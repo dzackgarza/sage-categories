@@ -96,6 +96,7 @@ It returns `True`, `False`, or `None`.
 A handler matches positively, with `match` and `case`, on the cases it can decide and returns `None` for every other case.
 The leaf writer extends coverage by adding cases.
 A case can use an exact computational construction that decides the predicate for that case.
+A case can ask an exact subquestion through `ask()`; SymPy owns the safety of the resulting evaluation cycle (D151).
 
 Handler domains are exact and unambiguous.
 The predicate owner supplies their mathematical meaning.
@@ -111,6 +112,7 @@ Public `assume(p)` adds the SymPy proposition `p` to that context.
 Public `retract(p)` removes it from that context.
 
 A positive property assumption also refines the same owned value.
+This assumption, `assume(X.is_P())`, is the placement route for a value already constructed; a constructor takes construction data (D150).
 Removing the assumption does not reverse established category placement.
 
 An ambient hypothesis is a zero-argument SymPy predicate application.

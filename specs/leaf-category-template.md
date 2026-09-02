@@ -86,7 +86,7 @@ C(data)
 Mor(C)(X, Y)(map_data)
 Fun(C, D)(on_object, on_morphism)
 
-C.Products()(diagram)
+C.Products()(X, Y)
 C.Limits(I)(diagram)
 C.SliceOver(X)(arrow)
 C.Subobjects(X)(monomorphism)
@@ -100,8 +100,8 @@ Grothendieck(P)
 
 ## Property specimen
 
-See [finite-set-minimal-template.py](finite-set-minimal-template.py).
-Its category and evaluation behavior comes from [property-refinement.md](property-refinement.md) and [undecidable-properties.md](undecidable-properties.md).
+See [finite-set-minimal-template.py](finite-set-minimal-template.py) for an axiom whose proposition uses existing methods, [poset-minimal-template.py](poset-minimal-template.py) for an axiom with a new predicate and its handlers, and [finite-poset-minimal-template.py](finite-poset-minimal-template.py) for a pullback-defined category.
+Their category and evaluation behavior comes from [property-refinement.md](property-refinement.md) and [undecidable-properties.md](undecidable-properties.md).
 
 ## Private computation specimen
 

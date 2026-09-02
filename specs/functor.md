@@ -109,7 +109,8 @@ F = Fun(C, D)(on_object, on_morphism)
 ```
 
 A functor that computes its images is declared by both actions, `Fun(C, D)(on_object, on_morphism)`.
-A subcategory inclusion or a point functor computes nothing: the leaf constructs it in the property subcategory of `Fun(C, D)` that states its known properties, and writes no action (D10, D11).
+A subcategory inclusion computes nothing: it is declared as `Fun(S, T).Monomorphisms().Isofibrations()()`, the zero-argument call on the property category of `Fun(S, T)`, and no action is written for it (D10, D11, D146; [Declaring one](#declaring-one)).
+A point functor is `D.Point()`, an arrow `* -> D` that the leaf class of the point adds to its structure functors (D154; [Point categories and point functors](#point-categories-and-point-functors)).
 The inherited `Cat().MorphismType` surface supplies:
 
 ```python
@@ -256,9 +257,7 @@ Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor
 
 - `Cat().WalkingIsomorphism()`: two objects and two mutually inverse morphisms;
 
-- `Cat().WalkingParallelPair()`: two objects and two parallel morphisms;
-
-- `Cat().Point(X)`, written `{X}`: the one-object category on a distinguished object `X`, one per `X`; see [Point categories and point functors](#point-categories-and-point-functors).
+- `Cat().WalkingParallelPair()`: two objects and two parallel morphisms.
 
 Two calls return one object by identity.
 No construction creates a second terminal object, simplex, or walking structure.
@@ -436,6 +435,7 @@ A leaf therefore declares which monomorphism placement follows by constructing i
 iota = Fun(S, T).Monomorphisms().Isofibrations()()
 ```
 
+This zero-argument call on the property category is the declaration of every subcategory inclusion; the inclusion computes nothing, and no action is written for it (D146).
 The leaf writer states that `S` is a subcategory of `T` by constructing there.
 The kernel does not compute that relation from Python inheritance or shared storage, and it does not recognize the functor by consulting a table of ones it built earlier.
 
@@ -678,13 +678,16 @@ structure functors. The kernel compiles those declarations on the resulting obje
 `Cat()`.
 
 ```python
-class Sets(Cat().ObjectType):
+class Sets(Category):
     class ObjectType: ...
     class ElementType: ...
     class MorphismType: ...
 
     def structure_functors(self): ...
 ```
+
+A category class extends one of the curated base classes `Category`, `CategoryOverRing`, and `CategoryOfXObjectsIn`, for example `Rings = RingObjectsIn(Sets)`.
+Writing the class populates its structure functor `Sets: * -> Cat` automatically: every category class is a point in `Cat` (D154).
 
 A category family is a functor into `Cat()` when its mathematics gives object and morphism
 actions. For example, `Discrete: Sets() -> Cat()` maps a set to its discrete category, and
@@ -693,8 +696,8 @@ Their functoriality comes from these actions.
 
 A constant category such as `Sets()` needs only its category class. A parameterized
 category such as `Modules(R)` uses its mathematical parameter in its category constructor.
-A one-object category such as `{X}` uses the point-category construction in the next
-section.
+A one-object category such as `{X}` is a category class whose sole object is `X`; the next
+section states how it places `X`.
 
 Generic kernel and `cat` modules accept ambient categories as arguments. They do not import
 production leaves. A category construction fails when its own class declaration,
@@ -702,26 +705,26 @@ constructor, or functor action is incomplete.
 
 ## Point categories and point functors
 
-For a distinguished mathematical object `X`, `Cat().Point(X)`, written `{X}`, is the one-object category whose sole object is `X` and whose sole morphism is `1_X`.
-It is an object of `Cat()` and is retained once per `X`.
+For a distinguished mathematical object `X`, the one-object category `{X}`, whose sole object is `X` and whose sole morphism is `1_X`, is a category class.
+Writing that class populates its structure functor `X: * -> Cat` automatically, so every leaf class is a point in `Cat`; here `*` is the terminal category `Cat().Terminal()` (D154).
 
-A functor from `{X}` to `D` is a point functor of `X`. Declared in `{X}.structure_functors()`, it places `X` as an object of `D`:
+`C.Point()` constructs an arrow, not an object: `F = C.Point()` is a functor `F: * -> C`, the point functor of its source.
+The kernel registers it automatically in the relevant property subcategory of `Fun(*, C)` (D154): a point functor is faithful and a monomorphism in `Cat`, and it is full exactly when `X` has no nonidentity endomorphism in `C`.
+A leaf class declares that its object `X` is a point in `C` by adding `C.Point()` to its structure functors:
 
 ```python
-iota = Fun(Cat().Point(X), D).Monomorphisms()()
+class NN(Category):
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+        return (Sets().Countable().Point(),)
 ```
 
-`{X}` has one hom category, so every functor out of it is faithful.
-The functor is full exactly when `X` has no nonidentity endomorphism in `D`.
-It is an isofibration exactly when every isomorphism at its image lifts to `{X}`.
-A construction states either property through its exact functor-property category.
-
-The distinguished object `X` is the construction data.
-The selected point functor is the structure functor of `{X}`: through the categorical level shift below, `D`'s object surface reaches `X` itself and `D`'s element surface reaches the objects of `X` (D128).
+`Sets().Countable().Point()` and `Sets().Point()` are both admissible here, and all relevant point diagrams commute.
+The point in `C` gives `X` itself the `C.ObjectType` inheritance, and gives `X.ObjectType` the `C.ElementType` inheritance, through the categorical level shift below (D128, D154).
+This structure functor is the whole declaration of a point; there are no further conveniences or shortcuts.
 
 ### The categorical level shift
 
-Let a category `C` be an object of a category `D` whose objects are structured categories, through a selected point functor `{C} -> D`.
+Let a category `C` be an object of a category `D` whose objects are structured categories, through the structure functor `D.Point()` in the class of `C`.
 That placement supplies these implementation surfaces:
 
 | Surface of `D` | Surface it supplies |
@@ -734,7 +737,6 @@ This shift follows from the point relation in `Cat`.
 It is the effect of selecting the point functor.
 It is not a second inheritance mechanism.
 
-`Cat().Point(C)` remains a separate category and adds no declaration to `C`.
 Shared target classes use the ordinary Sage dynamic-class construction and occur once in the MRO.
 
 ### Ambient algebraic categories
@@ -742,7 +744,7 @@ Shared target classes use the ordinary Sage dynamic-class construction and occur
 An algebraic category takes its ambient category as an argument.
 Thus `Semirings(A)` classifies semiring objects whose underlying objects, addition, multiplication, zero, one, and laws live in `A`. For example, `Semirings(Sets())` has underlying sets and set maps.
 `Semirings(Cat())` has underlying categories and functors.
-A category `C` is placed as an object of `Semirings(Cat())` by the point functor selected in `{C}.structure_functors()` (D128).
+A category `C` is placed as an object of `Semirings(Cat())` by the structure functor `Semirings(Cat()).Point()` in its class (D128, D154).
 
 `Semirings(Cat())` is the category of strict internal semiring objects.
 Associativity, units, symmetry, distributivity, and absorption are equalities of functors, exactly as `Semirings(Sets())` states them as equalities of maps.
@@ -976,8 +978,8 @@ The generic product and coproduct constructions apply to `Cat()` itself.
 For a sequence of categories, construct:
 
 ```python
-P = Cat().Products()((C_0, ..., C_n))
-Q = Cat().Coproducts()((C_0, ..., C_n))
+P = Cat().Products()(C_0, ..., C_n)
+Q = Cat().Coproducts()(C_0, ..., C_n)
 ```
 
 Their category-owned public functors are:
@@ -1011,7 +1013,8 @@ Dually, every sequence coproduct category retains all injections.
 Universal maps out of the coproduct use the component functors supplied by its defining cocone.
 
 The binary operators are the two-term cases.
-For categories `C` and `D`, `C * D` is the product category and `C + D` is the coproduct category.
+For categories `C` and `D`, `C * D = Cat().Products()(C, D)` is the product category, an object of `Cat().Products()`, and `C + D` is the coproduct category.
+A subcategory `D` creates its objects by `D(...)`, so `(C * D)(X, Y)` is the pair of `X in C` and `Y in D`; a product in `C` is never formed from `C * D` (D149).
 
 `Fun([1], C)` retains its evaluation functors:
 
@@ -1040,7 +1043,7 @@ The kernel supplies these shape constructors:
 
 - finite presented shapes: a finite set of objects, a finite set of generating morphisms, and a finite set of relations between composable words.
 
-A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assignment on `S`; it never enumerates `S`. A Python sequence `(X_0, ..., X_n)` is the convenience form and denotes the diagram over `Discrete([n])`.
+A discrete diagram needs only its object rule `i |-> X_i`. The rule is an assignment on `S`; it never enumerates `S`. The positional arguments `X_0, ..., X_n` are the convenience form and denote the diagram over `Discrete([n])`.
 
 For `D: I -> C`, `Cones(D)` is the cone category. A limiting cone is a terminal object of this category. `LimitCones(D)` is the full subcategory on these objects. A selected presentation `p in LimitCones(D)` supplies:
 
@@ -1063,9 +1066,16 @@ For each nontrivial discrete shape `J`, the selected limiting cones give a produ
 
 `C.Products()` is the union of the full images of these chosen product functors. It is the shared apex interface for objects constructed as nontrivial products. `C.Coproducts()` is dual. The essential image gives the replete category of objects isomorphic to such chosen products. Singleton limits remain available through their standard limit construction; they do not make every object a member of `C.Products()`.
 
-`C.Products()(diagram)` selects a product presentation `p in LimitCones(diagram)` and returns `p.apex()` placed in `C.Products()`. The presentation remains an object over the apex. A second limiting cone can have the same apex without replacing the first.
+`C.Products()(X, Y)` selects a product presentation `p in LimitCones((X, Y))` and returns `p.apex()` placed in `C.Products()`. The presentation remains an object over the apex. A second limiting cone can have the same apex without replacing the first.
 
-The common unambiguous case can expose `product_projection(i)` as a convenience. Code that must select among presentations uses `p.leg(i)`. The inherited default `X * Y` is `C.Products()((X, Y))`; a category-owned standard algebraic operation can override that default.
+This is the one product pattern at every level (D149):
+
+```python
+X * Y == C.Products()(X, Y) == (C * C)(X, Y)
+```
+
+`C` inherits its `Products()` subcategory construction, the nontrivial product objects, from `Cat`. The specifications spell the general case `C.Products()(X, Y)`.
+The common unambiguous case can expose `product_projection(i)` as a convenience. Code that must select among presentations uses `p.leg(i)`. A category-owned standard algebraic operation can override the inherited `*`.
 
 For a point `x: * -> p.apex()`, its component at `i` is the composite `p.leg(i) after x`. This construction belongs to the selected product presentation.
 
@@ -1240,7 +1250,7 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | `C ⥤ D` | `Mor(Cat())(C, D)` or `Fun(C, D)` |
 | `Functor.id C` | `End_Cat(C).one()` |
 | `Functor.comp` and whiskering functors | `Fun.composition(A, B, C)` and its morphism action |
-| `Functor.fromPUnit X` | the point functor of `X`, an object of `Fun(Cat().Point(X), D)` |
+| `Functor.fromPUnit X` | `D.Point()` in the structure functors of the class of `X`, an object of `Fun(*, D)` |
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
 | `ObjectProperty.ι P` | `Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()` |
 | monomorphism induced by `P -> Q` | `Fun(C.P(), C.Q()).Monomorphisms().Isofibrations().Full()()` |
@@ -1274,8 +1284,8 @@ Its `HasForget₂ C D` class also contains a chosen functor `C -> D`; it does no
 See [ConcreteCategory.Forget](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ConcreteCategory/Forget.html).
 
 Mathlib's `Functor.fromPUnit X : Discrete PUnit ⥤ C` sends the punctual category to a chosen object, and `Functor.equiv` states the equivalence `(Discrete PUnit ⥤ C) ≌ C`. See [PUnit](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/PUnit.html).
-Here `Cat().Point(X)` names its sole object `X`.
-The corresponding functor is the point functor of `X`; selecting it places `X` in `D` (D128).
+Here the class of `X` is its one-object category `{X}`.
+`D.Point()` in its structure functors is the point functor of `X`; selecting it places `X` in `D` (D128, D154).
 
 Mathlib defines `Prod.fst` and `Prod.snd` separately.
 See [Products.Basic](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Products/Basic.html).
@@ -1356,11 +1366,11 @@ It is kernel infrastructure over already established mathematical functors.
 
 - Kan extensions retain their units, counits, and universally induced natural transformations.
 
-- `Cat().Point(X)`, written `{X}`, is the one-object category on a distinguished object `X`, retained once per `X`.
+- Every category class is a point in `Cat`: writing the class populates its structure functor `* -> Cat`.
 
-- A selected functor `{X} -> D` is a point functor: it places `X` in `D` and supplies `D`'s surfaces through the level shift.
+- `C.Point()` is a functor `* -> C`, registered in the relevant subcategory of `Fun(*, C)`; a leaf class places its object `X` in `C` by adding `C.Point()` to its structure functors.
 
-- Placement of a category `C` in a structured category `D` through its point functor supplies the applicable object and element surfaces by categorical level.
+- Placement of a category `C` in a structured category `D` through `D.Point()` gives `C` the `D.ObjectType` inheritance and `C.ObjectType` the `D.ElementType` inheritance.
 
 - Every structure functor is an ordinary object of `Fun`.
 

@@ -12,7 +12,7 @@ Do not record retired names in current documentation.
 | --- | --- |
 | `C.ElementType` | The shared implementation and API for elements of objects of `C`. |
 | Point of a category `X` | A functor `* -> X`. This is an actual object of `X`; a set uses its discrete, 0-truncated category. |
-| `Cat().Point(X)` | The one-object category whose distinguished object is `X`. It is not a point `* -> X`. Its selected structure functors are the point functors of `X`, and each places `X` in its codomain (D128). |
+| `C.Point()` | The functor `* -> C`, an arrow and not an object. Every category class is a point in `Cat` automatically; a leaf class places its object `X` in `C` by adding `C.Point()` to its structure functors, which gives `X` the `C.ObjectType` inheritance and `X.ObjectType` the `C.ElementType` inheritance (D128, D154). |
 | Point of `C in Cat()` | A functor `* -> C`. This is an actual object of `C` and a `Cat().ElementType` value. |
 | Generalized element of `X` | A functor `T -> X`. |
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |

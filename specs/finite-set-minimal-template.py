@@ -1,26 +1,18 @@
-"""Finite-set design specimen for the public SymPy proposition contract.
+"""Finite-set design specimen for the axiom declaration contract.
 
-This pseudocode shows only the declarations owned by ``Sets().Finite()``.
-The private atom adapter and class compiler belong to the runtime substrate.
+This pseudocode shows only the declarations owned by ``Sets()`` for its ``Finite`` axiom.
+The proposition deciding membership in ``Sets().Finite()`` uses methods that already exist
+on ``Sets()``; ``Sets().Finite()`` exists implicitly, and the kernel constructs its
+structure functor to ``Sets()`` and generates ``X.is_finite()``.
 """
 
 from __future__ import annotations
 
-from sympy.assumptions import Predicate
 from sympy.logic.boolalg import Boolean
 
 
-class FinitePredicate(Predicate):
-    """State that an owned set has finite cardinality."""
-
-    name = "finite"
-
-
-finite = FinitePredicate()
-
-
 class SetsCategory(Category):
-    Finite = Axiom(predicate=finite)
+    """Implement sets, elements, and total set maps."""
 
     class ObjectType:
         """Implement sets."""
@@ -31,9 +23,18 @@ class SetsCategory(Category):
     class MorphismType:
         """Implement total set maps."""
 
+    def finite(self, X: Sets().ObjectType) -> Boolean:
+        """State the proposition deciding membership in ``Sets().Finite()``."""
+        return X.cardinality() < aleph0
+
+    Finite = Axiom(finite)
+
 
 class FiniteSetsCategory(Category):
-    """Implement the full property subcategory of finite sets."""
+    """Bind to ``Sets().Finite()`` to add finite-only operations.
+
+    The subcategory has exactly the constructors of ``Sets()``.
+    """
 
     _base_category_class_and_axiom = (SetsCategory, "Finite")
 
@@ -45,23 +46,3 @@ class FiniteSetsCategory(Category):
 
     class MorphismType:
         """Add no finite-set morphism operation."""
-
-    def membership_proposition(self, X: Sets().ObjectType) -> Boolean:
-        """Apply the category-owned predicate without evaluation."""
-        return finite(owned_value_atom(X))
-
-
-@finite.register(OwnedValueAtom)
-def decide_finiteness(
-    X: OwnedValueAtom,
-    assumptions: Boolean,
-) -> bool | None:
-    """Decide finiteness for exact supported owned representations."""
-    value = X.owned_value()
-    match value:
-        case ExplicitFiniteSet():
-            return True
-        case ExplicitInfiniteSet():
-            return False
-        case _:
-            return None

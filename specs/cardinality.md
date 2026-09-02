@@ -1,7 +1,7 @@
 # Cardinalities and ordinals
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
-`Cardinal()` is placed as an object of `Semirings(Cat())` by the point functor `{Cardinal()} -> Semirings(Cat())` selected in `{Cardinal()}.structure_functors()` (D128).
+`Cardinal()` is placed as an object of `Semirings(Cat())` by the structure functor `Semirings(Cat()).Point()` in its class (D128, D154).
 Cardinal addition and multiplication are its two internal semiring operations.
 Ordinals are objects of the skeletal category `Ordinals()`. Their Python addition and multiplication operators are ordinary ordinal arithmetic.
 Both models retain exact expressions when no normalization rule applies.
@@ -140,6 +140,8 @@ Reconstructing an equal expression returns the same cardinal object.
 
 ### Cardinal expression forms
 
+The private engine behind `Cardinal()` is two Sage semirings, declared into Sage's poset and semiring categories.
+They stay behind the computation-engine boundary of [leaves.md](leaves.md#computation-engine-boundary); the public category graph shares only the `Parent` root with Sage's (D01, D65, D153).
 The private expression model supports:
 
 - Finite cardinals.

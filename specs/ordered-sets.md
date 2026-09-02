@@ -13,11 +13,17 @@ Only `ask()` returns `True`, `False`, or Sage `Unknown`.
 The owned category constructors are:
 
 ```sage
+Relations()
 Posets()
 TotallyOrderedSets()
 FinitePosets()
 FiniteTotallyOrderedSets()
 ```
+
+`Relations()` is the category over `Sets()` whose objects are relation subobjects `R -> X * X` over varying `X`.
+Its retained first projection `(X, R) |-> X` is its structure functor to `Sets()`.
+`Posets()` is `Relations().PartialOrder()`, the axiom subcategory; the `PartialOrder` axiom and its proposition are declared on `Relations()` (D147).
+The structure functor of `Posets()` is its inclusion, `Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()` (D146).
 
 The structure functors form this commutative graph:
 
@@ -25,9 +31,9 @@ The structure functors form this commutative graph:
 \begin{array}{ccc}
 \mathbf{FinTotOrd} & \hookrightarrow & \mathbf{TotOrd} \\
 \downarrow & & \downarrow \\
-\mathbf{FinPos} & \hookrightarrow & \mathbf{Pos} \\
-\downarrow & & \downarrow \\
-\mathbf{FinSet} & \hookrightarrow & \mathbf{Set}.
+\mathbf{FinPos} & \hookrightarrow & \mathbf{Pos} & \hookrightarrow & \mathbf{Rel} \\
+\downarrow & & \downarrow & & \downarrow \\
+\mathbf{FinSet} & \hookrightarrow & \mathbf{Set} & = & \mathbf{Set}.
 \end{array}
 \]
 
@@ -35,7 +41,7 @@ Both paths from finite total orders to sets have the same intended underlying-se
 projection. This is coherence of the owned mathematical diamond, not a requirement for
 the compiler to compare constructor data or public functor images along the two paths.
 
-Let `U: Posets() -> Sets()` be the named projection `(X, R) |-> X`.
+Let `U: Posets() -> Sets()` be the composite of the inclusion into `Relations()` with the first projection, `(X, R) |-> X`.
 Then
 
 \[
@@ -71,7 +77,7 @@ Each category owns complete implementation classes:
 `TotallyOrderedSets()` adds only established totality.
 The finite categories add only algorithms and constructions that require finiteness.
 
-The relation presentation's `product_projection(0)` supplies membership, iteration, cardinality, set maps, and set constructions.
+The retained `product_projection(0)` of `Relations()` supplies membership, iteration, cardinality, set maps, and set constructions; `Posets()` inherits them along its inclusion.
 
 ## Poset construction and its proposition
 
@@ -88,21 +94,21 @@ x\leq y\land y\leq x\Rightarrow x=y,
 x\leq y\land y\leq z\Rightarrow x\leq z.
 \]
 
-`Posets()` owns this predicate meaning and defines its public SymPy predicate.
-The axiom declaration makes the subcategory available and generates `is_partial_order()` on the ambient relation class.
-`ask()` uses the exact SymPy handlers registered by `Posets()`.
+`Relations()` declares the `PartialOrder` axiom together with this proposition, applying the SymPy predicate it defines ([leaves.md](leaves.md#property-categories); D147, D148).
+The declaration generates `R.is_partial_order()` on `Relations().ObjectType`.
+`ask()` uses the exact SymPy handlers registered by `Relations()` for that predicate.
 An exhaustive finite algorithm is one such handler.
 Exact `True` refines the relation into `Posets()`.
 `False` disproves admission.
-`Unknown` leaves the relation in its ambient category.
+`Unknown` leaves the relation in `Relations()`.
 
-Selecting the property-category constructor directly asserts the laws:
+`Posets()` has exactly the constructors of `Relations()` (D150), and constructing there asserts the laws:
 
 ```python
 Posets()(relation)
 ```
 
-Its standard property application can be passed to `assume()`. A named mathematical construction returns its result already placed in the property category.
+An already constructed relation enters `Posets()` by `assume(R.is_partial_order())`. A named mathematical construction returns its result already placed in the property category.
 There are no checked, hypothesis-backed, or theorem-backed constructor families.
 
 Named constructors include:

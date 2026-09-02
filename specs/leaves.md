@@ -64,6 +64,9 @@ class LeafCategory(Category):
 An empty class body states that the leaf adds no local mathematics for that kind.
 Inherited methods still reach the compiled class through selected structure functors.
 
+A leaf class extends one of the curated base classes `Category`, `CategoryOverRing`, and `CategoryOfXObjectsIn` ([functor.md](functor.md#category-classes-and-category-valued-families)).
+Writing the class populates its structure functor `LeafCategory: * -> Cat` automatically (D154).
+
 ## Constructors
 
 The default call `C(data)` constructs an object of `C` from its usual complete mathematical data.
@@ -79,7 +82,12 @@ C.from_sage(engine_value)
 The constructor asks for the smallest datum that determines the new structure.
 It obtains data already determined by that datum from its mathematical owner.
 
-For a poset, the primary datum is a relation subobject
+A constructor takes construction data.
+A leaf writer defines the natural classcall and its `match`/`case` dispatch on that data.
+A property subcategory `C.P()` wires no constructor: the kernel gives it exactly the constructors of `C` through the functor `C.P() -> C`, which the kernel constructs.
+A value already constructed is placed by assumption, `assume(X.is_P())`, the membership proposition of `X in C.P()` ([undecidable-properties.md](undecidable-properties.md#assumptions); D150).
+
+For a relation, the primary datum is a subobject
 
 \[
 R\hookrightarrow X\times X.
@@ -87,8 +95,9 @@ R\hookrightarrow X\times X.
 
 The codomain and retained product projections determine `X`.
 The caller does not repeat `X`.
+`Relations()` owns this constructor, and `Posets() = Relations().PartialOrder()` has exactly the same constructors (D147, D150).
 
-The [poset template](poset-minimal-template.py) shows this constructor and its functor to `Sets()`.
+The [poset template](poset-minimal-template.py) shows this constructor, the axiom, and the retained first projection to `Sets()`.
 
 ## Structure functors
 
@@ -129,9 +138,14 @@ An action receives a fully initialized source value. It can call any method defi
 built by a constructor of `D`. The kernel runs the object action during construction to
 initialize the inherited target implementation; a leaf writes no base-class initializer call.
 
-A subcategory inclusion or a point functor computes nothing.
-The leaf constructs it in the property subcategory of `Fun(C, D)` that states its known
-properties, and writes no action (D10, D11).
+A subcategory inclusion computes nothing.
+The leaf declares it as `Fun(S, T).Monomorphisms().Isofibrations()()`, the zero-argument
+call on the property category of `Fun(S, T)`, and writes no action (D10, D11, D146;
+[functor.md](functor.md#declaring-one)).
+A point functor is `D.Point()`, an arrow `* -> D`: a leaf class whose sole object is `X`
+places `X` in `D` by adding `D.Point()` to its structure functors, which gives `X` the
+`D.ObjectType` inheritance and `X.ObjectType` the `D.ElementType` inheritance (D154;
+[functor.md](functor.md#point-categories-and-point-functors)).
 The leaf selects a projection retained by its defining construction (`POL-LEAF-071`).
 
 A leaf can create a structural diamond simply by selecting functors whose transitive
@@ -151,8 +165,8 @@ A leaf reuses that data and states only its added structure or theorem.
 
 Examples include:
 
-- a pullback-defined category selects the retained pullback projections;
-- a category of structured pairs selects the relevant product projections;
+- a pullback-defined category selects the retained pullback projections ([finite-poset template](finite-poset-minimal-template.py));
+- a category of structured pairs selects the relevant product projections ([poset template](poset-minimal-template.py));
 - a subcategory selects its retained monomorphism;
 - a lifted limit reuses the selected cone and universal morphism;
 - a restricted functor comes from `F.restrict(P, Q)`;
@@ -166,17 +180,29 @@ Operations that depend on one presentation remain on that presentation object.
 
 ## Property categories
 
-A leaf declares a property axiom once.
-The registered axiom identifier determines the public `is_P()` spelling.
-The leaf owns the predicate's mathematical meaning.
-Its public representation is a SymPy `Predicate` subclass.
-The generated method returns its applied SymPy proposition for `C.P()`.
+A category declares each axiom it introduces once, in its class body, by the axiom name and the proposition that decides membership (D148):
 
-The property owner registers its exact handlers through SymPy.
+```python
+class SetsCategory(Category):
+    def finite(self, X: Sets().ObjectType) -> Boolean:
+        return X.cardinality() < aleph0
+
+    Finite = Axiom(finite)
+```
+
+An axiom is a string, here `"Finite"`, the attribute name.
+The proposition is written by the leaf writer in terms of methods that already exist on the category.
+A proposition that no existing method supplies applies a SymPy `Predicate` subclass the leaf defines, and the leaf registers that predicate's exact handlers through SymPy.
+`Sets().Finite()` exists implicitly: its objects are the objects of `Sets()` that satisfy the proposition.
+The kernel constructs the minimal structure functor `Sets().Finite() -> Sets()`, so `ObjectType`, `ElementType`, and `MorphismType` inherit with no ceremony, and it generates `X.is_finite()` on `Sets().ObjectType`, returning the proposition.
 The kernel performs same-object refinement after an exact positive result.
+
+For a structure functor `F: C -> D` and an axiom `P` declared on `D`, the pullback in `Cat` defines `C.P()` ([property-refinement.md](property-refinement.md#inverse-images)).
+
+A class that adds operations to `C.P()` binds to it by `_base_category_class_and_axiom = (CCategory, "P")` and writes no constructor (D150).
 Any Python declaration helper remains private and creates no second predicate model.
 
-The complete example exists in [finite-set-minimal-template.py](finite-set-minimal-template.py).
+The complete examples are [finite-set-minimal-template.py](finite-set-minimal-template.py), a proposition from existing methods; [poset-minimal-template.py](poset-minimal-template.py), a new predicate with its handlers; and [finite-poset-minimal-template.py](finite-poset-minimal-template.py), an axiom reached by pullback along a structure functor.
 The general contract exists in [property-refinement.md](property-refinement.md).
 
 ## Computation-engine boundary
@@ -265,7 +291,7 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 ### `POL-LEAF-064` — property or construction subcategory built by hand
 
 - In code: `PropertySubcategory(self, "Name", ())`, `FullSubcategory(self)`; `self._p.Q = lambda: ...`; a hand-written accessor `Finite()`, `Countable()`, `WithBottom()`; a subcategory constructed by hand and then registered as an inverse image.
-- Owner: `Finite = Axiom()` in the class body; `_base_category_class_and_axiom` on the implementing class; `F.inverse_image(C.P())` for an inherited property (D83, D89).
+- Owner: `Finite = Axiom(finite)` in the class body, `finite` the method returning the deciding proposition ([Property categories](#property-categories), D148); `_base_category_class_and_axiom` on the implementing class; the pullback along a structure functor for an inherited property (D83, D89).
 - Gate: `no-hand-built-property-subcategory`, `no-patched-accessor`, `no-constructor-name-strings`.
 
 ### `POL-LEAF-065` — identity, composition, morphism or element construction, or element retention for inherited structure
@@ -277,7 +303,7 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 ### `POL-LEAF-066` — kernel machinery in a leaf: branching, refinement after construction, own value store, kernel state in a constructor
 
 - In code: `role_of(x) is Role.X`, `is_placed(x, C)`, `is_subcategory`; `refine(x, C)`; `x = C(...)` then `D()(x)` or `C.P()(x)` as a statement; `self._store[key] = ...`, `_NAME_CATEGORIES: MonoDict = MonoDict()`, `x: dict[...] = {}`, `@cached_method`, `@cached_function`; `ObjectType(self, data)`, `ObjectType(category=self, ...)`, `MorphismType(self.morphism_category(1), ...)`.
-- Owner: a leaf imports no kernel module (D122); a value is constructed into the strongest property subcategory its writer knows, and that subcategory owns the constructor (D21); containment is otherwise computed by the predicate through `ask()`, after which the kernel refines the same value; retention by identity is the kernel's (D111).
+- Owner: a leaf imports no kernel module (D122); a value is constructed into the strongest property subcategory its writer knows, and that subcategory has exactly the constructors of its ambient category (D21, D150); an already constructed value is placed by `assume(X.is_P())` ([Constructors](#constructors)), and containment is otherwise computed by the predicate through `ask()`, after which the kernel refines the same value; retention by identity is the kernel's (D111).
 - Gate: import contract "A leaf imports no kernel internal"; `no-refinement-after-construction`; `no-hand-rolled-retention`; `no-leaf-value-store`; `no-compiler-state-in-constructor`; `no-compiler-state-in-constructor-positional`. Review for a refinement call whose category is bound to a local name.
 
 ### `POL-LEAF-067` — Sage machinery as the category's runtime
@@ -295,13 +321,13 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 ### `POL-LEAF-069` — datum-free constructor, or a one-object category built by hand
 
 - In code: `def __call__(self) -> ObjectType: return self._x` with the object built in `__init__` and refined into `self`.
-- Owner: `Cat().Point(X)` with a selected point functor places `X` and supplies the codomain's surfaces (D128). The leaf states the membership rule, the cardinal, and one functor.
+- Owner: a one-object leaf class is a point in `Cat` automatically and places its object `X` in `D` by the structure functor `D.Point()`, which supplies the codomain's surfaces (D128, D154). The leaf states the membership rule, the cardinal, and that one structure functor.
 - Gate: `no-datum-free-constructor`.
 
 ### `POL-LEAF-070` — actions written for a functor that computes nothing
 
 - In code: `Fun(PointedSets(), Sets()).Faithful()(on_object=..., on_morphism=...)` for the first projection `(X, x) |-> X`; an `on_object` or `on_morphism` body for a subcategory inclusion or a point functor.
-- Owner: a functor that computes its images is declared by its two actions, `Fun(C, D)(on_object, on_morphism)` (D08, D123); an inclusion or point functor is constructed in the property subcategory of `Fun(C, D)` that states its known properties and carries no action (D10, D11); a retained projection is selected (`POL-LEAF-071`).
+- Owner: a functor that computes its images is declared by its two actions, `Fun(C, D)(on_object, on_morphism)` (D08, D123); an inclusion is `Fun(S, T).Monomorphisms().Isofibrations()()` and a point functor is `D.Point()`, each with no action (D10, D11, D146, D154); a retained projection is selected (`POL-LEAF-071`).
 - Gate: review.
 
 ### `POL-LEAF-071` — a retained projection rewritten

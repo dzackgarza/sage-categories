@@ -17,13 +17,13 @@ The declaration retains its subcategory monomorphism
 j_P:C.P()\hookrightarrow C.
 \]
 
-`C.P()` owns the mathematical meaning of `P`.
-Its public predicate is a SymPy `Predicate` subclass.
-Its exact SymPy handlers decide the cases known to that owner.
+`C` declares the axiom `P` by its name and the proposition that decides membership in `C.P()` ([leaves.md](leaves.md#property-categories); D148).
+`C.P()` exists implicitly and owns the mathematical meaning of `P`.
+A proposition that no existing method supplies applies a SymPy `Predicate` subclass, whose exact SymPy handlers decide the cases known to that owner.
 
 The registered axiom identifier determines the public `is_P()` spelling.
 The kernel generates that method once on the ambient implementation class.
-It returns `C.P().membership_proposition(X)`.
+It returns `C.P().membership_proposition(X)`, the declared proposition.
 
 For a morphism property, the construction starts from `Mor(C)`.
 For a functor property, it starts from `Fun(C, D)`.
@@ -56,7 +56,7 @@ F^{-1}(C.P())=D\times_C C.P().
 The pullback retains both projections.
 Its projection to `D` is the inverse-image subcategory monomorphism.
 
-When this construction defines the inherited property `P` on `D`, it is `D.P()`.
+For a structure functor `F: D -> C` and an axiom `P` declared on `C`, this pullback defines `D.P()` (D148).
 The axiom registration exposes its predicate and implementation classes.
 
 See Mathlib's [`ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html) and [full subcategories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html).
@@ -83,6 +83,8 @@ These routes use one refinement operation:
 - a positive assumption of the membership proposition;
 - an exact `True` result from `ask()`.
 
+A value already constructed enters `C.P()` by the assumption route, `assume(X.is_P())`; a constructor takes construction data, and `C.P()` has exactly the constructors of `C` (D150).
+
 After refinement, placement decides the same proposition as `True`.
 The property implementation class supplies its operations directly on the value.
 
@@ -102,8 +104,8 @@ The refined class contains each applicable implementation class once.
 
 ## Defining predicate
 
-A concrete property category supplies its defining mathematical predicate.
-That predicate returns a SymPy proposition when applied to an ambient value.
+The axiom declaration on the ambient category supplies the proposition that decides membership in the property category.
+That proposition is written in terms of methods that already exist on the ambient category, or applies a SymPy predicate the leaf defines ([leaves.md](leaves.md#property-categories); D148).
 
 Placement supplies an exact positive handler result.
 Other exact handlers can use owned data, a cited theorem, or a private engine.
@@ -111,7 +113,7 @@ Other exact handlers can use owned data, a cited theorem, or a private engine.
 Any Python helper for this declaration remains private.
 It does not define another predicate type, proposition type, or property category.
 
-The finite-set declaration template is [finite-set-minimal-template.py](finite-set-minimal-template.py).
+The finite-set declaration template is [finite-set-minimal-template.py](finite-set-minimal-template.py); the poset template [poset-minimal-template.py](poset-minimal-template.py) declares a new predicate with its handlers.
 
 ## Property construction
 

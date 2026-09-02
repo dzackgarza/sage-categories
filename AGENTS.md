@@ -117,7 +117,10 @@ Commit and push hooks own those checks.
 A targeted Sage-aware test is the only routine manual exception; read `justfile` first.
 Do not add automated convention enforcement before 1.0 (`POL-TEST-030`, `POL-TEST-031`).
 An architectural invariant check is admitted only under `D132`; it runs in `just architecture` at the push tier.
-`just architecture` green at the exact revision is the precondition of every R-gate; the gate agent runs it first (`POL-DOC-028`).
+`just architecture` green on the phase's owned rule set at the exact revision is the precondition of every R-gate; the gate agent runs it first (`POL-DOC-028`).
+`just plan-state` at the push tier fails on more than one open phase, a `complete` phase without an accepted revision, an open phase with an incomplete prerequisite, or a leaf package in `src` before R6 (`POL-DOC-029`).
+Two gates are red by design until their owning card is accepted: the commit-tier mypy gate on the D131 baseline (owner: the static-projection plan, blocked on R6) and the push-tier Sage import contract (owner: M1).
+A kernel commit or push inside that window uses `--no-verify`, and its message names the red gate; `just plan-state` and `just architecture` on the owned set are still run first.
 
 A docs-only edit runs no verification.
 Commit it with `git commit --no-verify`.

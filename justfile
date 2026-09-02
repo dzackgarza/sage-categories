@@ -23,8 +23,12 @@ architecture:
     PYTHONPATH=src uvx --python 3.14 --from import-linter lint-imports --config pyproject.toml
     uvx --from ast-grep-cli ast-grep scan --config .ast-grep/architecture.yml --error src tests/kernel
 
+# Phase-order invariants of the core plan's gate protocol (D136, POL-DOC-029), read from the vault cards.
+plan-state:
+    bash scripts/plan_state.sh
+
 # Run the full SageMath test suite before pushing.
-test-push: architecture
+test-push: plan-state architecture
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-push
 
 # Run CI acceptance QC through the central implementation.

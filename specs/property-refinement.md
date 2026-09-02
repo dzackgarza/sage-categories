@@ -57,6 +57,8 @@ The pullback retains both projections.
 Its projection to `D` is the inverse-image subcategory monomorphism.
 
 For a structure functor `F: D -> C` and an axiom `P` declared on `C`, this pullback defines `D.P()` (D148).
+When two structure functors of `D` have targets that both declare `P`, their pullbacks define one `D.P()`: the pullbacks are equivalent by composition, Sage's C3 linearization determines their order, and coherence is assumed with the first one chosen (D37, D159).
+`Modules(R).Finite()` means one thing, whether `Finite` reaches `Modules(R)` through a direct functor to `Sets()` or through one that passes through `Groups().Commutative()`.
 The axiom registration exposes its predicate and implementation classes.
 
 See Mathlib's [`ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html) and [full subcategories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html).
@@ -113,7 +115,7 @@ Other exact handlers can use owned data, a cited theorem, or a private engine.
 Any Python helper for this declaration remains private.
 It does not define another predicate type, proposition type, or property category.
 
-The finite-set declaration template is [finite-set-minimal-template.py](finite-set-minimal-template.py); the poset template [poset-minimal-template.py](poset-minimal-template.py) declares a new predicate with its handlers.
+The finite-set declaration template is [finite-set-minimal-template.py](finite-set-minimal-template.py); the poset template [poset-minimal-template.py](poset-minimal-template.py) declares a new predicate with its handlers and implements the axiom subcategory through its identity structure functor (D156); the finite-poset template [finite-poset-minimal-template.py](finite-poset-minimal-template.py) implements an axiom reached by pullback.
 
 ## Property construction
 

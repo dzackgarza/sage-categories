@@ -78,6 +78,17 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 ```
 
 These projections belong to `defining_presentation()`.
+A retained functor is selected by the named method of its construction, `C.CosliceUnder(X).projection()`, `Fun(I, C).ev(i)`, `P.product_projection(i)`, and a composite is `G * F` (D157).
+
+## Implementation specimen
+
+```python
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    x = D.P1().P2().P3()
+    return (End_Cat(x).one(),)
+```
+
+The identity functor of `x` declares this class the implementation of `x` (D156); the class writes no constructor.
 
 ## Construction specimen
 
@@ -100,8 +111,12 @@ Grothendieck(P)
 
 ## Property specimen
 
-See [finite-set-minimal-template.py](finite-set-minimal-template.py) for an axiom whose proposition uses existing methods, [poset-minimal-template.py](poset-minimal-template.py) for an axiom with a new predicate and its handlers, and [finite-poset-minimal-template.py](finite-poset-minimal-template.py) for a pullback-defined category.
+See [finite-set-minimal-template.py](finite-set-minimal-template.py) for an axiom whose proposition uses existing methods, [poset-minimal-template.py](poset-minimal-template.py) for an axiom with a new predicate and its handlers and the class implementing the axiom subcategory, and [finite-poset-minimal-template.py](finite-poset-minimal-template.py) for a pullback-defined category.
 Their category and evaluation behavior comes from [property-refinement.md](property-refinement.md) and [undecidable-properties.md](undecidable-properties.md).
+
+## Construction specimens
+
+See [pointed-sets-minimal-template.py](pointed-sets-minimal-template.py) for a chosen-datum fibration, the class implementing a coslice, and [poset-products-minimal-template.py](poset-products-minimal-template.py) for a universal-construction realization, a functor placed in `.CreatesLimits(I)`.
 
 ## Private computation specimen
 

@@ -111,6 +111,8 @@ F = Fun(C, D)(on_object, on_morphism)
 A functor that computes its images is declared by both actions, `Fun(C, D)(on_object, on_morphism)`.
 A subcategory inclusion computes nothing: it is declared as `Fun(S, T).Monomorphisms().Isofibrations()()`, the zero-argument call on the property category of `Fun(S, T)`, and no action is written for it (D10, D11, D146; [Declaring one](#declaring-one)).
 A point functor is `D.Point()`, an arrow `* -> D` that the leaf class of the point adds to its structure functors (D154; [Point categories and point functors](#point-categories-and-point-functors)).
+A functor retained by a construction is selected by the named method of that construction, and a composite is `G * F` (D157; [Functor-category calculus](#functor-category-calculus)).
+A class that implements a category otherwise named selects that category's identity functor (D156; [Implementing a named category](#implementing-a-named-category)).
 The inherited `Cat().MorphismType` surface supplies:
 
 ```python
@@ -126,7 +128,7 @@ The maps preserve identities and composition:
 F(1_X)=1_{F(X)},\qquad F(g\circ f)=F(g)\circ F(f).
 \]
 
-A point `x: * -> X` is represented by its defining functor. A functor `G: X -> Y` maps it by composition to `G after x: * -> Y`. A generalized element `T -> X` maps by the same composition to `T -> Y`. This point action belongs to `G`. Selection of a structure functor can add the applicable target element implementation to the compiled source class.
+A point `x: * -> X` is represented by its defining functor. A functor `G: X -> Y` maps it by composition to `G * x: * -> Y`. A generalized element `T -> X` maps by the same composition to `T -> Y`. This point action belongs to `G`. Selection of a structure functor can add the applicable target element implementation to the compiled source class.
 
 For fixed `C, D in Cat()`, the functor category is endpoint application to `Mor(Cat())`:
 
@@ -222,8 +224,8 @@ In particular:
 - objects of `Mor(Fun(C, D))` are natural transformations.
 
 The category whose objects are the morphisms of `C` and whose morphisms are commuting squares is not a primitive.
-It is the functor category `Fun([1], C)` from the walking arrow `[1]`. Its evaluation functors `ev_0, ev_1: Fun([1], C) -> C` supply the domain and codomain projections.
-In general, evaluation at `i in I` is the construction-named functor `Fun(I, C) -> C`.
+It is the functor category `Fun([1], C)` from the walking arrow `[1]`. Its evaluation functors `Fun([1], C).ev(0)` and `Fun([1], C).ev(1)`, each `Fun([1], C) -> C`, supply the domain and codomain projections.
+In general, evaluation at `i in I` is the retained functor `Fun(I, C).ev(i): Fun(I, C) -> C` (D157).
 
 The related property categories use the same mechanism:
 
@@ -537,6 +539,36 @@ Their existence does not affect the compiled public surface.
 Use as a structure functor changes compiler behavior only.
 It does not change a functor's mathematical definition.
 
+### Implementing a named category
+
+A category otherwise named, such as `D.P1().P2().P3()`, exists before any class is written for it.
+A class declares itself the implementation of that category by selecting its identity functor as a structure functor (D156):
+
+```python
+x = D.P1().P2().P3()
+id_x = End_Cat(x).one()
+structure_functors = [id_x, ...]
+```
+
+`id_x` is the identity of the endofunctor category at `x` ([Functor-category calculus](#functor-category-calculus)).
+The interface is uniform: `Fun` provides identity functors, and this selection is the whole declaration.
+The class writes no constructor; `x` keeps exactly the constructors of its ambient category (D150).
+A class implementing an axiom subcategory `C.P()` is the one-property instance, `x = C.P()` ([poset template](poset-minimal-template.py), [finite-poset template](finite-poset-minimal-template.py)).
+A class implementing a generic construction category is the same declaration, `x = Sets().CosliceUnder(Sets().Terminal())` ([pointed-sets template](pointed-sets-minimal-template.py)).
+
+### Selecting a retained functor
+
+A functor retained by a construction is selected by the named method of that construction (D157):
+
+```python
+C.CosliceUnder(X).projection()   # the retained projection of a coslice
+Fun(I, C).ev(i)                  # evaluation at i in I
+P.product_projection(i)          # the i-th projection of a product
+G * F                            # the composite of F: A -> B and G: B -> C
+```
+
+`G * F` is the morphism composition of `Cat`, and it is the one spelling of a composite functor.
+
 Each category lists only immediate structure functors.
 The kernel supplies their target classes as immediate dynamic bases. Sage dynamic-class
 construction and Sage's controlled linearization handle transitive inheritance and shared
@@ -686,8 +718,9 @@ class Sets(Category):
     def structure_functors(self): ...
 ```
 
-A category class extends one of the curated base classes `Category`, `CategoryOverRing`, and `CategoryOfXObjectsIn`, for example `Rings = RingObjectsIn(Sets)`.
+A category class extends one of the curated base classes `Category`, `CategoryOverRing`, and `CategoryOfXObjectsIn`, for example `Rings = RingObjectsIn(Sets)`; `RingObjectsIn(C)` is the class, and `Rings(C)` is the category it constructs ([rings.md](rings.md)).
 Writing the class populates its structure functor `Sets: * -> Cat` automatically: every category class is a point in `Cat` (D154).
+A class that implements a category otherwise named selects that category's identity functor as a structure functor (D156; [Implementing a named category](#implementing-a-named-category)).
 
 A category family is a functor into `Cat()` when its mathematics gives object and morphism
 actions. For example, `Discrete: Sets() -> Cat()` maps a set to its discrete category, and
@@ -795,13 +828,13 @@ The fundamental cases are:
 | subcategory or property subcategory | its specified monomorphism |
 | product category | each `product_projection(i)` |
 | coproduct category | each `coproduct_injection(i)` |
-| functor category `Fun(I, C)` | each evaluation `ev_i: Fun(I, C) -> C`; for `Fun([1], C)`, `ev_0` and `ev_1` |
-| slice or coslice presentation | its pullback projections; the varying object is the composite with `ev_0` or `ev_1` |
+| functor category `Fun(I, C)` | each evaluation `Fun(I, C).ev(i): Fun(I, C) -> C`; for `Fun([1], C)`, `ev(0)` and `ev(1)` |
+| slice or coslice presentation | its pullback projection `C.SliceOver(X).projection()` or `C.CosliceUnder(X).projection()`; the varying object is its composite with `Fun([1], C).ev(0)` or `Fun([1], C).ev(1)` |
 | Grothendieck fibration | its projection and specified cartesian lifts |
 | Grothendieck opfibration | its projection and specified cocartesian lifts |
 | base change | the functor supplied by pullback, pushforward, or the stated adjunction |
 | left or right Kan extension | the extended functor and its universal natural transformation |
-| composite construction | the ordinary composite of the supplied functors |
+| composite construction | the composite `G * F` of the supplied functors |
 
 The dual of a Grothendieck fibration is an opfibration.
 It is also called a cofibered category.
@@ -829,6 +862,7 @@ For categories `C` and `D`, `Fun.evaluation(C, D)` is the evaluation functor
 \operatorname{Fun}(C,D)\times C\longrightarrow D.
 \]
 
+For `F: A -> B` and `G: B -> C`, the composite is `G * F`, the morphism composition of `Cat` (D157).
 Fixing one input gives precomposition and postcomposition functors. Their morphism actions give left and right whiskering. Horizontal composition of natural transformations is the corresponding composite of these actions.
 
 The public natural-transformation operations are:
@@ -859,7 +893,7 @@ F.op()       # Op.on_morphism(F)
 eta.op()     # G.op() => F.op(), for eta: F => G
 ```
 
-It retains the natural isomorphism `Op compose Op ≅ Id`.
+It retains the natural isomorphism `Op * Op ≅ Id`.
 Thus duality acts on categories, functors, and natural transformations.
 The limit-side constructions own the implementation: terminal objects, products, limits, slices, monomorphisms, fibrations, and right Kan extensions.
 Their duals are initial objects, coproducts, colimits, coslices, epimorphisms, opfibrations, and left Kan extensions.
@@ -895,7 +929,7 @@ It retains both projections and its monomorphism into `C`. Chained property refi
 
 ### Restrictions and change of base
 
-Let `F: C -> D`, with subcategory monomorphisms `i: P -> C` and `j: Q -> D`. When the defining mathematics supplies a factorization of `F compose i` through `j`, `F.restrict(P, Q)` is the induced functor `P -> Q`. The leaf states the theorem that its objects and morphisms land in `Q`. The general restriction construction supplies the functor and the commuting square.
+Let `F: C -> D`, with subcategory monomorphisms `i: P -> C` and `j: Q -> D`. When the defining mathematics supplies a factorization of `F * i` through `j`, `F.restrict(P, Q)` is the induced functor `P -> Q`. The leaf states the theorem that its objects and morphisms land in `Q`. The general restriction construction supplies the functor and the commuting square.
 
 A morphism between two pullback diagrams induces the corresponding functor between their pullbacks. The pullback construction owns this action on objects, morphisms, and comparison natural transformations.
 
@@ -1019,8 +1053,8 @@ A subcategory `D` creates its objects by `D(...)`, so `(C * D)(X, Y)` is the pai
 `Fun([1], C)` retains its evaluation functors:
 
 ```python
-ev_0: Fun([1], C) -> C   # the domain of a morphism
-ev_1: Fun([1], C) -> C   # the codomain of a morphism
+Fun([1], C).ev(0)   # Fun([1], C) -> C, the domain of a morphism
+Fun([1], C).ev(1)   # Fun([1], C) -> C, the codomain of a morphism
 ```
 
 The generic pullback construction is `C.Limits(Cat().WalkingCospan())` (see [Diagram shapes and universal constructions](#diagram-shapes-and-universal-constructions)). Its legs are the retained projections.
@@ -1098,28 +1132,30 @@ Fun(C, D).PreservesLimits(I)
 Fun(C, D).CreatesLimits(I)
 ```
 
-state that `F` preserves or creates `I`-limits. Their colimit forms derive through `Op`. A right adjoint preserves limits. An equivalence creates and reflects limits and colimits. These implications follow [Mathlib, adjunctions and limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Limits.html) and [Mathlib, creates limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html).
+state that `F` preserves or creates `I`-limits. `CreatesLimits(I)` is a property subcategory of `Fun`, so of `Fun(C, D)` for every `C, D`, and its generated property is `F.is_limit_creating(I)` (D158). For the shape family `Discrete: Sets() -> Cat()`, `CreatesLimits(Discrete)` states creation of the limits of every discrete shape. Their colimit forms derive through `Op`. A right adjoint preserves limits. An equivalence creates and reflects limits and colimits. These implications follow [Mathlib, adjunctions and limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Limits.html) and [Mathlib, creates limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html).
 
-When a structural functor creates the required limits, its leaf states that property on the functor. The general creates-limits construction supplies the lifted cone and its universal maps. The leaf does not implement a separate lift for each named limit.
+A functor's theorem is the property subcategory it is constructed into (D158).
+A leaf states that a structural functor `U` creates `I`-limits by constructing `U` into `Fun(C, D).CreatesLimits(I)` at its declaration; `assume(U.is_limit_creating(I))` on a functor already constructed is shorthand for refining `U` into that subcategory.
+The general creates-limits construction supplies the lifted cone and its universal maps. The leaf does not implement a separate lift for each named limit ([poset-products template](poset-products-minimal-template.py)).
 
 ## Comma categories, slices, coslices, and fibers
 
-For `F: A -> C` and `G: B -> C`, `Comma(F, G)` has objects `(a, b, f)` with `f: F(a) -> G(b)`. It retains its projections to `A` and `B` and the natural transformation between their composites with `F` and `G`. It is the pullback of `(ev_0, ev_1): Fun([1], C) -> C * C` along `F * G`. This is the standard comma construction in [Mathlib](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Basic.html).
+For `F: A -> C` and `G: B -> C`, `Comma(F, G)` has objects `(a, b, f)` with `f: F(a) -> G(b)`. It retains its projections to `A` and `B` and the natural transformation between their composites with `F` and `G`. It is the pullback of `(ev(0), ev(1)): Fun([1], C) -> C * C` along `F * G`. This is the standard comma construction in [Mathlib](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Basic.html).
 
-`C.SliceOver(x)` and `C.CosliceUnder(x)` are the fixed-object comma categories. Equivalently, the slice is the pullback of `ev_1: Fun([1], C) -> C` along `x: * -> C`, and the coslice is the pullback of `ev_0` along `x`. Each retains its pullback projections. The varying object is the composite with `ev_0` or `ev_1`.
+`C.SliceOver(x)` and `C.CosliceUnder(x)` are the fixed-object comma categories. Equivalently, the slice is the pullback of `Fun([1], C).ev(1)` along `x: * -> C`, and the coslice is the pullback of `Fun([1], C).ev(0)` along `x`. Each retains its pullback projection to `Fun([1], C)`, selected as `C.SliceOver(x).projection()` or `C.CosliceUnder(x).projection()` (D157). The varying object is the composite of that projection with `Fun([1], C).ev(0)` or `Fun([1], C).ev(1)`.
 
-For the slice over `x`, an object is `(X, f: X -> x)`. The pullback projection to `Fun([1], C)` returns the defining morphism `f`; composing it with `ev_0` gives the varying object `X`, and composing it with `ev_1` gives the constant object `x`.
+For the slice over `x`, an object is `(X, f: X -> x)`. `C.SliceOver(x).projection()` returns the defining morphism `f`; `Fun([1], C).ev(0) * C.SliceOver(x).projection()` gives the varying object `X`, and the composite with `Fun([1], C).ev(1)` gives the constant object `x`.
 
-For the coslice under `x`, an object is `(X, f: x -> X)`. Composing the projection to `Fun([1], C)` with `ev_1` gives the varying object `X`; composing it with `ev_0` gives the constant object `x`.
+For the coslice under `x`, an object is `(X, f: x -> X)`. `Fun([1], C).ev(1) * C.CosliceUnder(x).projection()` gives the varying object `X`; the composite with `Fun([1], C).ev(0)` gives the constant object `x`.
 
 Two distinct functors carry distinct lift data:
 
-- the codomain evaluation `ev_1: Fun([1], C) -> C` is a fibration when `C` has pullbacks; the cartesian lift of `f: y -> x` at `p: z -> x` is the pullback `z *_x y -> y`, retained with both pullback projections (nLab "codomain fibration");
+- the codomain evaluation `Fun([1], C).ev(1)` is a fibration when `C` has pullbacks; the cartesian lift of `f: y -> x` at `p: z -> x` is the pullback `z *_x y -> y`, retained with both pullback projections (nLab "codomain fibration");
 
 - the fixed slice projection `C.SliceOver(x) -> C` is the category of elements of `Mor(C)(-, x)` and a discrete fibration for every `C`; the cartesian lift of `f: y -> z` at `(z, p: z -> x)` is `f: (y, p compose f) -> (z, p)`, by precomposition, with no pullback and no hypothesis on `C` (nLab "discrete fibration").
 
-The fiber of `ev_1` over `x` is `C.SliceOver(x)`. The total category `Fun([1], C)` and its fiber are distinct retained objects with distinct lifts.
-Dually, `ev_0` is an opfibration when `C` has pushouts, with cocartesian lifts by pushout, and the fixed coslice projection `C.CosliceUnder(x) -> C` is a discrete opfibration with cocartesian lifts by postcomposition.
+The fiber of `Fun([1], C).ev(1)` over `x` is `C.SliceOver(x)`. The total category `Fun([1], C)` and its fiber are distinct retained objects with distinct lifts.
+Dually, `Fun([1], C).ev(0)` is an opfibration when `C` has pushouts, with cocartesian lifts by pushout, and the fixed coslice projection `C.CosliceUnder(x) -> C` is a discrete opfibration with cocartesian lifts by postcomposition.
 These properties come from the construction theorems.
 They are not runtime decisions.
 
@@ -1143,7 +1179,7 @@ C.CoveredObjects(X)   = C.CosliceUnder(X).Epimorphisms()
 ```
 
 `Cat().ObjectType` defines these methods once, and every category inherits them.
-The slice or coslice retains a functor to `Mor(C)` that returns its defining arrow.
+The slice or coslice retains the projection `C.SliceOver(X).projection()` or `C.CosliceUnder(X).projection()`, which returns its defining arrow.
 `Monomorphisms()` and `Epimorphisms()` pull back the corresponding property subcategory of `Mor(C)` along that functor.
 
 Thus `C.Subobjects(X)` is the full subcategory of `C.SliceOver(X)` on monomorphisms.
@@ -1213,13 +1249,15 @@ A pointed set is an object of the coslice category under the singleton set:
 \mathbf{PointedSet}=1\!\downarrow\!\mathbf{Set}.
 \]
 
-The structure functor is the composite of the pullback projection to `Fun([1], Sets())` with `ev_1`, that is `(X, x) |-> X`. The pullback projection itself returns the point `* -> X`, that is, the morphism `1 -> X`, that selects `x`.
+`PointedSets()` is `Sets().CosliceUnder(Sets().Terminal())`.
+Its structure functor to `Sets()` is `Fun([1], Sets()).ev(1) * Sets().CosliceUnder(Sets().Terminal()).projection()`, that is `(X, x) |-> X` (D157). The projection `Sets().CosliceUnder(Sets().Terminal()).projection()` itself returns the point `* -> X`, that is, the morphism `1 -> X`, that selects `x`.
+The leaf class declares itself the implementation of this coslice through its identity structure functor (D156; [pointed-sets template](pointed-sets-minimal-template.py)).
 
 ### Product categories and `Fun([1], C)`
 
 For categories `C` and `D`, `product_projection(0)` and `product_projection(1)` are the two functors from `C * D` to its factors.
 
-The construction `Fun([1], C)` creates `ev_0` and `ev_1`. These functors exist without being returned from `structure_functors()`.
+The construction `Fun([1], C)` creates `Fun([1], C).ev(0)` and `Fun([1], C).ev(1)`. These functors exist without being returned from `structure_functors()`.
 
 ## Compiled public consequence
 
@@ -1249,7 +1287,7 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | `CategoryTheory.Functor C D` | `Cat().MorphismType` with domain `C` and codomain `D` |
 | `C ⥤ D` | `Mor(Cat())(C, D)` or `Fun(C, D)` |
 | `Functor.id C` | `End_Cat(C).one()` |
-| `Functor.comp` and whiskering functors | `Fun.composition(A, B, C)` and its morphism action |
+| `Functor.comp` and whiskering functors | `G * F`; `Fun.composition(A, B, C)` and its morphism action |
 | `Functor.fromPUnit X` | `D.Point()` in the structure functors of the class of `X`, an object of `Fun(*, D)` |
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
 | `ObjectProperty.ι P` | `Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()` |
@@ -1258,9 +1296,9 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | `Core.inclusion` | `epsilon_C: U(C.Core()) -> C` |
 | `ConcreteCategory.forget`, `HasForget₂.forget₂` | an extra structure containing one chosen functor and its required compatibility |
 | `Prod.fst`, `Prod.snd` | `product_projection(0)` and `product_projection(1)` |
-| `Arrow.leftFunc`, `Arrow.rightFunc` | `ev_0` and `ev_1` of `Fun([1], C)` |
-| `Over.forget` | the projection retained by the over-category construction |
-| `StructuredArrow.proj` | the projection retained by the structured-arrow construction |
+| `Arrow.leftFunc`, `Arrow.rightFunc` | `Fun([1], C).ev(0)` and `Fun([1], C).ev(1)` |
+| `Over.forget` | `Fun([1], C).ev(0) * C.SliceOver(x).projection()` |
+| `StructuredArrow.proj` | the projection retained by the structured-arrow construction; for a coslice, `Fun([1], C).ev(1) * C.CosliceUnder(x).projection()` |
 | `Comma F G` | `Comma(F, G)` with its projections and defining natural transformation |
 | `Functor.Fiber p b` | `p.Fiber(b)` |
 | `EssentialImage F` | `D.EssentialImage(F)` and its retained factorization |
@@ -1318,7 +1356,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - The monomorphism of a full subcategory is fully faithful by construction.
 
-- `Op: Cat() -> Cat()` acts on categories and functors, dualizes natural transformations, and retains `Op compose Op ≅ Id`.
+- `Op: Cat() -> Cat()` acts on categories and functors, dualizes natural transformations, and retains `Op * Op ≅ Id`.
 
 - `F.inverse_image(P)` is the retained pullback `D ×_C P` for `F: D -> C` and `P -> C`.
 
@@ -1342,6 +1380,12 @@ It is kernel infrastructure over already established mathematical functors.
 
 - Every functor is named by its construction or given as an explicit composite.
 
+- A retained functor is selected by the named method of its construction, `C.CosliceUnder(X).projection()`, `Fun(I, C).ev(i)`, `P.product_projection(i)`; a composite is `G * F`.
+
+- A class implements a category otherwise named by selecting that category's identity functor as a structure functor.
+
+- A functor's theorem is the property subcategory it is constructed into; `CreatesLimits(I)` is one, with property `is_limit_creating(I)`.
+
 - Each category presentation retains all projections and evaluations required by its definition.
 
 - `Cat().Products()` and `Cat().Coproducts()` accept sequence-indexed category diagrams.
@@ -1356,7 +1400,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - Every object of `Cat().Subobjects(P)` for a product category `P` retains its presenting monomorphism, then derives its component functors by composition.
 
-- Slice and coslice categories are pullbacks of `ev_1` and `ev_0` along the chosen object and retain their pullback projections.
+- Slice and coslice categories are pullbacks of `Fun([1], C).ev(1)` and `Fun([1], C).ev(0)` along the chosen object and retain their pullback projections, `C.SliceOver(x).projection()` and `C.CosliceUnder(x).projection()`.
 
 - Fibration and opfibration structure retains its cartesian or cocartesian lifts.
 

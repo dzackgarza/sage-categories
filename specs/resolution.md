@@ -142,6 +142,7 @@ They do not own mathematical equality or categorical structure.
 ## Properties and constructions
 
 Use Sage `CategoryWithAxiom` and `_base_category_class_and_axiom` for private property-class binding.
+The public declaration this binding realizes is the identity structure functor the implementing class selects ([functor.md](functor.md#implementing-a-named-category); D156).
 Use Sage `uncamelcase(identifier, "_")` when an axiom identifier needs snake case.
 The owned property category, predicate meaning, inverse images, and subcategory monomorphism remain in `Cat`.
 Its public predicate class, applied proposition, assumptions, and exact proposition dispatch use SymPy.

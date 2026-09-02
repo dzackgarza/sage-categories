@@ -23,7 +23,8 @@ FiniteTotallyOrderedSets()
 `Relations()` is the category over `Sets()` whose objects are relation subobjects `R -> X * X` over varying `X`.
 Its retained first projection `(X, R) |-> X` is its structure functor to `Sets()`.
 `Posets()` is `Relations().PartialOrder()`, the axiom subcategory; the `PartialOrder` axiom and its proposition are declared on `Relations()` (D147).
-The structure functor of `Posets()` is its inclusion, `Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()` (D146).
+The poset class declares itself the implementation of `Relations().PartialOrder()` through the identity structure functor `End_Cat(Relations().PartialOrder()).one()` (D156).
+The kernel constructs the inclusion `Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()` (D146, D148).
 
 The structure functors form this commutative graph:
 
@@ -41,7 +42,13 @@ Both paths from finite total orders to sets have the same intended underlying-se
 projection. This is coherence of the owned mathematical diamond, not a requirement for
 the compiler to compare constructor data or public functor images along the two paths.
 
-Let `U: Posets() -> Sets()` be the composite of the inclusion into `Relations()` with the first projection, `(X, R) |-> X`.
+Let `U: Posets() -> Sets()` be the composite of the inclusion into `Relations()` with the first projection, `(X, R) |-> X`:
+
+```python
+U = Relations().product_projection(0) * Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()
+```
+
+Both factors are retained functors, and `G * F` is the morphism composition of `Cat` (D157).
 Then
 
 \[
@@ -207,7 +214,7 @@ x\leq y\quad\Longleftrightarrow\quad
 \forall i,\ x_i\leq_i y_i.
 \]
 
-The poset leaf states this coordinatewise theorem once as the creates-limits property of `U`. The generic lift supplies the monotone projections and universal morphism. Applying `U` to the lifted cone returns the selected set-product cone.
+The poset leaf states this coordinatewise theorem once, by placing `U` in `Fun(Posets(), Sets()).CreatesLimits(Discrete)`; a functor's theorem is the property subcategory it is constructed into (D158; [poset-products template](poset-products-minimal-template.py)). The generic lift supplies the monotone projections and universal morphism, and `Posets().Products()(P, Q)` is inherited from `Cat` (D149). Applying `U` to the lifted cone returns the selected set-product cone.
 
 The product of total orders need not be total.
 In a product of two nontrivial chains, the two crossed elements are incomparable.

@@ -3,8 +3,9 @@
 ``Relations()`` constructs a relation from its subobject ``R -> X * X`` and selects the
 retained first projection ``(X, R) |-> X`` to ``Sets()``. It declares the ``PartialOrder``
 axiom together with the proposition deciding it, applying a new SymPy predicate with its
-exact handlers. ``Posets()`` is ``Relations().PartialOrder()``; it binds to that implicit
-subcategory to add order comparison and monotone maps, and wires no constructor.
+exact handlers. ``Posets()`` is ``Relations().PartialOrder()``; the poset class declares
+itself the implementation of that implicit subcategory by selecting its identity functor
+as a structure functor, adds order comparison and monotone maps, and wires no constructor.
 """
 
 from __future__ import annotations
@@ -77,9 +78,7 @@ class RelationsCategory(Category):
 
 
 class PosetsCategory(Category):
-    """Bind to ``Relations().PartialOrder()`` to add order comparison and monotone maps."""
-
-    _base_category_class_and_axiom = (RelationsCategory, "PartialOrder")
+    """Implement ``Relations().PartialOrder()``: add order comparison and monotone maps."""
 
     class ObjectType:
         """Add the operations the partial order supplies."""
@@ -94,6 +93,15 @@ class PosetsCategory(Category):
 
     class MorphismType:
         """Implement monotone maps."""
+
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+        """Declare this class the implementation of ``Relations().PartialOrder()``.
+
+        The identity functor of that category is the whole declaration; the kernel
+        constructs its inclusion into ``Relations()``.
+        """
+        x = Relations().PartialOrder()
+        return (End_Cat(x).one(),)
 
 
 @partial_order_laws.register(OwnedValueAtom)

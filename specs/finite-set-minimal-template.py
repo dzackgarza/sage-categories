@@ -3,7 +3,8 @@
 This pseudocode shows only the declarations owned by ``Sets()`` for its ``Finite`` axiom.
 The proposition deciding membership in ``Sets().Finite()`` uses methods that already exist
 on ``Sets()``; ``Sets().Finite()`` exists implicitly, and the kernel constructs its
-structure functor to ``Sets()`` and generates ``X.is_finite()``.
+structure functor to ``Sets()`` and generates ``X.is_finite()``. A class implementing an
+axiom subcategory appears in the poset and finite-poset templates.
 """
 
 from __future__ import annotations
@@ -28,21 +29,3 @@ class SetsCategory(Category):
         return X.cardinality() < aleph0
 
     Finite = Axiom(finite)
-
-
-class FiniteSetsCategory(Category):
-    """Bind to ``Sets().Finite()`` to add finite-only operations.
-
-    The subcategory has exactly the constructors of ``Sets()``.
-    """
-
-    _base_category_class_and_axiom = (SetsCategory, "Finite")
-
-    class ObjectType:
-        """Inherit the set surface under established finiteness."""
-
-    class ElementType:
-        """Add no finite-set element operation."""
-
-    class MorphismType:
-        """Add no finite-set morphism operation."""

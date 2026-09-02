@@ -66,6 +66,7 @@ Inherited methods still reach the compiled class through selected structure func
 
 A leaf class extends one of the curated base classes `Category`, `CategoryOverRing`, and `CategoryOfXObjectsIn` ([functor.md](functor.md#category-classes-and-category-valued-families)).
 Writing the class populates its structure functor `LeafCategory: * -> Cat` automatically (D154).
+A leaf class that implements a category otherwise named, an axiom subcategory `C.P()` or a generic construction such as `Sets().CosliceUnder(Sets().Terminal())`, selects that category's identity functor as a structure functor, `x = C.P(); id_x = End_Cat(x).one()` ([functor.md](functor.md#implementing-a-named-category); D156).
 
 ## Constructors
 
@@ -146,7 +147,8 @@ A point functor is `D.Point()`, an arrow `* -> D`: a leaf class whose sole objec
 places `X` in `D` by adding `D.Point()` to its structure functors, which gives `X` the
 `D.ObjectType` inheritance and `X.ObjectType` the `D.ElementType` inheritance (D154;
 [functor.md](functor.md#point-categories-and-point-functors)).
-The leaf selects a projection retained by its defining construction (`POL-LEAF-071`).
+The leaf selects a projection retained by its defining construction (`POL-LEAF-071`), by the named method of that construction: `C.CosliceUnder(X).projection()`, `Fun(I, C).ev(i)`, `P.product_projection(i)`; a composite is `G * F` (D157; [functor.md](functor.md#selecting-a-retained-functor)).
+A leaf states a theorem about a functor by constructing that functor into the property subcategory of `Fun(C, D)` that names it, such as `Fun(C, D).CreatesLimits(I)` (D158; [functor.md](functor.md#diagram-shapes-and-universal-constructions)).
 
 A leaf can create a structural diamond simply by selecting functors whose transitive
 targets meet. This never requires route-resolution boilerplate. The kernel chooses the
@@ -167,13 +169,14 @@ Examples include:
 
 - a pullback-defined category selects the retained pullback projections ([finite-poset template](finite-poset-minimal-template.py));
 - a category of structured pairs selects the relevant product projections ([poset template](poset-minimal-template.py));
+- a chosen-datum fibration selects the retained coslice projection composed with evaluation ([pointed-sets template](pointed-sets-minimal-template.py));
 - a subcategory selects its retained monomorphism;
-- a lifted limit reuses the selected cone and universal morphism;
+- a lifted limit reuses the selected cone and universal morphism ([poset-products template](poset-products-minimal-template.py));
 - a restricted functor comes from `F.restrict(P, Q)`;
 - an inherited property category comes from `F.inverse_image(C.P())`.
 
 For a universal construction, `Cat` owns the shape, diagram, cone or cocone, legs, apex, and universal map.
-The leaf states the additional leaf structure and the theorem that the construction preserves or creates it.
+The leaf states the additional leaf structure and the theorem that the construction preserves or creates it, by constructing the functor into `Fun(C, D).CreatesLimits(I)` (D158).
 
 One apex can have many presentations.
 Operations that depend on one presentation remain on that presentation object.
@@ -198,11 +201,12 @@ The kernel constructs the minimal structure functor `Sets().Finite() -> Sets()`,
 The kernel performs same-object refinement after an exact positive result.
 
 For a structure functor `F: C -> D` and an axiom `P` declared on `D`, the pullback in `Cat` defines `C.P()` ([property-refinement.md](property-refinement.md#inverse-images)).
+Two structure functors whose targets both declare `P` define one `C.P()` (D159; [property-refinement.md](property-refinement.md#inverse-images)).
 
-A class that adds operations to `C.P()` binds to it by `_base_category_class_and_axiom = (CCategory, "P")` and writes no constructor (D150).
+A class that adds operations to `C.P()` declares itself its implementation by selecting the identity functor of `C.P()` as a structure functor, `x = C.P(); id_x = End_Cat(x).one()` ([functor.md](functor.md#implementing-a-named-category); D156), and writes no constructor (D150).
 Any Python declaration helper remains private and creates no second predicate model.
 
-The complete examples are [finite-set-minimal-template.py](finite-set-minimal-template.py), a proposition from existing methods; [poset-minimal-template.py](poset-minimal-template.py), a new predicate with its handlers; and [finite-poset-minimal-template.py](finite-poset-minimal-template.py), an axiom reached by pullback along a structure functor.
+The complete examples are [finite-set-minimal-template.py](finite-set-minimal-template.py), a proposition from existing methods; [poset-minimal-template.py](poset-minimal-template.py), a new predicate with its handlers and the implementation of an axiom subcategory; [finite-poset-minimal-template.py](finite-poset-minimal-template.py), an axiom reached by pullback along a structure functor; [pointed-sets-minimal-template.py](pointed-sets-minimal-template.py), the implementation of a coslice, a chosen-datum fibration; and [poset-products-minimal-template.py](poset-products-minimal-template.py), a universal-construction realization.
 The general contract exists in [property-refinement.md](property-refinement.md).
 
 ## Computation-engine boundary
@@ -291,7 +295,7 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 ### `POL-LEAF-064` — property or construction subcategory built by hand
 
 - In code: `PropertySubcategory(self, "Name", ())`, `FullSubcategory(self)`; `self._p.Q = lambda: ...`; a hand-written accessor `Finite()`, `Countable()`, `WithBottom()`; a subcategory constructed by hand and then registered as an inverse image.
-- Owner: `Finite = Axiom(finite)` in the class body, `finite` the method returning the deciding proposition ([Property categories](#property-categories), D148); `_base_category_class_and_axiom` on the implementing class; the pullback along a structure functor for an inherited property (D83, D89).
+- Owner: `Finite = Axiom(finite)` in the class body, `finite` the method returning the deciding proposition ([Property categories](#property-categories), D148); the identity structure functor `End_Cat(C.P()).one()` on the implementing class (D156); the pullback along a structure functor for an inherited property (D83, D89).
 - Gate: `no-hand-built-property-subcategory`, `no-patched-accessor`, `no-constructor-name-strings`.
 
 ### `POL-LEAF-065` — identity, composition, morphism or element construction, or element retention for inherited structure
@@ -327,7 +331,7 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 ### `POL-LEAF-070` — actions written for a functor that computes nothing
 
 - In code: `Fun(PointedSets(), Sets()).Faithful()(on_object=..., on_morphism=...)` for the first projection `(X, x) |-> X`; an `on_object` or `on_morphism` body for a subcategory inclusion or a point functor.
-- Owner: a functor that computes its images is declared by its two actions, `Fun(C, D)(on_object, on_morphism)` (D08, D123); an inclusion is `Fun(S, T).Monomorphisms().Isofibrations()()` and a point functor is `D.Point()`, each with no action (D10, D11, D146, D154); a retained projection is selected (`POL-LEAF-071`).
+- Owner: a functor that computes its images is declared by its two actions, `Fun(C, D)(on_object, on_morphism)` (D08, D123); an inclusion is `Fun(S, T).Monomorphisms().Isofibrations()()` and a point functor is `D.Point()`, each with no action (D10, D11, D146, D154); a retained projection is selected, here `Fun([1], Sets()).ev(1) * Sets().CosliceUnder(Sets().Terminal()).projection()` (`POL-LEAF-071`, D157).
 - Gate: review.
 
 ### `POL-LEAF-071` — a retained projection rewritten
@@ -369,7 +373,7 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 ### `POL-LEAF-077` — declaration lookup by name string
 
 - In code: `Cat().declarations()["Sets"]`; `_implements = "Sets"`; `predicate(f"ThinOrder({self!r})")`; string tags such as `"finite"` and `"initial"` as an object's kind.
-- Owner: the class declaration is the registration (`Axiom`, `_base_category_class_and_axiom`); an object's kind is its category placement (D89).
+- Owner: the class declaration is the registration (`Axiom`, the identity structure functor of D156); an object's kind is its category placement (D89).
 - Gate: `no-declaration-lookup-by-name`; review for string tags.
 
 ### `POL-LEAF-078` — an accessor standing in for a functor

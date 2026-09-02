@@ -199,7 +199,7 @@ The set operations on these subobjects construct owned set subobjects.
 
 ## Finite and fixed-cardinality subsets
 
-Let `U_X: Sets().Subobjects(X) -> Sets()` be the inherited varying-object functor.
+Let `U_X: Sets().Subobjects(X) -> Sets()` be the inherited varying-object functor, `Fun([1], Sets()).ev(0) * Sets().SliceOver(X).projection()` composed with the inclusion of `Sets().Subobjects(X)` into `Sets().SliceOver(X)` (D157).
 The inverse image of `Sets().Finite()` along `U_X` is:
 
 ```python

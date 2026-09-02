@@ -53,7 +53,7 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "A leaf imports no kernel internal; kernel.refinement is the placement API"
+name = "A leaf imports no kernel internal"
 type = "forbidden"
 allow_indirect_imports = true
 source_modules = [
@@ -63,11 +63,4 @@ source_modules = [
     "sage_categories.number_sets",
     "sage_categories.ordinals",
 ]
-forbidden_modules = [
-    "sage_categories.kernel.roles",
-    "sage_categories.kernel.compiler",
-    "sage_categories.kernel.construction",
-    "sage_categories.kernel.functor_cache",
-    "sage_categories.kernel.predicates",
-    "sage_categories.kernel.stub_generator",
-]
+forbidden_modules = ["sage_categories.kernel"]

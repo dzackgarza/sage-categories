@@ -1,0 +1,15 @@
+id: no-hand-built-property-subcategory
+language: python
+severity: error
+files:
+  - src/sage_categories/sets/**/*.py
+  - src/sage_categories/posets/**/*.py
+  - src/sage_categories/algebra/**/*.py
+  - src/sage_categories/number_sets/**/*.py
+  - src/sage_categories/ordinals/**/*.py
+message: POL-LEAF-064, D89, D133
+rule:
+  any:
+    - pattern: PropertySubcategory($$$)
+    - pattern: FullSubcategory($$$)
+    - pattern: PredicateSubcategory($$$)

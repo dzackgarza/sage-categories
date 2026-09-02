@@ -1,0 +1,20 @@
+id: no-inherited-operation-rewritten
+language: python
+severity: error
+files:
+  - src/sage_categories/sets/**/*.py
+  - src/sage_categories/posets/**/*.py
+  - src/sage_categories/algebra/**/*.py
+  - src/sage_categories/number_sets/**/*.py
+  - src/sage_categories/ordinals/**/*.py
+ignores:
+  - src/sage_categories/sets/category.py
+message: POL-LEAF-065, D44, D133
+rule:
+  kind: function_definition
+  has:
+    field: name
+    regex: ^(construct_identity|composite|compose_morphisms|element_from_defining_morphism)$
+  inside:
+    kind: class_definition
+    stopBy: end

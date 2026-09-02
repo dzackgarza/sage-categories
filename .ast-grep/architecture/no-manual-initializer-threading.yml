@@ -5,11 +5,7 @@ files:
   - src/sage_categories/**/*.py
 ignores:
   - src/sage_categories/kernel/**
-message: >-
-  D13 / specs/resolution.md "Acceptance conditions": the kernel runs every reached
-  local initializer itself, each with its owner's datum, and threads inherited state
-  through the selected structure functors. A theory declaration stores its own datum
-  and calls no initializer of any class.
+message: POL-LEAF-063, D133, D13
 rule:
   any:
     - pattern: super().__init__($$$)

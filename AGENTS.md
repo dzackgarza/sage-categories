@@ -25,6 +25,9 @@ Do not derive architecture from source code, tests, reports, or Git history.
 A new policy or substantive specification edit needs transcript grounding under `POL-DOC-018`.
 Record its provenance in `specs/decisions.md`.
 An inspected external definition uses its exact source under `POL-MATH-040`.
+The transcript record has three stores: Claude sessions, Codex sessions, and the ChatGPT recordings (`just -f /home/dzack/gitclones/chat-on-steroids/justfile transcript <id>`).
+Check a decision against all three before calling it unsupported, and report a miss as searched, found, inference, confidence, gaps (`POL-DOC-025`, `POL-DOC-026`).
+Never write that you understood or learned; write the change into its owning document (`POL-DOC-024`).
 
 ## Repository entry
 

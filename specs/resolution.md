@@ -107,11 +107,20 @@ needed, remains the declaration-order rule of D56 rather than a second C3-specif
 Any private execution record or cached class data remains implementation-only and cannot
 become a second leaf-authored description of a functor action.
 
-## Diamonds
+## Diamond diagnostics and future coherence
 
-Controlled C3 places a shared implementation class once in the compiled MRO, and the
-kernel runs its initializer once. That is the whole treatment of a structural diamond
-(D37): no diagnostic, no coherence data, no preferred-path record.
+Every diamond in the owned structure-functor graph is accepted. Until the owned theory
+explicitly supplies coherence between the relevant composites, the kernel emits a
+`DEBUG`-level diagnostic identifying the unresolved diamond. If the diagnostic names a
+preferred path, it uses D56's declaration order. Debugging is opt-in: the same condition
+is never a warning or compilation failure.
+
+The core compiler requires only this diagnostic and the once-only C3 behavior. A later kernel extension
+can consume ordinary owned 2-morphism data between the composite functors and suppress the
+diagnostic for that diamond. That future mechanism must reuse the natural-transformation
+machinery of `Fun`; it must not add a coherence certificate, proof record, route registry,
+or second functor declaration. No public hook spelling or exact 2-cell property is fixed in
+the core compiler.
 
 ## Runtime categories and caches
 
@@ -177,7 +186,7 @@ The private runtime satisfies this specification when:
 - the same mechanism handles objects, elements, and morphisms;
 - both branches of a class diamond contribute their local methods;
 - a shared target class occurs once and initializes once;
-- a structural diamond compiles with one shared implementation occurrence and no diagnostic;
+- unresolved owned structural diamonds compile and appear only in opt-in `DEBUG` logs;
 - local declarations take precedence;
 - inherited methods run directly on the source value;
 - public functor application returns its separate owned image;

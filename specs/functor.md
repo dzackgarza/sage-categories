@@ -551,8 +551,14 @@ functor images from the competing paths are constructed or compared in order to 
 the diamond. Declaration order remains the existing preference rule of D56 wherever a
 path preference is required.
 
-That single occurrence is the whole treatment of a diamond (D37): the kernel keeps no
-diagnostic, coherence data, or preferred-path record for it.
+Coherence of a diamond is mathematical information about the relevant composite functors.
+Its absence is not a compiler failure. Until explicit owned coherence is supplied, the
+kernel reports the diamond only through opt-in `DEBUG` logging and continues with the
+single controlled-C3 implementation occurrence. A future extension can let theory code
+supply an actual 2-morphism, using the ordinary natural-transformation machinery of `Fun`,
+to mark the composites as coherent and silence that diagnostic. This extension must not
+introduce a proof record, certificate, route registry, or second functor declaration; its
+exact spelling is deferred.
 
 ### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 

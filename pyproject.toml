@@ -39,6 +39,25 @@ platform = ["juliacall>=0.9.35,<0.10"]
 # D132: the source dependency directions of specs/system.md, as a hard stop at the push tier.
 [tool.importlinter]
 root_package = "sage_categories"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Only the kernel's Sage runtime module and the named engine modules import Sage"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+    "sage_categories.kernel",
+    "sage_categories.cat",
+    "sage_categories.sets",
+    "sage_categories.posets",
+    "sage_categories.algebra",
+    "sage_categories.number_sets",
+    "sage_categories.ordinals",
+]
+forbidden_modules = ["sage"]
+ignore_imports = [
+    "sage_categories.posets._finite_poset_sage -> sage",
+]
 
 [[tool.importlinter.contracts]]
 name = "Cat and the kernel import no production leaf"

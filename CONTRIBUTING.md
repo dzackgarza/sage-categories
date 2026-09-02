@@ -993,6 +993,7 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-SAGE-013` | Do not memoize an owned mathematical value with a hash-and-equality cache, `sage.misc.cachefunc.cached_method` included. `==` on an owned value returns a proposition and `bool()` on it raises, so such a cache degenerates to hashing alone and fails on the first collision. Retain owned values by identity. |
 | `POL-SAGE-014` | When one comparison operator is defined through another, state each from its own definition. Python tries the reflected operator first when the right operand's class is a proper subclass of the left's, and same-object refinement makes exactly that true, so `__ge__` written as `other <= self` calls itself without bound as soon as one operand is refined. |
 | `POL-SAGE-015` | Bind every public name in the module whose source declares it. Assigning into another module's namespace at import time produces a name no source writes, which the static projection cannot state and a reader cannot find. A provisional binding that a later import overwrites is the same defect. |
+| `POL-SAGE-016` | Only `kernel/sage_runtime.py` and the engine modules named in the import contract import `sage`. The contract in `pyproject.toml` is the gate; a new engine module is added to it deliberately (D40, D132). |
 
 ## Public API and types
 

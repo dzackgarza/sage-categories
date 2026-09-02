@@ -25,6 +25,8 @@ The private runtime assigns these responsibilities:
 | Residual wrapper and descriptor behavior | wrapt | Private Python call and descriptor behavior. |
 | Private slotted frozen records | attrs `>=26.1,<27` | Private execution records only. |
 
+`kernel/sage_runtime.py` is the one module through which the kernel and `Cat` import Sage's runtime facilities. A leaf's private engine module imports Sage directly and is named in the import contract. No other module imports `sage` (D40).
+
 Each category-specific computation adapter lowers owned inputs and reconstructs the exact owned result.
 SymPy proposition expressions are the sole public engine values.
 Their mathematical predicates remain category-owned.

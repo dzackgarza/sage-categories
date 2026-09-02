@@ -132,6 +132,7 @@ The following source dependencies are valid:
 - `Cat` imports no production leaf.
 - The kernel imports no production leaf.
 - A leaf imports no kernel internal.
+- Only the kernel's Sage runtime module and the engine modules named in the import contract import `sage`.
 - A leaf depends only on its immediate mathematical targets.
 - A leaf can call a private engine helper.
 - An engine helper does not register categories or refine values.

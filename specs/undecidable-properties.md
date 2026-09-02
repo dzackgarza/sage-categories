@@ -58,7 +58,6 @@ A Python protocol that requires a Boolean must call `ask()` and reject `Unknown`
 
 A typed query owns its argument contract and exact result category.
 Application returns an owned unevaluated query application.
-It does not enter SymPy Boolean algebra.
 
 ```python
 q = X.cardinality()
@@ -70,7 +69,7 @@ Evaluation returns an owned cardinal or Sage `Unknown`.
 `Unknown` is not an object of `Cardinal()`.
 
 Cardinality, cofinality, rank, suprema, infima, maxima, minima, and extrema use typed queries when their result can be undecided or undefined.
-A proposition can compare a typed-query result only after the applicable mathematical owner defines that comparison.
+A comparison of a typed query with an object of its result category, such as `X.cardinality() < aleph0`, is a proposition that `ask()` evaluates (D18).
 
 ## Evaluation
 
@@ -91,16 +90,12 @@ The repository has no second proposition evaluator, proposition cache, connectiv
 ## Proposition handlers
 
 Each mathematical predicate registers exact handlers through SymPy.
-A handler receives the applied predicate and the active SymPy assumptions.
+A handler receives the arguments of the applied predicate, here the private identity atom of the owned value, and the active SymPy assumptions; SymPy 1.14.0 `Predicate.eval` calls `self.handler(*args, assumptions=assumptions)` (`sympy/assumptions/assume.py`, inspected 2026-09-03).
 It returns `True`, `False`, or `None`.
 
-A handler can use:
-
-- exact category placement;
-- owned mathematical data;
-- exact subquestions;
-- a mature computation engine;
-- a cited theorem with established hypotheses.
+A handler matches positively, with `match` and `case`, on the cases it can decide and returns `None` for every other case.
+The leaf writer extends coverage by adding cases.
+A case can use an exact computational construction that decides the predicate for that case.
 
 Handler domains are exact and unambiguous.
 The predicate owner supplies their mathematical meaning.
@@ -168,7 +163,6 @@ See MathWorld's [Twin Primes](https://mathworld.wolfram.com/TwinPrimes.html).
 | `X.is_P()` | The same SymPy proposition | `True`, `False`, or `Unknown` |
 | `a == b` | Category-owned SymPy proposition | `True`, `False`, or `Unknown` |
 | `X.cardinality()` | Typed query with result category `Cardinal()` | Owned cardinal or `Unknown` |
-| `C.P()(X)` | Owned value placed in `C.P()` | Not applicable |
 | `X in C.P()` | Python `bool` | Not applicable |
 
 ## Acceptance conditions
@@ -181,7 +175,7 @@ The architecture satisfies this specification when:
 - private identity atoms expose no independent public value;
 - `ask()` maps only undecided SymPy results to Sage `Unknown`;
 - each partial value-valued method has one exact result category;
-- typed queries remain separate from SymPy Boolean algebra;
+- a comparison of a typed query with an object of its result category is a proposition;
 - every equality operation uses its exact category-owned predicate;
 - positive property results refine the same value;
 - property containment uses declared monomorphisms;

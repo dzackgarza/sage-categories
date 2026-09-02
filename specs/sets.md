@@ -207,7 +207,7 @@ Sets().Subobjects(X).Finite()
 ```
 
 Its objects are the finite subobjects of `X`.
-The parameterized property category `Sets().OfCardinality(k)` has containment predicate `A.cardinality() == k`.
+The parameterized property category `Sets().OfCardinality(k)` has containment predicate `A.cardinality() == k`, a proposition that `ask()` evaluates.
 The inherited narrowing `Sets().Subobjects(X).OfCardinality(k)` contains the subobjects of cardinality `k`.
 
 If `X` has a chosen enumeration, these constructions can retain a derived enumeration isomorphism.

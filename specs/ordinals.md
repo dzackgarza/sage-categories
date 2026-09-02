@@ -53,17 +53,14 @@ alpha.natural_product(beta)
 ```python
 Ordinals()
 
-Ordinals()(value)
+Ordinals()(n)
 InitialOrdinal.on_object(Aleph.on_object(index))
 
 omega0
 ```
 
-`Ordinals()(value)` accepts:
-
-- An existing `OrdinalObject`.
-
-- A nonnegative Python `int`.
+`Ordinals()(n)` constructs the finite ordinal of a nonnegative Python `int` `n`.
+Each other presentation has its own named constructor (D52).
 
 The composite `InitialOrdinal.on_object(Aleph.on_object(index))` constructs \(\omega_{\text{index}}\).
 

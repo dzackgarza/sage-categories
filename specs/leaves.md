@@ -104,29 +104,35 @@ A leaf gets a selected functor in one of two ways:
 1. It returns the exact functor retained by its defining categorical construction.
 2. It constructs new leaf mathematics through `Fun(C, D)`.
 
-A new leaf functor supplies complete executable actions:
+A new leaf functor that computes its images supplies complete executable actions:
 
 ```python
 def target_functor(self) -> Cat().MorphismType:
     D = TargetCategory()
 
     def on_object(X: self.ObjectType) -> D.ObjectType:
-        return D(X.target_data())
+        return D(X._target_data())
 
     def on_morphism(f: self.MorphismType) -> D.MorphismType:
         source = on_object(f.domain())
         target = on_object(f.codomain())
-        return Mor(D)(source, target)(f.target_action())
+        return Mor(D)(source, target)(f._target_action())
 
     return Fun(self, D)(on_object, on_morphism)
 ```
 
 `on_object(X)` constructs and returns the public image in `D`.
 `on_morphism(f)` constructs and returns the public image in the exact target hom category.
-These two actions are the sole leaf declaration of the functor.
-Their inputs are source values whose own local state is initialized, and an action uses only
-the source category's own methods. The kernel runs the object action during construction to
+These two actions are the sole leaf declaration of a functor that computes.
+An action receives a fully initialized source value. It can call any method defined on
+`C.ObjectType` and the public methods of the values it reaches, and it returns a value
+built by a constructor of `D`. The kernel runs the object action during construction to
 initialize the inherited target implementation; a leaf writes no base-class initializer call.
+
+A subcategory inclusion or a point functor computes nothing.
+The leaf constructs it in the property subcategory of `Fun(C, D)` that states its known
+properties, and writes no action (D10, D11).
+The leaf selects a projection retained by its defining construction (`POL-LEAF-071`).
 
 A leaf can create a structural diamond simply by selecting functors whose transitive
 targets meet. This never requires route-resolution boilerplate. The kernel chooses the
@@ -271,7 +277,7 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 ### `POL-LEAF-066` — kernel machinery in a leaf: branching, refinement after construction, own value store, kernel state in a constructor
 
 - In code: `role_of(x) is Role.X`, `is_placed(x, C)`, `is_subcategory`; `refine(x, C)`; `x = C(...)` then `D()(x)` or `C.P()(x)` as a statement; `self._store[key] = ...`, `_NAME_CATEGORIES: MonoDict = MonoDict()`, `x: dict[...] = {}`, `@cached_method`, `@cached_function`; `ObjectType(self, data)`, `ObjectType(category=self, ...)`, `MorphismType(self.morphism_category(1), ...)`.
-- Owner: a leaf imports no kernel module (D122); a value is constructed into its strongest category by a named constructor, so `C.P()(x)` is refinement and `C.P().from_data(...)` is construction; retention by identity is the kernel's (D111); the kernel supplies the placement (D21).
+- Owner: a leaf imports no kernel module (D122); a value is constructed into the strongest property subcategory its writer knows, and that subcategory owns the constructor (D21); containment is otherwise computed by the predicate through `ask()`, after which the kernel refines the same value; retention by identity is the kernel's (D111).
 - Gate: import contract "A leaf imports no kernel internal"; `no-refinement-after-construction`; `no-hand-rolled-retention`; `no-leaf-value-store`; `no-compiler-state-in-constructor`; `no-compiler-state-in-constructor-positional`. Review for a refinement call whose category is bound to a local name.
 
 ### `POL-LEAF-067` — Sage machinery as the category's runtime
@@ -292,11 +298,11 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 - Owner: `Cat().Point(X)` with a selected point functor places `X` and supplies the codomain's surfaces (D128). The leaf states the membership rule, the cardinal, and one functor.
 - Gate: `no-datum-free-constructor`.
 
-### `POL-LEAF-070` — a selected functor declared without its two actions
+### `POL-LEAF-070` — actions written for a functor that computes nothing
 
-- In code: `Fun(self, D).Monomorphisms().Full()()`.
-- Owner: `Fun(C, D)(on_object, on_morphism)`; the two actions are the whole declaration (D08, D123).
-- Gate: `no-functor-without-actions`.
+- In code: `Fun(PointedSets(), Sets()).Faithful()(on_object=..., on_morphism=...)` for the first projection `(X, x) |-> X`; an `on_object` or `on_morphism` body for a subcategory inclusion or a point functor.
+- Owner: a functor that computes its images is declared by its two actions, `Fun(C, D)(on_object, on_morphism)` (D08, D123); an inclusion or point functor is constructed in the property subcategory of `Fun(C, D)` that states its known properties and carries no action (D10, D11); a retained projection is selected (`POL-LEAF-071`).
+- Gate: review.
 
 ### `POL-LEAF-071` — a retained projection rewritten
 
@@ -359,7 +365,7 @@ A leaf satisfies this specification when:
 - its source states only the category's new mathematics after inherited structure is removed;
 - it declares `ObjectType`, `ElementType`, and `MorphismType` under their exact names;
 - each locally owned public operation has one executable method body;
-- each new functor has complete object and morphism actions;
+- each new functor that computes its images has complete object and morphism actions;
 - `structure_functors()` returns only the immediate named functors that supply inheritance;
 - the leaf reuses functors and universal data retained by its defining constructions;
 - every public signature uses exact mathematical types;

@@ -136,15 +136,15 @@ reads.
 
 | ID | Policy |
 | --- | --- |
-| `POL-ONT-001` | Treat raw Python values (`Datum`) solely as private carrier representations, never as members or elements of any category. An element exists only as a morphism $x: \mathbf{1} \to X$ owned by a specific parent object $X$. Categories contain only category-owned `CategoryPoint` instances. |
+| `POL-ONT-001` | Treat raw Python values solely as private carrier representations, never as members or elements of any category. An element exists only as a morphism $x: \mathbf{1} \to X$ owned by a specific parent object $X$. Categories contain only category-owned objects, elements, and morphisms: values of `C.ObjectType`, `C.ElementType`, and `C.MorphismType`. |
 | `POL-ONT-002` | Make every mathematical constructor total on a single exact domain. Keep category refinement ($X \mapsto X$ placed in $\mathcal{P}$) strictly distinct from object construction from carrier data ($\text{data} \mapsto X$). Never create overloaded constructors that perform runtime type sniffing or fallback dispatch. |
-| `POL-ONT-003` | Evaluate category membership `X in C` strictly through the three-valued categorical proposition $\operatorname{ask}(C.\operatorname{membership\_proposition}(X))$. Never treat `in` as a container item check or query it on raw carrier data. Use `is_placed(X, C)` to test established category placement. |
+| `POL-ONT-003` | Evaluate category membership `X in C` strictly through the three-valued categorical proposition $\operatorname{ask}(C.\operatorname{membership\_proposition}(X))$. Never treat `in` as a container item check or query it on raw carrier data. |
 | `POL-ONT-004` | Never weaken or strip a categorical classification or subcategory placement (such as `Monomorphisms()`, `Epimorphisms()`, `Isomorphisms()`) to bypass a runtime error or constructor failure. Repair the underlying constructor or handler registration instead. |
-| `POL-ONT-005` | Never widen an exact semantic type (e.g. `Poset`, `SetMap`) to a generic ancestor type (e.g. `CategoryOfCategories.ElementType`, `CategoryPoint`) to resolve import cycles or forward-reference errors. Resolve module import ordering or defer handler registration instead. |
-| `POL-ONT-006` | Inspect established placement via `is_placed(X, C)` inside property deduction handlers. Never invoke active deduction via `X in C` or `ask()` within complementary property handlers, which triggers infinite mutual deduction cycles. |
+| `POL-ONT-005` | Never widen an exact semantic type (e.g. `Poset`, `SetMap`) to a generic ancestor type (e.g. `Cat().ElementType`) to resolve import cycles or forward-reference errors. Resolve module import ordering or defer handler registration instead. |
+| `POL-ONT-006` | A property handler decides by `match`/`case` the cases its exact rule can decide and returns `None` for every other case; a new decidable case extends the `match`. Never invoke active deduction via `X in C` or `ask()` within complementary property handlers, which triggers infinite mutual deduction cycles. |
 | `POL-ONT-007` | Treat raw Python callables (`lambda`, functions) solely as constructor input rules, never as morphisms. Morphisms require explicit category endpoints $A \to B$ and must be constructed through `Mor(C)(A, B)(rule)`. |
-| `POL-ONT-008` | Ban catch-all constructors, implicit fallback heuristics, and loose `@overload` sniffing. Provide dedicated explicit constructors of the form `X.from_Y(...)` for distinct input modalities. The main constructor must perform an explicit `match`/`case` on the exact supported input types, route them directly with no fallback paths, and unconditionally raise a hard `TypeError` on the default `case _:`. |
-| `POL-ONT-009` | Model mathematical structures using generic categorical constructions (slice, coslice, subobject, quotient, comma, and functor categories) rather than ad-hoc leaf classes or facade parents with ambient pointers. Theory-specific sub-entities (e.g. `Submonoids(M)`, `Subgroups(G)`, `Submodules(V)`) are convenience spellings for the corresponding generic construction `SubobjectCategory(C, X)`. No leaf category may implement bespoke subobject or quotient container classes. |
+| `POL-ONT-008` | Ban catch-all constructors, fallback heuristics, optional arguments, and default values. A general category's constructor `C(datum)` dispatches by `match`/`case` on the supplied datum into the proper subcategory, by that subcategory's constructor or by refinement, so `Sets({1, 2, 3})` constructs a finite set without the caller naming `Sets().Finite()`. Each specific route has its own separate, explicitly named total constructor. |
+| `POL-ONT-009` | Model mathematical structures using generic categorical constructions (slice, coslice, subobject, quotient, comma, and functor categories) rather than ad-hoc leaf classes or facade parents with ambient pointers. Theory-specific sub-entities (e.g. `Submonoids(M)`, `Subgroups(G)`, `Submodules(V)`) are convenience spellings for the corresponding generic construction `C.Subobjects(X)`. No leaf category may implement bespoke subobject or quotient container classes. |
 | `POL-ONT-010` | Perform a mandatory survey of existing generic categorical machinery before implementing any new theory, object, morphism, or construction. Never write greenfield code or bespoke data structures without first verifying whether the requested notion is an instance of an existing categorical construction, structure functor, or universal limit/colimit in `Cat`. |
 | `POL-ONT-011` | Ban standalone procedural free functions for mathematical properties, queries, or predicates (e.g. `is_discrete(C)`). Mathematical entities must own their operations as direct methods (e.g. `C.is_discrete()`), inherited on role classes from the most general category whose axioms define them. Standalone functions that accept loose duck-typed arguments are strictly prohibited. |
 
@@ -155,10 +155,10 @@ reads.
   - Treating `(1, 2)` or `((),)` as mathematical objects, assuming mathematical elements are bare Python values.
 - **The Internalized Reality**:
   - In `sage-categories`, **there is no global element universe**.
-  - A raw Python tuple `(1, 2)` is only private carrier representation (`Datum`). It has no mathematical meaning by itself.
+  - A raw Python tuple `(1, 2)` is only private carrier representation. It has no mathematical meaning by itself.
   - A mathematical element exists **only** as a morphism from the terminal object:
-    $$x: \mathbf{1} \to X \quad (\text{an owned } \texttt{ElementOfObject})$$
-  - Categories contain **only** category-owned `CategoryPoint` instances, never raw Python literals.
+    $$x: \mathbf{1} \to X \quad (\text{a value of } \texttt{C.ElementType} \text{ for } X \in \mathcal{C})$$
+  - Categories contain **only** category-owned objects, elements, and morphisms (`C.ObjectType`, `C.ElementType`, `C.MorphismType`), never raw Python literals.
 
 ### `POL-ONT-002`: The False Prior "Constructors Should Be Convenient Polymorphic Parsers"
 
@@ -179,7 +179,6 @@ reads.
   - In this architecture, `X in C` is the categorical membership proposition:
     $$\mathrm{ask}(C.\mathrm{membership\_proposition}(X))$$
   - Evaluating `((),) in Sets()` is a category error because raw Python memory structures have no categorical propositions.
-  - Checking whether an owned value already carries category placement uses `is_placed(X, C)`, not `in`.
 
 ### `POL-ONT-004`: The False Prior "Weaken the Invariant to Fix the Bug"
 
@@ -192,7 +191,7 @@ reads.
 ### `POL-ONT-005`: The False Prior "Widen the Type to Fix the Import"
 
 - **The False Model**:
-  - When a type annotation like `poset: Poset` cannot be resolved at module top-level, widening the type to `CategoryOfCategories.ElementType` so Python doesn't raise a `NameError`.
+  - When a type annotation like `poset: Poset` cannot be resolved at module top-level, widening the type to `Cat().ElementType` so Python doesn't raise a `NameError`.
 - **The Internalized Reality (`POL-TYPE-001`, `POL-TYPE-018`, `POL-TYPE-019`)**:
   - Types communicate exact mathematical semantics. Type erasure blinds the static checker and violates policy.
   - Fix the module structure, import at module level, or defer handler registration until semantic types exist.
@@ -204,14 +203,14 @@ reads.
 - **The Internalized Reality (`specs/undecidable-properties.md`, `specs/sets.md`)**:
   - `ambient in category` re-enters active three-valued proposition deduction (`ask()`).
   - Complementary property handlers calling each other through active deduction cause unbounded mutual recursion.
-  - Handlers must inspect already-placed structural facts using `is_placed(ambient, category)`.
+  - A handler decides by `match`/`case` the cases its exact rule can decide and returns `None` for every other case.
 
 ### `POL-ONT-007`: The False Prior "Raw Callables Are Morphisms"
 
 - **The False Model**:
   - Passing a bare Python `lambda x: x` into functions or subcategories expecting a morphism.
 - **The Internalized Reality (`specs/functor.md`, `specs/sets.md`)**:
-  - A lambda function is only mapping rule data (`Rule` / `Datum`), lacking domain, codomain, and category composition laws.
+  - A lambda function is only mapping rule data, lacking domain, codomain, and category composition laws.
   - A morphism must always be constructed explicitly with endpoints via `Mor(C)(A, B)(rule)`.
 
 ### `POL-ONT-008`: The False Prior "Catch-All Constructors with Fallback Heuristics"
@@ -219,9 +218,9 @@ reads.
 - **The False Model**:
   - Writing catch-all `__call__(*args, **kwargs)` constructors or broad `@overload` suites that try to guess user intent, trial-and-error multiple representations, or fall back across loose `if/elif/else` branches.
 - **The Internalized Reality (`POL-API-021`, `POL-API-028`)**:
-  - Distinct mathematical source representations require **explicit, dedicated constructor methods** of the form `X.from_Y(...)` (e.g. `Sets.from_enumeration(...)`, `Sets.from_rule(...)`, `Posets.from_relation(...)`).
-  - The main constructor does an explicit `match`/`case` on *exactly* what types of inputs come in, and routes them directly to the appropriate dedicated constructor.
-  - There are **zero fallback heuristics and zero silent coercions**. The default `case _:` branch unconditionally raises a hard `TypeError` or `ValueError`.
+  - Distinct mathematical source representations require **separate, explicitly named total constructors** (e.g. `Sets().Subobjects(X).from_predicate(predicate)`).
+  - A general category's constructor `C(datum)` dispatches by `match`/`case` on the supplied datum into the proper subcategory, so the caller need not know the category graph: `Sets({1, 2, 3})` constructs a finite set.
+  - There are **zero fallback heuristics, zero optional arguments, and zero default values**.
 
 ### `POL-ONT-009`: The False Prior "Reinventing Generic Categorical Constructions as Ad-Hoc Leaf Facades"
 
@@ -230,7 +229,7 @@ reads.
 - **The Internalized Reality (`specs/functor.md`, `specs/leaves.md`)**:
   - Subobjects, quotients, pointed objects, and comma objects are **generic categorical constructions** that exist uniformly across any category $\mathcal{C}$.
   - In any category $\mathcal{C}$, for an object $X \in \operatorname{Ob}(\mathcal{C})$, the subobjects form the **Subobject Category** $\mathbf{Sub}_{\mathcal{C}}(X)$—the full subcategory of the slice $\mathcal{C}/X$ spanned by monomorphisms $m: S \hookrightarrow X$. Morphisms between subobjects are commuting triangles in the slice ($m' \circ h = m$).
-  - Theory-specific constructors (`Submonoids(M)`, `Subgroups(G)`, `Subsets(X)`, `Submodules(V)`) are convenience spellings for `SubobjectCategory(C, X)`.
+  - Theory-specific constructors (`Submonoids(M)`, `Subgroups(G)`, `Subsets(X)`, `Submodules(V)`) are convenience spellings for `C.Subobjects(X)`.
   - Generic operations (subobject poset ordering, intersection via pullbacks, image factorization) are implemented once generically, not duplicated across leaf theories.
 
 ### `POL-ONT-010`: The False Prior "Greenfield First, Search Later"
@@ -238,7 +237,7 @@ reads.
 - **The False Model**:
   - Receiving an implementation task (e.g. "implement submonoids", "implement products of sets", "implement pullback diagrams"), immediately creating a new file or class, and writing bespoke ad-hoc code from scratch without surveying the existing codebase.
 - **The Internalized Reality (`specs/system.md`, `specs/functor.md`)**:
-  - Category theory is deeply unified: almost all structural concepts are instances of generic constructions (`Cat`, `Mor`, `Fun`, `SliceCategory`, `SubobjectCategory`, `QuotientCategory`, `Pullbacks`, `Limits`, `Colimits`, `diagrams`).
+  - Category theory is deeply unified: almost all structural concepts are instances of generic constructions (`Cat`, `Mor`, `Fun`, `C.SliceOver(X)`, `C.Subobjects(X)`, `C.CoveredObjects(X)`, `C.Limits(I)`, `C.Colimits(I)`, and diagrams `Fun(I, C)`).
   - Before writing any implementation code, a mandatory survey of existing generic machinery is strictly required. Hand-rolling code that duplicates or bypasses existing foundational machinery causes architectural drift and code bloat.
 
 ### `POL-ONT-011`: The False Prior "Standalone Procedural Helper Functions"
@@ -255,17 +254,17 @@ reads.
 | Concept | Python / SWE Prior (The Mistake) | `sage-categories` Architecture (The Truth) | Policy |
 | :--- | :--- | :--- | :--- |
 | **Elements** | Raw Python values (`1`, `(1, 2)`) | Arrows $x: \mathbf{1} \to X$ owned by a specific parent set $X$ | `POL-ONT-001` |
-| **Carrier Data** | The mathematical object itself | Private implementation representation (`Datum`), not in any category | `POL-ONT-001` |
+| **Carrier Data** | The mathematical object itself | Private implementation representation, not in any category | `POL-ONT-001` |
 | **Categories** | Collections / registries of objects | Mathematical category structures with role-compiled classes | `POL-ONT-001` |
 | **Constructors** | Polymorphic helper functions (`*args`) | Total, single-purpose mathematical operations (`POL-API-021`) | `POL-ONT-002` |
 | **Refinement** | Dynamic mutation / wrapper allocation | Same-object placement in subcategory without wrapper classes | `POL-ONT-002` |
 | **Membership `in`** | Container item containment | Three-valued proposition evaluation via SymPy / `ask()` | `POL-ONT-003` |
 | **Categorical Invariants** | Omit or weaken when failing | Strict mathematical contract; fix root cause | `POL-ONT-004` |
 | **Semantic Types** | Widen to avoid import issues | Exact mathematical types; defer handler registration | `POL-ONT-005` |
-| **Deduction Handlers** | Call `in` / `ask()` on complements | Inspect established structure via `is_placed` | `POL-ONT-006` |
+| **Deduction Handlers** | Call `in` / `ask()` on complements | `match`/`case` on the cases the exact rule decides; `None` otherwise | `POL-ONT-006` |
 | **Morphisms** | Bare Python callables / lambdas | Explicit arrows with domain and codomain endpoints | `POL-ONT-007` |
-| **Constructor Architecture** | Catch-all `*args` with heuristic fallbacks | Dedicated `from_Y` methods; explicit `match`/`case` with hard error on default `case _:` | `POL-ONT-008` |
-| **Subobjects & Quotients** | Bespoke leaf facade classes with ambient pointers | Generic slice/subobject/quotient categories (`SubobjectCategory(C, X)`) | `POL-ONT-009` |
+| **Constructor Architecture** | Catch-all `*args` with heuristic fallbacks | `C(datum)` dispatches by `match`/`case` on the datum; separate named total constructors per route; no optional arguments or defaults | `POL-ONT-008` |
+| **Subobjects & Quotients** | Bespoke leaf facade classes with ambient pointers | Generic slice/subobject/quotient categories (`C.Subobjects(X)`, `C.CoveredObjects(X)`) | `POL-ONT-009` |
 | **Implementation Process** | Immediate greenfield coding without surveying | Mandatory prior survey of existing generic categorical machinery | `POL-ONT-010` |
 | **Method & Property Ownership** | Standalone free functions (`is_discrete(C)`) | Direct category-owned methods (`C.is_discrete()`) inherited from the most general category | `POL-ONT-011` |
 
@@ -275,7 +274,7 @@ reads.
 Mathematics in `sage-categories` is not constructed on top of a global universe of material sets or raw Python data structures. Category theory is the primitive ontology:
 - **No Free-Floating Elements**: There is no such thing as an element existing outside of an object, or an object existing outside of a category. An "element" $x$ of an object $X$ is a **generalized element**—an arrow $x: \mathbf{1} \to X$ from the terminal object in the slice category over $\mathbf{1}$.
 - **Morphisms as the Universal Medium of Interaction**: Mathematical actions, evaluations, points, and relationships are modeled as morphism compositions $g \circ f$ and functor applications $F(f)$, never as container mutations, dictionary lookups, or ad-hoc method calls.
-- **Private Carrier Data vs. Public Mathematical Identity**: A raw Python tuple, integer, or lambda is solely private carrier data (`Datum` / `Rule`) used by runtime engines. It has no category membership, no domain, and no mathematical standing until an owned category constructor produces an owned `CategoryPoint`.
+- **Private Carrier Data vs. Public Mathematical Identity**: A raw Python tuple, integer, or lambda is solely private carrier data used by runtime engines. It has no category membership, no domain, and no mathematical standing until an owned category constructor produces an owned object, element, or morphism.
 
 #### 2. Functorial Transport: Structure Arrives via Functor Chains
 In traditional object-oriented systems, capabilities are added to classes via inheritance, mixins, or duplicated utility methods. In `sage-categories`, capabilities are **transported along canonical chains of structure functors**:
@@ -294,7 +293,7 @@ Categorical constructions are defined strictly by their **universal mapping prop
 A subcategory $\mathcal{P} \subseteq \mathcal{C}$ (whether a property subcategory, full subcategory, or wide subcategory) is a mathematical filter on the ambient category:
 - **Same-Object Identity**: An object in a property subcategory $\mathcal{P}$ is the exact same runtime instance in memory as in the ambient category $\mathcal{C}$. Refinement is functorial placement, not subclass instantiation or wrapper allocation.
 - **Multi-Property Intersection**: An object can simultaneously belong to multiple property subcategories (e.g., $X \in \operatorname{Ob}(\mathbf{FiniteSets}) \cap \operatorname{Ob}(\mathbf{TotallyOrderedSets})$) without generating combinatorial wrapper classes.
-- **Placement vs. Active Deduction**: An established placement means the object is already known to belong to $\mathcal{P}$ (`is_placed(X, P)`). Category containment `X in P` evaluates active proposition deduction.
+- **Placement vs. Active Deduction**: An established placement means the object is already known to belong to $\mathcal{P}$. Category containment `X in P` evaluates active proposition deduction.
 
 #### 5. Constructive Categorical Logic: Three-Valued Propositions via SymPy
 Mathematical truths, relations, and capabilities are modeled through constructive categorical logic:
@@ -304,35 +303,35 @@ Mathematical truths, relations, and capabilities are modeled through constructiv
 
 #### 6. Explicit Construction and Total Pattern Matching
 A robust categorical framework requires unambiguous mathematical construction:
-- **Explicit Named Constructors `X.from_Y(...)`**: When an object or morphism can be presented from different data modalities (e.g. from an explicit enumeration, a characteristic predicate, a generator list, a relation matrix), each representation receives its own dedicated, explicitly named constructor (`from_enumeration`, `from_rule`, `from_matrix`). Never rely on polymorphic overloads to guess the representation.
-- **Exhaustive Matching on Canonical Constructors**: The main constructor (`__call__` or primary factory) performs an explicit `match`/`case` on *exactly* what types or structural signatures of inputs arrive, routing each matched case directly to the appropriate dedicated constructor.
-- **Zero Fallback Heuristics and Hard Error on Default**: There are zero fallback branches and zero heuristic coercions. The default `case _:` branch must unconditionally raise an immediate, informative hard error (`TypeError` or `ValueError`), ensuring that unrecognized input forms fail fast and noisily.
+- **Separate Named Total Constructors**: When an object or morphism can be presented from different data modalities (e.g. from an explicit enumeration, a characteristic predicate, a generator list, a relation matrix), each representation receives its own separate, explicitly named total constructor (e.g. `Sets().Subobjects(X).from_predicate(predicate)`). Never rely on polymorphic overloads to guess the representation.
+- **Dispatch on the Datum**: A general category's constructor `C(datum)` performs a `match`/`case` on the supplied datum and routes it into the proper subcategory, by that subcategory's constructor or by refinement, so `Sets({1, 2, 3})` constructs a finite set and the caller never needs the category graph.
+- **Zero Fallback Heuristics**: There are zero fallback branches, zero optional arguments, and zero default values.
 
 #### 7. Generic Categorical Constructions vs. Ad-Hoc Leaf Facades
 Whenever a mathematical structure is an instance of a standard categorical construction, it must be realized through that generic construction rather than by inventing bespoke leaf classes:
 
 | Mathematical Concept | Anti-Pattern (Ad-Hoc Leaf Facade) | Correct Generic Categorical Construction |
 | :--- | :--- | :--- |
-| **Subobjects** (Submonoids, Subgroups, Subrings) | Custom `SubX` class with `ambient` pointer | `SubobjectCategory(C, X)` (full subcategory of slice $\mathcal{C}/X$ on monics) |
-| **Quotients** (Quotient groups, Quotient rings) | Custom `QuotientX` equivalence-class wrapper | `QuotientCategory(C, X)` (full subcategory of coslice $X/\mathcal{C}$ on epics) |
-| **Pointed Objects** (Pointed sets, Pointed spaces) | Custom `PointedX` pair `(space, basepoint)` | Coslice under the terminal/initial object $\mathbf{1}/\mathcal{C}$ |
-| **Hom-Sets / Morphisms** | Custom mapping lookup classes | Morphism Category $\mathbf{Mor}(\mathcal{C})(A, B)$ |
-| **Diagrams / Systems** | Custom graph/network data structures | Functor Category $[\mathcal{J}, \mathcal{C}]$ |
-| **Extensions / Bundles** | Ad-hoc fiber classes | Slice Category $\mathcal{C}/B$ |
+| **Subobjects** (Submonoids, Subgroups, Subrings) | Custom `SubX` class with `ambient` pointer | `C.Subobjects(X)`, that is `C.SliceOver(X).Monomorphisms()` |
+| **Quotients** (Quotient groups, Quotient rings) | Custom `QuotientX` equivalence-class wrapper | `C.CoveredObjects(X)`, that is `C.CosliceUnder(X).Epimorphisms()` |
+| **Pointed Objects** (Pointed sets, Pointed spaces) | Custom `PointedX` pair `(space, basepoint)` | `C.CosliceUnder(1)`, the coslice under the terminal object |
+| **Hom-Sets / Morphisms** | Custom mapping lookup classes | `Mor(C)(A, B)` |
+| **Diagrams / Systems** | Custom graph/network data structures | `Fun(J, C)` |
+| **Extensions / Bundles** | Ad-hoc fiber classes | `C.SliceOver(B)` |
 
 #### 8. Mandatory Construction Survey: Reuse Before Greenfield
 Writing new code before understanding existing machinery causes severe architectural fragmentation:
 - **The Mandatory Pre-Implementation Survey**: Before writing any implementation code for a requested structure or operation, the engineer must explicitly survey:
-  1. Generic categorical constructions in `src/sage_categories/cat/` (`SliceCategory`, `SubobjectCategory`, `QuotientCategory`, `MorphismCategory`, `FunctorCategory`, `Cones`, `Cocones`, `Pullbacks`).
+  1. Generic categorical constructions in `specs/functor.md` (`C.SliceOver(X)`, `C.CosliceUnder(X)`, `C.Subobjects(X)`, `C.CoveredObjects(X)`, `Mor(C)`, `Fun(C, D)`, `Cones(D)`, `C.Limits(I)`, `C.Colimits(I)`, pullbacks).
   2. Structure functor transport paths and canonical lifts across existing categories.
   3. Universal data and predicate registration mechanisms in `src/sage_categories/kernel/`.
-- **Specialization Over Duplication**: If the required mathematical concept is an instance of an existing generic construction (e.g. subobjects of $X$ in $\mathcal{C}$), specialize the generic construction (`SubobjectCategory(C, X)`) rather than hand-rolling new classes. Only write greenfield theory code when the concept is genuinely primitive to that specific category.
+- **Specialization Over Duplication**: If the required mathematical concept is an instance of an existing generic construction (e.g. subobjects of $X$ in $\mathcal{C}$), specialize the generic construction (`C.Subobjects(X)`) rather than hand-rolling new classes. Only write greenfield theory code when the concept is genuinely primitive to that specific category.
 
 #### 9. Method Ownership over Standalone Procedural Functions
 In a typed categorical architecture, operations belong to mathematical objects, not loose module functions:
 - **The Danger of Standalone Functions**: Standalone functions like `is_discrete(diagram_category)` or `is_finite(set_obj)` allow arbitrary duck-typed or unverified objects to slip through, bypassing category role compilation and producing subtle runtime errors.
 - **Direct Object Methods**: Properties, queries, and predicates must be owned directly as methods on the object itself (e.g. `C.is_discrete()`, `X.cardinality()`, `V.dimension()`).
-- **Inheritance at the Most General Categorical Level**: Every method must be defined on the role class (`CategoryDeclaration`, `ObjectOfCategory`, `ElementOfObject`, `MorphismOfCategory`) in the most general category whose mathematical hypotheses imply it (e.g. `C.is_discrete()` on generic `Cat`). The kernel compiles role MROs so that all specialized subcategories inherit the operation uniformly and with complete type safety.
+- **Inheritance at the Most General Categorical Level**: Every method must be defined on `C.ObjectType`, `C.ElementType`, or `C.MorphismType` of the most general category `C` whose mathematical hypotheses imply it (e.g. `C.is_discrete()` on `Cat().ObjectType`). The kernel compiles the dynamic MROs so that all specialized subcategories inherit the operation uniformly and with complete type safety.
 
 ## Predicates, hypotheses, and assumptions
 
@@ -674,7 +673,7 @@ Grounding examples:
 | `POL-LEAF-044` | Let a leaf-owned method lower semantic inputs to a fixed private engine, invoke a mature exact algorithm, and reconstruct the owned mathematical result. This computation is part of the leaf implementation, not structural wiring. |
 | `POL-LEAF-045` | Treat a short category-owned method that invokes a dependency as a valid implementation when it owns the public contract and semantic reconstruction. Repetition of private realization access alone does not justify a dispatcher or parallel hierarchy. |
 | `POL-LEAF-046` | Permit a private neighboring engine helper only for a substantial shared computation boundary. It exposes no public method surface, category classes, runtime registry, compiler binding, or mirror of the leaf operations. |
-| `POL-LEAF-047` | Give each local implementation constructor one exact typed datum containing only the new state required by its category. A functor action constructs its target image through an ordinary public target constructor. Each local initializer calls `super().__init__()` once. An object initializer reaches `Cat().ElementType` with its parent category. The leaf writes no separate initializer input for compiled inheritance. |
+| `POL-LEAF-047` | Give each local implementation constructor one exact typed datum containing only the new state required by its category. A functor action constructs its target image through an ordinary public target constructor. The kernel runs every reached initializer once with its owner's datum (D13). An object initializer reaches `Cat().ElementType` with its parent category. The leaf writes no separate initializer input for compiled inheritance. |
 | `POL-LEAF-048` | Make the public operation surface depend only on categorical placement. Every object of the category receives the same owned operations, regardless of which private dependency or representation computes them. |
 | `POL-LEAF-049` | Select each immediate named functor in the category layer. Reuse the exact functor retained by the defining category construction. Otherwise, define its complete object and morphism actions once through `Fun(self, Target)`. Select the strongest established functor-property subcategory before construction. Selection requires no additional object, element, morphism, or constructor description. |
 | `POL-LEAF-050` | Quarantine substantial Python, foreign-function, process, conversion, caching, and engine-adaptation code in private helpers. Keep mathematical ownership, public methods, semantic inputs, and semantic reconstruction on the sole category implementation class. |
@@ -692,7 +691,7 @@ Grounding examples:
 | `POL-LEAF-067` | Red flag: a Sage parent, element, or Sage category used as an owned category's own runtime. Sage machinery runs behind a private engine boundary; the owned category expresses the operations (D01, D65, D133). |
 | `POL-LEAF-068` | Red flag: a hand-written property application such as `is_finite()` on a leaf class. The kernel generates `is_p()` from the axiom declaration (D89, D135). |
 | `POL-LEAF-069` | Red flag: a datum-free constructor, or a one-object category built by hand. `Cat().Point(X)` with a selected point functor places the object (D128, D135). |
-| `POL-LEAF-070` | Red flag: a selected functor declared without its two actions. `Fun(C, D)(on_object, on_morphism)` is the whole declaration (D08, D123, D135). |
+| `POL-LEAF-070` | Red flag: a functor that computes its image selected without its two actions, or hand-written actions for a subcategory inclusion or point functor. A subcategory inclusion or point functor is declared by its property spelling, such as `Fun(C, D).Monomorphisms().Isofibrations().Full()()`, with no actions written; the kernel implements these standard functors. A functor that computes its image is declared by `Fun(C, D)(on_object, on_morphism)`, and the leaf writer's action is an entire Python function that feeds the source value into a constructor of `D` (D08, D10, D11, D123, D135). |
 | `POL-LEAF-071` | Red flag: a retained projection rewritten as a leaf method. The defining construction retains its projections and universal data; the leaf selects them (D09, D10, D135). |
 | `POL-LEAF-072` | Red flag: a placeholder datum, an unread construction datum, or a total-membership carrier. A witness uses an existing mathematical object, and no method only fails (D50, D129, D135). |
 | `POL-LEAF-073` | Red flag: a union or optional parameter on a leaf method. One total method per operation and one named constructor per presentation; a partial value is an applied query (D50, D52, D135). |
@@ -734,7 +733,7 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-017` | Review kernel compilation against [specs/resolution.md](specs/resolution.md): Sage receives the applicable immediate structure-functor targets and the local declaration as `ParentMethods`, and named functors alone construct public images. |
 | `POL-KERNEL-018` | Make each inherited method callable directly on every structural descendant through its compiled class MRO, applying to the descendant with its arguments unchanged. For a selected `F: C -> D`, the ordinary action constructs the separate public image `F(X)`, and the kernel runs that same action during construction to initialize the applicable `D` implementation on `X` from the datum it feeds to `D`'s constructor (D13). Thus `X.f() == F(X).f()` holds and the declaring method reads its own state where it is applied. This private runtime obligation creates no second theory-layer transport declaration (`POL-MATH-046`, D123). |
 | `POL-KERNEL-019` | Let a constructor requiring an object of `C` accept every `X` with `X in C`. Resolve its owned implementation inside the generic kernel boundary. |
-| `POL-KERNEL-020` | Give the local `ObjectType`, `ElementType`, or `MorphismType` to Sage as the runtime category's method provider. Rebind copied methods whose zero-argument `super()` still names that provider class. Never route a locally owned operation into Sage or another engine, replace its executable method, match it to an engine method by name, or interpret a decorator, annotation, registry entry, or marker as a computation route. |
+| `POL-KERNEL-020` | Give the local `ObjectType`, `ElementType`, or `MorphismType` to Sage as the runtime category's method provider. Never route a locally owned operation into Sage or another engine, replace its executable method, match it to an engine method by name, or interpret a decorator, annotation, registry entry, or marker as a computation route. |
 | `POL-KERNEL-021` | Derive the exact type a method applies to from its owning `ObjectType`, `ElementType`, or `MorphismType`. Derive parameter and result types from their exact mathematical types. Derive call shape from the Python signature. Fail compilation when a required type is not exact. Never require a leaf to restate these facts. |
 | `POL-KERNEL-022` | Use exact mathematical types for construction inputs and functor images. Never relabel a category, object, element, morphism, or mathematical collection as a plain value to avoid its exact type. |
 | `POL-KERNEL-023` | Compile every supported ordinary typed leaf method without any kernel import or framework annotation in the leaf. A required decorator, marker, or signature mirror is a kernel API defect. |
@@ -1052,8 +1051,8 @@ When an established finite algorithm requires a primitive loop bound, lower the 
 | `POL-TYPE-011` | Use a set, ordered set, multiset, indexed family, or another named mathematical collection in every theory-layer mathematical signature. The compiler-owned `structure_functors()` declaration returns the complete tuple required by `POL-CAT-085`. Never use `Iterable`, `Sequence`, `Collection`, `list`, or `tuple` for a mathematical collection. Use `float` only at an explicit numerical boundary. |
 | `POL-TYPE-012` | Primitive signatures can occur inside a private method only when every consumer remains inside that private boundary. |
 | `POL-TYPE-013` | Create a type for a genuine mathematical object. Do not wrap invalid constructor inputs in an engineering type to satisfy the checker. |
-| `POL-TYPE-014` | Never alias `Any`, directly or as part of a wider alias. Such an alias erases type information while giving the erasure a misleading semantic name. |
-| `POL-TYPE-015` | Do not create types with an `Input` suffix to model forms accepted by an implementation. Type each parameter as the mathematical object it denotes. |
+| `POL-TYPE-014` | The candidate of `__eq__` and `__contains__` is raw `Any`: never `object`, never an alias of `Any`, never an invented indirected type. |
+| `POL-TYPE-015` | Never create a type such as `MembershipInput` to name the candidate accepted by `__eq__` or `__contains__`. |
 | `POL-TYPE-016` | Use types to express the mathematics. Keep parsing, coercion, normalization, and representation conversion behind the typed mathematical boundary. |
 | `POL-TYPE-017` | Type every morphism by the element types of its domain and codomain categories. Do not widen either endpoint to a generic mathematical-object type. |
 | `POL-TYPE-018` | Give every category its own semantic object, element, and morphism types through `ObjectType`, `ElementType`, and `MorphismType`. Use those types throughout that category's API. |

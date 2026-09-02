@@ -50,13 +50,13 @@ def target_projection(self) -> Cat().MorphismType:
     D = TargetCategory()
 
     def on_object(X: self.ObjectType) -> D.ObjectType:
-        target_data = X.target_data()
+        target_data = X._target_data()
         return D(target_data)
 
     def on_morphism(f: self.MorphismType) -> D.MorphismType:
         source = on_object(f.domain())
         target = on_object(f.codomain())
-        target_map = f.target_map()
+        target_map = f._target_map()
         return Mor(D)(source, target)(target_map)
 
     return Fun(self, D)(on_object, on_morphism)

@@ -96,9 +96,9 @@ Python special methods follow the same rule.
 The two ordinary actions of `F` remain the sole public description of how target values are
 constructed (D123). The kernel runs `F.on_object` on the source value after the source's own
 local initializer has run, and initializes the `D` implementation on that same value from the
-datum the action feeds to `D`'s constructor (D13). The action uses only `C`'s own methods; an
-inherited method called inside it fails loudly. Public functor application returns the
-separate image the action constructs.
+datum the action feeds to `D`'s constructor (D13). The action can call any method defined on
+`C.ObjectType` and the public methods of the values it reaches. Public functor application
+returns the separate image the action constructs.
 
 Initializer threading follows the compiled implementation DAG. The kernel runs each reached
 implementation class's local initializer once, in controlled C3 order, with that class's own
@@ -193,8 +193,7 @@ The private runtime satisfies this specification when:
 - inherited methods run directly on the source value;
 - public functor application returns its separate owned image;
 - the kernel initializes each inherited implementation from its structure functor's object action, and no declaration calls a base-class initializer;
-- direct category-object placement applies the exact categorical level shift;
-- a selected point functor places its object and supplies the codomain's surfaces through the level shift;
+- a selected point functor places its object and supplies the codomain's surfaces through the exact categorical level shift;
 - the private Sage implementation graph remains distinct from Sage's mathematical category graph;
 - temporary runtime data has no public mathematical effect;
 - unrelated mathematical declarations with one spelling fail as a semantic collision;

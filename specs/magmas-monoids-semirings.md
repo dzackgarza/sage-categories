@@ -203,26 +203,15 @@ Monoids(V).Additive()
 Monoids(V).Multiplicative()
 ```
 
-They are inverse images of the matching `Magmas(V)` subcategories.
-Their complete immediate structure-functor tuples preserve both category branches:
+Let `U: Monoids(V) -> Magmas(V)` be the structure functor above.
+The notation subcategories are the inverse images of the matching `Magmas(V)` subcategories along `U`:
 
 ```python
-# Monoids(V).Additive()
-def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (
-        Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),
-        Fun(self, Magmas(V).Additive()).Monomorphisms().Isofibrations()(),
-    )
+Monoids(V).Additive()        is U.inverse_image(Magmas(V).Additive())
+Monoids(V).Multiplicative()  is U.inverse_image(Magmas(V).Multiplicative())
 ```
 
-```python
-# Monoids(V).Multiplicative()
-def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (
-        Fun(self, Monoids(V)).Monomorphisms().Isofibrations().Full()(),
-        Fun(self, Magmas(V).Multiplicative()).Monomorphisms().Isofibrations()(),
-    )
-```
+The pullback owns each resulting category and both of its structure functors, the projections to `Monoids(V)` and to the `Magmas(V)` subcategory ([functor.md](functor.md#inverse-image-subcategories)).
 
 When `V` is cartesian, the additive form names the unit point `zero()` and the multiplicative form names it `one()`.
 

@@ -108,7 +108,8 @@ Fun = Mor(Cat())
 F = Fun(C, D)(on_object, on_morphism)
 ```
 
-`Fun(C, D)(on_object, on_morphism)` requires both actions.
+A functor that computes its images is declared by both actions, `Fun(C, D)(on_object, on_morphism)`.
+A subcategory inclusion or a point functor computes nothing: the leaf constructs it in the property subcategory of `Fun(C, D)` that states its known properties, and writes no action (D10, D11).
 The inherited `Cat().MorphismType` surface supplies:
 
 ```python
@@ -353,26 +354,26 @@ Fun.Equivalences() is a full subcategory of Fun.EssentiallySurjective()
 The containment is the statement, and nothing induces it from a relation between
 predicates. `Fun.Equivalences()` is a full subcategory of `Fun.FullyFaithful()` the same
 way `Sets().Finite()` is one of `Sets().Countable()`; "fully faithful implies full" is
-set-theoretic logic and has no category-theoretic formulation. `Axiom`'s
-`full_subcategory_of` is where a category states it (`cat/properties.py`).
+set-theoretic logic and has no category-theoretic formulation. A category states a
+containment by constructing and retaining that monomorphism
+([property-refinement.md](property-refinement.md#property-containment)).
 
 ## Property resolution
 
 Functor properties use the public SymPy proposition, `ask()`, and property-refinement framework.
 They have no separate evidence or decision system.
 
-An existing functor can enter a property category by direct construction:
+A functor is constructed into the strongest property category its writer knows (D21):
 
 ```python
-F = Fun(C, D)(on_object, on_morphism)
-F = Fun(C, D).Full()(F)
+F = Fun(C, D).Full()(on_object, on_morphism)
 ```
 
-This category call asserts the property and supplies an existing owned functor.
-The code writer uses external mathematics to select `Fun(C, D).Full()`. The kernel records that assertion by refining the same owned functor.
-It does not prove, certify, or check fullness.
+This category call asserts the property.
+The code writer uses external mathematics to select `Fun(C, D).Full()`.
+The kernel does not prove, certify, or check fullness.
 
-An interactive assumption uses the same predicate and refinement:
+An interactive assumption uses the same predicate and refines the same owned functor:
 
 ```python
 F = Fun(C, D)(on_object, on_morphism)
@@ -456,7 +457,7 @@ iota = Fun(C.P(), C.Q()).Monomorphisms().Isofibrations().Full()()
 
 The containment is the statement. Nothing induces it from a relation between the
 predicates, and `P(X) ⟹ Q(X)` is set-theoretic logic with no category-theoretic
-formulation. `Axiom`'s `full_subcategory_of` is where `C` states it, and its
+formulation. `C` states it by constructing and retaining this monomorphism, and the
 fixed-endpoint functor category owns the construction.
 
 ### The core functor
@@ -730,8 +731,8 @@ That placement supplies these implementation surfaces:
 | Applicable structured morphism surface | The exact functors or natural transformations declared by `D` |
 
 This shift follows from the point relation in `Cat`.
-It is part of direct category-object construction and refinement.
-It is not a second inheritance mechanism or a one-object functor effect.
+It is the effect of selecting the point functor.
+It is not a second inheritance mechanism.
 
 `Cat().Point(C)` remains a separate category and adds no declaration to `C`.
 Shared target classes use the ordinary Sage dynamic-class construction and occur once in the MRO.
@@ -741,7 +742,7 @@ Shared target classes use the ordinary Sage dynamic-class construction and occur
 An algebraic category takes its ambient category as an argument.
 Thus `Semirings(A)` classifies semiring objects whose underlying objects, addition, multiplication, zero, one, and laws live in `A`. For example, `Semirings(Sets())` has underlying sets and set maps.
 `Semirings(Cat())` has underlying categories and functors.
-A category-valued internal semiring is constructed or refined directly in `Semirings(Cat())`.
+A category `C` is placed as an object of `Semirings(Cat())` by the point functor selected in `{C}.structure_functors()` (D128).
 
 `Semirings(Cat())` is the category of strict internal semiring objects.
 Associativity, units, symmetry, distributivity, and absorption are equalities of functors, exactly as `Semirings(Sets())` states them as equalities of maps.
@@ -1299,7 +1300,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - Every functor property method returns its containment proposition.
 
-- Direct construction and assumptions use the general same-object refinement path.
+- Assumptions and exact positive results use the general same-object refinement path.
 
 - Functor properties have no computational handlers.
 

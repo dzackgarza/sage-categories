@@ -1,7 +1,7 @@
 # Cardinalities and ordinals
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
-`Cardinal()` is constructed as an object of `Semirings(Cat())`.
+`Cardinal()` is placed as an object of `Semirings(Cat())` by the point functor `{Cardinal()} -> Semirings(Cat())` selected in `{Cardinal()}.structure_functors()` (D128).
 Cardinal addition and multiplication are its two internal semiring operations.
 Ordinals are objects of the skeletal category `Ordinals()`. Their Python addition and multiplication operators are ordinary ordinal arithmetic.
 Both models retain exact expressions when no normalization rule applies.
@@ -59,8 +59,8 @@ Thus a generalized element `t: T -> kappa` maps to the generalized set element `
 `Cardinal()` is a skeleton, so this functor is fully faithful and injective on objects, hence monic; it is not an isofibration, because a set isomorphic to a representative need not be one.
 Placement therefore does not follow it, and a cardinal is not a set (`specs/functor.md`, "Monomorphisms of `Cat()` and placement"). It is the representative transport from cardinal objects to sets.
 `Semirings(Cat())` is the general internal semiring category at ambient `Cat()`. Its objects, its addition and multiplication functors, its zero and one points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
-`Cardinal()` supplies cardinal addition with zero and cardinal multiplication with one through direct construction in that category.
-Direct category-object placement supplies the complete compiled classes, retained state, and public methods.
+`Cardinal()` supplies cardinal addition with zero and cardinal multiplication with one.
+Its selected point functor regards `Cardinal()` with these operations as an object of that category and, through the categorical level shift, supplies the compiled classes, retained state, and public methods of `Semirings(Cat())` ([functor.md](functor.md#the-categorical-level-shift)).
 The law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Cardinal()` is skeletal, so each binary operation selects one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
 
 For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the discrete category on the owned function set between their representatives:
@@ -104,20 +104,14 @@ Their object actions return the same `CardinalObject` and `OrdinalObject` values
 ### Public cardinal constructors
 
 ```python
-Cardinal()(value)
+Cardinal()(n)
 Aleph.on_object(index)
 aleph0
 continuum
 ```
 
-`Cardinal()(value)` is the category-owned constructor.
-It follows Sage's [`Parent.__call__()` dispatch model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html): the public call selects an exact private constructor route from the semantic input.
-
-Accepted inputs are:
-
-- An existing `CardinalObject`.
-
-- A nonnegative Python `int`.
+`Cardinal()(n)` is the category-owned constructor of the finite cardinal of a nonnegative Python `int` `n`.
+Each other presentation has its own named constructor (D52).
 
 Examples:
 

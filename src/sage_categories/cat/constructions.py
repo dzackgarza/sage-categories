@@ -104,10 +104,10 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
     from sage_categories.cat.opposites import OppositeCategory
 
     if isinstance(shape, OppositeCategory):
-        # A positive decision on a dual shape refines the op-apex into the op-side
-        # products family, and the op-narrowing join cannot compile that placement yet
-        # (the op categories' shared ``original`` spelling collides); the dual family
-        # stays undecided until the kernel owner supports that join.
+        # A positive decision on a dual shape places the apex in both ``C.Colimits(J)``
+        # and ``C.op().Products()``, two parallel universal surfaces that each declare
+        # ``index_category``; the dual family stays undecided until the colimit
+        # surface is the one opposite view of the op-side family (M4).
         return None
     # A finite presented shape decides by its label count without touching the owned
     # object set, so the categorical core stays executable before the production Sets

@@ -16,6 +16,7 @@ import pytest
 
 from sage_categories.cat.predicates import AppliedQuery, UnknownClass, predicate
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
+from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint
 
 
@@ -205,6 +206,19 @@ def test_each_exact_dispatch_signature_has_one_owning_handler() -> None:
     with pytest.raises(AssertionError):
         marked.register_handler(by_other_rule)
     assert ask(marked(tiny(2))) is True
+
+
+def test_one_declaration_compiled_at_two_incomparable_nodes_is_one_owner() -> None:
+    """Two opposite nodes each compile ``original`` from the one opposite declaration; their join compiles."""
+    tiny = Tiny()
+    first, second = TinySubcategory(tiny), TinySubcategory(tiny)
+    value = tiny(5)
+    first(value)
+    second(value)
+    refine(value, first.op())
+    refine(value, second.op())
+    assert is_placed(value, first.op())
+    assert is_placed(value, second.op())
 
 
 for name, value in tuple(globals().items()):

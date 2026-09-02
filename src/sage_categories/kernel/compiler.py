@@ -414,25 +414,34 @@ def _compiled_class(current: Node) -> type[CategoryPoint]:
 
 
 def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
-    """Reject one public spelling from incomparable owners in Sage's compiled MROs."""
+    """Reject one public spelling from incomparable owners in Sage's compiled MROs.
+
+    The owner of a spelling is the written declaration that supplies it.  One
+    declaration compiled at two incomparable nodes -- the opposite-category role
+    written once and compiled for each ``C.op()`` -- is one mathematical operation,
+    not a collision.
+    """
     runtime_by_class = {
         runtime.__dict__["parent_class"]: runtime
         for table in _runtime_categories.values()
         for _, runtime in table.items()
         if "parent_class" in runtime.__dict__
     }
-    owners: dict[str, tuple[Node, type[CategoryPoint]]] = {}
+    owners: dict[str, tuple[Node, type[CategoryPoint], type[CategoryPoint]]] = {}
     for surface in surfaces:
         for implementation in surface.__mro__:
             runtime = runtime_by_class.get(implementation)
             if runtime is None:
                 continue
+            declaration = runtime._current.category.local_role_class(runtime._current.role)
             for name in _local_method_names(runtime.ParentMethods):
                 previous = owners.get(name)
                 if previous is None:
-                    owners[name] = (runtime._current, implementation)
+                    owners[name] = (runtime._current, implementation, declaration)
                     continue
-                previous_node, previous_class = previous
+                previous_node, previous_class, previous_declaration = previous
+                if declaration is previous_declaration:
+                    continue
                 if issubclass(implementation, previous_class) or issubclass(previous_class, implementation):
                     continue
                 raise SemanticCollisionError(

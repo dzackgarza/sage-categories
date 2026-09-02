@@ -111,6 +111,7 @@ F = Fun(C, D)(on_object, on_morphism)
 A functor that computes its images is declared by both actions, `Fun(C, D)(on_object, on_morphism)`.
 A subcategory inclusion computes nothing: it is declared as `Fun(S, T).Monomorphisms().Isofibrations()()`, the zero-argument call on the property category of `Fun(S, T)`, and no action is written for it (D10, D11, D146; [Declaring one](#declaring-one)).
 A point functor is `D.Point()`, an arrow `* -> D` that the leaf class of the point adds to its structure functors (D154; [Point categories and point functors](#point-categories-and-point-functors)).
+A structure functor such as `Posets() -> Sets()` is defined by the leaf with its two actions and constructed into the strongest property subcategory of `Fun(C, D)` that states what is known about it (D08, D162; [Diagram shapes and universal constructions](#diagram-shapes-and-universal-constructions)).
 A functor retained by a construction is selected by the named method of that construction, and a composite is `G * F` (D157; [Functor-category calculus](#functor-category-calculus)).
 A class that implements a category otherwise named selects that category's identity functor (D156; [Implementing a named category](#implementing-a-named-category)).
 The inherited `Cat().MorphismType` surface supplies:
@@ -431,7 +432,7 @@ A leaf therefore declares which monomorphism placement follows by constructing i
 
 ### Declaring one
 
-`Fun.Monomorphisms()` and `Fun.Isofibrations()` are the two owned properties, so the declaration is an ordinary construction in the property category their intersection names:
+`Fun.Monomorphisms()` and `Fun.Isofibrations()` are owned properties of `Fun`, so the declaration is an ordinary construction in the property category their intersection names:
 
 ```python
 iota = Fun(S, T).Monomorphisms().Isofibrations()()
@@ -506,8 +507,12 @@ new owned category and the owned functors required by its mathematics.
 
 Every entry is an ordinary owned object of `Fun`. Its mathematical existence and
 properties come first. A structure functor need not be a subcategory monomorphism.
-For example, the named relation-base projection `Posets() -> Sets()` sends `(X, R)` to `X`.
+For example, the structure functor `Posets() -> Sets()` sends a poset to its underlying set, `(X, R) |-> X`, never to its relation (D163).
 A poset is not thereby an object of `Sets()`, and `Posets()` is not thereby a subcategory of `Sets()`.
+
+The properties a functor is declared with decide which functor carries inheritance (D164).
+`Posets()` admits two functors to `Sets()` that do not agree, `(X, R) |-> X` and `(X, R) |-> R`.
+The kernel inherits along the structure functor declared into the property subcategory that licenses inheritance, the fibration to the underlying set, `Fun(Posets(), Sets()).Fibrations()` (D128, D139); a functor to the same target without that declaration supplies no inheritance.
 
 The fixed-endpoint category `Fun(C, D)` owns construction of every functor `C -> D`.
 `Cat()` supplies the categorical calculus but does not construct or choose a leaf-specific
@@ -729,8 +734,8 @@ Their functoriality comes from these actions.
 
 A constant category such as `Sets()` needs only its category class. A parameterized
 category such as `Modules(R)` uses its mathematical parameter in its category constructor.
-A one-object category such as `{X}` is a category class whose sole object is `X`; the next
-section states how it places `X`.
+A named object such as `NN` is a category class, a completely abstract new category; the
+next section states how it registers itself as a point.
 
 Generic kernel and `cat` modules accept ambient categories as arguments. They do not import
 production leaves. A category construction fails when its own class declaration,
@@ -738,12 +743,12 @@ constructor, or functor action is incomplete.
 
 ## Point categories and point functors
 
-For a distinguished mathematical object `X`, the one-object category `{X}`, whose sole object is `X` and whose sole morphism is `1_X`, is a category class.
+A named mathematical object `X` is a leaf class, a completely abstract new category (D161).
 Writing that class populates its structure functor `X: * -> Cat` automatically, so every leaf class is a point in `Cat`; here `*` is the terminal category `Cat().Terminal()` (D154).
 
 `C.Point()` constructs an arrow, not an object: `F = C.Point()` is a functor `F: * -> C`, the point functor of its source.
-The kernel registers it automatically in the relevant property subcategory of `Fun(*, C)` (D154): a point functor is faithful and a monomorphism in `Cat`, and it is full exactly when `X` has no nonidentity endomorphism in `C`.
-A leaf class declares that its object `X` is a point in `C` by adding `C.Point()` to its structure functors:
+Every point is a replete full faithful subcategory (D161); the kernel registers the point functor automatically in the relevant property subcategory of `Fun(*, C)` (D154).
+The leaf class of `X` registers `X` as a point in `C` by adding `C.Point()` to its structure functors:
 
 ```python
 class NN(Category):
@@ -752,7 +757,8 @@ class NN(Category):
 ```
 
 `Sets().Countable().Point()` and `Sets().Point()` are both admissible here, and all relevant point diagrams commute.
-The point in `C` gives `X` itself the `C.ObjectType` inheritance, and gives `X.ObjectType` the `C.ElementType` inheritance, through the categorical level shift below (D128, D154).
+The point in `C` gives `X` itself the `C.ObjectType` inheritance, and gives `X.ObjectType` the `C.ElementType` inheritance, through the categorical level shift below (D128, D154, D161): every object of the category `NN` is an element of the set `NN`, and every set is a discrete category.
+`NN` later lifts its point to magmas in two ways, so `+` and `*` are supported, then to monoids, and then into semirings (D161).
 This structure functor is the whole declaration of a point; there are no further conveniences or shortcuts.
 
 ### The categorical level shift
@@ -1135,7 +1141,8 @@ Fun(C, D).CreatesLimits(I)
 state that `F` preserves or creates `I`-limits. `CreatesLimits(I)` is a property subcategory of `Fun`, so of `Fun(C, D)` for every `C, D`, and its generated property is `F.is_limit_creating(I)` (D158). For the shape family `Discrete: Sets() -> Cat()`, `CreatesLimits(Discrete)` states creation of the limits of every discrete shape. Their colimit forms derive through `Op`. A right adjoint preserves limits. An equivalence creates and reflects limits and colimits. These implications follow [Mathlib, adjunctions and limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Limits.html) and [Mathlib, creates limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html).
 
 A functor's theorem is the property subcategory it is constructed into (D158).
-A leaf states that a structural functor `U` creates `I`-limits by constructing `U` into `Fun(C, D).CreatesLimits(I)` at its declaration; `assume(U.is_limit_creating(I))` on a functor already constructed is shorthand for refining `U` into that subcategory.
+A leaf states that a structure functor `U` creates `I`-limits by constructing `U` into `Fun(C, D).CreatesLimits(I)` at its declaration.
+`Fun.Fibrations()` is the property subcategory of fibrations. A structure functor is defined by the leaf with its two actions and constructed into the strongest property subcategory of `Fun(C, D)` that states what is known about it: the poset leaf defines `U: Posets() -> Sets()`, `(X, R) |-> X`, as `Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)(on_object, on_morphism)` (D08, D158, D161, D162, D163).
 The general creates-limits construction supplies the lifted cone and its universal maps. The leaf does not implement a separate lift for each named limit ([poset-products template](poset-products-minimal-template.py)).
 
 ## Comma categories, slices, coslices, and fibers
@@ -1322,7 +1329,7 @@ Its `HasForget₂ C D` class also contains a chosen functor `C -> D`; it does no
 See [ConcreteCategory.Forget](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ConcreteCategory/Forget.html).
 
 Mathlib's `Functor.fromPUnit X : Discrete PUnit ⥤ C` sends the punctual category to a chosen object, and `Functor.equiv` states the equivalence `(Discrete PUnit ⥤ C) ≌ C`. See [PUnit](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/PUnit.html).
-Here the class of `X` is its one-object category `{X}`.
+Here the class of `X` is the category `X` itself, an abstract new category (D161).
 `D.Point()` in its structure functors is the point functor of `X`; selecting it places `X` in `D` (D128, D154).
 
 Mathlib defines `Prod.fst` and `Prod.snd` separately.

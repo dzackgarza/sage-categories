@@ -1,15 +1,15 @@
 """Local declarations for the ``Relations()`` and ``Posets()`` design specimen.
 
 ``Relations()`` is sets with additional structure, a structure category: its datum is
-``(X, R <= X * X)``, and it declares its structure functor to ``Sets()``,
-``(X, R) |-> X``, as ``Fun(Relations(), Sets()).Fibrations()()``. It declares the
-``PartialOrder`` axiom together with the private proposition deciding it, applying a new
-SymPy predicate; the kernel generates the public ``R.is_partial_order()``. ``Posets()`` is
+``(X, R <= X * X)``, and it defines its structure functor to ``Sets()`` by its two actions,
+sending a relation to its underlying set ``X``, never to the relation ``R``, and constructs
+it into ``Fun(Relations(), Sets()).Fibrations()``. It declares the ``PartialOrder`` axiom
+together with the private proposition deciding it, applying a new SymPy predicate; the
+kernel generates the public ``R.is_partial_order()``. ``Posets()`` is
 ``Relations().PartialOrder()``, its axiom subcategory, and inherits that functor; the poset
 class declares itself the implementation of that implicit subcategory by selecting its
-identity functor as a structure functor, declares its own forgetful structure functor to
-``Sets()`` with its theorem, adds order comparison and monotone maps, and wires no
-constructor.
+identity functor as a structure functor, defines its own structure functor to ``Sets()``
+with its theorem, adds order comparison and monotone maps, and wires no constructor.
 """
 
 from __future__ import annotations
@@ -69,13 +69,26 @@ class RelationsCategory(Category):
         """Construct the relation whose subobject ``predicate`` selects in ``X * X``."""
         return self(Sets().Subobjects(Sets().Products()(X, X)).from_predicate(predicate))
 
-    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        """Declare the forgetful fibration ``(X, R) |-> X`` to ``Sets()``.
+    def to_sets(self) -> Cat().MorphismType:
+        """Define the fibration to ``Sets()``: ``(X, R) |-> X`` and ``f |-> f``.
 
-        A relation inherits the structure of its set ``X`` through this functor; it
-        computes nothing, so the leaf writes no action for it.
+        A relation-preserving map is a map of the underlying sets.
         """
-        return (Fun(Relations(), Sets()).Fibrations()(),)
+        D = Sets()
+
+        def on_object(R: self.ObjectType) -> D.ObjectType:
+            return R._relation.ambient_object().product_projection(0).codomain()
+
+        def on_morphism(f: self.MorphismType) -> D.MorphismType:
+            source = on_object(f.domain())
+            target = on_object(f.codomain())
+            return Mor(D)(source, target)(f)
+
+        return Fun(self, D).Fibrations()(on_object, on_morphism)
+
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+        """Select the fibration to ``Sets()``; a relation inherits the structure of ``X``."""
+        return (self.to_sets(),)
 
 
 class PosetsCategory(Category):
@@ -96,15 +109,12 @@ class PosetsCategory(Category):
         """Implement monotone maps."""
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        """Select the identity of ``Relations().PartialOrder()`` and declare ``U``.
+        """Select the identity of ``Relations().PartialOrder()`` and ``U``.
 
         The identity functor of that category is the whole implementation declaration; the
-        kernel constructs its inclusion into ``Relations()``. The forgetful structure
-        functor ``U: Posets() -> Sets()`` is declared with its theorem, creation of the
-        limits of every discrete shape (poset-products template).
+        kernel constructs its inclusion into ``Relations()``. The structure functor
+        ``U: Posets() -> Sets()`` is defined with its theorem, creation of the limits of
+        every discrete shape, in the poset-products template.
         """
         x = Relations().PartialOrder()
-        return (
-            End_Cat(x).one(),
-            Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)(),
-        )
+        return (End_Cat(x).one(), self.to_sets())

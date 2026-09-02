@@ -20,7 +20,7 @@ class PointedSetsCategory(Category):
 
         def basepoint(self) -> Sets().MorphismType:
             """Return the chosen point ``x: 1 -> X``, the arrow the coslice retains."""
-            return Sets().CosliceUnder(Sets().Terminal()).projection()(self)
+            return Sets().CosliceUnder(Sets().Terminal()).projection().on_object(self)
 
     class ElementType:
         """Inherit the points of ``X`` through the structure functor to ``Sets()``."""

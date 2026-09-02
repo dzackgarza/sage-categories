@@ -19,14 +19,13 @@ Only `ask()` evaluates it.
 
 ## Public propositions
 
-Each mathematical predicate has a public SymPy `Predicate` subclass.
-Applying it returns a SymPy `AppliedPredicate`.
+A proposition is a SymPy Boolean expression.
+A predicate that no existing method supplies has a SymPy `Predicate` subclass its owner defines; applying it returns a SymPy `AppliedPredicate`.
 Compound propositions use SymPy `And`, `Or`, `Not`, and `Implies`.
 
-For a property category `C.P()`, these expressions return the same proposition:
+For a property category `C.P()`, the deciding proposition is a private method of the declaring category (D142), and the kernel generates its one public spelling:
 
 ```python
-C.P().membership_proposition(X)
 X.is_P()
 ```
 
@@ -124,10 +123,10 @@ They construct those results in the exact category their mathematics establishes
 ## Category containment
 
 Every category owns a membership proposition for a supplied value.
-A property category uses its defining predicate for that proposition.
+For a property category `C.P()` that proposition is `X.is_P()`.
 
 The Python expression `X in C` is a forced two-valued protocol boundary.
-It calls `ask(C.membership_proposition(X))`.
+It calls `ask()` on that proposition (`POL-ONT-003`).
 It converts only a decided result to `bool`.
 
 Placement in `C` is an exact positive result.
@@ -161,8 +160,7 @@ See MathWorld's [Twin Primes](https://mathworld.wolfram.com/TwinPrimes.html).
 
 | Expression | Unevaluated value | Result from `ask()` |
 | --- | --- | --- |
-| `C.P().membership_proposition(X)` | SymPy proposition | `True`, `False`, or `Unknown` |
-| `X.is_P()` | The same SymPy proposition | `True`, `False`, or `Unknown` |
+| `X.is_P()` | SymPy proposition | `True`, `False`, or `Unknown` |
 | `a == b` | Category-owned SymPy proposition | `True`, `False`, or `Unknown` |
 | `X.cardinality()` | Typed query with result category `Cardinal()` | Owned cardinal or `Unknown` |
 | `X in C.P()` | Python `bool` | Not applicable |

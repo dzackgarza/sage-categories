@@ -23,7 +23,7 @@ A proposition that no existing method supplies applies a SymPy `Predicate` subcl
 
 The registered axiom identifier determines the public `is_P()` spelling.
 The kernel generates that method once on the ambient implementation class.
-It returns `C.P().membership_proposition(X)`, the declared proposition.
+It returns the declared proposition, the value of the private deciding method (D142).
 
 For a morphism property, the construction starts from `Mor(C)`.
 For a functor property, it starts from `Fun(C, D)`.

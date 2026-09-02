@@ -1,7 +1,8 @@
 =============================
 === Running: structured text formatting ===
 # Formats Markdown (flowmark), JSON, and YAML (prettier) before agents spend time on whitespace
-No staged Markdown, JSON, or YAML files found
+Warning: Refusing to write specs/decisions.md: reformatting would change what pandoc reads (block 149: Para content differs). The file is unchanged. This is a flowmark bug -- please report it with the input document. To skip this check and format anyway, pass --no-verify.
+Warning: 1 file left unformatted because reformatting would have changed the pandoc-parsed meaning (see warnings above; each is a flowmark bug or ambiguous markdown worth reporting).
 =============================
 === Running: semgrep auto-fix ===
 # Applies Semgrep autofixes; CI-tier Semgrep verification owns remaining findings
@@ -10,13 +11,13 @@ No staged Markdown, JSON, or YAML files found
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 231 files tracked by git with 228 Code rules:
+  Scanning 182 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     231          Community     160                                                                
-  python           36     136          Custom         68                                                                
-  yaml             11       4                                                                                           
+  <multilang>       7     182          Community     160                                                                
+  python           36      72          Custom         68                                                                
+  yaml             11      26                                                                                           
                                                                                                                         
 No files modified by autofix.
                 
@@ -27,11 +28,11 @@ No files modified by autofix.
 ✅ Scan completed successfully.
  • Findings: 7 (7 blocking)
  • Rules run: 54
- • Targets scanned: 231
+ • Targets scanned: 182
  • Parsed lines: ~100.0%
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 231 files: 7 findings.
+Ran 54 rules on 182 files: 7 findings.
                    
                    
 ┌─────────────────┐
@@ -43,25 +44,25 @@ Ran 54 rules on 231 files: 7 findings.
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          304┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          306┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          304┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          306┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          321┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          323┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          321┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          323┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
                                                 
     src/sage_categories/kernel/stub_generator.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed

@@ -12,7 +12,7 @@ Do not record retired names in current documentation.
 | --- | --- |
 | `C.ElementType` | The shared implementation and API for elements of objects of `C`. |
 | Point of a category `X` | A functor `* -> X`. This is an actual object of `X`; a set uses its discrete, 0-truncated category. |
-| `Cat().Point(X)` | The one-object category whose distinguished object is `X`. It is not a point `* -> X`, and its functors cause no object placement. |
+| `Cat().Point(X)` | The one-object category whose distinguished object is `X`. It is not a point `* -> X`. Its selected structure functors are the point functors of `X`, and each places `X` in its codomain (D128). |
 | Point of `C in Cat()` | A functor `* -> C`. This is an actual object of `C` and a `Cat().ElementType` value. |
 | Generalized element of `X` | A functor `T -> X`. |
 | Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
@@ -20,7 +20,7 @@ Do not record retired names in current documentation.
 | Owned category graph | The entirely new graph whose nodes are package-owned objects of `Cat()` and whose selected implementation edges are owned structure functors. It is not Sage's mathematical category graph. Migrating a Sage concept creates a new owned category and the functors required by its mathematics. |
 | Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel as an edge of the owned implementation graph. Its ordinary object and morphism actions are already complete and accept source values whose own local state is initialized. It need not be a subcategory monomorphism. |
 | Private Sage implementation graph | The runtime-only graph of private Sage categories used to ask Sage for controlled C3 and dynamic implementation classes corresponding to the owned graph. It has no mathematical edges or nodes in the owned `Cat()` graph; the systems share only low-level Python/Sage `Parent` runtime ancestry. |
-| Unresolved structural diamond | Two or more owned structure-functor paths reaching one implementation owner with no explicit owned coherence yet supplied between the relevant composites. C3 still chooses one occurrence and compilation proceeds; the condition is reported only at `DEBUG` level. |
+| Structural diamond | Two or more owned structure-functor paths reaching one implementation owner. Controlled C3 places that owner once and the kernel initializes it once; nothing else is recorded or reported (D37). |
 | Fixed-object constructions | `C.Subobjects(X)`, `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)`. |
 | Named construction map | The exact retained projection, inclusion, evaluation, or adjoint with stated endpoints. |
 | Functor actions | `F.on_object(X)` and `F.on_morphism(f)` construct the public images owned by `F` from completed values in the stated source category. Selection for inheritance lets the kernel run the object action during construction to initialize the target implementation on the source value (D13). |

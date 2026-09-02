@@ -85,8 +85,8 @@ Every public result is an owned value or an authorized public proposition.
 | Concept | Mathematical owner | Runtime representation or implementer |
 | --- | --- | --- |
 | Category `C` | `Cat()` and `C` | `C.ObjectType` |
-| Direct placement of `C` in structured `D` | `D` | Kernel level-shift refinement |
-| One-object diagram on `X` | `Fun(Cat().Point(X), D)` | Ordinary functor value |
+| Placement of `C` in structured `D` | the point functor in `{C}.structure_functors()` | Kernel level-shift refinement |
+| Point functor of `X` | `Fun(Cat().Point(X), D)` | Ordinary functor value |
 | Object of `C` | `C` | `C.ObjectType` |
 | Element of an object of `C` | `C` | `C.ElementType` |
 | Morphism of `C` | `Mor(C)` | `C.MorphismType` |

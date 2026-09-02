@@ -107,20 +107,11 @@ needed, remains the declaration-order rule of D56 rather than a second C3-specif
 Any private execution record or cached class data remains implementation-only and cannot
 become a second leaf-authored description of a functor action.
 
-## Diamond diagnostics and future coherence
+## Diamonds
 
-Every diamond in the owned structure-functor graph is accepted. Until the owned theory
-explicitly supplies coherence between the relevant composites, the kernel emits a
-`DEBUG`-level diagnostic identifying the unresolved diamond. If the diagnostic names a
-preferred path, it uses D56's declaration order. Debugging is opt-in: the same condition
-is never a warning or compilation failure.
-
-The core compiler requires only this diagnostic and the once-only C3 behavior. A later kernel extension
-can consume ordinary owned 2-morphism data between the composite functors and suppress the
-diagnostic for that diamond. That future mechanism must reuse the natural-transformation
-machinery of `Fun`; it must not add a coherence certificate, proof record, route registry,
-or second functor declaration. No public hook spelling or exact 2-cell property is fixed in
-the core compiler.
+Controlled C3 places a shared implementation class once in the compiled MRO, and the
+kernel runs its initializer once. That is the whole treatment of a structural diamond
+(D37): no diagnostic, no coherence data, no preferred-path record.
 
 ## Runtime categories and caches
 
@@ -146,11 +137,10 @@ Its public predicate class, applied proposition, assumptions, and exact proposit
 Private identity atoms recover owned values inside exact SymPy handlers.
 Typed-query dispatch remains separate and private.
 
-When a category `C` is constructed or refined as an object of a structured category `D`, the runtime applies the categorical level shift from [functor.md](functor.md#the-categorical-level-shift).
+When a category `C` is placed as an object of a structured category `D` by a selected point functor, the runtime applies the categorical level shift from [functor.md](functor.md#the-categorical-level-shift).
 It refines `C` with the applicable `D.ObjectType` surface.
 It refines `C.ObjectType` with the applicable `D.ElementType` surface.
 The exact structured morphism category supplies any further surface.
-The runtime does not inspect a one-object diagram to perform this update.
 
 Reuse Sage functorial-construction category factories for private family binding and method-provider assembly.
 For example, Sage `CartesianProductsCategory` can supply private implementation classes.
@@ -187,13 +177,13 @@ The private runtime satisfies this specification when:
 - the same mechanism handles objects, elements, and morphisms;
 - both branches of a class diamond contribute their local methods;
 - a shared target class occurs once and initializes once;
-- unresolved owned structural diamonds compile and appear only in opt-in `DEBUG` logs;
+- a structural diamond compiles with one shared implementation occurrence and no diagnostic;
 - local declarations take precedence;
 - inherited methods run directly on the source value;
 - public functor application returns its separate owned image;
 - the kernel initializes each inherited implementation from its structure functor's object action, and no declaration calls a base-class initializer;
 - direct category-object placement applies the exact categorical level shift;
-- one-object diagrams cause no placement or inheritance;
+- a selected point functor places its object and supplies the codomain's surfaces through the level shift;
 - the private Sage implementation graph remains distinct from Sage's mathematical category graph;
 - temporary runtime data has no public mathematical effect;
 - unrelated mathematical declarations with one spelling fail as a semantic collision;

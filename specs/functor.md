@@ -26,7 +26,7 @@ This specification supplies the categorical layers of the tower in [system.md](s
 
 - [Category classes and category-valued families](#category-classes-and-category-valued-families)
 
-- [Point categories and one-object diagrams](#point-categories-and-one-object-diagrams)
+- [Point categories and point functors](#point-categories-and-point-functors)
 
 - [Functor construction and presentation data](#functor-construction-and-presentation-data)
 
@@ -257,7 +257,7 @@ Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor
 
 - `Cat().WalkingParallelPair()`: two objects and two parallel morphisms;
 
-- `Cat().Point(X)`, written `{X}`: the one-object category on a distinguished object `X`, one per `X`; see [Point categories and one-object diagrams](#point-categories-and-one-object-diagrams).
+- `Cat().Point(X)`, written `{X}`: the one-object category on a distinguished object `X`, one per `X`; see [Point categories and point functors](#point-categories-and-point-functors).
 
 Two calls return one object by identity.
 No construction creates a second terminal object, simplex, or walking structure.
@@ -551,14 +551,8 @@ functor images from the competing paths are constructed or compared in order to 
 the diamond. Declaration order remains the existing preference rule of D56 wherever a
 path preference is required.
 
-Coherence of a diamond is mathematical information about the relevant composite functors.
-Its absence is not a compiler failure. Until explicit owned coherence is supplied, the
-kernel reports the diamond only through opt-in `DEBUG` logging and continues with the
-single controlled-C3 implementation occurrence. A future extension can let theory code
-supply an actual 2-morphism, using the ordinary natural-transformation machinery of `Fun`,
-to mark the composites as coherent and silence that diagnostic. This extension must not
-introduce a proof record, certificate, route registry, or second functor declaration; its
-exact spelling is deferred.
+That single occurrence is the whole treatment of a diamond (D37): the kernel keeps no
+diagnostic, coherence data, or preferred-path record for it.
 
 ### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 
@@ -699,12 +693,12 @@ Generic kernel and `cat` modules accept ambient categories as arguments. They do
 production leaves. A category construction fails when its own class declaration,
 constructor, or functor action is incomplete.
 
-## Point categories and one-object diagrams
+## Point categories and point functors
 
 For a distinguished mathematical object `X`, `Cat().Point(X)`, written `{X}`, is the one-object category whose sole object is `X` and whose sole morphism is `1_X`.
 It is an object of `Cat()` and is retained once per `X`.
 
-A functor from `{X}` selects a one-object diagram in `D`:
+A functor from `{X}` to `D` is a point functor of `X`. Declared in `{X}.structure_functors()`, it places `X` as an object of `D`:
 
 ```python
 iota = Fun(Cat().Point(X), D).Monomorphisms()()
@@ -716,17 +710,12 @@ It is an isofibration exactly when every isomorphism at its image lifts to `{X}`
 A construction states either property through its exact functor-property category.
 
 The distinguished object `X` is the construction data.
-The functor records a diagram.
-It does not place `X` in `D`.
-Constructing or refining `X` as an object of `D` owns that placement.
-
-The one-object diagram is not a structure functor for `{X}`.
-Its codomain classes do not become implementation bases of `{X}` or `X`.
+The selected point functor is the structure functor of `{X}`: through the categorical level shift below, `D`'s object surface reaches `X` itself and `D`'s element surface reaches the objects of `X` (D128).
 
 ### The categorical level shift
 
-Let a category `C` be an object of a category `D` whose objects are structured categories.
-Direct placement of `C` in `D` supplies these implementation surfaces:
+Let a category `C` be an object of a category `D` whose objects are structured categories, through a selected point functor `{C} -> D`.
+That placement supplies these implementation surfaces:
 
 | Surface of `D` | Surface it supplies |
 | --- | --- |
@@ -1244,7 +1233,7 @@ Mathlib's arrow category has morphisms as objects and commuting squares as morph
 | `C ⥤ D` | `Mor(Cat())(C, D)` or `Fun(C, D)` |
 | `Functor.id C` | `End_Cat(C).one()` |
 | `Functor.comp` and whiskering functors | `Fun.composition(A, B, C)` and its morphism action |
-| `Functor.fromPUnit X` | the one-object diagram of `X`, an object of `Fun(Cat().Point(X), D)` |
+| `Functor.fromPUnit X` | the point functor of `X`, an object of `Fun(Cat().Point(X), D)` |
 | `ObjectProperty.FullSubcategory P` | the property subcategory `C.P()` |
 | `ObjectProperty.ι P` | `Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()` |
 | monomorphism induced by `P -> Q` | `Fun(C.P(), C.Q()).Monomorphisms().Isofibrations().Full()()` |
@@ -1279,7 +1268,7 @@ See [ConcreteCategory.Forget](https://leanprover-community.github.io/mathlib4_do
 
 Mathlib's `Functor.fromPUnit X : Discrete PUnit ⥤ C` sends the punctual category to a chosen object, and `Functor.equiv` states the equivalence `(Discrete PUnit ⥤ C) ≌ C`. See [PUnit](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/PUnit.html).
 Here `Cat().Point(X)` names its sole object `X`.
-The corresponding functor is the retained one-object diagram and has no placement or inheritance effect.
+The corresponding functor is the point functor of `X`; selecting it places `X` in `D` (D128).
 
 Mathlib defines `Prod.fst` and `Prod.snd` separately.
 See [Products.Basic](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Products/Basic.html).
@@ -1362,9 +1351,9 @@ It is kernel infrastructure over already established mathematical functors.
 
 - `Cat().Point(X)`, written `{X}`, is the one-object category on a distinguished object `X`, retained once per `X`.
 
-- A functor `{X} -> D` is a one-object diagram and has no placement or inheritance effect.
+- A selected functor `{X} -> D` is a point functor: it places `X` in `D` and supplies `D`'s surfaces through the level shift.
 
-- Direct placement of a category `C` in a structured category `D` supplies the applicable object and element surfaces by categorical level.
+- Placement of a category `C` in a structured category `D` through its point functor supplies the applicable object and element surfaces by categorical level.
 
 - Every structure functor is an ordinary object of `Fun`.
 

@@ -238,6 +238,19 @@ _finite_poset_sage.py
 The private module can own engine conversion, engine-native computations, and private caches.
 The category-owned classes retain public signatures, semantic result construction, and operation documentation.
 
+## Red flags
+
+A leaf that contains any of these shapes exposes a kernel defect (D133, `POL-LEAF-063` to `POL-LEAF-067`).
+Repair the kernel; do not polish the leaf.
+
+- an initializer that calls a base initializer or installs inherited state by hand;
+- a property or construction subcategory built by hand, named by a string, or patched with an accessor;
+- identity, composition, morphism construction, element construction, or element retention for inherited structure;
+- kernel role, placement, or refinement machinery used to branch, or to refine a value after constructing it;
+- a hand-rolled cache or registry of the leaf's own values;
+- kernel state, such as the constructing category, passed into a constructor;
+- a Sage parent, element, or Sage category used as the category's own runtime.
+
 ## Acceptance conditions
 
 A leaf satisfies this specification when:

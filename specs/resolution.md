@@ -198,6 +198,7 @@ The private runtime satisfies this specification when:
 - temporary runtime data has no public mathematical effect;
 - unrelated mathematical declarations with one spelling fail as a semantic collision;
 - theory modules import no private runtime type;
+- the kernel supplies inherited element construction, identity and composition, object retention, and axiom-subcategory routing, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133);
 - public engine values are limited to authorized SymPy proposition expressions;
 - their nested identity atoms expose no independent public API;
 - every fixed dependency owns only its assigned private responsibility;

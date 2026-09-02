@@ -685,6 +685,11 @@ Grounding examples:
 | `POL-LEAF-055` | Use only ordinary Python call syntax and exact mathematical types in a leaf method signature. Derive call shape and compiler data from that signature. |
 | `POL-LEAF-056` | Never implement an operation supplied by an inherited morphism category, morphism-property category, or universal construction. This includes inversion of isomorphisms and every other operation implied by established categorical placement. If the operation is absent from a descendant morphism, repair the generic owner, structure functor, or compiler. |
 | `POL-LEAF-057` | A named-object leaf states its known properties by its strongest category placement or by ordinary defining predicates that return `True`. Never enumerate the object, query an engine, or run a general decision procedure to rediscover a property supplied by its definition. |
+| `POL-LEAF-063` | Red flag: an initializer in a theory declaration that calls a base initializer or installs an inherited owner's state by hand. The kernel runs every reached initializer and threads inherited state through the selected structure functors (D13, D133). |
+| `POL-LEAF-064` | Red flag: a category that constructs a property or construction subcategory by hand, names it with a string, or patches an accessor onto it. An axiom is declared once at its owner, and the kernel routes `C.P()`, `C.Products()`, and `is_p()` from that declaration (D89, D133). |
+| `POL-LEAF-065` | Red flag: identity, composition, morphism construction, element construction, or element retention written in a leaf for structure it inherits. These arrive through the structure functor; a leaf writes only the mathematical delta it adds (D44, D133). |
+| `POL-LEAF-066` | Red flag: a leaf that branches on kernel roles, placement, or refinement machinery, refines a value after constructing it, keeps its own cache of its values, or passes kernel state such as the constructing category into a constructor. Construct into the strongest category directly; retention and placement are the kernel's (D21, D111, D133). |
+| `POL-LEAF-067` | Red flag: a Sage parent, element, or Sage category used as an owned category's own runtime. Sage machinery runs behind a private engine boundary; the owned category expresses the operations (D01, D65, D133). |
 
 See [Leaf category implementations](specs/leaves.md) for the complete ownership model,
 the allowed private computation sequence, and the rejected decorator and mirrored-class
@@ -734,6 +739,7 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-034` | Review private construction-family binding against [specs/resolution.md](specs/resolution.md): Sage factories supply binding and caching, while owned functors determine the implementation edges and the owned cone or cocone retains the universal data. |
 | `POL-KERNEL-035` | Review hom and functor boundaries against [specs/resolution.md](specs/resolution.md) and [specs/functor.md](specs/functor.md): Sage `Hom`-level types stay leaf-local, and generic `Mor` and `Fun` stay owned by `Cat`. |
 | `POL-KERNEL-036` | Review declaration and wrapper tooling against [specs/resolution.md](specs/resolution.md): use Python 3.14 `ast` for ordinary declarations and generated stubs, LibCST only for syntax-preserving codemods, and Sage introspection with wrapt for residual runtime behavior. |
+| `POL-KERNEL-037` | Every red-flag shape in `POL-LEAF-063` through `POL-LEAF-067` names a missing kernel capability. The repair adds that capability to the kernel generically and deletes the leaf wiring; a leaf-local patch that keeps the shape is rejected (D133). |
 See [Leaf category implementations](specs/leaves.md) for the exact boundary between
 kernel-owned inheritance and leaf-owned computation.
 

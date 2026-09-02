@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
-from sage_categories.algebra.monoids import MonoidObjectData, Monoids, MonoidsCategory
+from sage_categories.algebra.monoids import Monoids, MonoidsCategory
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.morphisms import MorphismCategory
@@ -36,9 +36,12 @@ type Key = tuple[Hashable, ...]
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class GroupObjectData(MonoidObjectData):
+class GroupObjectData:
     """The carrier, multiplication, unit, and inversion morphism of a group object."""
 
+    carrier: CategoryOfCategories.ElementType
+    multiplication: MorphismCategory.ObjectType
+    unit: MorphismCategory.ObjectType | CategoryOfCategories.ElementType
     inversion: MorphismCategory.ObjectType
 
 
@@ -50,7 +53,6 @@ class GroupObjectDeclaration:
         self._multiplication = data.multiplication
         self._unit = data.unit
         self._inversion = data.inversion
-        super().__init__()
 
     def carrier(self) -> CategoryOfCategories.ElementType:
         return self._carrier
@@ -87,7 +89,6 @@ class GroupMorphismDeclaration:
 
     def __init__(self, data: GroupMorphismData) -> None:
         self._carrier_morphism = data.carrier_morphism
-        super().__init__()
 
     def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._carrier_morphism

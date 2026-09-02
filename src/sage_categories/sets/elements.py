@@ -41,7 +41,6 @@ class SetElementDeclaration:
 
     def __init__(self, data: SetElementData) -> None:
         self._set_element_data = data
-        super().__init__()
 
     def __hash__(self) -> int:
         if isinstance(self._set_element_data, SetPointData):

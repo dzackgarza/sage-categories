@@ -55,7 +55,6 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
 
         def __init__(self, data: _OppositeMorphismData) -> None:
             self._opposite_original = data.original
-            super().__init__()
 
         def original(self) -> MorphismCategory.ObjectType:
             """The morphism of ``C`` represented in the opposite direction."""

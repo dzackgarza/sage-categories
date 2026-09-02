@@ -126,7 +126,6 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def __init__(self, data: SliceObjectData) -> None:
             self._structure = data.structure
-            super().__init__()
 
         def __repr__(self) -> str:
             return f"{self._structure!r} in {self.category()!r}"
@@ -139,7 +138,6 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def __init__(self, data: SliceTriangleData) -> None:
             self._varying = data.varying
-            super().__init__()
 
         def __repr__(self) -> str:
             return f"{self._varying!r} in {self.category()!r}"

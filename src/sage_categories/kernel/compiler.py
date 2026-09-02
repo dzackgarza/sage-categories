@@ -34,6 +34,8 @@ from sage_categories.kernel.construction import (
     retain_element_input,
     retain_morphism_input,
     retain_object_input,
+    retained_element_input,
+    retained_morphism_input,
     retained_object_input,
     retained_objects,
 )
@@ -471,6 +473,7 @@ def _refine_implementation_class(value: CategoryPoint, role_class: type[Category
 class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
     initializer: Callable[[Value, Datum], None]
     owner: type[Value]
+    written: bool
 
 
 _node_runtimes: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
@@ -505,27 +508,17 @@ def _runtime[Value: CategoryPoint, Datum](current: Node) -> _NodeRuntime[Value, 
     return table[current.category]
 
 
-def _advance[Value: CategoryPoint](owner: type[Value], instance: Value) -> None:
-    """Enter the next generated wrapper, or the kernel role initializer."""
-    super(owner, instance).__init__()
-
-
-def _advancing_initializer[Value: CategoryPoint, Datum](owner: type[Value]) -> Callable[[Value, Datum], None]:
-    """Return the total runtime initializer for a declaration with no local ``__init__``."""
-
-    def initialize(instance: Value, _datum: Datum) -> None:
-        _advance(owner, instance)
-
-    return initialize
+def _silent_initializer[Value: CategoryPoint, Datum](_instance: Value, _datum: Datum) -> None:
+    """The initializer of a declaration with no local ``__init__``: it adds no state."""
 
 
 
 def _linearized_nodes(current: Node) -> tuple[Node, ...]:
-    """The selected target nodes in the private Sage category's C3 order."""
+    """The selected target nodes in the private Sage category's C3 order, after ``current`` itself."""
     return tuple(
         runtime._current
         for runtime in _runtime_category(current)._all_super_categories
-        if isinstance(runtime, _RuntimeImplementationCategory)
+        if isinstance(runtime, _RuntimeImplementationCategory) and not same_node(runtime._current, current)
     )
 
 
@@ -550,109 +543,112 @@ def runtime_semantic_bases(
     return tuple(result)
 
 
-def _object_step[Value: ObjectOfCategory, Datum](
-    current: Node,
-    construction_input: ObjectConstructionInput[Value, Datum],
-    instance: ObjectOfCategory,
-) -> Callable[[], None]:
-    runtime = _runtime(current)
+_UNRESOLVED = object()
 
-    def initialize() -> None:
-        runtime.initializer(instance, construction_input.datum)
-
-    return initialize
+type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[Node, object]]
 
 
-def _element_step[Value: CategoryPoint, Datum](
-    current: Node,
-    construction_input: ElementConstructionInput[Value, Datum],
-    instance: Value,
-) -> Callable[[], None]:
-    runtime = _runtime(current)
-
-    def initialize() -> None:
-        runtime.initializer(instance, construction_input.datum)
-
-    return initialize
+def _initialize_kernel_roots(instance: CategoryPoint, role: Role) -> None:
+    """Install placement and identity from the active construction context, before any declaration runs."""
+    if role is not Role.ELEMENT:
+        instance._initialize_placement()
+    instance._initialize_identity()
 
 
-def _morphism_step[Value: MorphismOfCategory, Datum](
-    current: Node,
-    construction_input: MorphismConstructionInput[Value, Datum],
-    instance: MorphismOfCategory,
-) -> Callable[[], None]:
-    runtime = _runtime(current)
+def _with_cat_element_node(nodes: tuple[Node, ...], universe: Category) -> tuple[Node, ...]:
+    """Append the common ``Cat().ElementType`` root node when the linearization lacks it.
 
-    def initialize() -> None:
-        runtime.initializer(instance, construction_input.datum)
-
-    return initialize
-
-
-def _object_steps[RootValue: ObjectOfCategory, RootDatum](
-    current: Node,
-    root: ObjectConstructionInput[RootValue, RootDatum],
-) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """Close the mixed-role C3 implementation graph of one object."""
-    point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
-
-    def step(source: Node) -> Callable[[], None]:
-        match source.role:
-            case Role.OBJECT:
-                return _object_step(source, root, root.canonical_image)
-            case Role.ELEMENT:
-                return _element_step(source, point_input, root.canonical_image)
-            case Role.MORPHISM:
-                raise AssertionError(f"the object graph of {current.category!r} reaches a morphism implementation")
-
-    return tuple((source, step(source)) for source in (current, *_linearized_nodes(current)))
-
-
-def _element_steps[RootValue: CategoryPoint, RootDatum](
-    current: Node,
-    root: ElementConstructionInput[RootValue, RootDatum],
-) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """Close each element C3 node into one zero-argument initialization step."""
-    assert isinstance(root.identity, ElementRoleIdentity)
-    return (
-        (current, _element_step(current, root, root.canonical_image)),
-        *((source, _element_step(source, root, root.canonical_image)) for source in _linearized_nodes(current)),
-    )
-
-
-def _cat_element_step[Datum](
-    root: ObjectConstructionInput[ObjectOfCategory, Datum] | MorphismConstructionInput[MorphismOfCategory, Datum],
-) -> tuple[Node, Callable[[], None]]:
-    """The point input ``* -> K`` at the common ``Cat().ElementType`` MRO root.
-
-    A morphism of ``C`` is an object of ``Mor(C)`` and ``root.identity.category`` is that
-    placement, so the object and morphism roles state one point (``specs/functor.md``,
-    "Compiled implementation classes").
+    An object of ``C`` and a morphism of ``C`` (an object of ``Mor(C)``) are each a point
+    ``* -> K`` of their category (``specs/functor.md``, "Compiled implementation classes").
     """
-    target = node(root.identity.category.universe(), Role.ELEMENT)
-    point_input = ElementConstructionInput(root.canonical_image, CategoryPointIdentity(root.identity.category), None)
-    return target, _element_step(target, point_input, root.canonical_image)
+    target = node(universe, Role.ELEMENT)
+    if any(same_node(owner, target) for owner in nodes):
+        return nodes
+    return (*nodes, target)
 
 
-def _element_cat_element_step[Value: CategoryPoint, Datum](
-    root: ElementConstructionInput[Value, Datum],
-) -> tuple[Node, Callable[[], None]]:
-    """The defining-morphism input at the common ``Cat().ElementType`` MRO root."""
-    assert isinstance(root.identity, ElementRoleIdentity)
-    target = node(root.identity.defining_morphism.base_category().universe(), Role.ELEMENT)
-    element_input = ElementConstructionInput(root.canonical_image, root.identity, None)
-    return target, _element_step(target, element_input, root.canonical_image)
-
-
-def _morphism_steps[RootValue: MorphismOfCategory, RootDatum](
+def _initialize_graph(
+    context: ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext,
     current: Node,
-    root: MorphismConstructionInput[RootValue, RootDatum],
-) -> tuple[tuple[Node, Callable[[], None]], ...]:
-    """Close each morphism C3 node into one zero-argument initialization step."""
-    return (
-        (current, _morphism_step(current, root, root.canonical_image)),
-        *((source, _morphism_step(source, root, root.canonical_image)) for source in _linearized_nodes(current)),
-    )
+    instance: CategoryPoint,
+    data: object,
+    image_datum: _ImageDatum,
+) -> None:
+    """Run every reached local initializer once, each with its owner's datum (D13).
+
+    The root runs with the constructor's datum.  A selected target runs with the datum
+    its structure functor feeds to the target constructor: the kernel runs the ordinary
+    action on the value under construction and reads the datum its image was
+    constructed from.  A point node of the category runs with none.  The first
+    structural path to reach an owner supplies its datum (D56).  No declaration calls a
+    base-class initializer.
+    """
+    # Each reached owner keeps the value that represents ``instance`` in its own category:
+    # the instance itself at the root, and the retained image ``F(x)`` below a selected
+    # ``F``.  A functor out of an owner runs on that representative, which is a member of
+    # its domain; the source value carries the owner's implementation without being one
+    # of its objects (POL-MATH-046).
+    resolved: list[tuple[Node, object, CategoryPoint]] = [(current, data, instance)]
+
+    def resolution(owner: Node) -> tuple[object, CategoryPoint] | None:
+        return next(((datum, value) for known, datum, value in resolved if same_node(known, owner)), None)
+
+    for owner in context.nodes:
+        is_point_node = _is_cat_element_root(owner) or (owner.role is Role.ELEMENT and current.role is not Role.ELEMENT)
+        found = (None, instance) if is_point_node else resolution(owner)
+        assert found is not None, (
+            f"no selected functor reaches {owner.category!r}.{owner.role.value} from {current.category!r}"
+        )
+        datum, representative = found
+        runtime = _runtime(owner)
+        context.run(owner, lambda runtime=runtime, datum=datum: runtime.initializer(instance, datum))
+        if owner.role is not current.role:
+            continue
+        for functor, target in successors(owner):
+            if resolution(target) is not None:
+                continue
+            image, built, image_data = image_datum(functor, representative)
+            if image is representative:
+                # An inclusion is the identity on this value: the target shares the datum
+                # this owner was constructed from, and adds nothing to it.
+                resolved.append((target, datum, representative))
+                continue
+            assert same_node(built, target) or not _runtime(target).written, (
+                f"{functor!r} out of {type(owner.category).__name__} constructs its image at "
+                f"{type(built.category).__name__}.{built.role.value}, not at its codomain "
+                f"{type(target.category).__name__}.{target.role.value}, whose declaration initializes local state"
+            )
+            resolved.append((target, image_data, image))
+            if not same_node(built, target):
+                resolved.append((built, image_data, image))
+
+
+def _object_image_datum(functor: Functor, instance: CategoryPoint) -> tuple[CategoryPoint, Node, object]:
+    image = functor.on_object(instance)
+    if image is instance:
+        return image, Node(functor.codomain(), Role.OBJECT), None
+    retained = retained_object_input(image)
+    return image, node(retained.identity.category, Role.OBJECT), retained.datum
+
+
+def _morphism_image_datum(functor: Functor, instance: CategoryPoint) -> tuple[CategoryPoint, Node, object]:
+    image = functor.on_morphism(instance)
+    if image is instance:
+        return image, Node(functor.codomain(), Role.MORPHISM), None
+    retained = retained_morphism_input(image)
+    return image, node(retained.identity.category, Role.OBJECT), retained.datum
+
+
+def _element_image_datum(functor: Functor, instance: CategoryPoint) -> tuple[CategoryPoint, Node, object]:
+    """The image of a point ``t: T -> X`` is the element of ``F(X)`` defined by ``F(t)`` (D17)."""
+    defining_morphism = instance.defining_morphism()
+    image_morphism = functor.on_morphism(defining_morphism)
+    if image_morphism is defining_morphism:
+        # An inclusion fixes the defining morphism, so it fixes the element it defines;
+        # that element is the one under construction and is not yet retained.
+        return instance, Node(functor.codomain(), Role.ELEMENT), None
+    image = functor.codomain().element_from_defining_morphism(image_morphism)
+    return image, _construction_node(image, Role.ELEMENT), retained_element_input(image).datum
 
 
 def _construct_object_root[Datum](
@@ -664,11 +660,15 @@ def _construct_object_root[Datum](
     root = ObjectConstructionInput(instance, identity, data)
     retain_object_input(root)
     cat_element_identity = CategoryPointIdentity(identity.category)
-    steps = _object_steps(current, root)
-    context = ObjectConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
+    nodes = (current, *_linearized_nodes(current))
+    assert all(owner.role is not Role.MORPHISM for owner in nodes), (
+        f"the object graph of {current.category!r} reaches a morphism implementation"
+    )
+    context = ObjectConstructionContext(instance, identity, cat_element_identity, nodes)
     token = activate_object_context(context)
     try:
-        context.run(current)
+        _initialize_kernel_roots(instance, Role.OBJECT)
+        _initialize_graph(context, current, instance, data, _object_image_datum)
         context.assert_complete()
     finally:
         deactivate_object_context(token)
@@ -682,14 +682,15 @@ def _construct_element_root[Datum](
 ) -> None:
     root = ElementConstructionInput(instance, identity, data)
     retain_element_input(root)
-    steps = _element_steps(current, root)
-    cat_element_step = _element_cat_element_step(root)
-    if not any(same_node(owner, cat_element_step[0]) for owner, _ in steps):
-        steps = (*steps, cat_element_step)
-    context = ElementConstructionContext(root.canonical_image, root.identity, root.identity, steps)
+    nodes = _with_cat_element_node(
+        (current, *_linearized_nodes(current)),
+        identity.defining_morphism.base_category().universe(),
+    )
+    context = ElementConstructionContext(instance, identity, identity, nodes)
     token = activate_element_context(context)
     try:
-        context.run(current)
+        _initialize_kernel_roots(instance, Role.ELEMENT)
+        _initialize_graph(context, current, instance, data, _element_image_datum)
         context.assert_complete()
     finally:
         deactivate_element_context(token)
@@ -704,11 +705,12 @@ def _construct_morphism_root[Datum](
     root = MorphismConstructionInput(instance, identity, data)
     retain_morphism_input(root)
     cat_element_identity = CategoryPointIdentity(identity.category)
-    steps = (*_morphism_steps(current, root), _cat_element_step(root))
-    context = MorphismConstructionContext(root.canonical_image, root.identity, cat_element_identity, steps)
+    nodes = _with_cat_element_node((current, *_linearized_nodes(current)), identity.category.universe())
+    context = MorphismConstructionContext(instance, identity, cat_element_identity, nodes)
     token = activate_morphism_context(context)
     try:
-        context.run(current)
+        _initialize_kernel_roots(instance, Role.MORPHISM)
+        _initialize_graph(context, current, instance, data, _morphism_image_datum)
         context.assert_complete()
     finally:
         deactivate_morphism_context(token)
@@ -740,6 +742,7 @@ def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Va
     )
     token = activate_object_context(context)
     try:
+        _initialize_kernel_roots(instance, Role.OBJECT)
         provisional_type.__init__(instance)
         context.assert_complete()
     finally:
@@ -755,6 +758,14 @@ def _construction_node(instance: CategoryPoint, role: Role) -> Node:
     return current
 
 
+def _reject_base_initializer_call(instance: CategoryPoint) -> None:
+    """A compiled initializer re-entered on the value under construction: a declaration called a base initializer."""
+    raise AssertionError(
+        f"a declaration of {type(instance).__name__} called a base-class initializer during construction; "
+        "the kernel runs every reached initializer itself (D13)"
+    )
+
+
 def _initialize_object[Datum](
     instance: ObjectOfCategory,
     category: Category | None = None,
@@ -762,9 +773,7 @@ def _initialize_object[Datum](
 ) -> None:
     active = active_construction_context(instance)
     if active is not None and active.canonical_image is instance:
-        assert category is None and data is None, "an ancestor object constructor receives only its precomputed input"
-        active.advance()
-        return
+        _reject_base_initializer_call(instance)
     current = _construction_node(instance, Role.OBJECT)
     if category is not None:
         assert same_node(node(category, Role.OBJECT), current), (
@@ -780,9 +789,7 @@ def _initialize_element[Datum](
 ) -> None:
     active = active_construction_context(instance)
     if active is not None and active.canonical_image is instance:
-        assert defining_morphism is None and data is None, "an ancestor element constructor receives only its precomputed input"
-        active.advance()
-        return
+        _reject_base_initializer_call(instance)
     assert defining_morphism is not None, "an element root constructor requires its defining morphism"
     current = _construction_node(instance, Role.ELEMENT)
     _construct_element_root(current, instance, ElementRoleIdentity(defining_morphism), data)
@@ -797,11 +804,7 @@ def _initialize_morphism[Datum](
 ) -> None:
     active = active_construction_context(instance)
     if active is not None and active.canonical_image is instance:
-        assert category is None and domain is None and codomain is None and data is None, (
-            "an ancestor morphism constructor receives only its precomputed input"
-        )
-        active.advance()
-        return
+        _reject_base_initializer_call(instance)
     assert category is not None and domain is not None and codomain is not None, (
         "a morphism root constructor requires its category and endpoints"
     )
@@ -891,8 +894,9 @@ def _install_runtime_node(current: Node) -> type[CategoryPoint]:
     compiled = _compiled_class(current)
     _assert_no_semantic_collisions(compiled)
     node_initializer = vars(compiled).get("__init__")
+    written = node_initializer is not None
     if node_initializer is None:
-        node_initializer = _advancing_initializer(compiled)
+        node_initializer = _silent_initializer
     assert isinstance(node_initializer, FunctionType)
     if _is_cat_element_root(current):
         install_cat_element_root(compiled)
@@ -903,7 +907,7 @@ def _install_runtime_node(current: Node) -> type[CategoryPoint]:
             compiled.__init__ = _initialize_element
         case Role.MORPHISM:
             compiled.__init__ = _initialize_morphism
-    _node_runtimes[current.role][current.category] = _NodeRuntime(node_initializer, compiled)
+    _node_runtimes[current.role][current.category] = _NodeRuntime(node_initializer, compiled, written)
     setattr(current.category, current.role.value, compiled)
     return compiled
 
@@ -984,16 +988,16 @@ def _initialize_added_object_nodes(value: ObjectOfCategory, added: tuple[Node, .
     """Initialize the new nodes of one rebuilt object implementation graph."""
     if not added:
         return
-    root = retained_object_input(value)
-    all_steps = _object_steps(node(root.identity.category, Role.OBJECT), root)
-    steps = tuple(
-        next((owner, step) for owner, step in all_steps if same_node(owner, current))
-        for current in added
+    assert all(current.role is Role.ELEMENT for current in added), (
+        f"a placement of {value!r} added a non-point node: {added!r}"
     )
-    context = ObjectConstructionContext(value, root.identity, CategoryPointIdentity(root.identity.category), steps)
+    root = retained_object_input(value)
+    context = ObjectConstructionContext(value, root.identity, CategoryPointIdentity(root.identity.category), added)
     token = activate_object_context(context)
     try:
-        context.run(added[0])
+        for current in added:
+            runtime = _runtime(current)
+            context.run(current, lambda runtime=runtime: runtime.initializer(value, None))
         context.assert_complete()
     finally:
         deactivate_object_context(token)

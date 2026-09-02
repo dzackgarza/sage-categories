@@ -43,20 +43,10 @@ preserves_magma_operation: Predicate = predicate("preserves_magma_operation")
 
 @dataclass(frozen=True, eq=False, slots=True)
 class MagmaObjectData:
-    """The carrier and multiplication morphism of a magma object.
-
-    Every descendant construction datum threaded through the compiled magma
-    implementation exposes these two names (``kernel/compiler.py`` initializes each
-    reached implementation class with the one root datum).
-    """
+    """The carrier and multiplication morphism of a magma object."""
 
     carrier: CategoryOfCategories.ElementType
     multiplication: MorphismCategory.ObjectType
-
-    @property
-    def action_morphism(self) -> MorphismCategory.ObjectType:
-        """The action the compiled module occurrence reads when the ambient is a module category: the carrier module's action."""
-        return self.carrier.action_morphism()
 
 
 class MagmaObjectDeclaration:
@@ -65,7 +55,6 @@ class MagmaObjectDeclaration:
     def __init__(self, data: MagmaObjectData) -> None:
         self._carrier = data.carrier
         self._multiplication = data.multiplication
-        super().__init__()
 
     def carrier(self) -> CategoryOfCategories.ElementType:
         return self._carrier
@@ -90,7 +79,6 @@ class MagmaMorphismDeclaration:
 
     def __init__(self, data: MagmaMorphismData) -> None:
         self._carrier_morphism = data.carrier_morphism
-        super().__init__()
 
     def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._carrier_morphism

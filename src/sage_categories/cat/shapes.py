@@ -66,7 +66,6 @@ class DiscreteCategory(Category[[], []]):
 
         def __init__(self, data: DiscreteObjectData) -> None:
             self._point = data.point
-            super().__init__()
 
         def point(self) -> CategoryOfCategories.ElementType:
             """The point of the index set that this object is."""
@@ -236,7 +235,6 @@ class ThinCategory(Category[[], []]):
 
         def __init__(self, data: ThinObjectData) -> None:
             self._point = data.point
-            super().__init__()
 
         def point(self) -> CategoryOfCategories.ElementType:
             return self._point

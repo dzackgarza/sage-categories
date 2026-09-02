@@ -124,7 +124,6 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
         def __init__(self, data: FamilyObjectData) -> None:
             self._rule = data.rule
-            super().__init__()
             self._shape = self.category().shape()
 
         def component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
@@ -139,7 +138,6 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
         def __init__(self, data: FamilyMorphismData) -> None:
             self._rule = data.rule
-            super().__init__()
             self._shape = self.base_category().shape()
 
         def component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
@@ -446,7 +444,6 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
         def __init__(self, data: _TaggedObjectData) -> None:
             self._tag = data.tag
             self._member = data.member
-            super().__init__()
 
         def tag(self) -> CategoryOfCategories.ElementType:
             return self._tag
@@ -462,7 +459,6 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def __init__(self, data: _TaggedMorphismData) -> None:
             self._morphism = data.morphism
-            super().__init__()
 
         def morphism(self) -> MorphismCategory.ObjectType:
             return self._morphism

@@ -69,7 +69,6 @@ class SetMapDeclaration:
 
     def __init__(self, data: SetMorphismData) -> None:
         self._set_morphism_data = data
-        super().__init__()
 
     def __call__(self, element: SetElement) -> SetElement:
         """Compose with a generalized element; evaluate its datum at the terminal object (POL-CAT-040)."""

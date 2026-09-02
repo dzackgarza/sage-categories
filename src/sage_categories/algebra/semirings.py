@@ -60,7 +60,6 @@ class SemiringObjectDeclaration:
         self._zero = data.zero
         self._multiplication = data.multiplication
         self._one = data.one
-        super().__init__()
 
     def carrier(self) -> CategoryOfCategories.ElementType:
         return self._carrier
@@ -97,7 +96,6 @@ class SemiringMorphismDeclaration:
 
     def __init__(self, data: SemiringMorphismData) -> None:
         self._carrier_morphism = data.carrier_morphism
-        super().__init__()
 
     def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._carrier_morphism

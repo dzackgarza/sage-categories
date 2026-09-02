@@ -79,7 +79,6 @@ class FinitePresentedCategory(Category[[Word], []]):
 
         def __init__(self, data: VertexData) -> None:
             self._label = data.label
-            super().__init__()
 
         def __repr__(self) -> str:
             return f"{self._label!r} in {self.category()!r}"
@@ -89,7 +88,6 @@ class FinitePresentedCategory(Category[[Word], []]):
 
         def __init__(self, data: PathData) -> None:
             self._word = data.word
-            super().__init__()
 
         def word(self) -> Word:
             return self._word

@@ -109,7 +109,6 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def __init__(self, data: ConeData) -> None:
             self._cone_transformation = data.transformation
-            super().__init__()
 
         def diagram(self) -> Functor:
             return self._cone_transformation.codomain()
@@ -137,7 +136,6 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def __init__(self, data: ConeMorphismData) -> None:
             self._apex_morphism = data.apex_morphism
-            super().__init__()
 
         def apex_morphism(self) -> MorphismCategory.ObjectType:
             return self._apex_morphism

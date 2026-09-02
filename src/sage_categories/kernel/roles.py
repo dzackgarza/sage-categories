@@ -67,7 +67,8 @@ class CategoryPoint:
     def _is_object(self) -> bool:
         return role_of(self) is Role.OBJECT
 
-    def __init__(self) -> None:
+    def _initialize_identity(self) -> None:
+        """Read the point identity from the active construction context; the kernel calls this first."""
         from sage_categories.kernel.construction import active_construction_context
 
         context = active_construction_context(self)
@@ -75,7 +76,6 @@ class CategoryPoint:
             "a category point requires its active construction context"
         )
         self._cat_element_identity = context.cat_element_identity
-        super().__init__()
 
     def defining_morphism(self) -> MorphismOfCategory:
         from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity, active_construction_context
@@ -152,10 +152,6 @@ class ObjectOfCategory(CategoryPoint):
     def _object_role_source(self: Category) -> tuple[Category, bool]:
         source, role = self.role_source(Role.OBJECT)
         return source, role is Role.MORPHISM
-
-    def __init__(self) -> None:
-        self._initialize_placement()
-        super().__init__()
 
     def _initialize_placement(self) -> None:
         """Read the object construction context, which is the one an object is built in.

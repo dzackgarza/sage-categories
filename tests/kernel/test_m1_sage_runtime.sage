@@ -84,7 +84,6 @@ class BaseCategory(_SyntheticCategoryOperations, Category[[], []]):
             _BASE_OBJECT_INITIALIZATIONS.append(self)
             self._base_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def base_object(self) -> tuple[Self, int | Integer]:
             return self, self._base_state
@@ -100,7 +99,6 @@ class BaseCategory(_SyntheticCategoryOperations, Category[[], []]):
             _BASE_ELEMENT_INITIALIZATIONS.append(self)
             self._base_element_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def base_element(self) -> tuple[Self, int | Integer]:
             return self, self._base_element_state
@@ -110,7 +108,6 @@ class BaseCategory(_SyntheticCategoryOperations, Category[[], []]):
             _BASE_MORPHISM_INITIALIZATIONS.append(self)
             self._base_morphism_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def base_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._base_morphism_state
@@ -124,7 +121,6 @@ class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
         def __init__(self, label: int | Integer) -> None:
             self._left_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def left_object(self) -> tuple[Self, int | Integer]:
             return self, self._left_state
@@ -133,7 +129,6 @@ class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
         def __init__(self, label: int | Integer) -> None:
             self._left_element_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def left_element(self) -> tuple[Self, int | Integer]:
             return self, self._left_element_state
@@ -142,7 +137,6 @@ class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
         def __init__(self, label: int | Integer) -> None:
             self._left_morphism_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def left_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._left_morphism_state
@@ -172,7 +166,6 @@ class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
         def __init__(self, label: int | Integer) -> None:
             self._right_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def right_object(self) -> tuple[Self, int | Integer]:
             return self, self._right_state
@@ -181,7 +174,6 @@ class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
         def __init__(self, label: int | Integer) -> None:
             self._right_element_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def right_element(self) -> tuple[Self, int | Integer]:
             return self, self._right_element_state
@@ -190,7 +182,6 @@ class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
         def __init__(self, label: int | Integer) -> None:
             self._right_morphism_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def right_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._right_morphism_state
@@ -220,7 +211,6 @@ class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
         def __init__(self, label: int | Integer) -> None:
             self._diamond_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def diamond_object(self) -> tuple[Self, int | Integer]:
             return self, self._diamond_state
@@ -232,7 +222,6 @@ class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
         def __init__(self, label: int | Integer) -> None:
             self._diamond_element_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def diamond_element(self) -> tuple[Self, int | Integer]:
             return self, self._diamond_element_state
@@ -241,7 +230,6 @@ class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
         def __init__(self, label: int | Integer) -> None:
             self._diamond_morphism_state = label
             self._synthetic_label = label
-            super().__init__()
 
         def diamond_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._diamond_morphism_state
@@ -338,37 +326,37 @@ def test_sage_compiler_runs_the_object_element_and_morphism_diamond() -> None:
     assert sum(initialized is identity for initialized in _BASE_MORPHISM_INITIALIZATIONS) == 1
 
 
-def test_private_initialization_is_separate_from_public_functor_application() -> None:
+def test_construction_runs_each_selected_action_once_and_retains_its_image() -> None:
     object_calls_before = len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS)
     morphism_calls_before = len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS)
-
-    member_object = DIAMOND(11)
-    identity = DIAMOND.morphism_category(1)(member_object, member_object).one()
     to_left = DIAMOND.structure_functors()[0]
     left_to_base = LEFT.structure_functors()[0]
 
-    # Construction initializes the inherited implementation state directly and never
-    # applies the ordinary public functor to the partially constructed source.
-    assert len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_calls_before
+    # Constructing an object runs the selected object action once, on the value under
+    # construction; the datum that action feeds to LEFT's constructor initializes the
+    # inherited LEFT implementation on the same value (D13).  The declaration writes no
+    # initializer chain of its own.
+    member_object = DIAMOND(11)
+    assert _DIAMOND_TO_LEFT_OBJECT_ACTIONS[object_calls_before:] == [member_object]
     assert len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_calls_before
     inherited_source, inherited_state = member_object.left_object()
-    inherited_morphism, inherited_morphism_state = identity.left_morphism()
     assert inherited_source is member_object and inherited_state == 11
-    assert inherited_morphism is identity and inherited_morphism_state == 11
-    assert len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_calls_before
-    assert len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_calls_before
 
-    # Explicit application happens only after the source is complete and constructs the
-    # distinct public image.  CAP then owns reuse of that public image.
+    # The same for a morphism and the selected morphism action.
+    identity = DIAMOND.morphism_category(1)(member_object, member_object).one()
+    assert _DIAMOND_TO_LEFT_MORPHISM_ACTIONS[morphism_calls_before:] == [identity]
+    inherited_morphism, inherited_morphism_state = identity.left_morphism()
+    assert inherited_morphism is identity and inherited_morphism_state == 11
+
+    # Public application returns the image retained at construction; the action does
+    # not run again.
     object_image = to_left.on_object(member_object)
     assert len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_calls_before + 1
     assert to_left.on_object(member_object) is object_image
-    assert len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS) == object_calls_before + 1
 
     morphism_image = to_left.on_morphism(identity)
     assert len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_calls_before + 1
     assert to_left.on_morphism(identity) is morphism_image
-    assert len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS) == morphism_calls_before + 1
 
     base_image = left_to_base.on_object(object_image)
     assert object_image is LEFT(11)

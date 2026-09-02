@@ -435,7 +435,6 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         def __init__(self, data: NaturalTransformationData) -> None:
             self._assignment = data.assignment
             self._components: MonoDict = MonoDict()
-            super().__init__()
             self._component_family = LazyFamily(self.source_functor().domain(), self._component_from_assignment)
 
         def source_functor(self) -> Functor:

@@ -73,7 +73,6 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
             self._adjunction_inverse = data.inverse
             self._adjunction_unit = data.unit
             self._adjunction_counit = data.counit
-            super().__init__()
 
         def forward(self) -> Functor:
             return self._adjunction_forward
@@ -101,7 +100,6 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         def __init__(self, data: AdjunctionMorphismData) -> None:
             self._adjunction_forward_transformation = data.forward
             self._adjunction_inverse_transformation = data.inverse
-            super().__init__()
 
         def forward_transformation(self) -> NaturalTransformation:
             return self._adjunction_forward_transformation
@@ -270,7 +268,6 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
             self._equivalence_inverse = data.inverse
             self._equivalence_unit = data.unit
             self._equivalence_counit = data.counit
-            super().__init__()
 
         def forward(self) -> Functor:
             return self._equivalence_forward
@@ -300,7 +297,6 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
 
         def __init__(self, data: EquivalenceMorphismData) -> None:
             self._equivalence_transformation = data.transformation
-            super().__init__()
 
         def transformation(self) -> NaturalTransformation:
             return self._equivalence_transformation

@@ -71,7 +71,6 @@ class RingObjectDeclaration:
         self._multiplication = data.multiplication
         self._one = data.one
         self._inversion = data.inversion
-        super().__init__()
 
     def carrier(self) -> CategoryOfCategories.ElementType:
         return self._carrier
@@ -108,7 +107,6 @@ class RingMorphismDeclaration:
 
     def __init__(self, data: RingMorphismData) -> None:
         self._carrier_morphism = data.carrier_morphism
-        super().__init__()
 
     def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._carrier_morphism

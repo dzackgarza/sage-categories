@@ -102,7 +102,6 @@ class SetObjectDeclaration:
 
     def __init__(self, data: SetObjectData) -> None:
         self._set_object_data = data
-        super().__init__()
 
     def membership_proposition(
         self, candidate: CategoryOfCategories.ElementType

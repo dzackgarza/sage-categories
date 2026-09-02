@@ -6,9 +6,17 @@ files:
 ignores:
   - src/sage_categories/kernel/**
 message: >-
-  D132 / specs/resolution.md "Acceptance conditions": each reached implementation
-  owner initializes once, and the kernel threads the initializer chain through
-  controlled C3. A theory class never names a base class initializer by hand;
-  it stores its data and calls bare `super().__init__()`.
+  D13 / specs/resolution.md "Acceptance conditions": the kernel runs every reached
+  local initializer itself, each with its owner's datum, and threads inherited state
+  through the selected structure functors. A theory declaration stores its own datum
+  and calls no initializer of any class.
 rule:
-  pattern: $BASE.__init__(self, $$$ARGS)
+  any:
+    - pattern: super().__init__($$$)
+    - pattern: $BASE.__init__(self, $$$)
+  inside:
+    kind: class_definition
+    stopBy: end
+    has:
+      field: name
+      regex: (ObjectType|ElementType|MorphismType|Declaration)$

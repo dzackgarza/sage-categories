@@ -28,7 +28,6 @@ class Tiny(Category[[], []]):
     class ObjectType:
         def __init__(self, value: int | Integer) -> None:
             self._value = value
-            super().__init__()
 
         def value(self) -> int | Integer:
             return self._value

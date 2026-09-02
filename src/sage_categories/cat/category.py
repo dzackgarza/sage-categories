@@ -107,7 +107,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     _implements: ClassVar[str]
 
     def __init__(self, data: None = None) -> None:
-        super().__init__()
         if hasattr(self, "_ordinal"):
             return
         if not any(all(role.value in vars(found) for role in Role) for found in type(self).__mro__):
@@ -944,7 +943,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._on_object = data.on_object
             self._on_morphism = data.on_morphism
             self._initialize_functor_image_cache()
-            super().__init__()
 
         # The admission condition is the one the image construction needs.  A retained
         # monomorphism is the identity on the objects and morphisms of its domain

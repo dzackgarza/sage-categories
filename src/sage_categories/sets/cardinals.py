@@ -606,7 +606,6 @@ class CardinalObjectDeclaration:
 
     def __init__(self, data: CardinalObjectData) -> None:
         self._value = data.value
-        super().__init__()
 
     def aleph_index(self) -> OrdinalObject:
         """The ordinal index of an aleph, retained by identity at construction."""
@@ -704,7 +703,6 @@ class CardinalMorphismDeclaration:
 
     def __init__(self, data: CardinalMorphismData) -> None:
         self._set_map = data.set_map
-        super().__init__()
 
     def __repr__(self) -> str:
         return f"CardinalityMorphism({self.domain()!r} -> {self.codomain()!r})"

@@ -102,7 +102,6 @@ class OrdinalObjectDeclaration:
     def __init__(self, data: OrdinalObjectData) -> None:
         self._key = data.key
         self._terms = data.terms
-        super().__init__()
 
     def _kind_(self) -> str:
         return self._key[0]

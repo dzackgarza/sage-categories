@@ -76,7 +76,6 @@ class PosetDeclaration:
 
     def __init__(self, data: PosetObjectData) -> None:
         self._poset_object_data = data
-        super().__init__()
 
     def relation(self) -> SetObject:
         """The defining order relation ``R``, a chosen subset of ``X * X``."""
@@ -172,7 +171,6 @@ class MonotoneMapDeclaration:
 
     def __init__(self, data: PosetMorphismData) -> None:
         self._poset_morphism_data = data
-        super().__init__()
 
     def set_map(self) -> SetMap:
         """The underlying set map ``U(f)``."""

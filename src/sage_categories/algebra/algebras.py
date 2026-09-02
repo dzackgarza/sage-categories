@@ -71,7 +71,6 @@ class AlgebraObjectDeclaration:
         self._module = data.module
         self._multiplication = data.multiplication
         self._unit = data.unit
-        super().__init__()
 
     def module(self) -> ModuleObjectDeclaration:
         """The underlying module object in ``Modules(R, C)``."""
@@ -109,7 +108,6 @@ class AlgebraMorphismDeclaration:
 
     def __init__(self, data: AlgebraMorphismData) -> None:
         self._module_morphism = data.module_morphism
-        super().__init__()
 
     def module_morphism(self) -> MorphismCategory.ObjectType:
         return self._module_morphism

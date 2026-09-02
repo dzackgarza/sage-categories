@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 from sage.misc.cachefunc import cached_method
 from sage.structure.coerce_dict import MonoDict
 
-from sage_categories.algebra.magmas import MagmaObjectData, Magmas, MagmasCategory
+from sage_categories.algebra.magmas import Magmas, MagmasCategory
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.morphisms import MorphismCategory
@@ -41,13 +41,11 @@ preserves_monoid_unit: Predicate = predicate("preserves_monoid_unit")
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class MonoidObjectData(MagmaObjectData):
-    """The carrier, multiplication morphism, and unit morphism of a monoid object.
+class MonoidObjectData:
+    """The carrier, multiplication morphism, and unit morphism of a monoid object."""
 
-    Extending :class:`MagmaObjectData` states the exact contract the compiled magma
-    implementation reads when the kernel threads this datum through it.
-    """
-
+    carrier: CategoryOfCategories.ElementType
+    multiplication: MorphismCategory.ObjectType
     unit: MorphismCategory.ObjectType | CategoryOfCategories.ElementType
 
 
@@ -58,7 +56,6 @@ class MonoidObjectDeclaration:
         self._carrier = data.carrier
         self._multiplication = data.multiplication
         self._unit = data.unit
-        super().__init__()
 
     def carrier(self) -> CategoryOfCategories.ElementType:
         return self._carrier
@@ -95,7 +92,6 @@ class MonoidMorphismDeclaration:
 
     def __init__(self, data: MonoidMorphismData) -> None:
         self._carrier_morphism = data.carrier_morphism
-        super().__init__()
 
     def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._carrier_morphism

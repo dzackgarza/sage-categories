@@ -53,7 +53,6 @@ class ModuleObjectDeclaration:
     def __init__(self, data: ModuleObjectData) -> None:
         self._carrier = data.carrier
         self._action_morphism = data.action_morphism
-        super().__init__()
 
     def carrier(self) -> CategoryOfCategories.ElementType:
         """The underlying object in ``C``."""
@@ -83,7 +82,6 @@ class ModuleMorphismDeclaration:
 
     def __init__(self, data: ModuleMorphismData) -> None:
         self._carrier_morphism = data.carrier_morphism
-        super().__init__()
 
     def carrier_morphism(self) -> MorphismCategory.ObjectType:
         return self._carrier_morphism

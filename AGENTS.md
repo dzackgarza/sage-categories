@@ -68,7 +68,10 @@ Preserve unknown files and concurrent work.
 Execute the active vault DAG in dependency order.
 The active architecture-convergence DAG is M0 through M6.
 It covers the private kernel, generic `Cat`, and minimal executable witnesses.
+The active phase is the one core phase whose status is `in-progress`; every other phase is `blocked` until the prerequisite card carries an accepted revision (`POL-DOC-028`, D136).
+No phase has an accepted revision.
 Production sets, posets, named sets, rings, modules, algebras, and lattices remain blocked through R6 and owner approval.
+The leaf code already in `src/sage_categories/{sets,ordinals,number_sets,posets,algebra}` predates kernel acceptance; each red-flag shape in it is a kernel defect (`POL-KERNEL-037`), and a leaf file changes only by deleting wiring the accepted kernel supplies.
 
 After R6, execute the production DAG from [`specs/system.md`](specs/system.md).
 It cuts the `Sets()` and `Cardinal()` bootstrap cycle before later leaves begin.
@@ -114,6 +117,7 @@ Commit and push hooks own those checks.
 A targeted Sage-aware test is the only routine manual exception; read `justfile` first.
 Do not add automated convention enforcement before 1.0 (`POL-TEST-030`, `POL-TEST-031`).
 An architectural invariant check is admitted only under `D132`; it runs in `just architecture` at the push tier.
+`just architecture` green at the exact revision is the precondition of every R-gate; the gate agent runs it first (`POL-DOC-028`).
 
 A docs-only edit runs no verification.
 Commit it with `git commit --no-verify`.

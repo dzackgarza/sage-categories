@@ -1,0 +1,19 @@
+id: no-refinement-after-construction
+language: python
+severity: error
+files:
+  - src/sage_categories/sets/**/*.py
+  - src/sage_categories/posets/**/*.py
+  - src/sage_categories/algebra/**/*.py
+  - src/sage_categories/number_sets/**/*.py
+  - src/sage_categories/ordinals/**/*.py
+ignores:
+  - src/sage_categories/**/_*_sage.py
+message: POL-LEAF-066, D133
+rule:
+  any:
+    - pattern: refine($$$)
+    - pattern: $C.$P()($$$)
+      inside:
+        kind: expression_statement
+        stopBy: neighbor

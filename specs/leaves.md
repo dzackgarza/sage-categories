@@ -1,7 +1,8 @@
 # Leaf category implementations
 
 This specification owns the boundary between category theory, the kernel, and private computation engines.
-It implements D03, D08, D13, D118 through D123, and `POL-LEAF-053` through `POL-LEAF-062`.
+It implements D03, D08, D13, D118 through D123, D133, D135, and `POL-LEAF-053` through `POL-LEAF-079`.
+Its [Red flags](#red-flags) section is the one catalogue of banned leaf shapes; every other document refers to it by policy row.
 
 See [functor.md](functor.md) for `Cat`, `Mor`, `Fun`, functor actions, and structure-functor selection.
 See [property-refinement.md](property-refinement.md) for property categories and same-object refinement.
@@ -240,16 +241,116 @@ The category-owned classes retain public signatures, semantic result constructio
 
 ## Red flags
 
-A leaf that contains any of these shapes exposes a kernel defect (D133, `POL-LEAF-063` to `POL-LEAF-067`).
+A leaf that contains any of these shapes exposes a kernel defect (D133, D135, `POL-LEAF-063` to `POL-LEAF-079`, `POL-KERNEL-037`).
 Repair the kernel; do not polish the leaf.
 
-- an initializer that calls a base initializer or installs inherited state by hand;
-- a property or construction subcategory built by hand, named by a string, or patched with an accessor;
-- identity, composition, morphism construction, element construction, or element retention for inherited structure;
-- kernel role, placement, or refinement machinery used to branch, or to refine a value after constructing it;
-- a hand-rolled cache or registry of the leaf's own values;
-- kernel state, such as the constructing category, passed into a constructor;
-- a Sage parent, element, or Sage category used as the category's own runtime.
+This section is the catalogue.
+Each entry names the shape, the code that carries it, the owner that supplies it instead, and the gate that finds it.
+A gate is a rule in `.ast-grep/architecture/` or a contract in `[tool.importlinter]`; `just architecture` runs both at the push tier and fails on a file and line (D132).
+"Review" marks a shape that D132 admits no mechanical check for; the gate agent finds it by reading.
+The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBUTING.md`; a plan card cites the row.
+
+### `POL-LEAF-063` — base initializer, or inherited state installed by hand
+
+- In code: `super().__init__(...)` or `Base.__init__(self, ...)` in a category class or in `ObjectType`, `ElementType`, `MorphismType`; an `__init__` on a category class that builds subcategories, registers handlers, or constructs objects.
+- Owner: the kernel runs every reached initializer once with its owner's datum (D13). A category class has no initializer beyond storing its parameters.
+- Gate: `no-manual-initializer-threading`, `no-manual-initializer-threading-category`, `no-constructor-name-strings`.
+
+### `POL-LEAF-064` — property or construction subcategory built by hand
+
+- In code: `PropertySubcategory(self, "Name", ())`, `FullSubcategory(self)`; `self._p.Q = lambda: ...`; a hand-written accessor `Finite()`, `Countable()`, `WithBottom()`; a subcategory constructed by hand and then registered as an inverse image.
+- Owner: `Finite = Axiom()` in the class body; `_base_category_class_and_axiom` on the implementing class; `F.inverse_image(C.P())` for an inherited property (D83, D89).
+- Gate: `no-hand-built-property-subcategory`, `no-patched-accessor`, `no-constructor-name-strings`.
+
+### `POL-LEAF-065` — identity, composition, morphism or element construction, or element retention for inherited structure
+
+- In code: `construct_identity`, `composite`, `inverse_morphism`, `element_from_defining_morphism`; a `construct_morphism` whose body forwards through a structure functor; `P.element(x)` building `* -> P` by hand; an equality handler that decides inherited equality through a functor.
+- Owner: `Cat` defines each once; the kernel constructs elements from functor images (D44, D84, D85, D121). `Sets()` is the base and is exempt (D132).
+- Gate: `no-inherited-operation-rewritten`; review for forwarding `construct_morphism` bodies and equality handlers.
+
+### `POL-LEAF-066` — kernel machinery in a leaf: branching, refinement after construction, own value store, kernel state in a constructor
+
+- In code: `role_of(x) is Role.X`, `is_placed(x, C)`, `is_subcategory`; `refine(x, C)`; `x = C(...)` then `D()(x)` or `C.P()(x)` as a statement; `self._store[key] = ...`, `_NAME_CATEGORIES: MonoDict = MonoDict()`, `x: dict[...] = {}`, `@cached_method`, `@cached_function`; `ObjectType(self, data)`, `ObjectType(category=self, ...)`, `MorphismType(self.morphism_category(1), ...)`.
+- Owner: a leaf imports no kernel module (D122); a value is constructed into its strongest category by a named constructor, so `C.P()(x)` is refinement and `C.P().from_data(...)` is construction; retention by identity is the kernel's (D111); the kernel supplies the placement (D21).
+- Gate: import contract "A leaf imports no kernel internal"; `no-refinement-after-construction`; `no-hand-rolled-retention`; `no-leaf-value-store`; `no-compiler-state-in-constructor`; `no-compiler-state-in-constructor-positional`. Review for a refinement call whose category is bound to a local name.
+
+### `POL-LEAF-067` — Sage machinery as the category's runtime
+
+- In code: a subclass of `Parent`, `Element`, `ElementWrapper`, or `UniqueRepresentation` in a theory module; `from sage...` in a theory module; engine arithmetic or normalization on the category or object class.
+- Owner: an engine module named in the import contract, `_<leaf>_sage.py` (D40, `POL-LEAF-046`, `POL-LEAF-050`, `POL-SAGE-016`).
+- Gate: import contract "Only the kernel's Sage runtime module and the named engine modules import Sage".
+
+### `POL-LEAF-068` — hand-written property application or accessor
+
+- In code: `def is_finite(self) -> AppliedPredicate`, `def has_bottom(self)`, `def is_total(self)`.
+- Owner: the kernel generates `is_p()` on `C.ObjectType` from the axiom identifier, and descendants inherit it (D89).
+- Gate: `no-hand-written-property-application`.
+
+### `POL-LEAF-069` — datum-free constructor, or a one-object category built by hand
+
+- In code: `def __call__(self) -> ObjectType: return self._x` with the object built in `__init__` and refined into `self`.
+- Owner: `Cat().Point(X)` with a selected point functor places `X` and supplies the codomain's surfaces (D128). The leaf states the membership rule, the cardinal, and one functor.
+- Gate: `no-datum-free-constructor`.
+
+### `POL-LEAF-070` — a selected functor declared without its two actions
+
+- In code: `Fun(self, D).Monomorphisms().Full()()`.
+- Owner: `Fun(C, D)(on_object, on_morphism)`; the two actions are the whole declaration (D08, D123).
+- Gate: `no-functor-without-actions`.
+
+### `POL-LEAF-071` — a retained projection rewritten
+
+- In code: `def product_projection(self, index)` with an index branch and `raise IndexError`; a pullback-defined category whose projections are hand-written functors.
+- Owner: the defining construction retains its projections and universal data; the leaf selects them (D09, D10, `POL-LEAF-049`, "Retained functor specimen" in [leaf-category-template.md](leaf-category-template.md)).
+- Gate: `no-retained-projection-rewritten`.
+
+### `POL-LEAF-072` — placeholder datum
+
+- In code: `self(carrier, None, None, None)`; `ElementType(m, None)`; a "presentation" that stores generators and relations and reads neither; a carrier `sets(lambda x: True)`.
+- Owner: a witness uses an existing mathematical object (D129); no method only fails (D50).
+- Gate: `no-placeholder-datum`; review for unread construction data and total-membership carriers.
+
+### `POL-LEAF-073` — union or optional parameter
+
+- In code: `value: OrdinalObject | int`, `rule: Rule | SetMap`, `assumptions: Proposition | None = None`, `cardinality: CardinalObject | UnknownClass`, `*inverse_rule`.
+- Owner: one total method per operation and one named constructor per presentation (D52); a partial value is an applied query (D50).
+- Gate: `no-union-parameter`.
+
+### `POL-LEAF-074` — a property on a datum record
+
+- In code: `@property def unit(self): return self.zero` on a `@dataclass` datum, present so that a target owner's initializer can read the source datum.
+- Owner: the kernel initializes each target from the datum the functor action feeds to the target constructor (D13); a datum record holds exactly the new state (`POL-LEAF-047`, D121).
+- Gate: `no-property-on-datum`.
+
+### `POL-LEAF-075` — generic parameters on a leaf declaration
+
+- In code: `class PosetsCategory(Category[[Rule], []])`, `PropertySubcategory[[Rule], []]`.
+- Owner: the kernel derives call shape and compiler data from the ordinary method signature (`POL-LEAF-054`, `POL-LEAF-055`); the template writes `class LeafCategory(Category)`.
+- Gate: `no-generic-parameter-on-leaf-category`.
+
+### `POL-LEAF-076` — import-order wiring
+
+- In code: `global NAME` rebinding inside a function; a module-level `__getattr__`; `_other_module.Name = value`; handler registration deferred to the module bottom with a comment on import order.
+- Owner: each module binds the names it declares (`POL-SAGE-015`); layer dependencies are static (D122).
+- Gate: `no-import-order-wiring`; review for cross-module binding.
+
+### `POL-LEAF-077` — declaration lookup by name string
+
+- In code: `Cat().declarations()["Sets"]`; `_implements = "Sets"`; `predicate(f"ThinOrder({self!r})")`; string tags such as `"finite"` and `"initial"` as an object's kind.
+- Owner: the class declaration is the registration (`Axiom`, `_base_category_class_and_axiom`); an object's kind is its category placement (D89).
+- Gate: `no-declaration-lookup-by-name`; review for string tags.
+
+### `POL-LEAF-078` — an accessor standing in for a functor
+
+- In code: `carrier()`, `carrier_morphism()`, `underlying_set()`; a public method that returns what a selected functor's `on_object` returns.
+- Owner: apply the named functor (D73); a functor action may read private state (D39, D120).
+- Gate: review.
+
+### `POL-LEAF-079` — two spellings of one fact
+
+- In code: `covers()` returning a proposition on `Posets().ObjectType` and a `bool` on `FinitePosets().ObjectType`; `action()` beside `action_morphism()`; `binary_product()` and `__mul__` beside `Products()`; a docstring that names `+`, `zero()`, or `*` on a class that defines none of them.
+- Owner: one mathematical fact has one semantic owner and one method (D88, D121).
+- Gate: review.
 
 ## Acceptance conditions
 

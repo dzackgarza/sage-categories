@@ -1,0 +1,21 @@
+id: no-union-parameter
+language: python
+severity: error
+files:
+  - src/sage_categories/sets/**/*.py
+  - src/sage_categories/posets/**/*.py
+  - src/sage_categories/algebra/**/*.py
+  - src/sage_categories/number_sets/**/*.py
+  - src/sage_categories/ordinals/**/*.py
+ignores:
+  - src/sage_categories/**/_*_sage.py
+message: POL-LEAF-073, D52, D133
+rule:
+  any:
+    - kind: typed_parameter
+      has:
+        kind: binary_operator
+        regex: \|
+        stopBy: end
+    - kind: typed_default_parameter
+    - kind: default_parameter

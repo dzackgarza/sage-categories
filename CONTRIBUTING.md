@@ -690,6 +690,18 @@ Grounding examples:
 | `POL-LEAF-065` | Red flag: identity, composition, morphism construction, element construction, or element retention written in a leaf for structure it inherits. These arrive through the structure functor; a leaf writes only the mathematical delta it adds (D44, D133). |
 | `POL-LEAF-066` | Red flag: a leaf that branches on kernel roles, placement, or refinement machinery, refines a value after constructing it, keeps its own cache of its values, or passes kernel state such as the constructing category into a constructor. Construct into the strongest category directly; retention and placement are the kernel's (D21, D111, D133). |
 | `POL-LEAF-067` | Red flag: a Sage parent, element, or Sage category used as an owned category's own runtime. Sage machinery runs behind a private engine boundary; the owned category expresses the operations (D01, D65, D133). |
+| `POL-LEAF-068` | Red flag: a hand-written property application such as `is_finite()` on a leaf class. The kernel generates `is_p()` from the axiom declaration (D89, D135). |
+| `POL-LEAF-069` | Red flag: a datum-free constructor, or a one-object category built by hand. `Cat().Point(X)` with a selected point functor places the object (D128, D135). |
+| `POL-LEAF-070` | Red flag: a selected functor declared without its two actions. `Fun(C, D)(on_object, on_morphism)` is the whole declaration (D08, D123, D135). |
+| `POL-LEAF-071` | Red flag: a retained projection rewritten as a leaf method. The defining construction retains its projections and universal data; the leaf selects them (D09, D10, D135). |
+| `POL-LEAF-072` | Red flag: a placeholder datum, an unread construction datum, or a total-membership carrier. A witness uses an existing mathematical object, and no method only fails (D50, D129, D135). |
+| `POL-LEAF-073` | Red flag: a union or optional parameter on a leaf method. One total method per operation and one named constructor per presentation; a partial value is an applied query (D50, D52, D135). |
+| `POL-LEAF-074` | Red flag: a property on a datum record, present so a target initializer can read the source datum. The kernel initializes each target from the datum the functor action supplies (D13, D121, D135). |
+| `POL-LEAF-075` | Red flag: generic parameters on a leaf category declaration. The kernel derives call shape and compiler data from the ordinary method signature (`POL-LEAF-054`, `POL-LEAF-055`, D135). |
+| `POL-LEAF-076` | Red flag: import-order wiring: `global` rebinding, a module `__getattr__`, cross-module attribute assignment, or registration deferred to the module bottom. Each module binds the names it declares, and layer dependencies are static (D122, `POL-SAGE-015`, D135). |
+| `POL-LEAF-077` | Red flag: a declaration looked up by name string, or an object's kind held as a string tag. The class declaration is the registration, and an object's kind is its category placement (D89, D135). |
+| `POL-LEAF-078` | Red flag: an accessor standing in for a functor, such as `carrier()` or `underlying_set()`. Apply the named functor (D73, D135). Found by review. |
+| `POL-LEAF-079` | Red flag: two spellings of one fact, such as a proposition-valued and a `bool`-valued `covers()`, or `binary_product()` beside `Products()`. One fact has one owner and one method (D88, D121, D135). Found by review. |
 
 See [Leaf category implementations](specs/leaves.md) for the complete ownership model,
 the allowed private computation sequence, and the rejected decorator and mirrored-class
@@ -739,7 +751,7 @@ It does not reimplement composition, structural transport, domain checks, codoma
 | `POL-KERNEL-034` | Review private construction-family binding against [specs/resolution.md](specs/resolution.md): Sage factories supply binding and caching, while owned functors determine the implementation edges and the owned cone or cocone retains the universal data. |
 | `POL-KERNEL-035` | Review hom and functor boundaries against [specs/resolution.md](specs/resolution.md) and [specs/functor.md](specs/functor.md): Sage `Hom`-level types stay leaf-local, and generic `Mor` and `Fun` stay owned by `Cat`. |
 | `POL-KERNEL-036` | Review declaration and wrapper tooling against [specs/resolution.md](specs/resolution.md): use Python 3.14 `ast` for ordinary declarations and generated stubs, LibCST only for syntax-preserving codemods, and Sage introspection with wrapt for residual runtime behavior. |
-| `POL-KERNEL-037` | Every red-flag shape in `POL-LEAF-063` through `POL-LEAF-067` names a missing kernel capability. The repair adds that capability to the kernel generically and deletes the leaf wiring; a leaf-local patch that keeps the shape is rejected (D133). |
+| `POL-KERNEL-037` | Every red-flag shape in `POL-LEAF-063` through `POL-LEAF-079` names a missing kernel capability. The repair adds that capability to the kernel generically and deletes the leaf wiring; a leaf-local patch that keeps the shape is rejected (D133). |
 See [Leaf category implementations](specs/leaves.md) for the exact boundary between
 kernel-owned inheritance and leaf-owned computation.
 
@@ -1241,6 +1253,7 @@ It remains a replaceable algorithm, not the representation or default structural
 | `POL-DOC-025` | The owner's transcript record has three stores: Claude sessions, Codex sessions, and the ChatGPT recordings read through the `chat-on-steroids` justfile. A provenance check that has not read all three has not searched (D134). |
 | `POL-DOC-026` | A search that finds nothing is reported in five fields: searched, found, conclusion labeled as inference, confidence, gaps. It is never a finding; no decision row is struck and no acceptance invalidated on a miss (D134). |
 | `POL-DOC-027` | Audit the record by intent, not by provenance: ask of each mechanism the question a leaf writer would ask, treat an absurd answer as a defect, then confirm the intent in the transcripts. A row's cited session is a pointer to read, not evidence about its content (D134). |
+| `POL-DOC-028` | A phase closes only by an R-gate record: `just architecture` green at the exact revision first, then a fresh independent subagent's criterion-by-criterion result written on the phase card. The executing agent never grades its own gate; a commit title, test file, report, or session summary is not an acceptance. One phase is active at a time, a later phase leaves `blocked` only when its prerequisite card carries an accepted revision, and a generic defect found later returns every dependent phase to `blocked` (D93, D136). |
 
 | Contract | Canonical document |
 | --- | --- |

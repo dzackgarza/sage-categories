@@ -1,0 +1,19 @@
+id: no-functor-without-actions
+language: python
+severity: error
+files:
+  - src/sage_categories/sets/**/*.py
+  - src/sage_categories/posets/**/*.py
+  - src/sage_categories/algebra/**/*.py
+  - src/sage_categories/number_sets/**/*.py
+  - src/sage_categories/ordinals/**/*.py
+ignores:
+  - src/sage_categories/**/_*_sage.py
+message: POL-LEAF-070, D08, D123, D133
+rule:
+  any:
+    - pattern: Fun($$$)()
+    - pattern: Fun($$$).$A()()
+    - pattern: Fun($$$).$A().$B()()
+    - pattern: Fun($$$).$A().$B().$C()()
+    - pattern: Fun($$$).$A().$B().$C().$D()()

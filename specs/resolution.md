@@ -92,13 +92,15 @@ Methods declared by `D` run directly on the source value.
 Python special methods follow the same rule.
 
 The two ordinary actions of `F` remain the sole public description of how target values are
-constructed (D123), and they apply only to completed source values. The kernel must not
-invoke either action on a partially initialized source as an implicit constructor-state
-transport. Public functor application remains separate from private inherited-state
-installation.
+constructed (D123). The kernel runs `F.on_object` on the source value after the source's own
+local initializer has run, and initializes the `D` implementation on that same value from the
+datum the action feeds to `D`'s constructor (D13). The action uses only `C`'s own methods; an
+inherited method called inside it fails loudly. Public functor application returns the
+separate image the action constructs.
 
-Private initializer threading follows the compiled implementation DAG. Each reached
-implementation class initializes once. If several structural paths reach one implementation
+Initializer threading follows the compiled implementation DAG. The kernel runs each reached
+implementation class's local initializer once, in controlled C3 order, with that class's own
+datum. No declaration calls a base-class initializer. If several structural paths reach one implementation
 owner, controlled C3 contributes one shared occurrence and the other paths do not cause
 second initialization or competing public image construction. Route preference, wherever
 needed, remains the declaration-order rule of D56 rather than a second C3-specific rule.
@@ -189,7 +191,7 @@ The private runtime satisfies this specification when:
 - local declarations take precedence;
 - inherited methods run directly on the source value;
 - public functor application returns its separate owned image;
-- public functor actions are never invoked on partially initialized source values for state installation;
+- the kernel initializes each inherited implementation from its structure functor's object action, and no declaration calls a base-class initializer;
 - direct category-object placement applies the exact categorical level shift;
 - one-object diagrams cause no placement or inheritance;
 - the private Sage implementation graph remains distinct from Sage's mathematical category graph;

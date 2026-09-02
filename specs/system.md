@@ -140,8 +140,8 @@ The following source dependencies are valid:
 - Code, tests, reports, and Git history do not define architecture.
 
 A structure functor points from a structured source to an inherited target.
-Its ordinary actions accept completed source values.
-Compiler inheritance never calls those actions during source construction.
+Its ordinary actions accept source values whose own local state is initialized.
+Compiler inheritance runs the object action during source construction to initialize the target implementation on the source value (D13).
 
 ## Foundation bootstrap
 

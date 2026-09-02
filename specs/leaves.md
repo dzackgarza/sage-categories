@@ -123,8 +123,9 @@ def target_functor(self) -> Cat().MorphismType:
 `on_object(X)` constructs and returns the public image in `D`.
 `on_morphism(f)` constructs and returns the public image in the exact target hom category.
 These two actions are the sole leaf declaration of the functor.
-Their inputs are completed source values. The kernel does not ask a leaf to make either
-action support partially initialized constructor state.
+Their inputs are source values whose own local state is initialized, and an action uses only
+the source category's own methods. The kernel runs the object action during construction to
+initialize the inherited target implementation; a leaf writes no base-class initializer call.
 
 A leaf can create a structural diamond simply by selecting functors whose transitive
 targets meet. This never requires route-resolution boilerplate. The kernel chooses the

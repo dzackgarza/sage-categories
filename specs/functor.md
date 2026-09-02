@@ -160,8 +160,8 @@ F = Fun(C, D)(on_object, on_morphism)
 It returns an actual object built through one of the finite public constructors of `D`.
 `on_morphism` returns an actual morphism built through the exact target hom category.
 The writer knows the source leaf, the immediate target category, and the standard categorical calculus needed to navigate their data.
-Both actions are ordinary maps on already-constructed values of their stated source category.
-Returning `F` from `structure_functors()` does not make either action callable on a partially initialized source during construction.
+Both actions are ordinary maps on values of their stated source category whose own local state is initialized.
+Returning `F` from `structure_functors()` lets the kernel run the object action during source construction to initialize the target implementation on the source value (D13).
 
 For example, an algebra presentation can retain a morphism `R -> Z(A)`.
 Its functor to rings can recover `Z(A)` as the codomain and then use the ambient-object operation supplied by `Subobjects`:

@@ -1,4 +1,8 @@
 # D132 architecture invariants, run by `just architecture` at the push tier.
 # Each rule names the specification line it enforces.
+# The witness categories in tests/kernel are Sage source read as Python (no preparser-only syntax).
 ruleDirs:
   - architecture
+languageGlobs:
+  python:
+    - '*.sage'

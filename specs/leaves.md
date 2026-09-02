@@ -246,7 +246,7 @@ Repair the kernel; do not polish the leaf.
 
 This section is the catalogue.
 Each entry names the shape, the code that carries it, the owner that supplies it instead, and the gate that finds it.
-A gate is a rule in `.ast-grep/architecture/` or a contract in `[tool.importlinter]`; `just architecture` runs both at the push tier and fails on a file and line (D132).
+A gate is a rule in `.ast-grep/architecture/` or a contract in `[tool.importlinter]`; `just architecture` runs both over `src` and the witness categories in `tests/kernel` at the push tier and fails on a file and line (D132).
 "Review" marks a shape that D132 admits no mechanical check for; the gate agent finds it by reading.
 The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBUTING.md`; a plan card cites the row.
 

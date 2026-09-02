@@ -7,6 +7,7 @@ files:
   - src/sage_categories/algebra/**/*.py
   - src/sage_categories/number_sets/**/*.py
   - src/sage_categories/ordinals/**/*.py
+  - tests/kernel/**/*.sage
 ignores:
   - src/sage_categories/**/_*_sage.py
 message: POL-LEAF-071, D09, D10, D133

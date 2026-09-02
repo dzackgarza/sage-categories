@@ -21,7 +21,7 @@ test-commit:
 # Architecture invariants from specs/system.md and specs/resolution.md (D132): a hard stop before push.
 architecture:
     PYTHONPATH=src uvx --python 3.14 --from import-linter lint-imports --config pyproject.toml
-    uvx --from ast-grep-cli ast-grep scan --config .ast-grep/architecture.yml --error src
+    uvx --from ast-grep-cli ast-grep scan --config .ast-grep/architecture.yml --error src tests/kernel
 
 # Run the full SageMath test suite before pushing.
 test-push: architecture

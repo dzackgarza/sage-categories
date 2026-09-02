@@ -71,7 +71,7 @@ It covers the private kernel, generic `Cat`, and minimal executable witnesses.
 The active phase is the one core phase whose status is `in-progress`; every other phase is `blocked` until the prerequisite card carries an accepted revision (`POL-DOC-028`, D136).
 No phase has an accepted revision.
 Production sets, posets, named sets, rings, modules, algebras, and lattices remain blocked through R6 and owner approval.
-The leaf code already in `src/sage_categories/{sets,ordinals,number_sets,posets,algebra}` predates kernel acceptance; each red-flag shape in it is a kernel defect (`POL-KERNEL-037`), and a leaf file changes only by deleting wiring the accepted kernel supplies.
+The tree holds no production leaf (D137); a leaf enters with its P-phase, rewritten from the templates against the accepted kernel.
 
 After R6, execute the production DAG from [`specs/system.md`](specs/system.md).
 It cuts the `Sets()` and `Cardinal()` bootstrap cycle before later leaves begin.

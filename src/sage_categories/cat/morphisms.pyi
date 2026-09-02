@@ -105,7 +105,7 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
     class MorphismType(sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.functors.FunctorsCategory.MorphismType):
         ...
 
-    class ObjectType(sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.sets.maps.SetMapDeclaration, sage_categories.cat.category.CategoryOfCategories.MorphismType):
+    class ObjectType(sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.cat.category.CategoryOfCategories.MorphismType):
 
         def inverse(self) -> MorphismCategory.ObjectType:
             ...
@@ -123,7 +123,7 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
 
 class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):
 
-    class ObjectType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.sets.maps.SetMapDeclaration):
+    class ObjectType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
     class ElementType(sage_categories.cat.morphisms.MorphismCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):

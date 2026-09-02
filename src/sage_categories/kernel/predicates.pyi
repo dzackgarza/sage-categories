@@ -1,4 +1,3 @@
-from sage_categories.sets.exponentials import Function as Function
 from sage_categories.cat.predicates import Answer as Answer, AppliedQuery as AppliedQuery, Argument as Argument, Axiom as Axiom, PredicateHandler as PredicateHandler, Proposition as Proposition, Query as Query, QueryAnswer as QueryAnswer, QueryHandler as QueryHandler
 from sage_categories.kernel.compiler import install_on_declaration as install_on_declaration
 from sage_categories.kernel.refinement import is_placed as is_placed, refine as refine

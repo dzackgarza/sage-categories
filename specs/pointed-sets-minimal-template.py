@@ -13,14 +13,10 @@ from __future__ import annotations
 
 
 class PointedSetsCategory(Category):
-    """Implement ``Sets().CosliceUnder(Sets().Terminal())``: add the basepoint."""
+    """Implement ``Sets().CosliceUnder(Sets().Terminal())``; a pointed set is the arrow ``x: 1 -> X`` the coslice retains."""
 
     class ObjectType:
-        """Add the basepoint of a pointed set."""
-
-        def basepoint(self) -> Sets().MorphismType:
-            """Return the chosen point ``x: 1 -> X``, the arrow the coslice retains."""
-            return Sets().CosliceUnder(Sets().Terminal()).projection().on_object(self)
+        """The coslice object ``x: 1 -> X``; the coslice supplies the basepoint and the underlying set."""
 
     class ElementType:
         """Inherit the points of ``X`` through the structure functor to ``Sets()``."""

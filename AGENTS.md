@@ -109,7 +109,8 @@ Tests and static checks provide diagnostics only.
 Do not run repository test, lint, type-check, format, stub, or aggregate-check recipes manually.
 Commit and push hooks own those checks.
 A targeted Sage-aware test is the only routine manual exception; read `justfile` first.
-Do not add automated policy enforcement before 1.0 (`POL-TEST-030`, `POL-TEST-031`).
+Do not add automated convention enforcement before 1.0 (`POL-TEST-030`, `POL-TEST-031`).
+An architectural invariant check is admitted only under `D132`; it runs in `just architecture` at the push tier.
 
 A docs-only edit runs no verification.
 Commit it with `git commit --no-verify`.

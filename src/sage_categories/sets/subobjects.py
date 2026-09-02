@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sage.misc.cachefunc import cached_method
 
@@ -28,10 +28,9 @@ from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.sets.cardinals import CardinalObject
 from sage_categories.sets.elements import Datum
 from sage_categories.sets.maps import Rule
-from sage_categories.sets.objects import MembershipRule, SetObject
+from sage_categories.sets.objects import MembershipRule, SetObject, SetObjectDeclaration
 
 if TYPE_CHECKING:
-    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.sets.category import SetMap
 
 __all__ = ["ChosenQuotientsCategory", "ChosenSubsetsCategory", "SetSubobjects", "subset_of"]
@@ -99,16 +98,15 @@ def _distinct(data: tuple[Datum, ...]) -> tuple[Datum, ...] | UnknownClass:
     )
 
 
-def _subset_by_identity(
-    first: CategoryOfCategories.ElementType, candidate: Any
-) -> Decision:
-    return True if first is candidate else Unknown
+def _subset_of(first: SetObjectDeclaration, candidate: SetObjectDeclaration) -> Decision:
+    """The one exact ``subset_of`` case on sets: reflexivity first, then enumeration.
 
-
-def _subset_by_enumeration(
-    first: CategoryOfCategories.ElementType, candidate: Any
-) -> Decision:
-    """Exact when ``A`` has a chosen enumeration: ``B`` decides each member of ``A``."""
+    ``A <= A`` holds by reflexivity.  Otherwise the case is exact when both are chosen
+    subsets of one underlying set and ``A`` has a chosen enumeration: ``B``'s rule
+    decides each member of ``A``.
+    """
+    if first is candidate:
+        return True
     sets = _sets.Sets()
     chosen, finite = sets.ChosenSubsets(), sets.Finite()
     if first not in chosen or candidate not in chosen:
@@ -121,8 +119,7 @@ def _subset_by_enumeration(
     return ask(conjunction(rule(datum) for datum in finite.chosen_enumeration(first)))
 
 
-subset_of.register_handler(_subset_by_identity)
-subset_of.register_handler(_subset_by_enumeration)
+subset_of.register_handler(_subset_of)
 
 
 class ChosenSubsetObject:

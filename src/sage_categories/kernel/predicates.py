@@ -145,8 +145,19 @@ def mark_identity_predicate(owner: Predicate) -> None:
 
 
 def register_predicate_handler(owner: Predicate, handler: PredicateHandler) -> None:
-    """Register one owned exact case on SymPy's predicate dispatcher."""
+    """Register one owned exact case on SymPy's predicate dispatcher.
+
+    Each exact dispatch signature has one owner.  SymPy's dispatcher silently keeps
+    the last registration for a repeated signature, which would discard the earlier
+    handler without any failure, so a collision is rejected here instead.
+    """
     domains = _predicate_domains(handler)
+    existing = owner.handler.funcs.get(domains)
+    assert existing is None, (
+        f"{handler.__name__!r} collides with the registered exact handler {existing.__name__!r} "
+        f"on {owner!r}: both dispatch on {domains!r}, so one would silently replace the other. "
+        f"Declare exact leaf domains for each handler (POL-TYPE-019)."
+    )
 
     def evaluate(*engine_values, assumptions: Proposition):
         arguments = tuple(_owned_argument(value) for value in engine_values)

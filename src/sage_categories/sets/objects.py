@@ -38,26 +38,21 @@ type MembershipRule = Callable[[Datum], Decision]
 element_of: Predicate = predicate("element_of")
 
 
-def _element_of_by_parent(
+def _element_of(
     candidate: CategoryOfCategories.ElementType, ambient: SetObjectDeclaration, assumptions: Proposition
 ) -> Decision:
-    """A point ``* -> X`` is an element of ``X`` by definition (POL-CAT-058)."""
-    if role_of(candidate) is Role.ELEMENT and candidate.parent() is ambient:
-        return True
-    return Unknown
+    """The one exact ``element_of`` case on a set: parenthood first, then the membership rule.
 
-
-def _element_of_by_rule(
-    candidate: CategoryOfCategories.ElementType, ambient: SetObjectDeclaration, assumptions: Proposition
-) -> Decision:
-    """The membership rule decides a point of ``ambient`` from its stored datum.
-
-    A raw datum is not an element value, so a non-element candidate gives ``False``.
-    A generalized element with nonterminal domain retains no point datum, so the
+    A point ``* -> X`` is an element of ``X`` by definition (POL-CAT-058), so
+    parenthood decides before any rule runs.  Otherwise the membership rule decides
+    a point from its stored datum: a non-element candidate gives ``False``, and a
+    generalized element with nonterminal domain retains no point datum, so the
     decision there is ``Unknown``.
     """
     if role_of(candidate) is not Role.ELEMENT:
         return False
+    if candidate.parent() is ambient:
+        return True
     state = candidate._set_element_data
     if not isinstance(state, SetPointData):
         return Unknown
@@ -227,8 +222,7 @@ class SetObjectDeclaration:
         return "Set(<rule>)"
 
 
-element_of.register_handler(_element_of_by_parent)
-element_of.register_handler(_element_of_by_rule)
+element_of.register_handler(_element_of)
 
 
 def set_cardinality(set_obj: SetObjectDeclaration) -> CardinalObject | UnknownClass:

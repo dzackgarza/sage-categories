@@ -12,7 +12,9 @@ from sympy.logic.boolalg import Boolean
 
 from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Proposition, Query, ask, assume
 from sage_categories.cat.functors import Fun
-from sage_categories.cat.predicates import AppliedQuery, UnknownClass
+import pytest
+
+from sage_categories.cat.predicates import AppliedQuery, UnknownClass, predicate
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
 from sage_categories.kernel.roles import CategoryPoint
 
@@ -185,6 +187,24 @@ def test_sympy_owns_each_property_predicate_and_its_handler() -> None:
     assert negative.function is second_predicate
     assert ask(positive) is True
     assert ask(negative) is False
+
+
+def test_each_exact_dispatch_signature_has_one_owning_handler() -> None:
+    """A second handler on one exact signature is rejected; the first owner keeps deciding."""
+    tiny = Tiny()
+    marked = predicate("marked")
+
+    def by_value(candidate: Tiny.ObjectType, assumptions: Proposition) -> bool | None:
+        return bool(candidate.value() > Integer(0))
+
+    def by_other_rule(candidate: Tiny.ObjectType, assumptions: Proposition) -> bool | None:
+        return None
+
+    marked.register_handler(by_value)
+    assert ask(marked(tiny(2))) is True
+    with pytest.raises(AssertionError):
+        marked.register_handler(by_other_rule)
+    assert ask(marked(tiny(2))) is True
 
 
 for name, value in tuple(globals().items()):

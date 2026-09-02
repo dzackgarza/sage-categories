@@ -510,9 +510,9 @@ properties come first. A structure functor need not be a subcategory monomorphis
 For example, the structure functor `Posets() -> Sets()` sends a poset to its underlying set, `(X, R) |-> X`, never to its relation (D163).
 A poset is not thereby an object of `Sets()`, and `Posets()` is not thereby a subcategory of `Sets()`.
 
-The properties a functor is declared with decide which functor carries inheritance (D164).
+A leaf's ordered list of selected structure functors determines what is inherited and in what precedence, the first chosen and coherence assumed (D37, D159, D165); a functor to the same target that is not selected, such as `(X, R) |-> R` for posets, supplies nothing (D164).
 `Posets()` admits two functors to `Sets()` that do not agree, `(X, R) |-> X` and `(X, R) |-> R`.
-The kernel inherits along the structure functor declared into the property subcategory that licenses inheritance, the fibration to the underlying set, `Fun(Posets(), Sets()).Fibrations()` (D128, D139); a functor to the same target without that declaration supplies no inheritance.
+The poset leaf selects `(X, R) |-> X`, declared into `Fun(Posets(), Sets()).Fibrations()` (D128, D139), as its structure functor; `(X, R) |-> R` is not selected and supplies nothing. For a lattice `(L, b)`, both projections are selected: the first, to `L`, determines the inheritance, and the second, to `b`, supplies `L.b()`, `L.q()`, and the rest (D165).
 
 The fixed-endpoint category `Fun(C, D)` owns construction of every functor `C -> D`.
 `Cat()` supplies the categorical calculus but does not construct or choose a leaf-specific

@@ -181,11 +181,15 @@ def _construct_property_functor(
     args: tuple[OnObject | OnMorphism, ...],
     kwargs: dict[str, OnObject | OnMorphism],
 ) -> Functor:
-    """Construct or refine a functor through its exact property category."""
+    """Construct a functor through its exact property category.
+
+    ``Fun(S, T).P()`` wires no constructor of its own: it has exactly the constructors of
+    ``Fun(S, T)``, carried along its inclusion, and construction here asserts the property
+    (D150, ``POL-CAT-038``).  A functor already constructed is placed by
+    ``assume(F.is_p())``, never fed back to a constructor (D150, ``POL-ONT-002``).
+    """
     ambient = property_category.ambient()
-    if len(args) == 1 and not kwargs and args[0] in ambient:
-        functor = args[0]
-    elif args or kwargs:
+    if args or kwargs:
         functor = ambient(*args, **kwargs)
     else:
         functors = property_category.universe().morphism_category(1)

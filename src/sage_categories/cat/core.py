@@ -119,16 +119,29 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
         return self._isomorphisms(domain, codomain)(*args, **kwargs)
 
     def _identity_morphism_(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        """The identity of ``C``, which is an isomorphism."""
-        return self._isomorphisms(self._ambient.morphism_category(1)(member_object, member_object).one())
+        """The identity of ``C``, which is an isomorphism.
+
+        ``C`` owns the identity, so the core states the theorem by placing it (D21,
+        ``POL-MATH-037``); a constructor takes construction data and never a value
+        already constructed (D150).
+        """
+        identity = self._ambient.morphism_category(1)(member_object, member_object).one()
+        refine(identity, self._isomorphisms)
+        return identity
 
     def compose_morphisms(
         self,
         second: MorphismCategory.ObjectType,
         first: MorphismCategory.ObjectType,
     ) -> MorphismCategory.ObjectType:
-        """The composite in ``C``, of two isomorphisms and so an isomorphism."""
-        return self._isomorphisms(self._ambient.compose_morphisms(second, first))
+        """The composite in ``C``, of two isomorphisms and so an isomorphism.
+
+        ``C`` owns the composition, so the core states that theorem by placing the
+        composite (D21, ``POL-MATH-037``), not by feeding it to a constructor (D150).
+        """
+        composite = self._ambient.compose_morphisms(second, first)
+        refine(composite, self._isomorphisms)
+        return composite
 
     def inverse_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         return self._ambient.inverse_morphism(morphism)

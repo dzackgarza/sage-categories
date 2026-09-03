@@ -11,7 +11,9 @@ A property subcategory ``C.P()`` is the full subcategory on the objects satisfyi
 a predicate ``P``.  ``C`` declares it once, as an ``Axiom`` in the body of its class,
 and a separate class implements the generated subcategory by naming the declaring
 category class and the axiom (POL-LEAF-059).  Its constructor is the trusted boundary of that property
-(POL-CAT-038/069): calling it on a value of ``C`` refines the same value in place.
+(POL-CAT-038/069): it wires none of its own, carries exactly the constructors of ``C``
+along the inclusion ``C.P() -> C``, and narrows what they build into ``C.P()`` (D150,
+D175).  A value already constructed is placed by ``assume(X.is_P())``.
 ``C.P()`` is a full subcategory of ``C.Q()`` whenever the mathematics says so, and that
 containment is the statement: it is recorded as the subcategory monomorphism
 ``C.P() -> C.Q()``, and nothing induces it from a relation between the two predicates
@@ -33,7 +35,7 @@ from collections.abc import Callable
 from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar
 
-from sage_categories.cat.category import Cat, Category
+from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, property_predicate, register_handler
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
@@ -113,7 +115,7 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         """
 
     # A construction family is the image of a construction functor and constructs its
-    # objects from diagrams; a property subcategory only admits objects of its ambient.
+    # objects from diagrams; a property subcategory constructs through its ambient.
     # A narrowing constructs through the one root that constructs.
     _constructs_from_diagrams: ClassVar[bool] = False
 
@@ -223,11 +225,20 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
             self._functor.on_object(candidate)
         )
 
-    def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        assert value in self._ambient, f"{value!r} is not an object of {self._ambient!r}"
-        self._target_subcategory(self._functor.on_object(value))
-        refine(value, self)
-        return value
+    def __call__[Datum](self, *construction_data: Datum, **keywords: Datum) -> CategoryOfCategories.ElementType:
+        """``F.inverse_image(P)(data)``: ``D``'s constructor, with the result narrowed into the pullback.
+
+        The source projection is identity on the values of ``D``, so this subcategory
+        wires no constructor of its own: it has exactly the constructors of ``D``
+        (D150, ``POL-CAT-038``).  Construction here asserts that the image lies in ``P``,
+        which is what makes the constructed value an object of the pullback.  A value
+        already constructed is placed by ``assume(X.is_P())``, never fed back to a
+        constructor (D150, ``POL-ONT-002``).
+        """
+        constructed = self._ambient(*construction_data, **keywords)
+        refine(self._functor.on_object(constructed), self._target_subcategory)
+        refine(constructed, self)
+        return constructed
 
     def __repr__(self) -> str:
         return f"{self._functor!r}.inverse_image({self._target_subcategory!r})"
@@ -450,19 +461,29 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         """
         return self._ambient.membership_proposition(candidate) & self._property_predicate(candidate)
 
-    def __call__(
+    def __call__[Datum](
         self,
-        *arguments: CategoryOfCategories.ElementType,
-    ) -> CategoryOfCategories.ElementType:
-        """The trusted constructor: refine a value of the ambient; or dispatch endpoints ``P(A, B)``."""
-        match arguments:
-            case (value,):
-                assert value in self._ambient, f"{value!r} is not an object of {self._ambient!r}"
-                refine(value, self)
-                return value
-            case (domain, codomain):
-                return self._ambient(domain, codomain).property_subcategory(self)
-        raise TypeError(f"{self!r} takes one value to refine or two endpoints")
+        *construction_data: Datum,
+        **keywords: Datum,
+    ) -> CategoryOfCategories.ElementType | Category[MorphismData, TwoMorphismData]:
+        """``C.P()(data)``: ``C``'s constructor, with the result narrowed into ``C.P()``.
+
+        ``C.P()`` wires no constructor of its own.  It has exactly the constructors of
+        ``C``, carried along the inclusion ``C.P() -> C`` that ``cat_kernel`` builds, and
+        construction here asserts the property (D21, D150, D175, ``POL-CAT-038``).  A
+        value already constructed is placed by ``assume(X.is_P())``, never fed back to a
+        constructor (D150, ``POL-ONT-002``).
+
+        ``Mor(C).P()(A, B)`` is the same delegation.  ``Mor(C)``'s own call selects the
+        hom subcategory ``Mor(C)(A, B)`` rather than constructing a morphism, and the
+        narrowing of a subcategory of the ambient by ``P`` is ``property_subcategory``
+        where the narrowing of a value of it is refinement.
+        """
+        constructed = self._ambient(*construction_data, **keywords)
+        if isinstance(constructed, FullSubcategory) and constructed.ambient() is self._ambient:
+            return constructed.property_subcategory(self)
+        refine(constructed, self)
+        return constructed
 
     def __repr__(self) -> str:
         return f"{self._ambient!r}.{self._name}()"
@@ -579,20 +600,24 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
             proposition = proposition & root.membership_proposition(candidate)
         return proposition
 
-    def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        """Admit an object of the base, or construct through the one root and admit the result.
+    def __call__[Datum](self, *construction_data: Datum, **keywords: Datum) -> CategoryOfCategories.ElementType:
+        """Construct through the one root that constructs, or through the base, and narrow the result.
+
+        A narrowing wires no constructor of its own either: it has exactly the
+        constructors of the category it narrows (D150, ``POL-CAT-038``).
 
         ``D.P()(diagram)`` constructs in ``C.P()``, which reads a diagram into ``D``
         through the subcategory monomorphism.  The result lies in ``D`` by the evidence
         ``D``'s own predicates supply -- the theorem that the construction restricts to
         the subcategory (D104) -- and then enters this narrowing.
         """
-        if isinstance(value, Cat().ElementType) and value._is_object():
-            assert value in self._ambient, f"{value!r} is not an object of {self._ambient!r}"
-            refine(value, self)
-            return value
-        (root,) = tuple(root for root in self._roots if root._constructs_from_diagrams)
-        constructed = root(value)
+        constructing = tuple(root for root in self._roots if root._constructs_from_diagrams)
+        if not constructing:
+            constructed = self._ambient(*construction_data, **keywords)
+            refine(constructed, self)
+            return constructed
+        (root,) = constructing
+        constructed = root(*construction_data, **keywords)
         assert ask(self.membership_proposition(constructed)) is True, (
             f"{root!r} constructed {constructed!r}, which is not established to lie in {self!r}; "
             f"the restriction of {root.name()} to this subcategory needs its theorem"
@@ -605,7 +630,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
 
 
 class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[TwoMorphismData, []]):
-    """``Mor(C)(A, B).P()``: constructs a morphism ``A -> B`` with property ``P``, or refines one."""
+    """``Mor(C)(A, B).P()``: constructs a morphism ``A -> B`` with property ``P``, through ``Mor(C)(A, B)``."""
 
     class ObjectType:
         """A morphism ``A -> B`` with the property: an object of a hom category, so a morphism of ``C``.
@@ -627,23 +652,6 @@ class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[
 
     def _chosen_inhabitation(self) -> Decision:
         return _morphisms().hom_inhabitation(self)
-
-    def __call__(
-        self,
-        *args: MorphismData.args,
-        **kwargs: MorphismData.kwargs,
-    ) -> MorphismCategory.ObjectType:
-        if (
-            len(args) == 1
-            and not kwargs
-            and isinstance(args[0], Cat().ElementType)
-            and args[0] in self._ambient
-        ):
-            refine(args[0], self)
-            return args[0]
-        morphism = self._ambient(*args, **kwargs)
-        refine(morphism, self)
-        return morphism
 
     def one(self) -> MorphismCategory.ObjectType:
         """``1_X`` with this property: the unit of ``End_C(X)`` refined into the narrowing (POL-CAT-023, D84)."""

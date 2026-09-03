@@ -9,7 +9,7 @@ from typing import Self
 import pytest
 
 from sage_categories.cat import Fun
-from sage_categories.cat.category import Axiom, Cat, Category, CategoryOfCategories, ask
+from sage_categories.cat.category import Axiom, Cat, Category, CategoryOfCategories, ask, assume
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
@@ -663,18 +663,37 @@ def test_an_arrow_that_writes_no_point_declaration_places_nothing() -> None:
         UndeclaredPoint()
 
 
-def test_property_refinement_preserves_object_identity() -> None:
-    member_object = DIAMOND(13)
+def test_property_subcategory_constructs_through_its_ambient() -> None:
+    """``C.P()`` has exactly the constructors of ``C``, and construction places the result (D150)."""
     property_category = DIAMOND.SyntheticR1Property()
 
-    refined = property_category(member_object)
+    constructed = property_category(17)
 
-    assert refined is member_object
-    assert refined in property_category
-    left_source, left_state = refined.left_object()
-    right_source, right_state = refined.right_object()
-    assert left_source is refined and left_state == 13
-    assert right_source is refined and right_state == 13
+    assert constructed in property_category
+    assert constructed in DIAMOND
+    assert isinstance(constructed, property_category.ObjectType)
+    diamond_source, diamond_state = constructed.diamond_object()
+    left_source, left_state = constructed.left_object()
+    right_source, right_state = constructed.right_object()
+    assert diamond_source is constructed and diamond_state == 17
+    assert left_source is constructed and left_state == 17
+    assert right_source is constructed and right_state == 17
+
+
+def test_assumed_membership_places_an_already_constructed_object() -> None:
+    """The route for a value already constructed is ``assume(X.is_p())``, not a constructor (D150)."""
+    member_object = DIAMOND(13)
+    property_category = DIAMOND.SyntheticR1Property()
+    member_identity = id(member_object)
+
+    assume(member_object.is_synthetic_r1_property())
+
+    assert id(member_object) == member_identity
+    assert member_object in property_category
+    left_source, left_state = member_object.left_object()
+    right_source, right_state = member_object.right_object()
+    assert left_source is member_object and left_state == 13
+    assert right_source is member_object and right_state == 13
 
 
 def test_incomparable_method_owners_fail_at_compilation() -> None:

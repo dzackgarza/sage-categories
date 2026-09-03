@@ -29,8 +29,8 @@ def test_r5_2_fully_faithful_identity_uses_its_exact_proposition_and_same_value(
 
     assert proposition is fully_faithful.membership_proposition(identity)
     assert ask(proposition) is True
-    assert fully_faithful(identity) is identity
     assert identity in fully_faithful
+    assert endomorphisms.one() is identity
 
 
 def test_r5_3_terminal_constant_cospan_retains_its_universal_presentation() -> None:

@@ -97,11 +97,18 @@ def test_positive_evidence_uses_same_object_refinement() -> None:
     assert ask(proposition) is True
     assert assumed in tiny.Special()
 
-    constructed = tiny(-5)
-    constructed_identity = id(constructed)
-    assert tiny.Special()(constructed) is constructed
-    assert id(constructed) == constructed_identity
+
+def test_property_subcategory_constructs_through_its_ambient() -> None:
+    """``C.P()`` has exactly the constructors of ``C``, and construction places the result (D150)."""
+    tiny = Tiny()
+
+    constructed = tiny.Special()(5)
+
     assert constructed in tiny.Special()
+    assert constructed in tiny
+    assert isinstance(constructed, tiny.Special().ObjectType)
+    assert constructed.value() == 5
+    assert ask(constructed.is_special()) is True
 
 
 def test_sympy_active_assumptions_own_composite_propositions() -> None:
@@ -138,11 +145,11 @@ def test_property_monomorphism_and_inverse_image_are_retained_categorical_data()
     assert inverse.defining_functor() is identity
     assert inverse.target_subcategory() is property_category
 
-    value = tiny(7)
-    identity_before = id(value)
-    assert inverse(value) is value
-    assert id(value) == identity_before
+    value = inverse(7)
+    assert value.value() == 7
     assert value in inverse
+    assert value in tiny.Special()
+    assert value in tiny
 
     presentation = Cat().Pullbacks().presentation(inverse)
     shape = presentation.diagram().domain()

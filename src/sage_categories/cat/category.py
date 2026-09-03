@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal, overload
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, predicate, register_handler
-from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
+from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.roles import prepare_category_subclass
 from sage_categories.kernel.sage_runtime import Integer, MonoDict, TripleDict, cached_method
 
@@ -94,6 +94,19 @@ def _morphism_set() -> Query:
 
     query.register_handler(chosen)
     return query
+
+
+def _declares_subcategory(functor: MorphismCategory.ObjectType) -> bool:
+    """Whether ``functor`` is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
+
+    ``Fun`` reads it off the functor's own placement, and reading a functor's declaration
+    is ``Cat``'s (D175).  ``Fun`` is reached here rather than at the top of the module
+    because it is built from this one, and a category with no selected functor asks
+    nothing: that is the window the bootstrap runs in.
+    """
+    from sage_categories.cat.functors import Fun
+
+    return Fun.declares_subcategory(functor)
 
 
 class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
@@ -242,7 +255,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """
         functors = tuple(self.structure_functors())
         self._selected_functors = functors
-        self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
+        self._ambient_monomorphism = next((functor for functor in functors if _declares_subcategory(functor)), None)
         self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
         return functors
 
@@ -1185,7 +1198,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             selected route reaches from the subcategory.
             """
             assert element._is_element(), f"{element!r} is not a point of an object"
-            if traces_placement(self):
+            if _declares_subcategory(self):
                 parent = element.parent()
                 assert is_placed(parent, self.domain()) or parent in self.domain(), f"{element!r} is not a point of an object of {self.domain()!r}"
                 return element

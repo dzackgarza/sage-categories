@@ -11,24 +11,23 @@ from sympy.assumptions.assume import AppliedPredicate
 from sympy.core.basic import Basic
 from sympy.core.expr import AtomicExpr
 
-from sage_categories.cat.predicates import (
-    Answer,
-    AppliedQuery,
-    Argument,
-    Axiom,
-    PredicateHandler,
-    Proposition,
-    Query,
-    QueryAnswer,
-    QueryHandler,
-)
 from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.refinement import is_placed, refine
-from sage_categories.kernel.roles import CategoryPoint, Role, category_of, role_of
+from sage_categories.kernel.roles import CategoryPoint, Role, category_of, category_universal_class, role_of
 from sage_categories.kernel.sage_runtime import MonoDict, Unknown
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
+    from sage_categories.cat.predicates import (
+        Answer,
+        AppliedQuery,
+        Argument,
+        Axiom,
+        PredicateHandler,
+        Proposition,
+        Query,
+        QueryHandler,
+    )
 
 
 class _OwnedValueAtom(AtomicExpr):
@@ -96,10 +95,6 @@ def _handler_domains(handler: PredicateHandler | QueryHandler) -> tuple[type, ..
     annotations = get_annotations(handler)
     function = handler.__func__ if hasattr(handler, "__func__") else handler
     namespace = dict(function.__globals__)
-    if "CategoryOfCategories" not in namespace:
-        from sage_categories.cat.category import CategoryOfCategories
-
-        namespace["CategoryOfCategories"] = CategoryOfCategories
     domains: list[type] = []
     for parameter in signature(handler).parameters.values():
         if parameter.name == "assumptions":
@@ -107,16 +102,35 @@ def _handler_domains(handler: PredicateHandler | QueryHandler) -> tuple[type, ..
         annotation = annotations.get(parameter.name)
         assert annotation is not None, f"{handler!r} must declare an exact semantic domain for {parameter.name}"
         if isinstance(annotation, str):
-            try:
-                annotation = eval(annotation, namespace)
-            except NameError as error:
-                raise AssertionError(
-                    f"{handler!r} has unresolved semantic domain {annotation!r}"
-                ) from error
+            annotation = _evaluated_domain(handler, annotation, namespace)
         domain = get_origin(annotation) or annotation
         assert isinstance(domain, type), f"{handler!r} has non-type domain {domain!r}"
         domains.append(domain)
     return tuple(domains)
+
+
+def _evaluated_domain(
+    handler: PredicateHandler | QueryHandler,
+    annotation: str,
+    namespace: dict[str, type],
+) -> type:
+    """Evaluate a handler's string annotation in its own module's namespace.
+
+    The module that writes a handler can hold the name its annotation uses under
+    ``TYPE_CHECKING``, so the name is absent at runtime.  The class ``Cat()`` writes is
+    the one the bootstrap handed the kernel, so the string resolves from that rather than
+    from a ``Cat`` import (D173).  Adding it is second because a handler registered while
+    ``Cat`` is still importing resolves from its own module and the bootstrap has not run.
+    """
+    try:
+        return eval(annotation, namespace)
+    except NameError:
+        universal = category_universal_class()
+        namespace[universal.__name__] = universal
+    try:
+        return eval(annotation, namespace)
+    except NameError as error:
+        raise AssertionError(f"{handler!r} has unresolved semantic domain {annotation!r}") from error
 
 
 def _predicate_domains(handler: PredicateHandler) -> tuple[type, ...]:

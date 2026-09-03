@@ -36,7 +36,7 @@ from typing import TYPE_CHECKING, ClassVar
 from sage_categories.cat.category import Cat, Category
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, property_predicate, register_handler
-from sage_categories.kernel.refinement import is_subcategory, refine, traces_placement
+from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.kernel.sage_runtime import TripleDict, cached_method
 
 if TYPE_CHECKING:
@@ -208,7 +208,7 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
                 return image
 
             projections = _functors()(self, target)
-            if traces_placement(defining):
+            if _functors().declares_subcategory(defining):
                 projections = projections.Monomorphisms().Isofibrations()
             self._target_projection = projections(on_object, on_morphism)
         return self._target_projection
@@ -249,7 +249,7 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
     if key in _inverse_images:
         return _inverse_images[key]
 
-    if traces_placement(functor):
+    if _functors().declares_subcategory(functor):
         narrowing = functor.domain().property_subcategory(target_subcategory)
         functors = _functors()
         retain_inverse_image(

@@ -57,6 +57,26 @@ type = "forbidden"
 source_modules = ["sage_categories.kernel"]
 forbidden_modules = ["sage_categories.cat"]
 
+# D175: `cat_kernel` is downstream of both the kernel and `Cat`, and upstream of every
+# leaf. It holds the work that needs both layers, so it imports them and neither imports
+# it. specs/resolution.md "The closed kernel surface".
+[[tool.importlinter.contracts]]
+name = "The kernel imports no module of cat_kernel"
+type = "forbidden"
+source_modules = ["sage_categories.kernel"]
+forbidden_modules = ["sage_categories.cat_kernel"]
+
+[[tool.importlinter.contracts]]
+name = "Cat imports no module of cat_kernel"
+type = "forbidden"
+source_modules = ["sage_categories.cat"]
+forbidden_modules = ["sage_categories.cat_kernel"]
+
+# The third D175 edge, "no leaf imports `cat_kernel`", enters with the first leaf
+# package at P1: the tree holds no leaf (D137), and a contract whose source module does
+# not exist reports green over nothing, which is the vacuous-green defect
+# `scripts/rule_coverage.py` exists to stop (D174). A leaf reaches `Cat`.
+
 [[tool.importlinter.contracts]]
 name = "Only the kernel's Sage runtime module and the named engine modules import Sage"
 type = "forbidden"

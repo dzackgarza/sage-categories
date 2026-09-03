@@ -8,6 +8,15 @@ leaf, because information flows from the kernel into the leaves and never back (
 
 from importlib.metadata import version as _distribution_version
 
+from sage_categories import cat_kernel as _cat_kernel
+
+# ``cat_kernel`` is downstream of both layers below it (D175), so neither imports it and
+# this package installs it.  Before ``Cat`` is loaded: the kernel asks whether a functor
+# carries placement and inheritance while ``Fun`` is still building its own property
+# categories, and each reader reaches ``Fun`` when it is called.
+_cat_kernel.install()
+del _cat_kernel
+
 from sage_categories.cat.category import Category
 from sage_categories.cat.declarations import (
     NN,

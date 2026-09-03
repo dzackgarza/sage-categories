@@ -60,7 +60,8 @@ core_status="$(frontmatter "$core_plan" | jq -r .status)"
 if [ "$core_status" != "complete" ]; then
     while IFS= read -r pkg; do
         name="$(basename "$pkg")"
-        case "$name" in kernel|cat|__pycache__) ;; *) fail "production leaf '$name' is in src while the core plan is $core_status (D137, POL-DOC-021)";; esac
+        # The three layers of the core architecture, in dependency order (D175).
+        case "$name" in kernel|cat|cat_kernel|__pycache__) ;; *) fail "production leaf '$name' is in src while the core plan is $core_status (D137, POL-DOC-021)";; esac
     done < <(find src/sage_categories -mindepth 1 -maxdepth 1 -type d)
 fi
 

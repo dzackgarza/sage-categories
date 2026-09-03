@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from enum import Enum
 from sage_categories.cat.category import Category
-__all__ = ['Role', 'building_role_classes', 'CategoryPoint', 'prepare_category_subclass', 'ObjectOfCategory', 'ElementOfObject', 'MorphismOfCategory', 'kernel_base', 'install_cat_element_root', 'RoleCandidate', 'role_of', 'category_of']
+__all__ = ['Role', 'building_role_classes', 'CategoryPoint', 'prepare_category_subclass', 'ObjectOfCategory', 'ElementOfObject', 'MorphismOfCategory', 'install_category_object_class', 'is_category', 'category_universal_class', 'kernel_base', 'install_cat_element_root', 'RoleCandidate', 'role_of', 'category_of']
 
 class Role(Enum):
     OBJECT = 'ObjectType'
@@ -39,6 +39,15 @@ class ElementOfObject(CategoryPoint):
     ...
 
 class MorphismOfCategory(ObjectOfCategory):
+    ...
+
+def install_category_object_class(compiled: type[CategoryPoint]) -> None:
+    ...
+
+def is_category(value: CategoryPoint) -> bool:
+    ...
+
+def category_universal_class() -> type[CategoryPoint]:
     ...
 
 def kernel_base(role: Role) -> type[CategoryPoint]:

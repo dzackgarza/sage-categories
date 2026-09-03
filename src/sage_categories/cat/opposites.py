@@ -165,9 +165,9 @@ _opposite_transformations: MonoDict = MonoDict()
 
 def _opposite_structure_functor(functor: Functor) -> Functor:
     """Dualize one selected functor while preserving its placement relation."""
-    from sage_categories.kernel.refinement import is_placed, traces_placement
+    from sage_categories.kernel.refinement import is_placed
 
-    if not traces_placement(functor):
+    if not Fun.declares_subcategory(functor):
         return opposite_functor(functor)
     source = opposite_category(functor.domain())
     target = opposite_category(functor.codomain())

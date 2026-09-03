@@ -44,6 +44,7 @@ from sage_categories.kernel.roles import (
     Role,
     building_role_classes,
     install_category_declaration_root,
+    install_category_object_class,
     install_cat_element_root,
     kernel_base,
 )
@@ -212,6 +213,11 @@ def _runtime_targets(current: Node) -> tuple[SageCategory, ...]:
 def _is_cat_element_root(current: Node) -> bool:
     """Whether ``current`` is the preallocated common ``Cat().ElementType`` node."""
     return current.role is Role.ELEMENT and current.category.category() is current.category
+
+
+def _is_cat_object_root(current: Node) -> bool:
+    """Whether ``current`` is the ``Cat().ObjectType`` node, whose objects are the categories."""
+    return current.role is Role.OBJECT and current.category.category() is current.category
 
 
 def inheriting_functors(category: Category) -> tuple[Functor, ...]:
@@ -952,6 +958,8 @@ def _install_runtime_node(current: Node) -> type[CategoryPoint]:
     assert isinstance(node_initializer, FunctionType)
     if _is_cat_element_root(current):
         install_cat_element_root(compiled)
+    if _is_cat_object_root(current):
+        install_category_object_class(compiled)
     match current.role:
         case Role.OBJECT:
             compiled.__init__ = _initialize_object

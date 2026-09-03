@@ -1,9 +1,9 @@
 from plum import Function as Function
 from sage_categories.cat.category import Category as Category
-from sage_categories.cat.predicates import Answer as Answer, AppliedQuery as AppliedQuery, Argument as Argument, Axiom as Axiom, PredicateHandler as PredicateHandler, Proposition as Proposition, Query as Query, QueryAnswer as QueryAnswer, QueryHandler as QueryHandler
+from sage_categories.cat.predicates import Answer as Answer, AppliedQuery as AppliedQuery, Argument as Argument, Axiom as Axiom, PredicateHandler as PredicateHandler, Proposition as Proposition, Query as Query, QueryHandler as QueryHandler
 from sage_categories.kernel.compiler import install_on_declaration as install_on_declaration
 from sage_categories.kernel.refinement import is_placed as is_placed, refine as refine
-from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, Role as Role, category_of as category_of, role_of as role_of
+from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, Role as Role, category_of as category_of, category_universal_class as category_universal_class, role_of as role_of
 from sage_categories.kernel.sage_runtime import MonoDict as MonoDict, Unknown as Unknown
 from sympy import Predicate
 from sympy.core.basic import Basic

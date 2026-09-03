@@ -2,40 +2,68 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import TYPE_CHECKING
 
 import sage_categories.kernel.compiler as compiler
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role, RoleCandidate, role_of
+from sage_categories.kernel.roles import (
+    CategoryPoint,
+    MorphismOfCategory,
+    Role,
+    RoleCandidate,
+    is_category,
+    role_of,
+)
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
 
-__all__ = ["common_ancestor", "is_placed", "is_subcategory", "place", "refine", "traces_inheritance", "traces_placement"]
+__all__ = [
+    "FunctorDeclarationReader",
+    "common_ancestor",
+    "install_functor_declaration_readers",
+    "is_placed",
+    "is_subcategory",
+    "place",
+    "refine",
+    "traces_inheritance",
+    "traces_placement",
+]
+
+
+type FunctorDeclarationReader = Callable[[MorphismOfCategory], bool]
+
+_traces_placement: FunctorDeclarationReader | None = None
+_traces_inheritance: FunctorDeclarationReader | None = None
+
+
+def install_functor_declaration_readers(
+    placement: FunctorDeclarationReader,
+    inheritance: FunctorDeclarationReader,
+) -> None:
+    """Install ``cat_kernel``'s two readers of a functor's declared properties (D175).
+
+    Deciding whether a functor carries placement and inheritance reads the property
+    subcategory the functor was constructed in, which is ``Cat``'s; walking the placement
+    graph and refining the implementation class is the kernel's, and ``Cat`` calls that
+    walk from thirteen of its own modules.  ``cat_kernel`` is the layer that has both, so
+    it hands the readers down rather than the kernel reaching up (``specs/resolution.md``,
+    "The closed kernel surface").
+    """
+    global _traces_placement, _traces_inheritance
+    _traces_placement, _traces_inheritance = placement, inheritance
 
 
 def traces_placement(functor: MorphismOfCategory) -> bool:
-    """Whether placement follows ``functor``: it is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
-
-    Read both conditions from the functor's property-category placement.
-    Monicity and repleteness together present the exact subcategory relation.
-    """
-    from sage_categories.cat.functors import Fun
-
-    return Fun.declares_subcategory(functor)
+    """Whether placement follows ``functor``: it is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036)."""
+    assert _traces_placement is not None, "cat_kernel installs the functor declaration readers before any category is declared"
+    return _traces_placement(functor)
 
 
 def traces_inheritance(functor: MorphismOfCategory) -> bool:
-    """Whether inheritance follows ``functor``: it is declared an isofibration (D164 to D167).
-
-    A selected structure functor without that declaration gives access to the structure
-    it selects and supplies no implementation (``specs/functor.md``, "Structure functors
-    and inherited classes").  Placement asks for a monomorphism as well
-    (``traces_placement``, D169).
-    """
-    from sage_categories.cat.functors import Fun
-
-    return Fun.declares_inheritance(functor)
+    """Whether inheritance follows ``functor``: it is declared an isofibration (D164 to D167)."""
+    assert _traces_inheritance is not None, "cat_kernel installs the functor declaration readers before any category is declared"
+    return _traces_inheritance(functor)
 
 
 def _reached_placements(start: compiler.Node) -> Iterator[compiler.Node]:
@@ -137,9 +165,7 @@ def place(value: CategoryPoint, category: Category) -> None:
             # placement, so both roles are the point ``* -> category``.
             value._cat_element_identity = CategoryPointIdentity(category)
     compiler._refine_implementation_class(value, role_class)
-    from sage_categories.cat.category import Category
-
-    if isinstance(value, Category):
+    if is_category(value):
         compiler.apply_level_shift(value, category)
 
 

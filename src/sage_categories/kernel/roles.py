@@ -21,7 +21,10 @@ __all__ = [
     "RoleCandidate",
     "building_role_classes",
     "category_of",
+    "category_universal_class",
     "install_cat_element_root",
+    "install_category_object_class",
+    "is_category",
     "kernel_base",
     "prepare_category_subclass",
     "role_of",
@@ -37,6 +40,7 @@ class Role(Enum):
 _building_role_class = False
 _category_declaration_root: type[CategoryPoint] | None = None
 _category_universal_class: type[CategoryPoint] | None = None
+_category_object_class: type[CategoryPoint] | None = None
 
 
 @contextmanager
@@ -321,6 +325,38 @@ def install_category_declaration_root(
     _category_declaration_root = declaration_root
     _category_universal_class = universal_class
     _require_declarations(universal_class, universal_class)
+
+
+def install_category_object_class(compiled: type[CategoryPoint]) -> None:
+    """Put the compiled ``Cat().ObjectType`` where the kernel can read it.
+
+    The objects of ``Cat()`` are the categories, so this is the class every category
+    written over it is an instance of, and it is how the kernel decides whether a value
+    is a category without importing ``Cat`` (``is_category``, D173).
+    """
+    global _category_object_class
+    assert _category_object_class is None or _category_object_class is compiled
+    _category_object_class = compiled
+
+
+def is_category(value: CategoryPoint) -> bool:
+    """Whether ``value`` is a category: an object of ``Cat()``.
+
+    No value is one before the compiler installs the class, which is the window the
+    bootstrap runs in: the one value alive there is ``Cat()`` under construction.
+    """
+    return _category_object_class is not None and isinstance(value, _category_object_class)
+
+
+def category_universal_class() -> type[CategoryPoint]:
+    """The class ``Cat()`` writes, as the bootstrap installed it.
+
+    A predicate or query handler declares its semantic domain as a string annotation
+    naming this class, and the kernel resolves that string against the class it was
+    handed rather than by importing ``Cat`` (D173).
+    """
+    assert _category_universal_class is not None, "the category universal class is installed by the bootstrap"
+    return _category_universal_class
 
 
 def kernel_base(role: Role) -> type[CategoryPoint]:

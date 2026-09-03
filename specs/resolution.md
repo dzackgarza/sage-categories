@@ -50,6 +50,14 @@ and refines its implementation class, which is what the glossary's kernel row me
 "places". `cat_kernel` imports from the kernel and from `Cat`;
 neither imports it, and no leaf imports it. A leaf reaches `Cat`.
 
+Because neither layer below imports it, `cat_kernel` hands its work down and the layer
+below asks with what it was handed. `sage_categories/__init__.py` installs it, before
+`Cat` is loaded: the kernel asks whether a functor carries placement while `Fun` is still
+building its own property categories, and `Cat()`'s own class declares axioms in its body.
+So `cat_kernel` reaches `Cat` when a reader is called, not when it is imported, and the
+slots are in the kernel, the one layer `Cat` and `cat_kernel` both import. The kernel
+holds the reference and states none of the work.
+
 `POL-KERNEL-038` carries this rule and a D132 check fails on a method outside the list.
 
 ## Fixed private dependencies

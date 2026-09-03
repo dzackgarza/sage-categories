@@ -8,6 +8,39 @@ The public category theory lives in [functor.md](functor.md).
 The leaf boundary lives in [leaves.md](leaves.md).
 Nothing in this file adds a public mathematical object or a leaf declaration.
 
+## The closed kernel surface
+
+The kernel is engineering and states no mathematics (D130, D173).
+`Cat` owns every operation that all categories share, morphism semantics included: the two
+endpoints, composition, the identity, inverses, and the predicates the property
+subcategories generate.
+The three private role classes of `kernel/roles.py` exist so that Sage has a stable Python
+end for each compiled role.
+Their surface is closed, exactly as the leaf writer's contract is closed under D77, and for
+the same reason: a method outside it is mathematics that has lost its owner.
+
+A kernel role class declares only:
+
+- `__init_subclass__`, and the class-compilation entry points the compiler calls on a
+  declaration (`_compile_category`, `_recompile_category`, `local_role_class`, `role_class`,
+  `role_source`, `_object_role_source`);
+- the initializers the construction context calls (`_initialize_identity`,
+  `_initialize_placement`, `_initialize_functor_image_cache`);
+- the role test used by the compiler (`_is_object`, `_is_element`, `_is_morphism`);
+- the functor image cache reads (`_cached_object_image`, `_cached_morphism_image`);
+- `__hash__`, which is Python object identity.
+
+Everything else is `Cat`'s.
+A morphism's `domain`, `codomain`, and composition belong to `Mor(C).ObjectType`, the generic
+declaration of a morphism of an arbitrary category; a point's `parent`, `defining_morphism`,
+`category`, and `__eq__` belong to `Cat().ElementType` and `Cat().ObjectType`.
+The kernel reads a construction context and hands the value to the compiled class; it never
+defines what the value means.
+A kernel module imports no module of `Cat`: the direction is kernel to `Cat` to leaves, and
+the import contract states it.
+
+`POL-KERNEL-038` carries this rule and a D132 check fails on a method outside the list.
+
 ## Fixed private dependencies
 
 The project runs in the fixed Sage research environment on Python `>=3.14,<3.15`.
@@ -199,7 +232,8 @@ The private runtime satisfies this specification when:
 - temporary runtime data has no public mathematical effect;
 - unrelated mathematical declarations with one spelling fail as a semantic collision;
 - theory modules import no private runtime type;
-- the kernel supplies inherited element construction, identity and composition, object retention, and axiom-subcategory routing, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133);
+- the kernel supplies inherited element construction, object retention, and axiom-subcategory routing, and `Cat` supplies identity and composition, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133, D173);
+- every method a kernel module defines on a role class is on the closed surface below, and the kernel imports no module of `Cat` (D173);
 - public engine values are limited to authorized SymPy proposition expressions;
 - their nested identity atoms expose no independent public API;
 - every fixed dependency owns only its assigned private responsibility;

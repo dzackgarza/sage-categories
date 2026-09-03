@@ -10,6 +10,9 @@ Do not record retired names in current documentation.
 
 | Concept | Required statement |
 | --- | --- |
+| The kernel | The package `sage_categories.kernel`. It compiles implementation classes, asks Sage for controlled C3 and dynamic classes, threads initializers, retains values, refines, and places. It states no mathematics: it defines no operation of a category, an object, an element, or a morphism (D130, D173, `POL-KERNEL-008`, `POL-KERNEL-038`). |
+| `Cat` | The package `sage_categories.cat`. It owns every mathematical operation that all categories share: morphism endpoints, composition, identity, inverses, `Mor`, `Fun`, the property subcategories and their predicates, and the universal constructions. `Cat().ObjectType` and `Mor(C).ObjectType` define each once and every category inherits it (D44, D85, D173). |
+| The framework | The kernel and `Cat` together: everything a leaf writer does not write. D77 and D133 use the word "kernel" in this sense. A sentence that says the framework supplies an operation names which of the two owns it (D173). |
 | `C.ElementType` | The shared implementation and API for elements of objects of `C`. |
 | Point of a category `X` | A functor `* -> X`. This is an actual object of `X`; a set uses its discrete, 0-truncated category. |
 | `C.Point()` | The functor `* -> C`, an arrow and not an object. Every category class is a point in `Cat` automatically; a leaf class places its object `X` in `C` by adding `C.Point()` to its structure functors, which gives `X` the `C.ObjectType` inheritance and `X.ObjectType` the `C.ElementType` inheritance (D128, D154). |

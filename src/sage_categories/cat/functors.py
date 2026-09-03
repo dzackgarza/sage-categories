@@ -497,6 +497,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         self._shared_value_functors: TripleDict = TripleDict(weak_values=False)
         self._pending: list[tuple[Functor, bool]] = []
         self._declaring: MonoDict = MonoDict()
+        self._inheriting: MonoDict = MonoDict()
         super().__init__(base)
 
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
@@ -625,10 +626,40 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         isomorphism of the target with one endpoint in the source is one of the source.
         A functor the kernel did not build decides nothing here: the leaf declares it.
         """
+        return True if self._built_as_subcategory_monomorphism(functor) else None
+
+    def _built_as_subcategory_monomorphism(self, functor: Functor) -> bool:
+        """Whether the kernel itself built ``functor`` to present a subcategory."""
         key = (functor.domain(), functor.codomain(), self)
-        if key in self._shared_value_functors and self._shared_value_functors[key] is functor:
+        return key in self._shared_value_functors and self._shared_value_functors[key] is functor
+
+    def declares_inheritance(self, functor: Functor) -> bool:
+        """Whether ``functor`` carries inheritance from its target (D164 to D167).
+
+        Among a leaf's selected structure functors, the ones declared into
+        ``Fun(C, D).Isofibrations()`` or a subcategory of it carry inheritance; a
+        selected functor without that property gives access to the structure it selects
+        and inherits nothing (``specs/functor.md``, "Structure functors and inherited
+        classes").  ``(L, b) |-> L`` is a faithful isofibration and a lattice inherits
+        along it; ``(L, b) |-> b`` is not one, and reaches ``L.b()`` without making a
+        lattice a bilinear form.
+
+        Placement asks more: a monomorphism that is an isofibration (D169,
+        ``declares_subcategory``).  Inheritance needs the arrow condition alone, since
+        ``Groups() -> Sets()`` is not injective on objects.
+        """
+        if self._built_as_subcategory_monomorphism(functor):
+            # A functor the kernel built to present one category as a subcategory of
+            # another shares the values of its endpoints, so it is monic and its image
+            # is replete: it is an isofibration by construction, before and after the
+            # property categories exist (``_is_shared_value_functor``).
             return True
-        return None
+        if not self._bootstrapped:
+            return False
+        placement = functor.category()
+        if placement not in self._inheriting:
+            self._inheriting[placement] = any(root is self._isofibrations for root in placement.narrowing_roots())
+        return self._inheriting[placement]
 
     def declares_subcategory(self, functor: Functor) -> bool:
         """Whether ``functor`` is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).

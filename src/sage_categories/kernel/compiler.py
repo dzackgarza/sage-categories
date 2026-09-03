@@ -59,6 +59,7 @@ __all__ = [
     "construct_category_value",
     "declared_inheritance",
     "declared_subtyping",
+    "inheriting_functors",
     "apply_level_shift",
     "install_on_declaration",
     "node",
@@ -211,11 +212,24 @@ def _is_cat_element_root(current: Node) -> bool:
     return current.role is Role.ELEMENT and current.category.category() is current.category
 
 
+def inheriting_functors(category: Category) -> tuple[Functor, ...]:
+    """The selected structure functors of ``category`` that carry inheritance, in declared order.
+
+    A functor declared an isofibration carries inheritance from its target; a selected
+    functor without that declaration gives access to the structure it selects and
+    supplies no implementation.  Order decides precedence among the ones that do, the
+    first chosen and coherence assumed (D164 to D167, D37, D159, D165).
+    """
+    from sage_categories.kernel.refinement import traces_inheritance
+
+    return tuple(functor for functor in category.structure_functors() if traces_inheritance(functor))
+
+
 def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
-    """The selected functors out of ``current``; each keeps the role it starts in."""
+    """The inheriting functors out of ``current``; each keeps the role it starts in."""
     return tuple(
         (functor, node(functor.codomain(), current.role))
-        for functor in current.category.structure_functors()
+        for functor in inheriting_functors(current.category)
     )
 
 
@@ -812,7 +826,7 @@ def _debug_unresolved_diamonds(category: Category) -> None:
     paths: MonoDict = MonoDict()
 
     def walk(source: Category, path: tuple[Category, ...]) -> None:
-        for functor in source.structure_functors():
+        for functor in inheriting_functors(source):
             target = functor.codomain()
             next_path = (*path, target)
             if target not in paths:

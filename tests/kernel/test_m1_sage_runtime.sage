@@ -145,7 +145,7 @@ class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
         key = id(self)
         if key not in _SELECTED_FUNCTORS:
             _SELECTED_FUNCTORS[key] = (
-                Fun(self, BASE)(self._object_to_base, self._morphism_to_base),
+                Fun(self, BASE).Isofibrations()(self._object_to_base, self._morphism_to_base),
             )
         return _SELECTED_FUNCTORS[key]
 
@@ -190,7 +190,7 @@ class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
         key = id(self)
         if key not in _SELECTED_FUNCTORS:
             _SELECTED_FUNCTORS[key] = (
-                Fun(self, BASE)(self._object_to_base, self._morphism_to_base),
+                Fun(self, BASE).Isofibrations()(self._object_to_base, self._morphism_to_base),
             )
         return _SELECTED_FUNCTORS[key]
 
@@ -246,8 +246,8 @@ class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
                 return self._morphism_to_left(morphism)
 
             _SELECTED_FUNCTORS[key] = (
-                Fun(self, LEFT)(on_object, on_morphism),
-                Fun(self, RIGHT)(self._object_to_right, self._morphism_to_right),
+                Fun(self, LEFT).Isofibrations()(on_object, on_morphism),
+                Fun(self, RIGHT).Isofibrations()(self._object_to_right, self._morphism_to_right),
             )
         return _SELECTED_FUNCTORS[key]
 
@@ -392,8 +392,8 @@ def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFi
             key = id(self)
             if key not in _SELECTED_FUNCTORS:
                 _SELECTED_FUNCTORS[key] = (
-                    Fun(self, LEFT)(lambda member: LEFT(self._label(member)), lambda morphism: LEFT.morphism_category(1)(LEFT(self._label(morphism.domain())), LEFT(self._label(morphism.codomain()))).one()),
-                    Fun(self, RIGHT)(lambda member: RIGHT(self._label(member)), lambda morphism: RIGHT.morphism_category(1)(RIGHT(self._label(morphism.domain())), RIGHT(self._label(morphism.codomain()))).one()),
+                    Fun(self, LEFT).Isofibrations()(lambda member: LEFT(self._label(member)), lambda morphism: LEFT.morphism_category(1)(LEFT(self._label(morphism.domain())), LEFT(self._label(morphism.codomain()))).one()),
+                    Fun(self, RIGHT).Isofibrations()(lambda member: RIGHT(self._label(member)), lambda morphism: RIGHT.morphism_category(1)(RIGHT(self._label(morphism.domain())), RIGHT(self._label(morphism.codomain()))).one()),
                 )
             return _SELECTED_FUNCTORS[key]
 
@@ -458,8 +458,8 @@ def test_incomparable_method_owners_fail_at_compilation() -> None:
             key = id(self)
             if key not in _SELECTED_FUNCTORS:
                 _SELECTED_FUNCTORS[key] = (
-                    Fun(self, collision_left)(lambda member: collision_left(0), lambda morphism: collision_left.morphism_category(1)(collision_left(0), collision_left(0)).one()),
-                    Fun(self, collision_right)(lambda member: collision_right(0), lambda morphism: collision_right.morphism_category(1)(collision_right(0), collision_right(0)).one()),
+                    Fun(self, collision_left).Isofibrations()(lambda member: collision_left(0), lambda morphism: collision_left.morphism_category(1)(collision_left(0), collision_left(0)).one()),
+                    Fun(self, collision_right).Isofibrations()(lambda member: collision_right(0), lambda morphism: collision_right.morphism_category(1)(collision_right(0), collision_right(0)).one()),
                 )
             return _SELECTED_FUNCTORS[key]
 

@@ -11,7 +11,7 @@ from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, Role
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
 
-__all__ = ["common_ancestor", "is_placed", "is_subcategory", "place", "refine", "traces_placement"]
+__all__ = ["common_ancestor", "is_placed", "is_subcategory", "place", "refine", "traces_inheritance", "traces_placement"]
 
 
 def traces_placement(functor: MorphismOfCategory) -> bool:
@@ -23,6 +23,19 @@ def traces_placement(functor: MorphismOfCategory) -> bool:
     from sage_categories.cat.functors import Fun
 
     return Fun.declares_subcategory(functor)
+
+
+def traces_inheritance(functor: MorphismOfCategory) -> bool:
+    """Whether inheritance follows ``functor``: it is declared an isofibration (D164 to D167).
+
+    A selected structure functor without that declaration gives access to the structure
+    it selects and supplies no implementation (``specs/functor.md``, "Structure functors
+    and inherited classes").  Placement asks for a monomorphism as well
+    (``traces_placement``, D169).
+    """
+    from sage_categories.cat.functors import Fun
+
+    return Fun.declares_inheritance(functor)
 
 
 def _reached_placements(start: compiler.Node) -> Iterator[compiler.Node]:

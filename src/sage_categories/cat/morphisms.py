@@ -27,13 +27,15 @@ from sage_categories.cat.category import (
     Proposition,
     ask,
     composite_factors,
+    is_composite,
     member,
     refine,
     retain_composite_factors,
 )
 from sage_categories.cat.predicates import predicate, register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
-from sage_categories.kernel.sage_runtime import TripleDict
+from sage_categories.kernel.refinement import is_placed
+from sage_categories.kernel.sage_runtime import TripleDict, Unknown
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -119,6 +121,40 @@ def hom_inhabitation(hom_category: Category) -> Decision:
     return base.base_category()._chosen_hom_inhabited(hom_category)
 
 
+def _factor_sequence(morphism: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, ...]:
+    """The retained factors of ``morphism``, flattened, in application order."""
+    if not is_composite(morphism):
+        return (morphism,)
+    first, second = morphism.factors()
+    return (*_factor_sequence(first), *_factor_sequence(second))
+
+
+def _equal_words(
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+    assumptions: Proposition,
+) -> Decision:
+    """Two morphisms of ``C`` are equal when their reduced words and their endpoints are.
+
+    This is the exact positive case every category has beyond identity: composition is
+    associative and ``1_X`` is its unit, so two composites of the same factors in the same
+    order are one morphism however they were bracketed (D44, D84, D86).  The endpoints
+    decide the empty word, where the morphism is an identity and its object is the whole
+    of it.  A category whose morphism data decides more registers its own exact handler on
+    its own semantic domain.
+
+    Identity is decided before this runs, for every equality predicate
+    (``kernel/predicates.py``, ``register_predicate_handler``).
+    """
+    if first.domain() is not second.domain() or first.codomain() is not second.codomain():
+        return Unknown
+    left, right = first.word(), second.word()
+    # By identity: a morphism's own equality is the question being answered here.
+    if len(left) == len(right) and all(one is other for one, other in zip(left, right)):
+        return True
+    return Unknown
+
+
 class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismData, []]):
     """``Mor(C)``: objects are the morphisms of ``C``, morphisms its 2-morphisms."""
 
@@ -154,6 +190,37 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         def retain_factors(self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> None:
             """Retain that this morphism is the composite ``second * first``."""
             retain_composite_factors(self, first, second)
+
+        def is_composite(self) -> bool:
+            """Whether this morphism retains two factors."""
+            return is_composite(self)
+
+        def word(self) -> tuple[MorphismCategory.ObjectType, ...]:
+            """The factors of this morphism in application order, reduced.
+
+            A category composing formally retains each composite's pair (D44), so the
+            factors of a factor are retained too and the whole word is read back from that
+            retention alone: nothing is normalized at construction, and the word D173's
+            reduction engine consumes stays intact.
+
+            Two reductions apply in every category, and both keep the endpoints and the
+            placement: an identity drops, because ``1_X`` is the unit of ``End_C(X)``
+            (D84, D86); and two adjacent factors the category retains as mutually inverse
+            drop together, which is what ``_symbolic_inverse_`` means by equations that
+            hold by placement.  A category adding mathematics to composition reduces
+            further and overrides, as D44 licenses.
+            """
+            base = self.base_category()
+            identities = base.morphism_category(1).Identity()
+            factors = [factor for factor in _factor_sequence(self) if not is_placed(factor, identities)]
+            index = 0
+            while index < len(factors) - 1:
+                if base.retained_inverse(factors[index]) is factors[index + 1]:
+                    del factors[index : index + 2]
+                    index = max(index - 1, 0)
+                    continue
+                index += 1
+            return tuple(factors)
 
         def factors(self) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
             """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order.
@@ -215,6 +282,11 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             # selects a functor into is older than it (``Category._initialize``).
             base.ambient().morphism_category(1)
         super().__init__()
+        # The one exact case beyond identity that every category's morphisms have.  It is
+        # registered here because ``Mor(C)`` is where the morphisms of ``C`` are, and by
+        # the category that owns the predicate, because a subcategory shares its ambient's.
+        if base.owns_equality():
+            register_handler(base.equality(), _equal_words)
 
     def base_category(self) -> Category[MorphismData, TwoMorphismData]:
         return self._base
@@ -321,6 +393,12 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     Epimorphisms = Axiom()
     Isomorphisms = Axiom(full_subcategory_of=(Monomorphisms, Epimorphisms))
     Endomorphisms = Axiom()
+
+    # ``1_X`` is an endomorphism and its own inverse, so it is a full subcategory of both.
+    # Membership is placement: ``_identity_morphism_`` constructs the one identity of an
+    # object into it (D84, D86, POL-CAT-023).  Nothing else decides it, and the word an
+    # equality reads drops exactly its members.
+    Identity = Axiom(full_subcategory_of=(Endomorphisms, Isomorphisms))
 
     def Automorphisms(self) -> Category:
         """``Mor(C).Endomorphisms().Isomorphisms()``."""
@@ -482,6 +560,9 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
 
     def Endomorphisms(self) -> Category:
         return self.property_subcategory(self.ambient().Endomorphisms())
+
+    def Identity(self) -> Category:
+        return self.property_subcategory(self.ambient().Identity())
 
     def narrowing_type(self) -> type[FixedEndpointProperty[MorphismData, TwoMorphismData]]:
         from sage_categories.cat.properties import FixedEndpointProperty

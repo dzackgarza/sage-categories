@@ -354,6 +354,14 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             return self.ambient().equality()
         return self._equality
 
+    def owns_equality(self) -> bool:
+        """Whether the predicate this category answers equality with is its own.
+
+        A subcategory shares its ambient's, and an image its target's, so an exact handler
+        for what every category's morphisms have is registered once, by the owner.
+        """
+        return self.equality() is self._equality
+
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return member(candidate, self)
 
@@ -461,8 +469,17 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             identity = self.construct_identity(member_object)
             self._identities[member_object] = identity
             self.retain_inverses(identity, identity)
-            refine(identity, self.morphism_category(1).Automorphisms())
+            refine(identity, self.morphism_category(1).Identity())
         return self._identities[member_object]
+
+    def retained_inverse(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | None:
+        """The inverse this category retained for ``morphism``, or ``None``; it constructs nothing.
+
+        ``inverse_morphism`` constructs a symbolic inverse when none is retained, which is
+        the right answer to the question it asks and the wrong one for a reader deciding
+        whether two adjacent factors of a word cancel.
+        """
+        return self._inverses[morphism] if morphism in self._inverses else None
 
     def retain_inverses(self, forward: MorphismCategory.ObjectType, backward: MorphismCategory.ObjectType) -> None:
         """Record two morphisms as mutually inverse; both enter ``Mor(self).Isomorphisms()`` (POL-MATH-037)."""
@@ -1006,6 +1023,11 @@ def composite_factors(
     """The retained factors ``(first, second)`` of ``second * first`` (``Mor(C).ObjectType.factors``)."""
     assert composite in _composite_factors, f"{composite!r} is not a retained composite"
     return _composite_factors[composite]
+
+
+def is_composite(morphism: MorphismCategory.ObjectType) -> bool:
+    """Whether ``morphism`` retains two factors (``Mor(C).ObjectType.is_composite``)."""
+    return morphism in _composite_factors
 
 
 def _composite_sequence(functor: Functor) -> tuple[Functor, ...]:

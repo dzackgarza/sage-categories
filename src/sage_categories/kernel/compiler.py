@@ -534,7 +534,17 @@ def runtime_semantic_bases(
         issubclass(base, stable_role) for base in result
     ):
         result.append(stable_role)
+        # A declaration installed on the role root is a semantic base of every value of
+        # that role: ``Mor(C).ObjectType`` is installed on the morphism root rather than
+        # compiled as a node of its own, and it is where every morphism's shared
+        # mathematics is written (D44, D85, D173).
+        installed = _installed_root_declarations.get(stable_role)
+        if installed is not None and not any(known is installed for known in result):
+            result.append(installed)
     return tuple(result)
+
+
+_installed_root_declarations: dict[type[CategoryPoint], type[CategoryPoint]] = {}
 
 
 _UNRESOLVED = object()
@@ -938,10 +948,9 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
             normalization_owner = next(
                 owner for owner in type(category).__mro__ if "_object_role_source" in vars(owner)
             )
-            _install_written_body(
-                kernel_base(current.role),
-                vars(normalization_owner)[Role.OBJECT.value],
-            )
+            root, declaration = kernel_base(current.role), vars(normalization_owner)[Role.OBJECT.value]
+            _install_written_body(root, declaration)
+            _installed_root_declarations[root] = declaration
             setattr(category, role.value, current.category.role_class(current.role))
             continue
         _install_runtime_node(current)

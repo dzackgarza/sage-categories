@@ -45,6 +45,12 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         def retain_factors(self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> None:
             ...
 
+        def is_composite(self) -> bool:
+            ...
+
+        def word(self) -> tuple[MorphismCategory.ObjectType, ...]:
+            ...
+
         def factors(self) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
             ...
 
@@ -63,7 +69,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         def __hash__(self) -> int:
             ...
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     class ElementType(sage_categories.kernel.roles.ElementOfObject):
@@ -120,6 +126,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     Epimorphisms: Incomplete
     Isomorphisms: Incomplete
     Endomorphisms: Incomplete
+    Identity: Incomplete
 
     def Automorphisms(self) -> Category:
         ...
@@ -129,7 +136,7 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
     class ElementType(sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.morphisms.MorphismCategory.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.cat.functors.FunctorsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.functors.FunctorsCategory.MorphismType):
+    class MorphismType(sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.functors.FunctorsCategory.MorphismType):
         ...
 
     class ObjectType(sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.cat.category.CategoryOfCategories.MorphismType):
@@ -145,7 +152,7 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
     class ElementType(sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
 class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):
@@ -156,7 +163,7 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
     class ElementType(sage_categories.cat.morphisms.MorphismCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __init__(self, morphisms: MorphismCategory[MorphismData, TwoMorphismData], domain: CategoryOfCategories.ElementType, codomain: CategoryOfCategories.ElementType) -> None:
@@ -196,6 +203,9 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         ...
 
     def Endomorphisms(self) -> Category:
+        ...
+
+    def Identity(self) -> Category:
         ...
 
     def narrowing_type(self) -> type[FixedEndpointProperty[MorphismData, TwoMorphismData]]:

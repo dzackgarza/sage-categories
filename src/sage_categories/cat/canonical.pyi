@@ -22,7 +22,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         def __init__(self, data: VertexData) -> None:
             ...
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: PathData) -> None:
             ...

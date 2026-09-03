@@ -68,13 +68,13 @@ class ShapeIndexedFunctorProperty(FunctorProperties, PropertySubcategory[[OnObje
 
 class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
 
-    class ObjectType(sage_categories.cat.functors.FunctorCategory.ObjectType, sage_categories.cat.properties.NarrowedProperty.ObjectType, sage_categories.cat.morphisms.EndomorphismsCategory.ObjectType, sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType):
+    class ObjectType(sage_categories.cat.functors.FunctorCategory.ObjectType, sage_categories.cat.properties.NarrowedProperty.ObjectType, sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.morphisms.EndomorphismsCategory.ObjectType, sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.functors.FunctorCategory.ElementType, sage_categories.cat.properties.NarrowedProperty.ElementType, sage_categories.cat.morphisms.EndomorphismsCategory.ElementType, sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.cat.morphisms.IsomorphismsCategory.ElementType):
+    class ElementType(sage_categories.cat.functors.FunctorCategory.ElementType, sage_categories.cat.properties.NarrowedProperty.ElementType, sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.morphisms.EndomorphismsCategory.ElementType, sage_categories.cat.morphisms.IsomorphismsCategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.properties.NarrowedProperty.MorphismType, sage_categories.cat.morphisms.EndomorphismsCategory.MorphismType, sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType):
+    class MorphismType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.properties.NarrowedProperty.MorphismType, sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.morphisms.EndomorphismsCategory.MorphismType, sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
@@ -88,7 +88,7 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
     class ElementType(sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
@@ -148,7 +148,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     class ElementType(sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: NaturalTransformationData) -> None:
             ...

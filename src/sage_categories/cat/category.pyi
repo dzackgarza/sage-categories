@@ -81,6 +81,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def equality(self) -> Predicate:
         ...
 
+    def owns_equality(self) -> bool:
+        ...
+
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
@@ -107,6 +110,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
         ...
 
     def base_category(self) -> Category:
+        ...
+
+    def retained_inverse(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | None:
         ...
 
     def retain_inverses(self, forward: MorphismCategory.ObjectType, backward: MorphismCategory.ObjectType) -> None:
@@ -292,7 +298,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __pow__(self, exponent: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: FunctorData) -> None:
             ...

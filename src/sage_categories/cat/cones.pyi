@@ -54,7 +54,7 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     class ElementType(sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: ConeMorphismData) -> None:
             ...
@@ -96,7 +96,7 @@ class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []])
     class ElementType(sage_categories.cat.cones.ConeCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.cones.ConeCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory):
+    class MorphismType(sage_categories.cat.cones.ConeCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __init__(self, ambient: ConeCategory) -> None:

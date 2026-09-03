@@ -219,10 +219,18 @@ def inheriting_functors(category: Category) -> tuple[Functor, ...]:
     functor without that declaration gives access to the structure it selects and
     supplies no implementation.  Order decides precedence among the ones that do, the
     first chosen and coherence assumed (D164 to D167, D37, D159, D165).
+
+    A selected point functor is not one of these edges: it places the category as an
+    object of its codomain, and what it carries is the categorical level shift
+    (D154, D161, D169; ``refinement.place``).
     """
     from sage_categories.kernel.refinement import traces_inheritance
 
-    return tuple(functor for functor in category.structure_functors() if traces_inheritance(functor))
+    return tuple(
+        functor
+        for functor in category.structure_functors()
+        if traces_inheritance(functor) and not functor.codomain().retains_point_functor(functor)
+    )
 
 
 def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
@@ -857,6 +865,12 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     for functor in functors:
         functor_category = category.category().morphism_category(1)
         assert is_placed(functor, functor_category), f"{functor!r} is not an object of {functor_category!r}"
+        if functor.codomain().retains_point_functor(functor):
+            # A selected point functor is the arrow ``* -> D`` that places this category
+            # as an object of ``D``; it starts at the terminal category, not here, and
+            # what it carries is the level shift rather than an implementation edge
+            # (D154, D161, D169; ``refinement.place``).
+            continue
         assert functor.domain() is category, f"{functor!r} does not have domain {category!r}"
         # Naming a declared category as a functor's *domain* is always safe; selecting a
         # functor into one that no implementation claims is not, because the declaration's

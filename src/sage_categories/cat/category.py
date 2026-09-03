@@ -223,7 +223,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         self._compile_category(functors)
         from sage_categories.kernel.refinement import place
 
-        place(self, universe)
+        # A selected point functor ``* -> D`` places this category as an object of ``D``
+        # rather than of its universe, and the level shift follows that placement (D154,
+        # D161, D169; ``place``).
+        place(self, next((functor.codomain() for functor in functors if functor.codomain().retains_point_functor(functor)), universe))
 
     # -- declarations read by the kernel --------------------------------------
 
@@ -565,9 +568,38 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         from sage_categories.cat.functors import Fun
 
         if member_object not in self._points:
-            identity = self.morphism_category(1)(member_object, member_object).one()
-            self._points[member_object] = Fun(Cat().Terminal(), self)(lambda vertex: member_object, lambda path: identity)
+            # The identity is the morphism action's own result, computed when the action
+            # runs.  A point selected by a class under construction is the arrow that
+            # places its object, so the arrow exists before the object is an object of
+            # ``self`` (D154, D169).
+            self._points[member_object] = Fun(Cat().Terminal(), self)(
+                lambda vertex: member_object,
+                lambda path: self.morphism_category(1)(member_object, member_object).one(),
+            )
         return self._points[member_object]
+
+    def Point(self) -> Functor:
+        """The point functor ``* -> self`` selecting the object under construction (D154).
+
+        A leaf class places its object in ``self`` by adding this to its structure
+        functors, and that object is the value the class is being constructed for, so
+        the kernel's construction context names it (``specs/functor.md``, "Point
+        categories and point functors").  Selecting it places the object in ``self`` and
+        gives it the ``self.ObjectType`` inheritance and its ``ObjectType`` the
+        ``self.ElementType`` inheritance, through the categorical level shift (D128,
+        D154, D161, D169).
+        """
+        from sage_categories.kernel.construction import active_object_context
+
+        context = active_object_context()
+        assert context is not None, (
+            f"{self!r}.Point() selects the object under construction, and none is being constructed here"
+        )
+        return self.point_functor(context.canonical_image)
+
+    def retains_point_functor(self, functor: Functor) -> bool:
+        """Whether ``functor`` is a point of this category, the arrow ``* -> self`` it retains."""
+        return any(retained is functor for _, retained in self._points.items())
 
     def arrow_functor(self, morphism: MorphismCategory.ObjectType) -> Functor:
         """The diagram ``[1] -> self`` of shape the walking arrow that ``morphism`` denotes."""

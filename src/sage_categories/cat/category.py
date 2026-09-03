@@ -28,8 +28,9 @@ __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism"
 
 # The compilation order of categories: a category takes its ordinal after its
 # selected functors exist, so decreasing ordinal is a linear extension of the
-# selected graph; the kernel linearizes role classes by it and narrowings are
-# canonicalized by the ordinals of their roots.
+# selected graph, and narrowings are canonicalized by the ordinals of their roots.
+# The kernel ranks role classes by the declared order of ``structure_functors()``
+# instead (``kernel/compiler.py``, ``_rank_declarations``; D165, D166, D167).
 _category_ordinals = itertools.count()
 
 # The construction data of ``Cat()``: a functor's actions and a natural

@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import logging
 from collections.abc import Callable, Iterator
+from itertools import pairwise
 from types import FunctionType, GenericAlias
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
@@ -162,14 +163,135 @@ _ROLE_POSITIONS: dict[Role, int] = {
 
 _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
 
+_declared_ranks: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+
+_compiled_orders: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+
+
 def node_key(current: Node) -> tuple[int, int]:
     """The position of ``current`` in the total order the C3 merge is controlled by.
 
     Role order comes first because an object node can acquire a newer element node when
-    the category value enters a new placement.  Within one role, construction order
-    ranks a category after every structural target it selects.
+    the category value enters a new placement.  Within one role, the rank is the declared
+    one: a category outranks every structural target it selects, and the targets of one
+    declaration rank in the order ``structure_functors()`` names them (D165, D166, D167).
     """
-    return (_ROLE_POSITIONS[current.role], current.category.ordinal())
+    table = _declared_ranks[current.role]
+    assert current.category in table, f"{current.category!r}.{current.role.value} is not ranked"
+    return (_ROLE_POSITIONS[current.role], table[current.category])
+
+
+def _selected_in_role(category: Category, role: Role) -> list[Category]:
+    """The categories one declaration selects an inheriting functor into, in declared order."""
+    return [target.category for _, target in successors(Node(category, role)) if target.role is role]
+
+
+def _rank_declaration(category: Category, role: Role) -> None:
+    """Rank ``category`` in one role, and take the role's ranks again if it reorders a pair.
+
+    A category is newer than every target it selects, so a declaration that names its
+    targets in the order they already stand in takes the top rank and leaves the rest of
+    the order alone.
+    """
+    ranks = _declared_ranks[role]
+    reached = _selected_in_role(category, role)
+    if category not in ranks and all(
+        ahead in ranks and behind in ranks and ranks[ahead] > ranks[behind]
+        for ahead, behind in pairwise(reached)
+    ):
+        ranks[category] = 1 + max((rank for _, rank in ranks.items()), default=0)
+        return
+    _declared_ranks[role] = _rank_declarations(role, (category,))
+
+
+def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict:
+    """Rank one role's nodes, highest first, from the declared structural graph.
+
+    Sage's controlled C3 asks its client for a total order on the hierarchy and returns the
+    method resolution order that follows it (``sage.misc.c3_controlled``, "A strategy to
+    solve the problem").  This is that order.  Its first relation is the selected structural
+    graph, which puts a category above every target it selects.  Its second is the declared
+    order, which puts each selected isofibration above the next one named after it (D56,
+    D165, D166, D167).  The second yields to the first, exactly as a base list yields to
+    inheritance in C3 itself: a declaration orders the targets its graph leaves unordered,
+    and never turns a category into a base of one it already stands above.
+
+    The order a category already holds is the preference, so a declaration that adds no
+    relation between two categories leaves their order alone and the classes compiled from
+    it stay valid.  Where two declarations name one pair of targets in opposite orders no
+    order satisfies both; the earliest is the one kept, the diamond stays unresolved, and
+    the ``DEBUG`` record of ``_debug_unresolved_diamonds`` is its only effect (D37, D159).
+    """
+    incoming: MonoDict = MonoDict()
+    selected: MonoDict = MonoDict()
+
+    def expand(category: Category) -> None:
+        if category in incoming:
+            return
+        incoming[category] = []
+        selected[category] = _selected_in_role(category, role)
+        for target in selected[category]:
+            expand(target)
+            incoming[target].append(category)
+
+    for root in (*roots, *(category for category, _ in _runtime_categories[role].items())):
+        expand(root)
+
+    def outranks(source: Category, category: Category) -> bool:
+        """Whether ``source`` already stands above ``category``."""
+        frontier = [category]
+        seen: MonoDict = MonoDict()
+        while frontier:
+            for above in incoming[frontier.pop()]:
+                if above is source:
+                    return True
+                if above in seen:
+                    continue
+                seen[above] = None
+                frontier.append(above)
+        return False
+
+    # An order a compiled class was built from is fixed: the class exists, and Sage built
+    # its method resolution order from that order.  What a declaration orders is the pairs
+    # no compiled class has ordered yet.
+    for behind, above in _compiled_orders[role].items():
+        if behind in incoming:
+            incoming[behind].extend(ahead for ahead in above if ahead in incoming)
+
+    preferred = _declared_ranks[role]
+    declaring = [category for category, _ in selected.items()]
+    declaring.sort(key=lambda category: category.ordinal())
+    for category in declaring:
+        for ahead, behind in pairwise(selected[category]):
+            if ahead in preferred and behind in preferred and preferred[ahead] > preferred[behind]:
+                # The two already stand this way, and the ranks below prefer that order.
+                continue
+            if not outranks(behind, ahead):
+                incoming[behind].append(ahead)
+
+    unranked = 1 + sum(1 for _ in incoming.items())
+    pending = [category for category, _ in incoming.items()]
+    pending.sort(
+        key=lambda category: (preferred[category] if category in preferred else unranked, category.ordinal()),
+        reverse=True,
+    )
+    ranked: list[Category] = []
+    placed: MonoDict = MonoDict()
+
+    def place(category: Category) -> None:
+        if category in placed:
+            return
+        placed[category] = None
+        for source in incoming[category]:
+            place(source)
+        ranked.append(category)
+
+    for category in pending:
+        place(category)
+    ranks: MonoDict = MonoDict()
+    for position, category in enumerate(ranked):
+        ranks[category] = len(ranked) - position
+    return ranks
 
 
 def node(category: Category, role: Role) -> Node:
@@ -406,6 +528,14 @@ def _compiled_class(current: Node) -> type[CategoryPoint]:
     with building_role_classes():
         compiled = _runtime_category(current).parent_class
     _install_written_body(compiled, current.category.local_role_class(current.role))
+    # The order this class was built from is now fixed (``_rank_declarations``).
+    fixed = _compiled_orders[current.role]
+    chain = [current.category, *(owner.category for owner in _linearized_nodes(current) if owner.role is current.role)]
+    for ahead, behind in pairwise(chain):
+        if behind not in fixed:
+            fixed[behind] = []
+        if not any(known is ahead for known in fixed[behind]):
+            fixed[behind].append(ahead)
     return compiled
 
 
@@ -552,6 +682,16 @@ _UNRESOLVED = object()
 type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[Node, object]]
 
 
+class _SelectedAction(NamedTuple):
+    """One queued object action out of an owner the kernel has already initialized."""
+
+    functor: Functor
+    owner: Node
+    target: Node
+    datum: object
+    representative: CategoryPoint
+
+
 def _initialize_kernel_roots(instance: CategoryPoint, role: Role) -> None:
     """Install placement and identity from the active construction context, before any declaration runs."""
     if role is not Role.ELEMENT:
@@ -586,6 +726,12 @@ def _initialize_graph(
     constructed from.  A point node of the category runs with none.  The first
     structural path to reach an owner supplies its datum (D56).  No declaration calls a
     base-class initializer.
+
+    An action is run at the turn of the owner it constructs, not at the turn of the owner
+    it starts from, so every owner ahead of it in the C3 order is already initialized on
+    the instance.  This is what lets the second selected functor's action call the methods
+    the instance inherits through the first (D13 as corrected 09-02; ``specs/leaves.md``,
+    "An action receives a fully initialized source value").
     """
     # Each reached owner keeps the value that represents ``instance`` in its own category:
     # the instance itself at the root, and the retained image ``F(x)`` below a selected
@@ -593,12 +739,38 @@ def _initialize_graph(
     # its domain; the source value carries the owner's implementation without being one
     # of its objects (POL-MATH-046).
     resolved: list[tuple[Node, object, CategoryPoint]] = [(current, data, instance)]
+    queued: list[_SelectedAction] = []
 
     def resolution(owner: Node) -> tuple[object, CategoryPoint] | None:
         return next(((datum, value) for known, datum, value in resolved if same_node(known, owner)), None)
 
+    def run_next_action() -> bool:
+        """Run one queued action and record what the owner it reaches is constructed from."""
+        while queued:
+            action = queued.pop(0)
+            if resolution(action.target) is not None:
+                continue
+            image, built, image_data = image_datum(action.functor, action.representative)
+            if image is action.representative:
+                # An inclusion is the identity on this value: the target shares the datum
+                # this owner was constructed from, and adds nothing to it.
+                resolved.append((action.target, action.datum, action.representative))
+                return True
+            assert same_node(built, action.target) or not _runtime(action.target).written, (
+                f"{action.functor!r} out of {type(action.owner.category).__name__} constructs its image at "
+                f"{type(built.category).__name__}.{built.role.value}, not at its codomain "
+                f"{type(action.target.category).__name__}.{action.target.role.value}, whose declaration initializes local state"
+            )
+            resolved.append((action.target, image_data, image))
+            if not same_node(built, action.target):
+                resolved.append((built, image_data, image))
+            return True
+        return False
+
     for owner in context.nodes:
         is_point_node = _is_cat_element_root(owner) or (owner.role is Role.ELEMENT and current.role is not Role.ELEMENT)
+        while not is_point_node and resolution(owner) is None and run_next_action():
+            pass
         found = (None, instance) if is_point_node else resolution(owner)
         assert found is not None, (
             f"no selected functor reaches {owner.category!r}.{owner.role.value} from {current.category!r}"
@@ -608,23 +780,10 @@ def _initialize_graph(
         context.run(owner, lambda runtime=runtime, datum=datum: runtime.initializer(instance, datum))
         if owner.role is not current.role:
             continue
-        for functor, target in successors(owner):
-            if resolution(target) is not None:
-                continue
-            image, built, image_data = image_datum(functor, representative)
-            if image is representative:
-                # An inclusion is the identity on this value: the target shares the datum
-                # this owner was constructed from, and adds nothing to it.
-                resolved.append((target, datum, representative))
-                continue
-            assert same_node(built, target) or not _runtime(target).written, (
-                f"{functor!r} out of {type(owner.category).__name__} constructs its image at "
-                f"{type(built.category).__name__}.{built.role.value}, not at its codomain "
-                f"{type(target.category).__name__}.{target.role.value}, whose declaration initializes local state"
-            )
-            resolved.append((target, image_data, image))
-            if not same_node(built, target):
-                resolved.append((built, image_data, image))
+        queued.extend(
+            _SelectedAction(functor, owner, target, datum, representative)
+            for functor, target in successors(owner)
+        )
 
 
 def _object_image_datum(functor: Functor, instance: CategoryPoint) -> tuple[CategoryPoint, Node, object]:
@@ -938,6 +1097,12 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         f"{category!r} selects one functor twice"
     )
     _debug_unresolved_diamonds(category)
+    # The declaration this category just read adds relations to the total order the C3
+    # merge follows, so the ranks are taken again before any class is compiled from them.
+    for role in Role:
+        declaring = node(category, role)
+        if declaring.role is role:
+            _rank_declaration(declaring.category, role)
     for role in _COMPILE_ORDER:
         current = node(category, role)
         if current.category is not category:

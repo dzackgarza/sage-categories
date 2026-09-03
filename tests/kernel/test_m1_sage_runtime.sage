@@ -13,8 +13,8 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.compiler import SemanticCollisionError
-from sage_categories.kernel.roles import CategoryPoint
+from sage_categories.kernel.compiler import SemanticCollisionError, declared_inheritance
+from sage_categories.kernel.roles import CategoryPoint, Role
 
 
 _BASE_OBJECT_INITIALIZATIONS: list[CategoryPoint] = []
@@ -22,6 +22,7 @@ _BASE_ELEMENT_INITIALIZATIONS: list[CategoryPoint] = []
 _BASE_MORPHISM_INITIALIZATIONS: list[CategoryPoint] = []
 _DIAMOND_TO_LEFT_OBJECT_ACTIONS: list[CategoryPoint] = []
 _DIAMOND_TO_LEFT_MORPHISM_ACTIONS: list[CategoryPoint] = []
+_THREADED_TARGETS: list[tuple[str, CategoryPoint]] = []
 
 
 class _SyntheticCategoryOperations:
@@ -206,6 +207,115 @@ class DiamondCategory(_SyntheticCategoryOperations, Category):
 DIAMOND = DiamondCategory()
 
 
+def _synthetic_isofibration(
+    source: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    on_object: object,
+) -> Functor:
+    """One selected isofibration of a synthetic specimen, over the label its objects carry."""
+
+    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        return target.morphism_category(1)(on_object(morphism.domain()), on_object(morphism.codomain())).one()
+
+    return Fun(source, target).Isofibrations()(on_object, on_morphism)
+
+
+class FirstDeclaredCategory(_SyntheticCategoryOperations, Category):
+    """The older of a pair of targets; a specimen below declares it first."""
+
+    class ObjectType:
+        def __init__(self, label: Integer) -> None:
+            _THREADED_TARGETS.append(("first declared", self))
+            self._first_declared_state = label
+            self._synthetic_label = label
+
+        def first_declared_object(self) -> Integer:
+            return self._first_declared_state
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+
+FIRST_DECLARED = FirstDeclaredCategory()
+
+
+class SecondDeclaredCategory(_SyntheticCategoryOperations, Category):
+    """The newer of that pair; construction order would give it precedence."""
+
+    class ObjectType:
+        def __init__(self, label: Integer) -> None:
+            _THREADED_TARGETS.append(("second declared", self))
+            self._second_declared_state = label
+            self._synthetic_label = label
+
+        def second_declared_object(self) -> Integer:
+            return self._second_declared_state
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+
+SECOND_DECLARED = SecondDeclaredCategory()
+
+
+class AgainstConstructionOrderCategory(_SyntheticCategoryOperations, Category):
+    """Two selected isofibrations named against the order their targets were constructed."""
+
+    class ObjectType:
+        def __init__(self, label: Integer) -> None:
+            _THREADED_TARGETS.append(("source", self))
+            self._synthetic_label = label
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        def to_second(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            # This action reads a method the value under construction inherits through the
+            # isofibration declared before it, whose state the kernel has installed by now.
+            return SECOND_DECLARED(member_object.first_declared_object())
+
+        return (
+            _synthetic_isofibration(self, FIRST_DECLARED, lambda member: FIRST_DECLARED(self._label(member))),
+            _synthetic_isofibration(self, SECOND_DECLARED, to_second),
+        )
+
+
+AGAINST_CONSTRUCTION_ORDER = AgainstConstructionOrderCategory()
+
+
+class WithConstructionOrderCategory(_SyntheticCategoryOperations, Category):
+    """The same rule on a disjoint pair, which this one names newest first."""
+
+    class ObjectType:
+        def __init__(self, label: Integer) -> None:
+            self._synthetic_label = label
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (
+            _synthetic_isofibration(self, SECOND_DECLARED, lambda member: SECOND_DECLARED(self._label(member))),
+            _synthetic_isofibration(self, BASE, lambda member: BASE(self._label(member))),
+        )
+
+
+WITH_CONSTRUCTION_ORDER = WithConstructionOrderCategory()
+
+
 class StructuredCategory(Category):
     """A structured category whose objects are categories: the ``D`` of R1 criteria 6 and 7."""
 
@@ -343,6 +453,49 @@ def test_construction_runs_each_selected_action_once_and_retains_its_image() -> 
     assert image_morphism_state == inherited_morphism_state == 11
     assert DIAMOND.selected_functors()[0] is to_left
 
+
+def test_the_declared_order_of_the_selected_isofibrations_ranks_inheritance() -> None:
+    # The two targets stand in the order the declaration names, which is the reverse of the
+    # order they were constructed in (D165, D166, D167).
+    assert FIRST_DECLARED.ordinal() < SECOND_DECLARED.ordinal()
+    assert [
+        declaration.__qualname__
+        for declaration in declared_inheritance(AGAINST_CONSTRUCTION_ORDER, Role.OBJECT)
+    ][:3] == [
+        "AgainstConstructionOrderCategory.ObjectType",
+        "FirstDeclaredCategory.ObjectType",
+        "SecondDeclaredCategory.ObjectType",
+    ]
+
+    # What decides is the declared order and not the reverse of the construction order: a
+    # declaration naming the newer target first stands that way too.
+    assert BASE.ordinal() < SECOND_DECLARED.ordinal()
+    assert [
+        declaration.__qualname__
+        for declaration in declared_inheritance(WITH_CONSTRUCTION_ORDER, Role.OBJECT)
+    ][:3] == [
+        "WithConstructionOrderCategory.ObjectType",
+        "SecondDeclaredCategory.ObjectType",
+        "BaseCategory.ObjectType",
+    ]
+
+
+def test_a_selected_action_runs_on_a_value_the_targets_ahead_of_it_have_initialized() -> None:
+    del _THREADED_TARGETS[:]
+
+    member_object = AGAINST_CONSTRUCTION_ORDER(9)
+
+    # The second action called ``first_declared_object()``, which the value inherits through
+    # the isofibration declared before it (D13; ``specs/leaves.md``, "An action receives a
+    # fully initialized source value").
+    assert member_object.second_declared_object() == 9
+    assert member_object.first_declared_object() == 9
+    # The kernel ran this value's own initializer, then the two targets in declared order.
+    assert [name for name, value in _THREADED_TARGETS if value is member_object] == [
+        "source",
+        "first declared",
+        "second declared",
+    ]
 
 
 def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFixture) -> None:

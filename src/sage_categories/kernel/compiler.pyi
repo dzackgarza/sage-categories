@@ -74,6 +74,13 @@ class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
     written: bool
 type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[Node, object]]
 
+class _SelectedAction(NamedTuple):
+    functor: Functor
+    owner: Node
+    target: Node
+    datum: object
+    representative: CategoryPoint
+
 def construct_category_value(instance: ObjectOfCategory) -> None:
     ...
 

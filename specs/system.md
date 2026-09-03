@@ -131,7 +131,11 @@ The following source dependencies are valid:
 
 - `Cat` imports no production leaf.
 - The kernel imports no production leaf.
-- The kernel imports no module of `Cat`: the direction is kernel to `Cat` to leaves (D173).
+- The kernel imports no module of `Cat` (D173).
+- `cat_kernel` is downstream of both and imports from both; neither the kernel nor `Cat`
+  imports `cat_kernel`, and no leaf imports it (D175). The work that needs `Cat` to define
+  a functor and the kernel to interpret an axiom declaration as a structured isofibration
+  lives here, and nowhere else.
 - A leaf imports no kernel internal.
 - Only the kernel's Sage runtime module and the engine modules named in the import contract import `sage`.
 - A leaf depends only on its immediate mathematical targets.

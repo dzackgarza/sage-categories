@@ -36,8 +36,14 @@ declaration of a morphism of an arbitrary category; a point's `parent`, `definin
 `category`, and `__eq__` belong to `Cat().ElementType` and `Cat().ObjectType`.
 The kernel reads a construction context and hands the value to the compiled class; it never
 defines what the value means.
-A kernel module imports no module of `Cat`: the direction is kernel to `Cat` to leaves, and
-the import contract states it.
+A kernel module imports no module of `Cat`, and no module of `cat_kernel` either.
+
+`cat_kernel` is the layer downstream of both (D175). `Cat` defines functors; the kernel
+interprets an axiom declaration as a specifically structured isofibration; the work that
+needs both — generating `is_p()` and its property subcategory, and reading a functor's
+declared properties to decide placement and inheritance — is neither `Cat`'s alone nor the
+kernel's alone, and it lives here. `cat_kernel` imports from the kernel and from `Cat`;
+neither imports it, and no leaf imports it. A leaf reaches `Cat`.
 
 `POL-KERNEL-038` carries this rule and a D132 check fails on a method outside the list.
 

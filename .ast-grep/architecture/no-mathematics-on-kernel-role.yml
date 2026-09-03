@@ -1,0 +1,23 @@
+# D173: the kernel is engineering and states no mathematics. The three private role
+# classes exist so Sage has a stable Python end for each compiled role; their surface is
+# closed, the way D77 closes the leaf writer's contract, and specs/resolution.md "The
+# closed kernel surface" is the list. A method outside it is mathematics whose owner is
+# `Mor(C).ObjectType` or `Cat()`.
+id: no-mathematics-on-kernel-role
+language: python
+severity: error
+files:
+  - src/sage_categories/kernel/**/*.py
+message: POL-KERNEL-038, D173, D130
+rule:
+  kind: function_definition
+  has:
+    field: name
+    not:
+      regex: ^(__init_subclass__|__hash__|_compile_category|_recompile_category|local_role_class|role_class|role_source|_object_role_source|_initialize_identity|_initialize_placement|_initialize_functor_image_cache|_is_object|_is_element|_is_morphism|_cached_object_image|_cached_morphism_image)$
+  inside:
+    kind: class_definition
+    stopBy: end
+    has:
+      field: name
+      regex: ^(CategoryPoint|ObjectOfCategory|ElementOfObject|MorphismOfCategory)$

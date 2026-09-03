@@ -2,11 +2,6 @@ id: no-leaf-value-store
 language: python
 severity: error
 files:
-  - src/sage_categories/sets/**/*.py
-  - src/sage_categories/posets/**/*.py
-  - src/sage_categories/algebra/**/*.py
-  - src/sage_categories/number_sets/**/*.py
-  - src/sage_categories/ordinals/**/*.py
   - tests/kernel/**/*.sage
 ignores:
   - src/sage_categories/**/_*_sage.py

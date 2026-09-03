@@ -45,6 +45,17 @@ platform = ["juliacall>=0.9.35,<0.10"]
 [tool.importlinter]
 root_package = "sage_categories"
 include_external_packages = true
+# A `TYPE_CHECKING` import is an annotation, not a dependency, and D130 requires the exact
+# type. The contracts below read runtime imports only.
+exclude_type_checking_imports = true
+
+# D173: the kernel is engineering and `Cat` owns the mathematics every category shares, so
+# the direction is kernel to `Cat` to leaves. specs/system.md "Dependency directions".
+[[tool.importlinter.contracts]]
+name = "The kernel imports no module of Cat"
+type = "forbidden"
+source_modules = ["sage_categories.kernel"]
+forbidden_modules = ["sage_categories.cat"]
 
 [[tool.importlinter.contracts]]
 name = "Only the kernel's Sage runtime module and the named engine modules import Sage"

@@ -19,7 +19,13 @@ test-commit:
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-commit
 
 # Architecture invariants from specs/system.md and specs/resolution.md (D132): a hard stop before push.
+#
+# The coverage check runs first (D174): a rule whose file glob matches nothing is green
+# because it read nothing, which is not a measurement. A rule names only packages in the
+# tree, so each P-phase adds its package back to the rules it owns, exactly as the
+# pyproject comment states for the import contracts.
 architecture:
+    uv run --no-project --python 3.14 --with pyyaml python scripts/rule_coverage.py
     PYTHONPATH=src uvx --python 3.14 --from import-linter lint-imports --config pyproject.toml
     uvx --from ast-grep-cli ast-grep scan --config .ast-grep/architecture.yml --error src tests/kernel
 

@@ -95,7 +95,7 @@ Every public result is an owned value or an authorized public proposition.
 | Structure functor | Its defining category or retained construction | The compiler selects its target classes |
 | Public functor image | The named functor | Its ordinary object or morphism action |
 | Inherited execution | The declaring target category | Sage dynamic method resolution |
-| Property category `C.P()` | `C.P()` | Sage axiom binding and kernel refinement |
+| Property category `C.P()` | `C.P()`; `cat_kernel` routes it and its `is_p()` from the axiom declaration (D175) | Sage axiom binding and kernel refinement |
 | Mathematical predicate | The category, property, or equality owner | Public SymPy `Predicate` subclass |
 | Applied proposition | Its mathematical predicate | SymPy `AppliedPredicate` or Boolean expression |
 | Proposition assumptions | The active mathematical session | SymPy `global_assumptions` |

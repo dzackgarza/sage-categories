@@ -238,7 +238,7 @@ The private runtime satisfies this specification when:
 - temporary runtime data has no public mathematical effect;
 - unrelated mathematical declarations with one spelling fail as a semantic collision;
 - theory modules import no private runtime type;
-- the kernel supplies inherited element construction, object retention, and axiom-subcategory routing, and `Cat` supplies identity and composition, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133, D173);
+- the kernel supplies inherited element construction and object retention, `Cat` supplies identity and composition, and `cat_kernel` supplies axiom-subcategory routing with the predicates it generates, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133, D173, D175);
 - every method a kernel module defines on a role class is on the closed surface below, and the kernel imports no module of `Cat` (D173);
 - public engine values are limited to authorized SymPy proposition expressions;
 - their nested identity atoms expose no independent public API;

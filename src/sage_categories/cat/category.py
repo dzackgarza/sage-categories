@@ -207,6 +207,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
         self._elements: MonoDict = MonoDict()
+        self._composites: TripleDict = TripleDict(weak_values=False)
         self._slices: MonoDict = MonoDict()
         self._coslices: MonoDict = MonoDict()
         self._retained_data: MonoDict = MonoDict()
@@ -528,10 +529,14 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return self.MorphismType(domain, codomain, *args, **kwargs)
 
     def construct_identity(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        """``1_X``: the morphism with both endpoints ``X``, which its object determines and no datum names."""
+        """``1_X``: the morphism with both endpoints ``X``, which its object determines and no datum names.
+
+        A subcategory contains the identities of its objects, full or not, so the guard
+        is the ambient itself and the ambient's identity refines into this category.
+        """
         from sage_categories.kernel.refinement import refine
 
-        if self.has_full_ambient():
+        if self.has_ambient():
             ambient = self.ambient()
             identity = ambient.morphism_category(1)(member_object, member_object).one()
             refine(identity, self.morphism_category(1))
@@ -539,14 +544,28 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return self.MorphismType(member_object, member_object)
 
     def composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        """``second * first``: the morphism ``dom(first) -> cod(second)`` its two factors determine."""
+        """``second * first``: the morphism its two factors determine, retained on the pair.
+
+        A subcategory is closed under composition, full or not, so the guard is the
+        ambient itself.  With no ambient the category composes formally: ``g * f`` is
+        determined by ``g`` and ``f`` and not by ``dom f`` and ``cod g``, so the
+        composite is retained on the pair and retains the pair as its factors (D44).
+        """
         from sage_categories.kernel.refinement import refine
 
-        if self.has_full_ambient():
+        assert first.codomain() is second.domain(), (
+            f"{second!r} after {first!r} is not composable: the first ends at {first.codomain()!r} and the second starts at {second.domain()!r}"
+        )
+        if self.has_ambient():
             composite = self.ambient().composite(second, first)
             refine(composite, self.morphism_category(1))
             return composite
-        return self.MorphismType(first.domain(), second.codomain())
+        key = (second, first, self)
+        if key not in self._composites:
+            formal = self.MorphismType(first.domain(), second.codomain())
+            formal.retain_factors(first, second)
+            self._composites[key] = formal
+        return self._composites[key]
 
     def identity_two_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         from sage_categories.kernel.refinement import refine
@@ -954,6 +973,28 @@ _composite_factors: MonoDict = MonoDict()
 _composites: MonoDict = MonoDict()
 
 
+def retain_composite_factors(
+    composite: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> None:
+    """Retain that ``composite`` is ``second * first`` (``Mor(C).ObjectType.retain_factors``)."""
+    assert composite not in _composite_factors, f"{composite!r} already retains its factors"
+    assert first.codomain() is second.domain(), f"{second!r} after {first!r} is not composable"
+    assert composite.domain() is first.domain() and composite.codomain() is second.codomain(), (
+        f"{composite!r} does not run {first.domain()!r} -> {second.codomain()!r}"
+    )
+    _composite_factors[composite] = (first, second)
+
+
+def composite_factors(
+    composite: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The retained factors ``(first, second)`` of ``second * first`` (``Mor(C).ObjectType.factors``)."""
+    assert composite in _composite_factors, f"{composite!r} is not a retained composite"
+    return _composite_factors[composite]
+
+
 def _composite_sequence(functor: Functor) -> tuple[Functor, ...]:
     if functor not in _composite_factors:
         return (functor,)
@@ -991,7 +1032,76 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     Empty = Axiom()
 
     class ElementType:
-        """A point ``* -> C`` of a category, whose value is an object of ``C`` (POL-CAT-058)."""
+        """A point ``* -> C`` of a category, whose value is an object of ``C`` (POL-CAT-058).
+
+        Every owned value is such a point, so the compiled class of this declaration sits
+        under all three implementation roles and states what every point shares: what it
+        is a point of, the morphism defining it, its placement, and its equality (D173).
+        The two cases below are the two point identities the kernel installs: a point of a
+        category, whose placement the kernel retains and refines, and a generalized
+        element ``t: T -> X`` of an object, whose placement is the slice over ``X``.
+        """
+
+        def parent(self) -> CategoryOfCategories.ElementType:
+            """The object this is a point of: the category for a point ``* -> C``, the object for a point of one."""
+            from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
+
+            match self._cat_element_identity:
+                case ElementRoleIdentity(defining_morphism):
+                    return defining_morphism.codomain()
+                case CategoryPointIdentity(parent):
+                    return parent
+            raise AssertionError(self._cat_element_identity)
+
+        def defining_morphism(self) -> MorphismCategory.ObjectType:
+            """The morphism that defines this point: its own for an element, the point functor's arrow for an object."""
+            from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
+
+            match self._cat_element_identity:
+                case ElementRoleIdentity(defining_morphism):
+                    return defining_morphism
+                case CategoryPointIdentity(parent):
+                    return parent.point_functor(self)
+            raise AssertionError(self._cat_element_identity)
+
+        def category(self) -> Category:
+            """The strongest placement established for this point.
+
+            A point ``* -> C`` reads the placement the kernel installed from its
+            construction context and refined since (``refinement.place``), including one
+            established while the value is still under construction: a category class
+            that selects a point functor ``D.Point()`` is placed in ``D`` inside its own
+            constructor chain, and the level shift reads that placement (D154, D169).
+            A generalized element ``t: T -> X`` is an object of the slice over ``X``.
+            """
+            from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
+
+            match self._cat_element_identity:
+                case ElementRoleIdentity():
+                    return self.parent().category().SliceOver(self.parent())
+                case CategoryPointIdentity():
+                    return self._category
+            raise AssertionError(self._cat_element_identity)
+
+        def _deciding_category(self) -> Category:
+            """The category that decides equality of this point: its placement, or its parent's category for an element."""
+            from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
+
+            match self._cat_element_identity:
+                case ElementRoleIdentity():
+                    return self.parent().category()
+                case CategoryPointIdentity():
+                    return self._category
+            raise AssertionError(self._cat_element_identity)
+
+        def __eq__(self, candidate: CategoryOfCategories.ElementType | int) -> Predicate:
+            return self._deciding_category().equality()(self, candidate)
+
+        def __ne__(self, candidate: CategoryOfCategories.ElementType | int) -> Proposition:
+            return ~self._deciding_category().equality()(self, candidate)
+
+        def __hash__(self) -> int:
+            return object.__hash__(self)
 
         def __mul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             """``X * Y``: the product in the least category receiving both."""
@@ -1153,18 +1263,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 return image
             return image * comparison
 
-        # -- composition data ------------------------------------------------------------------
-
-        def retain_factors(self, first: Functor, second: Functor) -> None:
-            """Retain that this functor is the composite ``second * first``."""
-            assert self not in _composite_factors, f"{self!r} already retains its factors"
-            assert first.codomain() is second.domain() and self.domain() is first.domain() and self.codomain() is second.codomain()
-            _composite_factors[self] = (first, second)
-
-        def factors(self) -> tuple[Functor, Functor]:
-            """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order."""
-            assert self in _composite_factors, f"{self!r} is not a retained composite"
-            return _composite_factors[self]
+        # A functor is a morphism of ``Cat()``, so ``retain_factors`` and ``factors``
+        # arrive from ``Mor(C).ObjectType``, where every morphism's composite factors are
+        # declared once (D44, D85, D173).
 
         # -- fibration and opfibration lifts (POL-FUN-029) ------------------------------------
 

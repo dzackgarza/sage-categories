@@ -33,7 +33,34 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
     class ObjectType:
 
+        def domain(self) -> CategoryOfCategories.ElementType:
+            ...
+
+        def codomain(self) -> CategoryOfCategories.ElementType:
+            ...
+
+        def base_category(self) -> Category:
+            ...
+
+        def retain_factors(self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> None:
+            ...
+
+        def factors(self) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+            ...
+
         def op(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def __mul__(self, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            ...
+
+        def __eq__(self, candidate: MorphismCategory.ObjectType | int) -> Predicate:
+            ...
+
+        def __ne__(self, candidate: MorphismCategory.ObjectType | int) -> Proposition:
+            ...
+
+        def __hash__(self) -> int:
             ...
 
     class MorphismType(sage_categories.kernel.roles.MorphismOfCategory):

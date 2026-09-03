@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.cat.functors import Functor
     from sage_categories.kernel.functor_cache import FunctorImageCache
-    from sage_categories.cat.predicates import AppliedPredicate, Proposition
 
 __all__ = [
     "CategoryPoint",
@@ -77,37 +76,6 @@ class CategoryPoint:
             "a category point requires its active construction context"
         )
         self._cat_element_identity = context.cat_element_identity
-
-    def defining_morphism(self) -> MorphismOfCategory:
-        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
-
-        match self._cat_element_identity:
-            case ElementRoleIdentity(defining_morphism):
-                return defining_morphism
-            case CategoryPointIdentity(parent):
-                return parent.point_functor(self)
-        raise AssertionError(self._cat_element_identity)
-
-    def parent(self) -> ObjectOfCategory:
-        """The object this is a point of: the identity the kernel installed first, and ``place`` since (``refinement.place``)."""
-        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
-
-        match self._cat_element_identity:
-            case ElementRoleIdentity(defining_morphism):
-                return defining_morphism.codomain()
-            case CategoryPointIdentity(parent):
-                return parent
-        raise AssertionError(self._cat_element_identity)
-
-    def category(self) -> Category:
-        """The slice category of a point ``1_C -> X`` of an object."""
-        return self.parent().category().SliceOver(self.parent())
-
-    def __eq__(self, candidate: CategoryPoint | int) -> AppliedPredicate:
-        return self.parent().category().equality()(self, candidate)
-
-    def __ne__(self, candidate: CategoryPoint | int) -> Proposition:
-        return ~self.parent().category().equality()(self, candidate)
 
     def __hash__(self) -> int:
         return object.__hash__(self)
@@ -203,26 +171,6 @@ class ObjectOfCategory(CategoryPoint):
         assert context is not None and context.canonical_image is self, "object identity requires its active construction context"
         self._category = context.identity.category
 
-    def category(self) -> Category:
-        """The strongest category placement established for this object.
-
-        The construction context supplies the first placement (``_initialize_placement``)
-        and ``refinement.place`` every later one, including a placement established while
-        the object is still under construction: a category class that selects a point
-        functor ``D.Point()`` is placed in ``D`` inside its own constructor chain, and the
-        level shift reads that placement (D154, D169).
-        """
-        return self._category
-
-    def __eq__(self, candidate: CategoryPoint | int) -> AppliedPredicate:
-        return self._category.equality()(self, candidate)
-
-    def __ne__(self, candidate: CategoryPoint | int) -> Proposition:
-        return ~self._category.equality()(self, candidate)
-
-    def __hash__(self) -> int:
-        return object.__hash__(self)
-
 
 class ElementOfObject(CategoryPoint):
     """The role-specific kernel class of a point ``1_C -> X`` of an object."""
@@ -270,49 +218,6 @@ class MorphismOfCategory(ObjectOfCategory):
         self._category = identity.category
         self._domain = identity.domain
         self._codomain = identity.codomain
-
-    def category(self) -> Category:
-        """The strongest placement established for this morphism as an object of ``Mor(C)`` (``ObjectOfCategory.category``)."""
-        return self._category
-
-    def base_category(self) -> Category:
-        """The category ``C`` whose morphism this is."""
-        return self.category().base_category()
-
-    def domain(self) -> ObjectOfCategory:
-        from sage_categories.kernel.construction import active_morphism_context
-
-        context = active_morphism_context()
-        if context is not None and context.canonical_image is self:
-            return context.identity.domain
-        return self._domain
-
-    def codomain(self) -> ObjectOfCategory:
-        from sage_categories.kernel.construction import active_morphism_context
-
-        context = active_morphism_context()
-        if context is not None and context.canonical_image is self:
-            return context.identity.codomain
-        return self._codomain
-
-    def __mul__(self, first: MorphismOfCategory) -> MorphismOfCategory:
-        """``self * first`` is ``self`` after ``first``: composition owned by ``C``.
-
-        ``*`` on a morphism is composition and nothing else: no operator carries two
-        meanings on one role (POL-CAT-088).  The product of two morphisms is the
-        product of two objects of ``Mor(C)`` and is constructed by naming that
-        category: ``Mor(C).Products()((f, g))``.  It has no operator.
-        """
-        return self.base_category().compose_morphisms(self, first)
-
-    def __eq__(self, candidate: CategoryPoint | int) -> AppliedPredicate:
-        return self.base_category().equality()(self, candidate)
-
-    def __ne__(self, candidate: CategoryPoint | int) -> Proposition:
-        return ~self.base_category().equality()(self, candidate)
-
-    def __hash__(self) -> int:
-        return object.__hash__(self)
 
 
 _BASES: dict[Role, type[CategoryPoint]] = {

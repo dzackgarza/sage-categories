@@ -1,5 +1,6 @@
 from collections.abc import Callable as Callable
 from sage_categories.kernel.roles import MorphismOfCategory as MorphismOfCategory, ObjectOfCategory as ObjectOfCategory
+from sage_categories.kernel.sage_runtime import MonoDict as MonoDict, TripleDict as TripleDict
 
 class FunctorImageCache:
 

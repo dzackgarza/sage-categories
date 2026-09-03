@@ -8,7 +8,7 @@ from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTrans
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import AppliedQuery, Predicate, Proposition, UnknownClass
-from sage_categories.kernel.sage_runtime import Integer, cached_method
+from sage_categories.kernel.sage_runtime import Integer
 from typing import Literal, overload
 __all__ = ['OnObject', 'OnMorphism', 'Assignment', 'member', 'Category', 'CategoryOfCategories', 'Cat']
 type OnObject = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
@@ -153,20 +153,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
 
     def arrow_functor(self, morphism: MorphismCategory.ObjectType) -> Functor:
         ...
-
-    @cached_method
-    def Products(self) -> Category:
-        ...
-
-    @cached_method
-    def Coproducts(self) -> Category:
-        ...
-
-    def Limits(self, shape: Category) -> Category:
-        ...
-
-    def Colimits(self, shape: Category) -> Category:
-        ...
+    Products: Incomplete
+    Coproducts: Incomplete
+    Limits: Incomplete
+    Colimits: Incomplete
 
     def Pullbacks(self) -> Category:
         ...
@@ -272,6 +262,24 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     class ElementType:
 
+        def parent(self) -> CategoryOfCategories.ElementType:
+            ...
+
+        def defining_morphism(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def category(self) -> Category:
+            ...
+
+        def __eq__(self, candidate: CategoryOfCategories.ElementType | int) -> Predicate:
+            ...
+
+        def __ne__(self, candidate: CategoryOfCategories.ElementType | int) -> Proposition:
+            ...
+
+        def __hash__(self) -> int:
+            ...
+
         def __mul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             ...
 
@@ -320,12 +328,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             ...
 
         def after_terminal_comparison(self, image: MorphismCategory.ObjectType, defining: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-            ...
-
-        def retain_factors(self, first: Functor, second: Functor) -> None:
-            ...
-
-        def factors(self) -> tuple[Functor, Functor]:
             ...
 
         def retain_cartesian_lifts(self, rule: LiftRule) -> None:

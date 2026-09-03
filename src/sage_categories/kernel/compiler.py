@@ -708,9 +708,13 @@ def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Va
     """Allocate ``Cat()`` and start its provisional constructor chain inside its object context."""
     install_category_declaration_root(category_type.ObjectType, category_type)
     with building_role_classes():
+        # ``Cat()`` is an object of ``Cat()``, so it is a point ``* -> Cat()`` and the
+        # element declaration belongs in its chain.  This is the level shift
+        # ``_role_targets`` performs for every other object role, done by hand because
+        # the class this bootstrap allocates is what the first compile is run from.
         provisional_type = dynamic_class(
             f"_{category_type.__name__}Bootstrap",
-            (category_type, ObjectOfCategory),
+            (category_type, category_type.ElementType, ObjectOfCategory),
             doccls=category_type,
             prepend_cls_bases=False,
             cache=True,

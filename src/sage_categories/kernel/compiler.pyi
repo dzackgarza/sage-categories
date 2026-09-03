@@ -1,12 +1,11 @@
 from _typeshed import Incomplete
 from collections.abc import Callable
-from sage_categories.cat.category import Category as SageCategory
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
-from sage_categories.kernel.roles import CategoryPoint, Role
-from sage_categories.kernel.sage_runtime import lazy_attribute
+from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
+from sage_categories.kernel.sage_runtime import SageCategory, lazy_attribute
 from typing import Concatenate, NamedTuple
-__all__ = ['SemanticCollisionError', 'Node', 'node', 'same_node', 'declared_inheritance', 'declared_subtyping', 'compiler', 'install_on_declaration', 'compile_category', 'recompile_category', 'apply_level_shift']
+__all__ = ['SemanticCollisionError', 'Node', 'node', 'same_node', 'inheriting_functors', 'declared_inheritance', 'declared_subtyping', 'compiler', 'install_on_declaration', 'construct_category_value', 'compile_category', 'recompile_category', 'apply_level_shift']
 
 class SemanticCollisionError(Exception):
     ...
@@ -46,6 +45,9 @@ def node(category: Category, role: Role) -> Node:
 def same_node(first: Node, second: Node) -> bool:
     ...
 
+def inheriting_functors(category: Category) -> tuple[Functor, ...]:
+    ...
+
 def declared_inheritance(category: Category, role: Role) -> tuple[type[CategoryPoint], ...]:
     ...
 
@@ -69,6 +71,11 @@ def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member
 class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
     initializer: Callable[[Value, Datum], None]
     owner: type[Value]
+    written: bool
+type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[Node, object]]
+
+def construct_category_value(instance: ObjectOfCategory) -> None:
+    ...
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     ...

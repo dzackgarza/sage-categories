@@ -20,7 +20,17 @@ from typing import TYPE_CHECKING, Literal, overload
 
 from sympy import ask as sympy_ask
 
-from sage_categories.cat.category import Category, Decision, Predicate, Proposition, ask, member, refine
+from sage_categories.cat.category import (
+    Category,
+    Decision,
+    Predicate,
+    Proposition,
+    ask,
+    composite_factors,
+    member,
+    refine,
+    retain_composite_factors,
+)
 from sage_categories.cat.predicates import predicate, register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
 from sage_categories.kernel.sage_runtime import TripleDict
@@ -117,13 +127,67 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     # the generic declaration whose generated axiom applications the kernel installs on
     # the private morphism root.
     class ObjectType:
-        """A morphism of an arbitrary category ``C``."""
+        """A morphism of an arbitrary category ``C``.
+
+        Every category's ``C.MorphismType`` is compiled from this declaration, so what
+        all morphisms share is stated here once and reaches each of them by inheritance
+        (D44, D85).  The kernel keeps the construction context and the compiled class and
+        states none of this (D173).
+        """
+
+        def domain(self) -> CategoryOfCategories.ElementType:
+            """The source object of ``self``, the endpoint its construction fixed."""
+            return self._domain
+
+        def codomain(self) -> CategoryOfCategories.ElementType:
+            """The target object of ``self``, the endpoint its construction fixed."""
+            return self._codomain
+
+        def base_category(self) -> Category:
+            """The category ``C`` whose morphism this is.
+
+            ``self.category()`` is the placement, a subcategory of ``Mor(C)``; ``C`` is
+            its base.
+            """
+            return self.category().base_category()
+
+        def retain_factors(self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> None:
+            """Retain that this morphism is the composite ``second * first``."""
+            retain_composite_factors(self, first, second)
+
+        def factors(self) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+            """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order.
+
+            ``g * f`` is determined by ``g`` and ``f``, not by ``dom f`` and ``cod g``
+            (D44), so a category composing formally retains the pair and this reads it
+            back.  A functor is a morphism of ``Cat()`` and reaches this declaration.
+            """
+            return composite_factors(self)
 
         def op(self) -> MorphismCategory.ObjectType:
             """Return the retained morphism with its direction reversed in the opposite category."""
             from sage_categories.cat.opposites import opposite_morphism
 
             return opposite_morphism(self)
+
+        def __mul__(self, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            """``self * first`` is ``self`` after ``first``: composition owned by ``C``.
+
+            ``*`` on a morphism is composition and nothing else: no operator carries two
+            meanings on one role (POL-CAT-088).  The product of two morphisms is the
+            product of two objects of ``Mor(C)`` and is constructed by naming that
+            category: ``Mor(C).Products()((f, g))``.  It has no operator.
+            """
+            return self.base_category().compose_morphisms(self, first)
+
+        def __eq__(self, candidate: MorphismCategory.ObjectType | int) -> Predicate:
+            return self.base_category().equality()(self, candidate)
+
+        def __ne__(self, candidate: MorphismCategory.ObjectType | int) -> Proposition:
+            return ~self.base_category().equality()(self, candidate)
+
+        def __hash__(self) -> int:
+            return object.__hash__(self)
 
     class MorphismType:
         """The identity 2-morphism of a morphism of a 1-category: the only morphisms of ``Mor(C)``."""

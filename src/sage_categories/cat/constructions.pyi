@@ -4,6 +4,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import LimitConesCategory, cocone as cocone, cocone_apex as cocone_apex, cone as cone, cone_apex as cone_apex, vertex_of as vertex_of
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.predicates import Proposition
 from sage_categories.cat.properties import PredicateSubcategory, PropertySubcategory
 __all__ = ['cocone', 'cocone_apex', 'cone', 'cone_apex', 'vertex_of', 'presenting_family', 'ApexCategory', 'LimitsCategory', 'ProductsCategory', 'ColimitsCategory', 'CoproductsCategory']
 type Mediator = Callable[[NaturalTransformation], MorphismCategory.ObjectType]
@@ -25,6 +26,9 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
         ...
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], name: str, full_subcategory_of: tuple[Category, ...]) -> None:
+        ...
+
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
     def accepts(self, diagram: Functor, shape: Category) -> None:
@@ -52,7 +56,6 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
         ...
 
 class LimitsCategory(ApexCategory):
-    _base_category_class_and_axiom: tuple[type[Category], str]
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
@@ -94,7 +97,6 @@ class LimitsCategory(ApexCategory):
         ...
 
 class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
-    _base_category_class_and_axiom: tuple[type[Category], str]
 
     class ElementType:
         ...
@@ -147,7 +149,6 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         ...
 
 class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
-    _base_category_class_and_axiom: tuple[type[Category], str]
 
     class ElementType:
         ...
@@ -173,6 +174,9 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
             ...
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...], shape: Category) -> None:
+        ...
+
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
     def shape(self) -> Category:
@@ -221,7 +225,6 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         ...
 
 class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
-    _base_category_class_and_axiom: tuple[type[Category], str]
 
     class ElementType:
         ...
@@ -263,4 +266,3 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
 
     def name(self) -> str:
         ...
-

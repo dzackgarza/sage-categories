@@ -197,6 +197,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def Monomorphisms(self) -> Category:
         ...
 
+    def declares_inheritance(self, functor: Functor) -> bool:
+        ...
+
     def declares_subcategory(self, functor: Functor) -> bool:
         ...
 

@@ -3,9 +3,9 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.sage_runtime import Unknown as Unknown, UnknownClass as UnknownClass
 from sympy import Predicate as Predicate
-from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
+from sage_categories.cat.predicates import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.logic.boolalg import Boolean
-__all__ = ['Unknown', 'UnknownClass', 'Predicate', 'AppliedPredicate', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'predicate', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom']
+__all__ = ['Predicate', 'Unknown', 'UnknownClass', 'AppliedPredicate', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'predicate', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom']
 
 class AppliedPredicate(_SymPyAppliedPredicate):
 

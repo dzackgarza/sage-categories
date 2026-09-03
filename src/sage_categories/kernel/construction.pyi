@@ -81,13 +81,10 @@ class ObjectConstructionContext:
     canonical_image: ObjectOfCategory
     identity: ObjectRoleIdentity
     cat_element_identity: CategoryPointIdentity
-    steps: tuple[tuple[Node, Callable[[], None]], ...]
+    nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
 
-    def run(self, node: Node) -> None:
-        ...
-
-    def advance(self) -> None:
+    def run(self, node: Node, initialize: Callable[[], None]) -> None:
         ...
 
     def assert_complete(self) -> None:
@@ -98,13 +95,10 @@ class ElementConstructionContext:
     canonical_image: CategoryPoint
     identity: ElementRoleIdentity
     cat_element_identity: ElementRoleIdentity
-    steps: tuple[tuple[Node, Callable[[], None]], ...]
+    nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
 
-    def run(self, node: Node) -> None:
-        ...
-
-    def advance(self) -> None:
+    def run(self, node: Node, initialize: Callable[[], None]) -> None:
         ...
 
     def assert_complete(self) -> None:
@@ -115,13 +109,10 @@ class MorphismConstructionContext:
     canonical_image: MorphismOfCategory
     identity: MorphismRoleIdentity
     cat_element_identity: CategoryPointIdentity
-    steps: tuple[tuple[Node, Callable[[], None]], ...]
+    nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
 
-    def run(self, node: Node) -> None:
-        ...
-
-    def advance(self) -> None:
+    def run(self, node: Node, initialize: Callable[[], None]) -> None:
         ...
 
     def assert_complete(self) -> None:

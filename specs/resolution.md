@@ -12,8 +12,10 @@ Nothing in this file adds a public mathematical object or a leaf declaration.
 
 The kernel is engineering and states no mathematics (D130, D173).
 `Cat` owns every operation that all categories share, morphism semantics included: the two
-endpoints, composition, the identity, inverses, and the property subcategories; the
-predicates those generate are `cat_kernel`'s, which reads both sides (D175).
+endpoints, composition, the identity, inverses, and the axiom declarations. The property
+subcategories those axioms name are `cat_kernel`'s: it builds each with its inclusion
+`C.P() -> C` and generates the predicate, which lands on the declaration `Cat` writes
+(D175). The section below states the same split; these two sentences must agree.
 The three private role classes of `kernel/roles.py` exist so that Sage has a stable Python
 end for each compiled role.
 Their surface is closed, exactly as the leaf writer's contract is closed under D77, and for
@@ -183,7 +185,7 @@ They do not own mathematical equality or categorical structure.
 Use Sage `CategoryWithAxiom` and `_base_category_class_and_axiom` for private property-class binding.
 The public declaration this binding realizes is the identity structure functor the implementing class selects ([functor.md](functor.md#implementing-a-named-category); D156).
 Use Sage `uncamelcase(identifier, "_")` when an axiom identifier needs snake case.
-The owned property category, predicate meaning, inverse images, and subcategory monomorphism remain in `Cat`.
+The owned predicate meaning and inverse images remain in `Cat`; the property category and its subcategory monomorphism are built by `cat_kernel` from the axiom declaration (D148, D175).
 Its public predicate class, applied proposition, assumptions, and exact proposition dispatch use SymPy.
 Private identity atoms recover owned values inside exact SymPy handlers.
 Typed-query dispatch remains separate and private.

@@ -233,7 +233,7 @@ The set axioms generate these public applications on `Sets().ObjectType`:
 
 Each method returns its property subcategory's containment proposition.
 Every category whose compiled object class inherits `Sets().ObjectType` receives these methods.
-The kernel implements `__contains__()` by calling `ask()` on that proposition.
+`Cat` implements `__contains__()` by calling `ask()` on that proposition; it is not on the closed kernel surface (`resolution.md`, D173).
 An `Unknown` decision fails loudly there, since a bool cannot carry it; ask the proposition when the undecided case must be handled.
 A trusted category constructor or named mathematical construction places a set directly in the property category.
 

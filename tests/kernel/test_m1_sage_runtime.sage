@@ -25,48 +25,13 @@ _DIAMOND_TO_LEFT_MORPHISM_ACTIONS: list[CategoryPoint] = []
 
 
 class _SyntheticCategoryOperations:
-    """Construction operations shared only by the synthetic R1 specimens."""
+    """The object constructor the synthetic R1 specimens share: one object per label."""
 
     def __call__(self, label: int | Integer) -> CategoryOfCategories.ElementType:
         return self.ObjectType(label)
 
     def _label(self, member_object: CategoryPoint) -> int | Integer:
         return member_object._synthetic_label
-
-    def element_from_defining_morphism(self, defining_morphism: MorphismCategory.ObjectType) -> CategoryPoint:
-        if defining_morphism not in self._elements:
-            self._elements[defining_morphism] = defining_morphism.codomain().category().ElementType(
-                defining_morphism,
-                self._label(defining_morphism.codomain()),
-            )
-        return self._elements[defining_morphism]
-
-    def construct_morphism(
-        self,
-        domain: CategoryOfCategories.ElementType,
-        codomain: CategoryOfCategories.ElementType,
-    ) -> MorphismCategory.ObjectType:
-        assert domain is codomain
-        return self.MorphismType(
-            domain,
-            codomain,
-            self._label(domain),
-        )
-
-    def construct_identity(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        return self.MorphismType(
-            member_object,
-            member_object,
-            self._label(member_object),
-        )
-
-    def composite(
-        self,
-        second: MorphismCategory.ObjectType,
-        first: MorphismCategory.ObjectType,
-    ) -> MorphismCategory.ObjectType:
-        assert first.codomain() is second.domain()
-        return first
 
 
 class BaseCategory(_SyntheticCategoryOperations, Category):
@@ -86,19 +51,17 @@ class BaseCategory(_SyntheticCategoryOperations, Category):
             return self, self._base_state
 
     class ElementType:
-        def __init__(self, label: int | Integer) -> None:
+        def __init__(self, data: None) -> None:
             _BASE_ELEMENT_INITIALIZATIONS.append(self)
-            self._base_element_state = label
-            self._synthetic_label = label
+            self._base_element_state = self.parent()._base_state
 
         def base_element(self) -> tuple[Self, int | Integer]:
             return self, self._base_element_state
 
     class MorphismType:
-        def __init__(self, label: int | Integer) -> None:
+        def __init__(self, data: None) -> None:
             _BASE_MORPHISM_INITIALIZATIONS.append(self)
-            self._base_morphism_state = label
-            self._synthetic_label = label
+            self._base_morphism_state = self.domain()._base_state
 
         def base_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._base_morphism_state
@@ -117,17 +80,15 @@ class LeftCategory(_SyntheticCategoryOperations, Category):
             return self, self._left_state
 
     class ElementType:
-        def __init__(self, label: int | Integer) -> None:
-            self._left_element_state = label
-            self._synthetic_label = label
+        def __init__(self, data: None) -> None:
+            self._left_element_state = self.parent()._left_state
 
         def left_element(self) -> tuple[Self, int | Integer]:
             return self, self._left_element_state
 
     class MorphismType:
-        def __init__(self, label: int | Integer) -> None:
-            self._left_morphism_state = label
-            self._synthetic_label = label
+        def __init__(self, data: None) -> None:
+            self._left_morphism_state = self.domain()._left_state
 
         def left_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._left_morphism_state
@@ -157,17 +118,15 @@ class RightCategory(_SyntheticCategoryOperations, Category):
             return self, self._right_state
 
     class ElementType:
-        def __init__(self, label: int | Integer) -> None:
-            self._right_element_state = label
-            self._synthetic_label = label
+        def __init__(self, data: None) -> None:
+            self._right_element_state = self.parent()._right_state
 
         def right_element(self) -> tuple[Self, int | Integer]:
             return self, self._right_element_state
 
     class MorphismType:
-        def __init__(self, label: int | Integer) -> None:
-            self._right_morphism_state = label
-            self._synthetic_label = label
+        def __init__(self, data: None) -> None:
+            self._right_morphism_state = self.domain()._right_state
 
         def right_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._right_morphism_state
@@ -200,17 +159,15 @@ class DiamondCategory(_SyntheticCategoryOperations, Category):
             return self
 
     class ElementType:
-        def __init__(self, label: int | Integer) -> None:
-            self._diamond_element_state = label
-            self._synthetic_label = label
+        def __init__(self, data: None) -> None:
+            self._diamond_element_state = self.parent()._diamond_state
 
         def diamond_element(self) -> tuple[Self, int | Integer]:
             return self, self._diamond_element_state
 
     class MorphismType:
-        def __init__(self, label: int | Integer) -> None:
-            self._diamond_morphism_state = label
-            self._synthetic_label = label
+        def __init__(self, data: None) -> None:
+            self._diamond_morphism_state = self.domain()._diamond_state
 
         def diamond_morphism(self) -> tuple[Self, int | Integer]:
             return self, self._diamond_morphism_state

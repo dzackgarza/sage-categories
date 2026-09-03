@@ -408,11 +408,27 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     # -- identities and composition -------------------------------------------
     #
+    # ``Cat`` defines each of these once and every category has them (D44, D85,
+    # POL-LEAF-065).  Two cases, and they are the two relations a selected functor can
+    # carry.
+    #
     # A full subcategory has exactly the morphisms, identities, and composites of its
-    # ambient between its objects (Mathlib ``InducedCategory``): a category declared by
-    # ``Fun(self, T).Monomorphisms().Isofibrations().Full()()`` obtains them from ``T`` and refines
-    # each into ``Mor(self)``.  Every other category, including a core declared by a
-    # subcategory monomorphism that is not full (``cat/core.py``), owns these constructions.
+    # ambient between its objects (Mathlib ``InducedCategory``), and its monomorphism is
+    # the identity on values: a category declared by
+    # ``Fun(self, T).Monomorphisms().Isofibrations().Full()()`` obtains the ambient's own
+    # value and refines it into ``Mor(self)``, so ``1_X`` stays one morphism.
+    #
+    # Every other category constructs its own value, in ``self.MorphismType``.  That is
+    # where the inherited implementation is: ``self.MorphismType`` is compiled from this
+    # category's declaration and, for each selected structure functor declared an
+    # isofibration ``F: self -> D``, from ``D.MorphismType`` (D164 to D167), and the
+    # kernel initializes each reached owner with the datum ``F``'s own morphism action
+    # feeds to that owner's constructor (D13, D110).  So the category that owns the
+    # operation for the morphisms of ``self`` is ``D``, the operation reaches ``self``
+    # as ordinary compiled inheritance, and the result is a morphism of ``self`` because
+    # it is constructed as an object of ``Mor(self)``.  A core, whose monomorphism is
+    # not full, and a category whose morphisms carry data it composes, state their own
+    # (``cat/core.py``, ``cat/shapes.py``, ``Sets()`` under D132).
 
     def _identity_morphism_(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         """The private construction of ``1_X``, run once per object (POL-CAT-083).
@@ -502,15 +518,17 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         *args: MorphismData.args,
         **kwargs: MorphismData.kwargs,
     ) -> MorphismCategory.ObjectType:
+        """The morphism ``domain -> codomain`` this category's morphism data names."""
         from sage_categories.kernel.refinement import refine
 
         if self.has_full_ambient():
             morphism = self.ambient().construct_morphism(domain, codomain, *args, **kwargs)
             refine(morphism, self.morphism_category(1))
             return morphism
-        raise AssertionError(f"{self!r} declares no morphism constructor")
+        return self.MorphismType(domain, codomain, *args, **kwargs)
 
     def construct_identity(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        """``1_X``: the morphism with both endpoints ``X``, which its object determines and no datum names."""
         from sage_categories.kernel.refinement import refine
 
         if self.has_full_ambient():
@@ -518,16 +536,17 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             identity = ambient.morphism_category(1)(member_object, member_object).one()
             refine(identity, self.morphism_category(1))
             return identity
-        raise AssertionError(f"{self!r} declares no identity construction")
+        return self.MorphismType(member_object, member_object)
 
     def composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        """``second * first``: the morphism ``dom(first) -> cod(second)`` its two factors determine."""
         from sage_categories.kernel.refinement import refine
 
         if self.has_full_ambient():
             composite = self.ambient().composite(second, first)
             refine(composite, self.morphism_category(1))
             return composite
-        raise AssertionError(f"{self!r} declares no composition")
+        return self.MorphismType(first.domain(), second.codomain())
 
     def identity_two_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         from sage_categories.kernel.refinement import refine

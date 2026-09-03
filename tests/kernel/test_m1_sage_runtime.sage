@@ -9,7 +9,7 @@ from typing import Self
 import pytest
 
 from sage_categories.cat import Fun
-from sage_categories.cat.category import Cat, Category, CategoryOfCategories
+from sage_categories.cat.category import Axiom, Cat, Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
@@ -150,6 +150,8 @@ RIGHT = RightCategory()
 
 
 class DiamondCategory(_SyntheticCategoryOperations, Category):
+    SyntheticR1Property = Axiom()
+
     class ObjectType:
         def __init__(self, label: int | Integer) -> None:
             self._diamond_state = label
@@ -207,6 +209,12 @@ class DiamondCategory(_SyntheticCategoryOperations, Category):
 
 
 DIAMOND = DiamondCategory()
+
+
+class SyntheticR1PropertyCategory(PropertySubcategory):
+    """The declared implementation of ``DiamondCategory.SyntheticR1Property`` (POL-LEAF-064)."""
+
+    _base_category_class_and_axiom = (DiamondCategory, "SyntheticR1Property")
 
 
 def _synthetic_isofibration(
@@ -629,7 +637,7 @@ def test_an_arrow_that_writes_no_point_declaration_places_nothing() -> None:
 
 def test_property_refinement_preserves_object_identity() -> None:
     member_object = DIAMOND(13)
-    property_category = PropertySubcategory(DIAMOND, "SyntheticR1Property", ())
+    property_category = DIAMOND.SyntheticR1Property()
 
     refined = property_category(member_object)
 

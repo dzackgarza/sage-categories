@@ -5,7 +5,7 @@ one-point set; the generic coslice construction owns its objects ``(X, x: 1 -> X
 basepoint-preserving maps, its constructor, and its retained projection to
 ``Fun([1], Sets())``. This class declares itself the implementation of that coslice by
 selecting its identity functor, selects the retained projection composed with evaluation
-at the codomain as its structure functor to ``Sets()``, adds the basepoint operation, and
+at the codomain as its structure functor to ``Sets()``, adds no operation, and
 wires no constructor.
 """
 

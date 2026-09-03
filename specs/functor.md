@@ -81,7 +81,7 @@ The points `* -> C` are the actual objects of `C`, so every `C.ObjectType` inher
 `C.MorphismType` is `Mor(C).ObjectType`, because a morphism of `C` is an object of the morphism category.
 
 `Cat()` also supplies the uniform categorical constructions, defined once at that level and applicable to every category.
-They are mathematics, and the kernel implements them:
+They are mathematics. The kernel realizes the morphism-category tower; the property subcategories among them are built by `cat_kernel` from their axiom declarations (D175):
 
 ```python
 Mor(C)                     # the category of morphisms of C

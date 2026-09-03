@@ -2,8 +2,8 @@
 
 This pseudocode shows only the declarations owned by ``Sets()`` for its ``Finite`` axiom.
 The private proposition deciding membership in ``Sets().Finite()`` uses methods that
-already exist on ``Sets()``; ``Sets().Finite()`` exists implicitly, the kernel
-constructs its structure functor to ``Sets()``, and ``cat_kernel`` generates ``X.is_finite()``.
+already exist on ``Sets()``; ``Sets().Finite()`` exists implicitly, and ``cat_kernel``
+constructs its structure functor to ``Sets()`` and generates ``X.is_finite()``.
 A class implementing an axiom subcategory appears in the poset and finite-poset templates.
 """
 

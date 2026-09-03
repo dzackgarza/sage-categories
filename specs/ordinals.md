@@ -181,7 +181,7 @@ Natural product:
 `OrdinalOrder().EssentialImage(InitialOrdinal)` is the property subcategory of initial ordinals.
 Its retained equivalence has source `CardinalOrder()`.
 It owns the initiality containment predicate and the retained equivalence from `Cardinal()`.
-The kernel derives the standard `alpha.is_initial()` application.
+`cat_kernel` derives the standard `alpha.is_initial()` application (D175).
 Apply the inverse of that equivalence to obtain the cardinal index of an initial ordinal.
 
 Every ordinal supplies:

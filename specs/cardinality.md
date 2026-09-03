@@ -334,7 +334,7 @@ Apply `InitialOrdinal.on_object(kappa)` to obtain the initial ordinal representa
 
 Unary cardinal properties use the property-subcategory contract in [Property refinement](property-refinement.md).
 The inverse images of the corresponding `Sets()` property subcategories along the representative functor own finiteness and countability.
-The kernel-derived property applications return those containment predicates.
+The property applications `cat_kernel` derives return those containment predicates (D175).
 Specific-cardinal queries use equality and order directly; countable infinity is `kappa == aleph0`, uncountability is `aleph0 < kappa`, and the continuum query is `kappa == continuum`.
 Equality and order operations also return propositions.
 Use `ask()` when a decision is required.

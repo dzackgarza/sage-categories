@@ -112,7 +112,7 @@ class PosetsCategory(Category):
         """Select the identity of ``Relations().PartialOrder()`` and ``U``.
 
         The identity functor of that category is the whole implementation declaration; the
-        kernel constructs its inclusion into ``Relations()``. The structure functor
+        ``cat_kernel`` constructs its inclusion into ``Relations()``. The structure functor
         ``U: Posets() -> Sets()`` is defined with its theorem, creation of the limits of
         every discrete shape, in the poset-products template.
         """

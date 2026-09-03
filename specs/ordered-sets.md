@@ -24,7 +24,7 @@ FiniteTotallyOrderedSets()
 It is sets with additional structure, a structure category: its leaf states the datum `(X, R <= X * X)` and defines its structure functor to `Sets()` by its two actions, sending a relation to its underlying set `X`, never to `R`, constructed into `Fun(Relations(), Sets()).Fibrations()` (D08, D161, D162, D163).
 `Posets()` is `Relations().PartialOrder()`, the axiom subcategory; the `PartialOrder` axiom and its proposition are declared on `Relations()` (D147), and `Posets()` inherits that functor along its inclusion.
 The poset class declares itself the implementation of `Relations().PartialOrder()` through the identity structure functor `End_Cat(Relations().PartialOrder()).one()` (D156).
-The kernel constructs the inclusion `Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()` (D146, D148).
+`cat_kernel` constructs the inclusion `Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()` (D146, D148, D175).
 `Posets()` is itself a structure category and defines its own functors to the categories it inherits methods from (D161): the poset leaf defines its structure functor `U: Posets() -> Sets()` by its two actions, constructed into `Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)` (D162; [Products](#products)).
 
 The structure functors form this commutative graph:
@@ -195,7 +195,7 @@ Order preservation, order reflection, order embedding, and order isomorphism use
 Each property subcategory owns its predicate meaning and exact SymPy handlers.
 Their axioms generate `is_order_preserving()`,
 `is_order_reflecting()`, `is_order_embedding()`, and `is_order_isomorphism()` on the
-ambient set-map class. The kernel derives each standard property application.
+ambient set-map class. `cat_kernel` derives each standard property application (D175).
 Admission makes the preservation proposition evaluate to `True`.
 The other propositions remain available for assumption or exact evaluation.
 

@@ -108,7 +108,7 @@ The constructor receives or defines `mu_X`.
 The specification does not prescribe its private storage.
 The public surface has no generic `operation()` or `combine()` alias.
 The fixed-endpoint magma-morphism category owns the operation-preservation containment predicate.
-The kernel derives its standard property application.
+`cat_kernel` derives its standard property application (D175).
 
 ## Additive and multiplicative forms
 

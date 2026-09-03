@@ -274,7 +274,7 @@ If the image morphism is monic, the construction theorem gives
 If neither route applies, `ask(X.cardinality())` returns `Unknown`.
 
 Each cardinal property subcategory owns one containment predicate.
-The kernel-derived `X.is_finite()`, `X.is_countable()`, and related property applications return those propositions.
+The `X.is_finite()`, `X.is_countable()`, and related property applications `cat_kernel` derives return those propositions (D175).
 `ask()` decides them from category placement, active assumptions, and the routes the owning implementation registers: a known cardinality decides finiteness and countability, and a `Sets()` construction registers the case routes that external mathematics supplies for it.
 `assume(X.is_finite())` and the property subcategory constructors `Sets().Finite()`, `Sets().Countable()`, and `Sets().Uncountable()` are the positive routes.
 

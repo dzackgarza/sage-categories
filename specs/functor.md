@@ -112,7 +112,7 @@ A functor that computes its images is declared by both actions, `Fun(C, D)(on_ob
 A subcategory inclusion computes nothing: it is declared as `Fun(S, T).Monomorphisms().Isofibrations()()`, the zero-argument call on the property category of `Fun(S, T)`, and no action is written for it (D10, D11, D146; [Declaring one](#declaring-one)).
 A point functor is `D.Point()`, an arrow `* -> D` that the leaf class of the point adds to its structure functors (D154; [Point categories and point functors](#point-categories-and-point-functors)).
 A structure functor such as `Posets() -> Sets()` is defined by the leaf with its two actions and constructed into the strongest property subcategory of `Fun(C, D)` that states what is known about it (D08, D162; [Diagram shapes and universal constructions](#diagram-shapes-and-universal-constructions)).
-A functor retained by a construction is selected by the named method of that construction, and a composite is `G * F` (D157; [Functor-category calculus](#functor-category-calculus)). A retained functor carries the properties its construction declares for it: `C.SliceOver(X).projection()` is a discrete fibration, `C.CosliceUnder(X).projection()` a discrete opfibration, `Fun(I, C).ev(i)` an isofibration (transport of a diagram along an isomorphism at `i`). `Fun.Opfibrations()` is retained inside `Fun.Isofibrations()` as `Fun.Fibrations()` is (a cocartesian lift of an isomorphism is an isomorphism), and isofibrations compose ([nLab, "isofibration"](https://ncatlab.org/nlab/show/isofibration), `POL-MATH-040`), so the composite `G * F` of two functors in `Isofibrations()` is constructed into `Isofibrations()` by `Cat`; a leaf that selects such a composite as a structure functor inherits along it (D167, D169).
+A functor retained by a construction is selected by the named method of that construction, and a composite is `G * F` (D157; [Functor-category calculus](#functor-category-calculus)). A retained functor carries the properties its construction declares for it: `C.SliceOver(X).projection()` and `C.CosliceUnder(X).projection()` are the pullback projections to `Fun([1], C)`, and their composites with `Fun([1], C).ev(0)` and `ev(1)` are the discrete fibration `C.SliceOver(X) -> C` and the discrete opfibration `C.CosliceUnder(X) -> C` ([Comma categories, slices, coslices, and fibers](#comma-categories-slices-coslices-and-fibers)); `Fun(I, C).ev(i)` is an isofibration (transport of a diagram along an isomorphism at `i`). `Fun.Opfibrations()` is retained inside `Fun.Isofibrations()` as `Fun.Fibrations()` is (a cocartesian lift of an isomorphism is an isomorphism), and isofibrations compose ([nLab, "isofibration"](https://ncatlab.org/nlab/show/isofibration), `POL-MATH-040`), so the composite `G * F` of two functors in `Isofibrations()` is constructed into `Isofibrations()` by `Cat`; a leaf that selects such a composite as a structure functor inherits along it (D167, D169).
 A class that implements a category otherwise named selects that category's identity functor (D156; [Implementing a named category](#implementing-a-named-category)).
 The inherited `Cat().MorphismType` surface supplies:
 
@@ -412,19 +412,19 @@ A subcategory of `T` is a subobject of `T` in `Cat()`: an isomorphism class of m
 [nLab, full embedding](https://ncatlab.org/nlab/show/full+embedding) (inspected 2026-08-28) names the same class: "Embeddings in this sense are straightforwardly the same thing as monomorphisms in the 1-category `Cat`", and a full embedding is a monomorphism in `Cat` that is also full, hence fully faithful.
 So the owned property is `Fun.Monomorphisms()`, and the monomorphism of a full subcategory is an object of `Fun.Monomorphisms().Full()`. `Fun` needs no further property for this.
 
-**Replete.** Monicity alone is not enough, because a skeleton satisfies it.
+**Isofibration.** Monicity alone is not enough, because a skeleton satisfies it.
 `Cardinal()` selects one representative set per cardinal; its functor to `Sets()` is fully faithful and injective on objects, hence monic, hence an embedding.
 A cardinal is still not a set.
-The condition that separates them is repleteness of the image: [Kerodon, Example 4.4.1.12](https://kerodon.net/tag/01EX) (inspected 2026-08-28) states that a subcategory is replete exactly when an isomorphism of `C` with one endpoint in the subcategory has its other endpoint and itself in the subcategory, and that this holds exactly when **that monomorphism is an isofibration**. [nLab, replete subcategory](https://ncatlab.org/nlab/show/replete%2Bsubcategory) (inspected 2026-08-28) states why this is the right condition: a replete subcategory "is a subcategory for which the property of (strictly) belonging to it respects the principle of equivalence of categories."
+The condition that separates them is on the arrows: **that monomorphism is an isofibration**, so every isomorphism of `T` at an object in the image lifts to `S`. [Kerodon, Example 4.4.1.12](https://kerodon.net/tag/01EX) (inspected 2026-08-28) states that this holds exactly when an isomorphism of `C` with one endpoint in the subcategory has its other endpoint and itself in the subcategory, the object condition called replete. [nLab, replete subcategory](https://ncatlab.org/nlab/show/replete%2Bsubcategory) (inspected 2026-08-28) states why this is the right condition: such a subcategory "is a subcategory for which the property of (strictly) belonging to it respects the principle of equivalence of categories." The documents state the arrow condition (D170).
 
-`Sets().Finite()` is replete: a set isomorphic to a finite set is finite.
-Every property subcategory whose defining predicate is an isomorphism invariant is replete for the same reason.
-A skeleton is the opposite extreme and is replete only when it is everything.
+`Sets().Finite() -> Sets()` is an isofibration: a set isomorphic to a finite set is finite.
+The inclusion of every property subcategory whose defining predicate is an isomorphism invariant is an isofibration for the same reason.
+The inclusion of a skeleton is the opposite extreme and is an isofibration only when the skeleton is everything.
 
 ### Placement traces monic isofibrations
 
 `x in C` asks `C`'s membership proposition (`POL-CAT-043`, `POL-CAT-044`). Placement is a positive shortcut inside that one question: construction or same-object refinement into the property category already established the defining predicate, so `ask()` answers from placement without recomputing (`POL-CAT-068`). Placement propagates from `S` to `T` exactly along a functor that is a monomorphism of `Cat()` and an isofibration.
-Monicity gives one value rather than a copy; repleteness makes the resulting membership statement invariant, so an object of `Sets().Finite()` is an object of `Sets()` while a cardinal is not a set.
+Monicity gives one value rather than a copy; the isofibration condition makes the resulting membership statement invariant, so an object of `Sets().Finite()` is an object of `Sets()` while a cardinal is not a set.
 
 The choice is data.
 `Cardinal() -> Sets()` and `Sets().Finite() -> Sets()` are both monic, and nothing derives which one placement follows: nLab, *subobject*, states that for representatives of a subobject "there is no intrinsic way of defining such representatives".
@@ -448,7 +448,7 @@ A full subcategory adds fullness, so a property subcategory `C.P()` declares:
 iota = Fun(C.P(), C).Monomorphisms().Isofibrations().Full()()
 ```
 
-The defining object predicate selects the objects, and it is an isomorphism invariant, so `C.P()` is replete and the functor is an isofibration.
+The defining object predicate selects the objects, and it is an isomorphism invariant, so the functor is an isofibration.
 The morphism categories `Mor(C)(A, B)`, identities, and composition are inherited from `C`.
 
 A property subcategory can be contained in another, `C.P()` in `C.Q()`. That containment
@@ -747,7 +747,7 @@ A named mathematical object `X` is a leaf class, a completely abstract new categ
 Writing that class populates its structure functor `X: * -> Cat` automatically, so every leaf class is a point in `Cat`; here `*` is the terminal category `Cat().Terminal()` (D154).
 
 `C.Point()` constructs an arrow, not an object: `F = C.Point()` is a functor `F: * -> C`, the point functor of its source.
-`C.Point()` constructs one thing, the arrow `F: * -> C` selecting `X` (D154); its image generates the replete full subcategory `<X>` of `C`, the isomorphism class of `X` with all morphisms between its objects, and the kernel registers `F` in the relevant property subcategory of `Fun(*, C)` and carries placement and inheritance along the inclusion `<X> -> C`, a monomorphism and isofibration (`POL-FUN-036`, D128, D167). That inclusion is what "point" denotes in D161; the arrow `F` itself is faithful and monic and is full exactly when `X` has no nonidentity endomorphism.
+`C.Point()` constructs one thing, the arrow `F: * -> C` selecting `X` (D154); its image generates `<X>`, the smallest full subcategory of `C` containing `X` whose inclusion is an isofibration, the isomorphism class of `X` with all morphisms between its objects, and the kernel registers `F` in the relevant property subcategory of `Fun(*, C)` and carries placement and inheritance along the inclusion `<X> -> C`, declared in `Fun(<X>, C).Monomorphisms().Isofibrations()` (`POL-FUN-036`, D128, D167, D170). That inclusion is what "point" denotes in D161; the arrow `F` itself is faithful and monic and is full exactly when `X` has no nonidentity endomorphism.
 The leaf class of `X` registers `X` as a point in `C` by adding `C.Point()` to its structure functors:
 
 ```python
@@ -918,7 +918,7 @@ F^{-1}(P)=D\times_C P.
 The public construction is `F.inverse_image(P)`.
 It retains both pullback projections.
 The projection `F.inverse_image(P) -> D` is its subcategory monomorphism.
-Fullness and repleteness pass from `P` to the inverse image.
+When `i` is full, or an isofibration, that projection has the same property.
 
 For a property subcategory `C.P()`, a category declares `D.P()` as `F.inverse_image(C.P())` when the named functor `F` defines that inherited property.
 The pullback owns the resulting category and both structure functors.
@@ -982,7 +982,7 @@ For `F: C -> D`, three constructions retain different information:
 | `D.FullImage(F)` | literal values `F(X)` | all morphisms of `D` between them |
 | `D.EssentialImage(F)` | objects isomorphic in `D` to some `F(X)` | all morphisms of `D` between them |
 
-The essential image is full and replete. The functor factors through it as an essentially surjective functor followed by a fully faithful inclusion. Membership records only the existential property. A selected preimage is separate data. This follows [Mathlib, essential image](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/EssentialImage).
+The essential image is full, and its inclusion is an isofibration; the inclusion of the strict image need not be. The functor factors through it as an essentially surjective functor followed by a fully faithful inclusion. Membership records only the existential property. A selected preimage is separate data. This follows [Mathlib, essential image](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/EssentialImage).
 
 A universal presentation contains more information than any image category. A limiting cone retains its diagram, legs, apex, and universal maps. Its apex can lie in an image subcategory without owning that presentation.
 
@@ -1104,7 +1104,7 @@ For each nontrivial discrete shape `J`, the selected limiting cones give a produ
 \operatorname{Prod}_J:C^J\longrightarrow C.
 \]
 
-`C.Products()` is the union of the full images of these chosen product functors. It is the shared apex interface for objects constructed as nontrivial products. `C.Coproducts()` is dual. The essential image gives the replete category of objects isomorphic to such chosen products. Singleton limits remain available through their standard limit construction; they do not make every object a member of `C.Products()`.
+`C.Products()` is the union of the full images of these chosen product functors. It is the shared apex interface for objects constructed as nontrivial products. `C.Coproducts()` is dual. The essential image gives the category of objects isomorphic to such chosen products; its inclusion is an isofibration. Singleton limits remain available through their standard limit construction; they do not make every object a member of `C.Products()`.
 
 `C.Products()(X, Y)` selects a product presentation `p in LimitCones((X, Y))` and returns `p.apex()` placed in `C.Products()`. The presentation remains an object over the apex. A second limiting cone can have the same apex without replacing the first.
 

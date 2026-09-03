@@ -10,7 +10,7 @@ The private class update belongs to [resolution.md](resolution.md).
 ## Property category
 
 Let `P` be an object property on a category `C`.
-The objects that satisfy `P` form a full replete subcategory `C.P()`.
+The objects that satisfy `P` form a full subcategory `C.P()` whose inclusion is an isofibration, declared in `Fun(C.P(), C).Monomorphisms().Isofibrations()` (D170).
 The declaration retains its subcategory monomorphism
 
 \[
@@ -152,7 +152,7 @@ Those mechanics add no public property record.
 
 The architecture satisfies this specification when:
 
-- each object property gives a full replete subcategory and its monomorphism;
+- each object property gives a full subcategory and its inclusion, a monomorphism and isofibration;
 - the property category owns its predicate meaning;
 - its public predicate and applied proposition use SymPy;
 - the registered axiom determines the generated public method name;

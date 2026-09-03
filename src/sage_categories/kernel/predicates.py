@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from inspect import get_annotations, signature
 from typing import TYPE_CHECKING, get_origin
 
@@ -11,13 +12,15 @@ from sympy.assumptions.assume import AppliedPredicate
 from sympy.core.basic import Basic
 from sympy.core.expr import AtomicExpr
 
-from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.refinement import is_placed, refine
-from sage_categories.kernel.roles import CategoryPoint, Role, category_of, category_universal_class, role_of
+from sage_categories.kernel.roles import CategoryPoint, category_universal_class
 from sage_categories.kernel.sage_runtime import MonoDict, Unknown
 
 if TYPE_CHECKING:
-    from sage_categories.cat.category import Category
+    from collections.abc import Callable
+
+    from sage_categories.cat.category import Category, CategoryOfCategories
+    from sage_categories.cat.morphisms import MorphismCategory
     from sage_categories.cat.predicates import (
         Answer,
         AppliedQuery,
@@ -28,6 +31,40 @@ if TYPE_CHECKING:
         Query,
         QueryHandler,
     )
+    from sage_categories.cat.properties import PropertySubcategory
+
+
+@dataclass(frozen=True, slots=True)
+class AxiomLayer:
+    """What ``cat_kernel`` supplies for an axiom, and neither layer below supplies alone (D175).
+
+    Generating ``is_p()`` needs the axiom's declaration, which is ``Cat``'s, and the
+    compiler's installer, which is the kernel's; building a property subcategory's
+    inclusion ``C.P() -> C`` needs the declaration and the placement graph the same way
+    (D148, D150, ``POL-CAT-038``).  ``cat_kernel`` is the layer that has both, and it
+    installs itself here because ``Cat`` declares its first axiom while it is loading,
+    which is before ``cat_kernel`` can import it (``specs/resolution.md``, "The closed
+    kernel surface").
+    """
+
+    generate_application: Callable[[Axiom], None]
+    install_base_applications: Callable[[type[CategoryOfCategories.ElementType]], None]
+    subcategory_inclusions: Callable[[PropertySubcategory], tuple[MorphismCategory.ObjectType, ...]]
+
+
+_axiom_layer: AxiomLayer | None = None
+
+
+def install_axiom_layer(layer: AxiomLayer) -> None:
+    """Install ``cat_kernel``'s axiom layer (D175)."""
+    global _axiom_layer
+    _axiom_layer = layer
+
+
+def axiom_layer() -> AxiomLayer:
+    """The installed axiom layer, which ``sage_categories`` installs before ``Cat`` is loaded."""
+    assert _axiom_layer is not None, "cat_kernel installs the axiom layer before Cat is loaded"
+    return _axiom_layer
 
 
 class _OwnedValueAtom(AtomicExpr):
@@ -44,7 +81,6 @@ _values: dict[int, CategoryPoint] = {}
 _atom_types: dict[type, type[_OwnedValueAtom]] = {}
 _property_categories: dict[Predicate, Category] = {}
 _identity_predicates: set[Predicate] = set()
-_derived_applications: dict[tuple[type[CategoryPoint], str], Axiom] = {}
 _query_dispatchers: dict[Query, tuple[Dispatcher, Function]] = {}
 
 
@@ -244,52 +280,3 @@ def assume_property(proposition: Proposition) -> None:
         argument = _owned_argument(application.arguments[0])
         assert isinstance(argument, CategoryPoint)
         refine(argument, category)
-
-
-def axiom_application_owner(axiom: Axiom) -> type[CategoryPoint] | None:
-    """The object declaration of the declaring category class, or ``None`` for the base class.
-
-    The base category class declares no object role of its own: the objects of an
-    arbitrary category are the points of ``Cat()`` (POL-CAT-058), whose declaration is
-    written after the base class exists, so its axioms install when that declaration
-    is created (``install_base_axiom_applications``).
-    """
-    for declaring in axiom._declaring_class.__mro__:
-        declared = vars(declaring).get(Role.OBJECT.value)
-        if declared is not None:
-            return declared
-    return None
-
-
-_base_axioms: list[Axiom] = []
-
-
-def install_axiom_application(axiom: Axiom) -> None:
-    owner = axiom_application_owner(axiom)
-    if owner is None:
-        _base_axioms.append(axiom)
-        return
-    _install_application(axiom, owner)
-
-
-def install_base_axiom_applications(owner: type[CategoryPoint]) -> None:
-    """Install the applications of the axioms declared on the base category class onto the objects of every category."""
-    for axiom in _base_axioms:
-        _install_application(axiom, owner)
-    _base_axioms.clear()
-
-
-def _install_application(axiom: Axiom, owner: type[CategoryPoint]) -> None:
-    name = axiom.application_name()
-
-    def application(value: CategoryPoint, *parameters: Category) -> Proposition:
-        placement = category_of(value, role_of(value)).narrowing_base()
-        return axiom._declared_on(placement, *parameters).membership_proposition(value)
-
-    application.__name__ = name
-    application.__qualname__ = f"{owner.__name__}.{name}"
-    known = _derived_applications.get((owner, name))
-    assert known is None or known is axiom
-    assert known is not None or name not in vars(owner)
-    _derived_applications[(owner, name)] = axiom
-    install_on_declaration(owner, name, application)

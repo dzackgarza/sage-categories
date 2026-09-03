@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal, overload
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, predicate, register_handler
+from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.roles import prepare_category_subclass
 from sage_categories.kernel.sage_runtime import Integer, MonoDict, TripleDict, cached_method
@@ -185,9 +186,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         if cls.__dict__.get("ObjectType") is CategoryDeclaration:
             # ``Cat()``'s declaration: its points are the objects of every category
             # (POL-CAT-058), the owner of the applications of the base-class axioms.
-            from sage_categories.kernel.predicates import install_base_axiom_applications
-
-            install_base_axiom_applications(cls.__dict__["ElementType"])
+            _axiom_layer().install_base_applications(cls.__dict__["ElementType"])
         name = cls.__dict__.get("_implements")
         if name is not None:
             Cat().implement(name, cls)
@@ -697,7 +696,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     # axiom: ``X`` is in ``C.Products()`` exactly when it lies in the image of the
     # nontrivial product functor.  Declared here on the base class, every category
     # receives ``C.Products()``, ``C.Coproducts()``, ``C.Limits(I)``, and
-    # ``C.Colimits(I)`` from the kernel: a declared subcategory as the inverse image
+    # ``C.Colimits(I)`` from ``cat_kernel``, which builds every axiom's subcategory
+    # (D175): a declared subcategory as the inverse image
     # of its ambient's family, any other category as the family's own implementation
     # (``cat/constructions.py``).  Each family exists for every supplied shape without
     # asserting that the category has those limits (POL-CAT-051): constructing an

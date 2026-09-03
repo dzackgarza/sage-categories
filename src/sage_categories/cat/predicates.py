@@ -11,6 +11,7 @@ from sympy import And, Implies, Not, Or, Predicate, ask as sympy_ask
 from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.logic.boolalg import Boolean
 
+from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import MonoDict, Unknown, UnknownClass, cached_method, uncamelcase
 
 
@@ -291,15 +292,15 @@ class Axiom:
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:
         self._declaring_class = declaring_class
         self._name = name
-        from sage_categories.kernel.predicates import install_axiom_application
+        from sage_categories.kernel.predicates import axiom_layer
 
-        install_axiom_application(self)
+        axiom_layer().generate_application(self)
 
     def application_name(self) -> str:
         """``is_p()``: the application generated from this axiom's identifier and nothing else (D89, POL-CAT-060)."""
         return _application_name(self._name)
 
-    def application_owner(self) -> type[CategoryOfCategories.ElementType]:
+    def application_owner(self) -> type[CategoryOfCategories.ElementType] | None:
         """The role class the application is written onto: the object declaration of the declaring category class.
 
         A role *is* the name a category class writes for that mathematical kind
@@ -307,10 +308,17 @@ class Axiom:
         declaration.  ``Mor(C)`` writes ``MorphismOfCategory``, because an object of it is
         a morphism of an arbitrary ``C``; ``Fun`` writes ``Cat().MorphismType``; ``Cat()``
         writes ``CategoryDeclaration``.
-        """
-        from sage_categories.kernel.predicates import axiom_application_owner
 
-        return axiom_application_owner(self)
+        ``None`` for the base category class, which declares no object role of its own:
+        the objects of an arbitrary category are the points of ``Cat()`` (POL-CAT-058),
+        whose declaration is written after the base class exists, so its axioms install
+        when that declaration is created (``AxiomLayer.install_base_applications``).
+        """
+        for declaring in self._declaring_class.__mro__:
+            declared = vars(declaring).get(Role.OBJECT.value)
+            if declared is not None:
+                return declared
+        return None
 
     def __get__(self, category: Category | None, owner: type[Category]) -> Axiom | Callable[[], Category]:
         """``C.P`` on a category value is its accessor; on the class it is the declaration."""

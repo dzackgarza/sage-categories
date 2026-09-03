@@ -95,7 +95,7 @@ class Axiom:
     def application_name(self) -> str:
         ...
 
-    def application_owner(self) -> type[CategoryOfCategories.ElementType]:
+    def application_owner(self) -> type[CategoryOfCategories.ElementType] | None:
         ...
 
     def __get__(self, category: Category | None, owner: type[Category]) -> Axiom | Callable[[], Category]:

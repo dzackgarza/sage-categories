@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING, ClassVar
 from sage_categories.cat.category import Cat, Category
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, property_predicate, register_handler
+from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
 from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.kernel.sage_runtime import TripleDict, cached_method
 
@@ -426,12 +427,13 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         return result
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The monomorphism into the ambient, then one per further recorded containment (POL-FUN-024)."""
-        functors = _functors()
-        return (
-            functors.full_subcategory_monomorphism(self, self._ambient),
-            *(functors.full_subcategory_monomorphism(self, containing) for containing in self._full_subcategory_of),
-        )
+        """The inclusion ``C.P() -> C``, then one per further recorded containment (POL-FUN-024).
+
+        ``cat_kernel`` builds them: an axiom's property subcategory and its inclusion are
+        the one construction, and generating either needs both the declaration and the
+        kernel's reading of it (D148, D150, D175, ``POL-CAT-038``).
+        """
+        return _axiom_layer().subcategory_inclusions(self)
 
     @cached_method(key=lambda self, candidate: (id(candidate), candidate))
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:

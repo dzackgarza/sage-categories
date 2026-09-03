@@ -134,10 +134,19 @@ def target_functor(self) -> Cat().MorphismType:
 `on_object(X)` constructs and returns the public image in `D`.
 `on_morphism(f)` constructs and returns the public image in the exact target hom category.
 These two actions are the sole leaf declaration of a functor that computes.
-An action receives a fully initialized source value. It can call any method defined on
-`C.ObjectType` and the public methods of the values it reaches, and it returns a value
-built by a constructor of `D`. The kernel runs the object action during construction to
-initialize the inherited target implementation; a leaf writes no base-class initializer call.
+An action applied publicly receives a fully initialized source value. It can call any
+method defined on `C.ObjectType` and the public methods of the values it reaches, and it
+returns a value built by a constructor of `D`. The kernel runs the object action during
+construction to initialize the inherited target implementation; a leaf writes no
+base-class initializer call.
+
+During that construction run the value is not finished, and it cannot be: the target's
+own state is initialized from the datum the action has not returned yet. What the kernel
+guarantees there is that every owner ahead of the action's target is already initialized,
+so an action reads the source's own accessors and everything it inherits through an
+earlier-declared structure functor. A lattice's projection to the form reads what its
+projection to the module supplies, which is what D166 requires and the order it requires
+it in.
 
 A subcategory inclusion computes nothing.
 The leaf declares it as `Fun(S, T).Monomorphisms().Isofibrations()()`, the zero-argument

@@ -44,7 +44,10 @@ A kernel module imports no module of `Cat`, and no module of `cat_kernel` either
 interprets an axiom declaration as a specifically structured isofibration; the work that
 needs both — generating `is_p()` and its property subcategory, and reading a functor's
 declared properties to decide placement and inheritance — is neither `Cat`'s alone nor the
-kernel's alone, and it lives here. `cat_kernel` imports from the kernel and from `Cat`;
+kernel's alone, and it lives here. Reading is the whole of that half: `cat_kernel` decides
+whether a functor carries placement and inheritance, and the kernel then places the value
+and refines its implementation class, which is what the glossary's kernel row means by
+"places". `cat_kernel` imports from the kernel and from `Cat`;
 neither imports it, and no leaf imports it. A leaf reaches `Cat`.
 
 `POL-KERNEL-038` carries this rule and a D132 check fails on a method outside the list.
@@ -185,7 +188,7 @@ They do not own mathematical equality or categorical structure.
 Use Sage `CategoryWithAxiom` and `_base_category_class_and_axiom` for private property-class binding.
 The public declaration this binding realizes is the identity structure functor the implementing class selects ([functor.md](functor.md#implementing-a-named-category); D156).
 Use Sage `uncamelcase(identifier, "_")` when an axiom identifier needs snake case.
-The owned predicate meaning and inverse images remain in `Cat`; the property category and its subcategory monomorphism are built by `cat_kernel` from the axiom declaration (D148, D175).
+The owned predicate meaning stays with the property category that declares it (D142, `undecidable-properties.md` "each predicate meaning has one mathematical owner"); `Cat` owns the inverse images; the property category and its subcategory monomorphism are built by `cat_kernel` from the axiom declaration (D148, D175).
 Its public predicate class, applied proposition, assumptions, and exact proposition dispatch use SymPy.
 Private identity atoms recover owned values inside exact SymPy handlers.
 Typed-query dispatch remains separate and private.

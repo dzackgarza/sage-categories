@@ -165,8 +165,6 @@ _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
 
 _declared_ranks: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
-_compiled_orders: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
-
 
 def node_key(current: Node) -> tuple[int, int]:
     """The position of ``current`` in the total order the C3 merge is controlled by.
@@ -186,6 +184,26 @@ def _selected_in_role(category: Category, role: Role) -> list[Category]:
     return [target.category for _, target in successors(Node(category, role)) if target.role is role]
 
 
+def _ordered_in_role(category: Category, role: Role) -> list[Category]:
+    """The targets whose order this declaration fixes, in the order it names them.
+
+    D165, D166 and D167 give the rule to a category's ordered selection: the projections a
+    leaf writes, of which the declared first carries the inheritance.  A subcategory
+    inclusion is not one of those.  It states a containment, it is generated from the
+    recorded containments rather than named in an order
+    (``cat_kernel.subcategory_inclusions``, ``POL-FUN-024``, D83), and the containment it
+    states is already an edge of the structural graph.  Reading that off the functor's own
+    declaration is the same reading placement uses (``traces_placement``, D169, D175).
+    """
+    from sage_categories.kernel.refinement import traces_placement
+
+    return [
+        target.category
+        for functor, target in successors(Node(category, role))
+        if target.role is role and not traces_placement(functor)
+    ]
+
+
 def _rank_declaration(category: Category, role: Role) -> None:
     """Rank ``category`` in one role, and take the role's ranks again if it reorders a pair.
 
@@ -194,7 +212,7 @@ def _rank_declaration(category: Category, role: Role) -> None:
     the order alone.
     """
     ranks = _declared_ranks[role]
-    reached = _selected_in_role(category, role)
+    reached = _ordered_in_role(category, role)
     if category not in ranks and all(
         ahead in ranks and behind in ranks and ranks[ahead] > ranks[behind]
         for ahead, behind in pairwise(reached)
@@ -211,26 +229,26 @@ def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict:
     method resolution order that follows it (``sage.misc.c3_controlled``, "A strategy to
     solve the problem").  This is that order.  Its first relation is the selected structural
     graph, which puts a category above every target it selects.  Its second is the declared
-    order, which puts each selected isofibration above the next one named after it (D56,
-    D165, D166, D167).  The second yields to the first, exactly as a base list yields to
-    inheritance in C3 itself: a declaration orders the targets its graph leaves unordered,
-    and never turns a category into a base of one it already stands above.
+    order of the targets one declaration orders (``_ordered_in_role``; D56, D165, D166,
+    D167).  The second yields to the first, exactly as a base list yields to inheritance in
+    C3 itself: a declaration orders the targets its graph leaves unordered, and never turns
+    a category into a base of one it already stands above.
 
     The order a category already holds is the preference, so a declaration that adds no
-    relation between two categories leaves their order alone and the classes compiled from
-    it stay valid.  Where two declarations name one pair of targets in opposite orders no
-    order satisfies both; the earliest is the one kept, the diamond stays unresolved, and
-    the ``DEBUG`` record of ``_debug_unresolved_diamonds`` is its only effect (D37, D159).
+    relation between two categories leaves their order alone.  Two categories that order one
+    pair oppositely are two categories and neither constrains the other's chain; where no
+    order satisfies both, the first route is chosen and the diamond stays unresolved, whose
+    only effect is the ``DEBUG`` record of ``_debug_unresolved_diamonds`` (D37, D159).
     """
     incoming: MonoDict = MonoDict()
-    selected: MonoDict = MonoDict()
+    ordered: MonoDict = MonoDict()
 
     def expand(category: Category) -> None:
         if category in incoming:
             return
         incoming[category] = []
-        selected[category] = _selected_in_role(category, role)
-        for target in selected[category]:
+        ordered[category] = _ordered_in_role(category, role)
+        for target in _selected_in_role(category, role):
             expand(target)
             incoming[target].append(category)
 
@@ -251,18 +269,11 @@ def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict:
                 frontier.append(above)
         return False
 
-    # An order a compiled class was built from is fixed: the class exists, and Sage built
-    # its method resolution order from that order.  What a declaration orders is the pairs
-    # no compiled class has ordered yet.
-    for behind, above in _compiled_orders[role].items():
-        if behind in incoming:
-            incoming[behind].extend(ahead for ahead in above if ahead in incoming)
-
     preferred = _declared_ranks[role]
-    declaring = [category for category, _ in selected.items()]
+    declaring = [category for category, _ in ordered.items()]
     declaring.sort(key=lambda category: category.ordinal())
     for category in declaring:
-        for ahead, behind in pairwise(selected[category]):
+        for ahead, behind in pairwise(ordered[category]):
             if ahead in preferred and behind in preferred and preferred[ahead] > preferred[behind]:
                 # The two already stand this way, and the ranks below prefer that order.
                 continue
@@ -524,14 +535,6 @@ def _compiled_class(current: Node) -> type[CategoryPoint]:
     with building_role_classes():
         compiled = _runtime_category(current).parent_class
     _install_written_body(compiled, current.category.local_role_class(current.role))
-    # The order this class was built from is now fixed (``_rank_declarations``).
-    fixed = _compiled_orders[current.role]
-    chain = [current.category, *(owner.category for owner in _linearized_nodes(current) if owner.role is current.role)]
-    for ahead, behind in pairwise(chain):
-        if behind not in fixed:
-            fixed[behind] = []
-        if not any(known is ahead for known in fixed[behind]):
-            fixed[behind].append(ahead)
     return compiled
 
 

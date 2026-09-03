@@ -111,6 +111,17 @@ def _declares_subcategory(functor: MorphismCategory.ObjectType) -> bool:
     return Fun.declares_subcategory(functor)
 
 
+def _declares_point(functor: MorphismCategory.ObjectType) -> bool:
+    """Whether ``functor`` is declared a point ``* -> C`` (D154, D162).
+
+    Read the same way and for the same reason as ``_declares_subcategory``: the
+    declaration is the property category ``C.Point()`` constructed the arrow in.
+    """
+    from sage_categories.cat.functors import Fun
+
+    return Fun.declares_point(functor)
+
+
 class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     """The local ``Cat().ObjectType`` declaration."""
 
@@ -237,13 +248,18 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
         # A selected point functor ``* -> D`` places this category as an object of ``D``
         # rather than of its universe, and the level shift follows that placement (D154,
-        # D161, D169; ``place``).
-        points = tuple(functor for functor in functors if functor.codomain().retains_point_functor(functor))
+        # D161, D169; ``place``).  The arrow declares the point and is not itself an
+        # isofibration; the monic isofibration ``POL-FUN-036`` requires placement to
+        # follow is the inclusion ``<X> -> D`` of the replete full subcategory its image
+        # generates, so the placement is read off that inclusion (``specs/functor.md``,
+        # "Point categories and point functors").
+        points = tuple(functor for functor in functors if _declares_point(functor))
         assert len(points) <= 1, (
             f"{self!r} selects {len(points)} point functors; the kernel places a category along one point functor today. "
             "Several is the shape D161 describes for NN lifting its point to magmas in two ways, a kernel capability that does not exist yet"
         )
-        place(self, points[0].codomain() if points else universe)
+        inclusions = tuple(functor.codomain().EssentialImage(functor).inclusion_functor() for functor in points)
+        place(self, inclusions[0].codomain() if inclusions else universe)
 
     def _select_functors(self) -> tuple[Functor, ...]:
         """Read the declaration ``structure_functors()`` once and retain what it selected.
@@ -650,6 +666,14 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
         The objects of ``Mor(C)`` are the morphisms of ``C``, so ``member_object`` is a
         morphism there and its identity is the one ``Mor(C)`` supplies (POL-CAT-021).
+
+        The arrow is constructed in ``Fun(*, self).Monomorphisms()``, and that call is the
+        declaration ``cat_kernel`` reads (D146, D162, ``POL-CAT-069``).  It is the
+        strongest of ``Fun``'s named properties that holds for every ``self`` and every
+        object of it: a functor out of the terminal category is faithful and injective on
+        objects, hence monic, while an isomorphism ``X -> Y`` of ``self`` has nothing to
+        lift to in ``*``, so the arrow is not an isofibration.  Its fullness, which holds
+        exactly when ``member_object`` has no nonidentity endomorphism, is not declared.
         """
         from sage_categories.cat.functors import Fun
 
@@ -658,7 +682,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             # runs.  A point selected by a class under construction is the arrow that
             # places its object, so the arrow exists before the object is an object of
             # ``self`` (D154, D169).
-            self._points[member_object] = Fun(Cat().Terminal(), self)(
+            self._points[member_object] = Fun(Cat().Terminal(), self).Monomorphisms()(
                 lambda vertex: member_object,
                 lambda path: self.morphism_category(1)(member_object, member_object).one(),
             )
@@ -682,10 +706,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             f"{self!r}.Point() selects the object under construction, and none is being constructed here"
         )
         return self.point_functor(context.canonical_image)
-
-    def retains_point_functor(self, functor: Functor) -> bool:
-        """Whether ``functor`` is a point of this category, the arrow ``* -> self`` it retains."""
-        return any(retained is functor for _, retained in self._points.items())
 
     def arrow_functor(self, morphism: MorphismCategory.ObjectType) -> Functor:
         """The diagram ``[1] -> self`` of shape the walking arrow that ``morphism`` denotes."""

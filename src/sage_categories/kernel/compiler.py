@@ -350,17 +350,13 @@ def inheriting_functors(category: Category) -> tuple[Functor, ...]:
     supplies no implementation.  Order decides precedence among the ones that do, the
     first chosen and coherence assumed (D164 to D167, D37, D159, D165).
 
-    A selected point functor is not one of these edges: it places the category as an
-    object of its codomain, and what it carries is the categorical level shift
-    (D154, D161, D169; ``refinement.place``).
+    A selected point functor is not one of these edges: it is declared monic and not an
+    isofibration, so this reads it out, and what it carries is the categorical level shift
+    along the inclusion its image generates (D154, D161, D169; ``refinement.place``).
     """
     from sage_categories.kernel.refinement import traces_inheritance
 
-    return tuple(
-        functor
-        for functor in category.selected_functors()
-        if traces_inheritance(functor) and not functor.codomain().retains_point_functor(functor)
-    )
+    return tuple(functor for functor in category.selected_functors() if traces_inheritance(functor))
 
 
 def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
@@ -1073,12 +1069,12 @@ def _debug_unresolved_diamonds(category: Category) -> None:
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     """Compile the three role classes of ``category`` from its local declarations and its selected functors."""
-    from sage_categories.kernel.refinement import is_placed
+    from sage_categories.kernel.refinement import declares_point, is_placed
 
     for functor in functors:
         functor_category = category.category().morphism_category(1)
         assert is_placed(functor, functor_category), f"{functor!r} is not an object of {functor_category!r}"
-        if functor.codomain().retains_point_functor(functor):
+        if declares_point(functor):
             # A selected point functor is the arrow ``* -> D`` that places this category
             # as an object of ``D``; it starts at the terminal category, not here, and
             # what it carries is the level shift rather than an implementation edge

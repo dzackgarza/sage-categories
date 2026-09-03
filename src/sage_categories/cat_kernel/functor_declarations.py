@@ -15,7 +15,7 @@ from sage_categories.kernel.refinement import install_functor_declaration_reader
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
 
-__all__ = ["install", "traces_inheritance", "traces_placement"]
+__all__ = ["declares_point", "install", "traces_inheritance", "traces_placement"]
 
 
 def traces_placement(functor: Functor) -> bool:
@@ -42,6 +42,21 @@ def traces_inheritance(functor: Functor) -> bool:
     return Fun.declares_inheritance(functor)
 
 
+def declares_point(functor: Functor) -> bool:
+    """Whether ``functor`` is declared a point ``* -> C``: monic, with the terminal category as domain (D154, D162).
+
+    ``C.Point()`` writes that declaration in the call that constructs the arrow, so what
+    is read here is a declaration like any other (``POL-CAT-069``, D175).  The arrow
+    carries neither placement nor inheritance: those run along the inclusion ``<X> -> C``
+    of the replete full subcategory its image generates (D161, D169).  The compiler asks
+    because a point arrow is the one selected functor whose domain is not the category
+    that selected it.
+    """
+    from sage_categories.cat.functors import Fun
+
+    return Fun.declares_point(functor)
+
+
 def install() -> None:
-    """Hand the kernel the two readers its placement graph and refinement walk ask with."""
-    install_functor_declaration_readers(traces_placement, traces_inheritance)
+    """Hand the kernel the three readers its placement graph, refinement walk, and compiler ask with."""
+    install_functor_declaration_readers(traces_placement, traces_inheritance, declares_point)

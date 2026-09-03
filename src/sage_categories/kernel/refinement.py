@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 __all__ = [
     "FunctorDeclarationReader",
     "common_ancestor",
+    "declares_point",
     "install_functor_declaration_readers",
     "is_placed",
     "is_subcategory",
@@ -35,23 +36,25 @@ type FunctorDeclarationReader = Callable[[MorphismOfCategory], bool]
 
 _traces_placement: FunctorDeclarationReader | None = None
 _traces_inheritance: FunctorDeclarationReader | None = None
+_declares_point: FunctorDeclarationReader | None = None
 
 
 def install_functor_declaration_readers(
     placement: FunctorDeclarationReader,
     inheritance: FunctorDeclarationReader,
+    point: FunctorDeclarationReader,
 ) -> None:
-    """Install ``cat_kernel``'s two readers of a functor's declared properties (D175).
+    """Install ``cat_kernel``'s three readers of a functor's declared properties (D175).
 
-    Deciding whether a functor carries placement and inheritance reads the property
-    subcategory the functor was constructed in, which is ``Cat``'s; walking the placement
-    graph and refining the implementation class is the kernel's, and ``Cat`` calls that
-    walk from thirteen of its own modules.  ``cat_kernel`` is the layer that has both, so
-    it hands the readers down rather than the kernel reaching up (``specs/resolution.md``,
-    "The closed kernel surface").
+    Deciding whether a functor carries placement and inheritance, or declares a point,
+    reads the property subcategory the functor was constructed in, which is ``Cat``'s;
+    walking the placement graph and compiling the implementation classes is the kernel's,
+    and ``Cat`` calls that walk from thirteen of its own modules.  ``cat_kernel`` is the
+    layer that has both, so it hands the readers down rather than the kernel reaching up
+    (``specs/resolution.md``, "The closed kernel surface").
     """
-    global _traces_placement, _traces_inheritance
-    _traces_placement, _traces_inheritance = placement, inheritance
+    global _traces_placement, _traces_inheritance, _declares_point
+    _traces_placement, _traces_inheritance, _declares_point = placement, inheritance, point
 
 
 def traces_placement(functor: MorphismOfCategory) -> bool:
@@ -64,6 +67,12 @@ def traces_inheritance(functor: MorphismOfCategory) -> bool:
     """Whether inheritance follows ``functor``: it is declared an isofibration (D164 to D167)."""
     assert _traces_inheritance is not None, "cat_kernel installs the functor declaration readers before any category is declared"
     return _traces_inheritance(functor)
+
+
+def declares_point(functor: MorphismOfCategory) -> bool:
+    """Whether ``functor`` is declared a point ``* -> C``, the arrow that places its object in ``C`` (D154, D162)."""
+    assert _declares_point is not None, "cat_kernel installs the functor declaration readers before any category is declared"
+    return _declares_point(functor)
 
 
 def _reached_placements(start: compiler.Node) -> Iterator[compiler.Node]:

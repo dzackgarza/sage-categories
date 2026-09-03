@@ -1,16 +1,19 @@
 from collections.abc import Callable
 from sage_categories.cat.category import Category
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, RoleCandidate
-__all__ = ['FunctorDeclarationReader', 'install_functor_declaration_readers', 'traces_placement', 'traces_inheritance', 'is_placed', 'is_subcategory', 'common_ancestor', 'place', 'refine']
+__all__ = ['FunctorDeclarationReader', 'install_functor_declaration_readers', 'traces_placement', 'traces_inheritance', 'declares_point', 'is_placed', 'is_subcategory', 'common_ancestor', 'place', 'refine']
 type FunctorDeclarationReader = Callable[[MorphismOfCategory], bool]
 
-def install_functor_declaration_readers(placement: FunctorDeclarationReader, inheritance: FunctorDeclarationReader) -> None:
+def install_functor_declaration_readers(placement: FunctorDeclarationReader, inheritance: FunctorDeclarationReader, point: FunctorDeclarationReader) -> None:
     ...
 
 def traces_placement(functor: MorphismOfCategory) -> bool:
     ...
 
 def traces_inheritance(functor: MorphismOfCategory) -> bool:
+    ...
+
+def declares_point(functor: MorphismOfCategory) -> bool:
     ...
 
 def is_placed(candidate: RoleCandidate, category: Category) -> bool:

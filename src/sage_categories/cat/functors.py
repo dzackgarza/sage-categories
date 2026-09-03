@@ -678,6 +678,23 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             self._declaring[placement] = any(root is self._monomorphisms for root in roots) and any(root is self._isofibrations for root in roots)
         return self._declaring[placement]
 
+    def declares_point(self, functor: Functor) -> bool:
+        """Whether ``functor`` is declared a point ``* -> C``: a monomorphism whose domain is the terminal category (D146, D154, D162).
+
+        ``C.Point()`` constructs the arrow in ``Fun(*, C).Monomorphisms()``, and that
+        construction is the declaration.  The arrow is not an isofibration, because an
+        isomorphism ``X -> Y`` of ``C`` has nothing to lift to in ``*``, which has one
+        morphism; so it traces neither placement nor inheritance, and the inclusion
+        ``<X> -> C`` of the replete full subcategory its image generates carries both
+        (D161, D169).  The domain is what separates a point from the other monomorphisms
+        that are not isofibrations, the skeletal inclusions such as ``Cardinal() -> Sets()``.
+        """
+        if not self._bootstrapped:
+            return False
+        if functor.domain() is not self.base_category().Terminal():
+            return False
+        return any(root is self._monomorphisms for root in functor.category().narrowing_roots())
+
     def _declared_subcategory(self, full: bool) -> Category:
         """``Fun.Monomorphisms().Isofibrations()``, with fullness for a full subcategory (POL-FUN-036)."""
         declared = self.Monomorphisms().property_subcategory(self.Isofibrations())

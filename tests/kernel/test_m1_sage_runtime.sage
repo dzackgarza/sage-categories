@@ -9,11 +9,13 @@ from typing import Self
 import pytest
 
 from sage_categories.cat import Fun
-from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.category import Cat, Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.compiler import SemanticCollisionError, declared_inheritance
+from sage_categories.kernel.construction import active_object_context
+from sage_categories.kernel.refinement import declares_point, traces_inheritance, traces_placement
 from sage_categories.kernel.roles import CategoryPoint, Role
 
 
@@ -353,6 +355,41 @@ class NN(Category):
 NATURALS = NN()
 
 
+class QQ(Category):
+    """A second named object, independent of ``NN`` and a point in the same ``STRUCTURED``."""
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (STRUCTURED.Point(),)
+
+
+RATIONALS = QQ()
+
+
+class Unpointed(Category):
+    """The control of criteria 6 and 7: a new category that declares no point."""
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+
+UNPOINTED = Unpointed()
+
+
 def test_kernel_imports_without_production_leaves() -> None:
     import subprocess
     cmd = (
@@ -526,20 +563,68 @@ def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFi
     assert all(record.levelno == logging.DEBUG for record in records)
 
 def test_point_functor_places_the_class_and_shifts_the_level() -> None:
-    # ``STRUCTURED.Point()`` is the arrow ``* -> STRUCTURED`` selecting ``NATURALS``;
-    # selecting it places ``NATURALS`` as an object of ``STRUCTURED`` (D154, D169).
-    (point,) = NATURALS.selected_functors()
-    assert STRUCTURED.retains_point_functor(point)
-    assert point is STRUCTURED.point_functor(NATURALS)
-    assert NATURALS.category() is STRUCTURED
-    assert NATURALS in STRUCTURED
+    # ``STRUCTURED.Point()`` constructs the arrow ``* -> STRUCTURED`` selecting the class
+    # in ``Fun(*, STRUCTURED).Monomorphisms()``, and that call is the whole declaration.
+    # The arrow is not an isofibration, so what carries placement and inheritance is the
+    # inclusion ``<X> -> STRUCTURED`` of the replete full subcategory its image generates
+    # (D146, D154, D161, D169).
+    for named in (NATURALS, RATIONALS):
+        (point,) = named.selected_functors()
+        assert declares_point(point)
+        assert point is STRUCTURED.point_functor(named)
+        assert not traces_placement(point)
+        assert not traces_inheritance(point)
 
-    # The level shift: the category itself carries the object surface of ``STRUCTURED``,
-    # and its objects carry the element surface (D128, D161).
-    assert isinstance(NATURALS, STRUCTURED.ObjectType)
-    assert NATURALS.structured_object() is NATURALS
-    assert issubclass(NATURALS.ObjectType, STRUCTURED.ElementType)
-    assert NATURALS.ObjectType.structured_element is STRUCTURED.ElementType.structured_element
+        inclusion = STRUCTURED.EssentialImage(point).inclusion_functor()
+        assert inclusion.codomain() is STRUCTURED
+        assert traces_placement(inclusion)
+        assert traces_inheritance(inclusion)
+
+        assert named.category() is STRUCTURED
+        assert named in STRUCTURED
+
+        # The level shift: the category itself carries the object surface of
+        # ``STRUCTURED``, and its objects carry the element surface (D128, D161).
+        assert isinstance(named, STRUCTURED.ObjectType)
+        assert named.structured_object() is named
+        assert issubclass(named.ObjectType, STRUCTURED.ElementType)
+        assert named.ObjectType.structured_element is STRUCTURED.ElementType.structured_element
+
+    assert STRUCTURED.point_functor(NATURALS) is not STRUCTURED.point_functor(RATIONALS)
+
+    # The control declares no point: it is an object of its universe and receives neither
+    # surface of ``STRUCTURED``.
+    assert UNPOINTED.category() is not STRUCTURED
+    assert not isinstance(UNPOINTED, STRUCTURED.ObjectType)
+    assert not issubclass(UNPOINTED.ObjectType, STRUCTURED.ElementType)
+
+
+def test_an_arrow_that_writes_no_point_declaration_places_nothing() -> None:
+    # The same two actions and the same endpoints as ``STRUCTURED.Point()``, constructed
+    # outside ``Fun(*, STRUCTURED).Monomorphisms()``.  Only the declaration separates the
+    # two, so a placement decided by anything else -- the endpoints, a table of arrows
+    # already built, Python inheritance -- would place this one as well (POL-FUN-036).
+    class UndeclaredPoint(Category):
+        class ObjectType:
+            pass
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            member = active_object_context().canonical_image
+            return (
+                Fun(Cat().Terminal(), STRUCTURED)(
+                    lambda vertex: member,
+                    lambda path: STRUCTURED.morphism_category(1)(member, member).one(),
+                ),
+            )
+
+    with pytest.raises(AssertionError):
+        UndeclaredPoint()
 
 
 def test_property_refinement_preserves_object_identity() -> None:

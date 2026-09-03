@@ -154,9 +154,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def Point(self) -> Functor:
         ...
 
-    def retains_point_functor(self, functor: Functor) -> bool:
-        ...
-
     def arrow_functor(self, morphism: MorphismCategory.ObjectType) -> Functor:
         ...
     Products: Incomplete

@@ -386,6 +386,8 @@ RATIONALS = QQ()
 class LabelledArrows(Category):
     """Objects and morphisms named by a label: the closed list of D77 and nothing else."""
 
+    Marked = Axiom()
+
     class ObjectType:
         def __init__(self, label: str) -> None:
             self._label = label
@@ -771,3 +773,78 @@ def test_the_identity_is_the_unit_of_the_endomorphism_monoid() -> None:
     assert ask(composite == endomorphism) is Unknown
     # An endomorphism's two endpoints are one object, which the same declaration decides.
     assert endomorphism in Mor(LABELLED).Endomorphisms()
+
+
+def test_the_identity_is_the_unit_of_the_endomorphism_monoid_of_a_property_subcategory() -> None:
+    """``1_X`` is the unit of ``End_{C.P()}(X)``, in both orders.
+
+    A subcategory contains the identities of its objects, so ``C.P()`` reaches the one
+    identity ``C`` owns for ``X`` and both unit laws decide there (D84, D86,
+    ``POL-CAT-023``).  The placement that identity takes narrows ``Mor(C)`` by
+    ``Mor(C.P())``, ``Isomorphisms`` and ``Identity``; the narrowing by
+    ``{Mor(C.P()), Identity}`` is ``Mor(C.P()).Identity()``, and dropping one root at a
+    time is what declares the monomorphism into it (D83, ``POL-CAT-084``).  Without that
+    declaration ``f * 1_X`` keeps two factors against ``f``'s one and the right unit law
+    reads ``Unknown`` while the left one reads ``True``.
+    """
+    marked = LABELLED.Marked()
+    source, target = marked("marked source"), marked("marked target")
+    arrow = Mor(marked)(source, target)("marked arrow")
+    identity = Mor(marked)(source, source).one()
+    target_identity = Mor(marked)(target, target).one()
+
+    # One object has one identity, whichever of the two categories holding it is asked.
+    assert identity is Mor(LABELLED)(source, source).one()
+    assert ask(arrow * identity == arrow) is True
+    assert ask(target_identity * arrow == arrow) is True
+    # A subcategory is closed under composition, so each composite the unit laws compare
+    # is itself a morphism of ``C.P()``, in either order of the pair.
+    assert ask(Mor(marked).membership_proposition(arrow * identity)) is True
+    assert ask(Mor(marked).membership_proposition(target_identity * arrow)) is True
+
+
+def test_a_predicate_decides_on_a_class_no_atom_was_built_for_yet() -> None:
+    """A value's engine atom is a projection of its compiled class alone (D130, D131).
+
+    ``Mor(C.P())(X, X).one()`` is compiled at a node under the narrowings of ``Mor(C)``,
+    and ``C.P()`` writes no morphism class of its own, so its node and several nodes
+    below it are all compiled from the one declaration they inherit.  Reading that
+    declaration at the first of those nodes rather than the last states an order no
+    linearization satisfies, and the projection then has no class to build for this
+    value: every predicate on it stops deciding rather than answering.
+
+    The category is declared here, inside the claim, so that no earlier test has built
+    an atom for anything it compiles.  What the answer must not depend on is what was
+    asked before it, so the measurement is worth nothing on a warmed process.
+    """
+
+    class Fresh(Category):
+        """A category from the closed list of D77, reached by nothing else in this file."""
+
+        Selected = Axiom()
+
+        class ObjectType:
+            def __init__(self, label: str) -> None:
+                self._fresh_label = label
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            def __init__(self, label: str) -> None:
+                self._fresh_label = label
+
+        def __call__(self, label: str) -> CategoryOfCategories.ElementType:
+            return self.ObjectType(label)
+
+    ambient = Fresh()
+    selected = ambient.Selected()
+    member_object = selected("cold")
+    identity = Mor(selected)(member_object, member_object).one()
+
+    assert ask(identity.is_identity()) is True
+    assert identity in Mor(selected)
+    # The same claim on the value reached through the ambient's hom, which is the route a
+    # longer script warms first: one object has one identity, and one answer.
+    assert identity is Mor(ambient)(member_object, member_object).one()
+    assert ask(Mor(ambient)(member_object, member_object).one().is_identity()) is True

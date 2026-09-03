@@ -664,16 +664,30 @@ def _stable_role_class(runtime_class: type[CategoryPoint], role: Role) -> type[C
 def runtime_semantic_bases(
     runtime_class: type[CategoryPoint],
 ) -> tuple[type[CategoryPoint], ...] | None:
-    """Return every semantic and runtime branch of a compiled class in compiler C3 order."""
+    """Return every semantic and runtime branch of a compiled class in compiler C3 order.
+
+    One declaration can be the one several linearized nodes are compiled from: a
+    category class that writes no role class of its own is compiled from the one it
+    inherits, and every node under it is compiled from that same declaration.  It is
+    read once, at the last node that supplies it, because that is where Sage's
+    linearization of those nodes puts it -- a C3 order places a shared base after every
+    node that reaches it, and reading it at the first node instead would put it ahead of
+    declarations that the nodes between place before it.  Two nodes would then state
+    incompatible orders for one pair of declarations, and the projection over them has
+    no linearization (D130, ``specs/resolution.md``, "Sage class construction").
+    """
     current = _runtime_node(runtime_class)
     if current is None:
         return None
-    declaration = current.category.local_role_class(current.role)
-    result: list[type[CategoryPoint]] = [declaration]
-    for source in _linearized_nodes(current):
-        source_declaration = source.category.local_role_class(source.role)
-        if not any(source_declaration is known for known in result):
-            result.append(source_declaration)
+    supplied = [
+        source.category.local_role_class(source.role)
+        for source in (current, *_linearized_nodes(current))
+    ]
+    result: list[type[CategoryPoint]] = [
+        declaration
+        for position, declaration in enumerate(supplied)
+        if not any(declaration is later for later in supplied[position + 1 :])
+    ]
     stable_role = _stable_role_class(runtime_class, current.role)
     if not issubclass(stable_role, runtime_class) and not any(
         issubclass(base, stable_role) for base in result

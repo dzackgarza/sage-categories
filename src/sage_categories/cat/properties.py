@@ -574,10 +574,20 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         return root.predicate()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The monomorphisms into the base, into each root, into each narrowing by the roots not below one root, and into the same narrowing of the base's ambient, each once."""
+        """The monomorphisms into the base, into each root, into the narrowing by the roots but one, and into the same narrowing of the base's ambient, each once.
+
+        Dropping one root at a time reaches the narrowing by every subset of the roots,
+        which is what this category is a full subcategory of and what D83 requires it to
+        declare rather than leave to be induced.  ``1_X`` for ``X`` in ``C.P()`` is placed
+        in ``Mor(C.P()).Isomorphisms()`` as its own inverse and in ``Mor(C.P()).Identity()``
+        as an identity, so it lands in the narrowing by all three roots; without the
+        monomorphism into the narrowing by ``{Mor(C.P()), Identity}`` no reader can see
+        that it is an identity of ``C.P()``, and the word an equality reads stops dropping
+        it (D84, D86, ``POL-CAT-023``, ``POL-CAT-084``).
+        """
         targets: list[Category] = [self._ambient, *self._roots]
         for omitted in self._roots:
-            kept = tuple(root for root in self._roots if not is_subcategory(root, omitted))
+            kept = tuple(root for root in self._roots if root is not omitted)
             if kept:
                 targets.append(self._ambient.intersection(kept))
         if self._ambient.has_ambient():

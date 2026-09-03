@@ -5,8 +5,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from sage.sets.family import LazyFamily
-from sage.structure.coerce_dict import MonoDict, TripleDict
 from sympy import ask as sympy_ask
 
 from sage_categories.cat import category as _category
@@ -29,6 +27,7 @@ from sage_categories.cat.category import (
 from sage_categories.cat.properties import Axiom
 from sage_categories.cat.predicates import predicate, register_handler
 from sage_categories.kernel.roles import CategoryPoint
+from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
 

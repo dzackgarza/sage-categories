@@ -46,8 +46,6 @@ from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from sage.misc.cachefunc import cached_method
-from sage.structure.coerce_dict import MonoDict, TripleDict
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, member
@@ -61,6 +59,7 @@ from sage_categories.cat.shapes import Discrete, DiscreteCategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed
+from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

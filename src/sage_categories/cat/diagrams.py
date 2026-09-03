@@ -36,9 +36,6 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING
 
-from sage.misc.cachefunc import cached_function
-from sage.structure.coerce_dict import MonoDict, TripleDict
-
 from sage_categories.cat.category import Category
 from sage_categories.cat.cones import LimitConesCategory, cocone, cocone_apex, cone, cone_apex, cones
 from sage_categories.cat.declarations import Sets
@@ -49,6 +46,7 @@ from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.shapes import Discrete, DiscreteCategory
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import ask
+from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_function
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

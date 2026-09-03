@@ -8,11 +8,6 @@ from collections.abc import Callable, Iterator
 from types import CellType, FunctionType, GenericAlias
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
-from sage.categories.category import Category as SageCategory
-from sage.misc.lazy_attribute import lazy_attribute
-from sage.structure.coerce_dict import MonoDict
-from sage.structure.dynamic_class import dynamic_class
-
 from sage_categories.kernel.construction import (
     CategoryPointIdentity,
     ElementConstructionContext,
@@ -49,6 +44,7 @@ from sage_categories.kernel.roles import (
     install_cat_element_root,
     kernel_base,
 )
+from sage_categories.kernel.sage_runtime import MonoDict, SageCategory, dynamic_class, lazy_attribute
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict, TripleDict
+from sage_categories.kernel.sage_runtime import MonoDict, TripleDict
 
 if TYPE_CHECKING:
     from sage_categories.kernel.roles import MorphismOfCategory, ObjectOfCategory

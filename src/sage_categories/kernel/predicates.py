@@ -5,8 +5,6 @@ from __future__ import annotations
 from inspect import get_annotations, signature
 from typing import TYPE_CHECKING, get_origin
 
-from sage.misc.unknown import Unknown
-from sage.structure.coerce_dict import MonoDict
 from plum import Dispatcher, Function, NotFoundLookupError
 from sympy import And, Integer, Predicate, sympify
 from sympy.assumptions.assume import AppliedPredicate
@@ -27,6 +25,7 @@ from sage_categories.cat.predicates import (
 from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint, Role, category_of, role_of
+from sage_categories.kernel.sage_runtime import MonoDict, Unknown
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category

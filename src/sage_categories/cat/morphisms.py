@@ -18,12 +18,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, overload
 
-from sage.structure.coerce_dict import TripleDict
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, Decision, Predicate, Proposition, ask, member, refine
 from sage_categories.cat.predicates import predicate, register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
+from sage_categories.kernel.sage_runtime import TripleDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

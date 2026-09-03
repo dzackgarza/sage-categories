@@ -7,9 +7,8 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict
-
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
+from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category

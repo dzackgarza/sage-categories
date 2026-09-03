@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 
-from sage.structure.coerce_dict import MonoDict
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -13,6 +12,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition, predicate, register_handler
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
     "EssentialImageCategory",

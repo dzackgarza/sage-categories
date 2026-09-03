@@ -33,14 +33,12 @@ from collections.abc import Callable
 from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar
 
-from sage.structure.coerce_dict import TripleDict
-from sage.misc.cachefunc import cached_method
-
 from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, property_predicate, register_handler
 from sage_categories.kernel.refinement import is_subcategory, refine, traces_placement
 from sage_categories.kernel.roles import CategoryPoint, Role, role_of
+from sage_categories.kernel.sage_runtime import TripleDict, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

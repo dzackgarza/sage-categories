@@ -52,3 +52,4 @@ type = "forbidden"
 allow_indirect_imports = true
 source_modules = ["sage_categories.kernel", "sage_categories.cat"]
 forbidden_modules = ["sage"]
+ignore_imports = ["sage_categories.kernel.sage_runtime -> sage"]

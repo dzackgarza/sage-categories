@@ -13,11 +13,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict
-
 from sage_categories.cat.cat_constructions import LimitCategory, limit_of_categories
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Cat, Functor
+from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

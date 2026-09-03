@@ -1,7 +1,7 @@
 from collections.abc import Callable, Iterable
-from sage.misc.unknown import Unknown as Unknown, UnknownClass as UnknownClass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.kernel.sage_runtime import Unknown as Unknown, UnknownClass as UnknownClass
 from sympy import Predicate as Predicate
 from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.logic.boolalg import Boolean

@@ -5,8 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict
-
 from sage_categories.cat.cat_constructions import limit_of_categories
 from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cones, limit_cones
 from sage_categories.cat.diagrams import cospan_diagram
@@ -16,6 +14,7 @@ from sage_categories.cat.predicates import ask
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.slices import CommaCategory, _endpoint_functor, _pair_functor
 from sage_categories.kernel.refinement import is_placed, refine
+from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category, CategoryOfCategories

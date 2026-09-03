@@ -31,7 +31,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, member
@@ -41,6 +40,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import Predicate, Proposition, ask, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed
+from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

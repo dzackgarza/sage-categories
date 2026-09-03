@@ -10,13 +10,12 @@ the original direction.  Thus
 
 from __future__ import annotations
 
-from sage.structure.coerce_dict import MonoDict
-
 from sage_categories.cat.adjunctions import Equivalences, EquivalencesCategory
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Fun, FunctorCategory, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = ["dual_functor_category_equivalence"]
 

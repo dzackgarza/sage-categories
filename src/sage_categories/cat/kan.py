@@ -25,11 +25,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict, TripleDict
-
 from sage_categories.cat.constructions import cocone, cone
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.slices import comma_category
+from sage_categories.kernel.sage_runtime import MonoDict, TripleDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

@@ -2,14 +2,13 @@ import sage_categories
 from _typeshed import Incomplete
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
-from sage.misc.cachefunc import cached_method
-from sage.rings.integer import Integer
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.declarations import CategoryFamily
 from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import AppliedQuery, Predicate, Proposition, UnknownClass
+from sage_categories.kernel.sage_runtime import Integer, cached_method
 from typing import Literal, overload
 __all__ = ['OnObject', 'OnMorphism', 'Assignment', 'member', 'Category', 'CategoryOfCategories', 'Cat']
 type OnObject = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]

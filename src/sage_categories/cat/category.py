@@ -8,15 +8,12 @@ from dataclasses import dataclass
 from functools import cache
 from typing import TYPE_CHECKING, ClassVar, Literal, overload
 
-from sage.misc.cachefunc import cached_method
-from sage.rings.integer import Integer
-from sage.structure.coerce_dict import MonoDict, TripleDict
-
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 from sage_categories.kernel.roles import Role
+from sage_categories.kernel.sage_runtime import Integer, MonoDict, TripleDict, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory

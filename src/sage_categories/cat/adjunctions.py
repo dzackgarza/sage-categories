@@ -11,13 +11,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from sage.structure.coerce_dict import MonoDict
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.predicates import Decision, Proposition, Unknown, ask, register_handler
 from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
     "Adjunctions",

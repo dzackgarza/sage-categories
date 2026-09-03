@@ -6,13 +6,12 @@ from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict
-
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

@@ -46,8 +46,6 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING
 
-from sage.structure.coerce_dict import MonoDict
-
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.cones import (
@@ -69,6 +67,7 @@ from sage_categories.cat.properties import PredicateSubcategory, PropertySubcate
 from sage_categories.cat.predicates import Unknown
 from sage_categories.cat.predicates import Proposition, ask
 from sage_categories.kernel.refinement import is_subcategory, refine
+from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

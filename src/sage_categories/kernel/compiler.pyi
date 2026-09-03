@@ -1,10 +1,10 @@
 from _typeshed import Incomplete
 from collections.abc import Callable
 from sage_categories.cat.category import Category as SageCategory
-from sage.misc.lazy_attribute import lazy_attribute
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
 from sage_categories.kernel.roles import CategoryPoint, Role
+from sage_categories.kernel.sage_runtime import lazy_attribute
 from typing import Concatenate, NamedTuple
 __all__ = ['SemanticCollisionError', 'Node', 'node', 'same_node', 'declared_inheritance', 'declared_subtyping', 'compiler', 'install_on_declaration', 'compile_category', 'recompile_category', 'apply_level_shift']
 

@@ -29,14 +29,12 @@ from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from sage.misc.cachefunc import cached_function
-from sage.structure.coerce_dict import MonoDict
-
 from sage_categories.cat.category import Category
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import ask, register_handler
 from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

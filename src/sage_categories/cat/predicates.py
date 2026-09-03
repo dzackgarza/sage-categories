@@ -7,13 +7,11 @@ from functools import partial
 from itertools import count
 from typing import TYPE_CHECKING
 
-from sage.categories.category_with_axiom import uncamelcase
-from sage.misc.cachefunc import cached_method
-from sage.misc.unknown import Unknown, UnknownClass
-from sage.structure.coerce_dict import MonoDict
 from sympy import And, Implies, Not, Or, Predicate, ask as sympy_ask
 from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.logic.boolalg import Boolean
+
+from sage_categories.kernel.sage_runtime import MonoDict, Unknown, UnknownClass, cached_method, uncamelcase
 
 
 class AppliedPredicate(_SymPyAppliedPredicate):

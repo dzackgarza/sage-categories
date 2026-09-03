@@ -22,7 +22,7 @@ j_P:C.P()\hookrightarrow C.
 A proposition that no existing method supplies applies a SymPy `Predicate` subclass, whose exact SymPy handlers decide the cases known to that owner.
 
 The registered axiom identifier determines the public `is_P()` spelling.
-The kernel generates that method once on the ambient implementation class.
+`cat_kernel` generates that method once on the ambient implementation class (D175).
 It returns the declared proposition, the value of the private deciding method (D142).
 
 For a morphism property, the construction starts from `Mor(C)`.

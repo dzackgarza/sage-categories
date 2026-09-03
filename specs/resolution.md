@@ -12,8 +12,8 @@ Nothing in this file adds a public mathematical object or a leaf declaration.
 
 The kernel is engineering and states no mathematics (D130, D173).
 `Cat` owns every operation that all categories share, morphism semantics included: the two
-endpoints, composition, the identity, inverses, and the predicates the property
-subcategories generate.
+endpoints, composition, the identity, inverses, and the property subcategories; the
+predicates those generate are `cat_kernel`'s, which reads both sides (D175).
 The three private role classes of `kernel/roles.py` exist so that Sage has a stable Python
 end for each compiled role.
 Their surface is closed, exactly as the leaf writer's contract is closed under D77, and for

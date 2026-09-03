@@ -5,7 +5,7 @@
 sending a relation to its underlying set ``X``, never to the relation ``R``, and constructs
 it into ``Fun(Relations(), Sets()).Fibrations()``. It declares the ``PartialOrder`` axiom
 together with the private proposition deciding it, applying a new SymPy predicate; the
-kernel generates the public ``R.is_partial_order()``. ``Posets()`` is
+``cat_kernel`` generates the public ``R.is_partial_order()``. ``Posets()`` is
 ``Relations().PartialOrder()``, its axiom subcategory, and inherits that functor; the poset
 class declares itself the implementation of that implicit subcategory by selecting its
 identity functor as a structure functor, defines its own structure functor to ``Sets()``

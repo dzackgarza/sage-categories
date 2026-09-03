@@ -69,7 +69,7 @@ Execute the active vault DAG in dependency order.
 The active architecture-convergence DAG is M0 through M6.
 It covers the private kernel, generic `Cat`, and minimal executable witnesses.
 The active phase is the one core phase whose status is `in-progress`; every other phase is `blocked` until the prerequisite card carries an accepted revision (`POL-DOC-028`, D136).
-No phase has an accepted revision.
+M0 has an accepted revision (`6566c91`); M1 is the active phase.
 Production sets, posets, named sets, rings, modules, algebras, and lattices remain blocked through R6 and owner approval.
 The tree holds no production leaf (D137); a leaf enters with its P-phase, rewritten from the templates against the accepted kernel.
 

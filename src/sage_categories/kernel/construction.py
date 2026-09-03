@@ -40,9 +40,11 @@ __all__ = [
     "retain_element_input",
     "retain_morphism_input",
     "retain_object_input",
+    "retain_object_by_datum",
     "retained_element_input",
     "retained_input",
     "retained_morphism_input",
+    "retained_object_by_datum",
     "retained_object_input",
     "retained_objects",
 ]
@@ -167,6 +169,38 @@ def retained_element_input[Value: CategoryPoint, Datum](value: Value) -> Element
 def retained_morphism_input[Value: MorphismOfCategory, Datum](value: Value) -> MorphismConstructionInput[Value, Datum]:
     assert value in _morphism_inputs, f"{value!r} retains no morphism construction input"
     return _morphism_inputs[value]
+
+
+# One object per datum, for each category that constructs objects from a datum.  The
+# outer key is the constructing category, by identity.  The inner key is the datum, and
+# D111 assigns the table by its equality: an owned datum has proposition-valued equality
+# and is keyed by identity in a Sage ``MonoDict``; any other datum is an ordinary exact
+# key and is kept in a dict, which is the equality that datum itself defines.
+_objects_by_owned_datum: MonoDict = MonoDict()
+_objects_by_datum: MonoDict = MonoDict()
+
+
+def _objects_by[Datum](category: Category, datum: Datum) -> MonoDict | dict[Datum, ObjectOfCategory]:
+    """The table ``category`` retains its objects in for a datum of this equality (D111)."""
+    tables, empty = (
+        (_objects_by_owned_datum, MonoDict) if isinstance(datum, CategoryPoint) else (_objects_by_datum, dict)
+    )
+    if category not in tables:
+        tables[category] = empty()
+    return tables[category]
+
+
+def retained_object_by_datum[Datum](category: Category, datum: Datum) -> ObjectOfCategory | None:
+    """The object ``category`` retains for ``datum``, or ``None`` if it retains none yet."""
+    table = _objects_by(category, datum)
+    return table[datum] if datum in table else None
+
+
+def retain_object_by_datum[Value: ObjectOfCategory, Datum](category: Category, datum: Datum, value: Value) -> None:
+    """Retain ``value`` as the object ``category`` constructs from ``datum``."""
+    table = _objects_by(category, datum)
+    assert datum not in table, f"{category!r} already retains an object for {datum!r}"
+    table[datum] = value
 
 
 def retained_input[Value: CategoryPoint, Datum](

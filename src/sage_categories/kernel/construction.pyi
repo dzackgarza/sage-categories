@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from sage_categories.cat.category import Category
 from sage_categories.kernel.compiler import Node
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
-__all__ = ['ObjectRoleIdentity', 'ElementRoleIdentity', 'CategoryPointIdentity', 'CatElementRoleIdentity', 'MorphismRoleIdentity', 'ObjectConstructionInput', 'ElementConstructionInput', 'MorphismConstructionInput', 'retain_object_input', 'retain_element_input', 'retain_morphism_input', 'retained_objects', 'retained_object_input', 'retained_element_input', 'retained_morphism_input', 'retained_input', 'ObjectConstructionContext', 'ElementConstructionContext', 'MorphismConstructionContext', 'active_object_context', 'active_element_context', 'active_morphism_context', 'active_construction_context', 'activate_object_context', 'activate_element_context', 'activate_morphism_context', 'deactivate_object_context', 'deactivate_element_context', 'deactivate_morphism_context']
+__all__ = ['ObjectRoleIdentity', 'ElementRoleIdentity', 'CategoryPointIdentity', 'CatElementRoleIdentity', 'MorphismRoleIdentity', 'ObjectConstructionInput', 'ElementConstructionInput', 'MorphismConstructionInput', 'retain_object_input', 'retain_element_input', 'retain_morphism_input', 'retained_objects', 'retained_object_input', 'retained_element_input', 'retained_morphism_input', 'retained_object_by_datum', 'retain_object_by_datum', 'retained_input', 'ObjectConstructionContext', 'ElementConstructionContext', 'MorphismConstructionContext', 'active_object_context', 'active_element_context', 'active_morphism_context', 'active_construction_context', 'activate_object_context', 'activate_element_context', 'activate_morphism_context', 'deactivate_object_context', 'deactivate_element_context', 'deactivate_morphism_context']
 
 @dataclass(frozen=True, slots=True, eq=False)
 class ObjectRoleIdentity:
@@ -62,6 +62,12 @@ def retained_element_input[Value: CategoryPoint, Datum](value: Value) -> Element
     ...
 
 def retained_morphism_input[Value: MorphismOfCategory, Datum](value: Value) -> MorphismConstructionInput[Value, Datum]:
+    ...
+
+def retained_object_by_datum[Datum](category: Category, datum: Datum) -> ObjectOfCategory | None:
+    ...
+
+def retain_object_by_datum[Value: ObjectOfCategory, Datum](category: Category, datum: Datum, value: Value) -> None:
     ...
 
 def retained_input[Value: CategoryPoint, Datum](value: Value) -> ObjectConstructionInput[Value, Datum] | ElementConstructionInput[Value, Datum] | MorphismConstructionInput[Value, Datum]:

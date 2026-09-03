@@ -273,7 +273,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
             return self._from_sequence(tuple(family))
         rule = family
         assert ask(self._agrees(rule)) is not False, f"{family!r} is no family that {self._diagram!r} carries to itself"
-        return self.ObjectType(category=self, data=FamilyObjectData(rule))
+        return self.ObjectType(FamilyObjectData(rule))
 
     @cached_method(key=lambda self, sequence: tuple((id(member_object), member_object) for member_object in sequence))
     def _from_sequence(self, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> LimitCategory.ObjectType:
@@ -281,7 +281,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         assert ask(self._agrees(rule)) is not False, f"{sequence!r} is no family that {self._diagram!r} carries to itself"
         for position, member_object in enumerate(sequence):
             assert member_object in self.factor(position), f"{member_object!r} is not an object of {self.factor(position)!r}"
-        return self.ObjectType(category=self, data=FamilyObjectData(rule))
+        return self.ObjectType(FamilyObjectData(rule))
 
     def construct_morphism(
         self,
@@ -292,7 +292,6 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         rule = family if callable(family) else _sequence_rule(tuple(family))
         assert ask(self._agrees(rule)) is not False, f"{family!r} is no family of morphisms that {self._diagram!r} carries to itself"
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=domain,
             codomain=codomain,
             data=FamilyMorphismData(rule),
@@ -304,7 +303,6 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
             return component.category().morphism_category(1)(component, component).one()
 
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=member_object,
             codomain=member_object,
             data=FamilyMorphismData(component_identity),
@@ -313,7 +311,6 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     def composite(self, second: LimitCategory.MorphismType, first: LimitCategory.MorphismType) -> LimitCategory.MorphismType:
         assert first.codomain() is second.domain()
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=first.domain(),
             codomain=second.codomain(),
             data=FamilyMorphismData(lambda vertex: second.component(vertex) * first.component(vertex)),
@@ -518,7 +515,7 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
         assert member_object in self.summand(tag), f"{member_object!r} is not an object of {self.summand(tag)!r}"
         key = (tag, member_object, self)
         if key not in self._objects:
-            self._objects[key] = self.ObjectType(category=self, data=_TaggedObjectData(tag, member_object))
+            self._objects[key] = self.ObjectType(_TaggedObjectData(tag, member_object))
         return self._objects[key]
 
     def construct_morphism(
@@ -530,7 +527,6 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
         assert domain.tag() is codomain.tag(), f"{domain!r} and {codomain!r} lie in different summands"
         assert morphism in self.summand(domain.tag()).morphism_category(1)(domain.member(), codomain.member())
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=domain,
             codomain=codomain,
             data=_TaggedMorphismData(morphism),
@@ -539,7 +535,6 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
     def construct_identity(self, member_object: _TaggedCategory.ObjectType) -> _TaggedCategory.MorphismType:
         member = member_object.member()
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=member_object,
             codomain=member_object,
             data=_TaggedMorphismData(member.category().morphism_category(1)(member, member).one()),
@@ -548,7 +543,6 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
     def composite(self, second: _TaggedCategory.MorphismType, first: _TaggedCategory.MorphismType) -> _TaggedCategory.MorphismType:
         assert first.codomain() is second.domain()
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=first.domain(),
             codomain=second.codomain(),
             data=_TaggedMorphismData(second.morphism() * first.morphism()),

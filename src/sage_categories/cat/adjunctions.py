@@ -184,7 +184,6 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         by_counit = self._objects[unit]
         if counit not in by_counit:
             by_counit[counit] = self.ObjectType(
-                category=self,
                 data=AdjunctionData(self._forward, self._inverse, unit, counit),
             )
         return by_counit[counit]
@@ -212,7 +211,6 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
             "the endotransformations are not compatible with the counits"
         )
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=source,
             codomain=target,
             data=AdjunctionMorphismData(forward, inverse),
@@ -367,7 +365,6 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
         by_counit = by_unit[unit]
         if counit not in by_counit:
             by_counit[counit] = self.ObjectType(
-                category=self,
                 data=EquivalenceData(forward, inverse, unit, counit),
             )
         return by_counit[counit]
@@ -385,7 +382,6 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
             target.forward(),
         )
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=source,
             codomain=target,
             data=EquivalenceMorphismData(transformation),

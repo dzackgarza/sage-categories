@@ -109,7 +109,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         self._object_set: MonoDict = MonoDict()
         self._morphism_set: MonoDict = MonoDict()
         super().__init__()
-        self._vertices = {label: self.ObjectType(category=self, data=VertexData(label)) for label in labels}
+        self._vertices = {label: self.ObjectType(VertexData(label)) for label in labels}
         register_handler(self._equality, self._equal)
 
     def __call__(self, label: Hashable) -> FinitePresentedCategory.ObjectType:
@@ -218,7 +218,6 @@ class FinitePresentedCategory(Category[[Word], []]):
         key = (self.label(domain), self._reduce(word))
         if key not in self._paths:
             path = self.MorphismType(
-                category=self.morphism_category(1),
                 domain=domain,
                 codomain=codomain,
                 data=PathData(key[1]),

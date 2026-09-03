@@ -287,7 +287,7 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
         assert morphism in self._base_of_slice.morphism_category(1), f"{value!r} denotes no morphism of {self._base_of_slice!r}"
         assert ask(self.fixed_end(morphism) == self._fixed) is not False, f"{morphism!r} does not end at {self._fixed!r}"
         if morphism not in self._objects:
-            self._objects[morphism] = self.ObjectType(category=self, data=SliceObjectData(morphism))
+            self._objects[morphism] = self.ObjectType(SliceObjectData(morphism))
         return self._objects[morphism]
 
     def construct_morphism(
@@ -301,7 +301,6 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
         assert varying in self._base_of_slice.morphism_category(1)(self.varying_end(source), self.varying_end(target))
         assert ask(self._commutes(source, target, varying)) is not False, f"{varying!r} does not commute with {source!r} and {target!r}"
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=domain,
             codomain=codomain,
             data=SliceTriangleData(varying),

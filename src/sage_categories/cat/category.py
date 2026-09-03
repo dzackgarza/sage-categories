@@ -537,7 +537,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             refine(two_cell, self.morphism_category(2))
             return two_cell
         two_cells = self.morphism_category(2)
-        return two_cells.ObjectType(category=two_cells, domain=morphism, codomain=morphism)
+        return two_cells.ObjectType(domain=morphism, codomain=morphism)
 
     def compose_two_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         from sage_categories.kernel.refinement import refine
@@ -1285,7 +1285,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         by_morphism_action = self._declared_functors[key]
         if on_morphism not in by_morphism_action:
             by_morphism_action[on_morphism] = self.MorphismType(
-                category=self.morphism_category(1),
                 domain=domain,
                 codomain=codomain,
                 data=FunctorData(on_object, on_morphism),
@@ -1360,7 +1359,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         assert source_functor in functors and target_functor in functors
         assert source_functor.domain() is target_functor.domain() and source_functor.codomain() is target_functor.codomain()
         return functors.MorphismType(
-            category=functors.morphism_category(1),
             domain=source,
             codomain=target,
             data=NaturalTransformationData(assignment),

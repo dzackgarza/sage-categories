@@ -159,7 +159,6 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
         assert functors.has_constant_value(transformation.domain())
         if transformation not in self._objects:
             self._objects[transformation] = self.ObjectType(
-                category=self,
                 data=ConeData(transformation),
             )
         return self._objects[transformation]
@@ -173,7 +172,6 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
         ambient_morphisms = self._diagram.codomain().morphism_category(1)
         assert apex_morphism in ambient_morphisms(source.apex(), target.apex())
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=source,
             codomain=target,
             data=ConeMorphismData(apex_morphism),

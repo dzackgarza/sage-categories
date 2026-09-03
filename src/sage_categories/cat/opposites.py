@@ -122,7 +122,6 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         """Construct ``f.op(): domain -> codomain`` from ``f: codomain -> domain``."""
         assert original in self._original.morphism_category(1)(codomain, domain)
         return self.MorphismType(
-            category=self.morphism_category(1),
             domain=domain,
             codomain=codomain,
             data=_OppositeMorphismData(original),

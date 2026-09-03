@@ -50,7 +50,7 @@ class Tiny(Category[[], []]):
 
     def __call__(self, value: int | Integer) -> CategoryPoint:
         if value not in self._objects:
-            self._objects[value] = self.ObjectType(category=self, data=value)
+            self._objects[value] = self.ObjectType(value)
         return self._objects[value]
 
 

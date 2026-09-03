@@ -29,9 +29,11 @@ from sage_categories.kernel.construction import (
     is_constructed,
     retain_element_input,
     retain_morphism_input,
+    retain_object_by_datum,
     retain_object_input,
     retained_element_input,
     retained_morphism_input,
+    retained_object_by_datum,
     retained_object_input,
     retained_objects,
 )
@@ -774,20 +776,52 @@ def _reject_base_initializer_call(instance: CategoryPoint) -> None:
     )
 
 
+def _retention_node(constructing_class: type[CategoryPoint]) -> Node | None:
+    """The object node whose values ``constructing_class`` constructs, if it is one's compiled class.
+
+    A category class written over a compiled object class is not one: it constructs a
+    category, an object of ``Cat()`` with no datum of its own.
+    """
+    current = _runtime_node(constructing_class)
+    return current if current is not None and current.role is Role.OBJECT else None
+
+
+def _allocate_object(cls: type[ObjectOfCategory], *arguments: object, **keywords: object) -> ObjectOfCategory:
+    """Return the object the constructing category retains for its datum, or a new one (D111).
+
+    A category states its constructors from its datum and keeps no store of its own: one
+    object per datum is the kernel's, so the compiled class the constructor names is
+    where the retained object is returned instead of a second one being built.  A
+    construction with no datum has no key and is retained by nothing; a category class
+    written over a compiled object class constructs a category, whose arguments are its
+    own parameters and not a datum of ``Cat()``.
+    """
+    current = _retention_node(cls)
+    if current is None:
+        return object.__new__(cls)
+    data = arguments[0] if arguments else keywords.get("data")
+    if data is None:
+        return object.__new__(cls)
+    retained = retained_object_by_datum(current.category, data)
+    return object.__new__(cls) if retained is None else retained
+
+
 def _initialize_object[Datum](
     instance: ObjectOfCategory,
-    category: Category | None = None,
     data: Datum | None = None,
 ) -> None:
     active = active_construction_context(instance)
     if active is not None and active.canonical_image is instance:
         _reject_base_initializer_call(instance)
+    if is_constructed(instance):
+        # ``_allocate_object`` returned the object this category retains for ``data``,
+        # and Python calls the initializer on it again; it is already constructed.
+        return
+    retention = _retention_node(type(instance))
     current = _construction_node(instance, Role.OBJECT)
-    if category is not None:
-        assert same_node(node(category, Role.OBJECT), current), (
-            f"the ObjectType class of {current.category!r} cannot construct a value of {category!r}"
-        )
     _construct_object_root(current, instance, ObjectRoleIdentity(current.category), data)
+    if retention is not None and data is not None:
+        retain_object_by_datum(retention.category, data, instance)
 
 
 def _initialize_element[Datum](
@@ -805,7 +839,6 @@ def _initialize_element[Datum](
 
 def _initialize_morphism[Datum](
     instance: MorphismOfCategory,
-    category: Category | None = None,
     domain: ObjectOfCategory | None = None,
     codomain: ObjectOfCategory | None = None,
     data: Datum | None = None,
@@ -813,11 +846,12 @@ def _initialize_morphism[Datum](
     active = active_construction_context(instance)
     if active is not None and active.canonical_image is instance:
         _reject_base_initializer_call(instance)
-    assert category is not None and domain is not None and codomain is not None, (
-        "a morphism root constructor requires its category and endpoints"
-    )
+    assert domain is not None and codomain is not None, "a morphism root constructor requires its endpoints"
     current = _construction_node(instance, Role.MORPHISM)
-    _construct_morphism_root(current, instance, MorphismRoleIdentity(category, domain, codomain), data)
+    # A morphism of ``C`` is an object of ``Mor(C)``, and the compiled class the
+    # constructor names says which ``C`` it belongs to (``_construction_node``).
+    identity = MorphismRoleIdentity(current.category.morphism_category(1), domain, codomain)
+    _construct_morphism_root(current, instance, identity, data)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -917,6 +951,7 @@ def _install_runtime_node(current: Node) -> type[CategoryPoint]:
     match current.role:
         case Role.OBJECT:
             compiled.__init__ = _initialize_object
+            compiled.__new__ = staticmethod(_allocate_object)
         case Role.ELEMENT:
             compiled.__init__ = _initialize_element
         case Role.MORPHISM:

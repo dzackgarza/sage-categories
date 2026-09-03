@@ -34,7 +34,7 @@ class _SyntheticCategoryOperations:
 
     def __call__(self, label: int | Integer) -> CategoryOfCategories.ElementType:
         if label not in self._synthetic_objects:
-            self._synthetic_objects[label] = self.ObjectType(self, label)
+            self._synthetic_objects[label] = self.ObjectType(label)
         return self._synthetic_objects[label]
 
     def _label(self, member_object: CategoryPoint) -> int | Integer:
@@ -55,7 +55,6 @@ class _SyntheticCategoryOperations:
     ) -> MorphismCategory.ObjectType:
         assert domain is codomain
         return self.MorphismType(
-            self.morphism_category(1),
             domain,
             codomain,
             self._label(domain),
@@ -63,7 +62,6 @@ class _SyntheticCategoryOperations:
 
     def construct_identity(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         return self.MorphismType(
-            self.morphism_category(1),
             member_object,
             member_object,
             self._label(member_object),

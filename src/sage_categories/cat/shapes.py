@@ -121,20 +121,20 @@ class DiscreteCategory(Category[[], []]):
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
         assert point in self._index_set, f"{point!r} is not a point of {self._index_set!r}"
         if point not in self._objects:
-            self._objects[point] = self.ObjectType(category=self, data=DiscreteObjectData(point))
+            self._objects[point] = self.ObjectType(DiscreteObjectData(point))
         return self._objects[point]
 
     def construct_morphism(self, domain: DiscreteCategory.ObjectType, codomain: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
         """``Mor(Discrete(S))(x, y)()``: the identity, which exists exactly when ``x == y``."""
         assert ask(domain == codomain), f"{self!r} has no morphism {domain!r} -> {codomain!r}"
-        return self.MorphismType(self.morphism_category(1), domain, codomain)
+        return self.MorphismType(domain, codomain)
 
     def construct_identity(self, member_object: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
-        return self.MorphismType(self.morphism_category(1), member_object, member_object)
+        return self.MorphismType(member_object, member_object)
 
     def composite(self, second: DiscreteCategory.MorphismType, first: DiscreteCategory.MorphismType) -> DiscreteCategory.MorphismType:
         assert ask(first.codomain() == second.domain())
-        return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
+        return self.MorphismType(first.domain(), second.codomain())
 
     def _equal(
         self,
@@ -282,20 +282,20 @@ class ThinCategory(Category[[], []]):
         """The object at a point of ``P``, one object per retained point."""
         assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
         if point not in self._objects:
-            self._objects[point] = self.ObjectType(category=self, data=ThinObjectData(point))
+            self._objects[point] = self.ObjectType(ThinObjectData(point))
         return self._objects[point]
 
     def construct_morphism(self, domain: ThinCategory.ObjectType, codomain: ThinCategory.ObjectType) -> ThinCategory.MorphismType:
         """``Mor(Thin)(x, y)()``: the comparison ``x <= y``; rejected only when the order decides against it."""
         assert ask(self._order(domain.point(), codomain.point())) is not False, f"{domain!r} <= {codomain!r} is false"
-        return self.MorphismType(self.morphism_category(1), domain, codomain)
+        return self.MorphismType(domain, codomain)
 
     def construct_identity(self, member_object: ThinCategory.ObjectType) -> ThinCategory.MorphismType:
-        return self.MorphismType(self.morphism_category(1), member_object, member_object)
+        return self.MorphismType(member_object, member_object)
 
     def composite(self, second: ThinCategory.MorphismType, first: ThinCategory.MorphismType) -> ThinCategory.MorphismType:
         assert ask(first.codomain() == second.domain())
-        return self.MorphismType(self.morphism_category(1), first.domain(), second.codomain())
+        return self.MorphismType(first.domain(), second.codomain())
 
     def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
         domain = hom_category.domain()

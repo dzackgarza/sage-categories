@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import logging
 from collections.abc import Callable, Iterator
-from types import CellType, FunctionType, GenericAlias
+from types import FunctionType, GenericAlias
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
 from sage_categories.kernel.construction import (
@@ -340,47 +340,13 @@ def _local_method_names(local_class: type[CategoryPoint]) -> tuple[str, ...]:
     )
 
 
-def _rebound[**P, R](member: Callable[Concatenate[CategoryPoint, P], R], compiled: type[CategoryPoint]) -> Callable[Concatenate[CategoryPoint, P], R]:
-    """A written member whose zero-argument ``super()`` names the class its body now runs in.
-
-    A zero-argument ``super()`` reads the ``__class__`` cell CPython puts in the closure
-    of a method defined in a class body, so a body installed on another class needs a
-    cell naming that class.  ``attrs`` rewrites the same cell when it rebuilds a class
-    with slots (``attr._make._ClassBuilder._create_slots_class``: "If a method mentions
-    ``__class__`` or uses the no-arg ``super()``, the compiler will bake a reference to
-    the class in the method itself"; inspected 2026-08-29).  It rewrites the one cell in
-    place because one class replaces one class.  Here one written body serves a family of
-    nodes and each node's ``super()`` is its own next step, so each node takes its own
-    copy of the function with its own cell.
-    """
-    if isinstance(member, classmethod | staticmethod):
-        return type(member)(_rebound(member.__func__, compiled))
-    if not isinstance(member, FunctionType) or "__class__" not in member.__code__.co_freevars:
-        return member
-    if member.__closure__ is None:
-        raise ValueError(
-            f"_rebound: {member!r} declares free variable '__class__' but has no closure; "
-            f"cannot install on {compiled!r}"
-        )
-    closure = tuple(
-        CellType(compiled) if name == "__class__" else cell
-        for name, cell in zip(member.__code__.co_freevars, member.__closure__, strict=True)
-    )
-    rebound = FunctionType(member.__code__, member.__globals__, member.__name__, member.__defaults__, closure)
-    rebound.__qualname__ = member.__qualname__
-    rebound.__kwdefaults__ = member.__kwdefaults__
-    rebound.__annotations__ = member.__annotations__
-    rebound.__doc__ = member.__doc__
-    return rebound
-
-
 def _install_written_body(compiled: type[CategoryPoint], local: type[CategoryPoint]) -> None:
-    """Rebind each copied method whose zero-argument ``super()`` names ``local``."""
+    """Install each written member of one declaration on the class compiled from it."""
     if Generic in local.__mro__:
         compiled.__class_getitem__ = classmethod(GenericAlias)
     for name, member in vars(local).items():
         if isinstance(member, classmethod | staticmethod | FunctionType):
-            setattr(compiled, name, _rebound(member, compiled))
+            setattr(compiled, name, member)
 
 
 def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member: Callable[Concatenate[CategoryPoint, P], R]) -> None:
@@ -400,7 +366,7 @@ def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member
         for _, runtime in table.items():
             if runtime._current.category.local_role_class(runtime._current.role) is local:
                 compiled = runtime.parent_class
-                setattr(compiled, name, _rebound(member, compiled))
+                setattr(compiled, name, member)
 
 
 def _compiled_class(current: Node) -> type[CategoryPoint]:

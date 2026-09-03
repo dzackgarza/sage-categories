@@ -26,7 +26,6 @@ from sage_categories.cat.category import (
 )
 from sage_categories.cat.properties import Axiom
 from sage_categories.cat.predicates import predicate, register_handler
-from sage_categories.kernel.roles import CategoryPoint
 from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict
 
 __all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
@@ -52,7 +51,7 @@ def _defining_functor_equal(
     assumptions: Proposition,
 ) -> bool | None:
     """Compare a retained diagram with the functor represented by a value."""
-    if not isinstance(candidate, CategoryPoint):
+    if not isinstance(candidate, Cat().ElementType):
         return None
     candidate_denotes = candidate._is_object() or candidate._is_morphism()
     if is_placed(first, Fun) and not is_placed(candidate, Fun) and candidate_denotes:
@@ -216,7 +215,7 @@ def _denotes_diagram_by_domain(
     functors: FunctorCategory,
     assumptions: Proposition,
 ) -> bool | None:
-    if not isinstance(candidate, CategoryPoint):
+    if not isinstance(candidate, Cat().ElementType):
         return False
     if is_placed(candidate, functors.ambient()):
         return sympy_ask(endpoints(candidate, functors.domain(), functors.codomain()), assumptions)
@@ -244,7 +243,7 @@ def _denotes_functor_by_domain(
     functors: FunctorsCategory,
     assumptions: Proposition,
 ) -> bool:
-    if not isinstance(candidate, CategoryPoint):
+    if not isinstance(candidate, Cat().ElementType):
         return False
     if is_placed(candidate, functors):
         return True

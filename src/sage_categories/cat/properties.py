@@ -33,11 +33,10 @@ from collections.abc import Callable
 from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar
 
-from sage_categories.cat.category import Category
+from sage_categories.cat.category import Cat, Category
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, property_predicate, register_handler
 from sage_categories.kernel.refinement import is_subcategory, refine, traces_placement
-from sage_categories.kernel.roles import CategoryPoint, Role, role_of
 from sage_categories.kernel.sage_runtime import TripleDict, cached_method
 
 if TYPE_CHECKING:
@@ -586,7 +585,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         ``D``'s own predicates supply -- the theorem that the construction restricts to
         the subcategory (D104) -- and then enters this narrowing.
         """
-        if role_of(value) is Role.OBJECT:
+        if isinstance(value, Cat().ElementType) and value._is_object():
             assert value in self._ambient, f"{value!r} is not an object of {self._ambient!r}"
             refine(value, self)
             return value
@@ -635,7 +634,7 @@ class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[
         if (
             len(args) == 1
             and not kwargs
-            and isinstance(args[0], CategoryPoint)
+            and isinstance(args[0], Cat().ElementType)
             and args[0] in self._ambient
         ):
             refine(args[0], self)

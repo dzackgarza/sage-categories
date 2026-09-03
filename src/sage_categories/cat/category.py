@@ -12,7 +12,6 @@ from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
-from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import Integer, MonoDict, TripleDict, cached_method
 
 if TYPE_CHECKING:
@@ -106,7 +105,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     def __init__(self, data: None = None) -> None:
         if hasattr(self, "_ordinal"):
             return
-        if not any(all(role.value in vars(found) for role in Role) for found in type(self).__mro__):
+        if not any(
+            all(name in vars(found) for name in ("ObjectType", "ElementType", "MorphismType")) for found in type(self).__mro__
+        ):
             return
         self._initialize(self.category())
 
@@ -157,14 +158,19 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         (POL-CAT-057), and the ``class`` statement is where an omission happens, so it is
         where the omission is reported.  ``compiler`` builds role classes over this one at
         runtime; those state no category and are not checked.
+
+        This declaration calls no base hook: ``Cat()``'s own ``ObjectType`` is a
+        declaration like any other, and a declaration calls no base initializer or
+        subclass hook (D110, D13).  ``Generic``'s subclass protocol is not needed here;
+        PEP 695 gives each subclass its own type parameters, and the compiler supplies
+        the subscript surface of a compiled class itself (``_install_written_body``).
         """
-        super().__init_subclass__()
-        if cls.__dict__.get(Role.OBJECT.value) is CategoryDeclaration:
+        if cls.__dict__.get("ObjectType") is CategoryDeclaration:
             # ``Cat()``'s declaration: its points are the objects of every category
             # (POL-CAT-058), the owner of the applications of the base-class axioms.
             from sage_categories.kernel.predicates import install_base_axiom_applications
 
-            install_base_axiom_applications(cls.__dict__[Role.ELEMENT.value])
+            install_base_axiom_applications(cls.__dict__["ElementType"])
         name = cls.__dict__.get("_implements")
         if name is not None:
             Cat().implement(name, cls)

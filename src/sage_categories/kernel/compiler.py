@@ -645,6 +645,22 @@ def _linearized_nodes(current: Node) -> tuple[Node, ...]:
     )
 
 
+def _stable_role_class(runtime_class: type[CategoryPoint], role: Role) -> type[CategoryPoint]:
+    """The kernel role class ``runtime_class`` stands on, which is the role of its values.
+
+    A value's role is the one its compiled class carries, not the role of the node its
+    placement is compiled at.  ``Mor(C)(A, B)`` is the full subcategory of ``Mor(C)`` on
+    the morphisms ``A -> B``, so its objects are the morphisms of ``C`` and its object
+    node reaches ``C.MorphismType`` through that inclusion; a property subcategory of
+    ``Mor(C)`` reaches it the same way.  Both are object nodes, and a value of either is a
+    morphism (``specs/functor.md``, "The ``Mor(n, C)`` tower": one implementation type,
+    one value, two placements).  Reading the class is reading that level identity where
+    the structural graph already installed it.
+    """
+    kernel_roles = tuple(kernel_base(each) for each in Role)
+    return next((base for base in runtime_class.__mro__ if base in kernel_roles), kernel_base(role))
+
+
 def runtime_semantic_bases(
     runtime_class: type[CategoryPoint],
 ) -> tuple[type[CategoryPoint], ...] | None:
@@ -658,7 +674,7 @@ def runtime_semantic_bases(
         source_declaration = source.category.local_role_class(source.role)
         if not any(source_declaration is known for known in result):
             result.append(source_declaration)
-    stable_role = kernel_base(current.role)
+    stable_role = _stable_role_class(runtime_class, current.role)
     if not issubclass(stable_role, runtime_class) and not any(
         issubclass(base, stable_role) for base in result
     ):

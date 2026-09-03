@@ -9,14 +9,15 @@ from typing import Self
 import pytest
 
 from sage_categories.cat import Fun
-from sage_categories.cat.category import Axiom, Cat, Category, CategoryOfCategories
+from sage_categories.cat.category import Axiom, Cat, Category, CategoryOfCategories, ask
 from sage_categories.cat.functors import Functor
-from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.compiler import SemanticCollisionError, declared_inheritance
 from sage_categories.kernel.construction import active_object_context
 from sage_categories.kernel.refinement import declares_point, traces_inheritance, traces_placement
 from sage_categories.kernel.roles import CategoryPoint, Role
+from sage_categories.kernel.sage_runtime import Unknown
 
 
 _BASE_OBJECT_INITIALIZATIONS: list[CategoryPoint] = []
@@ -382,6 +383,33 @@ class QQ(Category):
 RATIONALS = QQ()
 
 
+class LabelledArrows(Category):
+    """Objects and morphisms named by a label: the closed list of D77 and nothing else."""
+
+    class ObjectType:
+        def __init__(self, label: str) -> None:
+            self._label = label
+
+        def __repr__(self) -> str:
+            return f"object {self._label}"
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        def __init__(self, label: str) -> None:
+            self._label = label
+
+        def __repr__(self) -> str:
+            return f"arrow {self._label}"
+
+    def __call__(self, label: str) -> CategoryOfCategories.ElementType:
+        return self.ObjectType(label)
+
+
+LABELLED = LabelledArrows()
+
+
 class Unpointed(Category):
     """The control of criteria 6 and 7: a new category that declares no point."""
 
@@ -694,3 +722,33 @@ def test_incomparable_method_owners_fail_at_compilation() -> None:
 
     with pytest.raises(SemanticCollisionError, match="collision"):
         CollisionDiamond()
+
+
+def test_the_identity_is_the_unit_of_the_endomorphism_monoid() -> None:
+    """``1_X`` is the unit of ``End_C(X)`` for a morphism reached through either placement.
+
+    ``Mor(C)(A, B)`` is the full subcategory of ``Mor(C)`` on the morphisms ``A -> B``, so
+    its objects are the morphisms of ``C``: one implementation type, one value, two
+    placements (``specs/functor.md``, "The ``Mor(n, C)`` tower"; D44, D85).  A morphism
+    built through the hom category and one built by composition therefore both reach the
+    equality ``Mor(C).ObjectType`` declares, and ``f * 1_X`` is ``f`` for each (D84, D86).
+    """
+    source, target = LABELLED("source"), LABELLED("target")
+    endomorphism = Mor(LABELLED)(source, source)("e")
+    arrow = Mor(LABELLED)(source, target)("a")
+    identity = Mor(LABELLED)(source, source).one()
+    composite = endomorphism * endomorphism
+
+    assert ask(identity.is_identity()) is True
+    assert ask(identity * identity == identity) is True
+    assert ask(endomorphism * identity == endomorphism) is True
+    assert ask(identity * endomorphism == endomorphism) is True
+    assert ask(arrow * identity == arrow) is True
+    assert ask(composite * identity == composite) is True
+    assert ask((arrow * endomorphism) * endomorphism == arrow * (endomorphism * endomorphism)) is True
+    # The unit law decides because the two words agree, not because equality answers True:
+    # ``e * e`` is a two-factor word and ``e`` a one-factor word, and no category-owned
+    # datum separates or joins them.
+    assert ask(composite == endomorphism) is Unknown
+    # An endomorphism's two endpoints are one object, which the same declaration decides.
+    assert endomorphism in Mor(LABELLED).Endomorphisms()

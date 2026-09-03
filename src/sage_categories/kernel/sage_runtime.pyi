@@ -1,4 +1,4 @@
-from sage_categories.cat.category import Category as SageCategory
+from sage.categories.category import Category as SageCategory
 from sage.categories.category_with_axiom import uncamelcase as uncamelcase
 from sage.misc.cachefunc import cached_function as cached_function, cached_method as cached_method
 from sage.misc.lazy_attribute import lazy_attribute as lazy_attribute

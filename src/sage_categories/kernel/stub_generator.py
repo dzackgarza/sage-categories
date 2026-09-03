@@ -36,11 +36,11 @@ def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         providers = _providers_in_module(inheritance, module)
         if not providers:
             tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
-            _canonicalize_imports(tree, canonical_exports)
+            _canonicalize_imports(tree, package, canonical_exports)
             stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
             continue
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
-        _canonicalize_imports(tree, canonical_exports)
+        _canonicalize_imports(tree, package, canonical_exports)
         _project_provider_bases(tree, module, providers)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
     return tuple(sorted(output_directory.rglob("*.pyi")))
@@ -119,12 +119,23 @@ def _public_names(tree: ast.Module) -> tuple[str, ...]:
 
 def _canonicalize_imports(
     tree: ast.Module,
+    package: str,
     canonical_exports: dict[str, str],
 ) -> None:
-    """Replace an imported runtime alias with its uniquely declared public owner."""
+    """Replace an imported runtime alias with its uniquely declared public owner.
+
+    A name is canonicalized only where it is this package's to own.  An import from
+    outside the package keeps its module, whatever the name: ``sage_runtime`` imports
+    Sage's own ``Category`` under an alias, and redirecting that to the module where this
+    package declares a ``Category`` states that the private Sage runtime mirror stands on
+    the owned declaration, which is D173's direction reversed.
+    """
     statements: list[ast.stmt] = []
     for statement in tree.body:
         if not isinstance(statement, ast.ImportFrom) or statement.module is None:
+            statements.append(statement)
+            continue
+        if statement.module != package and not statement.module.startswith(f"{package}."):
             statements.append(statement)
             continue
         grouped: dict[str, list[ast.alias]] = {}

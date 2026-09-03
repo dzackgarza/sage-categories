@@ -308,7 +308,7 @@ Fun(C, D).FullyFaithful() is Fun.FullyFaithful()(C, D)
 Each identity denotes one cached property subcategory.
 A constructor called through it returns a functor with endpoints `C, D` and the selected trusted property.
 
-The axiom declarations give the kernel their names and their ambient category `Mor(Cat())`.
+The axiom declarations give `cat_kernel` their names and their ambient category `Mor(Cat())`.
 `cat_kernel` generates these applications on `Cat().MorphismType`:
 
 ```python

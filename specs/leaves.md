@@ -85,7 +85,7 @@ It obtains data already determined by that datum from its mathematical owner.
 
 A constructor takes construction data.
 A leaf writer defines the natural classcall and its `match`/`case` dispatch on that data.
-A property subcategory `C.P()` wires no constructor: the kernel gives it exactly the constructors of `C` through the functor `C.P() -> C`, which the kernel constructs.
+A property subcategory `C.P()` wires no constructor: `cat_kernel` gives it exactly the constructors of `C` through the functor `C.P() -> C`, which `cat_kernel` constructs (D175).
 A value already constructed is placed by assumption, `assume(X.is_P())`, the membership proposition of `X in C.P()` ([undecidable-properties.md](undecidable-properties.md#assumptions); D150).
 
 For a relation, the primary datum is a subobject
@@ -199,7 +199,7 @@ An axiom is a string, here `"Finite"`, the attribute name.
 The deciding proposition is a private method (D142), written by the leaf writer in terms of methods that already exist on the category.
 A proposition that no existing method supplies applies a SymPy `Predicate` subclass the leaf defines, and the leaf registers that predicate's exact handlers through SymPy.
 `Sets().Finite()` exists implicitly: its objects are the objects of `Sets()` that satisfy the proposition.
-The kernel constructs the minimal structure functor `Sets().Finite() -> Sets()`, so `ObjectType`, `ElementType`, and `MorphismType` inherit with no ceremony, and `cat_kernel` generates the public `X.is_finite()` on `Sets().ObjectType`, the one public spelling of the proposition.
+`cat_kernel` constructs the minimal structure functor `Sets().Finite() -> Sets()`, so `ObjectType`, `ElementType`, and `MorphismType` inherit with no ceremony, and `cat_kernel` generates the public `X.is_finite()` on `Sets().ObjectType`, the one public spelling of the proposition.
 The kernel performs same-object refinement after an exact positive result.
 
 For a structure functor `F: C -> D` and an axiom `P` declared on `D`, the pullback in `Cat` defines `C.P()` ([property-refinement.md](property-refinement.md#inverse-images)).

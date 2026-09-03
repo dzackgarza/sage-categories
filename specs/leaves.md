@@ -303,7 +303,7 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 ### `POL-LEAF-065` — identity, composition, morphism or element construction, or element retention for inherited structure
 
 - In code: `construct_identity`, `composite`, `inverse_morphism`, `element_from_defining_morphism`; a `construct_morphism` whose body forwards through a structure functor; `P.element(x)` building `* -> P` by hand; an equality handler that decides inherited equality through a functor.
-- Owner: `Cat` defines each once; the kernel constructs elements from functor images (D44, D84, D85, D121). `Sets()` is the base and is exempt (D132).
+- Owner: `Cat` defines each once (D44, D85); the kernel constructs elements from functor images, a clause marked under `POL-DOC-026` because none of D44, D84, D85 or D121 states it and no owner statement assigning element construction was found in the three stores. `Sets()` is the base and is exempt (D132).
 - Gate: `no-inherited-operation-rewritten`; review for forwarding `construct_morphism` bodies and equality handlers.
 
 ### `POL-LEAF-066` — kernel machinery in a leaf: branching, refinement after construction, own value store, kernel state in a constructor

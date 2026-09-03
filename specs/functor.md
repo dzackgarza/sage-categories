@@ -1073,7 +1073,7 @@ For `D: I -> C`, the index category is exactly `I = D.domain()`.
 The construction retains `I` and `D`; every descendant category inherits that presentation.
 For a discrete diagram on `S`, the retained `Discrete(S)` construction supplies the index set `S`.
 
-The kernel supplies these shape constructors:
+`Cat` supplies these shape constructors (D173; `leaves.md` "Inherited constructions"):
 
 - `Discrete(S)` for `S in Sets()`: the discrete category on `S`; `Discrete` is a functor `Sets() -> Cat()`;
 

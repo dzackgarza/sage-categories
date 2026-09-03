@@ -406,7 +406,7 @@ Other category-owned predicate meanings, such as injectivity on an exact set-map
 
 ### The two conditions
 
-A subcategory of `T` is a subobject of `T` in `Cat()`: an isomorphism class of monomorphisms into `T` ([nLab, subobject](https://ncatlab.org/nlab/show/subobject), inspected 2026-08-28; "an isomorphism class of monomorphisms"). Two conditions apply, and the kernel needs both.
+A subcategory of `T` is a subobject of `T` in `Cat()`: an isomorphism class of monomorphisms into `T` ([nLab, subobject](https://ncatlab.org/nlab/show/subobject), inspected 2026-08-28; "an isomorphism class of monomorphisms"). Two conditions apply, and `cat_kernel` needs both to read the declaration (D175).
 
 **Monic.** [nLab, subcategory](https://ncatlab.org/nlab/show/subcategory) (inspected 2026-08-28): "subcategories of a category `C` can be identified with isomorphism classes of monic functors into `C`. A functor is easily verified to be monic iff it is faithful and injective on objects."
 [nLab, full embedding](https://ncatlab.org/nlab/show/full+embedding) (inspected 2026-08-28) names the same class: "Embeddings in this sense are straightforwardly the same thing as monomorphisms in the 1-category `Cat`", and a full embedding is a monomorphism in `Cat` that is also full, hence fully faithful.
@@ -428,7 +428,7 @@ Monicity gives one value rather than a copy; the isofibration condition makes th
 
 The choice is data.
 `Cardinal() -> Sets()` and `Sets().Finite() -> Sets()` are both monic, and nothing derives which one placement follows: nLab, *subobject*, states that for representatives of a subobject "there is no intrinsic way of defining such representatives".
-A leaf therefore declares which monomorphism placement follows by constructing it in the property category below, and the kernel trusts that declaration (`POL-CAT-069`). It does not infer the relation from Python inheritance, shared storage, or a cache of previously constructed functors.
+A leaf therefore declares which monomorphism placement follows by constructing it in the property category below, and `cat_kernel` reads that declaration and trusts it (`POL-CAT-069`, D175). It infers the relation from nothing else — not Python inheritance, not shared storage, not a cache of previously constructed functors.
 
 ### Declaring one
 

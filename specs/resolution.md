@@ -14,8 +14,8 @@ The kernel is engineering and states no mathematics (D130, D173).
 `Cat` owns every operation that all categories share, morphism semantics included: the two
 endpoints, composition, the identity, inverses, and the predicates the property
 subcategories generate.
-The three private role classes of `kernel/roles.py` exist so that Sage has a stable Python
-end for each compiled role.
+The four private role classes of `kernel/roles.py` — `CategoryPoint` and the three role
+classes standing on it — exist so that Sage has a stable Python end for each compiled role.
 Their surface is closed, exactly as the leaf writer's contract is closed under D77, and for
 the same reason: a method outside it is mathematics that has lost its owner.
 
@@ -232,7 +232,7 @@ The private runtime satisfies this specification when:
 - temporary runtime data has no public mathematical effect;
 - unrelated mathematical declarations with one spelling fail as a semantic collision;
 - theory modules import no private runtime type;
-- the kernel supplies inherited element construction, object retention, and axiom-subcategory routing, and `Cat` supplies identity and composition, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133, D173);
+- the kernel supplies implementation inheritance, initializer threading, object retention, refinement and placement, and `Cat` supplies element construction, identity and composition, and axiom-subcategory routing with the generated `is_p()`, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133, D173);
 - every method a kernel module defines on a role class is on the closed surface below, and the kernel imports no module of `Cat` (D173);
 - public engine values are limited to authorized SymPy proposition expressions;
 - their nested identity atoms expose no independent public API;

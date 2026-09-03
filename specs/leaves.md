@@ -199,7 +199,7 @@ An axiom is a string, here `"Finite"`, the attribute name.
 The deciding proposition is a private method (D142), written by the leaf writer in terms of methods that already exist on the category.
 A proposition that no existing method supplies applies a SymPy `Predicate` subclass the leaf defines, and the leaf registers that predicate's exact handlers through SymPy.
 `Sets().Finite()` exists implicitly: its objects are the objects of `Sets()` that satisfy the proposition.
-The kernel constructs the minimal structure functor `Sets().Finite() -> Sets()`, so `ObjectType`, `ElementType`, and `MorphismType` inherit with no ceremony, and it generates the public `X.is_finite()` on `Sets().ObjectType`, the one public spelling of the proposition.
+The kernel constructs the minimal structure functor `Sets().Finite() -> Sets()`, so `ObjectType`, `ElementType`, and `MorphismType` inherit with no ceremony, and `Cat` generates the public `X.is_finite()` on `Sets().ObjectType`, the one public spelling of the proposition.
 The kernel performs same-object refinement after an exact positive result.
 
 For a structure functor `F: C -> D` and an axiom `P` declared on `D`, the pullback in `Cat` defines `C.P()` ([property-refinement.md](property-refinement.md#inverse-images)).
@@ -321,7 +321,7 @@ The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBU
 ### `POL-LEAF-068` — hand-written property application or accessor
 
 - In code: `def is_finite(self) -> AppliedPredicate`, `def has_bottom(self)`, `def is_total(self)`.
-- Owner: the kernel generates `is_p()` on `C.ObjectType` from the axiom identifier, and descendants inherit it (D89).
+- Owner: `Cat` generates `is_p()` on `C.ObjectType` from the axiom identifier, and descendants inherit it (D89, D173).
 - Gate: `no-hand-written-property-application`.
 
 ### `POL-LEAF-069` — datum-free constructor, or a one-object category built by hand

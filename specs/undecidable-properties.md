@@ -23,7 +23,7 @@ A proposition is a SymPy Boolean expression.
 A predicate that no existing method supplies has a SymPy `Predicate` subclass its owner defines; applying it returns a SymPy `AppliedPredicate`.
 Compound propositions use SymPy `And`, `Or`, `Not`, and `Implies`.
 
-For a property category `C.P()`, the deciding proposition is a private method of the declaring category (D142), and the kernel generates its one public spelling:
+For a property category `C.P()`, the deciding proposition is a private method of the declaring category (D142), and `Cat` generates its one public spelling:
 
 ```python
 X.is_P()

@@ -309,7 +309,7 @@ Each identity denotes one cached property subcategory.
 A constructor called through it returns a functor with endpoints `C, D` and the selected trusted property.
 
 The axiom declarations give the kernel their names and their ambient category `Mor(Cat())`.
-The kernel generates these applications on `Cat().MorphismType`:
+`Cat` generates these applications on `Cat().MorphismType`:
 
 ```python
 F.is_full()

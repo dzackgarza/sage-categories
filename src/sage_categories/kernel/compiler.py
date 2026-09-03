@@ -26,6 +26,7 @@ from sage_categories.kernel.construction import (
     deactivate_element_context,
     deactivate_morphism_context,
     deactivate_object_context,
+    is_constructed,
     retain_element_input,
     retain_morphism_input,
     retain_object_input,
@@ -55,6 +56,7 @@ __all__ = [
     "SemanticCollisionError",
     "compile_category",
     "compiler",
+    "construct_category_value",
     "declared_inheritance",
     "declared_subtyping",
     "apply_level_shift",
@@ -710,6 +712,28 @@ def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Va
     finally:
         deactivate_object_context(token)
     return instance
+
+
+def construct_category_value(instance: ObjectOfCategory) -> None:
+    """Construct a category that wrote its own initializer to store its parameters.
+
+    A category is an object of ``Cat()``, so a category class with no initializer is
+    constructed by the compiled object initializer it inherits.  A class that stores
+    parameters shadows that initializer with its own; the kernel runs the construction
+    it shadowed, after the written body and with no base call from the class (D13, D110,
+    ``POL-LEAF-063``).
+
+    A class in ``Cat`` whose written initializer reaches the compiled one through its
+    own chain is constructed by that call, and the bootstrap runs the written body of
+    ``Cat()`` itself inside its construction context.  Both are already constructed
+    when the written body returns, and the kernel adds nothing to them here.
+    """
+    active = active_construction_context(instance)
+    if active is not None and active.canonical_image is instance:
+        return
+    if is_constructed(instance):
+        return
+    _initialize_object(instance)
 
 
 def _construction_node(instance: CategoryPoint, role: Role) -> Node:

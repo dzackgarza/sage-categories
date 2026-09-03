@@ -24,6 +24,7 @@ __all__ = [
     "category_of",
     "install_cat_element_root",
     "kernel_base",
+    "prepare_category_subclass",
     "role_of",
 ]
 
@@ -113,6 +114,46 @@ class CategoryPoint:
 
     def __hash__(self) -> int:
         return object.__hash__(self)
+
+
+def _install_category_initializer(category_class: type[CategoryPoint]) -> None:
+    """Run a category class's own initializer, then the kernel's, with no base call.
+
+    A category class stores its parameters and nothing else (``POL-LEAF-063``); the
+    initialization that follows is the kernel's to run, so the class calls no base
+    initializer (D13, D110).  A class that writes no initializer reaches the root
+    initializer directly and needs no wrapper.
+
+    A chained declaration in ``Cat`` stores its own parameters before it delegates, so
+    the root initializer runs once, for the class the value actually names; an inner
+    wrapper reached through that chain leaves it to the outer one.
+    """
+    written = vars(category_class).get("__init__")
+    if written is None or getattr(written, "_runs_the_kernel_initializer", False):
+        return
+
+    def kernel_initializer(self: CategoryPoint, *arguments: object, **keywords: object) -> None:
+        written(self, *arguments, **keywords)
+        if type(self).__init__ is kernel_initializer:
+            from sage_categories.kernel.compiler import construct_category_value
+
+            construct_category_value(self)
+
+    kernel_initializer._runs_the_kernel_initializer = True
+    category_class.__init__ = kernel_initializer
+
+
+def prepare_category_subclass(cls: type[CategoryPoint]) -> None:
+    """Install the kernel's initializer on a newly written category class.
+
+    A declaration calls no base initializer and no base hook (D110), so the theory's
+    ``__init_subclass__`` names this instead of reaching a base through ``super()``.
+    The compiler copies a written hook onto the class it compiles, so a class written
+    over the declaration and one written over its compiled class both arrive here.
+    """
+    if _building_role_class:
+        return
+    _install_category_initializer(cls)
 
 
 class ObjectOfCategory(CategoryPoint):

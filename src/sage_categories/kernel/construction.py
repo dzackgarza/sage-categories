@@ -36,6 +36,7 @@ __all__ = [
     "deactivate_element_context",
     "deactivate_morphism_context",
     "deactivate_object_context",
+    "is_constructed",
     "retain_element_input",
     "retain_morphism_input",
     "retain_object_input",
@@ -146,6 +147,11 @@ def retained_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
         for _, construction_input in _object_inputs.items()
         if construction_input.identity.category is category
     )
+
+
+def is_constructed(value: ObjectOfCategory) -> bool:
+    """Whether the kernel already constructed ``value`` as an object."""
+    return value in _object_inputs
 
 
 def retained_object_input[Value: ObjectOfCategory, Datum](value: Value) -> ObjectConstructionInput[Value, Datum]:

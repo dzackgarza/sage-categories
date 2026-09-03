@@ -12,6 +12,7 @@ from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, predicate, register_handler
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
+from sage_categories.kernel.roles import prepare_category_subclass
 from sage_categories.kernel.sage_runtime import Integer, MonoDict, TripleDict, cached_method
 
 if TYPE_CHECKING:
@@ -164,7 +165,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         subclass hook (D110, D13).  ``Generic``'s subclass protocol is not needed here;
         PEP 695 gives each subclass its own type parameters, and the compiler supplies
         the subscript surface of a compiled class itself (``_install_written_body``).
+        The kernel's own work for a new category class is named here rather than
+        reached through a base hook.
         """
+        prepare_category_subclass(cls)
         if cls.__dict__.get("ObjectType") is CategoryDeclaration:
             # ``Cat()``'s declaration: its points are the objects of every category
             # (POL-CAT-058), the owner of the applications of the base-class axioms.

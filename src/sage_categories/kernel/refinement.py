@@ -45,7 +45,7 @@ def _reached_placements(start: compiler.Node) -> Iterator[compiler.Node]:
     while frontier:
         current = frontier.pop(0)
         yield current
-        for functor in current.category.structure_functors():
+        for functor in current.category.selected_functors():
             if not traces_placement(functor):
                 continue
             target = compiler.node(functor.codomain(), current.role)
@@ -62,7 +62,7 @@ def _reached_subcategories(start: Category) -> Iterator[Category]:
     while frontier:
         current = frontier.pop(0)
         yield current
-        for functor in current.structure_functors():
+        for functor in current.selected_functors():
             if not traces_placement(functor):
                 continue
             target = functor.codomain()

@@ -271,6 +271,43 @@ class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
 DIAMOND = DiamondCategory()
 
 
+class StructuredCategory(Category):
+    """A structured category whose objects are categories: the ``D`` of R1 criteria 6 and 7."""
+
+    class ObjectType:
+        def structured_object(self) -> Self:
+            return self
+
+    class ElementType:
+        def structured_element(self) -> Self:
+            return self
+
+    class MorphismType:
+        pass
+
+
+STRUCTURED = StructuredCategory()
+
+
+class NN(Category):
+    """A named object: a new category that registers itself as a point in ``STRUCTURED``."""
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (STRUCTURED.Point(),)
+
+
+NATURALS = NN()
+
+
 def test_kernel_imports_without_production_leaves() -> None:
     import subprocess
     cmd = (
@@ -402,6 +439,23 @@ def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFi
     records = [record for record in caplog.records if "unresolved structural diamond" in record.getMessage()]
     assert records
     assert all(record.levelno == logging.DEBUG for record in records)
+
+def test_point_functor_places_the_class_and_shifts_the_level() -> None:
+    # ``STRUCTURED.Point()`` is the arrow ``* -> STRUCTURED`` selecting ``NATURALS``;
+    # selecting it places ``NATURALS`` as an object of ``STRUCTURED`` (D154, D169).
+    (point,) = NATURALS.selected_functors()
+    assert STRUCTURED.retains_point_functor(point)
+    assert point is STRUCTURED.point_functor(NATURALS)
+    assert NATURALS.category() is STRUCTURED
+    assert NATURALS in STRUCTURED
+
+    # The level shift: the category itself carries the object surface of ``STRUCTURED``,
+    # and its objects carry the element surface (D128, D161).
+    assert isinstance(NATURALS, STRUCTURED.ObjectType)
+    assert NATURALS.structured_object() is NATURALS
+    assert issubclass(NATURALS.ObjectType, STRUCTURED.ElementType)
+    assert NATURALS.ObjectType.structured_element is STRUCTURED.ElementType.structured_element
+
 
 def test_property_refinement_preserves_object_identity() -> None:
     member_object = DIAMOND(13)

@@ -216,9 +216,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         # The selected functors are constructed before the ordinal is taken, so every
         # codomain (and every narrowing a declaration constructs) is older than this
         # category.
-        functors = tuple(self.structure_functors())
-        self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
-        self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
+        functors = self._select_functors()
         self._ordinal = next(_category_ordinals)
         self._compile_category(functors)
         from sage_categories.kernel.refinement import place
@@ -226,7 +224,26 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         # A selected point functor ``* -> D`` places this category as an object of ``D``
         # rather than of its universe, and the level shift follows that placement (D154,
         # D161, D169; ``place``).
-        place(self, next((functor.codomain() for functor in functors if functor.codomain().retains_point_functor(functor)), universe))
+        points = tuple(functor for functor in functors if functor.codomain().retains_point_functor(functor))
+        assert len(points) <= 1, (
+            f"{self!r} selects {len(points)} point functors; the kernel places a category along one point functor today. "
+            "Several is the shape D161 describes for NN lifting its point to magmas in two ways, a kernel capability that does not exist yet"
+        )
+        place(self, points[0].codomain() if points else universe)
+
+    def _select_functors(self) -> tuple[Functor, ...]:
+        """Read the declaration ``structure_functors()`` once and retain what it selected.
+
+        A declaration constructs its functors when it is read, and a point functor
+        ``D.Point()`` names the object under construction, so the kernel reads it inside
+        this category's own constructor chain and never again: every later kernel read
+        is ``selected_functors()`` (D111, D154).
+        """
+        functors = tuple(self.structure_functors())
+        self._selected_functors = functors
+        self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
+        self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
+        return functors
 
     # -- declarations read by the kernel --------------------------------------
 
@@ -251,14 +268,15 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         its nested classes and structure functors are read again here.  The ordinal is not
         retaken, so every codomain stays older than the category that selects it.
         """
-        functors = tuple(self.structure_functors())
-        self._ambient_monomorphism = next((functor for functor in functors if traces_placement(functor)), None)
-        self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
-        self._recompile_category(functors)
+        self._recompile_category(self._select_functors())
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The selected structural graph: immediate functors, in preference order (POL-CAT-016, POL-FUN-003)."""
         return ()
+
+    def selected_functors(self) -> tuple[Functor, ...]:
+        """The structure functors this category selected, as the kernel read them at construction (``_select_functors``)."""
+        return self._selected_functors
 
     def retain_datum[Datum](self, value: CategoryOfCategories.ElementType, datum: Datum) -> None:
         """Retain this category's datum for ``value`` by identity."""

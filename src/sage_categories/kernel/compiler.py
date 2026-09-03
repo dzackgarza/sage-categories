@@ -228,7 +228,7 @@ def inheriting_functors(category: Category) -> tuple[Functor, ...]:
 
     return tuple(
         functor
-        for functor in category.structure_functors()
+        for functor in category.selected_functors()
         if traces_inheritance(functor) and not functor.codomain().retains_point_functor(functor)
     )
 

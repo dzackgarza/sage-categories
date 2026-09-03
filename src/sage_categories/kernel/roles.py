@@ -79,11 +79,9 @@ class CategoryPoint:
         self._cat_element_identity = context.cat_element_identity
 
     def defining_morphism(self) -> MorphismOfCategory:
-        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity, active_construction_context
+        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
 
-        context = active_construction_context(self)
-        identity = context.cat_element_identity if context is not None else self._cat_element_identity
-        match identity:
+        match self._cat_element_identity:
             case ElementRoleIdentity(defining_morphism):
                 return defining_morphism
             case CategoryPointIdentity(parent):
@@ -91,11 +89,10 @@ class CategoryPoint:
         raise AssertionError(self._cat_element_identity)
 
     def parent(self) -> ObjectOfCategory:
-        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity, active_construction_context
+        """The object this is a point of: the identity the kernel installed first, and ``place`` since (``refinement.place``)."""
+        from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
 
-        context = active_construction_context(self)
-        identity = context.cat_element_identity if context is not None else self._cat_element_identity
-        match identity:
+        match self._cat_element_identity:
             case ElementRoleIdentity(defining_morphism):
                 return defining_morphism.codomain()
             case CategoryPointIdentity(parent):
@@ -207,12 +204,14 @@ class ObjectOfCategory(CategoryPoint):
         self._category = context.identity.category
 
     def category(self) -> Category:
-        """The strongest category placement established for this object."""
-        from sage_categories.kernel.construction import active_object_context
+        """The strongest category placement established for this object.
 
-        context = active_object_context()
-        if context is not None and context.canonical_image is self:
-            return context.identity.category
+        The construction context supplies the first placement (``_initialize_placement``)
+        and ``refinement.place`` every later one, including a placement established while
+        the object is still under construction: a category class that selects a point
+        functor ``D.Point()`` is placed in ``D`` inside its own constructor chain, and the
+        level shift reads that placement (D154, D169).
+        """
         return self._category
 
     def __eq__(self, candidate: CategoryPoint | int) -> AppliedPredicate:
@@ -273,12 +272,7 @@ class MorphismOfCategory(ObjectOfCategory):
         self._codomain = identity.codomain
 
     def category(self) -> Category:
-        """The strongest placement established for this morphism as an object of ``Mor(C)``."""
-        from sage_categories.kernel.construction import active_morphism_context
-
-        context = active_morphism_context()
-        if context is not None and context.canonical_image is self:
-            return context.identity.category
+        """The strongest placement established for this morphism as an object of ``Mor(C)`` (``ObjectOfCategory.category``)."""
         return self._category
 
     def base_category(self) -> Category:

@@ -88,7 +88,7 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         """The opposites of the original category's selected functors."""
         if not self._derive_structure_functors:
             return ()
-        return tuple(_opposite_structure_functor(functor) for functor in self._original.structure_functors())
+        return tuple(_opposite_structure_functor(functor) for functor in self._original.selected_functors())
 
     def _enable_structure_functors(self) -> None:
         self._derive_structure_functors = True
@@ -187,7 +187,7 @@ def _opposite_structure_functor(functor: Functor) -> Functor:
 def opposite_category(category: Category) -> Category:
     """Return the retained opposite category, with ``C.op().op() is C``."""
     if category not in _opposite_categories:
-        for functor in category.structure_functors():
+        for functor in category.selected_functors():
             opposite_category(functor.codomain())
         opposite = OppositeCategory(category)
         _opposite_categories[category] = opposite

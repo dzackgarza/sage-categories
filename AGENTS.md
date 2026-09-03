@@ -124,4 +124,5 @@ A kernel commit or push inside that window uses `--no-verify`, and its message n
 
 A docs-only edit runs no verification.
 Commit it with `git commit --no-verify`.
-Use independent adversarial review at each plan gate.
+Use independent adversarial review at each plan gate: the `r-gate` agent (`r6-gate` for R6).
+Delegate a work unit only to the executor its phase card names (`mechanical-unit`, `construction-unit`, `kernel-core-unit`; D171).

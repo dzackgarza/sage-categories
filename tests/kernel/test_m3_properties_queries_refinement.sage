@@ -20,7 +20,7 @@ from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.roles import CategoryPoint
 
 
-class Tiny(Category[[], []]):
+class Tiny(Category):
     """Minimal set-like fixture with one object property and one typed query."""
 
     Special = Axiom()
@@ -39,8 +39,6 @@ class Tiny(Category[[], []]):
         pass
 
     def __init__(self) -> None:
-        self._objects: dict[int | Integer, CategoryPoint] = {}
-        super().__init__()
         self.Measure = Query("measure", 1, self)
 
         def measure(value: CategoryPoint) -> CategoryPoint | UnknownClass:
@@ -49,9 +47,7 @@ class Tiny(Category[[], []]):
         self.Measure.register_handler(measure)
 
     def __call__(self, value: int | Integer) -> CategoryPoint:
-        if value not in self._objects:
-            self._objects[value] = self.ObjectType(value)
-        return self._objects[value]
+        return self.ObjectType(value)
 
 
 class SpecialTiny(PredicateSubcategory):

@@ -20,7 +20,6 @@ from sage_categories.kernel.roles import CategoryPoint
 _BASE_OBJECT_INITIALIZATIONS: list[CategoryPoint] = []
 _BASE_ELEMENT_INITIALIZATIONS: list[CategoryPoint] = []
 _BASE_MORPHISM_INITIALIZATIONS: list[CategoryPoint] = []
-_SELECTED_FUNCTORS: dict[int, tuple[Functor, ...]] = {}
 _DIAMOND_TO_LEFT_OBJECT_ACTIONS: list[CategoryPoint] = []
 _DIAMOND_TO_LEFT_MORPHISM_ACTIONS: list[CategoryPoint] = []
 
@@ -28,14 +27,8 @@ _DIAMOND_TO_LEFT_MORPHISM_ACTIONS: list[CategoryPoint] = []
 class _SyntheticCategoryOperations:
     """Construction operations shared only by the synthetic R1 specimens."""
 
-    def __init__(self) -> None:
-        self._synthetic_objects: dict[int | Integer, CategoryOfCategories.ElementType] = {}
-        super().__init__()
-
     def __call__(self, label: int | Integer) -> CategoryOfCategories.ElementType:
-        if label not in self._synthetic_objects:
-            self._synthetic_objects[label] = self.ObjectType(label)
-        return self._synthetic_objects[label]
+        return self.ObjectType(label)
 
     def _label(self, member_object: CategoryPoint) -> int | Integer:
         return member_object._synthetic_label
@@ -76,7 +69,7 @@ class _SyntheticCategoryOperations:
         return first
 
 
-class BaseCategory(_SyntheticCategoryOperations, Category[[], []]):
+class BaseCategory(_SyntheticCategoryOperations, Category):
     class ObjectType:
         def __init__(self, label: int | Integer) -> None:
             _BASE_OBJECT_INITIALIZATIONS.append(self)
@@ -114,7 +107,7 @@ class BaseCategory(_SyntheticCategoryOperations, Category[[], []]):
 BASE = BaseCategory()
 
 
-class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
+class LeftCategory(_SyntheticCategoryOperations, Category):
     class ObjectType:
         def __init__(self, label: int | Integer) -> None:
             self._left_state = label
@@ -140,12 +133,7 @@ class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
             return self, self._left_morphism_state
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        key = id(self)
-        if key not in _SELECTED_FUNCTORS:
-            _SELECTED_FUNCTORS[key] = (
-                Fun(self, BASE).Isofibrations()(self._object_to_base, self._morphism_to_base),
-            )
-        return _SELECTED_FUNCTORS[key]
+        return (Fun(self, BASE).Isofibrations()(self._object_to_base, self._morphism_to_base),)
 
     def _object_to_base(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return BASE(self._label(member_object))
@@ -159,7 +147,7 @@ class LeftCategory(_SyntheticCategoryOperations, Category[[], []]):
 LEFT = LeftCategory()
 
 
-class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
+class RightCategory(_SyntheticCategoryOperations, Category):
     class ObjectType:
         def __init__(self, label: int | Integer) -> None:
             self._right_state = label
@@ -185,12 +173,7 @@ class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
             return self, self._right_morphism_state
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        key = id(self)
-        if key not in _SELECTED_FUNCTORS:
-            _SELECTED_FUNCTORS[key] = (
-                Fun(self, BASE).Isofibrations()(self._object_to_base, self._morphism_to_base),
-            )
-        return _SELECTED_FUNCTORS[key]
+        return (Fun(self, BASE).Isofibrations()(self._object_to_base, self._morphism_to_base),)
 
     def _object_to_base(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return BASE(self._label(member_object))
@@ -204,7 +187,7 @@ class RightCategory(_SyntheticCategoryOperations, Category[[], []]):
 RIGHT = RightCategory()
 
 
-class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
+class DiamondCategory(_SyntheticCategoryOperations, Category):
     class ObjectType:
         def __init__(self, label: int | Integer) -> None:
             self._diamond_state = label
@@ -233,21 +216,18 @@ class DiamondCategory(_SyntheticCategoryOperations, Category[[], []]):
             return self, self._diamond_morphism_state
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        key = id(self)
-        if key not in _SELECTED_FUNCTORS:
-            def on_object(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-                _DIAMOND_TO_LEFT_OBJECT_ACTIONS.append(member_object)
-                return self._object_to_left(member_object)
+        def on_object(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            _DIAMOND_TO_LEFT_OBJECT_ACTIONS.append(member_object)
+            return self._object_to_left(member_object)
 
-            def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-                _DIAMOND_TO_LEFT_MORPHISM_ACTIONS.append(morphism)
-                return self._morphism_to_left(morphism)
+        def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            _DIAMOND_TO_LEFT_MORPHISM_ACTIONS.append(morphism)
+            return self._morphism_to_left(morphism)
 
-            _SELECTED_FUNCTORS[key] = (
-                Fun(self, LEFT).Isofibrations()(on_object, on_morphism),
-                Fun(self, RIGHT).Isofibrations()(self._object_to_right, self._morphism_to_right),
-            )
-        return _SELECTED_FUNCTORS[key]
+        return (
+            Fun(self, LEFT).Isofibrations()(on_object, on_morphism),
+            Fun(self, RIGHT).Isofibrations()(self._object_to_right, self._morphism_to_right),
+        )
 
     def _object_to_left(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return LEFT(self._label(member_object))
@@ -364,8 +344,8 @@ def test_sage_compiler_runs_the_object_element_and_morphism_diamond() -> None:
 def test_construction_runs_each_selected_action_once_and_retains_its_image() -> None:
     object_calls_before = len(_DIAMOND_TO_LEFT_OBJECT_ACTIONS)
     morphism_calls_before = len(_DIAMOND_TO_LEFT_MORPHISM_ACTIONS)
-    to_left = DIAMOND.structure_functors()[0]
-    left_to_base = LEFT.structure_functors()[0]
+    to_left = DIAMOND.selected_functors()[0]
+    left_to_base = LEFT.selected_functors()[0]
 
     # Constructing an object runs the selected object action once, on the value under
     # construction; the datum that action feeds to LEFT's constructor initializes the
@@ -404,7 +384,7 @@ def test_construction_runs_each_selected_action_once_and_retains_its_image() -> 
     image_morphism, image_morphism_state = morphism_image.left_morphism()
     assert image_morphism is morphism_image
     assert image_morphism_state == inherited_morphism_state == 11
-    assert DIAMOND.structure_functors()[0] is to_left
+    assert DIAMOND.selected_functors()[0] is to_left
 
 
 
@@ -413,7 +393,7 @@ def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFi
 
     caplog.set_level(logging.DEBUG, logger="sage_categories.kernel.compiler")
 
-    class LoggedDiamond(_SyntheticCategoryOperations, Category[[], []]):
+    class LoggedDiamond(_SyntheticCategoryOperations, Category):
         class ObjectType:
             pass
 
@@ -424,13 +404,10 @@ def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFi
             pass
 
         def structure_functors(self) -> tuple[Functor, ...]:
-            key = id(self)
-            if key not in _SELECTED_FUNCTORS:
-                _SELECTED_FUNCTORS[key] = (
-                    Fun(self, LEFT).Isofibrations()(lambda member: LEFT(self._label(member)), lambda morphism: LEFT.morphism_category(1)(LEFT(self._label(morphism.domain())), LEFT(self._label(morphism.codomain()))).one()),
-                    Fun(self, RIGHT).Isofibrations()(lambda member: RIGHT(self._label(member)), lambda morphism: RIGHT.morphism_category(1)(RIGHT(self._label(morphism.domain())), RIGHT(self._label(morphism.codomain()))).one()),
-                )
-            return _SELECTED_FUNCTORS[key]
+            return (
+                Fun(self, LEFT).Isofibrations()(lambda member: LEFT(self._label(member)), lambda morphism: LEFT.morphism_category(1)(LEFT(self._label(morphism.domain())), LEFT(self._label(morphism.codomain()))).one()),
+                Fun(self, RIGHT).Isofibrations()(lambda member: RIGHT(self._label(member)), lambda morphism: RIGHT.morphism_category(1)(RIGHT(self._label(morphism.domain())), RIGHT(self._label(morphism.codomain()))).one()),
+            )
 
     LoggedDiamond()
 
@@ -470,7 +447,7 @@ def test_property_refinement_preserves_object_identity() -> None:
 
 
 def test_incomparable_method_owners_fail_at_compilation() -> None:
-    class CollisionLeft(_SyntheticCategoryOperations, Category[[], []]):
+    class CollisionLeft(_SyntheticCategoryOperations, Category):
         class ObjectType:
             def collision(self) -> Self:
                 return self
@@ -483,7 +460,7 @@ def test_incomparable_method_owners_fail_at_compilation() -> None:
 
     collision_left = CollisionLeft()
 
-    class CollisionRight(_SyntheticCategoryOperations, Category[[], []]):
+    class CollisionRight(_SyntheticCategoryOperations, Category):
         class ObjectType:
             def collision(self) -> Self:
                 return self
@@ -496,7 +473,7 @@ def test_incomparable_method_owners_fail_at_compilation() -> None:
 
     collision_right = CollisionRight()
 
-    class CollisionDiamond(_SyntheticCategoryOperations, Category[[], []]):
+    class CollisionDiamond(_SyntheticCategoryOperations, Category):
         class ObjectType:
             pass
 
@@ -507,13 +484,10 @@ def test_incomparable_method_owners_fail_at_compilation() -> None:
             pass
 
         def structure_functors(self) -> tuple[Functor, ...]:
-            key = id(self)
-            if key not in _SELECTED_FUNCTORS:
-                _SELECTED_FUNCTORS[key] = (
-                    Fun(self, collision_left).Isofibrations()(lambda member: collision_left(0), lambda morphism: collision_left.morphism_category(1)(collision_left(0), collision_left(0)).one()),
-                    Fun(self, collision_right).Isofibrations()(lambda member: collision_right(0), lambda morphism: collision_right.morphism_category(1)(collision_right(0), collision_right(0)).one()),
-                )
-            return _SELECTED_FUNCTORS[key]
+            return (
+                Fun(self, collision_left).Isofibrations()(lambda member: collision_left(0), lambda morphism: collision_left.morphism_category(1)(collision_left(0), collision_left(0)).one()),
+                Fun(self, collision_right).Isofibrations()(lambda member: collision_right(0), lambda morphism: collision_right.morphism_category(1)(collision_right(0), collision_right(0)).one()),
+            )
 
     with pytest.raises(SemanticCollisionError, match="collision"):
         CollisionDiamond()

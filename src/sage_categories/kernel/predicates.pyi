@@ -42,6 +42,9 @@ def mark_identity_predicate(owner: Predicate) -> None:
 def register_predicate_handler(owner: Predicate, handler: PredicateHandler) -> None:
     ...
 
+def register_declared_case(owner: Predicate, domain: type, handler: PredicateHandler) -> None:
+    ...
+
 def register_query_handler(query: Query, handler: QueryHandler) -> None:
     ...
 

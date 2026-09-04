@@ -5,7 +5,7 @@ from sage_categories.kernel.sage_runtime import Unknown as Unknown, UnknownClass
 from sympy import Predicate as Predicate
 from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.logic.boolalg import Boolean
-__all__ = ['Predicate', 'Unknown', 'UnknownClass', 'AppliedPredicate', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'predicate', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom']
+__all__ = ['Predicate', 'Unknown', 'UnknownClass', 'AppliedPredicate', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'DecidingProposition', 'predicate', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom', 'declared_axiom']
 
 class AppliedPredicate(_SymPyAppliedPredicate):
 
@@ -19,6 +19,7 @@ type Answer = Decision | CategoryOfCategories.ElementType
 type PredicateHandler = Callable[..., PredicateDecision]
 type QueryHandler = Callable[..., QueryAnswer]
 type Proposition = Boolean
+type DecidingProposition = Callable[[Category, CategoryOfCategories.ElementType], Proposition]
 
 def predicate(name: str) -> Predicate:
     ...
@@ -86,7 +87,7 @@ def retract(proposition: Proposition) -> None:
 
 class Axiom:
 
-    def __init__(self, full_subcategory_of: tuple[Axiom, ...]=()) -> None:
+    def __init__(self, deciding: DecidingProposition | None = None, *, full_subcategory_of: tuple[Axiom, ...]=()) -> None:
         ...
 
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:
@@ -112,3 +113,6 @@ class Axiom:
 
     def is_constructed(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> bool:
         ...
+
+def declared_axiom(category: Category, name: str) -> Axiom | None:
+    ...

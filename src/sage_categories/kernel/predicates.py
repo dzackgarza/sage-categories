@@ -197,13 +197,27 @@ def mark_identity_predicate(owner: Predicate) -> None:
 
 
 def register_predicate_handler(owner: Predicate, handler: PredicateHandler) -> None:
+    """Register one owned exact case whose semantic domains its own annotations declare."""
+    _register_exact_case(owner, _predicate_domains(handler), handler)
+
+
+def register_declared_case(owner: Predicate, domain: type, handler: PredicateHandler) -> None:
+    """Register the one exact case an axiom declaration supplies, on the objects of its declaring category.
+
+    The declaration already names that semantic domain -- it is the role class the
+    generated ``is_p()`` is written onto -- so the case is dispatched from it rather than
+    from an annotation the leaf writes a second time.
+    """
+    _register_exact_case(owner, (_atom_type(domain),), handler)
+
+
+def _register_exact_case(owner: Predicate, domains: tuple[type, ...], handler: PredicateHandler) -> None:
     """Register one owned exact case on SymPy's predicate dispatcher.
 
     Each exact dispatch signature has one owner.  SymPy's dispatcher silently keeps
     the last registration for a repeated signature, which would discard the earlier
     handler without any failure, so a collision is rejected here instead.
     """
-    domains = _predicate_domains(handler)
     existing = owner.handler.funcs.get(domains)
     assert existing is None, (
         f"{handler.__name__!r} collides with the registered exact handler {existing.__name__!r} "

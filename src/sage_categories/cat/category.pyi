@@ -246,6 +246,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def property_subcategory(self, property_category: Category[MorphismData, TwoMorphismData]) -> Category[MorphismData, TwoMorphismData]:
         ...
 
+    def __getattr__(self, name: str) -> Callable[..., Category[MorphismData, TwoMorphismData]]:
+        ...
+
     def narrowing_type(self) -> type[Category[MorphismData, TwoMorphismData]]:
         ...
 Category = CategoryDeclaration

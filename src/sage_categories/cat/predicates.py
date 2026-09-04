@@ -37,6 +37,7 @@ __all__ = [
     "AppliedQuery",
     "Argument",
     "Decision",
+    "DecidingProposition",
     "Predicate",
     "PredicateHandler",
     "Proposition",
@@ -48,6 +49,7 @@ __all__ = [
     "ask",
     "assume",
     "conjunction",
+    "declared_axiom",
     "disjunction",
     "established",
     "implication",
@@ -76,6 +78,12 @@ type Answer = Decision | CategoryOfCategories.ElementType
 type PredicateHandler = Callable[..., PredicateDecision]
 type QueryHandler = Callable[..., QueryAnswer]
 type Proposition = Boolean
+
+# The private method an axiom declaration carries: the proposition that decides
+# membership in ``C.P()``, written on the declaring category class in terms of methods
+# that already exist there (D142, D148).  It is unbound when the class body reads it,
+# so its first parameter is the declaring category.
+type DecidingProposition = Callable[[Category, CategoryOfCategories.ElementType], Proposition]
 
 _predicate_ids = count()
 
@@ -240,12 +248,28 @@ def _property_subcategory() -> type[PropertySubcategory]:
 class Axiom:
     """A property axiom, declared once in the body of a category class (D77.4, POL-LEAF-059).
 
-    ``Finite = Axiom()`` in the body of ``SetsCategory`` gives every value of that class
-    the accessor ``Finite()``, whose value is the property subcategory ``Sets().Finite()``.
+    ``Finite = Axiom(_finite)`` in the body of ``SetsCategory`` gives every value of that
+    class the accessor ``Finite()``, whose value is the property subcategory
+    ``Sets().Finite()``, and makes the private method ``_finite`` the proposition that
+    decides membership in it (D142, D148; ``specs/finite-set-minimal-template.py``).  That
+    method is written in terms of methods that already exist on the declaring category,
+    ``X.cardinality() < aleph0``, and it returns a proposition rather than a decision:
+    only ``ask()`` evaluates it, and it is registered as the exact case of the property's
+    predicate on the objects of the declaring category.
+
+    An axiom that carries no such method, ``Monomorphisms = Axiom()``, is complete as it
+    stands: it makes the subcategory available, a value enters it by construction,
+    declaration, or assumption, and membership is decided from that placement.  Deciding
+    and declaring are two independent mechanisms and neither needs the other (D97), so
+    an axiom carries the deciding proposition exactly when its mathematics computes one.
+
     A category ``D`` declared as a subcategory of ``C`` derives ``D.Finite()`` from that
     one declaration, as the inverse image of ``C.Finite()`` along its subcategory
     monomorphism; it states no class, predicate, constructor, or transport of its own
-    (POL-CAT-084, D83).
+    (POL-CAT-084, D83).  This reaches every category ``C`` supplies the axiom to,
+    ``C.P()`` among them: an axiom is a descriptor on the class that declares it, and a
+    subcategory of ``C`` is not a value of that class, so ``CategoryDeclaration`` resolves
+    the declaration along the ambient chain (``declared_axiom``, D77 item 4).
 
     A regressive functorial construction is an axiom too: ``X`` is a chosen product
     exactly when it lies in the image of the nontrivial product functor, so ``Products``,
@@ -290,7 +314,13 @@ class Axiom:
     ``"is_finite"`` by name matching, so the link is always the field.
     """
 
-    def __init__(self, full_subcategory_of: tuple[Axiom, ...] = ()) -> None:
+    def __init__(
+        self,
+        deciding: DecidingProposition | None = None,
+        *,
+        full_subcategory_of: tuple[Axiom, ...] = (),
+    ) -> None:
+        self._deciding = deciding
         self._full_subcategory_of = full_subcategory_of
         self._implementation: type[PropertySubcategory] | None = None
         # Retained per category and parameter values, by identity (POL-SAGE-013).
@@ -368,12 +398,47 @@ class Axiom:
         return _retention_key(category, *parameters) in self._constructed
 
     def _construct(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
-        """The inverse image along a declared subcategory's monomorphism, else the implementation of this axiom."""
+        """The inverse image along a declared subcategory's monomorphism, else the implementation of this axiom.
+
+        A subcategory receives the axioms its ambient supplies and constructs the ones it
+        declares itself, so the branch asks which of the two this is (D77 item 4, D83).
+        ``Posets()`` is ``Relations().PartialOrder()`` and declares ``Total`` on the order
+        it adds (``specs/ordered-sets.md``, "Total-order refinement"): the ambient
+        supplies no such axiom, so that declaration reaches the second branch, where it
+        has an owner to be constructed at.
+        """
         if category.has_ambient():
             defining_functor = category.subcategory_monomorphism()
-            return defining_functor.inverse_image(self._declared_on(defining_functor.codomain(), *parameters))
+            if declared_axiom(defining_functor.codomain(), self._name) is self:
+                return defining_functor.inverse_image(self._declared_on(defining_functor.codomain(), *parameters))
         containing = tuple(axiom._declared_on(category) for axiom in self._full_subcategory_of)
-        return (self._implementation or _property_subcategory())(category, self._name, containing, *parameters)
+        constructed = (self._implementation or _property_subcategory())(category, self._name, containing, *parameters)
+        if self._deciding is not None:
+            self._register_deciding_proposition(constructed, category)
+        return constructed
+
+    def _register_deciding_proposition(self, subcategory: Category, category: Category) -> None:
+        """Make the declared proposition the exact case of this property's predicate (D142, D148).
+
+        The declaration supplies the semantic domain: an axiom of ``C`` is a property of
+        the objects of ``C``, which is the same declaration the generated ``is_p()`` is
+        written onto, so nothing reads the method's own annotation and neither can
+        disagree with the other.  The method returns a proposition, so the case evaluates
+        it; an undecided proposition leaves membership undecided, and a positive one
+        refines the same value (``kernel/predicates.py``).
+        """
+        from sage_categories.kernel.predicates import register_declared_case
+
+        owner = self.application_owner()
+        assert owner is not None, f"{self!r} decides membership of the objects of a category that declares none"
+        deciding = self._deciding.__get__(category)
+
+        def decide(candidate: CategoryOfCategories.ElementType, assumptions: Proposition) -> PredicateDecision:
+            decision = ask(deciding(candidate))
+            return None if decision is Unknown else decision
+
+        decide.__name__ = self._deciding.__name__
+        register_declared_case(subcategory.predicate(), owner, decide)
 
     def _declared_on(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
         """``category.P(*parameters)``, through the accessor that category declares for this axiom.
@@ -388,6 +453,24 @@ class Axiom:
 
     def __repr__(self) -> str:
         return f"{self._declaring_class.__name__}.{self._name}"
+
+
+def declared_axiom(category: Category, name: str) -> Axiom | None:
+    """The axiom ``category`` supplies under ``name``, declared on it or reached from its ambient (D77 item 4).
+
+    An axiom is a descriptor on the class that declares it, and a declared subcategory is
+    a value of another class: ``C.P()`` is a ``PropertySubcategory`` and the inverse image
+    along a structure functor is its own class, so ordinary attribute lookup stops at the
+    first of them.  The subcategory monomorphism is what carries the axiom down (D83), so
+    the walk follows it, and the name is the one the declaring category writes, exactly as
+    a role is (``Category.local_role_class``, ``POL-KERNEL-028``).
+    """
+    declared = getattr(type(category), name, None)
+    if isinstance(declared, Axiom):
+        return declared
+    if not category.has_ambient():
+        return None
+    return declared_axiom(category.subcategory_monomorphism().codomain(), name)
 
 
 def _retention_key(

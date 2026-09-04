@@ -996,6 +996,29 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """``self.P()``: the narrowing of this placement by the roots of ``P`` (POL-CAT-084)."""
         return self.narrowing_base().intersection((*self.narrowing_roots(), *property_category.narrowing_roots()))
 
+    def __getattr__(self, name: str) -> Callable[..., Category[MorphismData, TwoMorphismData]]:
+        """``C.P().Q()``: an axiom of the ambient is an axiom here, along the subcategory monomorphism (D77 item 4).
+
+        An axiom is a descriptor on the class that declares it, and a declared
+        subcategory is a value of another class -- ``C.P()`` is a ``PropertySubcategory``
+        -- so the accessor a category class writes is out of reach of ordinary attribute
+        lookup on its own subcategories.  The declaration is still the one owner: this
+        finds it along the ambient chain and applies it here, where ``Axiom`` takes the
+        inverse image along this category's monomorphism (D83).  Nothing is patched onto
+        a value and no second accessor exists (``POL-LEAF-064``).
+
+        Private names are not axioms, and answering for one would hide a genuine missing
+        attribute behind an ambient walk.
+        """
+        if name.startswith("_"):
+            raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
+        from sage_categories.cat.predicates import declared_axiom
+
+        axiom = declared_axiom(self, name)
+        if axiom is None:
+            raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
+        return axiom.__get__(self, type(self))
+
     def narrowing_type(self) -> type[Category[MorphismData, TwoMorphismData]]:
         from sage_categories.cat.properties import NarrowedProperty
 

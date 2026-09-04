@@ -63,6 +63,75 @@ class TinySubcategory(FullSubcategory, Tiny):
     """A named full subcategory used to prove functorial property inheritance."""
 
 
+# The predicate a leaf defines when no existing method supplies the proposition, with the
+# exact cases it can decide registered through SymPy (``specs/leaves.md``, "Property
+# categories"; D143).
+light_enough = predicate("light_enough")
+
+
+class Tokens(Category):
+    """A witness in the shape of ``specs/finite-set-minimal-template.py``.
+
+    A category declares each axiom it introduces once, in its class body, by the axiom
+    name and the private method returning the proposition that decides membership (D77
+    item 4, D142, D148).  ``Light`` names its own predicate; ``Heavy`` is written from
+    ``is_light()``, an application the first declaration generated, which is what "in
+    terms of methods that already exist on the category" means; ``Tagged`` computes
+    nothing and is complete as it stands (D97).
+    """
+
+    class ObjectType:
+        def __init__(self, weight: Integer) -> None:
+            self._weight = weight
+
+        def weight(self) -> Integer:
+            return self._weight
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def _light(self, X: Tokens.ObjectType) -> Boolean:
+        """State the proposition deciding membership in ``Tokens().Light()``."""
+        return light_enough(X)
+
+    Light = Axiom(_light)
+
+    def _heavy(self, X: Tokens.ObjectType) -> Boolean:
+        """State the proposition deciding membership in ``Tokens().Heavy()``."""
+        return ~X.is_light()
+
+    Heavy = Axiom(_heavy)
+
+    Tagged = Axiom()
+
+    def __call__(self, weight: Integer) -> CategoryPoint:
+        return self.ObjectType(weight)
+
+
+class SealedTokens(FullSubcategory, Tokens):
+    """A declared subcategory that introduces an axiom of its own.
+
+    ``Posets()`` is ``Relations().PartialOrder()`` and declares ``Total`` on the order it
+    adds (``specs/ordered-sets.md``, "Total-order refinement").
+    """
+
+    Stamped = Axiom()
+
+
+def _decide_light(candidate: Tokens.ObjectType, assumptions: Proposition) -> bool | None:
+    """Decide the weights this leaf knows; every other case falls through to undecided (D143)."""
+    match candidate.weight():
+        case weight if weight >= Integer(0):
+            return bool(weight <= Integer(10))
+    return None
+
+
+light_enough.register_handler(_decide_light)
+
+
 def test_generated_property_application_and_three_valued_ask() -> None:
     tiny = Tiny()
     positive, negative, undecided = tiny(3), tiny(-2), tiny(99)
@@ -243,6 +312,72 @@ def test_one_declaration_compiled_at_two_incomparable_nodes_is_one_owner() -> No
     refine(value, second.op())
     assert is_placed(value, first.op())
     assert is_placed(value, second.op())
+
+
+def test_one_axiom_declaration_supplies_the_subcategory_its_inclusion_and_its_application() -> None:
+    """``Light = Axiom(_light)`` is the whole declaration; ``cat_kernel`` supplies the rest (D148, D170, D175)."""
+    tokens = Tokens()
+    light = tokens.Light()
+    (inclusion,) = light.structure_functors()
+    assert inclusion.domain() is light
+    assert inclusion.codomain() is tokens
+    assert inclusion in Fun(light, tokens).Monomorphisms().Isofibrations()
+
+    small = tokens(Integer(3))
+    proposition = small.is_light()
+    assert isinstance(proposition, Boolean)
+    assert proposition is light.membership_proposition(small)
+
+
+def test_the_declared_proposition_decides_membership_and_refines_the_same_value() -> None:
+    """``ask`` answers from the private method the declaration names, and a positive answer places the value (D142)."""
+    tokens = Tokens()
+    token = tokens(Integer(2))
+    identity = id(token)
+    assert not is_placed(token, tokens.Light())
+    assert ask(token.is_light()) is True
+    assert id(token) == identity
+    assert is_placed(token, tokens.Light())
+    assert token in tokens.Light()
+
+    assert ask(tokens(Integer(50)).is_light()) is False
+    assert ask(tokens(Integer(-1)).is_light()) is Unknown
+
+
+def test_a_deciding_proposition_is_written_from_the_applications_already_generated() -> None:
+    """``_heavy`` is written from ``is_light()``, which the first declaration generated (D148)."""
+    tokens = Tokens()
+    assert ask(tokens(Integer(50)).is_heavy()) is True
+    assert ask(tokens(Integer(2)).is_heavy()) is False
+    assert ask(tokens(Integer(-1)).is_heavy()) is Unknown
+
+
+def test_an_axiom_of_the_ambient_is_an_axiom_of_its_property_subcategory() -> None:
+    """``C.P().Q()``: one declaration reaches every category that declares a monomorphism into ``C`` (D77 item 4, D83)."""
+    tokens = Tokens()
+    light = tokens.Light()
+    tagged_light = light.Tagged()
+    assert tagged_light is light.property_subcategory(tokens.Tagged())
+    assert is_subcategory(tagged_light, light)
+    assert is_subcategory(tagged_light, tokens.Tagged())
+
+    constructed = tagged_light(Integer(4))
+    assert constructed in tagged_light
+    assert constructed in light
+    assert constructed in tokens.Tagged()
+    assert ask(constructed.is_tagged()) is True
+
+    placed = tokens(Integer(6))
+    assume(placed.is_tagged())
+    assert placed in tokens.Tagged()
+
+
+def test_a_declared_subcategory_constructs_the_axiom_it_declares_and_inherits_the_rest() -> None:
+    """An axiom has one owner: the category whose class body declares it (D77 item 4, D83)."""
+    tokens = Tokens()
+    sealed = SealedTokens(tokens)
+    assert sealed.Stamped().ambient() is sealed
+    assert sealed.Light() is sealed.subcategory_monomorphism().inverse_image(tokens.Light())
 
 
 for name, value in tuple(globals().items()):

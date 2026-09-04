@@ -3,6 +3,12 @@
 `sage-categories` builds a foundational category framework for Sage mathematics.
 The repository is initialized. Deliver each specified capability to its complete public consumer.
 
+These instructions constrain work at its existing boundary. Apply each rule when its stated condition occurs.
+They do not require a new checklist, report, agent, or gate for each action.
+Use the relevant section while working; keep the rest available by reference.
+An explanation of a failure does not establish that its remedy works.
+Preserve the original operation and acceptance claim until the delivered behavior establishes them.
+
 ## Sources of truth
 
 Each fact has one authoritative home:
@@ -63,6 +69,20 @@ An ordinary read, small correction, or status answer needs no separate frame doc
 Load skills for the requested operation and observed problems only. A skill reference does not create another task.
 Do not reload unchanged contracts within a session. Retain paths and section names for targeted reads.
 
+### Context and attention
+
+Use a search to find the owning definition, then read the whole relevant definition and its immediate callers.
+A matching name, excerpt, summary, or commit title selects evidence to inspect; it does not establish the claim.
+When output is truncated, narrow the next read to the missing relevant section. Do not repeat the same oversized dump.
+Keep current contracts, the active failure, and its evidence in the working context.
+Retrieve old history for a disputed decision or repeated failure, rather than routinely replaying the project history.
+
+Separate the requested deliverable from incidental defects exposed while reaching it.
+Repair an incidental defect in this unit only when the deliverable depends on that repair.
+Record other concrete defects with their existing owners, then return to the assigned operation.
+Do not replace difficult implementation with easier policy, typing, environment, or documentation work.
+Documentation is the deliverable when the user requests documentation; that does not certify implementation.
+
 ## Implementation and dependencies
 
 Follow [specs/system.md](specs/system.md#dependency-directions).
@@ -93,6 +113,79 @@ Preserve required behavior before deleting its former implementation.
 Never weaken a type, category declaration, or acceptance claim to pass a check.
 Keep engine values private under [specs/leaves.md](specs/leaves.md#computation-engine-boundary).
 
+### Mathematical meaning before implementation shape
+
+For a categorical operation, identify the input categories, result category, and maps that define the result.
+Track the distinction between a category, its objects, its points, and its morphisms through each expression.
+For a functor, identify both actions and their endpoints. For a universal construction, include its presentation and mediator.
+Resolve these from the topic contract before choosing Python classes, tuples, caches, or dispatch branches.
+Use ordinary mathematical notation in the task frame when it makes a level or variance distinction explicit.
+
+A representation does not determine its mathematical role.
+A tuple representing an element of a product category does not thereby become its image under a product functor.
+A Python callable does not establish a functor's morphism action or laws.
+A shared runtime base does not make values belong to the same semantic domain.
+When a repair relies on one of these identifications, establish the missing map or placement at its owner first.
+
+Check the direction, hypotheses, and scope of an implication before encoding it as category containment.
+A property required for one selected functor does not imply that property for every member of its ambient category.
+A consequence in one construction does not establish a global implication, its converse, or uniqueness of a choice.
+Preserve parameters, endpoint restrictions, and selected data when applying a theorem.
+An external theorem supplies mathematical support; the repository still needs the declared map and executable operation.
+
+When the public contract promises a category, functor, or universal presentation, construct that exact object.
+Returning its carrier, apex, engine value, or a record bearing its name leaves the missing structure unresolved.
+When a named object or operation is absent, keep that absence visible in the assigned claim.
+Do not invent a nearby meaning and report completion under the requested name.
+
+### Ownership and dependency reuse
+
+Separate mathematical meaning, runtime execution, and interpretation that needs both layers before moving code.
+Use the responsibilities in [specs/system.md](specs/system.md#system-shape), not the convenience of the current import graph.
+If a proposed move needs a forbidden dependency, split the responsibilities at the actual boundary.
+An import hidden inside a function or a renamed forwarding module does not change dependency direction.
+After an ownership repair, follow the original consumer through the new owner and inspect the affected sibling path.
+A file move or changed docstring establishes only location until that path works.
+
+Before implementing runtime infrastructure, identify the exact operation the existing dependency already owns.
+Exercise its required interlock through the smallest current consumer before building surrounding machinery.
+Use the dependency's class construction, ordering, identity, caching, or proposition operation directly where specified.
+Importing a library while keeping a second implementation of its job does not delegate that job.
+A reference comment does not justify maintaining a duplicate class graph, method graph, or state-transport system.
+Add repository code only for the semantic difference that the dependency does not supply.
+
+When two representations of the same relation need synchronization, identify which one derives from the other.
+Keep the defining declaration authoritative and derive the runtime or static view through its existing owner.
+Do not add another registry to reconcile registries introduced by the same unfinished implementation.
+Check whether a proposed cache retains an already-retained value before adding it.
+Caching, interning, mathematical equality, and category membership have distinct obligations; do not exchange their checks.
+
+### Construction, scope, and generality
+
+Follow initialization in dependency order: written source data, required functor images, then the inherited operation using that state.
+At an initialization failure, identify the exact value, state owner, and first read that occurs too early.
+Repair that ordering or ownership. Do not fill the field with a default, replay unrelated constructors, or copy target state in a leaf.
+Distinguish the constructing-time contract from the completed public action contract in `resolution.md`.
+
+When independent declarations interfere, inspect the scope of ranks, caches, retained identities, and mutable state first.
+Check whether the supposedly conflicting data belongs to the same category, declaration, or interned value.
+Do not introduce global precedence, a rejection rule, or a new mathematical constraint to accommodate accidental shared state.
+For a fix that depends on construction order, exercise the relevant declarations in both orders in fresh state.
+For retained values, check the promised repeated construction and a distinct parameter or owner that must remain distinct.
+Use these cases when the claim concerns scope or identity; do not impose a fresh-process matrix on unrelated work.
+
+Distinguish an implementation of a construction from an implementation of one evaluable case.
+An identity diagram, terminal apex, equal-leg span, or singleton domain proves only the case it exercises.
+Before claiming generality, use an admissible case where the shortcut cannot produce the answer.
+For transport, use an action that changes the datum; for composition, use the nonidentity maps required by the claim.
+Check a universal mediator with a competing cone or cocone, rather than only reading the stored apex.
+
+If successive examples require branches in the generic operation, re-read its defining construction before adding the next branch.
+Use the existing generic calculus or the specified engine domain to cover the required family.
+Keep legitimate finite or presented evaluation restrictions explicit at their owner.
+Do not expand those restrictions to excuse missing generic representation, retained maps, or declared categorical structure.
+A later integration phase composes working capabilities; it cannot retroactively justify accepting an unexercised primitive.
+
 ## Review and acceptance
 
 A phase receives one independent review at a fixed committed revision.
@@ -121,6 +214,27 @@ Keep one current acceptance record and one unresolved-work section on each card.
 Archive detailed reviews once; do not paste them into subsequent cards or prompts.
 R6 checks integration and remaining required claims. It reuses valid prerequisite acceptance.
 
+### Review the claim independently
+
+Give the reviewer the original contract, observed failure, and relevant diff before the implementer's causal explanation.
+The reviewer must derive the disputed behavior from those sources before assessing the proposed remedy.
+Another agent repeating the same supplied explanation does not add independent evidence.
+
+Separate a finding from its proposed repair. A true finding can come with a wrong repair.
+Rejecting that repair leaves the original failed claim to solve.
+Accept a finding because its counterexample or contract argument holds, not because of the reviewer's model or confidence.
+Reject a finding with the exact defeating fact; a green scanner or another approving review is insufficient.
+
+Read changed assertions and constructors during review, including lines removed by a claimed strengthening or cleanup.
+A test rewrite that removes one target, action, parameter, or public call can reduce the claim while improving presentation.
+If evidence is weakened, retain the affected acceptance obligation until an equally strong public exercise replaces it.
+A larger unrelated test or a more elaborate report cannot replace that lost evidence.
+
+When an accepted claim fails at its public boundary, reopen that claim and conclusions using the same failed evidence.
+Identify the shared premise or mechanism. Recheck those consumers within the assigned boundary.
+Do not declare the latest symptom to be the whole defect before following its callers and sibling use.
+Retain unrelated acceptance; the scope of invalidation follows evidence, not a blanket restart or automatic exoneration.
+
 ## Repeated failures
 
 Apply these actions to observed conditions, regardless of how productive the current work feels:
@@ -137,6 +251,25 @@ Apply these actions to observed conditions, regardless of how productive the cur
 | A task is called difficult because it contains many similar items | Examine one operation and its dependencies; execute independent items as a batch. |
 | A known command fails again without new evidence | Read the owned command and first failure. Change the hypothesis before another run. |
 | A reviewer requests already-located provenance again | Open the retained locator. Search further only if it is incomplete or contradicted. |
+
+Keep a correction sequence anchored to the same public operation and expected result.
+Renaming the issue, changing files, switching agents, or proposing a new cause does not start a new sequence.
+Before another repair of that operation, compare the earlier predicted result with what actually happened.
+Identify the premise the observation disproved and the next observation that can distinguish the remaining causes.
+Use the existing task frame and unresolved-work entry for this reasoning; do not create another tracking system.
+
+An ordinary failing test during implementation needs diagnosis and repair, not an additional review ceremony.
+A failure of a previously claimed public result also invalidates the evidence used for that claim.
+An admission, confident new explanation, small diff, or passing private check does not restore that evidence.
+Re-establish it through the same public boundary under the unchanged requirement.
+
+When replacing a rejected technique, preserve the obligation that technique tried to meet.
+Replacing attribute inspection with exception catching still uses implementation accidents to choose the operation.
+Replacing a broad type with another broad alias still loses the mathematical domain.
+Replacing explicit leaf wiring with a helper that performs the same wiring leaves its owner unchanged.
+Trace the missing declaration, state, or generic operation and repair it there.
+Do not add fallback branches, defaults, successful no-ops, or broader exception catches to make execution continue.
+Use the specified typed outcome for a legitimately undecided computation; implementation failure must remain visible.
 
 Distinguish recording proven completion from changing a requirement before editing a goal source.
 Change a requirement only with user authorization or a controlling decision that already supplies it.
@@ -157,6 +290,13 @@ It reports delivered behavior, revision or diff, and unresolved claims.
 The integrating agent checks the actual diff and consumer against the original frame, then commits the integrated unit.
 Delegates do not edit shared phase state. Avoid nested delegation and repeated reviewers for an unchanged question.
 
+A parallel split must have a stable shared interface before writers start.
+If both units require changing that interface, complete the prerequisite first or give the coherent change one writer.
+Do not split intertwined compiler and consumer changes merely to occupy available agents.
+When a delegate violates ownership, return the unchanged claim and concrete failure instead of composing another patch over it.
+Reassign an unresolved unit with its correction sequence intact when repeated results fail the same contract.
+Adding workers cannot resolve a missing mathematical definition or a contradictory input contract.
+
 ## Verification
 
 This repository is before 1.0. Architectural agreement controls acceptance.
@@ -175,6 +315,58 @@ Do not use mocks, simulations, skips, xfails, or assertions about the absence of
 Keep explicit enumeration approximations outside foundational paths; warn before large enumeration where explicitly offered.
 Measure performance by wall time and input size. Call counts can locate repeated work.
 Preserve the legible mathematical sequence over a faster opaque form.
+
+### Preserve the strength of the example
+
+Write expected results from the contract before using execution to determine whether they hold.
+Read each assertion as a proposition: its inputs, quantifiers, expected result, and the wrong behavior it excludes.
+Changing the specimen to an easier case changes what it proves, even if its test name stays the same.
+
+For framework acceptance, a small local category may supply its mathematical data, operations, and permitted declarations.
+It must receive the framework capability under review exactly as an ordinary leaf receives it.
+If setup installs generic methods, registers retained projections, copies inherited state, or directly supplies Python inheritance, inspect its role.
+Setup cannot supply the very inheritance, placement, retention, or property propagation the test claims to establish.
+Use the closed declaration template and the genuine generic owner for that behavior.
+
+Preserve every material dimension when replacing a nonconforming specimen.
+A two-target inheritance claim still needs two actual selected targets and behavior from both after the rewrite.
+Repeated refinement of one property cannot substitute for propagation from two targets.
+An identity action cannot substitute for a claim about changed target data.
+A private helper call cannot substitute for the public constructor or inherited method that failed.
+If a lawful replacement exposes a missing capability, repair that capability in the assigned unit.
+Removing the unlawful setup does not discharge its intended proof burden.
+
+For a typed query, exercise a registered handler returning a known owned answer through public `ask()`.
+Check its semantic value and result category, plus a legitimately undecided case when the contract permits one.
+An always-Unknown implementation passes an Unknown-only test; that test cannot establish query dispatch.
+For dispatch over generated classes, distinguish semantic domains even when their values share a runtime role or Python base.
+Check the affected domain after refinement when refinement is part of the claimed behavior.
+
+Choose the relation the contract requires: Python identity for retained identity, `ask(a == b)` for decided equality.
+Constructing a proposition is not deciding it. Python truth conversion cannot replace `ask()`.
+Membership alone does not establish the strongest placement, inherited operation, or retained comparison promised by a claim.
+Read the result through that promised public operation, including its state and endpoints where relevant.
+Do not replace a semantic assertion with a class name, representation string, permissive Boolean, or alternative expected output.
+
+### Diagnostics and generated projections
+
+Treat a type error as evidence about an exact input, output, domain, or projection boundary.
+Determine which boundary is wrong before changing its annotation or constructor.
+An unavailable annotation during registration can be an initialization problem; widening the domain does not solve it.
+Do not move construction from a required property category to its ambient category to bypass a failure.
+Correct registration, dispatch, or construction while retaining the specified mathematical type and placement.
+
+Compare generated stubs against the changed declarations and the compiler's semantic projection.
+A generator completing successfully does not establish that its output retained inherited methods, bases, and exact domains.
+If generation changes unrelated interfaces or depends on prior construction history, identify the generator defect at its owner.
+Do not accept those changes as harmless churn, weaken the runtime contract, or maintain an unrecorded second API by hand.
+Use only the active plan's explicit checkpoint exception while that defect remains unresolved.
+
+A diagnostic baseline classifies already-established failures; it is not evidence that a new failure is pre-existing.
+Attribute a claimed baseline failure to its recorded owner and cause before using the exception.
+Read the first concrete failure and the relevant output once. Re-run after a change or new diagnostic question.
+Inspect the actual rule scope when a green check is used for acceptance; an empty or wrong scope proves nothing.
+Prefer a decisive public exercise to another aggregate diagnostic total.
 
 Commit and push hooks own test, lint, type-check, format, stub, and aggregate recipes. Do not run these suites manually.
 A targeted Sage-aware exercise is the routine manual exception.
@@ -206,6 +398,31 @@ Apply a controlling correction to the whole affected statement and its examples,
 A new substantive choice needs user grounding in `specs/decisions.md`, with session and timestamp.
 Current explicit instructions establish provenance for the change they authorize.
 
+### Corrections, inference, and policy scope
+
+Translate a correction into the changed mathematical or behavioral claim before editing its wording.
+Check the entire affected definition, its examples, and its immediate consumers for the same assumption.
+A search-and-replace over verbs cannot resolve a responsibility split or a change of result category.
+Rewrite the complete owning statement once, then link to it from dependent guidance.
+
+Distinguish a source statement from the inference that applies it to this implementation.
+Record derived consequences as derivations, with the assumptions that make them valid.
+An agent-authored decision number, repeated citation, or newer timestamp does not turn an inference into a user instruction.
+When a source contradicts an inference, correct that inference and its dependent statements together.
+Keep unaffected decisions and their provenance intact.
+
+Before presenting an architectural conflict to the user, establish that both claims concern the same mathematical object and scope.
+Distinguish declaration-local from global state, mathematical equality from identity, and a construction from its presentation.
+Check whether one statement describes intended behavior and the other describes a current implementation defect.
+Those two statements do not create a product choice. Repair the defect within the existing contract.
+Ask only when the remaining alternatives change required mathematics or observable behavior and the sources do not decide them.
+
+Interpret a policy through its stated invariant and boundary.
+Do not extend a rule about leaf engineering to move generic mathematics into the private kernel.
+Do not extend a convention check into mathematical certification, or a missing citation into evidence that a contract is false.
+A rule violation requires repairing its substantive cause; renaming the construct to evade the rule leaves that cause intact.
+If literal wording conflicts with its controlling contract, correct the owning wording instead of building around the contradiction.
+
 For an old disputed decision, inspect its existing locator first.
 Search Claude sessions, Codex sessions, and ChatGPT recordings before claiming that no source exists.
 Use the `reading-transcripts` parser for CLI sessions, including queued user answers.
@@ -217,6 +434,11 @@ Inspect external definitions before citing them; retain exact definition or theo
 Write current contracts and remaining work. Keep incident narratives in history.
 When removing a requirement, remove its wording instead of adding a prohibition that repeats it.
 Update an existing rule before adding another. Each procedural rule needs an observable trigger and an action advancing the capability.
+Put incident details and the evidence behind a rule in its commit and decision locator, not in every future task packet.
+After a repeated failure, first check whether an existing rule was bypassed, mis-scoped, or incapable of distinguishing the bad result.
+Repair that rule at its owner. Do not append stronger adjectives or add a gate that checks only compliance with another gate.
+New automated architectural checks still require the D132 boundary; prose guidance does not authorize additional enforcement machinery.
+Judge this guidance by later action on the original capability, not by an agent restating or agreeing with it.
 
 ## Session continuity
 

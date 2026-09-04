@@ -1201,3 +1201,16 @@ Owner: [Products and component functors](functor.md#products-coproducts-and-comp
 
 Source: product-category clarification in Codex session `01a06ea2-e610-7fd0-acee-d0efc8315d93`, 2026-09-04T23:16:38.402Z.
 The product-functor consequence uses the existing chosen-product definition in `functor.md`.
+
+### D182
+
+Extend the workflow in [AGENTS.md](../AGENTS.md) with history-grounded guidance for preserving semantic claims during repairs.
+The guidance covers mathematical scope, dependency reuse, construction state, representative public consumers, proof-preserving test rewrites,
+exact typing, independent review, correction continuity, and bounded policy interpretation.
+It extends D180's procedure. Topic contracts, phase acceptance, and the D132 admission boundary remain with their existing owners.
+
+Source: workflow-guidance instruction in Codex session `01a06ea2-e610-7fd0-acee-d0efc8315d93`, 2026-09-04T23:41:01.450Z.
+Behavioral mechanisms are inferences from inspected changes, not claims about an agent's intent or model capability.
+Evidence locators: `4fe67cf`, `5baf28a`, `460a281`, `df0e19c`, `6f32004`, `6660e9c`, `7f8bea5`, `3f8ee1d`,
+`94584a2`, `13bdb2a`, `270b9d5`, `af73c40`, `b7c4853`, `e8f54c0`, and `51c74ab`.
+The implementation details and causal comparison are recorded with this documentation change in Git.

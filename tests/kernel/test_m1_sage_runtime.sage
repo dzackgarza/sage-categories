@@ -26,6 +26,7 @@ _BASE_MORPHISM_INITIALIZATIONS: list[CategoryPoint] = []
 _DIAMOND_TO_LEFT_OBJECT_ACTIONS: list[CategoryPoint] = []
 _DIAMOND_TO_LEFT_MORPHISM_ACTIONS: list[CategoryPoint] = []
 _THREADED_TARGETS: list[tuple[str, CategoryPoint]] = []
+_SCALAR_INITIALIZATIONS: list[tuple[CategoryPoint, Integer]] = []
 
 
 class _SyntheticCategoryOperations:
@@ -327,6 +328,98 @@ class WithConstructionOrderCategory(_SyntheticCategoryOperations, Category):
 WITH_CONSTRUCTION_ORDER = WithConstructionOrderCategory()
 
 
+class ModulesCategory(_SyntheticCategoryOperations, Category):
+    """The modules over one ring: one written declaration, one category for each ring.
+
+    A bimodule's two projections land in two categories of this one declaration, and the
+    kernel runs its one initializer for each of them, with that owner's own datum (D167).
+    """
+
+    class ObjectType:
+        def __init__(self, scalars: Integer) -> None:
+            _SCALAR_INITIALIZATIONS.append((self, scalars))
+            self._scalars = scalars
+
+        def scalars(self) -> Integer:
+            return self._scalars
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __init__(self, ring: str) -> None:
+        self._ring = ring
+
+
+LEFT_SCALARS = ModulesCategory("R")
+RIGHT_SCALARS = ModulesCategory("S")
+MIRROR_LEFT_SCALARS = ModulesCategory("R'")
+MIRROR_RIGHT_SCALARS = ModulesCategory("S'")
+
+
+class _BimoduleOperations:
+    """A bimodule specimen: its object is the pair of scalars, one for each side."""
+
+    def __call__(self, sides: tuple[Integer, Integer]) -> CategoryOfCategories.ElementType:
+        return self.ObjectType(sides)
+
+    def _sides(self, member_object: CategoryPoint) -> tuple[Integer, Integer]:
+        return member_object._bimodule_sides
+
+
+class LeftFirstBimodules(_BimoduleOperations, Category):
+    """A bimodule declaring the projection to the left scalars first."""
+
+    class ObjectType:
+        def __init__(self, sides: tuple[Integer, Integer]) -> None:
+            self._bimodule_sides = sides
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (
+            _synthetic_isofibration(self, LEFT_SCALARS, lambda member: LEFT_SCALARS(self._sides(member)[0])),
+            _synthetic_isofibration(self, RIGHT_SCALARS, lambda member: RIGHT_SCALARS(self._sides(member)[1])),
+        )
+
+
+LEFT_FIRST = LeftFirstBimodules()
+
+
+class RightFirstBimodules(_BimoduleOperations, Category):
+    """The same two projections of a disjoint pair, declared in the other order.
+
+    Its own pair, because a declaration orders the targets it names: two categories that
+    order one pair oppositely state two relations no single order satisfies, which is the
+    unresolved diamond of D37 rather than a precedence question.
+    """
+
+    class ObjectType:
+        def __init__(self, sides: tuple[Integer, Integer]) -> None:
+            self._bimodule_sides = sides
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (
+            _synthetic_isofibration(self, MIRROR_RIGHT_SCALARS, lambda member: MIRROR_RIGHT_SCALARS(self._sides(member)[1])),
+            _synthetic_isofibration(self, MIRROR_LEFT_SCALARS, lambda member: MIRROR_LEFT_SCALARS(self._sides(member)[0])),
+        )
+
+
+RIGHT_FIRST = RightFirstBimodules()
+
+
 class StructuredCategory(Category):
     """A structured category whose objects are categories: the ``D`` of R1 criteria 6 and 7."""
 
@@ -571,6 +664,36 @@ def test_a_selected_action_runs_on_a_value_the_targets_ahead_of_it_have_initiali
         "first declared",
         "second declared",
     ]
+
+
+def test_two_owners_of_one_declaration_read_the_first_declared_state() -> None:
+    # ``LEFT_SCALARS`` and ``RIGHT_SCALARS`` are two categories of the one written
+    # ``ModulesCategory.ObjectType``: a bimodule's two projections, which is the case D167
+    # names.  The kernel runs that one initializer for each of them, with that owner's own
+    # datum, so both write the state ``scalars()`` reads.  The declared order fixes which
+    # write the value reads, and it is the first, with coherence assumed (D37, D56, D165,
+    # D166, D167; ``specs/resolution.md``, "Sage class construction").
+    assert [functor.codomain() for functor in LEFT_FIRST.selected_functors()] == [LEFT_SCALARS, RIGHT_SCALARS]
+    assert LEFT_SCALARS.ordinal() < RIGHT_SCALARS.ordinal()
+
+    del _SCALAR_INITIALIZATIONS[:]
+    left_first = LEFT_FIRST((3, 5))
+    assert [scalars for value, scalars in _SCALAR_INITIALIZATIONS if value is left_first] == [3, 5]
+    assert left_first.scalars() == 3
+
+    # The same object datum, the same one declaration reached twice, the other declared
+    # order: the answer follows the declaration and not the datum's position, the class,
+    # or the order the two categories were constructed in.
+    assert [functor.codomain() for functor in RIGHT_FIRST.selected_functors()] == [
+        MIRROR_RIGHT_SCALARS,
+        MIRROR_LEFT_SCALARS,
+    ]
+    assert MIRROR_LEFT_SCALARS.ordinal() < MIRROR_RIGHT_SCALARS.ordinal()
+
+    del _SCALAR_INITIALIZATIONS[:]
+    right_first = RIGHT_FIRST((3, 5))
+    assert [scalars for value, scalars in _SCALAR_INITIALIZATIONS if value is right_first] == [5, 3]
+    assert right_first.scalars() == 5
 
 
 def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFixture) -> None:

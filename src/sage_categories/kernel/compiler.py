@@ -71,6 +71,8 @@ __all__ = [
     "same_node",
 ]
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class SemanticCollisionError(Exception):
     """Two incomparable owners declare one method spelling (POL-CAT-011, POL-API-011)."""
@@ -740,6 +742,42 @@ def _with_cat_element_node(nodes: tuple[Node, ...], universe: Category) -> tuple
     return (*nodes, target)
 
 
+def _keep_first_state(
+    instance: CategoryPoint,
+    installed: dict[str, tuple[object, Node]],
+    owner: Node,
+) -> None:
+    """Restore the state an earlier owner installed over a later owner's write (D37, D56).
+
+    Two reached owners can share one written declaration: a bimodule's two projections
+    reach ``Modules(R)`` and ``Modules(S)``, which are two categories of the one written
+    ``Modules`` object declaration (D167).  The kernel runs that one initializer for each
+    owner, with that owner's own datum (D13), so both write the same attribute names on
+    the one instance.  The declared order of the selected structure functors ranks the
+    owners and controlled C3 runs them in that order (D56, D165, D166, D167), so the
+    first-declared owner's state is the state the value reads, and the local declaration
+    ahead of every inherited one keeps its own (``specs/resolution.md``, "Sage class
+    construction").  Coherence between the two writes is assumed, so the discarded one is
+    the opt-in ``DEBUG`` line D37 gives an unresolved diamond rather than a failure.
+    """
+    for name, state in list(vars(instance).items()):
+        first = installed.get(name)
+        if first is None:
+            installed[name] = (state, owner)
+            continue
+        kept, first_owner = first
+        if state is kept:
+            continue
+        setattr(instance, name, kept)
+        _LOGGER.debug(
+            "kept the %s written for %r over the one written for %r on %r",
+            name,
+            first_owner.category,
+            owner.category,
+            instance,
+        )
+
+
 def _initialize_graph(
     context: ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext,
     current: Node,
@@ -769,6 +807,11 @@ def _initialize_graph(
     # of its objects (POL-MATH-046).
     resolved: list[tuple[Node, object, CategoryPoint]] = [(current, data, instance)]
     queued: list[_SelectedAction] = []
+    # Each name written on the instance, held by the owner whose turn wrote it first, so
+    # that a later owner's turn cannot displace it (``_keep_first_state``).  The state the
+    # kernel roots installed ahead of every declaration is not in it: placement and
+    # identity are the kernel's own, and the declaration that owns them refines them.
+    installed: dict[str, tuple[object, Node]] = {}
 
     def resolution(owner: Node) -> tuple[object, CategoryPoint] | None:
         return next(((datum, value) for known, datum, value in resolved if same_node(known, owner)), None)
@@ -807,6 +850,7 @@ def _initialize_graph(
         datum, representative = found
         runtime = _runtime(owner)
         context.run(owner, lambda runtime=runtime, datum=datum: runtime.initializer(instance, datum))
+        _keep_first_state(instance, installed, owner)
         if owner.role is not current.role:
             continue
         queued.extend(
@@ -1060,9 +1104,6 @@ def _initialize_morphism[Datum](
     # constructor names says which ``C`` it belongs to (``_construction_node``).
     identity = MorphismRoleIdentity(current.category.morphism_category(1), domain, codomain)
     _construct_morphism_root(current, instance, identity, data)
-
-
-_LOGGER = logging.getLogger(__name__)
 
 
 def _debug_unresolved_diamonds(category: Category) -> None:

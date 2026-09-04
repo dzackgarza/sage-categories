@@ -249,6 +249,13 @@ def test_products_pullbacks_comma_and_fixed_slices_retain_defining_functors() ->
 
 
 def test_shape_indexed_functor_properties_exist_at_fixed_endpoints() -> None:
+    """``Fun.P(I)`` is one property subcategory of ``Fun`` per shape, so one of every ``Fun(C, D)`` (D107, D168, POL-FUN-039).
+
+    The shape is the axiom's parameter, so it belongs to the property subcategory of
+    ``Fun`` the axiom retains; at fixed endpoints the category is the narrowing of
+    ``Fun(C, D)`` by it, which is what ``Fun.P(I)(C, D)`` spells
+    (``specs/functor.md``, "Functor property subcategories").
+    """
     category = Cat().Simplex(1)
     shape = Cat().Simplex(1)
     functors = Fun(category, category)
@@ -256,8 +263,10 @@ def test_shape_indexed_functor_properties_exist_at_fixed_endpoints() -> None:
     creates = functors.CreatesLimits(shape)
     assert preserves.ambient() is functors
     assert creates.ambient() is functors
-    assert preserves.shape() is shape
-    assert creates.shape() is shape
+    assert Fun.PreservesLimits(shape).shape() is shape
+    assert Fun.CreatesLimits(shape).shape() is shape
+    assert preserves is Fun.PreservesLimits(shape)(category, category)
+    assert creates is Fun.CreatesLimits(shape)(category, category)
 
 
 def test_op_is_an_involution_on_the_four_kinds_it_acts_on() -> None:

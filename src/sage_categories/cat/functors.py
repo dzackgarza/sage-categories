@@ -28,7 +28,16 @@ from sage_categories.cat.properties import Axiom
 from sage_categories.cat.predicates import predicate, register_handler
 from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict
 
-__all__ = ["Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation"]
+__all__ = [
+    "CreatesLimitsCategory",
+    "Fun",
+    "Functor",
+    "FunctorCategory",
+    "FunctorProperty",
+    "FunctorsCategory",
+    "NaturalTransformation",
+    "PreservesLimitsCategory",
+]
 
 
 def identity_on_values(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
@@ -122,37 +131,29 @@ class FunctorProperties:
         return self.property_subcategory(self.ambient().Monomorphisms())
 
 
-class ShapeIndexedFunctorProperty(
-    FunctorProperties,
-    PropertySubcategory[[OnObject, OnMorphism], [Assignment]],
-):
-    """A shape-indexed property subcategory of one fixed-endpoint functor category."""
+class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
+    """``Fun.P(I)``: a property subcategory of ``Fun`` whose axiom takes a diagram shape (D107, D168, POL-FUN-039).
 
-    class ObjectType:
-        """A functor with the stated shape-indexed universal-construction property."""
+    The shape is the axiom's parameter, so the axiom retains one category per shape and
+    the declaration supplies the name (``Axiom.subcategory``, D89).  Like every property
+    subcategory it adds no operation to a functor: it narrows which functors it has.
+    """
 
-    class ElementType:
-        """A generalized element of such a functor."""
-
-    class MorphismType:
-        """A natural transformation between such functors."""
-
-    def __init__(self, ambient: FunctorCategory, property_name: str, shape: Category) -> None:
+    def __init__(
+        self,
+        ambient: FunctorsCategory,
+        name: str,
+        full_subcategory_of: tuple[Category, ...],
+        shape: Category,
+    ) -> None:
         self._shape = shape
-        self._property_name = property_name
-        super().__init__(ambient, property_name, ())
+        super().__init__(ambient, name, full_subcategory_of)
 
     def shape(self) -> Category:
         return self._shape
 
-    def narrowing_type(self) -> type[FunctorProperty]:
-        return FunctorProperty
-
-    def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
-        return _construct_property_functor(self, args, kwargs)
-
     def __repr__(self) -> str:
-        return f"{self.ambient()!r}.{self._property_name}({self._shape!r})"
+        return f"{self.ambient()!r}.{self.name()}({self._shape!r})"
 
 
 class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
@@ -187,7 +188,7 @@ class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorp
 
 
 def _construct_property_functor(
-    property_category: ShapeIndexedFunctorProperty | FunctorProperty,
+    property_category: FunctorProperty,
     args: tuple[OnObject | OnMorphism, ...],
     kwargs: dict[str, OnObject | OnMorphism],
 ) -> Functor:
@@ -303,21 +304,7 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         self._constant_values: MonoDict = MonoDict()
         self._diagonal: Functor | None = None
         self._finite_data: MonoDict = MonoDict()
-        self._preserves_limits: MonoDict = MonoDict()
-        self._creates_limits: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
-
-    def PreservesLimits(self, shape: Category) -> Category:
-        """Functors preserving limits of ``shape`` (D107, POL-FUN-039); cached per shape on this fixed-endpoint category."""
-        if shape not in self._preserves_limits:
-            self._preserves_limits[shape] = ShapeIndexedFunctorProperty(self, "PreservesLimits", shape)
-        return self._preserves_limits[shape]
-
-    def CreatesLimits(self, shape: Category) -> Category:
-        """Functors creating limits of ``shape`` (D107, POL-FUN-039); cached per shape on this fixed-endpoint category."""
-        if shape not in self._creates_limits:
-            self._creates_limits[shape] = ShapeIndexedFunctorProperty(self, "CreatesLimits", shape)
-        return self._creates_limits[shape]
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return denotes_diagram(candidate, self)
@@ -548,25 +535,56 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         source, target = transformation.domain(), transformation.codomain()
         return self.morphism_category(1)(target, source).Isomorphisms()(lambda member_object: transformation.component(member_object).inverse())
 
-    # -- the functor property categories (POL-FUN-024, POL-CAT-090) ----------------------
+    # -- the functor property categories (POL-FUN-024, POL-CAT-090, POL-FUN-039) ---------
 
-    # The five properties of functors, each an ordinary property axiom of ``Fun``
-    # (POL-CAT-090).  The identifier is the whole declaration: the kernel compiles
-    # ``F.is_full()`` and its four siblings from these five lines, onto this class's
-    # ``ObjectType``, and no category writes one (``Axiom._derive_application``, D89).
+    # Every property of a functor is an ordinary property axiom of ``Fun`` (POL-CAT-090).
+    # The identifier is the whole declaration: the kernel compiles ``F.is_full()`` and its
+    # siblings from these lines, onto this class's ``ObjectType``, and no category writes
+    # one (``Axiom._derive_application``, D89).  Each containment below is the declared
+    # monomorphism between the two property categories, and nothing induces one from a
+    # relation between the predicates (D83).
     #
     # FullyFaithful is a full subcategory of Full and of Faithful; Equivalences of
     # FullyFaithful and of EssentiallySurjective (Mathlib ``Functor.FullyFaithful.full``,
     # ``Functor.FullyFaithful.faithful``, ``Functor.IsEquivalence``; inspected 2026-08-26).
     #
-    # None of the five registers a computational handler (POL-CAT-091): ``ask`` answers
-    # from placement, an active assumption, or a declared containment, and returns
-    # ``Unknown`` otherwise.
+    # A subcategory of ``T`` is a subobject of ``T`` in ``Cat()``, and the two conditions
+    # on the monomorphism that presents it are monicity and repleteness of the image,
+    # which is exactly the isofibration condition (Kerodon, Example 4.4.1.12,
+    # https://kerodon.net/tag/01EX, inspected 2026-08-28; nLab, replete subcategory,
+    # inspected 2026-08-28).  Placement follows a functor with both, and no other
+    # (POL-FUN-036; ``specs/functor.md``, "Monomorphisms of Cat() and placement").
+    # A monomorphism of ``Cat()`` is faithful and injective on objects, so Monomorphisms
+    # is a full subcategory of Faithful (nLab, subcategory,
+    # https://ncatlab.org/nlab/show/subcategory, inspected 2026-08-28: "A functor is
+    # easily verified to be monic iff it is faithful and injective on objects").
+    # Isofibrations is a full subcategory of nothing but ``Fun``: an isofibration need not
+    # be faithful, and declaring it inside Faithful would state something false.
+    #
+    # A cartesian lift of an isomorphism is an isomorphism, and so is a cocartesian one,
+    # so a Grothendieck fibration and an opfibration are isofibrations (D169;
+    # ``specs/functor.md``, "Functors as morphisms of Cat").  Neither is a subcategory of
+    # Faithful: ``Fun([1], C).ev(1)``, the codomain fibration, is a fibration and is
+    # faithful on no ``C`` with two parallel morphisms.
+    #
+    # PreservesLimits and CreatesLimits take the shape as the axiom's parameter, so each
+    # is one property subcategory of ``Fun`` per shape, and so one of ``Fun(C, D)`` for
+    # every ``C, D`` (D107, D158, D168, POL-FUN-039).
+    #
+    # None registers a computational handler (POL-CAT-091): ``ask`` answers from
+    # placement, an active assumption, or a declared containment, and returns ``Unknown``
+    # otherwise.
     Full = Axiom()
     Faithful = Axiom()
     EssentiallySurjective = Axiom()
     FullyFaithful = Axiom(full_subcategory_of=(Full, Faithful))
     Equivalences = Axiom(full_subcategory_of=(FullyFaithful, EssentiallySurjective))
+    Isofibrations = Axiom()
+    Monomorphisms = Axiom(full_subcategory_of=(Faithful,))
+    Fibrations = Axiom(full_subcategory_of=(Isofibrations,))
+    Opfibrations = Axiom(full_subcategory_of=(Isofibrations,))
+    PreservesLimits = Axiom()
+    CreatesLimits = Axiom()
 
     def _bootstrap(self) -> None:
         """Build the two property categories placement itself reads, and place the deferred monomorphisms.
@@ -576,28 +594,14 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         ``Fun`` is one of them, so the placements are queued until this runs and this
         drains the queue (``_shared_value_functor``).  It runs once, when this module
         constructs ``Fun``.
+
+        The two the declaration reads are built here rather than on demand for that same
+        reason: their own inclusions have to queue, so they cannot be the first thing a
+        placement asks for once the queue is closed.  Every other property category of
+        ``Fun`` is built when it is first asked for.
         """
-        # A subcategory of ``T`` is a subobject of ``T`` in ``Cat()``, and the two
-        # conditions on the monomorphism that presents it are monicity and repleteness of
-        # the image, which is exactly the isofibration condition (Kerodon, Example
-        # 4.4.1.12, https://kerodon.net/tag/01EX, inspected 2026-08-28; nLab, replete
-        # subcategory, inspected 2026-08-28).  Placement follows a functor with both, and
-        # no other (POL-FUN-036; ``specs/functor.md``, "Monomorphisms of Cat() and placement").
-        self._isofibrations = PropertySubcategory(self, "Isofibrations", ())
-        # A monomorphism of ``Cat()`` is faithful and injective on objects, so
-        # ``Monomorphisms`` is a full subcategory of ``Faithful`` (nLab, subcategory,
-        # https://ncatlab.org/nlab/show/subcategory, inspected 2026-08-28: "A functor is
-        # easily verified to be monic iff it is faithful and injective on objects").
-        self._monomorphisms = PropertySubcategory(self, "Monomorphisms", (self.Faithful(),))
-        # A cartesian lift of an isomorphism is an isomorphism, and so is a cocartesian
-        # one, so a Grothendieck fibration and opfibration are isofibrations; each states
-        # that containment by the monomorphism it retains into ``Isofibrations()`` and
-        # nothing induces it from the predicates (D83, D169; ``specs/functor.md``,
-        # "Functors as morphisms of Cat").  Neither is a subcategory of ``Faithful()``:
-        # ``Fun([1], C).ev(1)``, the codomain fibration, is a fibration and is faithful on
-        # no ``C`` with two parallel morphisms.
-        self._fibrations = PropertySubcategory(self, "Fibrations", (self._isofibrations,))
-        self._opfibrations = PropertySubcategory(self, "Opfibrations", (self._isofibrations,))
+        self.Isofibrations()
+        self.Monomorphisms()
         self._bootstrapped = True
         # Placing a deferred functor can construct a further narrowing of ``Fun``, whose
         # own subcategory monomorphisms defer in turn, so the queue grows while it is read
@@ -612,21 +616,6 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             refine(functor, self._declared_subcategory(full))
         self._pending.clear()
         self._bootstrapping = False
-
-    def Isofibrations(self) -> Category:
-        return self._isofibrations
-
-    def Fibrations(self) -> Category:
-        """Grothendieck fibrations, a retained full subcategory of ``Isofibrations()`` (D169)."""
-        return self._fibrations
-
-    def Opfibrations(self) -> Category:
-        """Grothendieck opfibrations, a retained full subcategory of ``Isofibrations()`` (D169)."""
-        return self._opfibrations
-
-    def Monomorphisms(self) -> Category:
-        """Monic functors: faithful and injective on objects, so this is a full subcategory of ``Faithful()``."""
-        return self._monomorphisms
 
     # -- subcategory monomorphisms (POL-FUN-027, POL-FUN-036) -----------------------------
     #
@@ -687,7 +676,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return False
         placement = functor.category()
         if placement not in self._inheriting:
-            self._inheriting[placement] = any(root is self._isofibrations for root in placement.narrowing_roots())
+            self._inheriting[placement] = any(root is self.Isofibrations() for root in placement.narrowing_roots())
         return self._inheriting[placement]
 
     def declares_subcategory(self, functor: Functor) -> bool:
@@ -704,7 +693,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         placement = functor.category()
         if placement not in self._declaring:
             roots = placement.narrowing_roots()
-            self._declaring[placement] = any(root is self._monomorphisms for root in roots) and any(root is self._isofibrations for root in roots)
+            self._declaring[placement] = any(root is self.Monomorphisms() for root in roots) and any(root is self.Isofibrations() for root in roots)
         return self._declaring[placement]
 
     def declares_point(self, functor: Functor) -> bool:
@@ -722,7 +711,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return False
         if functor.domain() is not self.base_category().Terminal():
             return False
-        return any(root is self._monomorphisms for root in functor.category().narrowing_roots())
+        return any(root is self.Monomorphisms() for root in functor.category().narrowing_roots())
 
     def _declared_subcategory(self, full: bool) -> Category:
         """``Fun.Monomorphisms().Isofibrations()``, with fullness for a full subcategory (POL-FUN-036)."""
@@ -750,6 +739,18 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
     def __repr__(self) -> str:
         return "Fun"
+
+
+class PreservesLimitsCategory(ShapeIndexedFunctorProperty):
+    """``Fun.PreservesLimits(I)``: the implementation of the ``PreservesLimits`` axiom of ``Fun``."""
+
+    _base_category_class_and_axiom = (FunctorsCategory, "PreservesLimits")
+
+
+class CreatesLimitsCategory(ShapeIndexedFunctorProperty):
+    """``Fun.CreatesLimits(I)``: the implementation of the ``CreatesLimits`` axiom of ``Fun``."""
+
+    _base_category_class_and_axiom = (FunctorsCategory, "CreatesLimits")
 
 
 Fun: FunctorsCategory = Cat().morphism_category(1)

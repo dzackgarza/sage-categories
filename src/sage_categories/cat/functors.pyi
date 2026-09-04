@@ -6,7 +6,7 @@ from sage_categories.cat import category as _category
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject, Proposition
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
-__all__ = ['Functor', 'FunctorProperty', 'FunctorCategory', 'FunctorsCategory', 'Fun', 'NaturalTransformation']
+__all__ = ['CreatesLimitsCategory', 'Fun', 'Functor', 'FunctorCategory', 'FunctorProperty', 'FunctorsCategory', 'NaturalTransformation', 'PreservesLimitsCategory']
 
 @dataclass(frozen=True, eq=False, slots=True)
 class NaturalTransformationData:
@@ -49,27 +49,12 @@ class FunctorProperties:
     def Monomorphisms(self) -> Category:
         ...
 
-class ShapeIndexedFunctorProperty(FunctorProperties, PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
+class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
 
-    class ObjectType:
-        ...
-
-    class ElementType:
-        ...
-
-    class MorphismType:
-        ...
-
-    def __init__(self, ambient: FunctorCategory, property_name: str, shape: Category) -> None:
+    def __init__(self, ambient: FunctorsCategory, name: str, full_subcategory_of: tuple[Category, ...], shape: Category) -> None:
         ...
 
     def shape(self) -> Category:
-        ...
-
-    def narrowing_type(self) -> type[FunctorProperty]:
-        ...
-
-    def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
         ...
 
 class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
@@ -98,12 +83,6 @@ class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorp
         ...
 
     def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
-        ...
-
-    def PreservesLimits(self, shape: Category) -> Category:
-        ...
-
-    def CreatesLimits(self, shape: Category) -> Category:
         ...
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
@@ -196,18 +175,12 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     EssentiallySurjective: Incomplete
     FullyFaithful: Incomplete
     Equivalences: Incomplete
-
-    def Isofibrations(self) -> Category:
-        ...
-
-    def Fibrations(self) -> Category:
-        ...
-
-    def Opfibrations(self) -> Category:
-        ...
-
-    def Monomorphisms(self) -> Category:
-        ...
+    Isofibrations: Incomplete
+    Monomorphisms: Incomplete
+    Fibrations: Incomplete
+    Opfibrations: Incomplete
+    PreservesLimits: Incomplete
+    CreatesLimits: Incomplete
 
     def identity_on_values(self, source: Category, target: Category) -> Functor:
         ...
@@ -229,5 +202,11 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         ...
+
+class PreservesLimitsCategory(ShapeIndexedFunctorProperty):
+    ...
+
+class CreatesLimitsCategory(ShapeIndexedFunctorProperty):
+    ...
 Fun: FunctorsCategory
 NaturalTransformation: Incomplete

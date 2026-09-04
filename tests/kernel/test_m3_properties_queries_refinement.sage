@@ -681,3 +681,77 @@ def test_two_structure_functors_supply_the_construction_families_and_their_conta
     assert limits is along_second.inverse_image(boxed.Limits(shape))
     assert is_subcategory(limits, tokens.Limits(shape))
     assert is_subcategory(limits, tokens.Products())
+
+
+def test_every_property_of_a_functor_is_an_axiom_the_kernel_applies() -> None:
+    """``Fun`` declares each of its properties once, and the kernel writes ``is_p()`` for every one (D89, ``POL-CAT-090``, ``POL-LEAF-064``).
+
+    A category that constructs a property subcategory by hand, names it with a string, or
+    patches an accessor onto it has no declaration for the kernel to read, so the
+    application is missing and the containment is a table rather than a monomorphism.
+    Each of these eleven is an ``Axiom`` in the body of ``FunctorsCategory``, so the
+    identifier is the whole declaration.
+    """
+    for name in (
+        "Full", "Faithful", "FullyFaithful", "EssentiallySurjective", "Equivalences",
+        "Isofibrations", "Monomorphisms", "Fibrations", "Opfibrations",
+        "PreservesLimits", "CreatesLimits",
+    ):
+        assert isinstance(getattr(type(Fun), name), Axiom)
+
+    tiny = Tiny()
+    inclusion = TinySubcategory(tiny).subcategory_monomorphism()
+
+    assert ask(inclusion.is_monomorphisms()) is True
+    assert ask(inclusion.is_isofibrations()) is True
+    assert ask(inclusion.is_full()) is True
+    # Faithfulness follows the declared containment ``Monomorphisms -> Faithful`` and is
+    # not stated a second time on the functor.
+    assert ask(inclusion.is_faithful()) is True
+    assert ask(inclusion.is_fibrations()) is Unknown
+    assert ask(inclusion.is_opfibrations()) is Unknown
+    assert ask(inclusion.is_essentially_surjective()) is Unknown
+
+    # Each containment is the declared monomorphism between the two property categories,
+    # and nothing induces one from a relation between the predicates (D83, D169).
+    assert is_subcategory(Fun.Monomorphisms(), Fun.Faithful())
+    assert is_subcategory(Fun.Fibrations(), Fun.Isofibrations())
+    assert is_subcategory(Fun.Opfibrations(), Fun.Isofibrations())
+    assert not is_subcategory(Fun.Isofibrations(), Fun.Faithful())
+
+    # The axiom's identifier names the category too, so nothing spells a name twice.
+    assert Fun.Isofibrations().name() == "Isofibrations"
+    assert Fun.Monomorphisms().name() == "Monomorphisms"
+    assert Fun.Fibrations().name() == "Fibrations"
+    assert Fun.Opfibrations().name() == "Opfibrations"
+
+
+def test_a_shape_indexed_functor_property_is_a_parameterized_axiom_of_Fun() -> None:
+    """``Fun.PreservesLimits(I)`` and ``Fun.CreatesLimits(I)`` are property subcategories of ``Fun``, one per shape (D107, D158, D168, ``POL-FUN-039``).
+
+    The shape is the axiom's parameter, so the axiom retains one category per shape and
+    supplies its name; the fixed-endpoint category is the narrowing of ``Fun(C, D)`` by
+    it, which is what ``Fun.P(I)(C, D)`` spells (``specs/functor.md``, "Functor property
+    subcategories").
+    """
+    tiny = Tiny()
+    shape, other = Cat().Simplex(1), Cat().Simplex(2)
+    preserves, creates = Fun.PreservesLimits(shape), Fun.CreatesLimits(shape)
+
+    assert preserves.ambient() is Fun
+    assert creates.ambient() is Fun
+    assert preserves.shape() is shape
+    assert preserves.name() == "PreservesLimits"
+    assert creates.name() == "CreatesLimits"
+    assert Fun.PreservesLimits(shape) is preserves
+    assert Fun.PreservesLimits(other) is not preserves
+    assert Fun.CreatesLimits(shape) is not preserves
+
+    functors = Fun(tiny, tiny)
+    assert functors.CreatesLimits(shape) is creates(tiny, tiny)
+    assert functors.PreservesLimits(shape) is preserves(tiny, tiny)
+
+    functor = functors.CreatesLimits(shape)(lambda value: value, lambda morphism: morphism)
+    assert ask(functor.is_creates_limits(shape)) is True
+    assert ask(functor.is_creates_limits(other)) is Unknown
+    assert ask(functor.is_preserves_limits(shape)) is Unknown

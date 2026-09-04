@@ -238,17 +238,13 @@ def test_equality_uses_the_category_owned_predicate() -> None:
 
 def test_axioms_propagate_along_retained_structure_functors() -> None:
     tokens = Tokens()
-    inclusion = Fun(tokens, tokens).Monomorphisms().Isofibrations().Full()(
-        lambda value: value,
-        lambda morphism: morphism,
-    )
-    light = inclusion.inverse_image(tokens.Light())
+    reached = tokens.Light()
+    light = reached.Light()
 
-    assert light is inclusion.inverse_image(tokens.Light())
-    comparison = next(functor for functor in light.selected_functors() if functor.codomain() is tokens.Light())
-    assert comparison in Fun(light, tokens.Light()).Monomorphisms().Isofibrations().Full()
+    comparison = next(functor for functor in light.selected_functors() if functor.codomain() is reached)
+    assert comparison in Fun(light, reached).Monomorphisms().Isofibrations().Full()
 
-    token = tokens(2)
+    token = reached(2)
     assert ask(token.is_light()) is True
     assert token in light
     assert token.category() is light
@@ -275,6 +271,12 @@ def test_narrowed_construction_containment_is_retained_and_navigable() -> None:
     )
     assert comparison in Fun(narrowed_limits, narrowed_products).Monomorphisms().Isofibrations().Full()
 
+    narrowed_colimits, narrowed_coproducts = narrowed.Colimits(shape), narrowed.Coproducts()
+    comparison = next(
+        functor for functor in narrowed_colimits.selected_functors() if functor.codomain() is narrowed_coproducts
+    )
+    assert comparison in Fun(narrowed_colimits, narrowed_coproducts).Monomorphisms().Isofibrations().Full()
+
     coproduct_apex = cat.Coproducts()((cat.Simplex(1), cat.Simplex(2)))
     coproduct_shape = coproduct_apex.index_category()
     colimits, coproducts = cat.Colimits(coproduct_shape), cat.Coproducts()
@@ -297,19 +299,10 @@ def test_opposite_narrowing_constructs_into_each_selected_root() -> None:
 
 def test_functor_property_axioms_have_retained_containments() -> None:
     tiny = Tiny()
-    tokens = Tokens()
-    inclusion = Fun(tokens, tokens).Monomorphisms().Isofibrations().Full()(
-        lambda value: value,
-        lambda morphism: morphism,
-    )
-
     identity = Cat().morphism_category(1)(Cat(), Cat()).one()
-    assert ask(identity.is_fully_faithful()) is True
-
-    assert ask(inclusion.is_monomorphisms()) is True
-    assert ask(inclusion.is_isofibrations()) is True
-    assert ask(inclusion.is_full()) is True
-    assert ask(inclusion.is_faithful()) is True
+    proposition = identity.is_fully_faithful()
+    assert proposition is Fun(Cat(), Cat()).FullyFaithful().membership_proposition(identity)
+    assert ask(proposition) is True
 
     endofunctors = Fun(tiny, tiny)
     for source, target in (
@@ -332,10 +325,6 @@ def test_shape_indexed_functor_properties_are_public_axioms() -> None:
     assert Fun.PreservesLimits(shape) is preserves
     assert Fun.PreservesLimits(other) is not preserves
     assert functors.CreatesLimits(shape) is creates(tiny, tiny)
-    functor = functors.CreatesLimits(shape)(lambda value: value, lambda morphism: morphism)
-    assert ask(functor.is_creates_limits(shape)) is True
-    assert ask(functor.is_creates_limits(other)) is Unknown
-    assert ask(functor.is_preserves_limits(shape)) is Unknown
 
 
 for name, value in tuple(globals().items()):

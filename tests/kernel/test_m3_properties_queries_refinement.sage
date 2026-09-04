@@ -31,18 +31,32 @@ class Tiny(Category):
         def value(self) -> int:
             return self._value
 
+        def positive_square_root(self) -> AppliedQuery:
+            return self.category()._positive_square_root(self)
+
     class ElementType:
         pass
 
     class MorphismType:
         pass
 
-    def _special(self, candidate: Tiny.ObjectType) -> Boolean:
+    def _special(self, candidate: "Tiny.ObjectType") -> Boolean:
         return special(candidate)
 
     Special = Axiom(_special)
 
-    def __call__(self, value: int) -> Tiny.ObjectType:
+    def __init__(self) -> None:
+        self._positive_square_root = Query("positive_square_root", 1, self)
+
+        def evaluate(candidate: Tiny.ObjectType) -> Tiny.ObjectType:
+            match candidate.value():
+                case 4:
+                    return self(2)
+            return Unknown
+
+        self._positive_square_root.register_handler(evaluate)
+
+    def __call__(self, value: int) -> "Tiny.ObjectType":
         return self.ObjectType(value)
 
 
@@ -92,18 +106,18 @@ class Tokens(Category):
     class MorphismType:
         pass
 
-    def _light(self, token: Tokens.ObjectType) -> Boolean:
+    def _light(self, token: "Tokens.ObjectType") -> Boolean:
         return light_enough(token)
 
     Light = Axiom(_light)
 
-    def _heavy(self, token: Tokens.ObjectType) -> Boolean:
+    def _heavy(self, token: "Tokens.ObjectType") -> Boolean:
         return ~token.is_light()
 
     Heavy = Axiom(_heavy)
     Tagged = Axiom()
 
-    def __call__(self, weight: int) -> Tokens.ObjectType:
+    def __call__(self, weight: int) -> "Tokens.ObjectType":
         return self.ObjectType(weight)
 
 
@@ -164,16 +178,20 @@ def test_positive_evidence_refines_the_same_public_value() -> None:
 def test_property_construction_and_query_use_public_surfaces() -> None:
     tiny = Tiny()
     constructed = tiny.Special()(5)
-    shape = Cat().Simplex(1)
-    query = shape.morphism_set()
-    undecided_query = Query("measure", 1, tiny)(tiny(-2))
+    query = tiny(4).positive_square_root()
     answer = ask(query)
 
     assert constructed.value() == 5
     assert constructed.category() is tiny.Special()
     assert constructed in tiny.Special()
-    assert answer in query.query().result_category()
-    assert ask(undecided_query) is Unknown
+    assert answer.category() is tiny
+    assert answer.value() == 2
+
+    other = Tiny()
+    other_answer = ask(other(4).positive_square_root())
+    assert other_answer.category() is other
+    assert other_answer.value() == 2
+    assert ask(tiny(2).positive_square_root()) is Unknown
     assert isinstance(query, AppliedQuery)
     assert not isinstance(query, Boolean)
 
@@ -241,8 +259,9 @@ def test_axioms_propagate_along_retained_structure_functors() -> None:
     reached = tokens.Light()
     light = reached.Light()
 
-    comparison = next(functor for functor in light.selected_functors() if functor.codomain() is reached)
-    assert comparison in Fun(light, reached).Monomorphisms().Isofibrations().Full()
+    assert light is reached
+    comparison = next(functor for functor in reached.selected_functors() if functor.codomain() is tokens)
+    assert comparison in Fun(reached, tokens).Monomorphisms().Isofibrations().Full()
 
     token = reached(2)
     assert ask(token.is_light()) is True

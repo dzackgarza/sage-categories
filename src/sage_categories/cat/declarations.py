@@ -14,11 +14,22 @@ declarations, which name the three kinds and no operation on any of them.  A par
 family instead awaits the object and morphism actions
 its implementation supplies, exactly as ``Discrete`` states them.
 
-An implementation does not construct a second category.  It names this one in its own
-body::
+An implementation does not construct a second category.  It selects the identity functor
+of this one as its first structure functor, which is the whole declaration, and there is
+no binding field (D156; ``specs/functor.md``, "Implementing a named category")::
 
     class SetsCategory(Category[[Rule], []]):
-        _implements = "Sets"
+        def structure_functors(self) -> tuple[Functor, ...]:
+            return (End_Cat(Sets).one(), ...)
+
+
+    Cat().implement(SetsCategory)
+
+``Cat().implement`` constructs the class to read that declaration, because the structure
+functors beside the identity are written against ``self`` like every other leaf's; the
+construction then stops at the declaration and strengthens ``Sets`` in place to the class,
+keeping its ordinal, instead of building a second category.  Until that call the
+declaration is open work like any other.
 
 The declarations below that no implementation claims are open work, and this module is
 the queue to read.  It is never a check that fails a build (``AGENTS.md``, "Tests").

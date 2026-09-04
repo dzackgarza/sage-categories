@@ -66,7 +66,8 @@ Inherited methods still reach the compiled class through selected structure func
 
 A leaf class extends one of the curated base classes `Category`, `CategoryOverRing`, and `CategoryOfXObjectsIn` ([functor.md](functor.md#category-classes-and-category-valued-families)).
 Writing the class populates its structure functor `LeafCategory: * -> Cat` automatically (D154).
-A leaf class that implements a category otherwise named, an axiom subcategory `C.P()` or a generic construction such as `Sets().CosliceUnder(Sets().Terminal())`, selects that category's identity functor as a structure functor, `x = C.P(); id_x = End_Cat(x).one()` ([functor.md](functor.md#implementing-a-named-category); D156).
+A leaf class that implements a category otherwise named, an axiom subcategory `C.P()` or a generic construction such as `Sets().CosliceUnder(Sets().Terminal())`, selects that category's identity functor as a structure functor, `x = C.P(); id_x = End_Cat(x).one()`, first among them, and writes `Cat().implement(LeafCategory)` beside the class ([functor.md](functor.md#implementing-a-named-category); D156).
+Its other structure functors are written against `self` like any leaf's: `Cat().implement` constructs the class to read the declaration, and that construction stops at the identity functor and strengthens `x` to the class instead of building a second category.
 
 ## Constructors
 

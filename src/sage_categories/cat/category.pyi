@@ -358,10 +358,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def open_declaration(self, declared: Category | CategoryFamily) -> str | None:
         ...
 
-    def implementation(self, name: str) -> type[Category] | Functor | None:
+    def implementation(self, name: str) -> type[Category] | None:
         ...
 
-    def implement(self, name: str, implementation: type[Category] | Functor) -> None:
+    def implement(self, implementation: type[Category]) -> None:
         ...
 
     def morphism_category_type(self) -> type[FunctorsCategory]:

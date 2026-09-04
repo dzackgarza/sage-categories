@@ -52,8 +52,6 @@ __all__ = ["Core", "CoreCategory", "CoreFixedEndpointCategory", "CoreMorphismCat
 class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
     """``Groupoids()``: the declared point of ``Cat()`` whose one stated arrow is its inclusion."""
 
-    _implements = "Groupoids"
-
     # A groupoid is a category, a point of a groupoid is an object of it, and a functor
     # between groupoids is a functor.  Groupoid theory would add its mathematics to the
     # three bodies below and the documents state none, so all three are empty
@@ -70,10 +68,21 @@ class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
         """A functor between two groupoids."""
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (Fun(self, Cat()).Monomorphisms().Isofibrations()(),)
+        """Declare this class the implementation of ``Groupoids``, and select the inclusion.
+
+        The first functor is ``End_Cat(Groupoids).one()``, the identity of ``Groupoids``
+        in ``Cat()``, and selecting it is the whole implementation declaration (D156).
+        The inclusion after it is written against ``self``, like every other structure
+        functor: ``Cat`` reads this declaration while constructing the class, and ``self``
+        is the value that construction lands on ``Groupoids``.
+        """
+        return (Fun(Groupoids, Groupoids).one(), Fun(self, Cat()).Monomorphisms().Isofibrations()())
 
     def __repr__(self) -> str:
         return "Groupoids"
+
+
+Cat().implement(GroupoidsCategory)
 
 
 class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
@@ -231,7 +240,7 @@ def _image(functor: Functor, isomorphism: MorphismCategory.ObjectType) -> Morphi
 Core: Functor = Fun(Cat(), Groupoids)(_core_of, _restricted)
 
 # The one retained identity-on-values functor out of ``Groupoids()``, which is also the
-# one ``GroupoidsCategory.structure_functors`` selects.
+# structure functor ``GroupoidsCategory`` selects after its implementation declaration.
 U: Functor = Fun(Groupoids, Cat()).Monomorphisms().Isofibrations()()
 
 _endofunctors = Fun(Cat(), Cat())

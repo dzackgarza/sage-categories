@@ -561,13 +561,24 @@ A category otherwise named, such as `D.P1().P2().P3()`, exists before any class 
 A class declares itself the implementation of that category by selecting its identity functor as a structure functor (D156):
 
 ```python
-x = D.P1().P2().P3()
-id_x = End_Cat(x).one()
-structure_functors = [id_x, ...]
+class Implementation(Category):
+    def structure_functors(self) -> tuple[Functor, ...]:
+        x = D.P1().P2().P3()
+        return (End_Cat(x).one(), ...)
+
+
+Cat().implement(Implementation)
 ```
 
-`id_x` is the identity of the endofunctor category at `x` ([Functor-category calculus](#functor-category-calculus)).
+`End_Cat(x).one()` is the identity of the endofunctor category at `x` ([Functor-category calculus](#functor-category-calculus)).
 The interface is uniform: `Fun` provides identity functors, and this selection is the whole declaration.
+There is no binding field, and no name of `x` is written as a string.
+
+`Cat().implement` constructs the class to read that declaration, and the construction stops there: the identity functor names `x`, so the class has no category of its own to build, and `Cat` strengthens `x` in place to the implementing class, keeping its ordinal, so every reference already written against `x` uses the implementation from that moment.
+Reading it by construction rather than off the class is what lets the functors after the identity be written against `self`, as `Fun(self, D)(on_object, on_morphism)`, the shape every leaf's structure functors have ([poset template](poset-minimal-template.py)); a read taken before the value exists would build those functors over nothing.
+That is also why the identity functor comes first: it is what says which category, and it is read before the rest of the declaration is used.
+Between the class statement and `Cat().implement`, `x` is still an open declaration, and a functor selected into it is refused as one.
+
 The class writes no constructor; `x` keeps exactly the constructors of its ambient category (D150).
 A class implementing an axiom subcategory `C.P()` is the one-property instance, `x = C.P()` ([poset template](poset-minimal-template.py), [finite-poset template](finite-poset-minimal-template.py)).
 A class implementing a generic construction category is the same declaration, `x = Sets().CosliceUnder(Sets().Terminal())` ([pointed-sets template](pointed-sets-minimal-template.py)).

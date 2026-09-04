@@ -55,6 +55,58 @@ class Marks(Category):
         return self.ObjectType(token)
 
 
+# A category ``Cat`` declares, and the class that implements it: the identity functor of
+# the declaration, selected first, is the whole implementation declaration (D156).
+GLYPHS = Cat().declare("Glyphs")
+GLYPHS_ORDINAL = GLYPHS.ordinal()
+
+
+class GlyphsCategory(Category):
+    """A category from D77's closed list, implementing the declaration ``Glyphs``."""
+
+    class ObjectType:
+        def __init__(self, glyph: str) -> None:
+            self._glyph = glyph
+
+        def glyph(self) -> str:
+            return self._glyph
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        def __init__(self, glyph: str) -> None:
+            self._glyph = glyph
+
+    def __call__(self, glyph: str) -> CategoryOfCategories.ElementType:
+        return self.ObjectType(glyph)
+
+    def to_tokens(self) -> Functor:
+        """The structure functor to ``TOKENS``, written against ``self`` as a leaf writes one."""
+
+        def on_object(X: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            return TOKENS(X.glyph())
+
+        def on_morphism(f: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            source, target = on_object(f.domain()), on_object(f.codomain())
+            return Mor(TOKENS)(source, target)(f._glyph)
+
+        return Fun(self, TOKENS)(on_object, on_morphism)
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """The identity of ``Glyphs``, then the structure functor this leaf defines.
+
+        The second entry is the shape every real leaf has (``specs/poset-minimal-template.py``):
+        a functor whose domain is ``self``, defined with its two actions.  It is
+        constructed when this declaration is read, which is why the read happens on the
+        value under construction and not on the class.
+        """
+        return (Fun(GLYPHS, GLYPHS).one(), self.to_tokens())
+
+
+Cat().implement(GlyphsCategory)
+
+
 class Runes(Category):
     """A third, so the two zero-argument declarations use two endpoint pairs.
 
@@ -295,6 +347,50 @@ def test_one_equality_predicate_has_a_generic_case_and_one_exact_owner() -> None
 
     assert ask(f == f) is True
     assert ask(f == g) is Unknown
+
+
+def test_a_composite_is_placed_by_both_of_its_factors() -> None:
+    """``g * f`` lands in the strongest category both factors are morphisms of, in either order.
+
+    A morphism placed in ``Mor(C.P())`` states that both of its endpoints lie in the full
+    subcategory ``C.P()``, so ``g * f`` is a morphism of ``C.P()`` when both factors are
+    and a morphism of ``C`` when one of them is not.  Composition therefore reads both
+    factors, exactly as the product of two objects does (``POL-CAT-088``), and the
+    composite is constructed into the strongest category its factors establish (D21,
+    ``POL-CAT-020``, ``POL-CAT-081``).
+
+    ``1_X`` for ``X`` in ``C.P()`` is placed in a narrowing of ``Mor(C)`` carrying
+    ``Mor(C.P())`` among its roots, so that narrowing's base is ``C.P()`` and not ``C``:
+    reading an ancestor there is the weakening ``POL-CAT-074`` forbids.  Placement is a
+    sufficient route to ``True`` and never the definition (``POL-CAT-068``), so the two
+    answers are read together: they agree on the composites of ``C.P()`` and agree again
+    on the composite whose far endpoint ``C.P()`` does not hold.
+    """
+    marked = TOKENS.Marked()
+    source, target = marked("marked source"), marked("marked target")
+    arrow = Mor(marked)(source, target)("marked arrow")
+    source_identity = Mor(marked)(source, source).one()
+    target_identity = Mor(marked)(target, target).one()
+
+    # The identity of an object of ``C.P()`` is a morphism of ``C.P()``, which is what its
+    # placement says and what composition reads from it.
+    assert is_placed(source_identity, Mor(marked))
+    assert source_identity.base_category() is marked
+
+    for name, composite in (("f * 1_X", arrow * source_identity), ("1_Y * f", target_identity * arrow)):
+        assert is_placed(composite, Mor(marked)), name
+        assert ask(Mor(marked).membership_proposition(composite)) is True, name
+        assert ask(composite == arrow) is True, name
+
+    # The far endpoint decides the other direction: ``h`` starts outside ``C.P()``, so
+    # ``f * h`` is a morphism of ``C`` alone and neither answer claims otherwise.
+    outside = TOKENS("ambient source")
+    entering = Mor(TOKENS)(outside, source)("entering arrow")
+    leaving = arrow * entering
+
+    assert is_placed(leaving, Mor(TOKENS))
+    assert not is_placed(leaving, Mor(marked))
+    assert ask(Mor(marked).membership_proposition(leaving)) is Unknown
 
 
 def test_canonical_shapes_are_retained() -> None:
@@ -614,50 +710,94 @@ def test_strict_and_full_image_inclusions_are_the_direct_zero_argument_call() ->
     assert ask(Fun.Isofibrations().membership_proposition(full_inclusion)) is Unknown
 
 
+def test_a_class_says_which_declared_category_it_implements_by_that_category_identity_functor() -> None:
+    """The identity structure functor is the whole implementation declaration (D156, POL-LEAF-080).
+
+    A category ``Cat`` declared exists before any class is written for it, and the class
+    that implements it says so by selecting that category's identity functor first among
+    its structure functors.  There is no binding field and no name written as a string,
+    which is the shape ``POL-LEAF-077`` names a red flag.  ``Cat().implement`` constructs
+    the class to read that declaration, because the structure functors beside the identity
+    are written against ``self`` as ``to_tokens`` is; the construction then stops at the
+    declaration and strengthens the declared value in place, ordinal kept, instead of
+    building a second category.
+    """
+    # The declared object is the final object: its class is strengthened in place, it
+    # keeps its ordinal, and it is no longer open work.
+    assert type(GLYPHS) is GlyphsCategory
+    assert GLYPHS.ordinal() == GLYPHS_ORDINAL
+    assert Cat().open_declaration(GLYPHS) is None
+
+    # The identity functor is what said which category, and it is the first selected.
+    assert GLYPHS.selected_functors()[0] is Fun(GLYPHS, GLYPHS).one()
+
+    # The functor written against ``self`` was built over the declared value, not over a
+    # second one: this is what a read taken off the class instead of the construction
+    # cannot do.
+    assert GLYPHS.selected_functors()[1].domain() is GLYPHS
+    assert GLYPHS.selected_functors()[1].on_object(GLYPHS("a")) is TOKENS("a")
+
+    # The class's mathematics reaches the value every earlier reference already holds.
+    assert GLYPHS("a").glyph() == "a"
+
+    # The identity functor is the only thing that says "I implement that one": a class
+    # selecting an ordinary structure functor first declares its own category, and the
+    # declaration it names as a codomain is untouched.
+    class SelectsNoIdentity(Category):
+        """A class whose only structure functor is the inclusion every subcategory selects."""
+
+        class ObjectType:
+            pass
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            return (Fun(self, GLYPHS).Monomorphisms().Isofibrations()(),)
+
+    its_own = SelectsNoIdentity()
+    assert its_own is not GLYPHS
+    assert its_own.ambient() is GLYPHS
+    assert type(GLYPHS) is GlyphsCategory
+
+    # An identity naming a category Cat declared nothing for is refused rather than
+    # silently adopted.
+    class ImplementsNoDeclaration(Category):
+        """A class selecting the identity of a category no declaration of Cat awaits."""
+
+        class ObjectType:
+            pass
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            return (Fun(TOKENS, TOKENS).one(),)
+
+    with pytest.raises(AssertionError):
+        Cat().implement(ImplementsNoDeclaration)
+
+
+def test_the_core_functor_target_is_implemented_through_that_same_declaration() -> None:
+    """``Groupoids`` is the declaration ``cat/core.py`` claims by this route (D99, D156).
+
+    The one implementation in the tree of a category ``Cat`` declares reaches it the way
+    the row states: the identity functor first, then the inclusion the core states, and
+    the declared value carries the implementing class.
+    """
+    from sage_categories.cat.core import U, Groupoids, GroupoidsCategory
+
+    assert type(Groupoids) is GroupoidsCategory
+    assert Cat().open_declaration(Groupoids) is None
+    assert Groupoids.selected_functors() == (Fun(Groupoids, Groupoids).one(), U)
+
+
 for name, value in tuple(globals().items()):
     if name.startswith("test_"):
         value()
-
-
-def test_a_composite_is_placed_by_both_of_its_factors() -> None:
-    """``g * f`` lands in the strongest category both factors are morphisms of, in either order.
-
-    A morphism placed in ``Mor(C.P())`` states that both of its endpoints lie in the full
-    subcategory ``C.P()``, so ``g * f`` is a morphism of ``C.P()`` when both factors are
-    and a morphism of ``C`` when one of them is not.  Composition therefore reads both
-    factors, exactly as the product of two objects does (``POL-CAT-088``), and the
-    composite is constructed into the strongest category its factors establish (D21,
-    ``POL-CAT-020``, ``POL-CAT-081``).
-
-    ``1_X`` for ``X`` in ``C.P()`` is placed in a narrowing of ``Mor(C)`` carrying
-    ``Mor(C.P())`` among its roots, so that narrowing's base is ``C.P()`` and not ``C``:
-    reading an ancestor there is the weakening ``POL-CAT-074`` forbids.  Placement is a
-    sufficient route to ``True`` and never the definition (``POL-CAT-068``), so the two
-    answers are read together: they agree on the composites of ``C.P()`` and agree again
-    on the composite whose far endpoint ``C.P()`` does not hold.
-    """
-    marked = TOKENS.Marked()
-    source, target = marked("marked source"), marked("marked target")
-    arrow = Mor(marked)(source, target)("marked arrow")
-    source_identity = Mor(marked)(source, source).one()
-    target_identity = Mor(marked)(target, target).one()
-
-    # The identity of an object of ``C.P()`` is a morphism of ``C.P()``, which is what its
-    # placement says and what composition reads from it.
-    assert is_placed(source_identity, Mor(marked))
-    assert source_identity.base_category() is marked
-
-    for name, composite in (("f * 1_X", arrow * source_identity), ("1_Y * f", target_identity * arrow)):
-        assert is_placed(composite, Mor(marked)), name
-        assert ask(Mor(marked).membership_proposition(composite)) is True, name
-        assert ask(composite == arrow) is True, name
-
-    # The far endpoint decides the other direction: ``h`` starts outside ``C.P()``, so
-    # ``f * h`` is a morphism of ``C`` alone and neither answer claims otherwise.
-    outside = TOKENS("ambient source")
-    entering = Mor(TOKENS)(outside, source)("entering arrow")
-    leaving = arrow * entering
-
-    assert is_placed(leaving, Mor(TOKENS))
-    assert not is_placed(leaving, Mor(marked))
-    assert ask(Mor(marked).membership_proposition(leaving)) is Unknown

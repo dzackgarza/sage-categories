@@ -6,7 +6,7 @@ import itertools
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import cache
-from typing import TYPE_CHECKING, ClassVar, Literal, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
@@ -122,12 +122,24 @@ def _declares_point(functor: MorphismCategory.ObjectType) -> bool:
     return Fun.declares_point(functor)
 
 
+def _declares_implementation(functor: MorphismCategory.ObjectType) -> Category | None:
+    """The category a class selecting ``functor`` first declares itself the implementation of (D156).
+
+    That category's identity functor is the whole declaration, so this reads the one
+    fact it carries: an endofunctor that is the retained identity names its own category
+    and nothing else.  Every other structure functor starts at the category under
+    construction, and a point functor starts at the terminal category.
+    """
+    from sage_categories.cat.functors import Fun
+
+    domain = functor.domain()
+    if domain is not functor.codomain():
+        return None
+    return domain if functor is Fun(domain, domain).one() else None
+
+
 class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     """The local ``Cat().ObjectType`` declaration."""
-
-    # The declaration this class implements, named in the body of a category class that
-    # claims one ``Cat`` made (D80).  A class that names none declares its own category.
-    _implements: ClassVar[str]
 
     def __init__(self, data: None = None) -> None:
         if hasattr(self, "_ordinal"):
@@ -199,9 +211,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             # ``Cat()``'s declaration: its points are the objects of every category
             # (POL-CAT-058), the owner of the applications of the base-class axioms.
             _axiom_layer().install_base_applications(cls.__dict__["ElementType"])
-        name = cls.__dict__.get("_implements")
-        if name is not None:
-            Cat().implement(name, cls)
 
     def __mul__(self, other: Category) -> Category:
         """``C * D``: the product category."""
@@ -242,6 +251,14 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         # codomain (and every narrowing a declaration constructs) is older than this
         # category.
         functors = self._select_functors()
+        implemented = _declares_implementation(functors[0]) if functors else None
+        if implemented is not None:
+            # The declaration says this class implements a category that already exists,
+            # so there is no second category to construct: ``Cat`` strengthens that value
+            # to this class in place (D156).  The construction stops here, before an
+            # ordinal is taken, and this half-built value is discarded.
+            self.universe()._adopt(implemented, type(self))
+            return
         self._ordinal = next(_category_ordinals)
         self._compile_category(functors)
         from sage_categories.kernel.refinement import place
@@ -1359,7 +1376,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         self._declared_functors: TripleDict = TripleDict(weak_values=False)
         self._exponential_actions: TripleDict = TripleDict(weak_values=False)
         self._declarations: dict[str, Category | CategoryFamily] = {}
-        self._implementations: dict[str, type[Category] | Functor] = {}
+        self._implementations: dict[str, type[Category]] = {}
         self._open_declarations: MonoDict = MonoDict()
         self._comma_categories: TripleDict = TripleDict(weak_values=False)
         super().__init__()
@@ -1411,27 +1428,41 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """The name ``declared`` was declared under while no implementation claims it, else ``None``."""
         return self._open_declarations[declared] if declared in self._open_declarations else None
 
-    def implementation(self, name: str) -> type[Category] | Functor | None:
-        """The class or functor implementing the declaration ``name``, or ``None``."""
+    def implementation(self, name: str) -> type[Category] | None:
+        """The class implementing the declaration ``name``, or ``None``."""
         return self._implementations.get(name)
 
-    def implement(self, name: str, implementation: type[Category] | Functor) -> None:
-        """Connect ``implementation`` to the declaration it names (D80).
+    def implement(self, implementation: type[Category]) -> None:
+        """Connect ``implementation`` to the category it declares itself the implementation of (D156).
+
+        The class says which category by selecting that category's identity functor
+        first among its structure functors, and that selection is the whole declaration:
+        there is no binding field and no name written as a string.
+
+        Constructing the class is what reads it.  A declaration is written against the
+        category under construction -- a leaf's other structure functors are
+        ``Fun(self, D)(...)`` -- so it is only readable there, and reading it early would
+        build those functors over a value that does not exist yet.  An implementing class
+        has no category of its own to construct, so the construction stops at the
+        declaration and ``Cat`` strengthens the declared value instead (``_initialize``).
+        """
+        implementation()
+
+    def _adopt(self, declared: Category, implementation: type[Category]) -> None:
+        """Strengthen the declaration ``declared`` to ``implementation`` in place (D80, D156).
 
         The declared object is the final object, so nothing is constructed here: its
-        class is strengthened to the implementing class in place -- the same in-place
+        class is strengthened to the implementing class -- the same in-place
         strengthening every value receives when its placement improves -- and its roles
-        are compiled again onto it.  **The ordinal is not retaken.**  Every reference
-        written against the declaration therefore uses the implementation the moment it
-        lands, with no edit and no resolution pass.
+        are compiled again onto it, from the same declaration read on the value it now
+        carries.  **The ordinal is not retaken.**  Every reference written against the
+        declaration therefore uses the implementation the moment it lands, with no edit
+        and no resolution pass.
         """
-        assert name in self._declarations, (
-            f"{implementation!r} implements {name!r}, which Cat declares nothing for"
+        name = self.open_declaration(declared)
+        assert name is not None, (
+            f"{implementation!r} implements {declared!r}, which is not a declaration of Cat awaiting one"
         )
-        assert name not in self._implementations, (
-            f"{name!r} is already implemented by {self._implementations[name]!r}, not {implementation!r}"
-        )
-        declared = self._declarations[name]
         self._implementations[name] = implementation
         del self._open_declarations[declared]
         declared.implemented_by(implementation)

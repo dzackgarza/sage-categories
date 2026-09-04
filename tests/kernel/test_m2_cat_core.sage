@@ -7,6 +7,7 @@ import pytest
 from sage_categories.cat.category import Axiom, Cat, Category, CategoryOfCategories, OnMorphism, OnObject, ask, is_placed, is_subcategory
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
+from sage_categories.cat.images import full_image, strict_image
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import Op, op_squared_isomorphism
 from sage_categories.cat.predicates import Proposition, Unknown, register_handler
@@ -571,6 +572,46 @@ def test_an_axiom_parameterized_by_a_functor_is_the_essential_image() -> None:
     assert not Category.EssentialImage.is_constructed(TOKENS, third)
     third.on_object(MARKS("a"))
     assert not Category.EssentialImage.is_constructed(TOKENS, third)
+
+
+def test_strict_and_full_image_inclusions_are_the_direct_zero_argument_call() -> None:
+    """A strict or full image inclusion is exactly ``Fun(S, T).P()()`` on its own placement (POL-LEAF-070).
+
+    Neither image is replete in general -- the essential image is the replete one, and it
+    is a different class (D168) -- so neither inclusion carries ``Isofibrations()`` (D169).
+    The strict image states only monicity; the full image states monicity and fullness
+    together, and not through ``Fun.full_subcategory_monomorphism``, which declares
+    ``Isofibrations()`` too and would misstate repleteness here.  ``_construct_inclusion``
+    writes no action for either, so it retains the one identity-on-values functor for its
+    endpoint pair (POL-FUN-027), the same object the named property category builds
+    directly with no arguments.
+    """
+
+    def token_actions(prefix: str) -> tuple[OnObject, OnMorphism]:
+        def on_object(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            return TOKENS(prefix + member_object._token)
+
+        def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            source = on_object(morphism.domain())
+            target = on_object(morphism.codomain())
+            return Mor(TOKENS)(source, target)(morphism._token)
+
+        return on_object, on_morphism
+
+    defining = Fun(MARKS, TOKENS)(*token_actions("image "))
+
+    strict = strict_image(TOKENS, defining)
+    strict_inclusion = strict.inclusion_functor()
+    assert strict_inclusion is Fun(strict, TOKENS).Monomorphisms()()
+    assert is_placed(strict_inclusion, Fun(strict, TOKENS).Monomorphisms())
+    assert ask(Fun.Isofibrations().membership_proposition(strict_inclusion)) is Unknown
+
+    full = full_image(TOKENS, defining)
+    full_inclusion = full.inclusion_functor()
+    assert full_inclusion is Fun(full, TOKENS).FullyFaithful().Monomorphisms()()
+    assert is_placed(full_inclusion, Fun(full, TOKENS).Monomorphisms())
+    assert is_placed(full_inclusion, Fun(full, TOKENS).FullyFaithful())
+    assert ask(Fun.Isofibrations().membership_proposition(full_inclusion)) is Unknown
 
 
 for name, value in tuple(globals().items()):

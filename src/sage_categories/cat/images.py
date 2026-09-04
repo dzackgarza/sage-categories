@@ -7,7 +7,7 @@ from abc import abstractmethod
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.functors import Fun, Functor, identity_on_values
+from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition, predicate, register_handler
 from sage_categories.cat.properties import PropertySubcategory
@@ -221,7 +221,7 @@ class StrictImageCategory[**MorphismData, **TwoMorphismData](
         """A target morphism equal to a literal value ``F(f)``."""
 
     def _construct_inclusion(self) -> Functor:
-        return Fun(self, self.target()).Monomorphisms()(identity_on_values, identity_on_values)
+        return Fun(self, self.target()).Monomorphisms()()
 
 
 class FullImageCategory[**MorphismData, **TwoMorphismData](
@@ -254,10 +254,7 @@ class FullImageCategory[**MorphismData, **TwoMorphismData](
         )
 
     def _construct_inclusion(self) -> Functor:
-        return Fun(self, self.target()).FullyFaithful().Monomorphisms()(
-            identity_on_values,
-            identity_on_values,
-        )
+        return Fun(self, self.target()).FullyFaithful().Monomorphisms()()
 
 
 class EssentialImageCategory[**MorphismData, **TwoMorphismData](

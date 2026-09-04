@@ -289,9 +289,7 @@ def _register_exact_case(owner: OwnedPredicate, domains: tuple[type, ...], handl
 
 def register_query_handler(query: Query, handler: QueryHandler) -> None:
     """Register one exact typed-query evaluator with private Plum dispatch."""
-    from sage_categories.kernel.compiler import runtime_implementation_class
-
-    domains = tuple(runtime_implementation_class(domain) for domain in _handler_domains(handler))
+    domains = _handler_domains(handler)
     assert len(domains) == query._arity, f"{handler!r} has the wrong arity for {query!r}"
     if query not in _query_dispatchers:
         dispatcher = Dispatcher()

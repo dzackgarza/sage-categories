@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 from inspect import get_annotations, signature
 from itertools import count
-from typing import TYPE_CHECKING, get_origin
+from typing import TYPE_CHECKING, Annotated, get_origin
 
+from beartype.vale import Is
 from plum import Dispatcher, Function, NotFoundLookupError
 from sympy import And, Integer, Predicate
 from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
@@ -191,6 +193,18 @@ def _handler_domains(handler: PredicateHandler | QueryHandler) -> tuple[type, ..
     return tuple(domains)
 
 
+def _matches_handler_domain(domain: type, argument: Argument) -> bool:
+    """Whether an argument has ``domain`` directly or through the retained compiler relation."""
+    if isinstance(argument, domain):
+        return True
+    if not isinstance(argument, CategoryPoint):
+        return False
+    from sage_categories.kernel.compiler import runtime_semantic_bases
+
+    semantic_bases = runtime_semantic_bases(type(argument))
+    return semantic_bases is not None and domain in semantic_bases
+
+
 def _evaluated_domain(
     handler: PredicateHandler | QueryHandler,
     annotation: str,
@@ -289,7 +303,10 @@ def _register_exact_case(owner: OwnedPredicate, domains: tuple[type, ...], handl
 
 def register_query_handler(query: Query, handler: QueryHandler) -> None:
     """Register one exact typed-query evaluator with private Plum dispatch."""
-    domains = _handler_domains(handler)
+    domains = tuple(
+        Annotated[domain | CategoryPoint, Is[partial(_matches_handler_domain, domain)]]
+        for domain in _handler_domains(handler)
+    )
     assert len(domains) == query._arity, f"{handler!r} has the wrong arity for {query!r}"
     if query not in _query_dispatchers:
         dispatcher = Dispatcher()

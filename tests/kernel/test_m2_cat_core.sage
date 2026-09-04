@@ -829,6 +829,73 @@ def test_the_core_constructs_its_morphisms_through_the_isomorphisms_of_its_ambie
     assert is_placed(Mor(core)(A, A).one(), Mor(core)(A, A))
 
 
+def test_the_restriction_of_a_functor_places_its_images_in_the_core_it_was_declared_into() -> None:
+    """``Core.on_morphism(F)`` returns its images in the exact target hom category (R2 criterion 2).
+
+    A functor action returns an actual morphism built through the exact target hom
+    category (``specs/functor.md``, "Functor actions are concrete constructors";
+    ``specs/leaves.md``, "Structure functors"), and the codomain this action was declared
+    with is ``D.Core()``.  ``F(f)`` is an isomorphism of ``D`` because ``F(f⁻¹)`` is
+    retained as its inverse, and that is exactly the theorem making it a morphism of the
+    core, so the restriction places it there (D21, ``POL-CAT-081``): ``Mor(D)`` and its
+    isomorphisms are declared ancestors of ``Mor(D.Core())``, and answering in one of them
+    is the ancestor ``POL-CAT-074`` forbids.  Composition is what the placement decides:
+    ``g * f`` is composed by the least category holding both factors, so an image left in
+    the ambient makes ``(F g) * (F f)``, a composite of two morphisms of ``D.Core()``,
+    leave the core.
+
+    Inversion is the same statement about the core's own defining operation: a groupoid is
+    a category in which every morphism is invertible, so ``f⁻¹`` is a morphism of the core
+    and ``f⁻¹ * f`` is the core's identity, reduced by the inverse pair the ambient
+    retains and the core reads back.
+    """
+    from sage_categories.cat.core import Core
+
+    def on_object(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return MARKS(member_object._token)
+
+    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        source = on_object(morphism.domain())
+        target = on_object(morphism.codomain())
+        return Mor(MARKS)(source, target)(morphism._token)
+
+    functor = Fun(TOKENS, MARKS)(on_object, on_morphism)
+    restricted = Core.on_morphism(functor)
+    assert restricted.domain() is TOKENS.Core()
+    assert restricted.codomain() is MARKS.Core()
+
+    X, Y, Z = TOKENS("restricted-domain"), TOKENS("restricted-middle"), TOKENS("restricted-codomain")
+    source_core, target_core = TOKENS.Core(), MARKS.Core()
+    arrow = Mor(source_core)(X, Y)("restricted-arrow")
+    onward = Mor(source_core)(Y, Z)("restricted-arrow-on")
+
+    image = restricted.on_morphism(arrow)
+    between = Mor(target_core)(functor.on_object(X), functor.on_object(Y))
+    assert image.category() is between
+    assert is_placed(image, between)
+    assert is_placed(image, Mor(target_core))
+    assert image in between
+    assert image in Mor(target_core)
+
+    # The image is an isomorphism of ``D`` with ``F(f⁻¹)`` retained as its inverse, which
+    # is what the ambient placements state; the core placement narrows them and keeps them.
+    assert is_placed(image, Mor(MARKS)(functor.on_object(X), functor.on_object(Y)).Isomorphisms())
+    assert image in Mor(MARKS).Isomorphisms()
+    assert restricted.on_morphism(arrow.inverse()) is image.inverse()
+    assert image.inverse().inverse() is image
+
+    # The core is closed under the operation that defines a groupoid, so the inverse of one
+    # of its morphisms is one of its morphisms and the round trip is its own identity.
+    assert is_placed(arrow.inverse(), Mor(source_core)(Y, X))
+    assert is_placed(arrow.inverse() * arrow, Mor(source_core)(X, X))
+    assert ask(arrow.inverse() * arrow == Mor(source_core)(X, X).one()) is True
+
+    # Two images compose inside the core, because the core is the category that holds both.
+    composite = restricted.on_morphism(onward) * image
+    assert is_placed(composite, Mor(target_core))
+    assert is_placed(composite, Mor(target_core)(functor.on_object(X), functor.on_object(Z)))
+
+
 for name, value in tuple(globals().items()):
     if name.startswith("test_"):
         value()

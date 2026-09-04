@@ -21,7 +21,8 @@ isomorphisms of ``C`` as its objects and lives one categorical level higher.
 For ``F: C -> D``, ``Core.on_morphism(F)`` restricts ``F`` to those isomorphisms.  A
 functor carries an isomorphism to an isomorphism, with ``F(f⁻¹)`` its inverse (Mathlib
 ``CategoryTheory.Functor.mapIso``; inspected 2026-08-29), and retaining that pair is what
-places the image in ``Mor(D).Isomorphisms()``.
+makes the image a morphism of ``D.Core()``, the codomain the restriction is declared
+with, where the restriction's action places it.
 
 ``epsilon_C: U(C.Core()) -> C`` is the component at ``C`` of the natural inclusion
 ``epsilon: U * Core => End_Cat(Cat()).one()``.  The core selects that same monomorphism as
@@ -158,7 +159,19 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
         return composite
 
     def inverse_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        return self._ambient.inverse_morphism(morphism)
+        """The inverse in ``C``, of an isomorphism and so a morphism of the core.
+
+        A groupoid is a category in which every morphism is invertible, so this is the
+        core's own defining operation and its value is a morphism of the core: ``C`` owns
+        the inverse and the core states that theorem by placing it (D21, ``POL-MATH-037``),
+        not by feeding a value already constructed to a constructor (D150).  The placement
+        is ``Mor(C.Core())(B, A)``, for the reason ``_identity_morphism_`` gives; leaving
+        it in ``Mor(C).Isomorphisms()``, a declared ancestor, would answer with an ancestor
+        (``POL-CAT-074``) and take ``f⁻¹ * f`` out of the core.
+        """
+        inverse = self._ambient.inverse_morphism(morphism)
+        refine(inverse, self.morphism_category(1)(morphism.codomain(), morphism.domain()))
+        return inverse
 
     def retain_inverses(
         self,
@@ -166,6 +179,16 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
         backward: MorphismCategory.ObjectType,
     ) -> None:
         self._ambient.retain_inverses(forward, backward)
+
+    def retained_inverse(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | None:
+        """The pair ``C`` retains, which is the pair the core retains: an inverse pair of ``C`` between two of its objects is one of the core.
+
+        ``retain_inverses`` above records into ``C``, so this reads from ``C``.  A word of
+        the core cancels two adjacent factors exactly when the ambient retains them as
+        mutually inverse (``Mor(C).ObjectType.word``), and the core stores nothing of its
+        own for that reader to find.
+        """
+        return self._ambient.retained_inverse(morphism)
 
     def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
         """``Mor(C.Core())(A, B)`` narrowed by roots is inhabited exactly when ``Mor(C)(A, B).Isomorphisms()`` narrowed the same way is."""
@@ -251,13 +274,25 @@ def _core_of(category: Category) -> Category:
 
 def _restricted(functor: Functor) -> Functor:
     """``Core.on_morphism(F)``: ``F`` restricted to the isomorphisms."""
-    return Fun(functor.domain().Core(), functor.codomain().Core())(functor.on_object, lambda isomorphism: _image(functor, isomorphism))
+    core = functor.codomain().Core()
+    return Fun(functor.domain().Core(), core)(functor.on_object, lambda isomorphism: _image(functor, core, isomorphism))
 
 
-def _image(functor: Functor, isomorphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-    """``F(f)``, with ``F(f⁻¹)`` retained as its inverse, which places it in ``Mor(D).Isomorphisms()``."""
+def _image(functor: Functor, core: Category, isomorphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+    """``F(f)``, a morphism of ``D.Core()``, because ``F(f⁻¹)`` is retained as its inverse.
+
+    ``F`` owns the image and ``D`` owns the inverse pair, so this action states the
+    restriction's own theorem by placing the image (D21, ``POL-MATH-037``), not by
+    feeding a value already constructed to a constructor (D150).  The placement is
+    ``Mor(D.Core())(F A, F B)``, the hom category of the codomain the restriction was
+    declared with: ``Mor(D).Isomorphisms()`` is a declared ancestor of it, so leaving the
+    image there would answer with an ancestor of the category that owns the value
+    (``POL-CAT-074``), and ``(F g) * (F f)`` would then be composed by ``D`` and leave the
+    core.  The core's own three operations state their theorems the same way.
+    """
     image = functor.on_morphism(isomorphism)
     functor.codomain().retain_inverses(image, functor.on_morphism(isomorphism.inverse()))
+    refine(image, core.morphism_category(1)(image.domain(), image.codomain()))
     return image
 
 

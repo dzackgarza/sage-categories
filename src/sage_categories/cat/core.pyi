@@ -56,6 +56,9 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
     def retain_inverses(self, forward: MorphismCategory.ObjectType, backward: MorphismCategory.ObjectType) -> None:
         ...
 
+    def retained_inverse(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | None:
+        ...
+
 class CoreMorphismCategory(MorphismCategory):
 
     class ObjectType:

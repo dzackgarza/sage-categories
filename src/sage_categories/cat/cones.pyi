@@ -1,4 +1,5 @@
 import sage_categories
+from _typeshed import Incomplete
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -33,6 +34,7 @@ class ConeMorphismData:
     apex_morphism: MorphismCategory.ObjectType
 
 class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
+    LimitCones: Incomplete
 
     class ObjectType(sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -83,9 +85,6 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     def apex_functor(self) -> Functor:
         ...
 
-    def LimitCones(self) -> LimitConesCategory:
-        ...
-
 class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
     class ObjectType(sage_categories.cat.cones.ConeCategory.ObjectType, sage_categories.kernel.roles.ObjectOfCategory):
@@ -97,9 +96,6 @@ class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []])
         ...
 
     class MorphismType(sage_categories.cat.cones.ConeCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
-        ...
-
-    def __init__(self, ambient: ConeCategory) -> None:
         ...
 
     def with_universal_data(self, transformation: NaturalTransformation, lift: Lift) -> LimitConesCategory.ObjectType:

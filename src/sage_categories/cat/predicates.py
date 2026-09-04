@@ -11,7 +11,6 @@ from sympy import And, Implies, Not, Or, Predicate, ask as sympy_ask
 from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.logic.boolalg import Boolean
 
-from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import MonoDict, Unknown, UnknownClass, cached_method, uncamelcase
 
 
@@ -315,7 +314,7 @@ class Axiom:
         when that declaration is created (``AxiomLayer.install_base_applications``).
         """
         for declaring in self._declaring_class.__mro__:
-            declared = vars(declaring).get(Role.OBJECT.value)
+            declared = vars(declaring).get("ObjectType")
             if declared is not None:
                 return declared
         return None

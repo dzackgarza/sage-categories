@@ -1,3 +1,4 @@
+from _typeshed import Incomplete
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import ConeCategory
@@ -13,6 +14,7 @@ class TotalConeMorphismData:
     diagram: NaturalTransformation
 
 class TotalConesCategory(CommaCategory):
+    LimitCones: Incomplete
 
     class ObjectType:
 
@@ -51,9 +53,6 @@ class TotalConesCategory(CommaCategory):
     def apex_fiber(self, apex: CategoryOfCategories.ElementType) -> Category:
         ...
 
-    def LimitCones(self) -> TotalLimitConesCategory:
-        ...
-
     def __call__(self, presentation: ConeCategory.ObjectType) -> TotalConesCategory.ObjectType:
         ...
 
@@ -75,9 +74,6 @@ class TotalLimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType, 
         ...
 
     class MorphismType:
-        ...
-
-    def __init__(self, ambient: TotalConesCategory) -> None:
         ...
 
 def total_cones(diagrams: FunctorCategory) -> TotalConesCategory:

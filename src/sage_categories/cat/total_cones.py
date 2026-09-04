@@ -10,7 +10,7 @@ from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cones, l
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Cat, Fun, Functor, FunctorCategory, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import ask
+from sage_categories.cat.predicates import Axiom, ask
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.slices import CommaCategory, _endpoint_functor, _pair_functor
 from sage_categories.kernel.refinement import is_placed, refine
@@ -32,6 +32,8 @@ class TotalConeMorphismData:
 
 class TotalConesCategory(CommaCategory):
     """The comma category ``(Delta_I downarrow Id)`` for ``Fun(I, C)``."""
+
+    LimitCones = Axiom()
 
     class ObjectType:
         """A cone presentation over one diagram of shape ``I``."""
@@ -62,7 +64,6 @@ class TotalConesCategory(CommaCategory):
     ) -> None:
         self._diagrams = diagrams
         self._objects: MonoDict = MonoDict()
-        self._limit_cones: TotalLimitConesCategory | None = None
         super().__init__(defining_diagram, diagonal, identity)
 
     def diagrams(self) -> FunctorCategory:
@@ -88,12 +89,6 @@ class TotalConesCategory(CommaCategory):
     def apex_fiber(self, apex: CategoryOfCategories.ElementType) -> Category:
         """Return the generic fiber of the apex functor over ``apex``."""
         return self.apex_functor().Fiber(apex)
-
-    def LimitCones(self) -> TotalLimitConesCategory:
-        """Return the property subcategory of selected limiting presentations."""
-        if self._limit_cones is None:
-            self._limit_cones = TotalLimitConesCategory(self)
-        return self._limit_cones
 
     def __call__(self, presentation: ConeCategory.ObjectType) -> TotalConesCategory.ObjectType:
         """Retain an existing owned cone presentation in the total category."""
@@ -214,6 +209,8 @@ class TotalLimitConesCategory(
 ):
     """The selected limiting presentations in a fixed-shape total cone category."""
 
+    _base_category_class_and_axiom = (TotalConesCategory, "LimitCones")
+
     class ObjectType:
         """A total cone whose retained presentation is limiting."""
 
@@ -222,9 +219,6 @@ class TotalLimitConesCategory(
 
     class MorphismType:
         """A morphism between selected limiting presentations."""
-
-    def __init__(self, ambient: TotalConesCategory) -> None:
-        super().__init__(ambient, "LimitCones", ())
 
 
 _total_cones: MonoDict = MonoDict()

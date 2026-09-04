@@ -2,9 +2,31 @@
 
 from sage_categories.kernel.sage_runtime import Integer
 
-from sage_categories.cat.category import Cat, Category
+from sage_categories.cat.category import Cat, Category, CategoryOfCategories
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
+from sage_categories.cat.morphisms import Mor
+
+
+class Tokens(Category):
+    """A category written from D77's closed list: three declarations and one constructor."""
+
+    class ObjectType:
+        def __init__(self, token: str) -> None:
+            self._token = token
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        def __init__(self, token: str) -> None:
+            self._token = token
+
+    def __call__(self, token: str) -> CategoryOfCategories.ElementType:
+        return self.ObjectType(token)
+
+
+TOKENS = Tokens()
 
 
 def _identity_functor(category: Category) -> Functor:
@@ -16,6 +38,52 @@ def _identity_transformation(functor: Functor) -> NaturalTransformation:
     return Fun(functor.domain(), category).morphism_category(1)(functor, functor)(
         lambda x: category.morphism_category(1)(functor.on_object(x), functor.on_object(x)).one()
     )
+
+
+def test_the_three_role_types_a_functor_and_a_transformation_are_one_tower() -> None:
+    """The five types a writer names are five nodes of one tower (R2 criterion 1).
+
+    ``Mor(n, C).ObjectType`` is ``Mor(n-1, C).MorphismType``: one implementation type, one
+    value, two placements (``specs/functor.md``, "The ``Mor(n, C)`` tower").  ``Cat()`` is
+    that same tower at the top, so a functor is an object of ``Mor(Cat())`` and a natural
+    transformation an object of ``Mor(2, Cat())``, which is the morphism type of the
+    functor category holding it.  ``isinstance`` decides against each of the five, so the
+    writer never needs a class the compiler owns to say what a value is (D130, D173).
+    """
+    a, b = TOKENS("a"), TOKENS("b")
+    arrow = Mor(TOKENS)(a, b)("f")
+
+    # The three role types of one category are three declarations, not one.
+    assert len({TOKENS.ObjectType, TOKENS.ElementType, TOKENS.MorphismType}) == 3
+    assert isinstance(a, TOKENS.ObjectType)
+    assert isinstance(arrow, TOKENS.MorphismType)
+
+    # The level identity, at the two levels a 1-category has.
+    assert Mor(0, TOKENS) is TOKENS
+    assert Mor(TOKENS) is Mor(1, TOKENS)
+    assert Mor(2, TOKENS) is Mor(Mor(TOKENS))
+    assert Mor(TOKENS).ObjectType is TOKENS.MorphismType
+    assert Mor(2, TOKENS).ObjectType is Mor(TOKENS).MorphismType
+    assert isinstance(arrow, Mor(TOKENS).ObjectType)
+
+    # A functor is an object of ``Mor(Cat())`` and of the fixed-endpoint category.
+    functors = Fun(TOKENS, TOKENS)
+    identity = _identity_functor(TOKENS)
+    assert Mor(Cat()).ObjectType is Cat().MorphismType
+    assert isinstance(identity, Cat().MorphismType)
+    assert isinstance(identity, functors.ObjectType)
+
+    # A natural transformation is an object of ``Mor(2, Cat())``, which is the morphism
+    # type of the functor category it is a morphism of.
+    eta = _identity_transformation(identity)
+    assert Mor(functors).ObjectType is functors.MorphismType
+    assert Mor(2, Cat()).ObjectType is Mor(Cat()).MorphismType
+    assert isinstance(eta, functors.MorphismType)
+    assert isinstance(eta, Mor(2, Cat()).ObjectType)
+
+    # Every value of the tower is a point ``* -> K``, the one root it has (POL-CAT-058).
+    for value in (a, arrow, TOKENS, identity, eta):
+        assert isinstance(value, Cat().ElementType)
 
 
 def test_functors_and_two_morphisms_are_owned_and_distinct() -> None:

@@ -1,9 +1,14 @@
 """Owned categories with Sage confined to explicit realizations.
 
-This package is the kernel: ``Cat()``, functors, the ``Mor(n, C)`` tower, the shapes,
-the predicate boundary, and the categories ``Cat`` declares.  Importing it loads no
-leaf, because information flows from the kernel into the leaves and never back (D81).
+Importing this package loads ``Cat``: ``Cat()``, functors, the ``Mor(n, C)`` tower, the
+shapes, the predicate boundary, and the categories ``Cat`` declares.  It loads no leaf,
+because information flows from ``Cat`` into the leaves and never back (D81).
 ``sage_categories.all`` is the import surface for the whole owned universe.
+
+The four layers, in the order of dependence D173 and D175 fix: the kernel
+(``sage_categories.kernel``), which is engineering and states no mathematics; ``Cat``
+(``sage_categories.cat``), which owns the mathematics every category shares;
+``cat_kernel``, the work that needs both; then the leaves.
 """
 
 from importlib.metadata import version as _distribution_version

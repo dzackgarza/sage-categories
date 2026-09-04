@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 
 from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.predicates import AxiomLayer, install_axiom_layer
-from sage_categories.kernel.roles import CategoryPoint, category_of, role_of
+from sage_categories.kernel.roles import category_of, role_of
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category, CategoryOfCategories
@@ -31,7 +31,7 @@ __all__ = ["generate_application", "install", "install_base_applications", "subc
 _base_axioms: list[Axiom] = []
 
 # The axiom each generated application came from, by the declaration it landed on.
-_derived_applications: dict[tuple[type[CategoryPoint], str], Axiom] = {}
+_derived_applications: dict[tuple[type[CategoryOfCategories.ElementType], str], Axiom] = {}
 
 
 def generate_application(axiom: Axiom) -> None:
@@ -43,17 +43,17 @@ def generate_application(axiom: Axiom) -> None:
     _install_application(axiom, owner)
 
 
-def install_base_applications(owner: type[CategoryPoint]) -> None:
+def install_base_applications(owner: type[CategoryOfCategories.ElementType]) -> None:
     """Install the applications of the base category class's axioms onto the objects of every category."""
     for axiom in _base_axioms:
         _install_application(axiom, owner)
     _base_axioms.clear()
 
 
-def _install_application(axiom: Axiom, owner: type[CategoryPoint]) -> None:
+def _install_application(axiom: Axiom, owner: type[CategoryOfCategories.ElementType]) -> None:
     name = axiom.application_name()
 
-    def application(value: CategoryPoint, *parameters: Category) -> Proposition:
+    def application(value: CategoryOfCategories.ElementType, *parameters: Category) -> Proposition:
         placement = category_of(value, role_of(value)).narrowing_base()
         return axiom._declared_on(placement, *parameters).membership_proposition(value)
 

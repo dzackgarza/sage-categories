@@ -35,7 +35,7 @@ from sage_categories.cat.category import (
 from sage_categories.cat.predicates import predicate, register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
 from sage_categories.kernel.refinement import is_placed
-from sage_categories.kernel.sage_runtime import TripleDict, Unknown
+from sage_categories.kernel.sage_runtime import Integer, TripleDict, Unknown
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -62,15 +62,20 @@ def Mor[**M, **T](level: Literal[2], category: Category[M, T]) -> MorphismCatego
 
 
 @overload
-def Mor(level: int, category: Category) -> MorphismCategory[[], []]: ...
+def Mor(level: int | Integer, category: Category) -> MorphismCategory[[], []]: ...
 
 
-def Mor(*arguments: int | Category) -> Category:
-    """``Mor(C)`` is ``Mor(1, C)``; ``Mor(n, C)`` is the ``n``-th morphism category of ``C``."""
+def Mor(*arguments: int | Integer | Category) -> Category:
+    """``Mor(C)`` is ``Mor(1, C)``; ``Mor(n, C)`` is the ``n``-th morphism category of ``C``.
+
+    A level is a Sage ``Integer`` wherever the caller is Sage source, because the
+    preparser writes every integer literal that way, and a Python ``int`` elsewhere.
+    ``Category.morphism_category`` states the same pair.
+    """
     match arguments:
         case (Category() as category,):
             return category.morphism_category(1)
-        case (int() as level, Category() as category):
+        case (int() | Integer() as level, Category() as category):
             return category.morphism_category(level)
     raise TypeError("Mor takes a category or a level and a category")
 

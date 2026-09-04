@@ -2,12 +2,12 @@
 
 One export per owner (POL-API-002): ``Cat``, ``Mor``, ``Fun``, ``Category``, and the
 shape constructors ``Discrete`` and ``Thin`` from the theory of ``Cat()``;
-``ask``, ``assume``, ``retract``, ``Predicate``, ``Unknown``, and ``Decision`` from the
-kernel's predicate boundary.
+``ask``, ``assume``, ``retract``, ``Predicate``, ``Unknown``, and ``Decision`` from
+``Cat``'s predicate boundary.
 
 A production leaf is imported here, and not in ``sage_categories`` itself, when its
 phase of the production plan is accepted: a leaf implements a category ``Cat``
-declared, and the kernel holds that declaration without it (D80, D81).
+declared, and ``Cat`` holds that declaration without it (D80, D81).
 """
 
 from sage_categories import (

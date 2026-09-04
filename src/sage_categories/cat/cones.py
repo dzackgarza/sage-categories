@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.predicates import Axiom
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.sage_runtime import MonoDict
@@ -103,6 +104,8 @@ class ConeMorphismData:
 class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     """``Cones(D)`` for one diagram ``D: I -> C``."""
 
+    LimitCones = Axiom()
+
     class ObjectType:
         """A cone over the fixed diagram."""
 
@@ -143,7 +146,6 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
         self._diagram = diagram
         self._objects: MonoDict = MonoDict()
         self._apex_functor: Functor | None = None
-        self._limit_cones: LimitConesCategory | None = None
         super().__init__()
 
     def diagram(self) -> Functor:
@@ -205,17 +207,14 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
             )
         return self._apex_functor
 
-    def LimitCones(self) -> LimitConesCategory:
-        if self._limit_cones is None:
-            self._limit_cones = LimitConesCategory(self)
-        return self._limit_cones
-
     def __repr__(self) -> str:
         return f"Cones({self._diagram!r})"
 
 
 class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
     """``LimitCones(D)``: terminal objects of ``Cones(D)``."""
+
+    _base_category_class_and_axiom = (ConeCategory, "LimitCones")
 
     class ObjectType:
         """A limiting cone with its unique-lift operation."""
@@ -229,9 +228,6 @@ class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []])
 
     class MorphismType:
         """A morphism between limiting cones."""
-
-    def __init__(self, ambient: ConeCategory) -> None:
-        super().__init__(ambient, "Terminal", ())
 
     def with_universal_data(
         self,

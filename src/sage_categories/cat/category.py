@@ -1093,32 +1093,25 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         Every owned value is such a point, so the compiled class of this declaration sits
         under all three implementation roles and states what every point shares: what it
         is a point of, the morphism defining it, its placement, and its equality (D173).
-        The two cases below are the two point identities the kernel installs: a point of a
-        category, whose placement the kernel retains and refines, and a generalized
-        element ``t: T -> X`` of an object, whose placement is the slice over ``X``.
+        The two cases below are the two kinds of point: a point of a category, whose
+        placement the kernel retains and refines, and a generalized element ``t: T -> X``
+        of an object, whose placement is the slice over ``X``.  The kernel's role test
+        tells them apart and its retained point identity carries the datum of each; this
+        declaration says what the datum means, and names no kernel type to read it (D130,
+        D173, ``specs/resolution.md``, "The closed kernel surface").
         """
 
         def parent(self) -> CategoryOfCategories.ElementType:
             """The object this is a point of: the category for a point ``* -> C``, the object for a point of one."""
-            from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
-
-            match self._cat_element_identity:
-                case ElementRoleIdentity(defining_morphism):
-                    return defining_morphism.codomain()
-                case CategoryPointIdentity(parent):
-                    return parent
-            raise AssertionError(self._cat_element_identity)
+            if self._is_element():
+                return self._cat_element_identity.defining_morphism.codomain()
+            return self._cat_element_identity.parent
 
         def defining_morphism(self) -> MorphismCategory.ObjectType:
             """The morphism that defines this point: its own for an element, the point functor's arrow for an object."""
-            from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
-
-            match self._cat_element_identity:
-                case ElementRoleIdentity(defining_morphism):
-                    return defining_morphism
-                case CategoryPointIdentity(parent):
-                    return parent.point_functor(self)
-            raise AssertionError(self._cat_element_identity)
+            if self._is_element():
+                return self._cat_element_identity.defining_morphism
+            return self._cat_element_identity.parent.point_functor(self)
 
         def category(self) -> Category:
             """The strongest placement established for this point.
@@ -1130,25 +1123,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             constructor chain, and the level shift reads that placement (D154, D169).
             A generalized element ``t: T -> X`` is an object of the slice over ``X``.
             """
-            from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
-
-            match self._cat_element_identity:
-                case ElementRoleIdentity():
-                    return self.parent().category().SliceOver(self.parent())
-                case CategoryPointIdentity():
-                    return self._category
-            raise AssertionError(self._cat_element_identity)
+            if self._is_element():
+                return self.parent().category().SliceOver(self.parent())
+            return self._category
 
         def _deciding_category(self) -> Category:
             """The category that decides equality of this point: its placement, or its parent's category for an element."""
-            from sage_categories.kernel.construction import CategoryPointIdentity, ElementRoleIdentity
-
-            match self._cat_element_identity:
-                case ElementRoleIdentity():
-                    return self.parent().category()
-                case CategoryPointIdentity():
-                    return self._category
-            raise AssertionError(self._cat_element_identity)
+            if self._is_element():
+                return self.parent().category()
+            return self._category
 
         def __eq__(self, candidate: CategoryOfCategories.ElementType | int) -> Predicate:
             return self._deciding_category().equality()(self, candidate)

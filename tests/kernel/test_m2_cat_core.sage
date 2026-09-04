@@ -341,6 +341,126 @@ def test_the_zero_argument_declaration_states_the_property_category_it_names() -
             property_category()
 
 
+def test_a_functor_is_its_exact_endpoints_and_its_two_ordinary_actions() -> None:
+    """A functor is declared by two endpoints and two ordinary actions, and by nothing else (R2 criterion 2).
+
+    The two actions are the complete writer input (D08, D123): each is ordinary Python
+    that ends by calling a public constructor of the target, ``D(datum)`` for an object and
+    ``Mor(D)(F(X), F(Y))(datum)`` for a morphism (``specs/functor.md``, "Functor actions are
+    concrete constructors").  The endpoints are exact: the functor is an object of
+    ``Fun(C, D)`` for the two categories the writer named, and every application checks
+    both actions against them, so a functor written with one action or with an action that
+    leaves the named codomain is refused (D56).
+    """
+
+    def on_object(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return MARKS(member_object._token)
+
+    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        source = on_object(morphism.domain())
+        target = on_object(morphism.codomain())
+        return Mor(MARKS)(source, target)(morphism._token)
+
+    functor = Fun(TOKENS, MARKS)(on_object, on_morphism)
+    assert functor.domain() is TOKENS
+    assert functor.codomain() is MARKS
+    assert is_placed(functor, Fun(TOKENS, MARKS))
+    assert functor in Fun(TOKENS, MARKS)
+    assert not is_placed(functor, Fun(MARKS, TOKENS))
+
+    a, b = TOKENS("a"), TOKENS("b")
+    arrow = Mor(TOKENS)(a, b)("f")
+
+    # The object action returns an object of the named codomain, built by that category's
+    # own constructor, and the morphism action a morphism of the exact target hom category.
+    image = functor.on_object(a)
+    assert isinstance(image, MARKS.ObjectType)
+    assert image in MARKS
+    assert image._token == "a"
+    arrow_image = functor.on_morphism(arrow)
+    assert arrow_image in Mor(MARKS)(functor.on_object(a), functor.on_object(b))
+    assert arrow_image._token == "f"
+
+    # One action is not a functor.
+    with pytest.raises(TypeError):
+        Fun(TOKENS, MARKS)(on_object)
+
+    # Endpoints the actions do not respect are refused where the action breaks them: the
+    # same two actions declared ``TOKENS -> TOKENS`` leave the codomain they named.
+    with pytest.raises(AssertionError):
+        Fun(TOKENS, TOKENS)(on_object, on_morphism).on_object(a)
+
+    def wrong_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        other = MARKS("elsewhere")
+        return Mor(MARKS)(other, other)("f")
+
+    with pytest.raises(AssertionError):
+        Fun(TOKENS, MARKS)(on_object, wrong_morphism).on_morphism(arrow)
+
+    # An argument outside the named domain is refused too.
+    with pytest.raises(AssertionError):
+        functor.on_object(MARKS("a"))
+
+
+def test_a_natural_transformation_is_a_morphism_of_its_exact_functor_category() -> None:
+    """A natural transformation is a morphism of ``Fun(C, D)`` for the exact endpoints of its two functors (R2 criterion 3).
+
+    ``Mor(Fun(C, D))(F, G)(assignment)`` is the one spelling, and the assignment is a rule
+    ``X |-> eta_X`` returning a morphism ``F(X) -> G(X)`` of ``D``; naturality is trusted
+    (``specs/functor.md``, "Functor actions are concrete constructors").  The endpoints are
+    exact in both directions: the transformation is placed in ``Mor(Fun(C, D))`` and in the
+    fixed-endpoint category on its two functors, in no other functor category, and a pair
+    of functors whose endpoints differ has no transformation between them at all (D56).
+    """
+
+    def marked(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return MARKS(member_object._token)
+
+    def marked_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        return Mor(MARKS)(marked(morphism.domain()), marked(morphism.codomain()))(morphism._token)
+
+    def shifted(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return MARKS(f"{member_object._token}'")
+
+    def shifted_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        return Mor(MARKS)(shifted(morphism.domain()), shifted(morphism.codomain()))(morphism._token)
+
+    source = Fun(TOKENS, MARKS)(marked, marked_morphism)
+    target = Fun(TOKENS, MARKS)(shifted, shifted_morphism)
+
+    def assignment(member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        return Mor(MARKS)(source.on_object(member_object), target.on_object(member_object))("shift")
+
+    transformation = Mor(Fun(TOKENS, MARKS))(source, target)(assignment)
+    assert transformation.source_functor() is source
+    assert transformation.target_functor() is target
+
+    # Its owning category is the functor category of the exact endpoints, and no other.
+    functors = Fun(source.domain(), source.codomain())
+    assert functors is Fun(TOKENS, MARKS)
+    assert is_placed(transformation, Mor(functors))
+    assert is_placed(transformation, Mor(functors)(source, target))
+    assert transformation in Mor(functors)
+    assert not is_placed(transformation, Mor(Fun(TOKENS, TOKENS)))
+    assert not is_placed(transformation, Mor(Fun(MARKS, TOKENS)))
+
+    # Its components are morphisms of the codomain, each in the exact hom category.
+    a = TOKENS("a")
+    component = transformation.component(a)
+    assert component in Mor(MARKS)
+    assert component in Mor(MARKS)(source.on_object(a), target.on_object(a))
+    assert component._token == "shift"
+
+    # Functors with mismatched endpoints have no transformation between them.
+    with pytest.raises(AssertionError):
+        Mor(Fun(TOKENS, MARKS))(source, _identity_functor(TOKENS))
+
+    # A component that is not a morphism of the codomain is refused when it is read.
+    stray = Mor(Fun(TOKENS, MARKS))(source, target)(lambda member_object: Mor(TOKENS)(a, a).one())
+    with pytest.raises(AssertionError):
+        stray.component(a)
+
+
 def test_the_containments_of_funs_property_subcategories_are_retained_monomorphisms() -> None:
     """Each containment among ``Fun``'s property subcategories is the monomorphism presenting it (D83, D169).
 
@@ -384,6 +504,73 @@ def test_the_containments_of_funs_property_subcategories_are_retained_monomorphi
     assert ask(monomorphism.is_faithful())
     isofibration = Fun(RUNES, TOKENS).Isofibrations()(*token_actions())
     assert ask(isofibration.is_faithful()) is Unknown
+
+
+def test_an_axiom_parameterized_by_a_functor_is_the_essential_image() -> None:
+    """``D.EssentialImage(F)`` is an axiom of ``D`` whose parameter is a functor (D168, POL-LEAF-064).
+
+    Being a product is an axiom, equivalent to membership in the essential image of the
+    nontrivial product functor, and axioms can be parameterized (D168).  So the essential
+    image is the general shape that row states in one case, and what it turns on is the
+    functor: a morphism of ``Cat()`` rather than an object of it, as ``C.Limits(I)`` turns
+    on a shape.  ``Category`` declares the axiom once and the declaration owns the name,
+    the retention, and the generated application; nothing spells ``"EssentialImage"`` at a
+    construction site (D89, D133 shape (2), D148, D175).
+    """
+
+    def token_actions(prefix: str) -> tuple[OnObject, OnMorphism]:
+        def on_object(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            return TOKENS(prefix + member_object._token)
+
+        def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            source = on_object(morphism.domain())
+            target = on_object(morphism.codomain())
+            return Mor(TOKENS)(source, target)(morphism._token)
+
+        return on_object, on_morphism
+
+    first = Fun(MARKS, TOKENS)(*token_actions("first "))
+    second = Fun(MARKS, TOKENS)(*token_actions("second "))
+
+    # One subcategory per target and defining functor, retained by the declaration; the
+    # two functors share their endpoints and have different essential images.
+    image = TOKENS.EssentialImage(first)
+    assert TOKENS.EssentialImage(first) is image
+    assert TOKENS.EssentialImage(second) is not image
+    assert image.ambient() is TOKENS
+    assert image.defining_functor() is first
+
+    # The name is the declaration's, and the application is compiled from that identifier
+    # and nothing else: ``EssentialImage`` gives ``is_essential_image`` (D89, POL-CAT-060).
+    assert image.name() == "EssentialImage"
+    assert Category.EssentialImage.application_name() == "is_essential_image"
+
+    # The generated application decides, and it takes the parameter the axiom does.
+    inside = first.on_object(MARKS("a"))
+    assert ask(inside.is_essential_image(first)) is True
+    assert inside in image
+    assert ask(inside.is_essential_image(second)) is Unknown
+
+    # Membership records only the existential property, so an object nobody exhibited as a
+    # value of ``first`` is undecided rather than excluded (``specs/functor.md``, "Strict,
+    # full, and essential images").
+    assert ask(TOKENS("unrelated").is_essential_image(first)) is Unknown
+
+    # The factorization the specification states: an essentially surjective factor onto
+    # the image, then the fully faithful inclusion that ``cat_kernel`` builds for the
+    # axiom's subcategory (D175).
+    factor, inclusion = image.factorization()
+    assert factor.domain() is MARKS and factor.codomain() is image
+    assert ask(factor.is_essentially_surjective())
+    assert inclusion.domain() is image and inclusion.codomain() is TOKENS
+    assert ask(inclusion.is_fully_faithful())
+
+    # Asking whether the subcategory exists constructs none: every public object image of
+    # every functor passes through the retention that reads this.
+    third = Fun(MARKS, TOKENS)(*token_actions("third "))
+    assert not Category.EssentialImage.is_constructed(TOKENS, third)
+    third.on_object(MARKS("a"))
+    assert not Category.EssentialImage.is_constructed(TOKENS, third)
 
 
 for name, value in tuple(globals().items()):

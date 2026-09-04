@@ -88,13 +88,13 @@ def retain_inverse_image(functor: Functor, target_subcategory: Category, realiza
 
 class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.category.CategoryDeclaration, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.cat.morphisms.EndomorphismsCategory.ObjectType, sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.cat.category.CategoryDeclaration, sage_categories.kernel.roles.ObjectOfCategory, sage_categories.cat.morphisms.EndomorphismsCategory.ObjectType, sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.morphisms.MorphismCategory.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.cat.morphisms.EndomorphismsCategory.ElementType, sage_categories.cat.morphisms.IsomorphismsCategory.ElementType):
+    class ElementType(sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.cat.morphisms.MorphismCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.cat.morphisms.EndomorphismsCategory.ElementType, sage_categories.cat.morphisms.IsomorphismsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.morphisms.EndomorphismsCategory.MorphismType, sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType):
+    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.morphisms.EndomorphismsCategory.MorphismType, sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType):
         ...
 
     def __init_subclass__(cls) -> None:

@@ -160,6 +160,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     Coproducts: Incomplete
     Limits: Incomplete
     Colimits: Incomplete
+    EssentialImage: Incomplete
 
     def Pullbacks(self) -> Category:
         ...
@@ -177,9 +178,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
         ...
 
     def FullImage(self, functor: Functor) -> Category:
-        ...
-
-    def EssentialImage(self, functor: Functor) -> Category:
         ...
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:

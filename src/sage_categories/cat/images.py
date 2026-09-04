@@ -18,7 +18,6 @@ __all__ = [
     "EssentialImageCategory",
     "FullImageCategory",
     "StrictImageCategory",
-    "essential_image",
     "full_image",
     "register_full_image",
     "retain_morphism_image",
@@ -264,7 +263,14 @@ class FullImageCategory[**MorphismData, **TwoMorphismData](
 class EssentialImageCategory[**MorphismData, **TwoMorphismData](
     PropertySubcategory[MorphismData, TwoMorphismData]
 ):
-    """The full replete subcategory on objects isomorphic to some ``F(X)``."""
+    """The full replete subcategory on objects isomorphic to some ``F(X)``.
+
+    This is ``D.EssentialImage(F)``, the axiom ``Category`` declares, parameterized by the
+    functor whose essential image it is (D168).  The declaration owns the name and the
+    retention, one subcategory per target and defining functor.
+    """
+
+    _base_category_class_and_axiom = (Category, "EssentialImage")
 
     class ObjectType:
         """An object isomorphic in the target to a value ``F(X)``."""
@@ -275,10 +281,24 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](
     class MorphismType:
         """Any target morphism between objects of the essential image."""
 
-    def __init__(self, defining_functor: Functor) -> None:
+    def __init__(
+        self,
+        ambient: Category,
+        name: str,
+        full_subcategory_of: tuple[Category, ...],
+        defining_functor: Functor,
+    ) -> None:
+        # The parameter fixes the ambient, which is what separates this axiom from an
+        # inherited one.  ``D.Finite()`` for a declared subcategory ``D`` of ``A`` is the
+        # inverse image of ``A.Finite()`` along ``D -> A``, because ``A`` states the same
+        # predicate (D83, POL-CAT-084); ``A`` states no essential image of a functor that
+        # lands in ``D``, so that derivation reaches here with the wrong ambient and stops.
+        assert defining_functor.codomain() is ambient, (
+            f"{defining_functor!r} does not land in {ambient!r}, so {ambient!r} states no essential image of it"
+        )
         self._defining_functor = defining_functor
         self._factor: Functor | None = None
-        super().__init__(defining_functor.codomain(), "EssentialImage", ())
+        super().__init__(ambient, name, full_subcategory_of)
 
     def defining_functor(self) -> Functor:
         return self._defining_functor
@@ -287,7 +307,9 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](
         self,
         source: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
-        return self(self._defining_functor.on_object(source))
+        image = self._defining_functor.on_object(source)
+        refine(image, self)
+        return image
 
     def morphism_image(
         self,
@@ -316,12 +338,21 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](
         return self.factor_functor(), self.inclusion_functor()
 
     def __repr__(self) -> str:
-        return f"{self.ambient()!r}.EssentialImage({self._defining_functor!r})"
+        return f"{self.ambient()!r}.{self.name()}({self._defining_functor!r})"
 
 
 _strict_images: MonoDict = MonoDict()
 _full_images: MonoDict = MonoDict()
-_essential_images: MonoDict = MonoDict()
+
+
+def _has_essential_image(defining_functor: Functor) -> bool:
+    """Whether ``D.EssentialImage(F)`` was already asked for; asking here constructs none.
+
+    Every public object and morphism image passes through the two retentions below, so
+    reading the axiom's own retention is what keeps a functor that nobody asked an
+    essential image of from getting one (``Axiom.is_constructed``).
+    """
+    return Category.EssentialImage.is_constructed(defining_functor.codomain(), defining_functor)
 
 
 def retain_object_image(
@@ -336,8 +367,8 @@ def retain_object_image(
         if isinstance(full_image, FullImageCategory):
             full_image._retain_object(image)
         refine(image, full_image)
-    if defining_functor in _essential_images:
-        _essential_images[defining_functor](image)
+    if _has_essential_image(defining_functor):
+        refine(image, defining_functor.codomain().EssentialImage(defining_functor))
 
 
 def retain_morphism_image(
@@ -347,8 +378,8 @@ def retain_morphism_image(
     """Retain a completed public morphism image in each constructed image category."""
     if defining_functor in _strict_images:
         _strict_images[defining_functor]._retain_morphism(image)
-    if defining_functor in _essential_images:
-        refine(image, _essential_images[defining_functor].morphism_category(1))
+    if _has_essential_image(defining_functor):
+        refine(image, defining_functor.codomain().EssentialImage(defining_functor).morphism_category(1))
 
 
 def strict_image(target: Category, defining_functor: Functor) -> StrictImageCategory:
@@ -377,11 +408,3 @@ def full_image(target: Category, defining_functor: Functor) -> Category:
     if defining_functor not in _full_images:
         _full_images[defining_functor] = FullImageCategory(defining_functor)
     return _full_images[defining_functor]
-
-
-def essential_image(target: Category, defining_functor: Functor) -> EssentialImageCategory:
-    """Return the retained essential image of ``defining_functor`` in its target."""
-    assert defining_functor.codomain() is target
-    if defining_functor not in _essential_images:
-        _essential_images[defining_functor] = EssentialImageCategory(defining_functor)
-    return _essential_images[defining_functor]

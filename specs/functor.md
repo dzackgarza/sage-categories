@@ -421,6 +421,12 @@ The condition that separates them is on the arrows: **that monomorphism is an is
 The inclusion of every property subcategory whose defining predicate is an isomorphism invariant is an isofibration for the same reason.
 The inclusion of a skeleton is the opposite extreme and is an isofibration only when the skeleton is everything.
 
+The two properties are declared differently because their mathematics differs.
+`Fun.Monomorphisms()` is a full subcategory of `Fun.Faithful()`, and states that containment by the monomorphism it retains: monic is faithful together with injectivity on objects.
+`Fun.Isofibrations()` is a full subcategory of nothing but `Fun`, because an isofibration need not be faithful: `Fun(I, C).ev(i)` is one, and two natural transformations of `Fun(I, C)` that agree at `i` need not be equal.
+The faithful isofibrations that carry inheritance (D167, `POL-FUN-036`) are therefore not the whole of `Fun.Isofibrations()`, and their faithfulness is not separately declared: the leaf writer asserts it by constructing a structure functor into `Fun(C, D).Isofibrations()` or a subcategory of it, and `cat_kernel` reads that declaration and trusts it, exactly as it trusts the isofibration condition itself (D169, D175).
+Declaring `Fun.Isofibrations()` inside `Fun.Faithful()` would state something false, and a containment is a declared monomorphism and never induced from an implication between predicates in any case (D83).
+
 ### Placement traces monic isofibrations
 
 `x in C` asks `C`'s membership proposition (`POL-CAT-043`, `POL-CAT-044`). Placement is a positive shortcut inside that one question: construction or same-object refinement into the property category already established the defining predicate, so `ask()` answers from placement without recomputing (`POL-CAT-068`). Placement propagates from `S` to `T` exactly along a functor that is a monomorphism of `Cat()` and an isofibration.
@@ -441,6 +447,11 @@ iota = Fun(S, T).Monomorphisms().Isofibrations()()
 This zero-argument call on the property category is the declaration of every subcategory inclusion; the inclusion computes nothing, and no action is written for it (D146).
 The leaf writer states that `S` is a subcategory of `T` by constructing there.
 The kernel does not compute that relation from Python inheritance or shared storage, and it does not recognize the functor by consulting a table of ones it built earlier.
+
+The property category the call names is the whole declaration, and the functor is placed in it and in nothing wider or narrower (D146, D162).
+So the call is available on a monomorphism subcategory of `Fun(S, T)` and is refused on every other property category of it: a functor that computes nothing is a subcategory inclusion, and every other functor is written with its two actions and constructed into the strongest property subcategory that states what is known about it (D08, D21).
+`Fun(S, T).Monomorphisms()()` declares a monomorphism and declares nothing further, so `ask()` answers `Unknown` for the isofibration condition and placement does not follow it; `Fun(S, T).Monomorphisms().Isofibrations()()` is the declaration placement follows.
+One identity-on-values functor exists per endpoint pair (`POL-FUN-027`), so two declarations on one pair narrow one retained value.
 
 A full subcategory adds fullness, so a property subcategory `C.P()` declares:
 

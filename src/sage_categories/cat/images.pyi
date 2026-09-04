@@ -4,7 +4,7 @@ from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition
 from sage_categories.cat.properties import PropertySubcategory
-__all__ = ['StrictImageCategory', 'FullImageCategory', 'EssentialImageCategory', 'retain_object_image', 'retain_morphism_image', 'strict_image', 'register_full_image', 'full_image', 'essential_image']
+__all__ = ['StrictImageCategory', 'FullImageCategory', 'EssentialImageCategory', 'retain_object_image', 'retain_morphism_image', 'strict_image', 'register_full_image', 'full_image']
 
 class ImageMorphismCategory[**MorphismData, **TwoMorphismData](MorphismCategory[MorphismData, TwoMorphismData]):
 
@@ -112,7 +112,7 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](PropertySubcateg
     class MorphismType:
         ...
 
-    def __init__(self, defining_functor: Functor) -> None:
+    def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...], defining_functor: Functor) -> None:
         ...
 
     def defining_functor(self) -> Functor:
@@ -146,7 +146,4 @@ def register_full_image(defining_functor: Functor, image: Category) -> None:
     ...
 
 def full_image(target: Category, defining_functor: Functor) -> Category:
-    ...
-
-def essential_image(target: Category, defining_functor: Functor) -> EssentialImageCategory:
     ...

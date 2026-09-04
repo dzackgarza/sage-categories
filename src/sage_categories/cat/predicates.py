@@ -252,8 +252,16 @@ class Axiom:
     ``Coproducts``, ``Limits``, and ``Colimits`` are declared once on the base category
     class and every category receives them (D31, D89; Sage
     ``RegressiveCovariantConstructionCategory``, ``sage/categories/covariant_functorial_construction.py``,
-    inspected 2026-09-02).  An axiom may take parameters, ``C.Limits(J)``, and its
-    subcategory is retained once per category and parameter values.
+    inspected 2026-09-02).  An axiom may take parameters, and its subcategory is retained
+    once per category and parameter values.
+
+    A parameter is a value of ``Cat()``, an object or a morphism of it.  ``C.Limits(J)``
+    supplies the shape, an object; ``D.EssentialImage(F)`` supplies the functor whose
+    essential image it is, a morphism.  D168 states the second: being a product is an
+    axiom, equivalent to membership in the essential image of the nontrivial product
+    functor, and axioms can be parameterized.  So the parameter that an essential image
+    turns on is the functor itself, and retention by identity is what such a parameter
+    needs.
 
     ``full_subcategory_of`` lists the categories ``C.P()`` is a full subcategory of beyond
     its ambient, by their axioms; each is recorded on the constructed subcategory as the
@@ -286,7 +294,7 @@ class Axiom:
         self._full_subcategory_of = full_subcategory_of
         self._implementation: type[PropertySubcategory] | None = None
         # Retained per category and parameter values, by identity (POL-SAGE-013).
-        self._constructed: dict[tuple[tuple[int, Category], ...], Category] = {}
+        self._constructed: dict[tuple[tuple[int, CategoryOfCategories.ElementType], ...], Category] = {}
 
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:
         self._declaring_class = declaring_class
@@ -341,14 +349,25 @@ class Axiom:
         )
         self._implementation = implementation
 
-    def subcategory(self, category: Category, *parameters: Category) -> Category:
+    def subcategory(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
         """``category.P(*parameters)``: one property subcategory per category and parameter values."""
-        key = tuple((id(value), value) for value in (category, *parameters))
+        key = _retention_key(category, *parameters)
         if key not in self._constructed:
             self._constructed[key] = self._construct(category, *parameters)
         return self._constructed[key]
 
-    def _construct(self, category: Category, *parameters: Category) -> Category:
+    def is_constructed(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> bool:
+        """Whether ``category.P(*parameters)`` is already retained; asking never constructs it.
+
+        A construction that has to place its result in ``C.P()`` only when that
+        subcategory exists asks here.  ``cat/images.py`` retains a public functor image in
+        ``D.EssentialImage(F)`` for each ``F`` whose essential image someone asked for, and
+        constructing one for every functor instead would build a property subcategory per
+        functor application.
+        """
+        return _retention_key(category, *parameters) in self._constructed
+
+    def _construct(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
         """The inverse image along a declared subcategory's monomorphism, else the implementation of this axiom."""
         if category.has_ambient():
             defining_functor = category.subcategory_monomorphism()
@@ -356,7 +375,7 @@ class Axiom:
         containing = tuple(axiom._declared_on(category) for axiom in self._full_subcategory_of)
         return (self._implementation or _property_subcategory())(category, self._name, containing, *parameters)
 
-    def _declared_on(self, category: Category, *parameters: Category) -> Category:
+    def _declared_on(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
         """``category.P(*parameters)``, through the accessor that category declares for this axiom.
 
         A category can build the subcategory itself -- ``Fun`` builds its property
@@ -369,6 +388,14 @@ class Axiom:
 
     def __repr__(self) -> str:
         return f"{self._declaring_class.__name__}.{self._name}"
+
+
+def _retention_key(
+    category: Category,
+    *parameters: CategoryOfCategories.ElementType,
+) -> tuple[tuple[int, CategoryOfCategories.ElementType], ...]:
+    """The category and its parameter values, by identity, holding each alive (POL-SAGE-013)."""
+    return tuple((id(value), value) for value in (category, *parameters))
 
 
 def _application_name(identifier: str) -> str:

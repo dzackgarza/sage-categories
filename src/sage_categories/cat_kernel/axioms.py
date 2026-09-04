@@ -19,7 +19,7 @@ from sage_categories.kernel.predicates import AxiomLayer, install_axiom_layer
 from sage_categories.kernel.roles import category_of, role_of
 
 if TYPE_CHECKING:
-    from sage_categories.cat.category import Category, CategoryOfCategories
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.morphisms import MorphismCategory
     from sage_categories.cat.predicates import Axiom, Proposition
     from sage_categories.cat.properties import PropertySubcategory
@@ -53,7 +53,10 @@ def install_base_applications(owner: type[CategoryOfCategories.ElementType]) -> 
 def _install_application(axiom: Axiom, owner: type[CategoryOfCategories.ElementType]) -> None:
     name = axiom.application_name()
 
-    def application(value: CategoryOfCategories.ElementType, *parameters: Category) -> Proposition:
+    def application(
+        value: CategoryOfCategories.ElementType,
+        *parameters: CategoryOfCategories.ElementType,
+    ) -> Proposition:
         placement = category_of(value, role_of(value)).narrowing_base()
         return axiom._declared_on(placement, *parameters).membership_proposition(value)
 

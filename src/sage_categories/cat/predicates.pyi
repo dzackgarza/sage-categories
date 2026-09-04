@@ -1,10 +1,10 @@
 from collections.abc import Callable, Iterable
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, OwnedPredicate as Predicate, ask_query as ask_query, assume_property as assume_property, axiom_layer as axiom_layer, bind_property_predicate as bind_property_predicate, owned_predicate as owned_predicate, register_declared_case as register_declared_case, register_predicate_handler as register_predicate_handler, register_query_handler as register_query_handler
+from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, OwnedPredicate as Predicate
 from sage_categories.kernel.sage_runtime import Unknown as Unknown, UnknownClass as UnknownClass
 from sympy.logic.boolalg import Boolean
-__all__ = ['Predicate', 'Unknown', 'UnknownClass', 'AppliedPredicate', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'DecidingProposition', 'predicate', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom', 'declared_axiom']
+__all__ = ['AppliedPredicate', 'Predicate', 'Unknown', 'UnknownClass', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'DecidingProposition', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom', 'declared_axiom']
 type Argument = CategoryOfCategories.ElementType | int
 type Decision = bool | UnknownClass
 type PredicateDecision = bool | None
@@ -14,9 +14,6 @@ type PredicateHandler = Callable[..., PredicateDecision]
 type QueryHandler = Callable[..., QueryAnswer]
 type Proposition = Boolean
 type DecidingProposition = Callable[[Category, CategoryOfCategories.ElementType], Proposition]
-
-def predicate(name: str) -> Predicate:
-    ...
 
 def property_predicate(name: str, category: Category) -> Predicate:
     ...
@@ -81,7 +78,7 @@ def retract(proposition: Proposition) -> None:
 
 class Axiom:
 
-    def __init__(self, deciding: DecidingProposition | None = None, *, full_subcategory_of: tuple[Axiom, ...]=()) -> None:
+    def __init__(self, deciding: DecidingProposition | None=None, *, full_subcategory_of: tuple[Axiom, ...]=()) -> None:
         ...
 
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:

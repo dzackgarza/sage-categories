@@ -14,6 +14,9 @@ __all__ = ['OnObject', 'OnMorphism', 'Assignment', 'member', 'Category', 'Catego
 type OnObject = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
 type OnMorphism = Callable[['MorphismCategory.ObjectType'], 'MorphismCategory.ObjectType']
 type Assignment = Callable[[CategoryOfCategories.ElementType], 'MorphismCategory.ObjectType']
+
+class _MemberPredicate(Predicate):
+    name: str
 member: Predicate
 
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.kernel.roles.ObjectOfCategory):

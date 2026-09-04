@@ -32,7 +32,7 @@ from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformatio
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.predicates import Decision, Unknown
-from sage_categories.cat.predicates import Predicate, Proposition, ask, predicate, register_handler
+from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.sage_runtime import MonoDict, TripleDict
 
@@ -98,7 +98,11 @@ def _varying_of(triangle: SliceLikeCategory.MorphismType) -> MorphismCategory.Ob
 # ``slice_member(t, C/x)``: ``t`` is an object of the slice or coslice: a morphism of
 # ``C`` (or a generalized element denoting one) whose fixed end is ``x``, or a value
 # already constructed there.
-slice_member = predicate("slice_member")
+class _SliceMemberPredicate(Predicate):
+    name = "slice_member"
+
+
+slice_member = _SliceMemberPredicate()
 
 
 def _slice_member_by_fixed_end(
@@ -479,7 +483,11 @@ def comma_category(first: Functor, second: Functor) -> Category:
 
 # ``has_morphism_property(x, S)``: the defining arrow of ``x`` is an object of the
 # property subcategory of ``Mor(C)`` that ``S`` pulls back.
-has_morphism_property = predicate("has_morphism_property")
+class _HasMorphismPropertyPredicate(Predicate):
+    name = "has_morphism_property"
+
+
+has_morphism_property = _HasMorphismPropertyPredicate()
 
 
 def _has_morphism_property(

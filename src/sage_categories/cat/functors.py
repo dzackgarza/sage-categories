@@ -25,7 +25,7 @@ from sage_categories.cat.category import (
     refine,
 )
 from sage_categories.cat.properties import Axiom
-from sage_categories.cat.predicates import predicate, register_handler
+from sage_categories.cat.predicates import register_handler
 from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict
 
 __all__ = [
@@ -224,7 +224,11 @@ def _construct_property_functor(
 # one.  The objects of ``Fun(1, K)`` are the objects of ``K``, each a point ``* -> K``, and
 # the objects of ``Fun([1], C)`` are the morphisms of ``C``, each an object of ``Mor(C)``
 # (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Canonical objects of Cat"): one value, denoting one diagram.
-denotes_diagram: Predicate = predicate("denotes_diagram")
+class _DenotesDiagramPredicate(Predicate):
+    name = "denotes_diagram"
+
+
+denotes_diagram: Predicate = _DenotesDiagramPredicate()
 
 
 def _denotes_diagram_by_domain(
@@ -252,7 +256,11 @@ def _denotes_diagram_by_domain(
 
 # ``denotes_functor(x, Fun)``: ``x`` is a functor by placement, or a point of a category
 # with a category as domain, which denotes its defining functor (specs/functor.md, "Slices and coslices").
-denotes_functor: Predicate = predicate("denotes_functor")
+class _DenotesFunctorPredicate(Predicate):
+    name = "denotes_functor"
+
+
+denotes_functor: Predicate = _DenotesFunctorPredicate()
 
 
 def _denotes_functor_by_domain(

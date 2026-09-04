@@ -1,7 +1,13 @@
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Proposition
+from sage_categories.cat.predicates import Predicate, Proposition
 __all__ = ['PointMorphismCategory', 'PointCategory']
+
+class _PointObjectPredicate(Predicate):
+    name: str
+
+class _PointIdentityPredicate(Predicate):
+    name: str
 
 class PointMorphismCategory(MorphismCategory[[], []]):
 

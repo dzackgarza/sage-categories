@@ -9,7 +9,7 @@ from sympy import ask as sympy_ask
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Predicate, Proposition, predicate, register_handler
+from sage_categories.cat.predicates import Predicate, Proposition, register_handler
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.sage_runtime import MonoDict
@@ -64,11 +64,17 @@ class ImageCategory[**MorphismData, **TwoMorphismData](
         """A target morphism admitted by this image construction."""
 
     def __init__(self, defining_functor: Functor) -> None:
+        class _ImageObjectPredicate(Predicate):
+            name = f"{self._image_name}_object"
+
+        class _ImageMorphismPredicate(Predicate):
+            name = f"{self._image_name}_morphism"
+
         self._defining_functor = defining_functor
         self._object_members: MonoDict = MonoDict()
         self._morphism_members: MonoDict = MonoDict()
-        self._object_predicate: Predicate = predicate(f"{self._image_name}_object")
-        self._morphism_predicate: Predicate = predicate(f"{self._image_name}_morphism")
+        self._object_predicate: Predicate = _ImageObjectPredicate()
+        self._morphism_predicate: Predicate = _ImageMorphismPredicate()
         self._inclusion: Functor | None = None
         self._factor: Functor | None = None
         register_handler(self._object_predicate, self._object_membership)

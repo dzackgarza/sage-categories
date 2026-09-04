@@ -4,7 +4,7 @@ from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition
 from sage_categories.cat.properties import PropertySubcategory
-__all__ = ['StrictImageCategory', 'FullImageCategory', 'EssentialImageCategory', 'retain_object_image', 'retain_morphism_image', 'strict_image', 'register_full_image', 'full_image']
+__all__ = ['StrictImageCategory', 'FullImageCategory', 'EssentialImageCategory', 'retain_object_image', 'retain_morphism_image', 'strict_image', 'register_full_image', 'full_image', '_ImageObjectPredicate@67', '_ImageMorphismPredicate@70']
 
 class ImageMorphismCategory[**MorphismData, **TwoMorphismData](MorphismCategory[MorphismData, TwoMorphismData]):
 

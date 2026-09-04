@@ -66,6 +66,9 @@ Discrete: Functor
 class ThinObjectData:
     point: CategoryOfCategories.ElementType
 
+class _ComparablePredicate(Predicate):
+    name: str
+
 class ThinMorphisms(MorphismCategory[[], []]):
 
     class ObjectType:

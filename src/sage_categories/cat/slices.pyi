@@ -4,7 +4,7 @@ from sage_categories.cat.cat_constructions import LimitCategory
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Proposition
+from sage_categories.cat.predicates import Predicate, Proposition
 from sage_categories.cat.properties import FullSubcategory
 __all__ = ['SliceLikeCategory', 'slice_over', 'coslice_under', 'CommaCategory', 'comma_category', 'SliceProperty', 'SubobjectsOfProduct']
 
@@ -15,6 +15,9 @@ class SliceObjectData:
 @dataclass(frozen=True, eq=False, slots=True)
 class SliceTriangleData:
     varying: MorphismCategory.ObjectType
+
+class _SliceMemberPredicate(Predicate):
+    name: str
 
 class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
 
@@ -134,6 +137,9 @@ class CommaCategory(LimitCategory):
 
 def comma_category(first: Functor, second: Functor) -> Category:
     ...
+
+class _HasMorphismPropertyPredicate(Predicate):
+    name: str
 
 class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
 

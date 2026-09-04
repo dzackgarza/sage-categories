@@ -32,7 +32,7 @@ from sage_categories.cat.category import (
     refine,
     retain_composite_factors,
 )
-from sage_categories.cat.predicates import predicate, register_handler
+from sage_categories.cat.predicates import register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
 from sage_categories.kernel.refinement import common_ancestor, is_placed
 from sage_categories.kernel.sage_runtime import Integer, TripleDict, Unknown
@@ -82,7 +82,11 @@ def Mor(*arguments: int | Integer | Category) -> Category:
 
 # ``endpoints(f, A, B)``: the domain of ``f`` is ``A`` and its codomain is ``B``,
 # decided through the equality predicate of the base category (identity first).
-endpoints = predicate("endpoints")
+class _EndpointsPredicate(Predicate):
+    name = "endpoints"
+
+
+endpoints = _EndpointsPredicate()
 
 
 def _endpoints_by_equality(
@@ -97,7 +101,11 @@ def _endpoints_by_equality(
 # ``endpoints_in(f, D)``: the domain and codomain of ``f`` are objects of ``D``.  A full
 # subcategory ``D`` of ``C`` has exactly the morphisms of ``C`` between its objects
 # (Mathlib ``InducedCategory.Hom``; inspected 2026-08-26).
-endpoints_in = predicate("endpoints_in")
+class _EndpointsInPredicate(Predicate):
+    name = "endpoints_in"
+
+
+endpoints_in = _EndpointsInPredicate()
 
 
 def _endpoints_in_by_membership(

@@ -51,7 +51,6 @@ __all__ = [
     "established",
     "implication",
     "negation",
-    "predicate",
     "property_predicate",
     "register_handler",
     "retract",
@@ -83,20 +82,9 @@ type Proposition = Boolean
 type DecidingProposition = Callable[[Category, CategoryOfCategories.ElementType], Proposition]
 
 
-def predicate(name: str) -> Predicate:
-    """Construct one mathematical predicate as a native SymPy predicate.
-
-    A category that needs a predicate no existing method supplies applies one of these
-    (``specs/undecidable-properties.md``, "Public propositions").  The SymPy class behind
-    it is the kernel's: applying it converts each owned argument to its private identity
-    atom and returns the three-valued application.
-    """
-    return owned_predicate(name)
-
-
 def property_predicate(name: str, category: Category) -> Predicate:
     """Construct the SymPy predicate owned by one property subcategory."""
-    owner = predicate(name)
+    owner = owned_predicate(name)
     bind_property_predicate(owner, category)
     return owner
 

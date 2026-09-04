@@ -38,7 +38,7 @@ from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import Predicate, Proposition, ask, predicate, register_handler
+from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.sage_runtime import MonoDict
 
@@ -192,7 +192,11 @@ class ThinObjectData:
 
 
 # ``comparable(f, T)``: the endpoints of the comparison ``f`` of ``T`` satisfy ``T``'s order.
-comparable = predicate("comparable")
+class _ComparablePredicate(Predicate):
+    name = "comparable"
+
+
+comparable = _ComparablePredicate()
 
 
 def _comparable_by_order(

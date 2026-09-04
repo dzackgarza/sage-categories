@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Proposition
+from sage_categories.cat.predicates import Predicate, Proposition
 __all__ = ['LimitCategory', 'limit_of_categories', 'product_of_categories', 'pullback_of_categories']
 type ObjectRule = Callable[['CategoryOfCategories.ElementType'], 'CategoryOfCategories.ElementType']
 type MorphismRule = Callable[['CategoryOfCategories.ElementType'], MorphismCategory.ObjectType]
@@ -15,6 +15,9 @@ class FamilyObjectData:
 @dataclass(frozen=True, eq=False, slots=True)
 class FamilyMorphismData:
     rule: MorphismRule
+
+class _ComponentsAgreePredicate(Predicate):
+    name: str
 
 class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, ...]], []]):
 

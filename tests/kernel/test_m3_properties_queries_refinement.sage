@@ -14,7 +14,7 @@ from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Propos
 from sage_categories.cat.functors import Fun
 import pytest
 
-from sage_categories.cat.predicates import AppliedQuery, UnknownClass, negation, predicate, register_handler, retract
+from sage_categories.cat.predicates import AppliedQuery, UnknownClass, negation, register_handler, retract
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
 from sage_categories.kernel.predicates import OwnedPredicate
 from sage_categories.kernel.refinement import is_placed, is_subcategory
@@ -67,7 +67,11 @@ class TinySubcategory(FullSubcategory, Tiny):
 # The predicate a leaf defines when no existing method supplies the proposition, with the
 # exact cases it can decide registered through SymPy (``specs/leaves.md``, "Property
 # categories"; D143).
-light_enough = predicate("light_enough")
+class LightEnoughPredicate(Predicate):
+    name = "light_enough"
+
+
+light_enough = LightEnoughPredicate()
 
 
 class Tokens(Category):
@@ -271,7 +275,11 @@ def test_sympy_owns_each_property_predicate_and_its_handler() -> None:
 def test_each_exact_dispatch_signature_has_one_owning_handler() -> None:
     """A second handler on one exact signature is rejected; the first owner keeps deciding."""
     tiny = Tiny()
-    marked = predicate("marked")
+
+    class MarkedPredicate(Predicate):
+        name = "marked"
+
+    marked = MarkedPredicate()
 
     def by_value(candidate: Tiny.ObjectType, assumptions: Proposition) -> bool | None:
         return bool(candidate.value() > Integer(0))

@@ -95,13 +95,13 @@ class LimitsCategory(ApexCategory):
 
 class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
 
         def product_factors(self) -> Functor:
             ...

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Literal, overload
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, predicate, register_handler
+from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, register_handler
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.roles import prepare_category_subclass
@@ -42,7 +42,11 @@ type Assignment = Callable[[CategoryOfCategories.ElementType], "MorphismCategory
 # ``member(x, C)``: ``x`` is an object of ``C``.  For a plain category the
 # proposition is decided by established placement alone (POL-CAT-068/073); a
 # property subcategory conjoins its own predicate (``cat/properties.py``).
-member: Predicate = predicate("member")
+class _MemberPredicate(Predicate):
+    name = "member"
+
+
+member: Predicate = _MemberPredicate()
 
 
 def _pointwise_limit_in_opposite_functor_category(

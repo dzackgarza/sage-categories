@@ -948,6 +948,9 @@ def constructed_data(family: Category, diagram: Functor) -> UniversalPresentatio
 def induced_limit_morphism(family: Category, transformation: NaturalTransformation) -> MorphismCategory.ObjectType:
     """``Lim(eta): L_D -> L_D'`` for ``eta: D => D'``: the mediator of the cone ``eta_i after pi_i``."""
     source = constructed_data(family, transformation.domain())
+    diagram_identity = family.diagrams().morphism_category(1)(transformation.domain(), transformation.domain()).one()
+    if transformation is diagram_identity:
+        return family.ambient().morphism_category(1)(source.apex(), source.apex()).one()
     target = constructed_data(family, transformation.codomain())
 
     def induced_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:

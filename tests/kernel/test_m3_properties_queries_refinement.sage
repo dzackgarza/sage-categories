@@ -672,6 +672,15 @@ def test_a_parameterized_construction_family_is_retained_per_parameter_value() -
     assert cat.Colimits(first) is not cat.Colimits(second)
 
 
+def test_limit_functor_preserves_the_retained_identity() -> None:
+    apex = Cat().Products()((Cat().Simplex(1), Cat().Simplex(2)))
+    family = apex.category()
+    diagram = family.presentation(apex).diagram()
+    identity = family.diagrams().morphism_category(1)(diagram, diagram).one()
+
+    assert family.limit_functor().on_morphism(identity) is Cat().morphism_category(1)(apex, apex).one()
+
+
 def test_two_structure_functors_supply_the_construction_families_and_their_containment() -> None:
     """A category that declares only its structure functors receives every family and the containment along each (D31, D83, D159)."""
     tokens = Tokens()

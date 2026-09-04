@@ -92,14 +92,16 @@ def _reached_placements(start: compiler.Node) -> Iterator[compiler.Node]:
             frontier.append(target)
 
 
-def _reached_subcategories(start: Category) -> Iterator[Category]:
+def _reached_subcategories(start: Category, outer: Category | None = None) -> Iterator[Category]:
     """Every exact category reached through placement-tracing functors."""
     found: list[Category] = [start]
     frontier = [start]
     while frontier:
         current = frontier.pop(0)
         yield current
-        for functor in current.selected_functors():
+        comparison = current._subcategory_comparison(outer) if outer is not None else None
+        functors = current.selected_functors() if comparison is None else (*current.selected_functors(), comparison)
+        for functor in functors:
             if not traces_placement(functor):
                 continue
             target = functor.codomain()
@@ -130,7 +132,7 @@ def is_placed(candidate: RoleCandidate, category: Category) -> bool:
 
 def is_subcategory(inner: Category, outer: Category) -> bool:
     """Whether ``inner`` is ``outer`` or a declared subcategory of it, through placement-tracing functors."""
-    return any(found is outer for found in _reached_subcategories(inner))
+    return any(found is outer for found in _reached_subcategories(inner, outer))
 
 
 def common_ancestor(first: Category, second: Category) -> Category | None:

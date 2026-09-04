@@ -329,6 +329,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """The structure functors this category selected, as the kernel read them at construction (``_select_functors``)."""
         return self._selected_functors
 
+    def _subcategory_comparison(self, target: Category) -> Functor | None:
+        """A retained structural functor from this category to ``target``, when a construction owns one."""
+        return None
+
     def retain_datum[Datum](self, value: CategoryOfCategories.ElementType, datum: Datum) -> None:
         """Retain this category's datum for ``value`` by identity."""
         assert value not in self._retained_data, f"{value!r} already retains a datum of {self!r}"

@@ -689,6 +689,7 @@ def test_two_structure_functors_supply_the_construction_families_and_their_conta
     assert limits is along_second.inverse_image(boxed.Limits(shape))
     assert is_subcategory(limits, tokens.Limits(shape))
     assert is_subcategory(limits, tokens.Products())
+    assert is_subcategory(limits, products)
 
 
 def test_every_property_of_a_functor_is_an_axiom_the_kernel_applies() -> None:

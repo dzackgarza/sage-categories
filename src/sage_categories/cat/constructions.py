@@ -53,7 +53,6 @@ from typing import TYPE_CHECKING
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.cones import (
-    ConeCategory,
     LimitConesCategory,
     cocone,
     cocone_apex,
@@ -70,7 +69,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PredicateSubcategory, PropertySubcategory
 from sage_categories.cat.predicates import Unknown
 from sage_categories.cat.predicates import Proposition, ask
-from sage_categories.kernel.refinement import is_subcategory, refine
+from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
 from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
@@ -341,6 +340,7 @@ class LimitsCategory(ApexCategory):
         assert shape in Cat(), f"{shape!r} is not a shape"
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
+        self._pullback_transformations: MonoDict = MonoDict()
         self._limit_adjunction: CategoryOfCategories.ElementType | None = None
         super().__init__(ambient, name, (*full_subcategory_of, *_union_containment(ambient.Products(), shape)))
         self.limit_functor()
@@ -392,6 +392,76 @@ class LimitsCategory(ApexCategory):
 
     def defining_functor(self) -> Functor:
         return self.limit_functor()
+
+    def _retain_pullback_comparison(
+        self,
+        source_diagram: Functor,
+        target_diagram: Functor,
+        middle_component: Functor,
+    ) -> Functor:
+        """Retain the functor induced by ``(1_D, middle_component, 1_C)`` between two chosen pullbacks."""
+        shape = self.shape()
+        assert self.ambient() is Cat() and shape is Cat().WalkingCospan()
+        assert self.has_construction(source_diagram) and self.has_construction(target_diagram)
+        source = self.chosen_object(source_diagram)
+        target = self.chosen_object(target_diagram)
+        retained = self._pullback_transformations[source] if source in self._pullback_transformations else ()
+        known = next(
+            (
+                transformation
+                for transformation in retained
+                if self.chosen_object(transformation.codomain()) is target
+            ),
+            None,
+        )
+        if known is not None:
+            return self.limit_functor().on_morphism(known)
+
+        left, middle, apex = (shape(index) for index in range(3))
+        source_left = source_diagram.on_object(left)
+        target_left = target_diagram.on_object(left)
+        source_middle = source_diagram.on_object(middle)
+        target_middle = target_diagram.on_object(middle)
+        source_apex = source_diagram.on_object(apex)
+        target_apex = target_diagram.on_object(apex)
+        assert source_left is target_left and source_apex is target_apex
+        assert middle_component.domain() is source_middle and middle_component.codomain() is target_middle
+        assert traces_placement(middle_component)
+        assert is_placed(middle_component, Fun.Full())
+
+        identities = {
+            0: Cat().morphism_category(1)(source_left, source_left).one(),
+            1: middle_component,
+            2: Cat().morphism_category(1)(source_apex, source_apex).one(),
+        }
+        transformation = self.diagrams().morphism_category(1)(source_diagram, target_diagram)(
+            lambda vertex: identities[shape.label(vertex)]
+        )
+        comparison = self.limit_functor().on_morphism(transformation)
+        refine(comparison, Fun._declared_subcategory(True))
+        self._pullback_transformations[source] = (*retained, transformation)
+        return comparison
+
+    def _pullback_comparison(self, source: Category, target: Category) -> Functor | None:
+        """Return the retained induced comparison ``source -> target``, if present."""
+        if source not in self._pullback_transformations:
+            return None
+        transformation = next(
+            (
+                candidate
+                for candidate in self._pullback_transformations[source]
+                if self.chosen_object(candidate.codomain()) is target
+            ),
+            None,
+        )
+        return None if transformation is None else self.limit_functor().on_morphism(transformation)
+
+    def _pullback_comparisons_from(self, source: Category) -> tuple[Functor, ...]:
+        """Return all retained induced comparisons with domain ``source``."""
+        if source not in self._pullback_transformations:
+            return ()
+        limit = self.limit_functor()
+        return tuple(limit.on_morphism(transformation) for transformation in self._pullback_transformations[source])
 
     def factorization(self) -> tuple[Functor, Functor]:
         return self._factor_through_image(self.limit_functor()), self.subcategory_monomorphism()
@@ -868,12 +938,16 @@ def induced_limit_morphism(family: Category, transformation: NaturalTransformati
     """``Lim(eta): L_D -> L_D'`` for ``eta: D => D'``: the mediator of the cone ``eta_i after pi_i``."""
     source = constructed_data(family, transformation.domain())
     target = constructed_data(family, transformation.codomain())
-    assert isinstance(source, ConeCategory.ObjectType)
-    assert isinstance(target, LimitConesCategory.ObjectType)
+
+    def induced_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        component = transformation.component(vertex)
+        identity = target.diagram().codomain().morphism_category(1)(component.domain(), component.domain()).one()
+        return source.leg(vertex) if component is identity else component * source.leg(vertex)
+
     induced_cone = cone(
         target.diagram(),
         source.apex(),
-        lambda vertex: transformation.component(vertex) * source.leg(vertex),
+        induced_leg,
     )
     return target.lift(cones(target.diagram())(induced_cone))
 
@@ -913,5 +987,4 @@ def limit_adjunction(family: Category) -> CategoryOfCategories.ElementType:
         counit_endofunctors.one(),
     )(lambda diagram: constructed_data(family, diagram).transformation())
     return Adjunctions(diagonal_functor, limit)(unit, counit)
-
 

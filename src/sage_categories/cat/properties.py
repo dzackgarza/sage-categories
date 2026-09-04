@@ -340,7 +340,9 @@ def retain_inverse_image(
         to_source = candidate_cone.component(shape(0))
 
         def on_object(value):
-            return realization(to_source.on_object(value))
+            image = to_source.on_object(value)
+            refine(image, realization)
+            return image
 
         def on_morphism(morphism):
             image = to_source.on_morphism(morphism)
@@ -349,7 +351,27 @@ def retain_inverse_image(
 
         return Fun(source, realization)(on_object, on_morphism)
 
-    Cat().Pullbacks().with_universal_data(diagram, realization, limiting_cone, mediator)
+    pullbacks = Cat().Pullbacks()
+    pullbacks.with_universal_data(diagram, realization, limiting_cone, mediator)
+    containments = (
+        *target_subcategory.selected_functors(),
+        *pullbacks._pullback_comparisons_from(target_subcategory),
+    )
+    for containment in containments:
+        if not _functors().declares_subcategory(containment):
+            continue
+        target_key = (functor, containment.codomain(), Cat())
+        if target_key not in _inverse_images:
+            continue
+        target_realization = _inverse_images[target_key]
+        target_diagram = cospan_diagram(
+            Cat(),
+            functor,
+            _declared_inclusion(containment.codomain(), functor.codomain()),
+        )
+        assert pullbacks.has_construction(target_diagram)
+        assert pullbacks.chosen_object(target_diagram) is target_realization
+        pullbacks._retain_pullback_comparison(diagram, target_diagram, containment)
 
 
 class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
@@ -591,6 +613,15 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         """The predicate of the one root property this narrowing restricts (``D.P()``)."""
         (root,) = self._roots
         return root.predicate()
+
+    def _subcategory_comparison(self, target: Category) -> Functor | None:
+        """Select the retained comparison between these inverse-image pullbacks, if one exists."""
+        from sage_categories.cat.functors import Cat
+
+        shape = Cat().WalkingCospan()
+        if not Category.Limits.is_constructed(Cat(), shape):
+            return None
+        return Cat().Pullbacks()._pullback_comparison(self, target)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The monomorphisms into the base, into each root, into the narrowing by the roots but one, and into the same narrowing of each category the base is a subcategory of, each once.

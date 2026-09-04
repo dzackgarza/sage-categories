@@ -798,6 +798,37 @@ def test_the_core_functor_target_is_implemented_through_that_same_declaration() 
     assert Groupoids.selected_functors() == (Fun(Groupoids, Groupoids).one(), U)
 
 
+def test_the_core_constructs_its_morphisms_through_the_isomorphisms_of_its_ambient() -> None:
+    """``Mor(C.Core())(A, B)(data)`` is the trusted constructor ``Mor(C)(A, B).Isomorphisms()(data)`` (D99, POL-MATH-037).
+
+    A morphism of ``C.Core()`` is an isomorphism of ``C``, and that containment is the
+    only thing the core adds to ``C``.  It is declared, not induced (D83), so the hom
+    category the call places its result in lies inside the isomorphisms of ``C`` between
+    the same two objects, and the call keeps the stronger of the two placements rather
+    than finding them incomparable (D21, ``POL-CAT-074``).  The core owns its identities
+    and its composites for the same reason its monomorphism is not full, so each lands in
+    the core's own hom category: ``Mor(C).Isomorphisms()`` is a declared ancestor of
+    ``Mor(C.Core())``, and answering there is the ancestor ``POL-CAT-074`` forbids.
+    """
+    A, B, D = TOKENS("core-domain"), TOKENS("core-middle"), TOKENS("core-codomain")
+    core = TOKENS.Core()
+    isomorphisms_between = Mor(TOKENS)(A, B).Isomorphisms()
+
+    morphism = Mor(core)(A, B)("core-arrow")
+
+    assert morphism.category() is Mor(core)(A, B)
+    assert is_subcategory(Mor(core)(A, B), isomorphisms_between)
+    assert is_placed(morphism, isomorphisms_between)
+    assert morphism.domain() is A and morphism.codomain() is B
+    assert morphism in Mor(TOKENS).Isomorphisms()
+
+    second = Mor(core)(B, D)("core-arrow-on")
+    composite = second * morphism
+    assert is_placed(composite, Mor(core))
+    assert is_placed(composite, Mor(core)(A, D))
+    assert is_placed(Mor(core)(A, A).one(), Mor(core)(A, A))
+
+
 for name, value in tuple(globals().items()):
     if name.startswith("test_"):
         value()

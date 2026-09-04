@@ -67,6 +67,9 @@ class CoreMorphismCategory(MorphismCategory):
     class MorphismType:
         ...
 
+    def structure_functors(self) -> tuple[Functor, ...]:
+        ...
+
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
@@ -82,6 +85,9 @@ class CoreFixedEndpointCategory(FixedEndpointCategory):
         ...
 
     class MorphismType:
+        ...
+
+    def structure_functors(self) -> tuple[Functor, ...]:
         ...
 Core: Functor
 U: Functor

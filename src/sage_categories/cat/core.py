@@ -128,14 +128,17 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
         return self._isomorphisms(domain, codomain)(*args, **kwargs)
 
     def _identity_morphism_(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        """The identity of ``C``, which is an isomorphism.
+        """The identity of ``C``, which is a morphism of the core because it is an isomorphism.
 
         ``C`` owns the identity, so the core states the theorem by placing it (D21,
         ``POL-MATH-037``); a constructor takes construction data and never a value
-        already constructed (D150).
+        already constructed (D150).  The placement is ``Mor(C.Core())(X, X)``, the core's
+        own endomorphism monoid: ``Mor(C).Isomorphisms()`` is a declared ancestor of it,
+        so placing the identity there instead would answer with an ancestor of the
+        category that owns the value (``POL-CAT-074``).
         """
         identity = self._ambient.morphism_category(1)(member_object, member_object).one()
-        refine(identity, self._isomorphisms)
+        refine(identity, self.morphism_category(1)(member_object, member_object))
         return identity
 
     def compose_morphisms(
@@ -143,13 +146,15 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
         second: MorphismCategory.ObjectType,
         first: MorphismCategory.ObjectType,
     ) -> MorphismCategory.ObjectType:
-        """The composite in ``C``, of two isomorphisms and so an isomorphism.
+        """The composite in ``C``, of two isomorphisms and so a morphism of the core.
 
         ``C`` owns the composition, so the core states that theorem by placing the
         composite (D21, ``POL-MATH-037``), not by feeding it to a constructor (D150).
+        The placement is ``Mor(C.Core())(A, D)``, the hom category of the core the
+        composite belongs to, for the reason ``_identity_morphism_`` gives.
         """
         composite = self._ambient.compose_morphisms(second, first)
-        refine(composite, self._isomorphisms)
+        refine(composite, self.morphism_category(1)(first.domain(), second.codomain()))
         return composite
 
     def inverse_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
@@ -186,6 +191,18 @@ class CoreMorphismCategory(MorphismCategory):
     class MorphismType:
         """A 2-morphism between two isomorphisms of ``C``."""
 
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """The inherited monomorphism into ``Mor(C)``, then the one into ``Mor(C).Isomorphisms()``.
+
+        The objects of this category are the morphisms of the core, which are the
+        isomorphisms of ``C``: the containment is that statement, and D83 has it declared
+        rather than induced from the membership proposition below.  Two morphisms of the
+        core with different endpoints then have ``Mor(C.Core())`` as their least common
+        category, so ``g * f`` is composed by the core, which is where the theorem that
+        the composite is again an isomorphism is stated (``POL-CAT-088``, D21).
+        """
+        return (*super().structure_functors(), Fun.full_subcategory_monomorphism(self, self._base.isomorphisms()))
+
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return self._base.isomorphisms().membership_proposition(candidate)
 
@@ -194,20 +211,10 @@ class CoreMorphismCategory(MorphismCategory):
 
 
 class CoreFixedEndpointCategory(FixedEndpointCategory):
-    """``Mor(C.Core())(A, B)``: by definition the full subcategory ``Mor(C)(A, B).Isomorphisms()``.
+    """``Mor(C.Core())(A, B)``: the full subcategory ``Mor(C)(A, B).Isomorphisms()`` of ``Mor(C)(A, B)``."""
 
-    That identity needs no declaration of its own.  ``Mor(C.Core())`` reaches
-    ``Mor(C).Isomorphisms()``, so the inherited full-subcategory monomorphism into
-    ``Mor(C.Core())`` already carries it: membership here is the ambient's proposition and
-    these endpoints, ``Mor(C.Core())(A, B)(data)`` constructs through
-    ``Mor(C)(A, B).Isomorphisms()``, and ``CoreCategory._chosen_hom_inhabited`` asks that
-    same category.  A second monomorphism, into ``Mor(C)(A, B).Isomorphisms()``, states the
-    identity again as a second placement route, and the two disagree on the linearization
-    of the object class (``compiler._assert_linearized``).
-    """
-
-    # ``Mor(C.Core())(A, B)`` is by definition ``Mor(C)(A, B).Isomorphisms()``: the same
-    # objects, so each body below is empty.
+    # The core narrows the morphisms of ``C`` and nothing else, so each body below is
+    # empty: an isomorphism ``A -> B`` here is that same value of ``C``.
     class ObjectType:
         """An isomorphism ``A -> B`` of ``C``."""
 
@@ -216,6 +223,23 @@ class CoreFixedEndpointCategory(FixedEndpointCategory):
 
     class MorphismType:
         """A 2-morphism between two isomorphisms ``A -> B``."""
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """The inherited monomorphism into ``Mor(C.Core())``, then the one into ``Mor(C)(A, B).Isomorphisms()``.
+
+        The containment is the statement and nothing induces it (D83).  The inherited
+        monomorphism reaches ``Mor(C.Core())`` and from there ``Mor(C)``, and neither
+        carries these endpoints, so without this second one nothing says that a morphism
+        of the core between ``A`` and ``B`` is an isomorphism ``A -> B`` of ``C``: the
+        value ``CoreCategory.construct_morphism`` builds in ``Mor(C)(A, B).Isomorphisms()``
+        and this category have no common placement, and refining it here would weaken an
+        established one (``POL-CAT-074``, ``POL-MATH-037``, D21).
+
+        It is full.  ``Mor(C).Isomorphisms()`` is a full subcategory of ``Mor(C)``, so the
+        2-morphisms between two isomorphisms ``A -> B`` are the same on both sides.
+        """
+        isomorphisms_between = self.base_category().isomorphisms()(self.domain(), self.codomain())
+        return (*super().structure_functors(), Fun.full_subcategory_monomorphism(self, isomorphisms_between))
 
 
 def _core_of(category: Category) -> Category:

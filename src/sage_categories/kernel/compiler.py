@@ -75,11 +75,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SemanticCollisionError(Exception):
-    """Two incomparable owners declare one spelling (POL-CAT-011, POL-API-011).
+    """Two incomparable owners declare one spelling.
 
-    A method name is one spelling and the name of an instance attribute is the other
-    (``specs/resolution.md``, "Acceptance conditions": unrelated mathematical
-    declarations with one spelling fail as a semantic collision).
+    A public method name is one spelling, rejected under POL-CAT-011 and POL-API-011.
+    The name of an instance attribute is the other, rejected under POL-API-024, whose
+    "the compiler rejects unrelated declarations with the same name" is this refusal in
+    the words it uses (``specs/resolution.md``, "Semantic collisions"; D178).
     """
 
 
@@ -785,12 +786,19 @@ def _keep_first_state(
     another.  Nothing licenses order to decide between two unrelated owners, and
     ``specs/resolution.md`` ("Semantic collisions") bans using selection order to resolve
     that conflict, so the kernel refuses it loudly instead of answering one owner's
-    method with another owner's state (D56).
+    method with another owner's state (D56).  An attribute name is the second spelling
+    that section governs; POL-API-024 owns the refusal (D178).
 
-    ``kernel_state`` holds the names the kernel roots installed ahead of every
-    declaration.  Placement and identity are the kernel's own, and the declaration that
-    owns them refines them from whichever turn it runs on (``refinement.place``, D169,
-    D175), so no turn's write of one of those names is discarded.
+    ``kernel_state`` holds every name already on the instance when the first owner's turn
+    starts, so nothing in it was written by a declaration's initializer and the first-writer
+    rule has no owner to name for it.  Two writers put names there.  The kernel roots run
+    immediately before and install placement and identity, which are the kernel's own and
+    which the declaration that owns them refines from whichever turn it runs on
+    (``refinement.place``, D169, D175).  A category value carries, in addition, whatever its
+    own class stored: the kernel constructs a category after that written body has run
+    (``kernel/roles.py``, ``_install_category_initializer``), so ``_ambient``, ``_name``,
+    ``_roots`` and a leaf category's own fields are all present before any turn.  Those are
+    the parameters of the one class the value names, not state a reached owner installed.
     """
     for name, state in list(vars(instance).items()):
         if name in kernel_state:
@@ -849,9 +857,11 @@ def _initialize_graph(
     resolved: list[tuple[Node, object, CategoryPoint]] = [(current, data, instance)]
     queued: list[_SelectedAction] = []
     # Each name written on the instance, held by the owner whose turn wrote it first, so
-    # that a later owner's turn cannot displace it (``_keep_first_state``).  The state the
-    # kernel roots installed ahead of every declaration is exempt: placement and identity
-    # are the kernel's own, and the declaration that owns them refines them.
+    # that a later owner's turn cannot displace it (``_keep_first_state``).  Every name
+    # already on the instance is exempt: no owner's turn wrote it, so the first-writer rule
+    # has no owner to name for it.  Those names are placement and identity, and for a
+    # category value also the parameters its own class stored before the kernel constructed
+    # it.
     kernel_state = frozenset(vars(instance))
     installed: dict[str, tuple[object, Node]] = {}
 

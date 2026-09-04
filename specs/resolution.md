@@ -231,6 +231,7 @@ It does not decide whether two unrelated mathematical owners can use one public 
 
 Keep one semantic collision check.
 Reject a compiled class when unrelated declaring categories define different mathematical operations with the same public name.
+A declaration's instance-attribute names are its other spelling, so reject a constructed value when unrelated declaring categories write one attribute name on it (`POL-API-024`, D178).
 Do not use selection order to resolve that conflict.
 
 ## Acceptance conditions
@@ -249,7 +250,7 @@ The private runtime satisfies this specification when:
 - a selected point functor places its object and supplies the codomain's surfaces through the exact categorical level shift;
 - the private Sage implementation graph remains distinct from Sage's mathematical category graph;
 - temporary runtime data has no public mathematical effect;
-- unrelated mathematical declarations with one spelling fail as a semantic collision;
+- unrelated mathematical declarations with one spelling, a public method name or an instance-attribute name, fail as a semantic collision;
 - theory modules import no private runtime type;
 - the kernel supplies inherited element construction and object retention, `Cat` supplies identity and composition, and `cat_kernel` supplies axiom-subcategory routing with the predicates it generates, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133, D173, D175);
 - every method a kernel module defines on a role class is on the closed surface below, and the kernel imports no module of `Cat` (D173);

@@ -443,6 +443,7 @@ class LimitsCategory(ApexCategory):
             self._pullback_transformations[key] = transformation
         comparison = self.limit_functor().on_morphism(transformation)
         refine(comparison, Fun._declared_subcategory(True))
+        self.chosen_object(source_diagram)._retain_structure_functor(comparison)
         return comparison
 
     def _apply_pullback_comparisons_at(self, diagram: Functor) -> None:
@@ -450,20 +451,6 @@ class LimitsCategory(ApexCategory):
         for (source_diagram, target_diagram, middle_component), _ in tuple(self._pullback_transformations.items()):
             if source_diagram is diagram or target_diagram is diagram:
                 self._apply_pullback_comparison(source_diagram, target_diagram, middle_component)
-
-    def _pullback_comparison(self, source: Category, target: Category) -> Functor | None:
-        """Return the retained induced comparison ``source -> target``, if present."""
-        retained = next(
-            (
-                transformation
-                for (source_diagram, target_diagram, _), transformation in self._pullback_transformations.items()
-                if transformation is not None
-                and self.chosen_object(source_diagram) is source
-                and self.chosen_object(target_diagram) is target
-            ),
-            None,
-        )
-        return None if retained is None else self.limit_functor().on_morphism(retained)
 
     def _pullback_comparisons_from(self, source: Category) -> tuple[Functor, ...]:
         """Return all retained induced comparisons with domain ``source``."""

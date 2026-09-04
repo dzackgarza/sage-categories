@@ -620,15 +620,6 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         (root,) = self._roots
         return root.predicate()
 
-    def _subcategory_comparison(self, target: Category) -> Functor | None:
-        """Select the retained comparison between these inverse-image pullbacks, if one exists."""
-        from sage_categories.cat.functors import Cat
-
-        shape = Cat().WalkingCospan()
-        if not Category.Limits.is_constructed(Cat(), shape):
-            return None
-        return Cat().Pullbacks()._pullback_comparison(self, target)
-
     def structure_functors(self) -> tuple[Functor, ...]:
         """The monomorphisms into the base, into each root, into the narrowing by the roots but one, and into the same narrowing of each category the base is a subcategory of, each once.
 

@@ -16,7 +16,7 @@ import pytest
 from sage_categories.cat.predicates import AppliedQuery, UnknownClass, negation, register_handler, retract
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
 from sage_categories.kernel.predicates import OwnedPredicate
-from sage_categories.kernel.refinement import is_placed, is_subcategory
+from sage_categories.kernel.refinement import common_ancestor, is_placed, is_subcategory
 from sage_categories.kernel.roles import CategoryPoint
 
 
@@ -700,11 +700,11 @@ def test_two_structure_functors_supply_the_construction_families_and_their_conta
     assert limits is along_second.inverse_image(boxed.Limits(shape))
     assert is_subcategory(limits, tokens.Limits(shape))
     assert is_subcategory(limits, tokens.Products())
-    comparison = limits._subcategory_comparison(products)
-    assert comparison is not None
-    assert limits._subcategory_comparison(products) is comparison
+    comparison = next(functor for functor in limits.selected_functors() if functor.codomain() is products)
+    assert next(functor for functor in limits.selected_functors() if functor.codomain() is products) is comparison
     assert comparison in Fun(limits, products).Monomorphisms().Isofibrations().Full()
     assert is_subcategory(limits, products)
+    assert common_ancestor(limits, products) is products
 
 
 def test_every_property_of_a_functor_is_an_axiom_the_kernel_applies() -> None:
@@ -749,11 +749,11 @@ def test_every_property_of_a_functor_is_an_axiom_the_kernel_applies() -> None:
         (endofunctors.Fibrations(), endofunctors.Isofibrations()),
         (endofunctors.Opfibrations(), endofunctors.Isofibrations()),
     ):
-        comparison = source._subcategory_comparison(target)
-        assert comparison is not None
-        assert source._subcategory_comparison(target) is comparison
+        comparison = next(functor for functor in source.selected_functors() if functor.codomain() is target)
+        assert next(functor for functor in source.selected_functors() if functor.codomain() is target) is comparison
         assert comparison in Fun(source, target).Monomorphisms().Isofibrations().Full()
         assert is_subcategory(source, target)
+        assert common_ancestor(source, target) is target
 
     # The axiom's identifier names the category too, so nothing spells a name twice.
     assert Fun.Isofibrations().name() == "Isofibrations"

@@ -5,7 +5,6 @@ from __future__ import annotations
 from sage_categories.kernel.sage_runtime import Integer
 
 from sage_categories.kernel.sage_runtime import Unknown
-from sympy import Predicate as SymPyPredicate
 from sympy.assumptions import global_assumptions
 from sympy.assumptions.assume import AppliedPredicate
 from sympy.logic.boolalg import Boolean
@@ -141,7 +140,7 @@ def test_generated_property_application_and_three_valued_ask() -> None:
     tiny = Tiny()
     positive, negative, undecided = tiny(3), tiny(-2), tiny(99)
     proposition = positive.is_special()
-    assert issubclass(Predicate, SymPyPredicate)
+    assert isinstance(tiny.Special().predicate(), Predicate)
     assert isinstance(proposition, Boolean)
     assert all(isinstance(part, AppliedPredicate) for part in proposition.args)
     assert isinstance(proposition | negative.is_special(), Boolean)
@@ -254,12 +253,12 @@ def test_inherited_property_is_the_inverse_image_along_the_defining_functor() ->
     assert presentation.transformation().component(shape(1)).codomain() is tiny.Special()
 
 
-def test_sympy_owns_each_property_predicate_and_its_handler() -> None:
+def test_each_property_predicate_uses_cats_base_and_its_own_handler() -> None:
     first, second = Tiny(), Tiny()
     first_predicate = first.Special().predicate()
     second_predicate = second.Special().predicate()
-    assert isinstance(first_predicate, SymPyPredicate)
-    assert isinstance(second_predicate, SymPyPredicate)
+    assert isinstance(first_predicate, Predicate)
+    assert isinstance(second_predicate, Predicate)
     assert first_predicate is not second_predicate
 
     positive = first_predicate(first(1))
@@ -516,14 +515,13 @@ def test_a_pullback_property_category_places_what_it_constructs() -> None:
     assert assumed in boxed.Tagged()
 
 
-class BalancedPredicate(SymPyPredicate):
+class BalancedPredicate(Predicate):
     """The predicate a category defines when no existing method supplies its proposition.
 
     ``specs/leaves.md`` "Property categories" and ``specs/poset-minimal-template.py`` write
-    it as this class statement, which is how SymPy documents a predicate that can be
-    evaluated (``sympy/assumptions/assume.py``, ``Predicate``, SymPy 1.14.0).  Applying it
-    to an owned value is SymPy's work as well: the value enters the expression as its
-    private identity atom, and nothing at the application site converts it.
+    it as this class statement on the predicate base that ``Cat`` exports.  Applying it
+    to an owned value enters that value in the SymPy expression as its private identity
+    atom, and nothing at the application site converts it.
     """
 
     name = "balanced"
@@ -543,8 +541,8 @@ def _decide_balanced(candidate: Tokens.ObjectType, assumptions: Proposition) -> 
 register_handler(balanced, _decide_balanced)
 
 
-def test_a_predicate_written_as_a_sympy_subclass_applies_to_an_owned_value() -> None:
-    """SymPy owns application, composition, and evaluation of a category's own predicate.
+def test_a_predicate_written_on_cats_base_applies_to_an_owned_value() -> None:
+    """``Cat.Predicate`` owns application, composition, and evaluation of a category's predicate.
 
     The owned value reaches the expression as its private identity atom, so one value
     gives one atom and two values give two.  ``ask`` then answers from the exact case the
@@ -563,6 +561,8 @@ def test_a_predicate_written_as_a_sympy_subclass_applies_to_an_owned_value() -> 
     assert ask(proposition) is True
     assert ask(balanced(odd)) is False
     assert ask(balanced(unsigned)) is Unknown
+    with pytest.raises(TypeError):
+        bool(balanced(unsigned))
     assert ask(balanced(even) & ~balanced(odd)) is True
 
 

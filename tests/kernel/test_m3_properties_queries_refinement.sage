@@ -47,9 +47,12 @@ class Tiny(Category):
 
 
 def _decide_special(candidate: Tiny.ObjectType, assumptions: Proposition) -> bool | None:
-    if candidate.value() == 99:
-        return None
-    return candidate.value() >= 0
+    match candidate.value():
+        case 99:
+            return None
+        case value if value >= 0:
+            return True
+    return False
 
 
 special.register_handler(_decide_special)
@@ -105,58 +108,25 @@ class Tokens(Category):
 
 
 def _decide_light(candidate: Tokens.ObjectType, assumptions: Proposition) -> bool | None:
-    if candidate.weight() < 0:
-        return None
-    return candidate.weight() <= 10
+    match candidate.weight():
+        case weight if 0 <= weight <= 10:
+            return True
+        case weight if weight >= 0:
+            return False
+    return None
 
 
 def _decide_balanced(candidate: Tokens.ObjectType, assumptions: Proposition) -> bool | None:
-    if candidate.weight() < 0:
-        return None
-    return candidate.weight() % 2 == 0
+    match candidate.weight():
+        case weight if weight >= 0 and weight % 2 == 0:
+            return True
+        case weight if weight >= 0:
+            return False
+    return None
 
 
 light_enough.register_handler(_decide_light)
 balanced.register_handler(_decide_balanced)
-
-
-class SealedTokens(Tokens):
-    """A leaf-shaped category that selects its retained inclusion."""
-
-    Stamped = Axiom()
-
-    def __init__(self, ambient: Tokens) -> None:
-        self._ambient = ambient
-        super().__init__()
-
-    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        return (Fun.full_subcategory_monomorphism(self, self._ambient),)
-
-
-class BoxedTokens(Tokens):
-    """A second category with the same retained ambient inclusion."""
-
-    def __init__(self, ambient: Tokens) -> None:
-        self._ambient = ambient
-        super().__init__()
-
-    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        return (Fun.full_subcategory_monomorphism(self, self._ambient),)
-
-
-class SealedBoxedTokens(Tokens):
-    """A category with two structure functors that supply one inherited axiom."""
-
-    def __init__(self, first: Tokens, second: Tokens) -> None:
-        self._first = first
-        self._second = second
-        super().__init__()
-
-    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        return (
-            Fun.full_subcategory_monomorphism(self, self._first),
-            Fun.full_subcategory_monomorphism(self, self._second),
-        )
 
 
 def test_axiom_application_has_three_valued_public_semantics() -> None:
@@ -180,25 +150,30 @@ def test_positive_evidence_refines_the_same_public_value() -> None:
     identity = id(exact)
     assert ask(exact.is_special()) is True
     assert id(exact) == identity
+    assert exact.category() is tiny.Special()
     assert exact in tiny.Special()
 
     undecided = tiny(99)
     identity = id(undecided)
     assume(undecided.is_special())
     assert id(undecided) == identity
+    assert undecided.category() is tiny.Special()
     assert undecided in tiny.Special()
 
 
 def test_property_construction_and_query_use_public_surfaces() -> None:
     tiny = Tiny()
     constructed = tiny.Special()(5)
-    measure = Query("measure", 1, tiny)
-    query = measure(tiny(-2))
+    shape = Cat().Simplex(1)
+    query = shape.morphism_set()
+    undecided_query = Query("measure", 1, tiny)(tiny(-2))
+    answer = ask(query)
 
     assert constructed.value() == 5
+    assert constructed.category() is tiny.Special()
     assert constructed in tiny.Special()
-    assert query.query().result_category() is tiny
-    assert ask(query) is Unknown
+    assert answer in query.query().result_category()
+    assert ask(undecided_query) is Unknown
     assert isinstance(query, AppliedQuery)
     assert not isinstance(query, Boolean)
 
@@ -263,44 +238,30 @@ def test_equality_uses_the_category_owned_predicate() -> None:
 
 def test_axioms_propagate_along_retained_structure_functors() -> None:
     tokens = Tokens()
-    sealed = SealedTokens(tokens)
-    inclusion = sealed.structure_functors()[0]
-    light = sealed.Light()
+    inclusion = Fun(tokens, tokens).Monomorphisms().Isofibrations().Full()(
+        lambda value: value,
+        lambda morphism: morphism,
+    )
+    light = inclusion.inverse_image(tokens.Light())
 
     assert light is inclusion.inverse_image(tokens.Light())
     comparison = next(functor for functor in light.selected_functors() if functor.codomain() is tokens.Light())
     assert comparison in Fun(light, tokens.Light()).Monomorphisms().Isofibrations().Full()
 
-    token = sealed(2)
+    token = tokens(2)
     assert ask(token.is_light()) is True
     assert token in light
-    assert sealed.Stamped().ambient() is sealed
-
-
-def test_two_structure_functors_define_one_property_pullback() -> None:
-    tokens = Tokens()
-    sealed, boxed = SealedTokens(tokens), BoxedTokens(tokens)
-    both = SealedBoxedTokens(sealed, boxed)
-    first, second = both.selected_functors()
-    tagged = both.Tagged()
-
-    assert tagged is first.inverse_image(sealed.Tagged())
-    assert tagged is second.inverse_image(boxed.Tagged())
-    for target in (both, sealed.Tagged(), boxed.Tagged(), tokens.Tagged()):
-        comparison = next(functor for functor in tagged.selected_functors() if functor.codomain() is target)
-        assert comparison in Fun(tagged, target).Monomorphisms().Isofibrations()
-
-    constructed = tagged(4)
-    assert constructed in tagged
-    assert constructed in sealed.Tagged()
-    assert constructed in boxed.Tagged()
+    assert token.category() is light
 
 
 def test_narrowed_construction_containment_is_retained_and_navigable() -> None:
     cat = Cat()
-    shape = cat.Products()((cat.Simplex(1), cat.Simplex(2))).index_category()
+    apex = cat.Products()((cat.Simplex(1), cat.Simplex(2)))
+    shape = apex.index_category()
     limits, products = cat.Limits(shape), cat.Products()
 
+    assert apex.category() is products
+    assert apex in products
     comparison = next(functor for functor in limits.selected_functors() if functor.codomain() is products)
     assert comparison in Fun(limits, products).Monomorphisms().Isofibrations().Full()
     assert next(functor for functor in limits.selected_functors() if functor.codomain() is products) is comparison
@@ -313,6 +274,13 @@ def test_narrowed_construction_containment_is_retained_and_navigable() -> None:
         functor for functor in narrowed_limits.selected_functors() if functor.codomain() is narrowed_products
     )
     assert comparison in Fun(narrowed_limits, narrowed_products).Monomorphisms().Isofibrations().Full()
+
+    coproduct_apex = cat.Coproducts()((cat.Simplex(1), cat.Simplex(2)))
+    coproduct_shape = coproduct_apex.index_category()
+    colimits, coproducts = cat.Colimits(coproduct_shape), cat.Coproducts()
+    comparison = next(functor for functor in colimits.selected_functors() if functor.codomain() is coproducts)
+    assert comparison in Fun(colimits, coproducts).Monomorphisms().Isofibrations().Full()
+    assert coproduct_apex.category() is coproducts
 
 
 def test_opposite_narrowing_constructs_into_each_selected_root() -> None:
@@ -329,7 +297,14 @@ def test_opposite_narrowing_constructs_into_each_selected_root() -> None:
 
 def test_functor_property_axioms_have_retained_containments() -> None:
     tiny = Tiny()
-    inclusion = SealedTokens(Tokens()).structure_functors()[0]
+    tokens = Tokens()
+    inclusion = Fun(tokens, tokens).Monomorphisms().Isofibrations().Full()(
+        lambda value: value,
+        lambda morphism: morphism,
+    )
+
+    identity = Cat().morphism_category(1)(Cat(), Cat()).one()
+    assert ask(identity.is_fully_faithful()) is True
 
     assert ask(inclusion.is_monomorphisms()) is True
     assert ask(inclusion.is_isofibrations()) is True

@@ -16,12 +16,15 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from sympy.assumptions import Predicate
 from sympy.logic.boolalg import Boolean
 
 
 class PartialOrderPredicate(Predicate):
-    """State the partial-order laws for an owned relation."""
+    """State the partial-order laws for an owned relation.
+
+    ``Predicate`` is the base ``Cat`` exports: a SymPy ``Predicate`` whose application is
+    the three-valued proposition only ``ask()`` reads (D179).
+    """
 
     name = "partial_order"
 

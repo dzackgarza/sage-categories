@@ -207,7 +207,9 @@ class SetsCategory(Category):
 
 An axiom is a string, here `"Finite"`, the attribute name.
 The deciding proposition is a private method (D142), written by the leaf writer in terms of methods that already exist on the category.
-A proposition that no existing method supplies applies a SymPy `Predicate` subclass the leaf defines, and the leaf registers that predicate's exact handlers through SymPy.
+A proposition that no existing method supplies applies a predicate the leaf defines: a class statement on `Predicate`, the base `Cat` exports, carrying the predicate's `name` ([poset template](poset-minimal-template.py); D179).
+That base is a SymPy `Predicate`, and its application is the three-valued proposition whose Python truth value raises, so `if p:` on an undecided proposition fails loudly (`POL-MATH-035`, `POL-API-015`, D131).
+The leaf registers that predicate's exact handlers through SymPy.
 `Sets().Finite()` exists implicitly: its objects are the objects of `Sets()` that satisfy the proposition.
 `cat_kernel` constructs the minimal structure functor `Sets().Finite() -> Sets()`, so `ObjectType`, `ElementType`, and `MorphismType` inherit with no ceremony, and `cat_kernel` generates the public `X.is_finite()` on `Sets().ObjectType`, the one public spelling of the proposition.
 The kernel performs same-object refinement after an exact positive result.

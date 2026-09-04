@@ -1,7 +1,7 @@
 # Propositions, typed queries, and `ask()`
 
 This specification owns the public question and evaluation contract.
-It implements D18 through D25, D63, D83, D89, D97, D115, and D125.
+It implements D18 through D25, D63, D83, D89, D97, D115, D125, and D179.
 
 It consumes property categories from [property-refinement.md](property-refinement.md).
 It provides propositions, typed queries, assumptions, equality, and evaluation.
@@ -20,7 +20,8 @@ Only `ask()` evaluates it.
 ## Public propositions
 
 A proposition is a SymPy Boolean expression.
-A predicate that no existing method supplies has a SymPy `Predicate` subclass its owner defines; applying it returns a SymPy `AppliedPredicate`.
+A predicate that no existing method supplies is a class statement its owner writes on `Predicate`, the one base `Cat` exports, which is a SymPy `Predicate` (D179).
+Applying it returns a SymPy `AppliedPredicate` whose Python truth value raises, so only `ask()` reads it (`POL-MATH-035`, D131).
 Compound propositions use SymPy `And`, `Or`, `Not`, and `Implies`.
 
 For a property category `C.P()`, the deciding proposition is a private method of the declaring category (D142), and `cat_kernel` generates its one public spelling:
@@ -30,7 +31,8 @@ X.is_P()
 ```
 
 The property category owns the predicate meaning.
-SymPy owns the public predicate class, application class, and Boolean algebra.
+SymPy owns predicate application, the Boolean algebra, the handler dispatcher, the assumption context, and evaluation.
+The exported base adds the raising truth value to SymPy's applied predicate, which is SymPy's own idiom for a three-valued expression, `Relational.__bool__` ([sets.md](sets.md#equality)).
 
 An owned value enters a SymPy expression through a private identity atom.
 The atom preserves the value's identity and gives the handler access to that value.
@@ -171,6 +173,7 @@ The architecture satisfies this specification when:
 
 - each truth-valued method returns a SymPy proposition;
 - each predicate meaning has one mathematical owner;
+- every leaf-defined predicate is a class statement on the one exported `Predicate`, so one application class carries every proposition and its truth value raises;
 - SymPy owns proposition application, composition, assumptions, dispatch, and evaluation;
 - private identity atoms expose no independent public value;
 - `ask()` maps only undecided SymPy results to Sage `Unknown`;

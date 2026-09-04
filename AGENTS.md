@@ -4,6 +4,7 @@
 
 `sage-categories` is a foundational category framework for Sage-based mathematics.
 It is already initialized.
+The kernel is engineering, `Cat` owns the mathematics every category shares, and `cat_kernel` holds the joint work downstream of both; a leaf reaches `Cat` and never `cat_kernel` (D173, D175).
 
 Read the applicable owners before each substantive edit or review:
 
@@ -120,10 +121,11 @@ Do not add automated convention enforcement before 1.0 (`POL-TEST-030`, `POL-TES
 An architectural invariant check is admitted only under `D132`; it runs in `just architecture` at the push tier.
 `just architecture` green on the phase's owned rule set at the exact revision is the precondition of every R-gate; the gate agent runs it first (`POL-DOC-028`).
 `just plan-state` at the push tier fails on more than one open phase, a `complete` phase without an accepted revision, an open phase with an incomplete prerequisite, or a leaf package in `src` before R6 (`POL-DOC-029`).
-Three gates are red by design until their owning card is accepted: the commit-tier mypy gate on the D131 baseline (owner: the static-projection plan, blocked on R6), the push-tier contract "The kernel imports no module of `Cat`", and the D132 rule `no-mathematics-on-kernel-role` (owner of the last two: M1). The Sage import contract was the fourth and has been kept since `b4dbfe0`. The import contract fails before the `ast-grep` step, so `no-mathematics-on-kernel-role` is run on its own until that contract is green.
-The last two carry D173: the kernel is engineering, `Cat` owns the mathematics every category shares, and the direction is kernel to `Cat` to leaves.
+One gate is red by design until its owning card is accepted: the commit-tier mypy gate on the D131 baseline (owner: the static-projection plan, blocked on R6).
+`just architecture` is red at the `ast-grep` step on four findings in `tests/kernel/test_m3_properties_queries_refinement.sage`: two of `no-refinement-after-construction`, which M3 owns and R3 clears, and two of `no-union-parameter`, which no phase card names and which is therefore R6's.
+The contract "The kernel imports no module of `Cat`" has been kept since `0d516b0`, the Sage import contract since `b4dbfe0`, and the D132 rule `no-mathematics-on-kernel-role` has been clean since `9ebf392`.
 `just architecture` runs `scripts/rule_coverage.py` first, so a rule whose file glob matches nothing is a hard stop rather than a vacuous green (D174).
-A kernel commit or push inside that window uses `--no-verify`, and its message names the red gate; `just plan-state` and `just architecture` on the owned set are still run first.
+A kernel commit or push against a red gate above uses `--no-verify`, and its message names the red gate; `just plan-state` and `just architecture` on the owned set are still run first.
 
 A docs-only edit runs no verification.
 Commit it with `git commit --no-verify`.

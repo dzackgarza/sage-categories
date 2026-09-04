@@ -17,7 +17,7 @@ import pytest
 from sage_categories.cat.predicates import AppliedQuery, UnknownClass, negation, predicate, register_handler, retract
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
 from sage_categories.kernel.predicates import OwnedPredicate
-from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
+from sage_categories.kernel.refinement import is_placed, is_subcategory
 from sage_categories.kernel.roles import CategoryPoint
 
 
@@ -303,14 +303,14 @@ def test_construction_families_are_axioms_applied_by_the_kernel() -> None:
 
 
 def test_one_declaration_compiled_at_two_incomparable_nodes_is_one_owner() -> None:
-    """Two opposite nodes each compile ``original`` from the one opposite declaration; their join compiles."""
+    """The intersection of two incomparable subcategories constructs into the join, and a category shares its objects with its opposite."""
     tiny = Tiny()
     first, second = TinySubcategory(tiny), TinySubcategory(tiny)
-    value = tiny(5)
-    first(value)
-    second(value)
-    refine(value, first.op())
-    refine(value, second.op())
+    both = tiny.intersection((first, second))
+    value = both(5)
+    assert value.category() is both
+    assert is_placed(value, first)
+    assert is_placed(value, second)
     assert is_placed(value, first.op())
     assert is_placed(value, second.op())
 
@@ -343,6 +343,42 @@ def test_the_declared_proposition_decides_membership_and_refines_the_same_value(
 
     assert ask(tokens(Integer(50)).is_light()) is False
     assert ask(tokens(Integer(-1)).is_light()) is Unknown
+
+
+def test_a_second_property_narrows_the_established_placement_rather_than_replacing_it() -> None:
+    """Both positive routes land the value in ``C.P().Q()``; neither answers with the ancestor ``C.Q()`` (``POL-CAT-074``, D150)."""
+    tokens = Tokens()
+    light, tagged = tokens.Light(), tokens.Tagged()
+
+    assumed = light(Integer(3))
+    identity = id(assumed)
+    assume(assumed.is_tagged())
+    assert id(assumed) == identity
+    assert assumed.category() is light.Tagged()
+    assert assumed in light
+    assert assumed in tagged
+
+    exact = tagged(Integer(4))
+    assert ask(exact.is_light()) is True
+    assert exact.category() is light.Tagged()
+    assert exact in light
+    assert exact in tagged
+
+
+def test_a_negative_answer_records_no_placement_and_an_undecided_one_changes_nothing() -> None:
+    """Only an exact positive result refines (``specs/property-refinement.md``, "Same-object refinement")."""
+    tokens = Tokens()
+    light = tokens.Light()
+
+    heavy = tokens(Integer(50))
+    assert ask(heavy.is_light()) is False
+    assert heavy.category() is tokens
+    assert not is_placed(heavy, light)
+
+    undecided = tokens(Integer(-1))
+    assert ask(undecided.is_light()) is Unknown
+    assert undecided.category() is tokens
+    assert not is_placed(undecided, light)
 
 
 def test_a_deciding_proposition_is_written_from_the_applications_already_generated() -> None:

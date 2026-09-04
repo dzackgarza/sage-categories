@@ -14,41 +14,6 @@ class NaturalTransformationData:
 Cat = _category.Cat
 Functor: Incomplete
 
-class FunctorProperties:
-
-    def Full(self) -> Category:
-        ...
-
-    def Faithful(self) -> Category:
-        ...
-
-    def FullyFaithful(self) -> Category:
-        ...
-
-    def EssentiallySurjective(self) -> Category:
-        ...
-
-    def Equivalences(self) -> Category:
-        ...
-
-    def PreservesLimits(self, shape: Category) -> Category:
-        ...
-
-    def CreatesLimits(self, shape: Category) -> Category:
-        ...
-
-    def Isofibrations(self) -> Category:
-        ...
-
-    def Fibrations(self) -> Category:
-        ...
-
-    def Opfibrations(self) -> Category:
-        ...
-
-    def Monomorphisms(self) -> Category:
-        ...
-
 class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
 
     def __init__(self, ambient: FunctorsCategory, name: str, full_subcategory_of: tuple[Category, ...], shape: Category) -> None:
@@ -57,15 +22,15 @@ class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [A
     def shape(self) -> Category:
         ...
 
-class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
+class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
 
-    class ObjectType(sage_categories.cat.functors.FunctorCategory.ObjectType, sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType, sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.properties.NarrowedProperty.ObjectType, sage_categories.cat.morphisms.EndomorphismsCategory.ObjectType):
+    class ObjectType(sage_categories.cat.functors.FunctorCategory.ObjectType, sage_categories.cat.properties.NarrowedProperty.ObjectType, sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType(sage_categories.cat.functors.FunctorCategory.ElementType, sage_categories.cat.morphisms.IsomorphismsCategory.ElementType, sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.cat.properties.NarrowedProperty.ElementType, sage_categories.cat.morphisms.EndomorphismsCategory.ElementType):
+    class ElementType(sage_categories.cat.functors.FunctorCategory.ElementType, sage_categories.cat.properties.NarrowedProperty.ElementType, sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType, sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.properties.NarrowedProperty.MorphismType, sage_categories.cat.morphisms.EndomorphismsCategory.MorphismType):
+    class MorphismType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.properties.NarrowedProperty.MorphismType, sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
@@ -77,7 +42,7 @@ class _DenotesDiagramPredicate(Predicate):
 class _DenotesFunctorPredicate(Predicate):
     name: str
 
-class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
+class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...

@@ -1531,7 +1531,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         identity = self.construct_morphism(category, category, lambda x: x, lambda f: f)
         # The identity functor is an equivalence: Mathlib ``CategoryTheory.Functor.id``
         # with ``IsEquivalence`` of the identity (inspected 2026-08-26).
-        refine(identity, Fun(category, category).Equivalences())
+        refine(identity, Fun.Equivalences())
         return identity
 
     def _symbolic_inverse_(self, functor: Functor) -> Functor:

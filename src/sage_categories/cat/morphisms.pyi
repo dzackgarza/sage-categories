@@ -153,13 +153,13 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
 
 class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.functors.FunctorsCategory.MorphismType):
         ...
 
-    class ElementType(sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.cat.morphisms.MorphismCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.morphisms.MorphismCategory.MorphismType):
         ...
 
 class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):
@@ -198,21 +198,6 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         ...
 
     def compose(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def Monomorphisms(self) -> Category:
-        ...
-
-    def Epimorphisms(self) -> Category:
-        ...
-
-    def Isomorphisms(self) -> Category:
-        ...
-
-    def Endomorphisms(self) -> Category:
-        ...
-
-    def Identity(self) -> Category:
         ...
 
     def narrowing_type(self) -> type[FixedEndpointProperty[MorphismData, TwoMorphismData]]:

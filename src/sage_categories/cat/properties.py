@@ -353,6 +353,7 @@ def retain_inverse_image(
 
     pullbacks = Cat().Pullbacks()
     pullbacks.with_universal_data(diagram, realization, limiting_cone, mediator)
+    pullbacks._apply_pullback_comparisons_at(diagram)
     containments = (
         *target_subcategory.selected_functors(),
         *pullbacks._pullback_comparisons_from(target_subcategory),
@@ -360,17 +361,27 @@ def retain_inverse_image(
     for containment in containments:
         if not _functors().declares_subcategory(containment):
             continue
-        target_key = (functor, containment.codomain(), Cat())
-        if target_key not in _inverse_images:
+        if containment.codomain() is functor.codomain():
             continue
-        target_realization = _inverse_images[target_key]
+        target_key = (functor, containment.codomain(), Cat())
+        target_inclusion = next(
+            (
+                candidate
+                for candidate in containment.codomain().selected_functors()
+                if candidate.codomain() is functor.codomain() and _functors().declares_subcategory(candidate)
+            ),
+            None,
+        )
+        if target_inclusion is None:
+            continue
         target_diagram = cospan_diagram(
             Cat(),
             functor,
-            _declared_inclusion(containment.codomain(), functor.codomain()),
+            target_inclusion,
         )
-        assert pullbacks.has_construction(target_diagram)
-        assert pullbacks.chosen_object(target_diagram) is target_realization
+        if target_key in _inverse_images:
+            assert pullbacks.has_construction(target_diagram)
+            assert pullbacks.chosen_object(target_diagram) is _inverse_images[target_key]
         pullbacks._retain_pullback_comparison(diagram, target_diagram, containment)
 
 

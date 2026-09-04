@@ -689,6 +689,10 @@ def test_two_structure_functors_supply_the_construction_families_and_their_conta
     assert limits is along_second.inverse_image(boxed.Limits(shape))
     assert is_subcategory(limits, tokens.Limits(shape))
     assert is_subcategory(limits, tokens.Products())
+    comparison = limits._subcategory_comparison(products)
+    assert comparison is not None
+    assert limits._subcategory_comparison(products) is comparison
+    assert comparison in Fun(limits, products).Monomorphisms().Isofibrations().Full()
     assert is_subcategory(limits, products)
 
 
@@ -727,6 +731,18 @@ def test_every_property_of_a_functor_is_an_axiom_the_kernel_applies() -> None:
     assert is_subcategory(Fun.Fibrations(), Fun.Isofibrations())
     assert is_subcategory(Fun.Opfibrations(), Fun.Isofibrations())
     assert not is_subcategory(Fun.Isofibrations(), Fun.Faithful())
+
+    endofunctors = Fun(Cat(), Cat())
+    for source, target in (
+        (endofunctors.Monomorphisms(), endofunctors.Faithful()),
+        (endofunctors.Fibrations(), endofunctors.Isofibrations()),
+        (endofunctors.Opfibrations(), endofunctors.Isofibrations()),
+    ):
+        comparison = source._subcategory_comparison(target)
+        assert comparison is not None
+        assert source._subcategory_comparison(target) is comparison
+        assert comparison in Fun(source, target).Monomorphisms().Isofibrations().Full()
+        assert is_subcategory(source, target)
 
     # The axiom's identifier names the category too, so nothing spells a name twice.
     assert Fun.Isofibrations().name() == "Isofibrations"

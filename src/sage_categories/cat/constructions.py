@@ -70,7 +70,7 @@ from sage_categories.cat.properties import PredicateSubcategory, PropertySubcate
 from sage_categories.cat.predicates import Unknown
 from sage_categories.cat.predicates import Proposition, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.sage_runtime import MonoDict, TripleDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -340,7 +340,7 @@ class LimitsCategory(ApexCategory):
         assert shape in Cat(), f"{shape!r} is not a shape"
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
-        self._pullback_transformations: MonoDict = MonoDict()
+        self._pullback_transformations: TripleDict = TripleDict(weak_values=False)
         self._limit_adjunction: CategoryOfCategories.ElementType | None = None
         super().__init__(ambient, name, (*full_subcategory_of, *_union_containment(ambient.Products(), shape)))
         self.limit_functor()
@@ -398,25 +398,11 @@ class LimitsCategory(ApexCategory):
         source_diagram: Functor,
         target_diagram: Functor,
         middle_component: Functor,
-    ) -> Functor:
+    ) -> Functor | None:
         """Retain the functor induced by ``(1_D, middle_component, 1_C)`` between two chosen pullbacks."""
         shape = self.shape()
         assert self.ambient() is Cat() and shape is Cat().WalkingCospan()
-        assert self.has_construction(source_diagram) and self.has_construction(target_diagram)
-        source = self.chosen_object(source_diagram)
-        target = self.chosen_object(target_diagram)
-        retained = self._pullback_transformations[source] if source in self._pullback_transformations else ()
-        known = next(
-            (
-                transformation
-                for transformation in retained
-                if self.chosen_object(transformation.codomain()) is target
-            ),
-            None,
-        )
-        if known is not None:
-            return self.limit_functor().on_morphism(known)
-
+        key = (source_diagram, target_diagram, middle_component)
         left, middle, apex = (shape(index) for index in range(3))
         source_left = source_diagram.on_object(left)
         target_left = target_diagram.on_object(left)
@@ -428,40 +414,65 @@ class LimitsCategory(ApexCategory):
         assert middle_component.domain() is source_middle and middle_component.codomain() is target_middle
         assert traces_placement(middle_component)
         assert is_placed(middle_component, Fun.Full())
+        if key not in self._pullback_transformations:
+            self._pullback_transformations[key] = None
+        return self._apply_pullback_comparison(source_diagram, target_diagram, middle_component)
 
-        identities = {
-            0: Cat().morphism_category(1)(source_left, source_left).one(),
-            1: middle_component,
-            2: Cat().morphism_category(1)(source_apex, source_apex).one(),
-        }
-        transformation = self.diagrams().morphism_category(1)(source_diagram, target_diagram)(
-            lambda vertex: identities[shape.label(vertex)]
-        )
+    def _apply_pullback_comparison(
+        self,
+        source_diagram: Functor,
+        target_diagram: Functor,
+        middle_component: Functor,
+    ) -> Functor | None:
+        """Realize a retained cospan map after both endpoint pullbacks are retained."""
+        if not self.has_construction(source_diagram) or not self.has_construction(target_diagram):
+            return None
+        key = (source_diagram, target_diagram, middle_component)
+        transformation = self._pullback_transformations[key]
+        if transformation is None:
+            shape = self.shape()
+            left, _, apex = (shape(index) for index in range(3))
+            identities = {
+                0: Cat().morphism_category(1)(source_diagram.on_object(left), source_diagram.on_object(left)).one(),
+                1: middle_component,
+                2: Cat().morphism_category(1)(source_diagram.on_object(apex), source_diagram.on_object(apex)).one(),
+            }
+            transformation = self.diagrams().morphism_category(1)(source_diagram, target_diagram)(
+                lambda vertex: identities[shape.label(vertex)]
+            )
+            self._pullback_transformations[key] = transformation
         comparison = self.limit_functor().on_morphism(transformation)
         refine(comparison, Fun._declared_subcategory(True))
-        self._pullback_transformations[source] = (*retained, transformation)
         return comparison
+
+    def _apply_pullback_comparisons_at(self, diagram: Functor) -> None:
+        """Apply each retained cospan morphism whose last missing endpoint is ``diagram``."""
+        for (source_diagram, target_diagram, middle_component), _ in tuple(self._pullback_transformations.items()):
+            if source_diagram is diagram or target_diagram is diagram:
+                self._apply_pullback_comparison(source_diagram, target_diagram, middle_component)
 
     def _pullback_comparison(self, source: Category, target: Category) -> Functor | None:
         """Return the retained induced comparison ``source -> target``, if present."""
-        if source not in self._pullback_transformations:
-            return None
-        transformation = next(
+        retained = next(
             (
-                candidate
-                for candidate in self._pullback_transformations[source]
-                if self.chosen_object(candidate.codomain()) is target
+                transformation
+                for (source_diagram, target_diagram, _), transformation in self._pullback_transformations.items()
+                if transformation is not None
+                and self.chosen_object(source_diagram) is source
+                and self.chosen_object(target_diagram) is target
             ),
             None,
         )
-        return None if transformation is None else self.limit_functor().on_morphism(transformation)
+        return None if retained is None else self.limit_functor().on_morphism(retained)
 
     def _pullback_comparisons_from(self, source: Category) -> tuple[Functor, ...]:
         """Return all retained induced comparisons with domain ``source``."""
-        if source not in self._pullback_transformations:
-            return ()
         limit = self.limit_functor()
-        return tuple(limit.on_morphism(transformation) for transformation in self._pullback_transformations[source])
+        return tuple(
+            limit.on_morphism(transformation)
+            for (source_diagram, _, _), transformation in self._pullback_transformations.items()
+            if transformation is not None and self.chosen_object(source_diagram) is source
+        )
 
     def factorization(self) -> tuple[Functor, Functor]:
         return self._factor_through_image(self.limit_functor()), self.subcategory_monomorphism()
@@ -987,4 +998,3 @@ def limit_adjunction(family: Category) -> CategoryOfCategories.ElementType:
         counit_endofunctors.one(),
     )(lambda diagram: constructed_data(family, diagram).transformation())
     return Adjunctions(diagonal_functor, limit)(unit, counit)
-

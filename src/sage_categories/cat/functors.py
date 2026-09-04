@@ -85,52 +85,6 @@ from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategor
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
 
 
-class FunctorProperties:
-    """The property subcategories of ``Fun``, narrowed to ``Fun(C, D)`` and to its own narrowings.
-
-    ``Fun(C, D).Monomorphisms().Isofibrations().Full()`` is one category however it is
-    spelled (POL-CAT-084), so the same accessors sit on the fixed-endpoint category and on
-    each narrowing of it, and each narrows the placement it is called on.
-    """
-
-    def Full(self) -> Category:
-        return self.property_subcategory(self.ambient().Full())
-
-    def Faithful(self) -> Category:
-        return self.property_subcategory(self.ambient().Faithful())
-
-    def FullyFaithful(self) -> Category:
-        return self.property_subcategory(self.ambient().FullyFaithful())
-
-    def EssentiallySurjective(self) -> Category:
-        return self.property_subcategory(self.ambient().EssentiallySurjective())
-
-    def Equivalences(self) -> Category:
-        return self.property_subcategory(self.ambient().Equivalences())
-
-    def PreservesLimits(self, shape: Category) -> Category:
-        """Functors preserving limits of ``shape`` (D107, POL-FUN-039)."""
-        return self.property_subcategory(self.ambient().PreservesLimits(shape))
-
-    def CreatesLimits(self, shape: Category) -> Category:
-        """Functors creating limits of ``shape`` (D107, POL-FUN-039)."""
-        return self.property_subcategory(self.ambient().CreatesLimits(shape))
-
-    def Isofibrations(self) -> Category:
-        return self.property_subcategory(self.ambient().Isofibrations())
-
-    def Fibrations(self) -> Category:
-        """Grothendieck fibrations: a cartesian lift of an isomorphism is an isomorphism, so this sits inside ``Isofibrations()`` (D169)."""
-        return self.property_subcategory(self.ambient().Fibrations())
-
-    def Opfibrations(self) -> Category:
-        """Grothendieck opfibrations: a cocartesian lift of an isomorphism is an isomorphism, so this sits inside ``Isofibrations()`` (D169)."""
-        return self.property_subcategory(self.ambient().Opfibrations())
-
-    def Monomorphisms(self) -> Category:
-        return self.property_subcategory(self.ambient().Monomorphisms())
-
-
 class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
     """``Fun.P(I)``: a property subcategory of ``Fun`` whose axiom takes a diagram shape (D107, D168, POL-FUN-039).
 
@@ -156,7 +110,7 @@ class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [A
         return f"{self.ambient()!r}.{self.name()}({self._shape!r})"
 
 
-class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
+class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
     """``Fun(C, D).P()``: functors ``C -> D`` with property ``P``; constructs one, and ``one()`` is ``1_C`` with ``P``."""
 
     class ObjectType:
@@ -275,7 +229,7 @@ def _denotes_functor_by_domain(
     return (candidate._is_object() or candidate._is_morphism()) and candidate.defining_morphism().domain() in Cat()
 
 
-class FunctorCategory(FunctorProperties, FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
+class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
     """``Fun(C, D)``: functors ``C -> D`` and their natural transformations.
 
     As the category of diagrams of shape ``C`` in ``D`` it retains its evaluation

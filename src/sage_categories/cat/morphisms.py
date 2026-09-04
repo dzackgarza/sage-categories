@@ -576,21 +576,6 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         assert first.domain() is self._domain_object and second.codomain() is self._codomain_object
         return self.base_category().compose_morphisms(second, first)
 
-    def Monomorphisms(self) -> Category:
-        return self.property_subcategory(self.ambient().Monomorphisms())
-
-    def Epimorphisms(self) -> Category:
-        return self.property_subcategory(self.ambient().Epimorphisms())
-
-    def Isomorphisms(self) -> Category:
-        return self.property_subcategory(self.ambient().Isomorphisms())
-
-    def Endomorphisms(self) -> Category:
-        return self.property_subcategory(self.ambient().Endomorphisms())
-
-    def Identity(self) -> Category:
-        return self.property_subcategory(self.ambient().Identity())
-
     def narrowing_type(self) -> type[FixedEndpointProperty[MorphismData, TwoMorphismData]]:
         from sage_categories.cat.properties import FixedEndpointProperty
 

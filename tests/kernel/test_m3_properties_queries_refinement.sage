@@ -326,6 +326,13 @@ def test_shape_indexed_functor_properties_are_public_axioms() -> None:
     assert Fun.PreservesLimits(other) is not preserves
     assert functors.CreatesLimits(shape) is creates(tiny, tiny)
 
+    identity = Cat().morphism_category(1)(Cat(), Cat()).one()
+    created_at_shape = identity.is_creates_limits(shape)
+    created_at_other = identity.is_creates_limits(other)
+    assert created_at_shape is Fun(Cat(), Cat()).CreatesLimits(shape).membership_proposition(identity)
+    assert created_at_other is Fun(Cat(), Cat()).CreatesLimits(other).membership_proposition(identity)
+    assert created_at_shape != created_at_other
+
 
 for name, value in tuple(globals().items()):
     if name.startswith("test_"):

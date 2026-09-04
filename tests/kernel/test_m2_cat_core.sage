@@ -617,3 +617,47 @@ def test_strict_and_full_image_inclusions_are_the_direct_zero_argument_call() ->
 for name, value in tuple(globals().items()):
     if name.startswith("test_"):
         value()
+
+
+def test_a_composite_is_placed_by_both_of_its_factors() -> None:
+    """``g * f`` lands in the strongest category both factors are morphisms of, in either order.
+
+    A morphism placed in ``Mor(C.P())`` states that both of its endpoints lie in the full
+    subcategory ``C.P()``, so ``g * f`` is a morphism of ``C.P()`` when both factors are
+    and a morphism of ``C`` when one of them is not.  Composition therefore reads both
+    factors, exactly as the product of two objects does (``POL-CAT-088``), and the
+    composite is constructed into the strongest category its factors establish (D21,
+    ``POL-CAT-020``, ``POL-CAT-081``).
+
+    ``1_X`` for ``X`` in ``C.P()`` is placed in a narrowing of ``Mor(C)`` carrying
+    ``Mor(C.P())`` among its roots, so that narrowing's base is ``C.P()`` and not ``C``:
+    reading an ancestor there is the weakening ``POL-CAT-074`` forbids.  Placement is a
+    sufficient route to ``True`` and never the definition (``POL-CAT-068``), so the two
+    answers are read together: they agree on the composites of ``C.P()`` and agree again
+    on the composite whose far endpoint ``C.P()`` does not hold.
+    """
+    marked = TOKENS.Marked()
+    source, target = marked("marked source"), marked("marked target")
+    arrow = Mor(marked)(source, target)("marked arrow")
+    source_identity = Mor(marked)(source, source).one()
+    target_identity = Mor(marked)(target, target).one()
+
+    # The identity of an object of ``C.P()`` is a morphism of ``C.P()``, which is what its
+    # placement says and what composition reads from it.
+    assert is_placed(source_identity, Mor(marked))
+    assert source_identity.base_category() is marked
+
+    for name, composite in (("f * 1_X", arrow * source_identity), ("1_Y * f", target_identity * arrow)):
+        assert is_placed(composite, Mor(marked)), name
+        assert ask(Mor(marked).membership_proposition(composite)) is True, name
+        assert ask(composite == arrow) is True, name
+
+    # The far endpoint decides the other direction: ``h`` starts outside ``C.P()``, so
+    # ``f * h`` is a morphism of ``C`` alone and neither answer claims otherwise.
+    outside = TOKENS("ambient source")
+    entering = Mor(TOKENS)(outside, source)("entering arrow")
+    leaving = arrow * entering
+
+    assert is_placed(leaving, Mor(TOKENS))
+    assert not is_placed(leaving, Mor(marked))
+    assert ask(Mor(marked).membership_proposition(leaving)) is Unknown

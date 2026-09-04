@@ -436,13 +436,24 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return MorphismCategory
 
     def base_category(self) -> Category:
-        """The category ``C`` such that this category is a subcategory of ``Mor(C)``."""
+        """The strongest category ``C`` such that this category is a subcategory of ``Mor(C)``.
+
+        A narrowing carries the roots it is narrowed by, and a root that is itself a
+        category of morphisms narrows the base by its own base: the narrowing of
+        ``Mor(C)`` by ``{Mor(C.P()), Isomorphisms, Identity}`` is a subcategory of
+        ``Mor(C.P())``, so its base is ``C.P()``.  That narrowing is where ``1_X`` for
+        ``X`` in ``C.P()`` is placed (``cat/properties.py``,
+        ``NarrowedProperty.structure_functors``), and answering ``C`` there replaces an
+        established placement with an ancestor, which POL-CAT-074 forbids.  A root that
+        is a property of ``Mor(C)`` narrows the morphisms and not the base, so it
+        contributes nothing here.
+        """
         source, is_morphism = self._object_role_source()
         if is_morphism:
             return source
-        if self.has_ambient():
-            return self.ambient().base_category()
-        raise AssertionError(f"{self!r} is not a category of morphisms")
+        assert self.has_ambient(), f"{self!r} is not a category of morphisms"
+        morphism_roots = tuple(root.base_category() for root in self.narrowing_roots() if root._object_role_source()[1])
+        return self.ambient().base_category().intersection(morphism_roots)
 
     # -- identities and composition -------------------------------------------
     #

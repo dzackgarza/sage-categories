@@ -34,7 +34,7 @@ from sage_categories.cat.category import (
 )
 from sage_categories.cat.predicates import predicate, register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
-from sage_categories.kernel.refinement import is_placed
+from sage_categories.kernel.refinement import common_ancestor, is_placed
 from sage_categories.kernel.sage_runtime import Integer, TripleDict, Unknown
 
 if TYPE_CHECKING:
@@ -243,14 +243,28 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             return opposite_morphism(self)
 
         def __mul__(self, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-            """``self * first`` is ``self`` after ``first``: composition owned by ``C``.
+            """``self * first`` is ``self`` after ``first``: composition owned by the least category having both.
 
             ``*`` on a morphism is composition and nothing else: no operator carries two
             meanings on one role (POL-CAT-088).  The product of two morphisms is the
             product of two objects of ``Mor(C)`` and is constructed by naming that
             category: ``Mor(C).Products()((f, g))``.  It has no operator.
+
+            Composition is binary, so its owner is read from both factors, exactly as the
+            product of two objects reads both (``cat/category.py``, ``_shared_category``).
+            A morphism placed in ``Mor(C.P())`` states that both of its endpoints lie in
+            the full subcategory ``C.P()``, so ``g * f`` is a morphism of ``C.P()`` when
+            both factors are and a morphism of ``C`` when one of them is not.  Reading the
+            left factor alone weakens the composite in the one order and asserts a
+            containment its far endpoint does not support in the other (D21, POL-CAT-020,
+            POL-CAT-074).
             """
-            return self.base_category().compose_morphisms(self, first)
+            shared = common_ancestor(self.category(), first.category())
+            assert shared is not None, (
+                f"{self!r} in {self.category()!r} and {first!r} in {first.category()!r} "
+                f"have no least common category along subcategory monomorphisms"
+            )
+            return shared.base_category().compose_morphisms(self, first)
 
         def __eq__(self, candidate: MorphismCategory.ObjectType | int) -> Predicate:
             return self.base_category().equality()(self, candidate)

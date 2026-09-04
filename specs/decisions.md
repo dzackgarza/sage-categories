@@ -1099,7 +1099,7 @@ Source: 09-02, `54674b9b` 2026-09-02T23:49:34Z, 23:50:47Z.
 
 Selected faithful isofibrations carry inheritance; other selected functors supply access. Order fixes precedence. [D177](#d177) records the trusted faithfulness assertion associated with the selected Isofibrations declaration. Owner: [Selected structure functors](functor.md#structure-functors-and-inherited-classes).
 
-Source: 09-02, `54674b9b` 2026-09-02T23:55:17Z; derived from D164, D165, D166 and confirmed by the owner.
+Source: 09-02, `54674b9b` 2026-09-02T23:55:17Z; confirmation at 2026-09-02T23:55:21.682Z on the queued-message surface. Derived from D164, D165, and D166.
 
 ### D168
 

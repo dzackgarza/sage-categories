@@ -25,8 +25,12 @@ and the caller reads the data it means at that diagram.
 ``C.Products()`` is the union of the full images of ``Lim_I`` for discrete shapes
 whose owned object-set cardinality is at least two.  It supplies the sequence
 convenience ``(X_0, ..., X_n)`` and ``product_projection(i)`` (POL-CAT-093).
-The shape family ``C.Limits(I)`` remains the sole owner of the universal data.
-Singleton and unresolved discrete shapes remain only in ``C.Limits(I)``.
+The shape family ``C.Limits(I)`` remains the sole owner of the universal data, and
+being one of the full images the union runs over is the containment
+``C.Limits(I) -> C.Products()``, declared as that subcategory monomorphism (D83).
+An apex is therefore placed once, in its shape family, and reaches the union along
+the declaration.  Singleton and unresolved discrete shapes declare no such
+monomorphism and remain only in ``C.Limits(I)``.
 ``C.Coproducts()`` and ``C.Colimits(Discrete(S))`` are dual with cocones.
 
 Constructing an object of ``C.Limits(I)`` calls the category-owned
@@ -119,6 +123,21 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
         return None
     decision = ask(cardinal >= 2)
     return decision if decision is not Unknown else None
+
+
+def _union_containment(union: Category, shape: Category) -> tuple[Category, ...]:
+    """``union`` when ``shape`` is known nontrivial discrete, so that the containment is declared (D83).
+
+    ``C.Products()`` is the union of the full images of the ``Lim_J`` for nontrivial
+    discrete ``J`` (``specs/functor.md``, "Diagram shapes and universal constructions"),
+    and ``C.Limits(J)`` is the full image of ``Lim_J``, so the mathematics says
+    ``C.Limits(J)`` is a full subcategory of ``C.Products()``.  That containment is
+    recorded as the monomorphism ``C.Limits(J) -> C.Products()`` and nothing induces it
+    from a relation between the two predicates (D83), so an apex is placed once, in its
+    shape family, and reaches the union along the declaration.  A singleton or undecided
+    shape declares nothing and its apexes stay in ``C.Limits(J)`` alone.
+    """
+    return (union,) if _nontrivial_discrete(shape) is True else ()
 
 
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:
@@ -323,7 +342,7 @@ class LimitsCategory(ApexCategory):
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
         self._limit_adjunction: CategoryOfCategories.ElementType | None = None
-        super().__init__(ambient, name, full_subcategory_of)
+        super().__init__(ambient, name, (*full_subcategory_of, *_union_containment(ambient.Products(), shape)))
         self.limit_functor()
 
     def shape(self) -> Category:
@@ -340,12 +359,8 @@ class LimitsCategory(ApexCategory):
         """
         self.accepts(diagram, self._shape)
         if self.has_construction(diagram):
-            apex = self.chosen_object(diagram)
-        else:
-            apex = self.chosen(diagram, self.ambient().limit_construction(self._shape))
-        if self._shape.is_discrete():
-            self.ambient().Products().retain_product(self, apex)
-        return apex
+            return self.chosen_object(diagram)
+        return self.chosen(diagram, self.ambient().limit_construction(self._shape))
 
     def with_universal_data(
         self,
@@ -362,10 +377,7 @@ class LimitsCategory(ApexCategory):
             limiting_cone,
             lambda candidate: mediator(candidate.transformation()),
         )
-        retained = self._retain(diagram, apex, presentation)
-        if self._shape.is_discrete():
-            self.ambient().Products().retain_product(self, retained)
-        return retained
+        return self._retain(diagram, apex, presentation)
 
     def limit_functor(self) -> Functor:
         """``Lim_I: Fun(I, C) -> C``, retained once."""
@@ -390,11 +402,8 @@ class LimitsCategory(ApexCategory):
             self._limit_adjunction = limit_adjunction(self)
         return self._limit_adjunction
 
-    def name(self) -> str:
-        return f"Limits({self._shape!r})"
-
     def __repr__(self) -> str:
-        return f"{self.ambient()!r}.Limits({self._shape!r})"
+        return f"{self.ambient()!r}.{self.name()}({self._shape!r})"
 
 
 class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
@@ -474,16 +483,6 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
             return None
         return False
 
-    def retain_product(
-        self,
-        family: Category,
-        apex: CategoryOfCategories.ElementType,
-    ) -> None:
-        assert isinstance(family, LimitsCategory)
-        assert family.shape().is_discrete()
-        self.retain_full_image(family)
-        ask(self.membership_proposition(apex))
-
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> Category:
         families = tuple(
             family
@@ -539,12 +538,6 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
             limiting_cone,
             mediator,
         )
-
-    def name(self) -> str:
-        return "Products"
-
-    def __repr__(self) -> str:
-        return f"{self.ambient()!r}.Products()"
 
 
 class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
@@ -609,7 +602,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         self._lowered: MonoDict = MonoDict()
         self._dual_diagrams: MonoDict = MonoDict()
         self._colimit_functor: Functor | None = None
-        super().__init__(ambient, name, full_subcategory_of)
+        super().__init__(ambient, name, (*full_subcategory_of, *_union_containment(ambient.Coproducts(), shape)))
         self.colimit_functor()
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
@@ -663,8 +656,6 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         apex = presentation.apex()
         assert apex in self.ambient(), f"{apex!r} is not an object of {self.ambient()!r}"
         refine(apex, self)
-        if self._shape.is_discrete():
-            self.ambient().Coproducts().retain_coproduct(self, apex)
         return apex
 
     def has_construction(self, diagram: Functor) -> bool:
@@ -738,11 +729,8 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
     def defining_functor(self) -> Functor:
         return self.colimit_functor()
 
-    def name(self) -> str:
-        return f"Colimits({self._shape!r})"
-
     def __repr__(self) -> str:
-        return f"{self.ambient()!r}.Colimits({self._shape!r})"
+        return f"{self.ambient()!r}.{self.name()}({self._shape!r})"
 
 
 class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
@@ -806,16 +794,6 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
             return None
         return False
 
-    def retain_coproduct(
-        self,
-        family: Category,
-        apex: CategoryOfCategories.ElementType,
-    ) -> None:
-        assert isinstance(family, ColimitsCategory)
-        assert family.shape().is_discrete()
-        self.retain_full_image(family)
-        ask(self.membership_proposition(apex))
-
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> ColimitsCategory:
         families = tuple(
             family
@@ -871,12 +849,6 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
             colimiting_cocone,
             mediator,
         )
-
-    def name(self) -> str:
-        return "Coproducts"
-
-    def __repr__(self) -> str:
-        return f"{self.ambient()!r}.Coproducts()"
 
 
 # -- the construction functors -------------------------------------------------------------

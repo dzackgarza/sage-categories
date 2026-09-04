@@ -93,9 +93,6 @@ class LimitsCategory(ApexCategory):
     def adjunction(self) -> CategoryOfCategories.ElementType:
         ...
 
-    def name(self) -> str:
-        ...
-
 class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
 
     class ElementType:
@@ -130,9 +127,6 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     def full_images(self) -> tuple[Category, ...]:
         ...
 
-    def retain_product(self, family: Category, apex: CategoryOfCategories.ElementType) -> None:
-        ...
-
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> Category:
         ...
 
@@ -143,9 +137,6 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         ...
 
     def with_universal_data(self, diagram: Functor, apex: CategoryOfCategories.ElementType, limiting_cone: NaturalTransformation, mediator: Mediator) -> CategoryOfCategories.ElementType:
-        ...
-
-    def name(self) -> str:
         ...
 
 class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
@@ -221,9 +212,6 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
     def defining_functor(self) -> Functor:
         ...
 
-    def name(self) -> str:
-        ...
-
 class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
 
     class ElementType:
@@ -249,9 +237,6 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
     def full_images(self) -> tuple[Category, ...]:
         ...
 
-    def retain_coproduct(self, family: Category, apex: CategoryOfCategories.ElementType) -> None:
-        ...
-
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> ColimitsCategory:
         ...
 
@@ -262,7 +247,4 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         ...
 
     def with_universal_data(self, diagram: Functor, apex: CategoryOfCategories.ElementType, colimiting_cocone: NaturalTransformation, mediator: Mediator) -> CategoryOfCategories.ElementType:
-        ...
-
-    def name(self) -> str:
         ...

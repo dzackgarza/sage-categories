@@ -559,3 +559,89 @@ def test_equality_uses_the_exact_category_owned_predicate() -> None:
     assert ask(here == here) is True
     assert ask(here != here) is False
     assert ask(here == there) is Unknown
+
+
+def test_a_nontrivial_discrete_limit_family_declares_its_containment_in_products() -> None:
+    """``C.Limits(J) -> C.Products()`` is the statement of the containment, not a consequence of the two predicates (D83).
+
+    ``C.Products()`` is the union of the full images of the ``Lim_J`` for nontrivial
+    discrete ``J`` (``specs/functor.md``, "Diagram shapes and universal constructions"),
+    and ``C.Limits(J)`` is the full image of ``Lim_J``, so the mathematics says
+    ``C.Limits(J)`` is a full subcategory of ``C.Products()``.  A shape that is not known
+    to be nontrivial discrete declares none.
+    """
+    cat = Cat()
+    discrete = cat.Products()((cat.Simplex(1), cat.Simplex(2))).index_category()
+    limits, products = cat.Limits(discrete), cat.Products()
+
+    (declared,) = tuple(functor for functor in limits.structure_functors() if functor.codomain() is products)
+    assert declared in Fun(limits, products).Monomorphisms().Isofibrations()
+    assert is_subcategory(limits, products)
+    assert not is_subcategory(cat.Limits(cat.Terminal()), products)
+    assert not is_subcategory(cat.Limits(cat.WalkingCospan()), products)
+
+    colimits, coproducts = cat.Colimits(discrete), cat.Coproducts()
+    (codeclared,) = tuple(functor for functor in colimits.structure_functors() if functor.codomain() is coproducts)
+    assert codeclared in Fun(colimits, coproducts).Monomorphisms().Isofibrations()
+    assert is_subcategory(colimits, coproducts)
+
+
+def test_a_chosen_product_reaches_products_through_that_one_declaration() -> None:
+    """The apex is placed once, in its shape family; membership in ``C.Products()`` follows the declared monomorphism."""
+    cat = Cat()
+    apex = cat.Products()((cat.Simplex(1), cat.Simplex(2)))
+    discrete = apex.index_category()
+
+    assert apex.category() is cat.Limits(discrete)
+    assert is_placed(apex, cat.Products())
+    assert ask(apex.is_products()) is True
+    assert apex in cat.Products()
+    assert cat.Products().presenting_family(apex) is cat.Limits(discrete)
+    assert ask(cat.Simplex(1).is_products()) is False
+
+
+def test_a_construction_family_carries_the_name_its_axiom_declares() -> None:
+    """One axiom, one name: the family reads the declaration and spells no name of its own (D89, ``POL-LEAF-079``)."""
+    cat = Cat()
+    discrete = cat.Products()((cat.Simplex(1), cat.Simplex(2))).index_category()
+
+    assert cat.Products().name() == "Products"
+    assert cat.Coproducts().name() == "Coproducts"
+    assert cat.Limits(discrete).name() == "Limits"
+    assert cat.Colimits(discrete).name() == "Colimits"
+
+    assert repr(cat.Limits(discrete)) == f"{cat!r}.Limits({discrete!r})"
+    assert repr(cat.Colimits(discrete)) == f"{cat!r}.Colimits({discrete!r})"
+    assert repr(cat.Products()) == f"{cat!r}.Products()"
+
+
+def test_a_parameterized_construction_family_is_retained_per_parameter_value() -> None:
+    """``C.Limits(J)`` is one category per category and shape, each retaining its own universal data (D168)."""
+    cat = Cat()
+    first, second = cat.Simplex(1), cat.Simplex(2)
+
+    assert cat.Limits(first) is cat.Limits(first)
+    assert cat.Limits(first) is not cat.Limits(second)
+    assert cat.Limits(first).shape() is first
+    assert cat.Limits(second).shape() is second
+    assert cat.Limits(first).limit_functor() is not cat.Limits(second).limit_functor()
+    assert cat.Colimits(first) is not cat.Colimits(second)
+
+
+def test_two_structure_functors_supply_the_construction_families_and_their_containment() -> None:
+    """A category that declares only its structure functors receives every family and the containment along each (D31, D83, D159)."""
+    tokens = Tokens()
+    sealed, boxed = SealedTokens(tokens), BoxedTokens(tokens)
+    both = SealedBoxedTokens(sealed, boxed)
+    along_first, along_second = both.selected_functors()
+    shape = Cat().Products()((Cat().Simplex(1), Cat().Simplex(2))).index_category()
+
+    products = both.Products()
+    assert products is along_first.inverse_image(sealed.Products())
+    assert products is along_second.inverse_image(boxed.Products())
+
+    limits = both.Limits(shape)
+    assert limits is along_first.inverse_image(sealed.Limits(shape))
+    assert limits is along_second.inverse_image(boxed.Limits(shape))
+    assert is_subcategory(limits, tokens.Limits(shape))
+    assert is_subcategory(limits, tokens.Products())

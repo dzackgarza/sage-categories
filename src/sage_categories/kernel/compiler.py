@@ -75,7 +75,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SemanticCollisionError(Exception):
-    """Two incomparable owners declare one method spelling (POL-CAT-011, POL-API-011)."""
+    """Two incomparable owners declare one spelling (POL-CAT-011, POL-API-011).
+
+    A method name is one spelling and the name of an instance attribute is the other
+    (``specs/resolution.md``, "Acceptance conditions": unrelated mathematical
+    declarations with one spelling fail as a semantic collision).
+    """
 
 
 class _KernelRoleRootCategory(SageCategory):
@@ -742,12 +747,28 @@ def _with_cat_element_node(nodes: tuple[Node, ...], universe: Category) -> tuple
     return (*nodes, target)
 
 
+def _unrelated_owners(first: Node, second: Node) -> bool:
+    """Whether two reached owners share neither a written declaration nor a class relation.
+
+    This is the relation ``_assert_no_semantic_collisions`` reads for a public method
+    spelling, applied to the other spelling a declaration writes: the names of its
+    instance state.  Two owners are related when one written declaration supplies both --
+    the bimodule of D167 -- or when one's compiled class stands below the other's, which
+    is the ordinary refinement an inheriting functor installs.
+    """
+    if first.category.local_role_class(first.role) is second.category.local_role_class(second.role):
+        return False
+    first_class, second_class = _runtime(first).owner, _runtime(second).owner
+    return not issubclass(first_class, second_class) and not issubclass(second_class, first_class)
+
+
 def _keep_first_state(
     instance: CategoryPoint,
     installed: dict[str, tuple[object, Node]],
+    kernel_state: frozenset[str],
     owner: Node,
 ) -> None:
-    """Restore the state an earlier owner installed over a later owner's write (D37, D56).
+    """Restore the state an earlier related owner installed over a later owner's write (D37, D56).
 
     Two reached owners can share one written declaration: a bimodule's two projections
     reach ``Modules(R)`` and ``Modules(S)``, which are two categories of the one written
@@ -759,8 +780,21 @@ def _keep_first_state(
     ahead of every inherited one keeps its own (``specs/resolution.md``, "Sage class
     construction").  Coherence between the two writes is assumed, so the discarded one is
     the opt-in ``DEBUG`` line D37 gives an unresolved diamond rather than a failure.
+
+    Those rows reach one written declaration reached twice and one owner refined by
+    another.  Nothing licenses order to decide between two unrelated owners, and
+    ``specs/resolution.md`` ("Semantic collisions") bans using selection order to resolve
+    that conflict, so the kernel refuses it loudly instead of answering one owner's
+    method with another owner's state (D56).
+
+    ``kernel_state`` holds the names the kernel roots installed ahead of every
+    declaration.  Placement and identity are the kernel's own, and the declaration that
+    owns them refines them from whichever turn it runs on (``refinement.place``, D169,
+    D175), so no turn's write of one of those names is discarded.
     """
     for name, state in list(vars(instance).items()):
+        if name in kernel_state:
+            continue
         first = installed.get(name)
         if first is None:
             installed[name] = (state, owner)
@@ -768,6 +802,13 @@ def _keep_first_state(
         kept, first_owner = first
         if state is kept:
             continue
+        if _unrelated_owners(first_owner, owner):
+            raise SemanticCollisionError(
+                f"{name!r} is written by both "
+                f"{_declaration_name(first_owner.category.local_role_class(first_owner.role))} and "
+                f"{_declaration_name(owner.category.local_role_class(owner.role))}, "
+                "which are incomparable; name the two mathematical states distinctly"
+            )
         setattr(instance, name, kept)
         _LOGGER.debug(
             "kept the %s written for %r over the one written for %r on %r",
@@ -809,8 +850,9 @@ def _initialize_graph(
     queued: list[_SelectedAction] = []
     # Each name written on the instance, held by the owner whose turn wrote it first, so
     # that a later owner's turn cannot displace it (``_keep_first_state``).  The state the
-    # kernel roots installed ahead of every declaration is not in it: placement and
-    # identity are the kernel's own, and the declaration that owns them refines them.
+    # kernel roots installed ahead of every declaration is exempt: placement and identity
+    # are the kernel's own, and the declaration that owns them refines them.
+    kernel_state = frozenset(vars(instance))
     installed: dict[str, tuple[object, Node]] = {}
 
     def resolution(owner: Node) -> tuple[object, CategoryPoint] | None:
@@ -850,7 +892,7 @@ def _initialize_graph(
         datum, representative = found
         runtime = _runtime(owner)
         context.run(owner, lambda runtime=runtime, datum=datum: runtime.initializer(instance, datum))
-        _keep_first_state(instance, installed, owner)
+        _keep_first_state(instance, installed, kernel_state, owner)
         if owner.role is not current.role:
             continue
         queued.extend(

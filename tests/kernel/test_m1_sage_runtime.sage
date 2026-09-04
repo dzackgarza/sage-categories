@@ -868,6 +868,82 @@ def test_incomparable_method_owners_fail_at_compilation() -> None:
         CollisionDiamond()
 
 
+def test_incomparable_state_owners_fail_at_construction() -> None:
+    """Two unrelated owners cannot both name one piece of a value's state.
+
+    The rows that let the declared order pick which write a value reads reach one written
+    declaration reached twice (D167) and a coherent diamond whose first route is chosen
+    (D37, D159).  Two declarations that share neither a written body nor a class relation
+    are neither case, so no order resolves them and the kernel fails loudly rather than
+    answering one owner's method with the other owner's state (D56;
+    ``specs/resolution.md``, "Semantic collisions").
+    """
+
+    class SharedStateLeft(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._left_label = label
+                self._shared_state = ("left", label)
+
+            def left_only(self) -> tuple[str, Integer]:
+                return self._shared_state
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+    shared_left = SharedStateLeft()
+
+    class SharedStateRight(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._right_label = label
+                self._shared_state = ("right", label)
+
+            def right_only(self) -> tuple[str, Integer]:
+                return self._shared_state
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+    shared_right = SharedStateRight()
+
+    # Each answers with its own state where it is the only owner.
+    assert shared_left(2).left_only() == ("left", 2)
+    assert shared_right(2).right_only() == ("right", 2)
+
+    class SharedStateSource(_SyntheticCategoryOperations, Category):
+        """One value reaching both, whose two initializers write the one name."""
+
+        class ObjectType:
+            pass
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            return (
+                _synthetic_isofibration(self, shared_left, lambda member: shared_left(3)),
+                _synthetic_isofibration(self, shared_right, lambda member: shared_right(3)),
+            )
+
+    shared_source = SharedStateSource()
+
+    with pytest.raises(
+        SemanticCollisionError,
+        match="'_shared_state' is written by both .*SharedStateLeft.ObjectType and .*SharedStateRight.ObjectType",
+    ):
+        shared_source(3)
+
+
 def test_the_identity_is_the_unit_of_the_endomorphism_monoid() -> None:
     """``1_X`` is the unit of ``End_C(X)`` for a morphism reached through either placement.
 

@@ -383,3 +383,89 @@ def test_a_declared_subcategory_constructs_the_axiom_it_declares_and_inherits_th
 for name, value in tuple(globals().items()):
     if name.startswith("test_"):
         value()
+
+
+class BoxedTokens(FullSubcategory, Tokens):
+    """A second declared subcategory of ``Tokens``, incomparable with ``SealedTokens``."""
+
+
+class SealedBoxedTokens(Tokens):
+    """A category selecting two structure functors whose targets both supply ``Tagged``.
+
+    ``Modules(R).Finite()`` means one thing whether ``Finite`` reaches it through a direct
+    functor to ``Sets()`` or through one that passes through ``Groups().Commutative()``
+    (D159, ``POL-LEAF-081``).  The declaration is the selection and its order; the leaf
+    states no property category, no containment, and no placement of its own.
+    """
+
+    def __init__(self, first: Tokens, second: Tokens) -> None:
+        self._first = first
+        self._second = second
+        super().__init__()
+
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+        return (
+            Fun.full_subcategory_monomorphism(self, self._first),
+            Fun.full_subcategory_monomorphism(self, self._second),
+        )
+
+
+def test_two_structure_functors_supplying_one_axiom_give_one_property_category() -> None:
+    """``D.P()`` is the pullback along each selected functor whose target supplies ``P`` (D159, ``POL-LEAF-081``)."""
+    for order in (0, 1):
+        tokens = Tokens()
+        subcategories = (SealedTokens(tokens), BoxedTokens(tokens))
+        first, second = subcategories[order], subcategories[1 - order]
+        both = SealedBoxedTokens(first, second)
+        along_first, along_second = both.selected_functors()
+        assert both.ambient() is first
+
+        tagged = both.Tagged()
+        assert tagged is along_first.inverse_image(first.Tagged())
+        assert tagged is along_second.inverse_image(second.Tagged())
+
+        pullbacks = Cat().Pullbacks()
+        squares = pullbacks.presenting_diagrams(tagged)
+        assert len(squares) == 2
+        for square, functor in ((squares[0], along_first), (squares[1], along_second)):
+            target = functor.codomain()
+            shape = square.domain()
+            assert square.on_object(shape(0)) is both
+            assert square.on_object(shape(1)) is target.Tagged()
+            assert square.on_object(shape(2)) is target
+            cone = pullbacks.universal_data(square).transformation()
+            assert cone.component(shape(0)).codomain() is both
+            assert cone.component(shape(1)).codomain() is target.Tagged()
+
+
+def test_property_containment_in_each_target_is_a_declared_monomorphism() -> None:
+    """Containment is the declaration, not a consequence read off the predicates (D83, D170)."""
+    tokens = Tokens()
+    sealed, boxed = SealedTokens(tokens), BoxedTokens(tokens)
+    both = SealedBoxedTokens(sealed, boxed)
+    tagged = both.Tagged()
+
+    for target in (both, tokens.Tagged(), sealed.Tagged(), boxed.Tagged()):
+        (declared,) = tuple(functor for functor in tagged.structure_functors() if functor.codomain() is target)
+        assert declared in Fun(tagged, target).Monomorphisms().Isofibrations()
+        assert is_subcategory(tagged, target)
+
+
+def test_a_pullback_property_category_places_what_it_constructs() -> None:
+    """The retained square routes construction and assumption; the leaf declares only its functors (``POL-LEAF-066``)."""
+    tokens = Tokens()
+    sealed, boxed = SealedTokens(tokens), BoxedTokens(tokens)
+    both = SealedBoxedTokens(sealed, boxed)
+
+    constructed = both.Tagged()(Integer(4))
+    assert is_placed(constructed, both.Tagged())
+    for category in (both, sealed.Tagged(), boxed.Tagged(), tokens.Tagged()):
+        assert constructed in category
+
+    assumed = both(Integer(6))
+    identity = id(assumed)
+    assume(assumed.is_tagged())
+    assert id(assumed) == identity
+    assert is_placed(assumed, both.Tagged())
+    assert assumed in sealed.Tagged()
+    assert assumed in boxed.Tagged()

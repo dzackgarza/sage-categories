@@ -39,7 +39,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, property_predicate, register_handler
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
-from sage_categories.kernel.refinement import is_subcategory, refine
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.sage_runtime import TripleDict, cached_method
 
 if TYPE_CHECKING:
@@ -284,6 +284,29 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
     return result
 
 
+def _declared_inclusion(subcategory: Category, ambient: Category) -> Functor:
+    """The monomorphism ``P -> C`` that ``P`` declares, the second leg of the cospan of ``D ×_C P``.
+
+    A property category is a subcategory of several categories at once, and each
+    containment is its own declared monomorphism (D83), so the leg is the declaration
+    whose target is this pullback's ``C``: ``Left.P()`` includes into the category that
+    declares ``P`` and into ``Left``, and the pullback along ``D -> Left`` is taken over
+    the second.  Reading the leg off the declaration rather than off the ambient chain is
+    what lets one ``D.P()`` be the pullback along each of several structure functors
+    (D159, ``POL-LEAF-081``).
+    """
+    declared = next(
+        (
+            functor
+            for functor in subcategory.selected_functors()
+            if functor.codomain() is ambient and _functors().declares_subcategory(functor)
+        ),
+        None,
+    )
+    assert declared is not None, f"{subcategory!r} declares no subcategory monomorphism into {ambient!r}"
+    return declared
+
+
 def retain_inverse_image(
     functor: Functor,
     target_subcategory: Category,
@@ -302,16 +325,12 @@ def retain_inverse_image(
     from sage_categories.cat.constructions import cone, cone_apex
     from sage_categories.cat.functors import Cat, Fun
 
-    assert is_subcategory(target_subcategory, functor.codomain()), (
-        f"{target_subcategory!r} is not a subcategory of {functor.codomain()!r}"
-    )
     key = (functor, target_subcategory, Cat())
     assert key not in _inverse_images, (
         f"an inverse image of {target_subcategory!r} along {functor!r} is already retained"
     )
     _inverse_images[key] = realization
-    inclusion = target_subcategory.subcategory_monomorphism()
-    diagram = cospan_diagram(Cat(), functor, inclusion)
+    diagram = cospan_diagram(Cat(), functor, _declared_inclusion(target_subcategory, functor.codomain()))
     shape = diagram.domain()
     projections = {0: source_projection, 1: target_projection}
     limiting_cone = cone(diagram, realization, lambda vertex: projections[shape.label(vertex)])
@@ -574,7 +593,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         return root.predicate()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The monomorphisms into the base, into each root, into the narrowing by the roots but one, and into the same narrowing of the base's ambient, each once.
+        """The monomorphisms into the base, into each root, into the narrowing by the roots but one, and into the same narrowing of each category the base is a subcategory of, each once.
 
         Dropping one root at a time reaches the narrowing by every subset of the roots,
         which is what this category is a full subcategory of and what D83 requires it to
@@ -584,14 +603,22 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         monomorphism into the narrowing by ``{Mor(C.P()), Identity}`` no reader can see
         that it is an identity of ``C.P()``, and the word an equality reads stops dropping
         it (D84, D86, ``POL-CAT-023``, D169).
+
+        The last group runs over every structure functor the base declares as a
+        subcategory monomorphism, not the first of them.  ``D.P()`` is one category
+        however many targets supply ``P``, and it is a full subcategory of each target's
+        ``P``: that containment is the statement, and each is declared here (D83, D159,
+        ``POL-LEAF-081``).  ``is_subcategory`` reads the declarations, so a containment
+        the base's first ambient does not carry has nowhere else to be read from.
         """
         targets: list[Category] = [self._ambient, *self._roots]
         for omitted in self._roots:
             kept = tuple(root for root in self._roots if root is not omitted)
             if kept:
                 targets.append(self._ambient.intersection(kept))
-        if self._ambient.has_ambient():
-            targets.append(self._ambient.ambient().intersection(self._roots))
+        for functor in self._ambient.selected_functors():
+            if _functors().declares_subcategory(functor):
+                targets.append(functor.codomain().intersection(self._roots))
         distinct: list[Category] = []
         for target in targets:
             if target is not self and not any(target is known for known in distinct):

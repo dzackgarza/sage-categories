@@ -710,6 +710,63 @@ def test_strict_and_full_image_inclusions_are_the_direct_zero_argument_call() ->
     assert ask(Fun.Isofibrations().membership_proposition(full_inclusion)) is Unknown
 
 
+def test_applying_a_functor_whose_full_image_exists_retains_the_image_and_places_nothing() -> None:
+    """``D.FullImage(F)`` records its objects by retention, and no placement follows (D169).
+
+    The full image is the full subcategory of ``D`` on the objects ``F`` hits.  An object
+    isomorphic to ``F(X)`` need not be one of them, so the full image is not replete, its
+    inclusion is not an isofibration, and placement, which needs a monomorphism that is an
+    isofibration (``POL-FUN-036``), has nothing here to follow.  Applying ``F`` therefore
+    retains its image in the full image and places it nowhere, which is the route the
+    strict image already takes.  Membership is what the retention answers:
+    ``x in D.FullImage(F)`` asks the image's own membership proposition, which is the
+    definition, and placement is only ever a sufficient route to ``True`` (``POL-CAT-068``).
+    """
+
+    def token_actions(prefix: str) -> tuple[OnObject, OnMorphism]:
+        def on_object(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            return TOKENS(prefix + member_object._token)
+
+        def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            source = on_object(morphism.domain())
+            target = on_object(morphism.codomain())
+            return Mor(TOKENS)(source, target)(morphism._token)
+
+        return on_object, on_morphism
+
+    # The image, then the application.
+    early = Fun(MARKS, TOKENS)(*token_actions("early full "))
+    early_image = full_image(TOKENS, early)
+    source, target = early.on_object(MARKS("a")), early.on_object(MARKS("b"))
+    assert source is early.on_object(MARKS("a"))
+    assert ask(early_image.membership_proposition(source)) is True
+    assert source in early_image
+
+    # The full image spans every morphism of the target between the objects it retains,
+    # so an arbitrary one is a morphism of it and is no value of ``early``.
+    spanned = Mor(TOKENS)(source, target)("spanned")
+    assert spanned in early_image.morphism_category(1)
+
+    # The application, then the image, then the application again.
+    late = Fun(MARKS, TOKENS)(*token_actions("late full "))
+    before = late.on_object(MARKS("a"))
+    late_image = full_image(TOKENS, late)
+    after = late.on_object(MARKS("b"))
+    assert before is late.on_object(MARKS("a"))
+    assert ask(late_image.membership_proposition(after)) is True
+    assert after in late_image
+
+    # Nothing was placed.  The full image is no declared subcategory of its target, and
+    # its inclusion states monicity and fullness and no repleteness, so a placement into
+    # it would follow a declaration that is not there.
+    inclusion = late_image.inclusion_functor()
+    assert inclusion is Fun(late_image, TOKENS).FullyFaithful().Monomorphisms()()
+    assert ask(Fun.Isofibrations().membership_proposition(inclusion)) is Unknown
+    assert not is_subcategory(late_image, TOKENS)
+    assert not is_placed(after, late_image)
+    assert after.category() is TOKENS
+
+
 def test_a_class_says_which_declared_category_it_implements_by_that_category_identity_functor() -> None:
     """The identity structure functor is the whole implementation declaration (D156, POL-LEAF-080).
 

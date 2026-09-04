@@ -362,8 +362,20 @@ def retain_object_image(
     if defining_functor in _full_images:
         full_image = _full_images[defining_functor]
         if isinstance(full_image, FullImageCategory):
+            # An object isomorphic to a value ``F(X)`` need not be one, so the full image
+            # is not replete and its inclusion is not an isofibration (D169).  Placement
+            # needs a monomorphism that is an isofibration (``POL-FUN-036``), so nothing
+            # presents this subcategory to placement and the retention is the whole
+            # record: ``image in D.FullImage(F)`` answers ``True`` from the membership
+            # proposition, which is the definition.  Placement is only ever a sufficient
+            # route to ``True`` (``POL-CAT-068``).  This is the strict image's route.
             full_image._retain_object(image)
-        refine(image, full_image)
+        else:
+            # A category that registered itself as the full image of its own defining
+            # functor -- ``C.Limits(I)`` of its chosen limit functor, for one -- is a
+            # declared subcategory of the target with its own placement monomorphism, and
+            # placement follows that declaration.
+            refine(image, full_image)
     if _has_essential_image(defining_functor):
         refine(image, defining_functor.codomain().EssentialImage(defining_functor))
 

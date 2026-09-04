@@ -1,6 +1,6 @@
 """R1: synthetic acceptance for the private Sage-backed category compiler."""
 
-from sage.rings.integer import Integer
+from sage_categories.kernel.sage_runtime import Integer
 
 import sys
 
@@ -31,27 +31,27 @@ _THREADED_TARGETS: list[tuple[str, CategoryPoint]] = []
 class _SyntheticCategoryOperations:
     """The object constructor the synthetic R1 specimens share: one object per label."""
 
-    def __call__(self, label: int | Integer) -> CategoryOfCategories.ElementType:
+    def __call__(self, label: Integer) -> CategoryOfCategories.ElementType:
         return self.ObjectType(label)
 
-    def _label(self, member_object: CategoryPoint) -> int | Integer:
+    def _label(self, member_object: CategoryPoint) -> Integer:
         return member_object._synthetic_label
 
 
 class BaseCategory(_SyntheticCategoryOperations, Category):
     class ObjectType:
-        def __init__(self, label: int | Integer) -> None:
+        def __init__(self, label: Integer) -> None:
             _BASE_OBJECT_INITIALIZATIONS.append(self)
             self._base_state = label
             self._synthetic_label = label
 
-        def base_object(self) -> tuple[Self, int | Integer]:
+        def base_object(self) -> tuple[Self, Integer]:
             return self, self._base_state
 
         def preferred_object(self) -> CategoryOfCategories.ElementType:
             return BASE(0)
 
-        def __pos__(self) -> tuple[Self, int | Integer]:
+        def __pos__(self) -> tuple[Self, Integer]:
             return self, self._base_state
 
     class ElementType:
@@ -59,7 +59,7 @@ class BaseCategory(_SyntheticCategoryOperations, Category):
             _BASE_ELEMENT_INITIALIZATIONS.append(self)
             self._base_element_state = self.parent()._base_state
 
-        def base_element(self) -> tuple[Self, int | Integer]:
+        def base_element(self) -> tuple[Self, Integer]:
             return self, self._base_element_state
 
     class MorphismType:
@@ -67,7 +67,7 @@ class BaseCategory(_SyntheticCategoryOperations, Category):
             _BASE_MORPHISM_INITIALIZATIONS.append(self)
             self._base_morphism_state = self.domain()._base_state
 
-        def base_morphism(self) -> tuple[Self, int | Integer]:
+        def base_morphism(self) -> tuple[Self, Integer]:
             return self, self._base_morphism_state
 
 
@@ -76,25 +76,25 @@ BASE = BaseCategory()
 
 class LeftCategory(_SyntheticCategoryOperations, Category):
     class ObjectType:
-        def __init__(self, label: int | Integer) -> None:
+        def __init__(self, label: Integer) -> None:
             self._left_state = label
             self._synthetic_label = label
 
-        def left_object(self) -> tuple[Self, int | Integer]:
+        def left_object(self) -> tuple[Self, Integer]:
             return self, self._left_state
 
     class ElementType:
         def __init__(self, data: None) -> None:
             self._left_element_state = self.parent()._left_state
 
-        def left_element(self) -> tuple[Self, int | Integer]:
+        def left_element(self) -> tuple[Self, Integer]:
             return self, self._left_element_state
 
     class MorphismType:
         def __init__(self, data: None) -> None:
             self._left_morphism_state = self.domain()._left_state
 
-        def left_morphism(self) -> tuple[Self, int | Integer]:
+        def left_morphism(self) -> tuple[Self, Integer]:
             return self, self._left_morphism_state
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -114,25 +114,25 @@ LEFT = LeftCategory()
 
 class RightCategory(_SyntheticCategoryOperations, Category):
     class ObjectType:
-        def __init__(self, label: int | Integer) -> None:
+        def __init__(self, label: Integer) -> None:
             self._right_state = label
             self._synthetic_label = label
 
-        def right_object(self) -> tuple[Self, int | Integer]:
+        def right_object(self) -> tuple[Self, Integer]:
             return self, self._right_state
 
     class ElementType:
         def __init__(self, data: None) -> None:
             self._right_element_state = self.parent()._right_state
 
-        def right_element(self) -> tuple[Self, int | Integer]:
+        def right_element(self) -> tuple[Self, Integer]:
             return self, self._right_element_state
 
     class MorphismType:
         def __init__(self, data: None) -> None:
             self._right_morphism_state = self.domain()._right_state
 
-        def right_morphism(self) -> tuple[Self, int | Integer]:
+        def right_morphism(self) -> tuple[Self, Integer]:
             return self, self._right_morphism_state
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -154,11 +154,11 @@ class DiamondCategory(_SyntheticCategoryOperations, Category):
     SyntheticR1Property = Axiom()
 
     class ObjectType:
-        def __init__(self, label: int | Integer) -> None:
+        def __init__(self, label: Integer) -> None:
             self._diamond_state = label
             self._synthetic_label = label
 
-        def diamond_object(self) -> tuple[Self, int | Integer]:
+        def diamond_object(self) -> tuple[Self, Integer]:
             return self, self._diamond_state
 
         def preferred_object(self) -> Self:
@@ -168,14 +168,14 @@ class DiamondCategory(_SyntheticCategoryOperations, Category):
         def __init__(self, data: None) -> None:
             self._diamond_element_state = self.parent()._diamond_state
 
-        def diamond_element(self) -> tuple[Self, int | Integer]:
+        def diamond_element(self) -> tuple[Self, Integer]:
             return self, self._diamond_element_state
 
     class MorphismType:
         def __init__(self, data: None) -> None:
             self._diamond_morphism_state = self.domain()._diamond_state
 
-        def diamond_morphism(self) -> tuple[Self, int | Integer]:
+        def diamond_morphism(self) -> tuple[Self, Integer]:
             return self, self._diamond_morphism_state
 
     def structure_functors(self) -> tuple[Functor, ...]:

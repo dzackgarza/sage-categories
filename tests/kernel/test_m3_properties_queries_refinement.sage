@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from sage.rings.integer import Integer
+from sage_categories.kernel.sage_runtime import Integer
 
-from sage.misc.unknown import Unknown
+from sage_categories.kernel.sage_runtime import Unknown
 from sympy import Predicate as SymPyPredicate
 from sympy.assumptions import global_assumptions
 from sympy.assumptions.assume import AppliedPredicate

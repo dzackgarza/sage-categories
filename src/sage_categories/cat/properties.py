@@ -583,7 +583,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         as an identity, so it lands in the narrowing by all three roots; without the
         monomorphism into the narrowing by ``{Mor(C.P()), Identity}`` no reader can see
         that it is an identity of ``C.P()``, and the word an equality reads stops dropping
-        it (D84, D86, ``POL-CAT-023``, ``POL-CAT-084``).
+        it (D84, D86, ``POL-CAT-023``, D169).
         """
         targets: list[Category] = [self._ambient, *self._roots]
         for omitted in self._roots:

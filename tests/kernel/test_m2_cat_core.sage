@@ -1,6 +1,6 @@
 """R2 acceptance for the owned Cat core, using only Cat-level constructions."""
 
-from sage.rings.integer import Integer
+from sage_categories.kernel.sage_runtime import Integer
 
 from sage_categories.cat.category import Cat, Category
 from sage_categories.cat.diagrams import cospan_diagram

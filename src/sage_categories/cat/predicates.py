@@ -4,27 +4,24 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from functools import partial
-from itertools import count
 from typing import TYPE_CHECKING
 
-from sympy import And, Implies, Not, Or, Predicate, ask as sympy_ask
-from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
+from sympy import And, Implies, Not, Or, ask as sympy_ask
 from sympy.logic.boolalg import Boolean
 
+from sage_categories.kernel.predicates import (
+    AppliedPredicate,
+    OwnedPredicate as Predicate,
+    ask_query,
+    assume_property,
+    axiom_layer,
+    bind_property_predicate,
+    owned_predicate,
+    register_declared_case,
+    register_predicate_handler,
+    register_query_handler,
+)
 from sage_categories.kernel.sage_runtime import MonoDict, Unknown, UnknownClass, cached_method, uncamelcase
-
-
-class AppliedPredicate(_SymPyAppliedPredicate):
-    """An owned predicate application; three-valued, so its Python truth value raises (D131).
-
-    SymPy's own applied predicates take ``object.__bool__``'s default ``True``, which
-    lets ``if proposition:`` and list containment silently affirm an undecided
-    proposition.  Every application an owned predicate constructs is this subclass,
-    and only ``ask()`` evaluates it.
-    """
-
-    def __bool__(self) -> bool:
-        raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category, CategoryOfCategories
@@ -85,44 +82,28 @@ type Proposition = Boolean
 # so its first parameter is the declaring category.
 type DecidingProposition = Callable[[Category, CategoryOfCategories.ElementType], Proposition]
 
-_predicate_ids = count()
-
-
-def _apply_predicate(owner: Predicate, *arguments: Argument) -> AppliedPredicate:
-    from sage_categories.kernel.predicates import engine_argument
-
-    return AppliedPredicate(owner, *(engine_argument(argument) for argument in arguments))
-
-
-def _register_handler(owner: Predicate, handler: PredicateHandler) -> None:
-    """Register an exact handler on one repository-owned SymPy predicate."""
-    from sage_categories.kernel.predicates import register_predicate_handler
-
-    register_predicate_handler(owner, handler)
-
 
 def predicate(name: str) -> Predicate:
-    """Construct one mathematical predicate as a native SymPy predicate."""
-    predicate_type = type(
-        f"CatPredicate{next(_predicate_ids)}",
-        (Predicate,),
-        {"name": name, "__call__": _apply_predicate, "register_handler": _register_handler},
-    )
-    return predicate_type()
+    """Construct one mathematical predicate as a native SymPy predicate.
+
+    A category that needs a predicate no existing method supplies applies one of these
+    (``specs/undecidable-properties.md``, "Public propositions").  The SymPy class behind
+    it is the kernel's: applying it converts each owned argument to its private identity
+    atom and returns the three-valued application.
+    """
+    return owned_predicate(name)
 
 
 def property_predicate(name: str, category: Category) -> Predicate:
     """Construct the SymPy predicate owned by one property subcategory."""
     owner = predicate(name)
-    from sage_categories.kernel.predicates import bind_property_predicate
-
     bind_property_predicate(owner, category)
     return owner
 
 
 def register_handler(owner: Predicate, handler: PredicateHandler) -> None:
     """Register an exact handler on a SymPy predicate."""
-    _register_handler(owner, handler)
+    register_predicate_handler(owner, handler)
 
 
 class Query:
@@ -142,8 +123,6 @@ class Query:
         return self._name
 
     def register_handler(self, handler: QueryHandler) -> None:
-        from sage_categories.kernel.predicates import register_query_handler
-
         register_query_handler(self, handler)
 
     def result_category(self) -> Category:
@@ -204,8 +183,6 @@ def implication(antecedent: bool | Proposition, consequent: bool | Proposition) 
 def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
     """Evaluate a proposition or typed query."""
     if isinstance(application, AppliedQuery):
-        from sage_categories.kernel.predicates import ask_query
-
         return ask_query(application)
     decision = sympy_ask(application)
     return Unknown if decision is None else decision
@@ -218,7 +195,6 @@ def established(application: Decision | Proposition) -> bool:
 
 def assume(proposition: Proposition) -> None:
     """Record a SymPy proposition and apply its positive property refinement."""
-    from sage_categories.kernel.predicates import assume_property
     from sympy.assumptions import global_assumptions
 
     global_assumptions.add(proposition)
@@ -329,8 +305,6 @@ class Axiom:
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:
         self._declaring_class = declaring_class
         self._name = name
-        from sage_categories.kernel.predicates import axiom_layer
-
         axiom_layer().generate_application(self)
 
     def application_name(self) -> str:
@@ -427,8 +401,6 @@ class Axiom:
         it; an undecided proposition leaves membership undecided, and a positive one
         refines the same value (``kernel/predicates.py``).
         """
-        from sage_categories.kernel.predicates import register_declared_case
-
         owner = self.application_owner()
         assert owner is not None, f"{self!r} decides membership of the objects of a category that declares none"
         deciding = self._deciding.__get__(category)

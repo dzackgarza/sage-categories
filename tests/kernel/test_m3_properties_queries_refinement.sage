@@ -14,8 +14,9 @@ from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Propos
 from sage_categories.cat.functors import Fun
 import pytest
 
-from sage_categories.cat.predicates import AppliedQuery, UnknownClass, predicate
+from sage_categories.cat.predicates import AppliedQuery, UnknownClass, negation, predicate, register_handler, retract
 from sage_categories.cat.properties import FullSubcategory, PredicateSubcategory
+from sage_categories.kernel.predicates import OwnedPredicate
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.roles import CategoryPoint
 
@@ -136,7 +137,7 @@ def test_generated_property_application_and_three_valued_ask() -> None:
     tiny = Tiny()
     positive, negative, undecided = tiny(3), tiny(-2), tiny(99)
     proposition = positive.is_special()
-    assert Predicate is SymPyPredicate
+    assert issubclass(Predicate, SymPyPredicate)
     assert isinstance(proposition, Boolean)
     assert all(isinstance(part, AppliedPredicate) for part in proposition.args)
     assert isinstance(proposition | negative.is_special(), Boolean)
@@ -469,3 +470,92 @@ def test_a_pullback_property_category_places_what_it_constructs() -> None:
     assert is_placed(assumed, both.Tagged())
     assert assumed in sealed.Tagged()
     assert assumed in boxed.Tagged()
+
+
+class BalancedPredicate(SymPyPredicate):
+    """The predicate a category defines when no existing method supplies its proposition.
+
+    ``specs/leaves.md`` "Property categories" and ``specs/poset-minimal-template.py`` write
+    it as this class statement, which is how SymPy documents a predicate that can be
+    evaluated (``sympy/assumptions/assume.py``, ``Predicate``, SymPy 1.14.0).  Applying it
+    to an owned value is SymPy's work as well: the value enters the expression as its
+    private identity atom, and nothing at the application site converts it.
+    """
+
+    name = "balanced"
+
+
+balanced = BalancedPredicate()
+
+
+def _decide_balanced(candidate: Tokens.ObjectType, assumptions: Proposition) -> bool | None:
+    """A token of nonnegative weight is balanced when that weight is even (D143)."""
+    match candidate.weight():
+        case weight if weight >= Integer(0):
+            return bool(weight % Integer(2) == Integer(0))
+    return None
+
+
+register_handler(balanced, _decide_balanced)
+
+
+def test_a_predicate_written_as_a_sympy_subclass_applies_to_an_owned_value() -> None:
+    """SymPy owns application, composition, and evaluation of a category's own predicate.
+
+    The owned value reaches the expression as its private identity atom, so one value
+    gives one atom and two values give two.  ``ask`` then answers from the exact case the
+    category registered, and returns ``Unknown`` for SymPy's ``None`` alone: a decided
+    ``False`` stays ``False`` (criteria 2 and 6).
+    """
+    tokens = Tokens()
+    even, odd, unsigned = tokens(Integer(4)), tokens(Integer(5)), tokens(Integer(-1))
+
+    proposition = balanced(even)
+    assert isinstance(proposition, AppliedPredicate)
+    assert proposition.function is balanced
+    assert proposition == balanced(even)
+    assert proposition != balanced(odd)
+
+    assert ask(proposition) is True
+    assert ask(balanced(odd)) is False
+    assert ask(balanced(unsigned)) is Unknown
+    assert ask(balanced(even) & ~balanced(odd)) is True
+
+
+def test_an_error_sympy_raises_is_not_an_undecided_answer() -> None:
+    """Sage ``Unknown`` is SymPy's ``None`` and nothing else (criterion 6).
+
+    Inconsistent assumptions are SymPy's error, not an answer, and withdrawing them
+    restores the exact decision the category's own case supplies.
+    """
+    tokens = Tokens()
+    proposition = balanced(tokens(Integer(7)))
+
+    assume(proposition)
+    assume(negation(proposition))
+    with pytest.raises(ValueError):
+        ask(proposition)
+
+    retract(proposition)
+    retract(negation(proposition))
+    assert ask(proposition) is False
+
+
+def test_equality_uses_the_exact_category_owned_predicate() -> None:
+    """``a == b`` applies the equality predicate of the category that decides it (criterion 4).
+
+    Each category owns one, and the SymPy class behind every owned predicate is the
+    kernel's, so ``Cat`` states no engine construction of its own (D125).
+    """
+    tokens, other = Tokens(), Tokens()
+    here, there = tokens(Integer(2)), other(Integer(2))
+
+    assert isinstance(tokens.equality(), OwnedPredicate)
+    assert isinstance(tokens.Light().predicate(), OwnedPredicate)
+    assert tokens.equality() is not other.equality()
+    assert (here == there).function is tokens.equality()
+    assert (there == here).function is other.equality()
+
+    assert ask(here == here) is True
+    assert ask(here != here) is False
+    assert ask(here == there) is Unknown

@@ -9,7 +9,7 @@ from sage_categories.kernel.refinement import is_placed as is_placed, refine as 
 from sage_categories.kernel.roles import CategoryPoint as CategoryPoint, category_universal_class as category_universal_class
 from sage_categories.kernel.sage_runtime import MonoDict as MonoDict, Unknown as Unknown
 from sympy import Predicate
-from sympy.core.basic import Basic
+from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.core.expr import AtomicExpr
 
 @dataclass(frozen=True, slots=True)
@@ -30,19 +30,32 @@ class _OwnedValueAtom(AtomicExpr):
     def __new__(cls, identity: int) -> _OwnedValueAtom:
         ...
 
-def engine_argument(argument: Argument) -> Basic:
+class AppliedPredicate(_SymPyAppliedPredicate):
+
+    def __bool__(self) -> bool:
+        ...
+
+class OwnedPredicate(Predicate):
+
+    def __call__(self, *arguments: Argument) -> AppliedPredicate:
+        ...
+
+    def register_handler(self, handler: PredicateHandler) -> None:
+        ...
+
+def owned_predicate(name: str) -> OwnedPredicate:
     ...
 
-def bind_property_predicate(owner: Predicate, category: Category) -> None:
+def bind_property_predicate(owner: OwnedPredicate, category: Category) -> None:
     ...
 
-def mark_identity_predicate(owner: Predicate) -> None:
+def mark_identity_predicate(owner: OwnedPredicate) -> None:
     ...
 
-def register_predicate_handler(owner: Predicate, handler: PredicateHandler) -> None:
+def register_predicate_handler(owner: OwnedPredicate, handler: PredicateHandler) -> None:
     ...
 
-def register_declared_case(owner: Predicate, domain: type, handler: PredicateHandler) -> None:
+def register_declared_case(owner: OwnedPredicate, domain: type, handler: PredicateHandler) -> None:
     ...
 
 def register_query_handler(query: Query, handler: QueryHandler) -> None:

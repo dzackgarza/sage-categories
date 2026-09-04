@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from inspect import get_annotations, signature
+from itertools import count
 from typing import TYPE_CHECKING, get_origin
 
 from plum import Dispatcher, Function, NotFoundLookupError
-from sympy import And, Integer, Predicate, sympify
-from sympy.assumptions.assume import AppliedPredicate
+from sympy import And, Integer, Predicate
+from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.core.basic import Basic
 from sympy.core.expr import AtomicExpr
+from sympy.core.sympify import converter
 
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint, category_universal_class
@@ -79,8 +81,8 @@ class _OwnedValueAtom(AtomicExpr):
 _atoms: MonoDict = MonoDict()
 _values: dict[int, CategoryPoint] = {}
 _atom_types: dict[type, type[_OwnedValueAtom]] = {}
-_property_categories: dict[Predicate, Category] = {}
-_identity_predicates: set[Predicate] = set()
+_property_categories: dict[OwnedPredicate, Category] = {}
+_identity_predicates: set[OwnedPredicate] = set()
 _query_dispatchers: dict[Query, tuple[Dispatcher, Function]] = {}
 
 
@@ -112,11 +114,55 @@ def _owned_atom(value: CategoryPoint) -> _OwnedValueAtom:
     return _atoms[value]
 
 
-def engine_argument(argument: Argument) -> Basic:
-    """Convert an owned predicate argument to its private SymPy value."""
-    if isinstance(argument, CategoryPoint):
-        return _owned_atom(argument)
-    return sympify(argument)
+# An owned value entering any SymPy expression becomes its private identity atom
+# (``specs/undecidable-properties.md``, "Public propositions").  ``converter`` is the
+# registry SymPy documents for exactly this -- the key is the class, the value converts an
+# instance to a ``Basic``, and ``sympify`` walks the MRO of every argument through it,
+# ``strict`` included (``sympy/core/sympify.py`` lines 302-313 and 414-425, SymPy 1.14.0,
+# inspected 2026-09-04).  Stating the rule here rather than at each application site is
+# what lets a predicate a category defines as a SymPy ``Predicate`` subclass apply to an
+# owned value: SymPy converts the argument, and no caller converts anything.
+converter[CategoryPoint] = _owned_atom
+
+
+class AppliedPredicate(_SymPyAppliedPredicate):
+    """An owned predicate application; three-valued, so its Python truth value raises (D131).
+
+    SymPy's own applied predicates take ``object.__bool__``'s default ``True``, which
+    lets ``if proposition:`` and list containment silently affirm an undecided
+    proposition.  Every application an owned predicate constructs is this subclass,
+    and only ``ask()`` evaluates it.
+    """
+
+    def __bool__(self) -> bool:
+        raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
+
+
+class OwnedPredicate(Predicate):
+    """The SymPy ``Predicate`` subclass every owned predicate is an instance of.
+
+    SymPy keeps a predicate's handler dispatcher on its class and dispatches on argument
+    types, so a predicate that can be evaluated is a subclass with an instance
+    (``sympy/assumptions/assume.py``, ``PredicateMeta`` and ``Predicate``, SymPy 1.14.0,
+    inspected 2026-09-04).  This base adds the one thing SymPy's predicate does not:
+    application returns the three-valued ``AppliedPredicate`` above.  Argument conversion
+    is SymPy's, through the ``converter`` entry above.
+    """
+
+    def __call__(self, *arguments: Argument) -> AppliedPredicate:
+        return AppliedPredicate(self, *arguments)
+
+    def register_handler(self, handler: PredicateHandler) -> None:
+        """Register one owned exact case on this predicate."""
+        register_predicate_handler(self, handler)
+
+
+_predicate_classes = count()
+
+
+def owned_predicate(name: str) -> OwnedPredicate:
+    """Construct one owned predicate, as its own subclass so it carries its own dispatcher."""
+    return type(f"OwnedPredicate{next(_predicate_classes)}", (OwnedPredicate,), {"name": name})()
 
 
 def _owned_argument(argument: Basic) -> Argument:
@@ -176,7 +222,7 @@ def _predicate_domains(handler: PredicateHandler) -> tuple[type, ...]:
     )
 
 
-def bind_property_predicate(owner: Predicate, category: Category) -> None:
+def bind_property_predicate(owner: OwnedPredicate, category: Category) -> None:
     """Bind one SymPy predicate to the property category it decides."""
     _property_categories[owner] = category
 
@@ -186,7 +232,7 @@ def bind_property_predicate(owner: Predicate, category: Category) -> None:
     owner.register(_OwnedValueAtom)(placed)
 
 
-def mark_identity_predicate(owner: Predicate) -> None:
+def mark_identity_predicate(owner: OwnedPredicate) -> None:
     """Make object identity the generic exact positive case of an equality predicate."""
     _identity_predicates.add(owner)
 
@@ -196,12 +242,12 @@ def mark_identity_predicate(owner: Predicate) -> None:
     owner.register(_OwnedValueAtom, _OwnedValueAtom)(identical)
 
 
-def register_predicate_handler(owner: Predicate, handler: PredicateHandler) -> None:
+def register_predicate_handler(owner: OwnedPredicate, handler: PredicateHandler) -> None:
     """Register one owned exact case whose semantic domains its own annotations declare."""
     _register_exact_case(owner, _predicate_domains(handler), handler)
 
 
-def register_declared_case(owner: Predicate, domain: type, handler: PredicateHandler) -> None:
+def register_declared_case(owner: OwnedPredicate, domain: type, handler: PredicateHandler) -> None:
     """Register the one exact case an axiom declaration supplies, on the objects of its declaring category.
 
     The declaration already names that semantic domain -- it is the role class the
@@ -211,7 +257,7 @@ def register_declared_case(owner: Predicate, domain: type, handler: PredicateHan
     _register_exact_case(owner, (_atom_type(domain),), handler)
 
 
-def _register_exact_case(owner: Predicate, domains: tuple[type, ...], handler: PredicateHandler) -> None:
+def _register_exact_case(owner: OwnedPredicate, domains: tuple[type, ...], handler: PredicateHandler) -> None:
     """Register one owned exact case on SymPy's predicate dispatcher.
 
     Each exact dispatch signature has one owner.  SymPy's dispatcher silently keeps

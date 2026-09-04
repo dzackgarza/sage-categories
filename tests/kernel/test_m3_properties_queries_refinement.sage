@@ -309,15 +309,17 @@ def test_construction_families_are_axioms_applied_by_the_kernel() -> None:
     assert is_subcategory(inhabited.Limits(shape), cat.Limits(shape))
 
 
-def test_one_declaration_compiled_at_two_incomparable_nodes_is_one_owner() -> None:
-    """The intersection of two incomparable subcategories constructs into the join, and a category shares its objects with its opposite."""
+def test_an_opposite_narrowing_constructs_into_both_opposite_roots() -> None:
+    """The intersection of two opposite subcategories constructs through their common opposite base."""
     tiny = Tiny()
     first, second = TinySubcategory(tiny), TinySubcategory(tiny)
-    both = tiny.intersection((first, second))
-    value = both(5)
+    both = tiny.op().intersection((first.op(), second.op()))
+
+    value = both(Integer(5))
+
+    assert value.value() == Integer(5)
     assert value.category() is both
-    assert is_placed(value, first)
-    assert is_placed(value, second)
+    assert is_placed(value, both)
     assert is_placed(value, first.op())
     assert is_placed(value, second.op())
 

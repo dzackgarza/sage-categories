@@ -6,7 +6,7 @@ import itertools
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import cache
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, ClassVar, Literal, overload
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
@@ -144,6 +144,8 @@ def _declares_implementation(functor: MorphismCategory.ObjectType) -> Category |
 
 class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     """The local ``Cat().ObjectType`` declaration."""
+
+    _constructs_from_diagrams: ClassVar[bool] = False
 
     def __init__(self, data: None = None) -> None:
         if hasattr(self, "_ordinal"):

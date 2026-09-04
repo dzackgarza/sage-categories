@@ -114,11 +114,6 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         stated here.
         """
 
-    # A construction family is the image of a construction functor and constructs its
-    # objects from diagrams; a property subcategory constructs through its ambient.
-    # A narrowing constructs through the one root that constructs.
-    _constructs_from_diagrams: ClassVar[bool] = False
-
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         self._ambient = ambient
         super().__init__()

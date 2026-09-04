@@ -1831,8 +1831,7 @@ def bootstrap() -> None:
     The kernel compiles ``Cat()``, and this function binds the semantic names to its
     public roles.  Modules that declare other category classes import only after this
     function returns.  Their classes therefore derive from the compiled ``Category``
-    role and enter its generated constructor chain normally.  The kernel evaluates
-    deferred signatures after the semantic names are bound (POL-KERNEL-021).
+    role and enter its generated constructor chain normally.
 
     ``cat/__init__.py`` constructs the private runtime value before it imports
     ``cat/functors.py``.  Binding these names completes one Cat declaration identity.

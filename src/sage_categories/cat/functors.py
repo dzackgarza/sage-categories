@@ -71,7 +71,6 @@ class NaturalTransformationData:
 Cat = _category.Cat
 Category = _category.Category
 Functor = Cat().MorphismType
-_category.Functor = Functor
 
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory, endpoints
 from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
@@ -755,8 +754,6 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
 Fun: FunctorsCategory = Cat().morphism_category(1)
 NaturalTransformation = Fun.MorphismType
-_category.Fun = Fun
-_category.NaturalTransformation = NaturalTransformation
 Fun._bootstrap()
 register_handler(denotes_diagram, _denotes_diagram_by_domain)
 register_handler(denotes_functor, _denotes_functor_by_domain)

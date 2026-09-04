@@ -1,7 +1,5 @@
 """R2 acceptance for the owned Cat core, using only Cat-level constructions."""
 
-from sage_categories.kernel.sage_runtime import Integer
-
 import pytest
 
 from sage_categories.cat.category import Axiom, Cat, Category, CategoryOfCategories, OnMorphism, OnObject, ask, is_placed, is_subcategory

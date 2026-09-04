@@ -111,6 +111,14 @@ class FunctorProperties:
     def Isofibrations(self) -> Category:
         return self.property_subcategory(self.ambient().Isofibrations())
 
+    def Fibrations(self) -> Category:
+        """Grothendieck fibrations: a cartesian lift of an isomorphism is an isomorphism, so this sits inside ``Isofibrations()`` (D169)."""
+        return self.property_subcategory(self.ambient().Fibrations())
+
+    def Opfibrations(self) -> Category:
+        """Grothendieck opfibrations: a cocartesian lift of an isomorphism is an isomorphism, so this sits inside ``Isofibrations()`` (D169)."""
+        return self.property_subcategory(self.ambient().Opfibrations())
+
     def Monomorphisms(self) -> Category:
         return self.property_subcategory(self.ambient().Monomorphisms())
 
@@ -172,6 +180,9 @@ class FunctorProperty(FunctorProperties, FixedEndpointProperty[[OnObject, OnMorp
         the declaration ``POL-FUN-036`` names: the leaf states the relation by
         constructing in ``Fun(S, T).Monomorphisms().Isofibrations()``, and the kernel
         trusts it (``specs/functor.md``, "Monomorphisms of Cat() and placement").
+        The functor is placed in exactly the property category the call named, so
+        ``Fun(S, T).Monomorphisms()()`` declares a monomorphism and nothing further
+        (D146, D162).
         """
         return _construct_property_functor(self, args, kwargs)
 
@@ -187,22 +198,24 @@ def _construct_property_functor(
     ``Fun(S, T)``, carried along its inclusion, and construction here asserts the property
     (D150, ``POL-CAT-038``).  A functor already constructed is placed by
     ``assume(F.is_p())``, never fed back to a constructor (D150, ``POL-ONT-002``).
+
+    The zero-argument form declares an inclusion, and it is available only on a
+    monomorphism subcategory: a functor that computes nothing is a subcategory
+    monomorphism, and every other functor is written with its two actions and constructed
+    into the strongest property subcategory that states what is known about it (D08, D21,
+    D146, D162).  The property category the call names is the whole declaration, so the
+    result is placed there and in nothing wider or narrower.
     """
     ambient = property_category.ambient()
     if args or kwargs:
         functor = ambient(*args, **kwargs)
     else:
         functors = property_category.universe().morphism_category(1)
-        roots = property_category.narrowing_roots()
-        assert any(root is functors.Monomorphisms() for root in roots), (
-            f"{property_category!r} requires object and morphism actions"
+        assert any(root is functors.Monomorphisms() for root in property_category.narrowing_roots()), (
+            f"{property_category!r} is not a monomorphism subcategory of Fun, so it requires "
+            f"object and morphism actions (D146, D162)"
         )
-        source, target = ambient.domain(), ambient.codomain()
-        functor = (
-            functors.full_subcategory_monomorphism(source, target)
-            if any(root is functors.Full() for root in roots)
-            else functors.subcategory_monomorphism(source, target)
-        )
+        functor = functors.identity_on_values(ambient.domain(), ambient.codomain())
     refine(functor, property_category)
     return functor
 
@@ -576,20 +589,40 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         # https://ncatlab.org/nlab/show/subcategory, inspected 2026-08-28: "A functor is
         # easily verified to be monic iff it is faithful and injective on objects").
         self._monomorphisms = PropertySubcategory(self, "Monomorphisms", (self.Faithful(),))
+        # A cartesian lift of an isomorphism is an isomorphism, and so is a cocartesian
+        # one, so a Grothendieck fibration and opfibration are isofibrations; each states
+        # that containment by the monomorphism it retains into ``Isofibrations()`` and
+        # nothing induces it from the predicates (D83, D169; ``specs/functor.md``,
+        # "Functors as morphisms of Cat").  Neither is a subcategory of ``Faithful()``:
+        # ``Fun([1], C).ev(1)``, the codomain fibration, is a fibration and is faithful on
+        # no ``C`` with two parallel morphisms.
+        self._fibrations = PropertySubcategory(self, "Fibrations", (self._isofibrations,))
+        self._opfibrations = PropertySubcategory(self, "Opfibrations", (self._isofibrations,))
         self._bootstrapped = True
         # Placing a deferred functor can construct a further narrowing of ``Fun``, whose
-        # own subcategory monomorphisms defer in turn, so the queue is drained until it
-        # stays empty.  There are finitely many narrowings, so it does.
-        while self._pending:
-            batch, self._pending = self._pending, []
-            for functor, full in batch:
-                refine(functor, self._declared_subcategory(full))
+        # own subcategory monomorphisms defer in turn, so the queue grows while it is read
+        # and is drained until nothing is added.  There are finitely many narrowings, so
+        # it ends.  Each entry stays in the queue while the drain runs, because the queue
+        # is the declaration every entry carries until its placement exists
+        # (``declares_inheritance``).
+        drained = 0
+        while drained < len(self._pending):
+            functor, full = self._pending[drained]
+            drained += 1
+            refine(functor, self._declared_subcategory(full))
+        self._pending.clear()
         self._bootstrapping = False
-        register_handler(self._isofibrations.predicate(), self._is_shared_value_functor)
-        register_handler(self._monomorphisms.predicate(), self._is_shared_value_functor)
 
     def Isofibrations(self) -> Category:
         return self._isofibrations
+
+    def Fibrations(self) -> Category:
+        """Grothendieck fibrations, a retained full subcategory of ``Isofibrations()`` (D169)."""
+        return self._fibrations
+
+    def Opfibrations(self) -> Category:
+        """Grothendieck opfibrations, a retained full subcategory of ``Isofibrations()`` (D169)."""
+        return self._opfibrations
 
     def Monomorphisms(self) -> Category:
         """Monic functors: faithful and injective on objects, so this is a full subcategory of ``Faithful()``."""
@@ -600,42 +633,35 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     # A leaf declares that ``S`` is a subcategory of ``T`` by constructing in
     # ``Fun(S, T).Monomorphisms().Isofibrations()`` (``FunctorProperty.__call__``).  The
     # kernel's own subcategories are built while those property categories do not yet
-    # exist, so they route through the two methods below, which construct the same one
-    # identity-on-values functor and place it once ``_bootstrap`` has run.
+    # exist, so they request the inclusion by name instead, through the two named methods
+    # at the foot of this section; both declare the same property, and both reach the one
+    # identity-on-values functor the leaf's own declaration reaches.
 
-    def _shared_value_functor(self, source: Category, target: Category, full: bool) -> Functor:
-        """The one identity-on-values functor ``source -> target``, placed in the declared property.
+    def identity_on_values(self, source: Category, target: Category) -> Functor:
+        """The one functor ``source -> target`` that is the identity on the values they share, retained by identity (POL-FUN-027).
 
-        Until ``_bootstrap`` has finished, the property category to place it in does not
-        exist yet (or is itself under construction), so the placement is queued and
-        ``_bootstrap`` drains the queue.
+        It is a functor exactly when ``source`` is a subcategory of ``target``, and this
+        states nothing about which relation holds: the caller declares that by placing the
+        result, and a placement made twice for one pair narrows the one retained value.
         """
         key = (source, target, self)
         if key not in self._shared_value_functors:
             self._shared_value_functors[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
-        functor = self._shared_value_functors[key]
+        return self._shared_value_functors[key]
+
+    def _shared_value_functor(self, source: Category, target: Category, full: bool) -> Functor:
+        """The identity-on-values functor ``source -> target``, placed in the declared property.
+
+        Until ``_bootstrap`` has finished, the property category to place it in does not
+        exist yet (or is itself under construction), so the declaration is queued and
+        ``_bootstrap`` drains the queue.
+        """
+        functor = self.identity_on_values(source, target)
         if self._bootstrapping:
             self._pending.append((functor, full))
         else:
             refine(functor, self._declared_subcategory(full))
         return functor
-
-    def _is_shared_value_functor(self, functor: Functor, assumptions: Proposition) -> bool | None:
-        """The exact route for a functor the kernel itself built: it shares the values of its endpoints.
-
-        Such a functor is injective on objects and on morphisms, hence monic
-        (nLab, subcategory, https://ncatlab.org/nlab/show/subcategory, inspected
-        2026-08-28: "A functor is easily verified to be monic iff it is faithful and
-        injective on objects"), and its image is everything the source has, so an
-        isomorphism of the target with one endpoint in the source is one of the source.
-        A functor the kernel did not build decides nothing here: the leaf declares it.
-        """
-        return True if self._built_as_subcategory_monomorphism(functor) else None
-
-    def _built_as_subcategory_monomorphism(self, functor: Functor) -> bool:
-        """Whether the kernel itself built ``functor`` to present a subcategory."""
-        key = (functor.domain(), functor.codomain(), self)
-        return key in self._shared_value_functors and self._shared_value_functors[key] is functor
 
     def declares_inheritance(self, functor: Functor) -> bool:
         """Whether ``functor`` carries inheritance from its target (D164 to D167).
@@ -652,11 +678,10 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         ``declares_subcategory``).  Inheritance needs the arrow condition alone, since
         ``Groups() -> Sets()`` is not injective on objects.
         """
-        if self._built_as_subcategory_monomorphism(functor):
-            # A functor the kernel built to present one category as a subcategory of
-            # another shares the values of its endpoints, so it is monic and its image
-            # is replete: it is an isofibration by construction, before and after the
-            # property categories exist (``_is_shared_value_functor``).
+        if any(declared is functor for declared, _ in self._pending):
+            # While the queue drains, a declaration made by name has nowhere to be placed
+            # yet, so the queue holds it.  The queue is that declaration, read here
+            # exactly as the placement is read below, and it is empty once bootstrap ends.
             return True
         if not self._bootstrapped:
             return False

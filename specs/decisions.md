@@ -1,747 +1,1203 @@
-# Architectural decisions
+# Architectural decision index
 
-This file records the decisions the repository owner stated in working sessions between 2026-08-22 and 2026-08-29, in Claude and Codex transcripts.
-Those statements are the source of the architecture.
-They were not written down anywhere in the repository, so each rebuild rediscovered them by excavation or, more often, invented a replacement.
-
-Each entry gives the decision and its date.
-The topic specifications own the resulting technical statements; this file owns what was decided and when.
-When a specification, a policy row, a plan, or a report disagrees with an entry here, this file wins and the other artifact is the defect.
-
-Read this before proposing an architecture.
-Do not re-derive a decision from source code: the source was written by the same process these decisions correct.
-
-Cite the session identifier and the message timestamp when adding an entry, as
-`4544eba5 2026-08-28T12:00Z`, so a reader can retrieve the statement (`POL-DOC-018`).
-Entries below carry dates; the sessions they were read from are listed under
-[Sources](#sources).
-
-## Sources
-
-This record was built by reading the user's messages in the Claude and Codex sessions for
-this repository between 2026-08-22 and 2026-08-28: 208 messages across 99 session files,
-under `~/.claude/projects/-home-dzack-gitclones-sage-categories/` and
-`~/.codex/sessions/`. The sessions carrying the most decisions were, in order:
-
-| Session | Messages |
-| --- | --- |
-| `rollout-2026-08-24T18-54-56-01a03368` | 49 |
-| `rollout-2026-08-23T00-58-03-01a02a68` | 24 |
-| `b55dc6aa` | 23 |
-| `rollout-2026-08-25T13-22-02-01a0375e` | 13 |
-| `5df9424f` | 12 |
-| `rollout-2026-08-24T03-46-01-01a03028` | 10 |
-| `rollout-2026-08-25T00-27-59-01a03499` | 9 |
-| `rollout-2026-08-26T12-53-54-01a03c6a` | 8 |
-| `1c1a3599` | 8 |
-| `ee78124f` | 7 |
-| `rollout-2026-08-22T22-55-29-01a029f8` | 7 |
-
-Entries added later should name their own session and timestamp inline rather than
-relying on this table.
+This index preserves decision IDs, source locators, supersession, and recorded uncertainty.
+The linked topic specification owns each current technical contract.
+[System architecture](system.md) maps those owners; [AGENTS.md](../AGENTS.md) owns the work procedure ([D180](#d180)).
+Add decisions with an exact session identifier and message timestamp.
 
 ## Contents
 
+- [Sources](#sources)
 - [Philosophy](#philosophy)
-
 - [System synthesis and work control](#system-synthesis-and-work-control)
-
 - [Purpose and scope](#purpose-and-scope)
-
 - [Structure functors and inheritance](#structure-functors-and-inheritance)
-
 - [Elements](#elements)
-
 - [Predicates, containment, and assumption](#predicates-containment-and-assumption)
-
 - [Cardinality](#cardinality)
-
 - [Universal constructions](#universal-constructions)
-
 - [Diamonds and identity](#diamonds-and-identity)
-
 - [Leaf discipline](#leaf-discipline)
-
 - [Types and style](#types-and-style)
-
 - [What the documents are for](#what-the-documents-are-for)
+
+## Sources
+
+The original record draws on Claude, Codex, and ChatGPT conversations for this repository.
+The legacy source cohort is:
+
+- Claude: `~/.claude/projects/-home-dzack-gitclones-sage-categories/`.
+- Codex: `~/.codex/sessions/`, including `~/.codex/sessions/2026`.
+- ChatGPT: the recordings read through the `chat-on-steroids` justfile described in [AGENTS.md](../AGENTS.md).
+
+| Legacy session locator |
+| --- |
+| `rollout-2026-08-24T18-54-56-01a03368` |
+| `rollout-2026-08-23T00-58-03-01a02a68` |
+| `b55dc6aa` |
+| `rollout-2026-08-25T13-22-02-01a0375e` |
+| `5df9424f` |
+| `rollout-2026-08-24T03-46-01-01a03028` |
+| `rollout-2026-08-25T00-27-59-01a03499` |
+| `rollout-2026-08-26T12-53-54-01a03c6a` |
+| `1c1a3599` |
+| `ee78124f` |
+| `rollout-2026-08-22T22-55-29-01a029f8` |
+
+Dates use 2026. A date-only entry retains the original incomplete citation; the cohort above does not identify its exact message.
+An entry marked inference preserves that status even when a topic specification currently implements it.
 
 ## Philosophy
 
-The decisions below are consequences.
-These are the reasons, and they were the part that never got written down: each rebuild received the rules, could not derive them, and substituted something that looked equivalent.
-A rule you cannot derive is a rule you will replace with a synonym.
-
-**Category theory is the DRY mechanism, not decoration.** Sage already computes everything this package computes, so computation is not what is being bought.
-What is being bought is that a structure is stated once and reaches everywhere it applies.
-Products are defined once and apply to categories, sets, rings, modules, sheaves, and schemes alike.
-Inheritance, dispatch, and code reuse are engineering answers to a question mathematics answered better, and a functor is not a pleasant way to describe a relationship — it is the reuse mechanism itself.
-So writing engineering wiring is the signal that a mathematical statement was missed, not a sign that mathematics ran out.
-
-**Categorical placement is the index into a catalogue of algorithms.** The product is an easily discoverable and transportable catalogue of algorithms, reached by slotting an object into the correct category.
-That is why placement has to be principled: a wrong placement is not a taxonomy error, it is a wrong answer about which algorithms apply to your object.
-It is also why a value is constructed into the strongest category its mathematics supports — that is how the right algorithms become reachable.
-
-**A definition determines a complete interface, and an implementation cannot forget part of it.** This is the defect being repaired.
-Sage's `IntegralLattice` does not know its underlying set is `ZZ^n`, so `ZZ^n` is not recognised as a product, and Sage can neither count nor iterate it, even though `ZZ` enumerates.
-Sage has three free modules with different operations and inconsistent inherited cardinality.
-If `X` is a set it has a cardinality — not because an author remembered to write one, but because that is what being a set means.
-Inheritance is therefore total and automatic, never opt-in.
-
-**Rigour is a floor, not a mandate to build.** The obligation is to be mathematically principled and never to do anything ill-defined.
-It is not to satisfy a self-imposed mathematical programme with new machinery.
-Proving things belongs in a language like Lean.
-When a design question turns out to be about formalization rather than about a decision the code must make, the answer is to drop the question, not to build the apparatus.
-Three successive coherence subsystems were built for a mandate that did not exist.
-
-**Construction is assertion.** Placing a value in a category is how a theorem is stated; the writer is trusted, and a citation on the construction line is what an auditing mathematician reads.
-There is no separate certificate, authority token, or proof record, because they would duplicate what the placement already says, and duplicating it invites the two to disagree.
-
-**Information flows from the kernel downstream, never upstream.** A kernel that knows what a poset is — that ensures subsets of a poset are posets, with no mechanism that generalizes — is defective even when it works.
-The test is not whether the mechanism produces the right answer for the category in front of you; it is whether the mechanism could have been written without knowing that category exists.
-
-**A justification must survive weakening its hypotheses.** Checking a kernel by testing that a matrix rank is zero is wrong the moment `R` stops being a field, because torsion makes a nonzero module have rank zero.
-Hard-tying an implementation to `ZZ` is wrong when the algorithm only needed a PID. An implementation that happens to be correct in its current category is still wrong if its *reason* is specific to that category.
-Ask what the argument rests on, not whether the answer comes out right here.
-
-**Never encode a non-finitary concept in a finitary structure.** The components of a natural transformation are an indexed family, not a tuple, because almost every category in use is infinite.
-Cardinality is not obtained by enumeration, because the set may be `{2, 4, ...}` or `{1, ..., 10^10}`. The underlying set of `Free_R(S)` exists by a membership rule and a cardinality rule, with nothing to enumerate and nothing to compare.
-
-**Complexity has a direction.** It may accumulate in the kernel, and only in exchange for removing it from every leaf.
-A kernel feature that does not shrink a leaf is a net loss, and a leaf carrying wiring is evidence the kernel has not paid for itself.
-
-**Dependency order is part of the architecture.** A production leaf consumes an accepted kernel contract; it does not help design that contract while both are changing.
-Parallel kernel and leaf work lets the leaf's immediate needs choose generic mechanisms and hides missing kernel ownership inside leaf code.
-Complete and independently accept the kernel first, then implement and independently review one leaf phase at a time.
-A generic defect found later invalidates every dependent acceptance and returns work to the kernel owner.
-
-**An execution plan contains decisions.** It cannot assign implementation work whose first task is to decide its mathematical owner, public spelling, result category, constructor contract, or acceptance criterion.
-Resolve each such question in the governing decision and specification before the phase starts.
-When the transcripts do not determine the answer, ask the user before implementation begins.
-
-**The mathematics is the interface; the presentation must not leak.** A group is technically `(X, f)` and a lattice is technically `(L, b)`, but nobody works with them as ordered pairs.
-Publicly a lattice *is* a module with more structure.
-An ordered pair is a fine private representation and an unacceptable public one, which is why every `underlying_Y()` deserves suspicion: it is a presentation escaping into the API.
-
-**Depth in the graph bounds vocabulary.** A leaf mentioning cardinality in a lattice subtree is a red flag, not because of layering discipline but because cardinality is not part of what a lattice is.
-Vocabulary that leaks across the graph is a mathematical error before it is a structural one.
-
-**The kernel is a black box, and no mathematician ever audits it.** The split is between a mathematical declaration and the wiring that realizes it, never between general and specific mathematics.
-`Cat`, `Mor(n, C)`, `Fun(C, D)`, the property subcategories, and `Sets()` are all objects this repository defines, and all of them are read as mathematics.
-The kernel is what takes those plain declarations and performs the Python wiring behind them: class building, linearization, private runtime state sharing, caches, descriptors, and refinement mechanics.
-That is what nobody reads.
-
-So the kernel exists to give a leaf writer an interface that reads and writes like standard mathematics.
-It should adhere to precise mathematics where it can, but that is an aid and never its acceptance criterion.
-Holding it to the theory layer's standard is what produced universes, straightening machinery, and three coherence subsystems, each built to exhibit category theory to a reader who was never going to look.
-Ordinary Python lives there, engine boundaries are quarantined in their own subtrees, and the layout tells a reader where mathematics stops.
-
-**The user should not need to know the framework.** Nobody writes `FiniteSet({1, 2, 3})`; `Sets({1, 2, 3})` routes.
-A small number of high-level endpoints are the interface, and discoverability comes from names mathematicians already know.
-The code exists to reduce cognitive load, so requiring knowledge of the category graph in order to use it defeats the purpose.
-
-**Prior art before invention, and mathematical structure is itself prior art.** Sage already supports semirings and posets, so cardinals are built on them rather than hand-rolled.
-Any Python, Sage, SymPy, GAP, Singular, Macaulay2, Julia, or published package is available inside an implementation.
-Before encoding something, look for the structure that already encodes it and for other systems that have solved it.
-
-**A finding is an instance of a principle.** When a violation is identified, the violation is not the finding — the principle it instantiates is, and that principle is the reason the instance is wrong.
-Fixing the instance alone leaves every sibling in place and teaches nothing.
-
-**A local repair on a wrong architecture is negative progress.** Polishing the wrong structure removes the pressure that would have forced the real fix while leaving the structure in place, so the result is worse than having done nothing.
-The same holds for deleting a test that senses a defect: repair what it senses, and the test becomes unformulable on its own.
+Category theory carries reusable mathematics, and category placement supplies the complete applicable interface.
+Place an operation at the most general owner whose hypotheses justify it.
+Keep infinite families indexed and preserve the distinction between mathematical objects and their private presentations.
+The [system specification](system.md) and [leaf contract](leaves.md#leaf-contract) state these principles operationally.
 
 ## System synthesis and work control
 
-**D124 (08-31, `01a05682` 2026-08-31T12:04:57Z). The project is one synthetic system, a tower of linked abstractions legible to an agent.** The owner's instruction: make the entire system as agent-intuitive, agent-ergonomic, and agent-accretive as possible; conceptualize the project as a synthetic system that is maximally coherent, cohesive, modular, and interconnected, forming a tower of linked abstractions that are maximally legible to an agent, rather than an assemblage of parts; then make the requisite changes to the design documents and plans. The active tower runs from `Cat`, morphisms, and functors through foundational properties, universal constructions, pullback-defined property closure, sets, order, algebraic families, modules, and algebras. The runtime substrate compiles and evaluates that mathematics. [`system.md`](system.md) owns the complete composition and dependency directions.
+### D124
 
-**D125 (08-31, `01a05682` 2026-08-31T09:27:03Z; `01a03368` 2026-08-24T20:25:53Z, 21:11:24Z; `b55dc6aa` 2026-08-27T16:38:05Z, 16:39:04Z, 18:32:36Z). Public propositions use the predicate notion Sage and SymPy already have.** A predicate is already a notion in Sage and SymPy, and it is what `ask()` takes (`01a05682` 09:27:03Z). Every categorical method returns predicates instead of bools; Sage and SymPy have already solved this design problem, so one can call `assume(X.is_finite())` (`01a03368` 21:11:24Z). Predicates strictly generalize bools, so nothing returns a bool; `A == B` returns `A.__eq__(B)`, which can return a proposition, and `==` can produce `Unknown`, so `ask(a == b)` is used everywhere to decide (`b55dc6aa` 16:38:05Z, 16:39:04Z, 18:32:36Z). When an object is already in the property subcategory, the predicate is overridden to return `True` and wins in the MRO; otherwise the predicate assumed in context short-circuits; otherwise the computational routes run, and a positive result refines the same value into the subcategory so the computation never reruns (`01a03368` 20:25:53Z).
+The framework forms one coherent tower of mathematical abstractions. The system specification owns its composition and dependency directions. Owner: [System architecture](system.md).
 
-**D126 (08-31, cited `01a05682` 2026-08-31T12:04:57Z). The foundation uses a staged bootstrap.** Ordinals form a semiring, full stop, and there is a point embedding of the entire category of ordinals into the category of semirings (`1c1a3599` 2026-08-26T23:12:17Z, 23:23:15Z). Miss recorded at R0 (`POL-DOC-025`): searched: the cited message and the three stores by keyword (bootstrap, cycle, Semiring, Cardinal, "in that order"); found: ordinals-are-a-semiring only; inference: the staged order is agent synthesis; confidence: high; gaps: the assistant turns of `01a05682`.
+Source: 08-31, `01a05682` 2026-08-31T12:04:57Z.
 
-**D127 (08-31, `01a05682` 2026-08-31T11:21:08Z, 12:04:57Z; `01a03368` 2026-08-24T14:03:20Z). Agent work continues from canonical state.** Agents work from the exact current state: if there is a plan in motion or a specific directive given in chat, the job is to carry out that work immediately, exploring only what is relevant to the cited tasks; Git history is irrelevant unless the task is to understand past work; a leaf carrying plain Python, engineering, and wiring is a kernel defect to surface, not something to polish with local workarounds (`01a03368` 14:03:20Z). Subagent work that replaces one violation with another is a sideways gradient (`01a05682` 11:21:08Z). The design documents and plans are the surface an agent drives from (12:04:57Z; D124).
+### D125
 
-**D128 (08-31, corrected 09-02; `01a03368` 2026-08-24T20:58:14Z; `1c1a3599` 2026-08-26T23:21:02Z; `b55dc6aa` 2026-08-27T18:57:29Z; `353b942d` 2026-08-28T14:41:54Z). Object placement is by point functor.** For a distinguished object `X`, `Cat().Point(X)`, written `{X}`, is the one-object category on `X`. Its structure functors `{X} -> D` are its point functors. Selecting one places `X` as an object of `D` and, through the categorical level shift, propagates `D`'s object surface to `X` itself, `D`'s element surface to the objects of `X`, and shifts morphisms accordingly. `QQ` is placed in the countable-set, poset, and field categories by declaring those point functors on `{QQ}`. **Superseded in part by D154 (`54674b9b` 2026-09-02T22:00:14Z):** asked where the structure functor `{NN} -> Sets().Countable()` is declared, the owner answered "Leaf class for the point" and said `C.Point()` is for defining an arrow, not an object (`54674b9b` 2026-09-02T22:00:14Z). So the leaf class of `X` declares `D.Point()`, the arrow `* -> D`, among its own structure functors; `{X}` remains the one-object category and declares none. The nine sites that cite this row for the placement route mean D154's. A point functor is an isofibration only when its literal image is replete and every isomorphism at `X` lifts. The 08-31 text, which said a functor `{X} -> D` records a diagram and performs no placement or inheritance, was an agent synthesis with no owner statement; the owner said on 08-24 to model `QQ` as `{QQ}` with functors into its categories, and on 08-26 that a point functor is the inclusion of `{C}` into `D` that regards `C` as an object of `D` and propagates `D`'s methods.
+Public propositions use Sage/SymPy's predicate and ask machinery. [D115](#d115) governs the separate application/evaluation boundary; [D179](#d179) fixes the exported predicate base. Owner: [Propositions and typed queries](undecidable-properties.md).
 
-**D129 (08-31, cited `01a05682` 2026-08-31T12:04:57Z). A public mechanism enters with its first mathematical consumer.** Miss recorded at R0 (`POL-DOC-025`): searched: the cited message and the three stores (placeholder, artificial, first consumer, witness, fixture); found: nothing; inference: agent synthesis of the global "no speculative abstractions" instruction; confidence: high; gaps: the assistant turns of `01a05682`.
+Source: 08-31, `01a05682` 2026-08-31T09:27:03Z; `01a03368` 2026-08-24T20:25:53Z, 21:11:24Z; `b55dc6aa` 2026-08-27T16:38:05Z, 16:39:04Z, 18:32:36Z.
 
-**D130 (09-01, `01a05a70` 2026-09-01T02:28:51Z; `01a03028` 2026-08-23T20:48:17Z, 23:06:28Z). Types make leaf code a mathematically meaningful DSL; type errors are triaged, never golfed.** The express goal of types is to make code more readable, legible, and understandable, to force contributors to be more precise, to catch genuine errors statically instead of at runtime, and to let leaf-writing code work inside an extremely well-constructed system of mathematically meaningful types; leaf code reads more like a mathematical DSL than Python software engineering, and the kernel is allowed to be a relatively inscrutable black box of engineering. Type-checker output is triaged into workstreams: bad typing design in the repository, bad upstream stubs, genuine slop (`Any` and `object` types, untyped code, overuse of `getattr` and other type peeking, asserting and case-matching to narrow types, unnecessarily loose type design), and genuine type-checker failures such as inability to see dynamically constructed types without explicit inheritance; golfing the last regime reverses the intended gradient (`01a05a70` 02:28:51Z). Python protocols are banned: they are duck typing that avoids proper mathematical types (`01a03028` 23:06:28Z). Type-checker plugins and static generation of manifests, statically constructed types, and stubs, regenerated on commit, test, push, or version bump, are legitimate (`01a03028` 20:48:17Z; D51). This decision controls `POL-TYPE-018`, `POL-TYPE-020`, `POL-TYPE-025`, and `POL-TYPE-027`.
+### D126
+
+Inference: the staged bootstrap order was synthesized by an agent. The cited owner statements establish ordinal semiring structure, not that order. The system specification retains the implementation order. Owner: [Foundation bootstrap](system.md#foundation-bootstrap).
+
+Source: 08-31, cited `01a05682` 2026-08-31T12:04:57Z.
+Additional source locators: `1c1a3599`; `2026-08-26T23:12:17Z`; `23:23:15Z`.
+
+### D127
+
+Work continues from the current tree and active task. [D180](#d180) owns current execution and context-loading rules. Owner: [Workflow](../AGENTS.md).
+
+Source: 08-31, `01a05682` 2026-08-31T11:21:08Z, 12:04:57Z; `01a03368` 2026-08-24T14:03:20Z.
+
+### D128
+
+Superseded in part by [D154](#d154) and [D161](#d161): the leaf class of X declares C.Point(). The one-object category {X} is not the declaration site. [D169](#d169) fixes the inclusion through which placement proceeds. Owner: [Points and placement](functor.md#point-categories-and-point-functors).
+
+Source: 08-31, corrected 09-02; `01a03368` 2026-08-24T20:58:14Z; `1c1a3599` 2026-08-26T23:21:02Z; `b55dc6aa` 2026-08-27T18:57:29Z; `353b942d` 2026-08-28T14:41:54Z.
+Additional source locators: `54674b9b`; `2026-09-02T22:00:14Z`.
+
+### D129
+
+Inference from the general restriction on speculative abstractions: a public mechanism enters with its first mathematical consumer. No message-level owner statement was found in the cited search. Owner: [System architecture](system.md).
+
+Source: 08-31, cited `01a05682` 2026-08-31T12:04:57Z.
+
+### D130
+
+Types communicate exact mathematics. Diagnose repository types, upstream stubs, implementation defects, and checker limitations separately. [D131](#d131) fixes Any exceptions; static projection remains an authorized approach. Owner: [Exact types](leaves.md#exact-types).
+
+Source: 09-01, `01a05a70` 2026-09-01T02:28:51Z; `01a03028` 2026-08-23T20:48:17Z, 23:06:28Z.
 
 ## Purpose and scope
 
-**D01 (08-22, clarified 08-30, `2026-08-30-cce86657` 2026-08-29T18:13:42Z). Build the whole foundation before any structured category.** `Cat`, all arrow categories, working inheritance through `ObjectType` and the other implementation classes, and then an extensive owned `Sets()` implemented as a leaf when that migration reaches it. The repository's `Cat()` defines an entirely new category graph; it is not a refinement, fork, or partial reuse of Sage's mathematical category graph. The two systems meet only in the private Python runtime substrate ultimately rooted in Sage `Parent` machinery and in the Sage class-building facilities selected under D109 through D114. No Sage category or categorical construction enters the owned mathematical graph or public API. Categories are migrated as needed by defining new owned categories and their owned functors.
-Do not drift into rings, modules, lattices, or formed modules.
+### D01
 
-**D02 (08-23). The package shadows a subset of Sage, and its universe is closed.** `sage_categories.all` works like `sage.all`. Once you touch a package-owned object, every further computation stays inside the package: every operation is mediated by the package's categorical API, and every result you can produce is still a package object.
-There is no intention to refine Sage objects into this hierarchy or to be compatible with base Sage; any compatibility is incidental.
-Base Sage appears only inside hidden implementation engines.
-When the package wants a Sage construction, it absorbs it as an internal engine and re-expresses it through the categorical machinery.
+Build the foundation before production leaves. The owned category graph uses Sage only through the private runtime. [D137](#d137) fixes the pre-acceptance tree; [D173](#d173) and [D175](#d175) fix layer ownership. Owner: [System architecture](system.md).
 
-The reason is uniformity of interface.
-Sage's implementations forget things.
-Sage's `IntegralLattice` does not know its underlying set is `ZZ^n`, so `ZZ^n` is not recognised as a product of sets, rings, or rank-one modules, and Sage cannot say its cardinality or iterate it — while research code wants to enumerate infinite countable sets in bounded loops, as Vinberg's algorithm does.
+Source: 08-22, clarified 08-30, `2026-08-30-cce86657` 2026-08-29T18:13:42Z.
 
-**D03 (08-23, clarified 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:08Z, 2026-08-29T08:42Z). Computation is not the goal.** Sage already computes everything this package computes.
-The goals are uniformity, categorically principled code, category theory as a form of DRY, real functors everywhere, and obviating engineering concerns so that a leaf developer thinks about mathematics.
-It is an organisational, more legible layer over Sage.
-Sage code needs a programmer to audit it; code here, outside the kernel, should be auditable by a mathematician with very little coding experience.
-For `M = ZZ^3`, the public result is one free module with the complete interface forced by its mathematics.
-Its structural route to `Sets()` supplies cardinality and countability.
-Its retained finite-product presentation and the chosen enumerations of its factors supply product enumeration.
-These consequences do not depend on which private Sage free-module class performs a computation.
+### D02
 
-**D04 (08-23). The long-term asymptote.** Adding a category such as `MyVerySpecialAlgebraOverANoetherianDomain(R)` should mean: define a leaf category, possibly from a shipped template; declare a few functors to nearby categories you already understand, without reading the rest of the codebase; write your new methods; and receive the full inherited surface.
-You think at the level of your own algebra, and `cardinality()` and suitable limits and colimits arrive because of the functorial wiring.
+The public category API is closed under its operations. Computation engines remain private; public SymPy propositions are the exception fixed by [D125](#d125). Owner: [System architecture](system.md).
+
+Source: 08-23.
+
+### D03
+
+The framework supplies one complete mathematical interface through category theory. A leaf states mathematics; inherited structure supplies the remaining operations. Owner: [System architecture](system.md).
+
+Source: 08-23, clarified 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:08Z, 2026-08-29T08:42Z.
+
+### D04
+
+A leaf declares its new mathematics and immediate functors to known categories. The generic framework supplies the inherited surface. Owner: [Leaf contract](leaves.md#leaf-contract).
+
+Source: 08-23.
 
 ## Structure functors and inheritance
 
-**D05 (08-23, corrected 08-29). A leaf never writes subclass relations between category-owned classes.** The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` and returns its immediate structure functors.
-The kernel constructs those exact classes dynamically with the corresponding target classes as bases.
-Thus a product-set leaf does not write `class ProductSetObject(SetObject)`, but its compiled `C.ObjectType` does inherit the target `Sets().ObjectType` through the declared structure functor.
-This Python inheritance is the intended mechanism. It does not assert categorical containment.
-The same rule applies to limits, colimits, products, coproducts, tensor products, direct sums, subobjects, and covering objects (`01a03028` 2026-08-23T20:26:43Z; `01a048f6` 2026-08-28T21:03:59Z, 21:06:26Z).
+### D05
 
-**D06 (08-24, clarified 08-30, `2026-08-30-cce86657` 2026-08-29T18:13:42Z). Sage's `super_categories` conflates distinct notions.** It carries subcategory inclusions, full or not, and structure projections such as `(X, op) |-> X` where Sage declares `Sets` a supercategory. The new owned graph instead declares explicit `structure_functors: list[Functor]` and names the distinct mathematics separately: subcategory inclusion, full subcategory inclusion, projection, and so on. This is a new graph using a more explicit declaration model, not a replacement of live edges in Sage's category graph. A migrated Sage concept is reconstructed as an owned category with the functors required by its mathematics.
+Category-owned classes acquire their bases through compiled structure functors. [D167](#d167) narrows which selected functors carry inheritance. Owner: [Implementation classes](functor.md#cobjecttype-celementtype-and-cmorphismtype).
 
-**D07 (08-24, corrected 08-29). Selection does not include every functor out of the category.** The structure functors are the ordinary functors whose target classes supply inherited implementation.
-For a poset `(X, R)`, the projection to `X` supplies the set interface. The projection to `R` does not supply the public poset interface.
-The Python inheritance from `Sets().ObjectType` does not make the poset an object of `Sets()` and does not identify it with the separate public set image of the projection (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:20Z).
+Source: 08-23, corrected 08-29.
+Additional source locators: `01a03028`; `2026-08-23T20:26:43Z`; `01a048f6`; `2026-08-28T21:03:59Z`; `21:06:26Z`.
 
-**D08 (08-24, corrected 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T09:15Z). A functor's two actions are complete executable constructions.** Every `F: C -> D` defines `on_object` and `on_morphism`. For `X in C`, `F.on_object(X)` is ordinary Python code that calls a public constructor of `D` and returns the resulting object of `D`. For `f: X -> Y`, `F.on_morphism(f)` calls a public constructor of `Mor(D)(F(X), F(Y))` and returns the resulting morphism of `D`. These two actions are the complete functor definition and the complete writer input. Returning `F` from `C.structure_functors()` only selects this already-complete ordinary functor for compiled inheritance.
+### D06
 
-**D09 (08-25, corrected 08-30). Name the exact functor.** Categories such as magmas are pullbacks whose objects are pairs, so their distinct projections carry distinct mathematics.
-For lattices `(L, b)`, the projections to `L` and to `b` have equal standing.
-For `Modules(R)`, the defining datum `R -> End(X)` does not select one unnamed map to another category.
-Use the exact projection, inclusion, source, target, adjoint, or composite and state both endpoints.
+Declare mathematical functors in the owned graph. Subcategory relations, structure projections, and implementation inheritance have distinct meanings. Owner: [Selected structure functors](functor.md#structure-functors-and-inherited-classes).
 
-**D10 (08-25, `01a03368` 2026-08-24, Codex store; owner named under D173 and D175 on 09-03). The standard functors are written by no leaf; `cat_kernel` implements the axiom-derived ones and `Cat` the rest.** `FullSubcategoryInclusionFunctor`, `ProductProjectionFunctor(i)`, and their relatives are written by no leaf, precisely so that leaves need no boilerplate. The owner statement says the leaf writes none of them, which is the second of the two senses D173 separates, so this row names the owner, and the answer is not one package. A subcategory inclusion `C.P() -> C` is derived from an axiom declaration and is `cat_kernel`'s, which is the scope `system.md` gives that package. A point arrow `C.Point()` and a product projection have no axiom declaration; both are constructed by a method of `cat/`, and `Cat` may not import `cat_kernel`, so they are `Cat`'s. For the inclusion it cannot be the kernel either: `full_subcategory_monomorphism` is defined at `cat/functors.py:690` and every one of its twelve call sites is inside `cat/`, and building one needs `cat.functors`, which the import contract forbids the kernel. It is the joint work D175 places in `cat_kernel`, and it is the same construct D146, D148, D150, D170, `POL-CAT-038`, `leaves.md:88` and `ordered-sets.md:27` already name there.
-A leaf writing a page of functor code is a kernel defect.
+Source: 08-24, clarified 08-30, `2026-08-30-cce86657` 2026-08-29T18:13:42Z.
 
-**D11 (08-25, `01a0375e` 2026-08-25T08:44:37Z; spelling corrected 08-26, `ee78124f` 2026-08-26T09:05:48Z). Every leaf constructs its functors explicitly.** Not `self.inclusion(D)`. A leaf constructs `Fun(self, D).inclusion()`, or `Fun(self, D).Full().inclusion()`, so that a known theorem appears as part of the construction of the functor.
-Nothing is computed; the leaf writer is trusted.
-`Fun(C, D)` is the functor category. `Ar(C)` is dropped entirely, and hom and arrow notation are dropped entirely, everywhere (`ee78124f` 2026-08-26T09:05:48Z; D55).
+### D07
 
-**D12 (08-26, corrected 08-29). A structure functor is an ordinary functor selected for compiler use.** Leaves construct ordinary functors and return the applicable ones from `structure_functors()`. This contextual name does not define another functor class or constructor, and selection does not assert a subcategory relation.
+A category selects particular functors from those it defines. [D167](#d167) supersedes selection alone as the inheritance condition. Owner: [Selected structure functors](functor.md#structure-functors-and-inherited-classes).
 
-**D13 (08-26, corrected 09-02; `36d46178` 2026-08-26T10:33:24Z; `01a0406a` 2026-08-26T23:47:08Z; `01a03368` 2026-08-24T23:50:43Z; `4544eba5` 2026-08-28T11:34:30Z, 12:00:37Z, 12:18:19Z; `2026-08-30-cce86657` 2026-08-29T17:52:11Z, 17:53:44Z, 18:13:42Z; `2026-08-29-52bc359d` 2026-08-29T09:03:22Z, 09:04:47Z; `e38ff397` 2026-09-02T14:14:54Z, endorsing the repair the assistant stated at 14:13:21Z). The kernel is Sage class-building over the owned `structure_functors()` declarations, plus private runtime state sharing.** When a leaf defines `C` and a structure functor `F: C -> D`, `C.ObjectType` becomes a subclass of `D.ObjectType`. Sage handles this by constructing and linearizing MROs for methods; the kernel follows Sage's lead and constructs dynamic classes with dynamic inheritance, so a leaf implementer never names a Python implementation class, never inherits explicitly, and never deals with Python diamonds or Liskov issues. The class construction problem is solved once by the kernel (`36d46178` 10:33:24Z). The lineage is as straightforward as Sage's `Parent` and `Element` classes, split into category, object, element, and morphism types and propagated downward by `Cat` (`01a0406a` 23:47:08Z). The obligation of a structure functor `F: C -> D` is to say how to take the leaf's `C.ObjectType` implementation and feed it into an available constructor of `D.ObjectType`, and likewise for elements and morphisms. An inclusion functor says the `D` constructors already handle the leaf's objects, so the leaf needs no `__init__` at all; a projection functor is tautological boilerplate the kernel hides (`01a03368` 23:50:43Z). The kernel makes `X.f() = F(X).f()` true (`4544eba5` 11:34:30Z). The kernel figures out how the leaf class dynamically inherits `D.ObjectType`, methods and fields. Instead of the leaf writing `__init__` methods and manually threading supers, the kernel uses the functor definition to perform that threading, handling the arguments the target initializer needs; `self` means the source object, which is a set by Python class inheritance (`4544eba5` 12:00:37Z, 12:18:19Z). A functor can always assume its input is fully initialized, because in a session the object is constructed before the functor is applied (`cce86657` 17:52:11Z). The kernel relies on no particular leaf functor; imports flow from the kernel into the leaves (`cce86657` 17:53:44Z). An action calls any methods the writer defines on `C.ObjectType` and ends by returning `Y = D().some_constructor(...)` or `D()(data)`; the kernel derives nothing from a functor definition (`52bc359d` 09:03:22Z, 09:04:47Z). The repair endorsed on 09-02 (`e38ff397` 14:14:54Z): the kernel runs the leaf's own initializer with its own datum, then, for each selected structure functor, runs its object action on the instance inside a construction context where the target constructor call initializes the target's state on that same instance, recursing down Sage's C3 order with each owner initialized once; no `super()` in any declaration, no datum inheritance towers, and no ancestor sees a leaf datum. Diamonds follow D37.
+Source: 08-24, corrected 08-29.
+Additional source locators: `01a048f6-e3f5-7e42-be2a-1f60f70ac23e`; `2026-08-28T21:20Z`.
 
-**D123 (08-30, corrected 09-02; `2026-08-29-52bc359d` 2026-08-29T09:03:22Z, 09:04:47Z; `4544eba5` 2026-08-28T12:18:19Z; `b55dc6aa` 2026-08-27T19:02:32Z; `2026-08-30-cce86657` 2026-08-29T17:52:11Z; endorsed report `01a04e73` 2026-08-29T16:56:37Z; `e38ff397` 2026-09-02T14:14:54Z). The two ordinary functor actions are the sole functor declaration.** `on_object` is exactly what tells you how to take `X` in `C` and produce some `Y` in `D`: the writer provides an entire Python function that uses the declared implementation, calls any methods the writer defines on `C.ObjectType`, and ends by returning `Y = D().some_constructor(...)` or `D()(data)`. Every category has a finite list of object constructors and morphism constructors, so a functor writer must concretely accept `X` or `f` in `C` and literally produce `F(X)` and `F(f)` in `D` through literal constructors on `D`. The kernel derives nothing from a functor definition; there is nothing to derive (`52bc359d` 09:03:22Z, 09:04:47Z). The entire purpose of functors is to transport literal constructor data: the leaf writer knows exactly the target categories and their constructors and produces the data that a target constructor takes (`b55dc6aa` 19:02:32Z). An action may assume its input is fully initialized (`cce86657` 17:52:11Z), and the kernel uses the functor definition to thread the target initializer (`4544eba5` 12:18:19Z); D13 records how both hold. The kernel's use of an action is kernel business; it can evaluate the action inside a construction context in which target constructor calls initialize the target class on the existing source instance, or retain and replay the constructor invocation internally (endorsed report, `01a04c1c` 2026-08-29T09:15:33Z). This decision controls D08, D13, D17, D95, D110, D118, and every policy, specification, template, plan, or docstring that can be read as requiring another leaf-authored account of either action.
+### D08
 
-**D14 (08-26, corrected 08-29). One chain per mathematical kind.** Every category is a `Cat().ObjectType`. Every object of a category is a point `* -> C`, hence a `Cat().ElementType` and a `C.ObjectType`. `C.ElementType` is the category-owned implementation and public interface shared by the elements of objects of `C`. When an object `X` is regarded as a category, its elements are the points `* -> X`, with `*` the terminal category. A morphism of `C` is a `Mor(C).ObjectType` (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:11Z).
+A computing functor has two complete executable actions, each returning a value from the exact target constructor. [D146](#d146), [D154](#d154), and [D162](#d162) fix the inclusion and point construction forms. Owner: [Functor actions](functor.md#functor-actions-are-concrete-constructors).
 
-**D55 (08-26, `ee78124f` 2026-08-26T09:05:48Z; endorsed report `01a04c1c` 2026-08-29T06:02:35Z). Use one public morphism-category spelling.** Drop `Ar(C)` entirely. Define `Mor(n, C)` as the category of `n`-morphisms in `C`. Almost all repository categories are 1-categories, so `Ob(C) := Mor(0, C) = C.ObjectType` and morphisms in `C` are `Mor(1, C) := Mor(C) = C.MorphismType`. Thus categories are `Mor(0, Cat)`, functors are `Mor(1, Cat)`, and natural transformations are `Mor(2, Cat) = Mor(1, Fun)`. Drop hom and arrow notation entirely, everywhere. `Mor(C)` is always a category: its objects are the 1-morphisms of `C` and its morphisms are the 2-morphisms of `C`. The public API uses `Mor(C)(A, B)` for the fixed-endpoint hom category (endorsed report, `01a04c1c` 06:02:35Z).
-This supersedes the `Ar`/`Hom` spellings of D11.
+Source: 08-24, corrected 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T09:15Z.
 
-**D56 (08-26; no session or timestamp recorded, which `POL-DOC-018` requires). Eager, and fail fast and loudly.** Declaration order in `structure_functors()` controls preference. The R1 gate at `be5103d` searched the three 08-26 Claude sessions for an owner turn spelling this and found none, and searched "declaration order" across the whole Claude store and `~/.codex/sessions/2026` with the same result; the recordings were not searched for it. The rule itself is independently on the record in the owner's own words through D165 and through D37's recording statement, both confirmed verbatim, so the decision stands and only its citation is missing. Every use of this row in a gate record so far is doubled by one of those two.
+### D09
 
-**D58 (08-27, corrected 08-29). What a functor is for.** In Sage you declare your supercategories but never say *how* to construct an object or morphism of a supercategory from one of yours.
-An ordinary functor supplies that missing mathematics through its complete executable actions.
-The writer knows the source API and the exact target category.
-`on_object(X)` calls an ordinary public target constructor and returns the resulting target object.
-`on_morphism(f)` does the same in the target hom category.
-The kernel does not inspect either function or request a second account of the construction.
-For a module built from `rho: R -> End_Set(X)`, the selected functor to `Sets()` literally constructs the associated set from the module API (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T09:15Z).
+Name the exact projection, inclusion, adjoint, evaluation, or composite, with both endpoints. Owner: [Construction-owned functors](functor.md#construction-named-functors).
 
-**D59 (08-26, corrected 08-30). Morphism properties, not arrow properties.** `Mor(C).Monomorphisms()` and its relatives.
-For `C = Cat`, use property subcategories such as `Mor(Cat()).Full()` and `Mor(Cat()).Faithful()` on the exact named functor.
+Source: 08-25, corrected 08-30.
 
-**D60 (08-26). A natural transformation's components are an indexed family.** Almost every category in use is infinite, so a tuple of components is absurd.
-Model it as an assignment `X |-> eta_X`.
+### D10
 
-**D61 (08-27). Name the functor property that licenses common-ancestor tracing, and cite it.** There is a property `P` of functors along which tracing a common ancestor is allowed, and it must be the well-known citable one, not a heuristic recorded after the fact.
-"Embedding" is colloquial with no formalized definition.
-"Subcategory" is colloquial too: if the intended notion is a monomorphism, say so.
-"Inclusion functor" is not a term.
-Record the precise citable definitions and the decisions that follow from them.
+Cat constructs point arrows and generic construction maps. cat_kernel constructs axiom-derived subcategories and their inclusions. [D173](#d173) and [D175](#d175) replace the older undifferentiated kernel ownership. Owner: [Layer ownership](system.md#dependency-directions).
+
+Source: 08-25, `01a03368` 2026-08-24, Codex store; owner named under D173 and D175 on 09-03.
+Reference locators: `cat/functors.py:690`.
+
+### D11
+
+The functor category owns each explicit declaration. [D55](#d55) supersedes the old morphism-category notation; [D146](#d146) and [D177](#d177) fix monomorphism declarations. Owner: [Monomorphism declarations](functor.md#declaring-one).
+
+Source: 08-25, `01a0375e` 2026-08-25T08:44:37Z; spelling corrected 08-26, `ee78124f` 2026-08-26T09:05:48Z.
+
+### D12
+
+A structure functor is an ordinary functor selected in structure_functors(). [D167](#d167) and [D177](#d177) qualify the semantic declaration that licenses inherited execution. Owner: [Selected structure functors](functor.md#structure-functors-and-inherited-classes).
+
+Source: 08-26, corrected 08-29.
+
+### D13
+
+Run the source's local initializer, then the functor actions that supply inherited state in the construction context. Target constructors initialize that target's state on the same value, once per owner in C3 order. Each owner receives its own datum. Owner: [Construction execution](resolution.md#direct-inherited-execution).
+
+Source: 08-26, corrected 09-02; `36d46178` 2026-08-26T10:33:24Z; `01a0406a` 2026-08-26T23:47:08Z; `01a03368` 2026-08-24T23:50:43Z; `4544eba5` 2026-08-28T11:34:30Z, 12:00:37Z, 12:18:19Z; `2026-08-30-cce86657` 2026-08-29T17:52:11Z, 17:53:44Z, 18:13:42Z; `2026-08-29-52bc359d` 2026-08-29T09:03:22Z, 09:04:47Z; `e38ff397` 2026-09-02T14:14:54Z, endorsing the repair the assistant stated at 14:13:21Z.
+
+### D123
+
+The two ordinary actions are the sole declaration of a computing functor. [D13](#d13) fixes how construction-time execution initializes the same source value from those actions. Owner: [Functor actions](functor.md#functor-actions-are-concrete-constructors).
+
+Source: 08-30, corrected 09-02; `2026-08-29-52bc359d` 2026-08-29T09:03:22Z, 09:04:47Z; `4544eba5` 2026-08-28T12:18:19Z; `b55dc6aa` 2026-08-27T19:02:32Z; `2026-08-30-cce86657` 2026-08-29T17:52:11Z; endorsed report `01a04e73` 2026-08-29T16:56:37Z; `e38ff397` 2026-09-02T14:14:54Z.
+Additional source locators: `01a04c1c`; `2026-08-29T09:15:33Z`.
+
+### D14
+
+Every category uses Cat().ObjectType. Objects of C use C.ObjectType and inherit Cat().ElementType. C.ElementType supplies the elements of objects of C; C.MorphismType is Mor(C).ObjectType. Owner: [Morphism tower](functor.md#the-morn-c-tower).
+
+Source: 08-26, corrected 08-29.
+Additional source locators: `01a04c1c-b22b-7f70-8351-6e12ca028470`; `2026-08-29T06:11Z`.
+
+### D55
+
+Use Mor(n, C), with Mor(0, C) = C and Mor(C) = Mor(1, C). Mor(C)(A, B) is fixed-endpoint application. C.ObjectType implements objects of C; it is not the category Mor(0, C). Owner: [Morphism tower](functor.md#the-morn-c-tower).
+
+Source: 08-26, `ee78124f` 2026-08-26T09:05:48Z; endorsed report `01a04c1c` 2026-08-29T06:02:35Z.
+
+### D56
+
+Declaration order fixes preference. The original row lacks a message locator; [D37](#d37) and [D165](#d165) independently support this rule. Owner: [C3 and diamonds](resolution.md#diamond-diagnostics-and-future-coherence).
+
+Source: 08-26; no session or timestamp recorded, which `POL-DOC-018` requires.
+
+### D58
+
+An ordinary functor supplies executable target constructions through its two actions. [D123](#d123) fixes these as the entire writer input. Owner: [Functor actions](functor.md#functor-actions-are-concrete-constructors).
+
+Source: 08-27, corrected 08-29.
+Additional source locators: `01a04c1c-b22b-7f70-8351-6e12ca028470`; `2026-08-29T09:15Z`.
+
+### D59
+
+Morphism properties belong to Mor(C); functor properties belong to Mor(Cat()) and its fixed-endpoint categories. Owner: [Functor properties](functor.md#property-resolution).
+
+Source: 08-26, corrected 08-30.
+
+### D60
+
+Natural-transformation components are an indexed assignment X -> eta_X, valid for infinite domains. Owner: [Functor actions](functor.md#functor-actions-are-concrete-constructors).
+
+Source: 08-26.
+
+### D61
+
+Common-ancestor tracing needs a named mathematical functor property. [D167](#d167) and [D169](#d169) fix the inheritance and placement conditions. Owner: [Placement conditions](functor.md#monomorphisms-of-cat-and-placement).
+
+Source: 08-27.
 
 ## Elements
 
-**D15 (08-23). "Shared elements" is not a concept.** Every category has an `ElementType`, including a dynamically constructed one such as `C.Products()`. Element classes inherit exactly as object classes do, and may add methods: the element type of a product is also an element of a set and may carry `x.factors()`. An element of a finite set is not "just an element of a set" — it is `FiniteSets().ElementType`, which extends `Sets().ElementType` when the wiring is correct.
+### D15
 
-**D16 (08-26, corrected 08-29). What `ElementType` implements.** A Sage element is implicitly a pair `(X, x)` with `X = x.parent()`. `C.ElementType` is the shared implementation and API for the elements of objects of `C`, as Sage category element methods are shared across the elements of their parents. The categorical point of a category `X` is a functor `* -> X` from the terminal category. A morphism `T -> X` with general domain is a generalized element and stays in its functor or slice category. For `C in Cat()`, points `* -> C` are the actual objects of `C`, so `C.ObjectType` inherits `Cat().ElementType`. Sets are read as discrete, hence 0-truncated, categories when this point model is applied (`01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:11Z).
+Element implementation classes inherit the full applicable surface, including the extra operations of a property or construction category. Owner: [Implementation classes](functor.md#cobjecttype-celementtype-and-cmorphismtype).
 
-**D17 (08-26, corrected 08-29; `1aa61835` 2026-08-26T07:01:17Z; `2026-08-29-52bc359d` 2026-08-29T06:03:12Z; endorsed report `01a04c1c` 2026-08-29T06:11:46Z). Point transport uses composition at the point's categorical level.** A point of `X` is a morphism `* -> X` with `*` the terminal category, where `X` is any category and sets are regarded as 0-truncated categories (`52bc359d` 06:03:12Z). Any functor induces transport on elements, essentially by the induced functor on categories of elements (`1aa61835` 07:01:17Z). For `x: * -> X` and a functor `G: X -> Y`, the image point is the composite `G after x: * -> Y` (endorsed report, `01a04c1c` 06:11:46Z). Compiled `ElementType` inheritance is a compiler consequence of selecting `F`. It adds no third functor action and requires no additional declaration from the functor writer.
+Source: 08-23.
 
-**D62 (08-27, corrected 08-29). Points and generalized elements are distinct.** A point of a category `X` is `p: * -> X`. A generalized element is `p: T -> X`. For `X = C in Cat()`, a point `* -> C` is an actual object of `C`, while a functor `T -> C` is a generalized element.
+### D16
+
+C.ElementType is the shared element surface of objects of C. Points have terminal domain; generalized elements have arbitrary domain. Sets use their discrete categories. Owner: [Points and placement](functor.md#point-categories-and-point-functors).
+
+Source: 08-26, corrected 08-29.
+Additional source locators: `01a04c1c-b22b-7f70-8351-6e12ca028470`; `2026-08-29T06:11Z`.
+
+### D17
+
+Transport a point x: * -> X along G: X -> Y by G * x. Element-class inheritance introduces no third functor action. Owner: [Points and placement](functor.md#point-categories-and-point-functors).
+
+Source: 08-26, corrected 08-29; `1aa61835` 2026-08-26T07:01:17Z; `2026-08-29-52bc359d` 2026-08-29T06:03:12Z; endorsed report `01a04c1c` 2026-08-29T06:11:46Z.
+
+### D62
+
+A point is a functor * -> X. A generalized element has arbitrary domain T -> X. Owner: [Points and placement](functor.md#point-categories-and-point-functors).
+
+Source: 08-27, corrected 08-29.
 
 ## Predicates, containment, and assumption
 
-**D18 (08-22, corrected 08-29). There is no decidability boundary.** Every mathematical truth question returns an applied proposition. Every other mathematical query that is not total and exact on its full declared domain returns an applied query with an exact result category. Only `ask()` returns `True`, `False`, an owned result, or Sage `Unknown`. Predicates are proposition-valued; cardinality and cofinality are invariants, not predicates (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T17:24Z, 2026-08-28T17:25Z; `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T06:02Z).
+### D18
 
-**D19 (08-22, corrected 08-29). Category containment and the public predicate application ask one proposition.** `cat_kernel` derives `X.is_finite()` from the property declaration owned by `Sets().Finite()` (D175). It returns that category's containment proposition. `ask(X.is_finite())` evaluates it. Python containment asks the same proposition and is only a forced two-valued admission boundary (`4544eba5` 2026-08-28T12:00Z; `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:51Z).
+Truth questions construct propositions. Partial value questions construct typed queries with exact result categories. Only ask() evaluates them. Owner: [Propositions and typed queries](undecidable-properties.md).
 
-**D20 (08-24). Every propositional method returns a proposition.** Never a bool, never an `Unknown` in its place.
-Anything that would need `Unknown` routes through `assume`/`ask`/`.assume()`. Containment in a category is always a possibly compound proposition, declared once as part of the category's definition — `cat_kernel` wires `FiniteSets` to be reachable as `Sets().Finite()` and lets it declare a membership proposition (D175), and `__contains__` follows from that.
+Source: 08-22, corrected 08-29.
+Additional source locators: `01a048f6-e3f5-7e42-be2a-1f60f70ac23e`; `2026-08-28T17:24Z`; `2026-08-28T17:25Z`; `01a04c1c-b22b-7f70-8351-6e12ca028470`; `2026-08-29T06:02Z`.
 
-**D21 (08-24, `01a03368` 2026-08-24T20:58:14Z; `1c1a3599` 2026-08-26T23:21:02Z; corrected 08-31). Construct into the strongest subcategory you can.** A named construction can return its result through the strongest property-subcategory constructor that its mathematics establishes.
-The public predicate remains proposition-valued and keeps its one category-owned definition (`4544eba5 2026-08-28T12:00Z`).
-A named object is placed by the point functors its leaf class declares: the class of `QQ` adds `Sets().Countable().Point()`, `Posets().Point()` and `Fields().Point()` to its own structure functors, and `QQ` is an object of each (D154; D128 as superseded in part).
-`Fields().Countable().PartiallyOrdered()` should be nearly automatic, with Sage's `with_axiom` as the model: if any category defines a property subcategory, any subcategory can narrow itself the same way.
-Defining `FF_p` and its category placements must never require proving finiteness by enumeration.
+### D19
 
-**D22 (08-24, corrected 08-28). Assumption is a shortcut for construction.** `assume(X.is_finite())` and `assume(f.is_injective())` refine into the corresponding property category.
-Python containment asks the same proposition and returns its Boolean decision, so it is not the proposition passed to `assume()` (`4544eba5 2026-08-28T12:00Z`).
+Category containment and generated is_P() concern the same proposition. Python containment is its forced two-valued evaluation boundary. Owner: [Containment](undecidable-properties.md#category-containment).
 
-**D23 (08-24, corrected 08-29). Property refinement strengthens the category of the same value.** It is not transport into a second implementation, and it is not a family of admission APIs.
-Direct property construction, global assumption, exact computation, and construction-owned mathematics use the kernel's same-object refinement mechanism.
-These APIs must not exist: `monos.checked(...)`, `monos.from_hypothesis(...)`, `monos.from_theorem(...)`, `construct(..., check=True)`. A property category can still provide every constructor required by its supported mathematical and engine representations (`01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z).
+Source: 08-22, corrected 08-29.
+Additional source locators: `4544eba5`; `2026-08-28T12:00Z`; `01a048f6-e3f5-7e42-be2a-1f60f70ac23e`; `2026-08-28T19:51Z`.
 
-**D24 (08-24, `01a03368` 2026-08-24T20:38:59Z, 20:20:39Z; corrected 08-31). Backend code does not call `assume()`.** The assumption context is global, and a notebook user can write into it.
-Internal code already knows the category in which to construct its result, and constructs there.
+### D20
 
-**D25 (08-24, 08-25). Theorem-backed construction is declaration, not computation.** No Python code can establish that `RR` is uncountable, and running a monotonicity check on `n |-> n^2 : NN -> NN`, or a totality check on `{1, ..., 10^10}` with its natural order, is absurd.
-A specific named constructor owns its theorem, and its controlled input data is what makes the theorem applicable: `square_morphism_on_naturals()`, `componentwise_product_order(diagram)`, `finite_total_order_from_enumeration(enumeration)`. A generic `from_theorem(value, owner)` remains invalid, because a registered owner is an opaque token that identifies no construction.
-A public total-order constructor accepting an arbitrary relation is likewise invalid; a constructor from an enumeration builds the guaranteed-total relation itself.
+Every propositional method constructs a proposition. Only ask() returns its truth decision or Unknown. Owner: [Propositions and typed queries](undecidable-properties.md).
 
-**D26 (08-25). The repository never proves or certifies category theory.** That is hopeless in Sage and belongs in a language like Lean.
-The categorical core is meant to be independently auditable by mathematicians, so it encodes its needs in standard category or homotopy theory — nLab, the Stacks Project, Kerodon, textbooks, arXiv papers — and stays mathematically legible.
-A code writer forms constructions into the correct subcategory as the way of asserting a theorem, with a citation on the construction line.
+Source: 08-24.
 
-**D63 (08-26). `__eq__` returns a predicate.** So `a == b` can evaluate to `Unknown`, and that is fine.
-Where a Boolean is forced, repository code writes `decision = ask(x == y); assert decision is not Unknown`. Points are chosen data `x: * -> X`.
+### D21
+
+Construct a result in the strongest category established by its mathematics. [D150](#d150) fixes inherited property constructors; [D154](#d154) supersedes the earlier point-declaration placement. Owner: [Constructors](leaves.md#constructors).
+
+Source: 08-24, `01a03368` 2026-08-24T20:58:14Z; `1c1a3599` 2026-08-26T23:21:02Z; corrected 08-31.
+Additional source locators: `4544eba5`; `2026-08-28T12:00Z`.
+
+### D22
+
+A property assumption refines the value through the same property category used by direct construction. [D150](#d150) fixes the already-constructed-value route. Owner: [Assumptions](undecidable-properties.md#assumptions).
+
+Source: 08-24, corrected 08-28.
+Additional source locators: `4544eba5`; `2026-08-28T12:00Z`.
+
+### D23
+
+Property refinement strengthens the category of the same value. [D150](#d150) supersedes separate property-constructor wiring; alternative semantic representations remain valid construction data. Owner: [Same-object refinement](property-refinement.md#same-object-refinement).
+
+Source: 08-24, corrected 08-29.
+Additional source locators: `01a048f6-e3f5-7e42-be2a-1f60f70ac23e`; `2026-08-28T20:21Z`.
+
+### D24
+
+Theory code and engines construct results in their established categories. The interactive assumption context belongs to the mathematical session. Owner: [Assumptions](undecidable-properties.md#assumptions).
+
+Source: 08-24, `01a03368` 2026-08-24T20:38:59Z, 20:20:39Z; corrected 08-31.
+
+### D25
+
+A named constructor asserts the theorem attached to its controlled mathematical datum. An enumeration can define a total order; an arbitrary relation cannot establish totality by its constructor name. Owner: [Constructors](leaves.md#constructors).
+
+Source: 08-24, 08-25.
+
+### D26
+
+Construction in a category asserts the theorem. Cite nontrivial mathematics at its construction owner; formal proof certification is outside this runtime. Owner: [System architecture](system.md).
+
+Source: 08-25.
+
+### D63
+
+Equality constructs a proposition. Boolean-consuming code evaluates it through ask() and handles Unknown. [D131](#d131) fixes input types. Owner: [Equality](undecidable-properties.md#equality).
+
+Source: 08-26.
 
 ## Cardinality
 
-**D27 (08-22). Never enumerate a set to compute a property.** Always consider what happens for `{2, 4, ...}` or `{1, ..., 10^10}`. Enumeration is a dead-last fallback for when cardinality is required, the set is known finite, and there is no other way.
-Usually cardinality is supplied at construction or derived from a known relationship: `{n in NN | n <= 100}` is finite without listing anything.
-Enumeration can be a fine first approximation in a specific algorithm, but it does not belong on a main path and should warn loudly.
+### D27
 
-**D28 (08-22, 08-23). Cardinals compare by ordinary syntax.** `==`, `<=`, and the rest, against ordinary integers.
-You never extract a cardinal's "value".
+Derive properties from construction data and mathematical relationships. Enumeration for cardinality is a last route only for a known finite set, and that route warns. Owner: [Sets](sets.md).
 
-**D29 (08-24, amended by D62). `cardinality()` never uses absence for unknown mathematics.** Representing an undecided cardinality by `None` is a defect.
-An image receives the domain's cardinality only when the map is established injective; a constant function is the counterexample.
+Source: 08-22.
 
-**D30 (08-25). Cardinal arithmetic is the categorical operation.** The coproduct in the category of cardinals is exactly cardinal addition; the product is exactly cardinal multiplication.
+### D28
 
-**D64 (08-26, `ee78124f` 2026-08-26T09:05:48Z; corrected 08-29, `01a048f6` 2026-08-28T17:24:29Z, 17:25:36Z). There is no unresolved cardinal object.** There is no "symbolic cardinal". `X.cardinality()` uses the `ask`/`assume`/`.assume()` machinery: when the cardinality is known, you get an actual cardinality; when it is not, you get `Unknown`. This is uniform across all methods that are undecidable in full generality. Cardinals implement no separate `Unknown` handling (`ee78124f` 09:05:48Z). Cardinality is a predicate that you evaluate with `ask`; this is the central architecture for generically undecidable methods (`01a048f6` 17:24:29Z, 17:25:36Z).
-This amends D29.
+Cardinals support ordinary comparison syntax, including comparisons with integers, through their owned operations. Owner: [Cardinal arithmetic](cardinality.md).
 
-**D65 (08-27, `b55dc6aa` 2026-08-27T20:20:25Z, 20:47:14Z, 20:49:31Z; 08-26, `1c1a3599` 2026-08-26T23:08:20Z, 23:12:17Z, 23:23:15Z). Cardinals are a semiring with a poset structure.** The poset records that `2 ** aleph_0`, and most cardinal exponentials, are incomparable to `aleph_i` in ZFC. There are two totally ordered infinite sets of formal symbols, `{0, 1, ...}` and `{aleph_0, aleph_1, ...}`, and the algebra must take arbitrary sums, products, and formal exponentials of them.
+Source: 08-22, 08-23.
 
-Do not hand-roll that algebra.
-Sage supports semirings already (20:47:14Z). The internal data of a cardinal is two Sage semirings; it extends Sage's semiring class, and likely its poset class too, or at the very least composes by containing internal Sage semirings and Sage posets and re-expressing the proper `__add__`, `__mul__`, `__le__`, and the rest, and declares itself into Sage's poset and semiring categories (20:49:31Z).
-On 08-26 the owner said there is no such thing as a "semiring parent" in this repository, that would be a backend engine; the categories express the operations and methods (23:08:20Z); there is a point embedding of the entire category of ordinals into the category of semirings (23:12:17Z); ordinals form a semiring, full stop (23:23:15Z). D01 (`cce86657` 2026-08-29T18:13:42Z) states the relation between the owned category graph and Sage's.
-When you define a semiring you *define* its operations, so an idempotent `x + x = x` is a definition and not a defect.
-Look for prior art before inventing an encoding.
+### D29
 
-**D66 (08-27). Sets of the same cardinality are never identified; cardinals of the same value always are.** `[2] * [3]` is not `[6]` in `Sets()`: the left side is a set of ordered pairs.
-Identifying `{1, 2, 3}` with `{a, b, c}` would render a computer algebra system useless.
-In `Cardinal()`, by contrast, `c_2 * c_3` *is* `c_6`, because a skeletal category that is a semiring object has a multiplication `C * C -> C` along which products collapse.
-A cardinal may still be *represented* as a product, as `aleph_0 ** 2` may be represented by the pair, but finite with finite, finite with infinite, and infinite with infinite all collapse.
+Unknown cardinality is an undecided query, not an absent value. An image inherits its domain's cardinality only through an established injection. [D64](#d64) and [D115](#d115) fix evaluation. Owner: [Typed queries](undecidable-properties.md#typed-queries).
+
+Source: 08-24, amended by D62.
+
+### D30
+
+Cardinal addition and multiplication are the apexes of cardinal coproducts and products. The skeletal arithmetic and retained set presentations have distinct owners under [D66](#d66). Owner: [Cardinal arithmetic](cardinality.md).
+
+Source: 08-25.
+
+### D64
+
+Unknown cardinality belongs to query evaluation. [D18](#d18) and [D115](#d115) supersede calling cardinality a predicate. Known cardinal expressions remain owned cardinals under [D65](#d65). Owner: [Typed queries](undecidable-properties.md#typed-queries).
+
+Source: 08-26, `ee78124f` 2026-08-26T09:05:48Z; corrected 08-29, `01a048f6` 2026-08-28T17:24:29Z, 17:25:36Z.
+
+### D65
+
+Cardinals have semiring arithmetic and an order; the engine supports finite and aleph symbols with sums, products, and exponentials. [D153](#d153) fixes the private Sage ownership of the two-semiring representation. Owner: [Cardinal arithmetic](cardinality.md).
+
+Source: 08-27, `b55dc6aa` 2026-08-27T20:20:25Z, 20:47:14Z, 20:49:31Z; 08-26, `1c1a3599` 2026-08-26T23:08:20Z, 23:12:17Z, 23:23:15Z.
+Additional source locators: `cce86657`; `2026-08-29T18:13:42Z`.
+
+### D66
+
+Sets of equal cardinality remain distinct. Equal cardinal values use one skeletal representative, while private cardinal expressions can retain a presentation. Owner: [Cardinal arithmetic](cardinality.md).
+
+Source: 08-27.
 
 ## Universal constructions
 
-**D31 (08-23). Define each construction at the most general level that supports it.** `Modules(R).Products()` should exist because any `C in Cat` can form `C.Products()`, the way `with_axiom` works — not through leaf boilerplate.
-If the category is not complete the subcategory may be empty, which is fine and not something the code proves.
-`Modules(R)` may be where `TensorProducts()` and `DirectSums()` first appear, and then `Lattices(R)` forms `Lattices(R).TensorProducts()` by stating only its delta: `⊗_i (L_i, b_i) := (⊗_i L_i, ⊗_i b_i)`, since module homs are themselves modules and the tensor product there is already handled at the module level.
+### D31
 
-**D32 (08-23). A constructed object presents as an ordinary object with more methods.** A product set truly *is* a set; it carries additional methods for its factors, universal morphisms, and so on.
-Redefining `cardinality()` on a product is the red flag.
-Either the family knows `(prod X_i).cardinality() = prod X_i.cardinality()`, or the functor knows how to build the underlying set, which knows its own cardinality like any set.
+Define each construction at its most general owner. Construction categories exist without asserting inhabitation. Tensor products and direct sums first belong to their applicable algebraic owner. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 
-The same holds for `R`-lattices: `L = (M, b)` projects to `M`, so a lattice truly *is* a module with new methods.
-Which functors count for inheritance is decided case by case by what is standard to mathematicians.
-One does not think of a lattice *as* a bilinear form, so `L.bilinear_form()` is public while `b`'s methods are not grafted on; but neither should a lattice be treated as an ordered pair in public, with `L.underlying_module()` indirection.
-Any `underlying_Y()` method deserves scrutiny: a lattice does not "have" an underlying module, it *is* a module with extra structure, just as a group `G = (X, f)` is not handled as an ordered pair in daily use.
-Ordered pairs are fine as private representations.
+Source: 08-23.
 
-**D33 (08-24). A poset product just is the set product with an order on it.** It needs to do nothing to construct its projections or its mediating morphisms.
+### D32
 
-**D34 (08-25, `01a0375e` 2026-08-25T09:17:33Z; corrected 08-28, `01a048f6` 2026-08-28T18:44:23Z, 18:48:43Z, 19:05:40Z, 19:09:35Z; `353b942d` 2026-08-28T14:14:50Z; `2026-08-29-52bc359d` 2026-08-29T06:03:12Z). The `Cat` level owns the construction vocabulary.** General projections exist for any subcategory of a product category, `proj_i: (X_1, ..., X_n) |-> X_i`; a coslice has projections to both `X in C` and its defining morphism, and composing with the source and target projections gives the rest. Functors out of sequence-indexed products of categories, and into sequence-indexed coproducts, are part of the fundamental layer. At the `Cat` level one defines `Cat.Subobjects`, `Cat.Products`, `Cat.Coproducts`, and so on, so that `Cat().Products().Subobjects()` can be stated, and the `ObjectType` of that category answers `product_projection(i)`. Slice and coslice categories and their fibrations to the underlying object are then formulated naturally (`01a0375e` 09:17:33Z). `C.Products()` means nontrivial products: the interface available on any object that is a product, carved out as the subcategory of objects that are the image of some product functor `Prod_J: C^J -> C` (`52bc359d` 06:03:12Z). A subobject of `X` is an object of `C.SliceOver(X).Monomorphisms()`: an object `Y` with a monomorphism `Y -> X` (`353b942d` 14:14:50Z). `Sets().Subobjects(X)` is a category with constructors such as `from_predicate(P)`; for `X` an object of a category `C`, `X.subobjects() := C.Subobjects(X)` is a fine alias, and aliases are version 2 work. Subobjects route to the slice monomorphism construction, defined once in `Cat` and inherited by every category (`01a048f6` 18:44:23Z, 18:48:43Z, 19:05:40Z, 19:09:35Z).
+A constructed object receives the ambient interface and retains its defining presentation. [D106](#d106) separates presentation from apex; [D167](#d167) fixes the inheritance condition. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 
-**D101 (08-29, endorsed report `01a04c1c` 2026-08-29T06:39:12Z; owner's endorsement 08:11:52Z, "This is meant to guide document updates and repairs"; owner's request `2026-08-29-52bc359d` 2026-08-29T06:28:41Z for the missing categorical and functorial primitives). Base change of a subcategory is a first-class categorical construction.** (Endorsed report, `01a04c1c` 06:39:12Z.) For `F: D -> C` and a subcategory monomorphism `i: P -> C`, the inverse-image subcategory is the pullback `F.inverse_image(P) = D ×_C P`. It retains the pullback projections, including its monomorphism into `D`. A property category on `D` obtained from a property category on `C` is this inverse image along the named functor that defines the inherited property. The axiom and class compiler expose the resulting category and its implementation classes.
+Source: 08-23.
 
-**D102 (08-29, endorsed report `01a04c1c` 2026-08-29T06:39:12Z; owner's endorsement 08:11:52Z). Opposite categories and dualization are foundational.** (Endorsed report, `01a04c1c` 06:39:12Z.) The dualizing functor `Op: Cat() -> Cat()` acts on categories and functors, and dualization sends natural transformations to natural transformations with reversed direction. It retains the natural isomorphism `Op compose Op ≅ Id`. The public operations are `C.op()`, `F.op()`, and `eta.op()`. Dual constructions are obtained through this functorial operation. The limit-side owners are terminal objects, products, limits, slices, monomorphisms, fibrations, and right Kan extensions. Initial objects, coproducts, colimits, coslices, epimorphisms, opfibrations, and left Kan extensions are their duals. Each pair has one foundation.
+### D33
 
-**D103 (08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z). The generic core supplies a thin functorial calculus in mathematical dependency order.** (Endorsed report, `01a04c1c` 07:02:32Z.) Its four strata are functor-category calculus, category constructions, universal and functorial structure, and indexed and representational structure. The strata add standard categories, functors, natural transformations, and properties; they are thin mathematical wrappers around machinery the plan already intends to have.
+A poset product lifts the set-product presentation with its componentwise order. Generic construction machinery supplies projections and mediation. Owner: [Order categories](ordered-sets.md).
 
-**D104 (08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z). Composition, evaluation, and base change are first-class functorial constructions.** (Endorsed report, `01a04c1c` 07:02:32Z.) Composition and evaluation are functors between functor and product categories. Their morphism actions supply whiskering and horizontal composition. Pullbacks supply intersections of subcategories, restriction of a functor to subcategories, induced functors between pullbacks, fibers of functors, and change of base. A leaf states the theorem that its functor lands in a named subcategory. The generic restriction or pullback construction then owns the resulting functor.
+Source: 08-24.
 
-**D105 (08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z; `5df9424f` 2026-08-23T20:00:29Z). Comma categories and the three image constructions are public mathematical language.** (Endorsed report, `01a04c1c` 07:02:32Z.) A comma category retains its two projections and defining natural transformation; slices and coslices are its fixed-object cases. For `F: C -> D`, distinguish the strict image, the full subcategory spanned by the literal object image, and the essential image. The essential image is the replete closure and retains the standard essentially-surjective/fully-faithful factorization.
+### D34
 
-**D106 (08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z). Existence properties and selected universal data have different owners.** (Endorsed report, `01a04c1c` 07:02:32Z.) `Adjunctions(F, G)`, `Equivalences(C, D)`, `Cones(D)`, `LimitCones(D)`, and `Representations(F)` are categories of selected mathematical data. Their inhabitation states existence; selecting an object supplies data needed for computation. A universal presentation is separate from its diagram and its apex. The total category of limiting cones has a diagram projection and an apex functor. The fiber of the apex functor over `X` is the category of limiting presentations with apex `X`. A leaf writer authors a functor as an equivalence when theorems back that up; the repository never asks whether a functor is an equivalence (D144).
+Cat owns construction families, projections, slices, coslices, and fixed-object constructions. [D168](#d168) supersedes the earlier product-image membership description. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 
-**D107 (08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z). Functor properties state preservation and creation of universal constructions.** (Endorsed report, `01a04c1c` 07:02:32Z.) `PreservesLimits(I)` and `CreatesLimits(I)` are shape-indexed property subcategories of functors; their colimit forms are derived by duality. Chosen limits give `Lim_I` right adjoint to the diagonal functor, and chosen colimits give its dual left adjoint. A leaf that creates a limit states that theorem on its named structure functor. The generic construction then supplies the lifted limit and its universal data.
+Source: 08-25, `01a0375e` 2026-08-25T09:17:33Z; corrected 08-28, `01a048f6` 2026-08-28T18:44:23Z, 18:48:43Z, 19:05:40Z, 19:09:35Z; `353b942d` 2026-08-28T14:14:50Z; `2026-08-29-52bc359d` 2026-08-29T06:03:12Z.
 
-**D108 (08-29, `353b942d` 2026-08-28T14:26:05Z; `77631b59` 2026-08-29T02:20:51Z; endorsed report `01a04c1c` 2026-08-29T07:02:32Z, owner's endorsement 08:11:52Z). Fibers, Grothendieck constructions, Yoneda, and representability complete the generic calculus.** The category of modules and the category of modules with a chosen generating set are completely different categories; the relation is a Grothendieck construction, or straightening, with a fibration over the base category, and `With<Datum>` glosses over the actual categorical construction and the fibration needed (`353b942d` 14:26:05Z; D75). General Yoneda and co-Yoneda embeddings are defined once, and the functor of points of an object is extracted from them (`77631b59` 02:20:51Z). (Endorsed report, `01a04c1c` 07:02:32Z:) a functor has a category-valued fiber over each object; base change of a fibration is the ordinary pullback of its projection; restricted Yoneda and the category of representations are generic constructions; density and separation are properties of the restricted Yoneda functor; mates, monads, comonads, Eilenberg--Moore categories, and reflective or coreflective subcategories are later extensions.
+### D101
 
-**D109 (08-29, endorsed report `01a04c1c` 2026-08-29T07:34:05Z, owner's request `2026-08-29-52bc359d` 2026-08-29T06:41:21Z; clarified 08-30, `2026-08-30-cce86657` 2026-08-29T18:13:42Z, 18:04:14Z). Sage is the private runtime and compiler substrate.** The owned `Cat` layer determines every mathematical category, functor, property, construction, and public type in an entirely new graph. A private Sage runtime graph mirrors the three owned implementation-class graphs only so Sage can supply controlled C3, dynamic classes, refinement, and ordinary `Parent` machinery. It neither imports nor extends Sage's mathematical category graph. The owned and Sage runtime implementation classes meet only through the low-level Python/Sage ancestry propagated from the `Cat().ObjectType` root. No relation in the private runtime graph states a public subcategory relation or changes the owned mathematical graph.
+F.inverse_image(P) is the pullback D ×_C P for F: D -> C. It retains its projections and inclusion into D. Owner: [Property inverse images](property-refinement.md#inverse-images).
 
-**D110 (08-29, endorsed report `01a04c1c` 2026-08-29T07:34:05Z; `2026-08-29-52bc359d` 2026-08-29T09:03:22Z, 09:04:47Z; `4544eba5` 2026-08-28T12:18:19Z; `01a048f6` 2026-08-28T21:19:22Z, 21:40:24Z; corrected 09-02, `e38ff397` 2026-09-02T14:14:54Z endorsing the repair stated at 14:13:21Z). Sage compiles each implementation class.** The kernel uses Sage's dynamic class construction model almost verbatim and simply uses Sage's linearization (`01a048f6` 21:19:22Z, 21:40:24Z). (Endorsed report, `01a04c1c` 07:34:05Z:) for each owned category `C` and implementation-class kind, a private runtime category has as immediate Sage supercategories the private runtime categories selected by the applicable immediate structure-functor edges; its one method provider is `C`'s local `ObjectType`, `ElementType`, or `MorphismType`; Sage's `_all_super_categories`, `_super_categories_for_classes`, `_make_named_class`, controlled C3, and `dynamic_class` build the resulting `parent_class`; the private middle layer exists solely to ask Sage to solve a Python multiple-inheritance problem, and no public mathematical assertion is obtained from it. The repair endorsed on 09-02 (`e38ff397` 14:14:54Z): no `super()` in any declaration and no datum inheritance towers; the kernel runs the leaf's own initializer, then each selected functor's object action inside a construction context that initializes the target's state on the same instance, recursing down Sage's C3 order with each owner initialized once (D13).
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T06:39:12Z; owner's endorsement 08:11:52Z; owner's request `2026-08-29-52bc359d` 2026-08-29T06:28:41Z.
 
-**D111 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T07:34Z). Sage owns ordinary runtime refinement and caching.** An owned value that is a Sage `Parent` uses `Parent._refine_category_`. Other owned values use the same small pattern with the private runtime category join and `dynamic_class`. `CachedRepresentation`, `UniqueRepresentation`, and `cached_method` own caches whose keys have ordinary exact equality. `MonoDict` and `TripleDict` remain for keys containing owned values whose equality is proposition-valued.
+### D102
 
-**D112 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T07:34Z). Sage axiom and construction categories are private implementation sources.** Sage's `CategoryWithAxiom`, `_base_category_class_and_axiom`, and construction-category factories supply runtime binding, caching, and method-provider assembly. The owned category `C.P()` remains the full replete subcategory and its functorial base changes remain pullbacks in `Cat`. Owned product and other construction interfaces retain their defining functors and universal presentations. Sage's deduction from `super_categories()` never determines this mathematics.
+Op acts on categories, functors, and natural transformations and retains Op * Op ≅ Id. Dual constructions share the limit-side owner. Owner: [Dualization](functor.md#opposites-and-dualization).
 
-**D113 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T07:34Z). Generic `Mor` and `Fun` stay in the owned `Cat` layer.** Concrete leaves can use Sage `Hom`, `Homset`, `Map`, `Morphism`, and identity morphisms when their endpoints are Sage parents. The generic kernel follows their small domain, codomain, parent, and composition protocol without forcing every abstract category object to become a Sage `Parent`. It follows Sage's functor action protocol without inheriting `sage.categories.functor.Functor`, whose endpoints are Sage categories. A selected structure functor remains an owned object of `Fun(C, D)`.
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T06:39:12Z; owner's endorsement 08:11:52Z.
 
-**D114 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T07:34Z). Generated Python structure uses Python syntax tools.** The stub projector uses Python 3.14 `ast` for ordinary Python declarations and generated stubs. It uses `tree-sitter-sage` only for Sage syntax. Fixed constructor wrappers keep ordinary declared functions. A later wrapper that needs a generated runtime signature uses `makefun` instead of a local signature generator.
+### D103
 
-**D115 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:01Z). Forming a mathematical question is separate from evaluating it.** Calling a truth-valued method constructs an applied proposition. Calling a partial value-valued method constructs an applied query with an exact result category. Neither call evaluates the application. `ask()` is the common evaluation boundary and can return `Unknown`. Category placement or an active assumption changes what `ask()` can establish without changing the proposition or query that the public method constructs.
+The generic calculus proceeds through functor categories, category constructions, universal structure, and indexed structure. The system specification owns the dependency order. Owner: [System architecture](system.md).
 
-**D116 (08-29, endorsed report `01a04c1c` 2026-08-29T06:02:35Z, owner's endorsement "largely right" `2026-08-29-52bc359d` 2026-08-29T06:03:12Z; `1c1a3599` 2026-08-26T23:23:15Z). Ordinal operators keep their standard meaning.** (Endorsed report, `01a04c1c` 06:02:35Z.) For ordinals `alpha` and `beta`, `alpha + beta` is ordinary ordinal sum and `alpha * beta` is ordinary ordinal product; standard ordinal arithmetic uses `+` and multiplication for the ordinary noncommutative operations, and the Hessenberg natural operations are separately named, as Mathlib names them `nadd` and `nmul`. Ordinals form a semiring, full stop (`1c1a3599` 23:23:15Z).
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z.
 
-**D117 (08-29, endorsed report `01a04c1c` 2026-08-29T06:02:35Z, owner's endorsement "largely right" `2026-08-29-52bc359d` 2026-08-29T06:03:12Z). Aleph and initial ordinal are order-theoretic maps.** (Endorsed report, `01a04c1c` 06:02:35Z.) The aleph enumeration and the least-initial-ordinal construction are order-theoretic maps between the ordinal and cardinal orders; monotonicity determines a functor between the corresponding thin order categories and says nothing about how an arbitrary function between cardinal representatives is mapped. Their object actions return the same owned ordinal and cardinal values used by the arithmetic categories.
+### D104
 
-**D118 (08-29, corrected 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:47Z, 2026-08-29T08:49Z, 2026-08-29T09:15Z). A typical leaf is an executable mathematical definition.** It states its objects, elements, morphisms, default and named semantic constructors, immediate selected structure functors, and only the operations, predicates, algorithms, and theorems first owned there. The main transport work is the explicit object and morphism action of each selected functor. Each action directly constructs its result through the target category's public constructors. A leaf reuses projections, inclusions, restrictions, lifts, fibers, and universal maps retained by the categorical construction that defines it. A property implementation gives its defining proposition and optional exact handlers. A chosen-datum category uses the applicable fiber or Grothendieck construction. The kernel compiles classes and makes inherited implementation state available. Several semantic or engine-ingestion constructors still construct one category-owned implementation type.
+Composition and evaluation are functors; their morphism actions supply whiskering. Pullbacks own intersections, restrictions, induced functors, fibers, and base change. Owner: [Functor-category calculus](functor.md#functor-category-calculus).
 
-**D119 (08-29, corrected 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T09:01Z, 2026-08-29T09:15Z). Every mathematical value is constructed by its owning category.** `Cat()` supplies the generic categorical calculus and constructs categories. It does not choose a leaf-specific functor or infer how one leaf construction becomes an object of another category. A leaf either reuses the exact functor retained by its defining categorical construction or constructs its new action as an object of `Fun(self, Target)`. Thus `C` constructs its objects, `Mor(C)(X, Y)` constructs morphisms, `Fun(C, D)` constructs functors, and the applicable property or construction subcategory constructs its objects. Convenience constructors belong to that owning category. No parallel `Cat`, kernel, or helper namespace constructs functors for leaves.
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z.
 
-**D120 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T09:15Z). A functor writer implements one concrete map between two known constructor surfaces.** Each category has a finite, discoverable public set of object and morphism constructors. The writer of `F: C -> D` knows `C`, the immediate target `D`, and the standard categorical calculus. The writer uses arbitrary ordinary Python in `on_object` and `on_morphism`, including private helpers owned by `C`, and ends by returning values constructed through `D` and `Mor(D)`. A helper used only inside these actions is private or local to the action; it is not part of `C`'s public method surface. The kernel derives nothing from the function bodies and requires no duplicate description of them. Selecting `F` in `structure_functors()` only selects the target implementation surface for compilation.
+### D105
 
-**D121 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T15:42Z). One mathematical fact has one semantic owner.** A category, functor, property subcategory, universal presentation, named construction, or category-owned implementation class owns each mathematical fact and public operation. No second runtime or generated entity can represent the same fact. A repair identifies the standard mathematical owner, moves the responsibility there, and deletes the duplicate entity. Renaming the duplicate is not a repair.
+Comma categories retain projections and a comparison transformation. Strict, full, and essential images retain their distinct object and morphism conditions. Owner: [Image categories](functor.md#strict-full-and-essential-images).
 
-**D122 (08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T15:42Z). Layer dependencies preserve mathematical ownership.** Kernel and `Cat` theory modules do not import production leaves. Leaves do not import kernel internals and depend only on their own mathematics, exact immediate targets, generic categorical constructions, and private computation helpers. Private backends do not register categories, refine objects, or control assumptions. Generated stubs and manifests are output projections of accepted declarations; runtime and mathematical declarations never consume them as authority.
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z; `5df9424f` 2026-08-23T20:00:29Z.
 
-**D35 (08-25, `01a0375e` 2026-08-25T07:11:30Z; `1aa61835` 2026-08-26T07:01:17Z; `b55dc6aa` 2026-08-27T15:49:13Z, 16:00:08Z). Category operators and object operators have different owners.** For categories, `[C, D] := Hom_Cat(C, D) := Fun(C, D)` is a category, and `Monoids * Rings`, `Fun(Monoids, Sets) * Fun(Rings, Graphs)`, and `X * Y` for two sets all use one interface and one semantics (`1aa61835` 07:01:17Z). `Y ** X` is defined once as `Hom_C(X, Y)` at the categorical level, and similarly `X * Y` for the product, `X + Y` for the coproduct, and `X @ Y` for the biproduct (`01a0375e` 07:11:30Z). `Cat` owns `X ** Y` via its object type, the same way `X * Y` is always a product in `C` (`b55dc6aa` 16:00:08Z; D70).
+### D106
 
-**D67 (08-26, corrected 08-28). Scope of the current foundation.** Complete `Cat`, functor categories, the `Mor(n, C)` tower, universal constructions, the method compiler, and the owned `Sets()` category before adding later theories.
-Tests can use small vertical examples to establish this foundation.
-Those examples do not add their theories to the implementation surface (`01a029f8 2026-08-22T16:48Z`).
+Existence and selected universal data have different owners. Keep diagram, presentation, and apex distinct; the apex fiber classifies presentations of that apex. Adjunctions, equivalences, cones, and representations retain selected data. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 
-**D68 (08-26). Diagram categories are the workhorse.** Provide machinery for finite diagram categories, specializing to filtered ones such as explicit sequences, since ninety percent of downstream code writes `X * Y` or a product over a list.
-Do not over-specialize: finite sequence-indexed products alone hit a wall at the adeles.
-Do not over-generalize either: ten times the code for the ten percent needing arbitrary diagrams is the opposite error.
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z.
 
-**D69 (08-26, `ee78124f` 2026-08-26T09:05:48Z; `b55dc6aa` 2026-08-27T13:54:22Z, 16:00:08Z; `01a048f6` 2026-08-28T21:19:22Z). The categorical binary operators live at the `Cat` level.** `X * Y`, `X + Y`, and the rest are defined at the `Cat` level: for categories it does the obvious thing, wired through `ObjectType`. Objects of categories receive defaults through `Cat.ElementType`, which can include obvious deferral to the category itself for its products, coproducts, and so on. This is wired once at the `Cat` level, which is where the assertion that `X` and `Y` lie in the same category belongs (`ee78124f` 09:05:48Z).
-`X * Y` is never silently cast into a product category: when you want that, call the product's own constructor, `(C * D)(X, Y)` or `(C * D)([X, Y])`.
-For objects, `C * D` returns a product object in all cases: `A x B` is an object in `A.category() == B.category()`, or a specifically routed common ancestor, with all methods of that category plus projections and the ability to lift morphisms (`b55dc6aa` 13:54:22Z; D140).
+### D107
 
-**D70 (08-27, `b55dc6aa` 2026-08-27T15:49:13Z, 16:00:08Z; `01a0375e` 2026-08-25T07:11:30Z). `**` is category-owned.** `X ** Y := Hom_C(Y, X)`, always, in any category, the same way `X * Y` is always a product in `C`. `Cat` owns this, via its object type (`b55dc6aa` 15:49:13Z, 16:00:08Z). `Y ** X` is defined once as `Hom_C(X, Y)` at the categorical level (`01a0375e` 07:11:30Z).
+Shape-indexed functor properties state preservation and creation. Chosen limits give an adjunction to the diagonal; creation supplies lifted universal data. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 
-**D71 (08-26). Canonical objects are included.** `1 = *`, the empty object, simple horns with their boundaries, simplices, and walking structures in `Cat`; the empty set and `[n]` in `Sets()`. Any canonical representing object the constructions need.
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T07:02:32Z; owner's endorsement 08:11:52Z.
+
+### D108
+
+Fibers, Grothendieck constructions, Yoneda, and representations belong to the generic calculus. Monads, comonads, mates, and reflective constructions are later extensions. Owner: [Indexed categories](functor.md#indexed-categories-yoneda-and-representability).
+
+Source: 08-29, `353b942d` 2026-08-28T14:26:05Z; `77631b59` 2026-08-29T02:20:51Z; endorsed report `01a04c1c` 2026-08-29T07:02:32Z, owner's endorsement 08:11:52Z.
+
+### D109
+
+Sage supplies a private runtime mirror for controlled C3, dynamic classes, refinement, and Parent support. Owned declarations determine all mathematics. Owner: [Private runtime](resolution.md).
+
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T07:34:05Z, owner's request `2026-08-29-52bc359d` 2026-08-29T06:41:21Z; clarified 08-30, `2026-08-30-cce86657` 2026-08-29T18:13:42Z, 18:04:14Z.
+
+### D110
+
+Sage compiles each implementation class. [D13](#d13)'s corrected construction context supplies each owner's state once from the relevant action. Owner: [Construction execution](resolution.md#direct-inherited-execution).
+
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T07:34:05Z; `2026-08-29-52bc359d` 2026-08-29T09:03:22Z, 09:04:47Z; `4544eba5` 2026-08-28T12:18:19Z; `01a048f6` 2026-08-28T21:19:22Z, 21:40:24Z; corrected 09-02, `e38ff397` 2026-09-02T14:14:54Z endorsing the repair stated at 14:13:21Z.
+
+### D111
+
+Sage refinement and caches own private identity behavior. Exact keys use ordinary Sage caches; proposition-valued equality requires identity-keyed MonoDict or TripleDict. Owner: [Runtime caches](resolution.md#runtime-categories-and-caches).
+
+Source: 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T07:34Z.
+
+### D112
+
+Sage axiom and construction categories supply private binding and class assembly. [D156](#d156) fixes public identity-functor binding; [D175](#d175) fixes cat_kernel ownership. Owner: [Private property binding](resolution.md#properties-and-constructions).
+
+Source: 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T07:34Z.
+
+### D113
+
+Generic Mor and Fun belong to Cat. Private engines can use Sage morphism protocols for Sage-parent endpoints without forcing every abstract object into that runtime form. Owner: [Morphism tower](functor.md#the-morn-c-tower).
+
+Source: 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T07:34Z.
+
+### D114
+
+Python 3.14 ast handles Python declarations and generated stubs; tree-sitter-sage handles Sage syntax. Fixed wrappers use declared functions; generated runtime signatures use makefun when needed. Owner: [Declarations and signatures](resolution.md#declarations-and-signatures).
+
+Source: 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T07:34Z.
+
+### D115
+
+Constructing a proposition or typed query does not evaluate it. Placement and assumptions affect ask(), not the question's mathematical meaning. Owner: [Propositions and typed queries](undecidable-properties.md).
+
+Source: 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:01Z.
+
+### D116
+
+Ordinary ordinal sum and product use + and *. Hessenberg arithmetic has separate names. The ordinal specification assigns the semiring laws to the Hessenberg operations. Owner: [Ordinal arithmetic](ordinals.md#arithmetic-ownership).
+
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T06:02:35Z, owner's endorsement `2026-08-29-52bc359d` 2026-08-29T06:03:12Z; `1c1a3599` 2026-08-26T23:23:15Z.
+
+### D117
+
+Aleph and initial-ordinal constructions are functors between the thin order categories. Their actions return the same owned arithmetic values. Owner: [Cardinal arithmetic](cardinality.md).
+
+Source: 08-29, endorsed report `01a04c1c` 2026-08-29T06:02:35Z, owner's endorsement `2026-08-29-52bc359d` 2026-08-29T06:03:12Z.
+
+### D118
+
+A leaf states only its defining data, constructors, functors, and new operations. It reuses retained universal maps and owns one implementation across representations. Owner: [Leaf contract](leaves.md#leaf-contract).
+
+Source: 08-29, corrected 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T08:47Z, 2026-08-29T08:49Z, 2026-08-29T09:15Z.
+
+### D119
+
+Each value is constructed by its exact category: C, Mor(C)(X, Y), Fun(C, D), or the relevant property or construction category. Owner: [Construction-owned functors](functor.md#construction-named-functors).
+
+Source: 08-29, corrected 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T09:01Z, 2026-08-29T09:15Z.
+
+### D120
+
+A computing functor uses two known constructor surfaces. Its complete actions can use private helpers; the compiler interprets no function body and asks for no second declaration. Owner: [Functor actions](functor.md#functor-actions-are-concrete-constructors).
+
+Source: 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T09:15Z.
+
+### D121
+
+Each mathematical fact and public operation has one semantic owner. Runtime and generated artifacts project that declaration. Owner: [System architecture](system.md).
+
+Source: 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T15:42Z.
+
+### D122
+
+Leaves depend on immediate mathematical targets and private engines. Engines control neither categories nor assumptions. Generated stubs and manifests are output-only. Owner: [Layer ownership](system.md#dependency-directions).
+
+Source: 08-29, `01a04c1c-b22b-7f70-8351-6e12ca028470` 2026-08-29T15:42Z.
+
+### D35
+
+Cat supplies category-level and object-level product, coproduct, biproduct, and exponentiation syntax. The ambient category fixes each operation; [D181](#d181) distinguishes a product-category element from its product-functor image. Owner: [Categorical operators](functor.md#products-coproducts-and-component-functors).
+
+Source: 08-25, `01a0375e` 2026-08-25T07:11:30Z; `1aa61835` 2026-08-26T07:01:17Z; `b55dc6aa` 2026-08-27T15:49:13Z, 16:00:08Z.
+
+### D67
+
+Complete the category framework and owned Sets foundation before later theories. [D137](#d137) fixes the pre-R6 leaf boundary; small examples are witnesses for the foundation. Owner: [System architecture](system.md).
+
+Source: 08-26, corrected 08-28.
+Additional source locators: `01a029f8`; `2026-08-22T16:48Z`.
+
+### D68
+
+Support finite diagrams and sequential shapes while retaining arbitrary indexed assignments where required. Finite positional products are a convenience, not the definition. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
+
+Source: 08-26.
+
+### D69
+
+Cat owns the common categorical operators and ambient-category routing. [D140](#d140) fixes the required tracing property; [D181](#d181) fixes the product-call distinction. Owner: [Categorical operators](functor.md#products-coproducts-and-component-functors).
+
+Source: 08-26, `ee78124f` 2026-08-26T09:05:48Z; `b55dc6aa` 2026-08-27T13:54:22Z, 16:00:08Z; `01a048f6` 2026-08-28T21:19:22Z.
+
+### D70
+
+X ** Y denotes the category-owned morphism-object construction from Y to X. The ambient categorical owner supplies this syntax. Owner: [Categorical operators](functor.md#products-coproducts-and-component-functors).
+
+Source: 08-27, `b55dc6aa` 2026-08-27T15:49:13Z, 16:00:08Z; `01a0375e` 2026-08-25T07:11:30Z.
+
+### D71
+
+Cat owns terminal and initial categories, simplices, walking structures, and required horns with their boundaries. Sets owns its empty and canonical finite sets. Owner: [Canonical categories](functor.md#canonical-objects-of-cat).
+
+Source: 08-26.
 
 ## Diamonds and identity
 
-**D36 (08-26). Size is not modeled.** Assume `Cat` is bicomplete and biclosed, so `[C, D] := Hom_Cat(C, D) := Fun(C, D)` is a category under whatever definition is in play.
-This is an engineering convenience to be formalized later.
-The point is that `Monoids * Rings`, `Fun(Monoids, Sets) * Fun(Rings, Graphs)`, and `X * Y` for two sets all use one interface and one semantics.
+### D36
 
-**D37 (08-26, corrected 08-30, `2026-08-30-cce86657` 2026-08-29T18:01:55Z, 18:11:47Z, 18:12:42Z, 18:13:42Z; `01a048f6` 2026-08-28T21:19:22Z, 21:40:24Z). Sage's linearization owns implementation diamonds; choose the first route and debug-log unresolved diamonds.** Diamonds are a non-issue: the kernel uses Sage's dynamic class construction model almost verbatim and simply uses Sage's linearization (`01a048f6` 21:19:22Z, 21:40:24Z). The kernel may warn leaf writers in logs when they create a diamond, but every legitimate case is a coherent diamond: there is an implicit 2-cell (natural transformation) between the intended compositions, so the kernel chooses the first route (18:01:55Z; D56 gives the declaration order). Every unresolved diamond is debug-logged, so debugging is opt-in. An optional mechanism stub for future kernel work lets a leaf implementation provide the coherence data (a 2-cell) proving the diamond coherent, which silences the log for that diamond (18:11:47Z). The debug logging covers all outstanding Sage diamonds when Sage's graph is reconstructed in leaves here (18:12:42Z). This is an entirely new category graph; it shares only a root with Sage's category graph, because both stem from `Parent` types, which is what `Cat.ObjectType` propagates (18:13:42Z).
+Assume Cat is bicomplete and biclosed. Universe sizes are outside the current model. Owner: [Cat](functor.md#cat-and-its-implementation).
 
-**D38 (08-26, corrected 08-28). Set equality is a proposition, not a procedure.** The image in `Sets()` of `Free_R(S)` can be created by fiat, from a membership rule and a cardinality rule; nothing enumerates it and there is no extensional description to compare.
-`X == Y` is `True` by identity and otherwise `Unknown`, unless a cited theorem or an exact computation decides it.
-The compiler never uses set equality to merge public functor images.
-Each named functor constructs its own public image, and two functors with the same endpoints can return different objects (`4544eba5 2026-08-28T12:00Z`; `4544eba5 2026-08-28T12:18Z`).
+Source: 08-26.
+
+### D37
+
+Sage controlled C3 selects one implementation occurrence. Declaration order fixes precedence; unresolved diamonds receive DEBUG diagnostics. Optional future coherence uses owned 2-morphisms. Owner: [C3 and diamonds](resolution.md#diamond-diagnostics-and-future-coherence).
+
+Source: 08-26, corrected 08-30, `2026-08-30-cce86657` 2026-08-29T18:01:55Z, 18:11:47Z, 18:12:42Z, 18:13:42Z; `01a048f6` 2026-08-28T21:19:22Z, 21:40:24Z.
+
+### D38
+
+Set equality is proposition-valued. Identity, a theorem, or an exact computation can decide it. Each named functor retains its own public image. Owner: [Equality](undecidable-properties.md#equality).
+
+Source: 08-26, corrected 08-28.
+Additional source locators: `4544eba5`; `2026-08-28T12:00Z`; `2026-08-28T12:18Z`.
 
 ## Leaf discipline
 
-**D80 (08-28, corrected 08-29). A category class defines the category and its implementation classes together.** A category is defined by a class in the Sage model.
-That class contains its nested `ObjectType`, `ElementType`, and `MorphismType`, its constructors, and its immediate structure functors.
-The kernel constructs the three exact nested classes dynamically from that declaration.
-Parameterized category families use ordinary mathematical constructors or functors into `Cat()` as their definitions require (`b55dc6aa` 2026-08-27T18:57Z; `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:03Z, 2026-08-28T21:06Z).
+### D80
 
-**D81 (08-28, `77631b59` 2026-08-28T17:35:47Z). Imports flow from the kernel into the leaves, never backwards.** No kernel module imports a leaf module.
-This is the executable form of the Philosophy's information-flow rule: a generic construction is parameterized by its ambient category and never imports a leaf category to obtain one. A kernel module that imports a leaf has taken that leaf's mathematics into the kernel, which is the defect the rule names whether or not the result works.
+A category class declares its category and its nested ObjectType, ElementType, and MorphismType together. The compiler constructs those exact classes. Owner: [Implementation classes](functor.md#cobjecttype-celementtype-and-cmorphismtype).
 
-**D86 (08-28, `77631b59` 2026-08-28T19:03:51Z, corrected 2026-08-28T19:06:27Z). An identity is named by the operation it is an identity for, and the identity morphism is one of them.** `identity()` unqualified says nothing: `ZZ.identity()` could be `0` or `1`. An identity comes from the magmatic structure, which splits into the additive and multiplicative axiomatic subcategories, so the names are `additive_identity()` and `multiplicative_identity()`.
-Sage draws the same split with the same mechanism: `AdditiveMagmas.AdditiveUnital` supplies `zero()` and `Magmas.Unital` supplies `one()` (`sage/categories/additive_magmas.py:599,696`, `sage/categories/magmas.py:461,482`, inspected 2026-08-29).
-Composition induces a multiplicative monoid structure on `End_C(X) = Mor(C)(X, X)`. Its unit is `End_C(X).one()`.
+Source: 08-28, corrected 08-29.
+Additional source locators: `b55dc6aa`; `2026-08-27T18:57Z`; `01a048f6-e3f5-7e42-be2a-1f60f70ac23e`; `2026-08-28T21:03Z`; `2026-08-28T21:06Z`.
 
-**D83 (08-28, `4544eba5` 2026-08-28T12:00:37Z; `77631b59` 2026-08-28T22:04:44Z; `b55dc6aa` 2026-08-27T16:08:35Z; endorsed report `01a04e73` 2026-08-29T16:56:37Z). Containment in a property subcategory is by construction into it or by its containment predicate.** With a `with_axiom`-like construction, the subcategory `Sets().Finite()` is available for refinement, and containment is satisfied only by constructing into that category. The predicate mechanism is for computing refinement dynamically: a `FiniteSets` category wired to represent `Sets().Finite()` with an explicit cardinality-check predicate (`77631b59` 22:04:44Z). `is_finite()` means `self` is in `Sets().Finite()`, period. `FiniteSets` is wired as a predicate-based subcategory of `Sets` by declaring a specific type of functor into `Sets` and defining the containment predicate `self.cardinality() < aleph_0`; `is_finite` is defined once on the entire `Sets` category, routes once into a containment check, and every category `D` declaring that type of functor to `Sets` receives `is_finite` from it (`4544eba5` 12:00:37Z). "Subcategory" is colloquial; if the intended notion is a monomorphism, say so (`b55dc6aa` 16:08:35Z; D61). The owner adds that the category of isomorphisms is a simultaneous subcategory of `Mor(C).Monomorphisms()` and `Mor(C).Epimorphisms()`, the same way that finite sets is a subcategory of countable sets; it is not "finite implies countable" (`77631b59` 2026-08-28T18:10:28Z, a queued message).
+### D81
 
-**D82 (08-28, `77631b59` 2026-08-28T17:35:47Z, 17:54:04Z, 17:59:49Z; `b55dc6aa` 2026-08-27T18:57:29Z; `01a048f6` 2026-08-28T16:05:24Z). Category-valued families are ordinary mathematical constructions.** Construction functors are formulated as endofunctors `Cat -> Cat`, `Cat x Cat -> Cat`, and so on: `SemiringObjects(C)`, `RingObjects(C)`, `MagmaObjects(C)`, `MonoidObjects(C)`, specializing to `Monoids := MonoidObjects(Sets())`, `Magmas := MagmaObjects(Sets())`, and so on (`77631b59` 17:54:04Z). One-object categories such as `NN` and `ZZ`, one-object categories parameterized by another datum such as `FF_p`, categories parameterized by a ring such as `Modules(R) := ModuleObjects(Cat)(R)`, and categories parameterized by another category such as `MonoidObjects(C)` all need concrete mechanisms (17:59:49Z).
-A constant category such as `Sets()` is constructed by its category class (`b55dc6aa` 18:57:29Z).
-`Cat` can declare points such as `Sets` and constructions such as magma objects in a category; a downstream category can be the implementation of that category; the imports always flow from the kernel into leaves, never backwards (17:35:47Z). It makes complete sense for `Cat` to hold a list of points it expects downstream (`Sets`, `Posets`, `TotallyOrderedSets`, `NN`, `ZZ`) as a mathematical planning surface that can be audited against: a point `Cat` declares that no leaf implements is a work queue for leaf writers (17:54:04Z).
+Kernel modules and Cat import no production leaf. Generic constructions receive their ambient category from their caller. Owner: [Layer ownership](system.md#dependency-directions).
 
-**D84 (08-29, corrected 08-30, `01a048f6` 2026-08-28T18:35:42Z, 18:44:23Z, 18:48:43Z, 19:09:35Z; `77631b59` 2026-08-28T19:06:27Z; endorsed report `01a04e73` 2026-08-29T16:56:37Z). Identity morphisms and object-dependent constructions keep their mathematical owners.** For `X in C`, the identity morphism is `End_C(X).one()`, the unit of the endomorphism monoid on `Mor(C)(X, X)` under composition. The inherited fixed-object construction method is `C.Subobjects(X)`. The ambient category in the call fixes the role of `X`; the same value can occur in more than one category. `Sets().Subobjects(X).from_predicate(predicate)` constructs the set subobject selected by a predicate.
+Source: 08-28, `77631b59` 2026-08-28T17:35:47Z.
 
-**D85 (08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z, 2026-08-28T18:49Z, 2026-08-28T19:05Z, 2026-08-28T19:09Z). Uniform category operations are inherited methods.** `Cat().ObjectType` defines each method once, and every category inherits it through the implementation-class hierarchy. In particular, its fixed-object methods return the monomorphism or epimorphism property subcategories of slices and coslices. A leaf supplies only its specialization, realization, and new mathematical constructors. Type-specific and leaf-specific convenience aliases begin after version 1.
+### D86
 
-**D87 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:25Z). A construction specification follows the category graph.** `Cat` owns the shape, index, diagram, cone or cocone, defining morphisms, universal morphism, and every operation determined by that categorical construction. A leaf specification links to that contract and states its mathematical delta: the added leaf structure, its membership and equality predicates, its cardinality or other leaf operations, its exact algorithms, and its private engine realizations. A public name identifies the exact mathematical object or morphism it returns. One generic construction has one inherited public surface.
+Units use the operation's mathematical name: zero() and one() for the additive and multiplicative forms. End_C(X).one() is the unit for composition. Owner: [Categorical operators](functor.md#products-coproducts-and-component-functors).
 
-**D88 (08-29, `01a048f6` 2026-08-28T19:38:03Z, 19:43:26Z; endorsed report `01a04c1c` 2026-08-29T07:02:32Z). Version 1 exposes defining data and composes public operations.** `factor_cardinalities` is alarming: `P := prod_i X_i` is a set, it just has a cardinality, it has factors, and a list of factor cardinalities is `[Xi.cardinality() for Xi in P.product_factors()]`. More generally, there should not be methods that are expressible as one or two lines of compositional code, in version 1 (`01a048f6` 19:38:03Z). This is the general point about specifications defining methods that are simple compositions of primitives, and it applies to the complete specification surface (19:43:26Z).
+Source: 08-28, `77631b59` 2026-08-28T19:03:51Z, corrected 2026-08-28T19:06:27Z.
+Reference locators: `sage/categories/additive_magmas.py:599,696`; `sage/categories/magmas.py:461,482`.
 
-**D89 (08-29, corrected 08-29, `4544eba5` 2026-08-28T12:00:37Z; `01a048f6` 2026-08-28T19:51:04Z, 22:51:01Z, 23:00:18Z, 23:05:25Z, 23:08:36Z; the mechanism at 23:09:46Z endorsed at 23:11:16Z; `01a03368` 2026-08-24T22:05:49Z; owner named under D175 on 09-03). `cat_kernel` generates property applications from axioms.** Most `is_X` methods fold into the subcategory-defined-by-containment-predicate methodology (`01a048f6` 19:51:04Z). `is_P` is dynamically generated and no leaf writes it; writing it in every leaf is boilerplate (22:51:01Z), and `is_P` is never meant to be manually written (23:08:36Z). The construction almost precisely emulates `with_axiom`: registering a category to be `C.P()` for a specific `P` is already supported in Sage, and the new predicate methodology is grafted on for when one chooses to instantiate such a registered subcategory, which extends a different ABC base (such as `PredicateSubcategory`) whose abstract-method contract requires the instantiating category to define its predicate method (23:00:18Z). The endorsed mechanism (23:09:46Z, "So record it" at 23:11:16Z): `P` comes from Sage's axiom registration `_base_category_class_and_axiom = (Sets, "Finite")`, which says `FiniteSets()` is `Sets().Finite()`; the private predicate supplies the mathematical definition; `cat_kernel` generates `is_finite()`, equivalent to returning `Sets().Finite().membership_proposition(self)`; descendant compiled classes inherit the generated method; the leaf never writes or names `is_P()` separately. A research category such as `Sets().OfCardinalityExactlyFour()` is determined by a predicate the owner spelled `is_cardinality_exactly_four()` (`01a03368` 22:05:49Z). `is_finite()` means `self` is in `Sets().Finite()`, defined once on the entire `Sets` category and received by every category with the declared functor to `Sets` (`4544eba5` 12:00:37Z). Only `ask()` decides that proposition.
+### D83
 
-**D97 (08-28, `77631b59` 2026-08-28T22:04:44Z; endorsed `01a03368` 2026-08-24T21:59:43Z, 22:12:42Z). An axiom makes a subcategory available; an exact SymPy handler can compute refinement into it.** These mechanisms are independent. A Sage axiom registration makes `Sets().Finite()` available for trusted construction and refinement. The category owns its finite predicate meaning and defines its public SymPy predicate. Exact handlers can decide that predicate. The registered implementation class is still the one `Sets().Finite()` category. Positive placement, assumption, or handler results use the same refinement.
+Axiom availability, containment propositions, and same-object refinement share one property category. Relations between property categories are their declared monomorphisms. Owner: [Property categories](property-refinement.md#property-category).
 
-**D95 (08-29, corrected 08-29, `01a048f6` 2026-08-28T21:03:59Z, 21:06:26Z; `01a04c1c` 2026-08-29T09:15:33Z). `C.ObjectType` is the exact class name.** A category specifies `C.ObjectType`, and the kernel constructs `C.ObjectType` dynamically. For each structure functor `F: C -> D`, `C.ObjectType` inherits `D.ObjectType`. A leaf never constructs this inheritance. Policies, specifications, and plans name the exact class they mean.
+Source: 08-28, `4544eba5` 2026-08-28T12:00:37Z; `77631b59` 2026-08-28T22:04:44Z; `b55dc6aa` 2026-08-27T16:08:35Z; endorsed report `01a04e73` 2026-08-29T16:56:37Z.
+Additional source locators: `2026-08-28T18:10:28Z`.
 
-**D96 (08-29, corrected 08-30, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:20Z; `2026-08-30-cce86657` 2026-08-29T18:13:42Z). A structure functor is an edge of the new owned implementation graph; it does not assert a subcategory relation.** A functor returned by `C.structure_functors()` can be forgetful, a projection, a fibration, a subcategory monomorphism, or another functor whose target classes supply inherited implementation. Its compiler role is analogous to the role Sage's `super_categories()` relation plays for Sage's own mixin graph, but it is not a reused or translated Sage edge.
-Its use in dynamic class construction does not assert that `C` is a subcategory of its codomain or that an object of `C` is its public image under the functor.
-The public image `F(x)` remains a separate object owned by `F`.
-A subcategory relation exists only through its declared monomorphism.
+### D82
 
-**D90 (08-29, corrected 08-29, `01a048f6` 2026-08-28T20:21:35Z). Algebraic structures expose their standard mathematical syntax.** The entire point of magmas is that they provide `+` or `*`; that is the operation. To construct a semiring object you must supply or define the operation, but storing it is purely an internal concern. Extracting a binary operation is absurd; you use `a + b` on elements. Maybe the `Cat`-level `Magmas` defines `additive_binary_operation` and `multiplicative_binary_operation` on the additive and multiplicative subcategories, which may be morphisms `X * X -> X`, addition or multiplication tables, tensors, or any number of things, but that reaches beyond what the public API and specifications need to pin down. Returning an "operation" is bizarre: it is a binary operation, and the specifications use standard mathematical language. Module actions differ: one may want to construct from `rho` and extract `rho` for applications.
+Constant categories use category classes. Category-valued families have their ordinary constructors or functor actions. Cat can declare expected downstream mathematical points without importing their leaves. Owner: [Category-valued families](functor.md#category-classes-and-category-valued-families).
 
-**D91 (08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Property refinement and representation construction are distinct.** Positive property evidence uses the kernel's same-object refinement mechanism. This does not limit the property's constructors. A finite-set category can accept lists, tuples, Python sets, SymPy sets, Julia sets, GAP sets, and other supported representations through as many exact constructor routes as its mathematics requires.
+Source: 08-28, `77631b59` 2026-08-28T17:35:47Z, 17:54:04Z, 17:59:49Z; `b55dc6aa` 2026-08-27T18:57:29Z; `01a048f6` 2026-08-28T16:05:24Z.
 
-**D92 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z). Active prohibitions remain explicit.** A specification keeps prohibitions that exclude known architectural failure patterns. Such a prohibition is a current contract, not a record of removed implementation history.
+### D84
 
-**D93 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T16:05Z). Kernel and leaf implementation proceeds in strict dependency order.** First specify the complete kernel contract and its detailed acceptance criteria. Then implement and independently accept the kernel while production leaves remain unchanged. After that, implement and independently review one leaf phase. A leaf defect returns to that leaf phase. A generic defect returns to the kernel phase and invalidates every dependent acceptance. Kernel and production leaf implementation never proceed in parallel.
+End_C(X).one() is the identity morphism. C.Subobjects(X) fixes X's ambient role through C. Owner: [Fixed-object constructions](functor.md#fixed-object-construction-categories).
 
-**D77 (08-28, `353b942d` 2026-08-28T14:55:27Z; `77631b59` 2026-08-29T00:55:50Z; `2026-08-29-52bc359d` 2026-08-29T07:54:51Z, 08:28:01Z). The leaf writer's contract is a closed list.** The kernel exists to make this list short, so anything a leaf must supply beyond it is a kernel defect, not a leaf obligation.
+Source: 08-29, corrected 08-30, `01a048f6` 2026-08-28T18:35:42Z, 18:44:23Z, 18:48:43Z, 19:09:35Z; `77631b59` 2026-08-28T19:06:27Z; endorsed report `01a04e73` 2026-08-29T16:56:37Z.
 
-1. `ObjectType`, `ElementType`, and `MorphismType`, defined inline as nested classes or, if sufficiently complex, as a separate (likely private) class assigned in the category class definition (`77631b59` 00:55:50Z).
+### D85
 
-2. Constructors: how another mathematician builds objects of your category, in the terms your mathematics uses.
+Cat().ObjectType defines uniform category operations once. Each leaf inherits them and adds its mathematical realization. Owner: [Fixed-object constructions](functor.md#fixed-object-construction-categories).
 
-3. Functors: how ordinary executable actions construct objects and morphisms through another category's public constructors.
+Source: 08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T18:48Z, 2026-08-28T18:49Z, 2026-08-28T19:05Z, 2026-08-28T19:09Z.
 
-4. Which axiomatic subcategories are available.
-   Finiteness is declared once as `C.Finite()`, and any category `D` with a functor into `C` can then declare `D.Finite()`, exactly as Sage's `with_axiom` propagates an axiom down the graph.
+### D87
 
-5. For a property-based subcategory, its containment predicate.
-   That predicate is the whole declaration; membership, refinement, and `ask()` follow from it.
+Cat owns shapes, diagrams, presentations, legs, and universal maps. Each leaf specification states its added structure, predicates, algorithms, and realizations. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 
-6. The wiring that makes a category the concrete implementation of such a subcategory.
-   `FiniteSets` declares itself the implementation of `Sets().Finite()` and adds the methods that finiteness makes available; that is Sage's `_base_category_class_and_axiom` shape (D55, `POL-LEAF-059`).
-   Superseded on the spelling by D156: the class says which category by selecting that category's identity functor, and `_base_category_class_and_axiom` stays as the private Sage binding behind it (D112, [glossary.md](glossary.md)).
+Source: 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T19:25Z.
 
-The list is what a mathematician writes.
-Everything else - inheritance, dispatch, construction threading, caches, class building - is the kernel's, and it is the kernel's precisely so that this list stays this short (D04).
+### D88
 
-**D39 (08-22). What a leaf implementer supplies.** Functors to known owned categories that show how to feed the new category's objects into another owned category's constructor, plus a constructor for the minimal delta that defines the leaf.
-`Modules(R)` built from an action `rho: R -> End(X)` and selecting the owned functor to `Sets()` needs only the functor that uses `rho` to extract `X` and feed it to the `Sets()` constructor.
-The red flag is a lattice category defining `cardinality()` instead of declaring its functor to `Modules(R).Free()`. Constructors and functors are among the few places where reaching into private fields may be acceptable, and each such use needs scrutiny.
+The version-1 interface exposes defining data and mathematical primitives. Users compose short derived operations from those primitives. Owner: [Leaf contract](leaves.md#leaf-contract).
 
-**D40 (08-22). Mathematical encapsulation, enforced by the file system.** A leaf defining something that depends on deeply underlying structure in another category is a red flag — `cardinality` mentioned in a lattice subtree, for instance.
-Keep the kernel siloed in its own subtree with its own test subtree, and split into subtrees as they grow: `Cat`, `Sets`, modules, formed modules, algebras.
-Consider nesting for hot paths such as free modules over a PID. The point is that the kernel subtree may use ordinary Python and is the firewall for non-mathematical code, while every mathematical subtree can be audited for non-mathematical language and types.
-Engine boundaries — Sage, SymPy — should be quarantined in their own subtrees, where repository rules may be violated out of necessity, so that violations are firewalled by layout.
+Source: 08-29, `01a048f6` 2026-08-28T19:38:03Z, 19:43:26Z; endorsed report `01a04c1c` 2026-08-29T07:02:32Z.
 
-**D41 (08-22). A subcategory should almost never exist to house an implementation.** A method belongs at the most general category where it makes sense and where something is at least declarable, so an object can be constructed by supplying that data, and different computational implementations can be selected by case.
-`Sets.PropertyCategory()`, invented to wrap subsets defined by a predicate, was the red flag: any set can form a subset from a predicate, and the result is a subobject in `Sets`. There is no mathematical notion of "a set defined by a property" — every set is.
-The naming is the tell: `PropertySet` is engineering-brained.
-Track construction provenance privately if you need it.
+### D89
 
-**D42 (08-22, corrected 08-28). The user should not need to know the category graph.** Nobody should write `FiniteSet({1, 2, 3})`; `Sets({1, 2, 3})` uses the total constructor selected by that datum.
-Additional construction data or established properties select separate, specifically named total constructors.
-A small number of high-level endpoints are the primary construction interface.
-Specific named constructors state any stronger construction (`4544eba5 2026-08-28T11:34Z`; `4544eba5 2026-08-28T12:00Z`).
-Usability comes from discoverability through well-known names: `Sets`, `Monoids`, `Groups`, `Rings`, `Modules(R)`, `Algebras(R)`.
+An axiom identifier and private proposition generate the one public is_P() application. [D148](#d148) fixes the declaration; [D175](#d175) assigns generation to cat_kernel. Owner: [Property categories](property-refinement.md#property-category).
 
-**D43 (08-24). The leaf class is the implementation, and it is the firewall.** There is never more than one choice of implementation: Sage already lets competing implementations proliferate, with three different free modules carrying different operations and inconsistent inherited surfaces.
-Mathematically there is one notion of a free module.
-Your `ObjectType` hides every possible implementation, collected in one class.
-Internally you may use anything — Sage, SymPy, NumPy, an imported dependency such as VinAL for hyperbolic lattices, a bespoke research algorithm, Cython, a shell program, Julia, GAP, Singular, Macaulay2 — provided the public API never exposes the choice.
-There is no automatic routing into engine methods and no `@realized_operation`-style marker.
-Quarantine substantial Python complexity into helper modules.
+Source: 08-29, corrected 08-29, `4544eba5` 2026-08-28T12:00:37Z; `01a048f6` 2026-08-28T19:51:04Z, 22:51:01Z, 23:00:18Z, 23:05:25Z, 23:08:36Z; the mechanism at 23:09:46Z endorsed at 23:11:16Z; `01a03368` 2026-08-24T22:05:49Z; owner named under D175 on 09-03.
 
-**D44 (08-24). Inherited fundamentals stay inherited.** Composition of arrows is basic category theory and arrives by inheritance.
-A leaf may override to add leaf-level mathematics — a free-module morphism hooking composition to build a private matrix — but a method that adds no new mathematics does not belong in a leaf at all.
-Inheritance is automatic; you write wiring only when you are adding mathematics.
+### D97
 
-**D45 (08-24). The question to answer at every step.** "What generic categorical mechanism makes every leaf state only its new mathematics?"
-Only that determines where code lives, which objects own theorems, how calls work, and what methods must exist.
-Trace the whole implementation path: how the kernel defines products, how they propagate through categories and presentations and structure functors, so that the leaf supplies only its delta.
+An axiom makes its category available. An exact SymPy handler can decide its proposition. Positive results use the same refinement as construction and assumption. Owner: [Property categories](property-refinement.md#property-category).
 
-**D73 (08-28, `353b942d` 2026-08-28T13:59:29Z, 13:13:10Z; `4544eba5` 2026-08-28T12:00:37Z, 12:18:19Z; `01a0375e` 2026-08-25T08:52:59Z, 08:57:58Z; `b55dc6aa` 2026-08-27T16:00:08Z). Every method makes its choices explicit.** A method such as `underlying_object_projection` makes no sense: projection to what? The underlying set of a module can also be a ring. Methods cannot make implicit choices; everything must be explicit. If you want to project to sets, you construct that functor and apply it, and do not hide it behind an ambiguous method (`353b942d` 13:59:29Z).
-A "structural image" of a category makes no sense: a functor has an image, a category does not, and a category can declare ten structure functors (`4544eba5` 12:00:37Z). You get the image of `P` under a functor, a set; an object cannot be "read" in two different categories (`4544eba5` 12:18:19Z).
-A "forgetful functor" is ill-defined: categories such as magmas are pullbacks whose objects are pairs, with two projections; for lattices `(L, b)`, `(L, b) -> L` and `(L, b) -> b` are symmetric choices; for `Modules(R)` the defining datum is a ring morphism `R -> End(X)`, and it is absurd to expect the kernel to know which presentation "forget" means (`01a0375e` 08:52:59Z, 08:57:58Z).
-Sets need not be the ambient category: schemes, sheaves, functor categories, and simplicial sets are bog-standard mathematics to support, and none of them are sets (`353b942d` 13:13:10Z).
-Common-ancestor tracing runs along a named, citable property `P` of functors, `Fun.P()`, never a heuristic (`b55dc6aa` 16:00:08Z; D61).
+Source: 08-28, `77631b59` 2026-08-28T22:04:44Z; endorsed `01a03368` 2026-08-24T21:59:43Z, 22:12:42Z.
 
-**D76 (08-28, corrected 08-28). Distinguish preservation from equality on the nose.** A functor `U` preserves a product when the canonical comparison morphism `U(prod X_i) -> prod U(X_i)`, induced by the cone `(U(pi_i))`, is an isomorphism.
-A lifted construction can require more: its chosen apex and defining morphisms can map to the chosen ambient construction on the nose.
-State that stronger equality where the construction needs it.
+### D95
 
-This construction-level equality does not identify the public images of arbitrary named functors (`01a03c6a 2026-08-26T07:36Z`; `4544eba5 2026-08-28T12:18Z`).
-Inheritance follows the Sage dynamic-class MRO from the immediate structure-functor targets (D37, D95, D96). A leaf that lifts an ambient construction builds on the ambient apex and retains its defining morphisms; the compiler has no preservation registry.
+C.ObjectType is the exact category-owned class constructed by the compiler. [D167](#d167) narrows which selected targets contribute bases. Owner: [Implementation classes](functor.md#cobjecttype-celementtype-and-cmorphismtype).
 
-**D75 (08-28). Objects carrying a choice form the total category of a fibration over the base, and the choice is usually a morphism.** Sage names the phenomenon — `Modules(R).WithBasis()` is "the category of modules with a distinguished basis" (`sage/categories/modules_with_basis.py:179`), with `AlgebrasWithBasis`, `WithRealizations`, and the `FinitelyGenerated` family beside it, all on the same axiom machinery as `Finite`. Taking the name is not taking the construction, and the construction is what has to be stated.
+Source: 08-29, corrected 08-29, `01a048f6` 2026-08-28T21:03:59Z, 21:06:26Z; `01a04c1c` 2026-08-29T09:15:33Z.
 
-`Modules(R)` and the category of pairs `(M, S)` with `S` a chosen generating set are completely different categories.
-The relation between them is a fibration `p: E -> Modules(R)` whose fibre over `M` is the category of choices for `M`, with `p` the functor that forgets the datum; the pairs are the objects of the total category, obtained by the Grothendieck construction from the assignment `M |-> {choices for M}`. Straightening and unstraightening are the two directions of that correspondence.
+### D96
 
-The citations, inspected: the Grothendieck construction `∫F` of a pseudofunctor `F: C^op -> Cat` has as objects the pairs `(c, a)` and as morphisms the pairs `(f, phi)` with `f: c -> c'` in `C` and `phi: a -> F(f)(a')` in `F(c)`, with `p: ∫F -> C` the first projection, and `∫` is an equivalence of 2-categories onto the fibrations over `C` ([nLab, "Grothendieck construction"](https://ncatlab.org/nlab/show/Grothendieck+construction)). A fibred category is one where every morphism of the base lifts to a strongly cartesian morphism ([Stacks Project, Categories, Definition 4.33.5, tag 02XJ](https://stacks.math.columbia.edu/tag/02XJ), with Lemma 4.33.7 giving the pseudofunctor once pullbacks are chosen).
+A structure functor belongs to the new owned graph. Its compiler use establishes neither categorical containment nor equality with its public image; [D167](#d167) fixes inherited execution. Owner: [Selected structure functors](functor.md#structure-functors-and-inherited-classes).
 
-The datum is itself a morphism, which is why one construction covers the whole family.
-A generating set `S` for `M` is an epimorphism `Free_R(S) ->> M`. A finite presentation is a length-two resolution `Free_R(X_1) -> Free_R(X_0) -> M`. A resolution of any length is the general case.
-So these are categories of diagrams over `M`, expressible with machinery this repository already owns: `C.SliceOver(M)`, `Fun([1], C)` and its evaluations, and `Fun(I, C)` for a shape `I` (D34, D68). `WithBasis`, `WithGeneratingSet`, and `FinitelyPresented` are one construction at different shapes, not a family of separate axioms — which is the whole point, since one mechanism stated once is what the framework buys (see the Philosophy).
+Source: 08-29, corrected 08-30, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T21:20Z; `2026-08-30-cce86657` 2026-08-29T18:13:42Z.
 
-The name also hides a real choice about morphisms, which the construction has to make explicit: whether a morphism of the total category is required to respect the datum, and whether it is cartesian over the base.
-Sage's own case shows the subtlety — its `ModulesWithBasis` morphisms are ordinary module morphisms, while the homset uses the distinguished bases to read a matrix as a morphism (`sage/categories/modules_with_basis.py:47`). That is a decision, not a detail, and `With<Datum>` states none of it.
+### D90
 
-Two places the pattern does not reach.
-There is no bare object to equip when the object is already the pair. An object of `Subobjects(X)` is an object together with a monomorphism into `X` (D74). A construction family that already retains its construction is the equipped form, so it needs no adjective. A product has many isomorphic siblings, and the repository keeps the one it built.
+Element syntax carries algebraic operations. Module actions can also expose their defining action morphism for mathematical use. Owner: [Algebraic operations](magmas-monoids-semirings.md#owned-operations).
 
-**D74 (08-26, corrected 08-30, `01a048f6` 2026-08-28T18:44:23Z, 18:48:43Z, 19:09:35Z, 19:25:26Z; `353b942d` 2026-08-28T14:14:50Z; endorsed reports `01a04c1c` 2026-08-29T06:02:35Z, `01a04e73` 2026-08-29T16:56:37Z). `Subobjects(X)` retains a monomorphism representative, and restricting structure to one is leaf work.** An object is a pair `(A, i)` with `i: A -> X` monic. A subobject in the quotient sense is an isomorphism class of such representatives. Equality of represented subobjects is a proposition.
+Source: 08-29, corrected 08-29, `01a048f6` 2026-08-28T20:21:35Z.
 
-For a poset `P` presented by `(X, R)`, `Sets().Subobjects(X).from_predicate(predicate)` constructs only a set subobject. `Posets().Subobjects(P)` specializes the inherited construction by retaining the restricted order and monomorphism in `Posets()`. The ordering subtree decides the strongest established order category of the result.
+### D91
 
-The theorem that transports a monomorphism between the set and poset categories belongs to the leaf that states it. The compiler supplies only the generic construction and inherited category structure.
+Same-object property refinement and ingestion of a new representation are distinct. [D150](#d150) fixes the ambient constructors inherited by a property category. Owner: [Same-object refinement](property-refinement.md#same-object-refinement).
 
-**D72 (08-27). Categories of structured objects are parameterized by another category.** `Semirings`, `Magmas`, `Monoids`, `Rings`, `Modules`, and `Algebras` all take an ambient category.
-The point is only to endow objects with the corresponding methods.
-Sage's monoids are monoid objects in sets; taking the ambient category as a parameter is the generalization, not a specialization to `Cat`.
+Source: 08-29, corrected 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z.
+
+### D92
+
+This earlier row retained explicit prohibitions in specifications. [D180](#d180) controls their current document ownership and the consolidation of repeated rules. Owner: [Document ownership](system.md).
+
+Source: 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T20:21Z.
+
+### D93
+
+Kernel acceptance precedes production leaves. [D180](#d180) controls the current dependency, review, and defect-return procedure. Owner: [Workflow](../AGENTS.md).
+
+Source: 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T16:05Z.
+
+### D77
+
+The leaf contract consists of implementation classes, constructors, functor actions, axioms, and defining predicates. [D156](#d156) supersedes the old public axiom-binding field; [D173](#d173) and [D175](#d175) divide generic ownership. Owner: [Leaf contract](leaves.md#leaf-contract).
+
+Source: 08-28, `353b942d` 2026-08-28T14:55:27Z; `77631b59` 2026-08-29T00:55:50Z; `2026-08-29-52bc359d` 2026-08-29T07:54:51Z, 08:28:01Z.
+
+### D39
+
+A leaf supplies minimal construction data and executable functors to immediate mathematical targets. Operations inherited through those targets remain at their owners. Owner: [Leaf contract](leaves.md#leaf-contract).
+
+Source: 08-22.
+
+### D40
+
+Separate mathematical declarations, kernel engineering, and private computation engines by subtree. The import boundary follows this separation. Owner: [Layer ownership](system.md#dependency-directions).
+
+Source: 08-22.
+
+### D41
+
+A category records mathematical structure. Alternative representations and algorithms remain inside its one implementation; subsets use the inherited subobject construction. Owner: [Leaf contract](leaves.md#leaf-contract).
+
+Source: 08-22.
+
+### D42
+
+High-level mathematical category names own discoverable constructors. [D150](#d150) supersedes property-specific constructor wiring: property categories inherit the ambient constructors. Owner: [Constructors](leaves.md#constructors).
+
+Source: 08-22, corrected 08-28.
+Additional source locators: `4544eba5`; `2026-08-28T11:34Z`; `2026-08-28T12:00Z`.
+
+### D43
+
+Each mathematical category has one public implementation type. It can use several private computation engines without exposing engine selection. Owner: [Computation engines](leaves.md#computation-engine-boundary).
+
+Source: 08-24.
+
+### D44
+
+Identity and composition arrive from Cat. A leaf adds only its own mathematical specialization of an inherited operation. Owner: [Morphism tower](functor.md#the-morn-c-tower).
+
+Source: 08-24.
+
+### D45
+
+Place each operation at the generic mathematical owner that lets every leaf state only its additional mathematics. Owner: [System architecture](system.md).
+
+Source: 08-24.
+
+### D73
+
+A named functor fixes an explicit mathematical choice. Its endpoint pair alone does not select a projection, image, or representation. Owner: [Construction-owned functors](functor.md#construction-named-functors).
+
+Source: 08-28, `353b942d` 2026-08-28T13:59:29Z, 13:13:10Z; `4544eba5` 2026-08-28T12:00:37Z, 12:18:19Z; `01a0375e` 2026-08-25T08:52:59Z, 08:57:58Z; `b55dc6aa` 2026-08-27T16:00:08Z.
+
+### D76
+
+Preservation gives an isomorphic comparison. A lifted construction can require its chosen apex and defining morphisms to map exactly to the chosen ambient presentation. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
+
+Source: 08-28, corrected 08-28.
+Additional source locators: `01a03c6a`; `2026-08-26T07:36Z`; `4544eba5`; `2026-08-28T12:18Z`.
+
+### D75
+
+Chosen-data categories use the applicable diagram, fiber, or Grothendieck construction. Their morphisms must state datum preservation and cartesianness. Generating data is an epimorphism Free_R(S) -> M; presentations and resolutions use the corresponding diagrams. These consumer-specific morphism choices remain open until stated. Owner: [Indexed categories](functor.md#indexed-categories-yoneda-and-representability).
+
+Source: 08-28.
+Reference locators: `sage/categories/modules_with_basis.py:179`; `sage/categories/modules_with_basis.py:47`; [Grothendieck+construction](https://ncatlab.org/nlab/show/Grothendieck+construction); [02XJ](https://stacks.math.columbia.edu/tag/02XJ).
+
+### D74
+
+Subobjects(X) retains a representative (A, i) with i: A -> X monic. Represented equality is a proposition; a quotient subobject is an isomorphism class. Restricting added leaf structure belongs to that leaf. Owner: [Fixed-object constructions](functor.md#fixed-object-construction-categories).
+
+Source: 08-26, corrected 08-30, `01a048f6` 2026-08-28T18:44:23Z, 18:48:43Z, 19:09:35Z, 19:25:26Z; `353b942d` 2026-08-28T14:14:50Z; endorsed reports `01a04c1c` 2026-08-29T06:02:35Z, `01a04e73` 2026-08-29T16:56:37Z.
+
+### D72
+
+Structured-object categories take their ambient category as a parameter. Each definition supplies the additional monoidal, action, or closed data it requires. Owner: [Category-valued families](functor.md#category-classes-and-category-valued-families).
+
+Source: 08-27.
 
 ## Types and style
 
-**D78 (08-28, `353b942d` 2026-08-28T15:13:29Z, 15:21:46Z). Automated checks are not the arbiter of correctness before 1.0.** Never run a test suite, type checker, linter, formatter, or diagnostic sweep against an incomplete or incorrect architecture, and never chase test or lint correctness mid-refactor. The reason is the gradient it sets, not the timing: it polishes intermediate code the refactor will delete or obviate; it rewards golfing that code until the checks pass, which optimizes the checker rather than the architecture; it implicitly protects the old code the refactor exists to replace, because breaking it registers as a failure; and it can derail the refactor outright, turning a structural change into a sequence of local repairs that keep the checks green.
+### D78
 
-Regression prevention is not a goal before 1.0, and pursuing it is gradient-misaligned with correctness. The architecture is still being designed, so a regression test locks in behaviour that the design work exists to replace, and each one becomes a reason not to make the change that is needed. After 1.0, when edits are incremental against a working codebase, regression prevention is the point and the craft of writing a good test applies to it.
+Before 1.0, architecture controls acceptance and checks provide diagnostics. [D132](#d132) narrows the mechanical-check boundary; [D180](#d180) owns the current workflow. Owner: [Workflow](../AGENTS.md).
 
-Tests are for regressions and end-to-end behaviour. They are not for internal consistency, they are not unit tests, and they are not a way to lock in current behaviour. A one-off test is fine, and so is adding a test and running it on its own while working - as a feedback signal, never as a correctness signal. Lean on red commits until a 1.0 milestone.
+Source: 08-28, `353b942d` 2026-08-28T15:13:29Z, 15:21:46Z.
 
-Until then the arbiter is agreement with the plans, the specifications, and the transcripts. Establishing that agreement takes intelligent, dynamic, adversarial review, for which subagents are appropriate: alignment with the stated architecture, contradictions between documents, abstraction leaking across the kernel and leaf boundary, and drift from what was actually decided. A green suite is evidence of none of it.
+### D79
 
-**D79 (08-28, `be8d8a9e` 2026-08-28T15:50:50Z). Do not build automated enforcement before 1.0.** `AGENTS.md` is extremely clear about not trying to automatically enforce anything before v1; if it is not, make it clear. D132 narrows this decision for architectural invariants.
+[D132](#d132) narrows the pre-1.0 enforcement restriction for admitted architectural invariants. [D180](#d180) owns the current check and review procedure. Owner: [Workflow](../AGENTS.md).
 
-**D46 (08-22). Everything is a tensor.** The package departs from Sage's linear-algebra primitives: not vectors as internal representations of module elements and matrices as internal representations of module morphisms, but `(p, q)`-tensors throughout, encoded at the module `ElementType` level.
-A bilinear form is a Gram tensor, not a Gram matrix.
-`vector()` and `matrix()` shadow a `tensor()` constructor taking `(p, q)` shapes, base rings, and multi-indexable data.
+Source: 08-28, `be8d8a9e` 2026-08-28T15:50:50Z.
 
-**D47 (08-22). Morphisms never operate on plain Python objects.** Always construct elements of the appropriate objects.
-A hom-category `__call__` may assert `x.ambient_object() in self.base_category()`.
+### D46
 
-**D48 (08-22). Do not coin a name for a standard notion.** `type MathematicalObject = Any` and `SetMapRule` are both defects.
-The standard notion is a morphism of sets, and the type is `SetMorphism`. Calling it a "map" or a "rule" avoids the standard semantics.
+Module elements and morphisms use (p, q)-tensors at the module ElementType level. vector() and matrix() specialize tensor() by shape, base ring, and indexed data; bilinear forms use Gram tensors. Owner: [Module objects](modules.md).
 
-**D49 (08-22). Each category is internally consistent in its types.** A poset method takes `PosetElement := Posets().ElementType`, never `SetElement`, so that passing an unstructured set element is a static type error — even when the poset element class adds nothing.
+Source: 08-22.
 
-**D50 (08-23, `01a03028` 2026-08-23T20:59:19Z; corrected 08-28, `01a048f6` 2026-08-28T17:24:29Z). Never write a method that only fails.** No body that is `assert False`, `return NotImplemented`, or a raise.
-That hides a missing capability from static checkers and surprises the user at runtime; the point is a uniform interface.
-A `cardinality()` that raises is worse than no `cardinality()` at all.
-Use abstract methods or expose the method only on the category that owns the capability.
-A method that is undecidable in full generality returns a predicate and is evaluated with `ask()`; cardinality is a predicate that you evaluate with `ask`, and this is the central architecture for generically undecidable methods (`01a048f6` 2026-08-28T17:24:29Z, 17:25:36Z; `01a03368` 2026-08-24T21:11:24Z).
+### D47
 
-**D51 (08-23). Do not golf type checkers.** They are a signal; the architecture and philosophy are the arbiters of correctness.
-The compiler should be strong enough to teach mypy about the functorial construction, but a very dynamic process may exceed what mypy can follow.
-Type-checker plugins are legitimate, as is static generation — manifests, statically constructed types, stubs — regenerated on commit, test, push, or version bump, since the repository does statically encode all its intended relations at any given time.
+Morphism evaluation accepts elements constructed by the appropriate owned objects. Owner: [Leaf contract](leaves.md#leaf-contract).
 
-**D52 (08-24). Never use optional arguments.** Write total methods and separate, specifically named constructors.
-A set constructor that can accept a cardinality by fiat does not make cardinality optional with a default; it is total in cardinality, with `construct_uncountable_set`, `construct_countable_set`, and `construct_finite_set` split out.
+Source: 08-22.
 
-**D53 (08-23). Prefer the mathematically flavoured construction.** `pairwise` over `zip`, and generally: look for packages and dependencies that improve the mathematical flavour of the code, and propose them when the idea surfaces.
+### D48
+
+Use standard mathematical type names. [D131](#d131) fixes the two authorized Any aliases. Owner: [Exact types](leaves.md#exact-types).
+
+Source: 08-22.
+
+### D49
+
+Public signatures use the category's exact object, element, and morphism types, including refinements whose local method body is empty. Owner: [Exact types](leaves.md#exact-types).
+
+Source: 08-22.
+
+### D50
+
+Partial mathematical operations use applied queries and ask(); capability-specific methods belong to the appropriate category or abstract contract. [D18](#d18) and [D115](#d115) supersede the older predicate terminology for cardinality. Owner: [Propositions and typed queries](undecidable-properties.md).
+
+Source: 08-23, `01a03028` 2026-08-23T20:59:19Z; corrected 08-28, `01a048f6` 2026-08-28T17:24:29Z.
+Additional source locators: `17:25:36Z`; `01a03368`; `2026-08-24T21:11:24Z`.
+
+### D51
+
+Generated stubs and type-checker plugins can expose dynamic category structure. Type-checker diagnostics do not define architecture; [D130](#d130) fixes their interpretation. Owner: [Static projection](functor.md#static-semantic-projection).
+
+Source: 08-23.
+
+### D52
+
+Use total constructors and separate named forms for distinct complete mathematical data. [D150](#d150) fixes the constructor surface inherited by property categories. Owner: [Constructors](leaves.md#constructors).
+
+Source: 08-24.
+
+### D53
+
+Prefer established mathematical primitives and packages when they express the operation directly. Owner: [Leaf contract](leaves.md#leaf-contract).
+
+Source: 08-23.
 
 ## What the documents are for
 
-**D94 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T17:36Z, 2026-08-28T18:18Z, 2026-08-28T18:20Z, 2026-08-28T18:30Z). An executing plan records resolved contracts.** Before a phase starts, its governing decisions and specifications fix every mathematical owner, public spelling, input and result category, constructor contract, dependency, exclusion, and acceptance statement needed to implement it. The plan states those decisions and the work that makes them true. It does not defer them with tasks to determine, choose, clarify, or correct a contract or policy during implementation. If the transcripts do not determine a required decision, ask the user before implementation starts and then update the governing specification and plan.
+### D94
 
-**D100 (08-29, `77631b59` 2026-08-29T02:43:39Z). A separating family declares nothing this repository uses.** `separating_family()` returns a tuple whose unstated meaning is that its objects jointly separate morphisms, and downstream code reads it as authorization. That is theorem metadata: `POL-MATH-031` forbids runtime metadata repeating a fact, `POL-MATH-032` makes construction authority static ownership rather than runtime data, `POL-MATH-037` makes constructing in the category the assertion, and `POL-MATH-045` forbids a second runtime classification of one fact.
+Implementation work requires fixed mathematical owners, public contracts, and acceptance. [D180](#d180) controls how plans reference those contracts. Owner: [Workflow](../AGENTS.md).
 
-Every claimed use has a more direct owner:
+Source: 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T17:36Z, 2026-08-28T18:18Z, 2026-08-28T18:20Z, 2026-08-28T18:30Z.
 
-- constructing `Hom(G, -)` needs only the object `G`, and does not need `G` to be a generator;
-- that `Hom(G, -)` is faithful belongs on that named functor, through `.Faithful()`;
-- morphism equality belongs to the category's equality predicate and its exact leaf algorithms;
-- a functor `X -> Y` transports points `* -> X` by composition;
-- structural inheritance uses the selected structure functor, not faithfulness;
-- set equality already uses identity, symbolic comparison, finite extensional comparison, or `Unknown`.
+### D100
 
-So the tuple-based declaration leaves the kernel. Named restricted Yoneda functors and their properties own every supported use.
+Restricted Yoneda functors, their properties, evaluation maps, and presentations own generator uses. The earlier claim that generators have no use is superseded by this row's recorded correction. Owner: [Generators and presentations](separating-families-and-categorical-generators.md).
 
-Corrected 08-29: this entry originally added that generators buy the repository nothing. That is stale. [Separating families and categorical generators](separating-families-and-categorical-generators.md) records concrete uses — presentations, restricted Yoneda functors, density, and evaluation epimorphisms. What is banned is the tuple as theorem metadata and as construction authority, not the notion. Generators and separating families stay, through named mathematical constructions: faithfulness on the restricted Yoneda functor, canonical evaluation maps in the established epimorphism category, and finite presentations for finitary morphism constructors.
+Source: 08-29, `77631b59` 2026-08-29T02:43:39Z.
 
-`Sets()` hid the conflation, because its terminal object `1` is also a generator; the two notions differ in general.
-**D99 (08-29, corrected 08-29, `77631b59` 2026-08-29T00:44:44Z; `01a04ab2-d713-74b3-8a24-eeef392b0869` 2026-08-29T00:48Z). `Core` is a functor `Cat -> Groupoids`, and category relations belong to their named structure functors.** Three objects are distinct: a multiplicative property `P` of the morphisms of `C`; the category `W_P(C)` with the objects of `C` and only its `P`-morphisms; and the inclusion functor `i_P: W_P(C) -> C`. A construction produces a category and its defining functor. The category and its inclusion are never two spellings of one object.
+### D99
 
-`Core(C)` is not `Mor(C).Isomorphisms()`. `Core(C)` has the objects of `C`, and its morphisms are the isomorphisms of `C`. `Mor(C).Isomorphisms()` has the isomorphisms of `C` as its *objects* and lives one categorical level higher; it can say which arrows enter the core and it is not the core.
+Core: Cat -> Groupoids retains the inclusion U(Core(C)) -> C. Core(C) keeps C's objects and isomorphisms; Mor(C).Isomorphisms() lives one level higher. The cardinality functor starts at Core(Sets()). Owner: [Core functor](functor.md#the-core-functor).
 
-The functorial formulation is `U: Groupoids -> Cat` and `Core: Cat -> Groupoids`, with the inclusion the component `eps_C: U(Core(C)) -> C`. `C.Core()` returns `Core.on_object(C)`, and the cardinality functor has domain `Core(Sets())`.
+Source: 08-29, corrected 08-29, `77631b59` 2026-08-29T00:44:44Z; `01a04ab2-d713-74b3-8a24-eeef392b0869` 2026-08-29T00:48Z.
 
-`Groupoids()` is a declared point of `Cat`; the current foundation requires no further groupoid implementation. `Core` is required. The generic public `WideSubcategory(P)` has no independent production use. Do not reintroduce it unless a later user decision requires that general construction.
+### D98
 
-Use standard functor properties on the named object of `Fun(C, D)`. `Faithful` means injective on each fixed-endpoint morphism collection. `Full` means surjective. `FullyFaithful` means bijective. `EssentiallySurjective` means that every target object is isomorphic to an image. These replace presentation-dependent object counts and ambiguous global claims about bijectivity on morphisms. Most structural relations have this form: they are properties of the structure functor, not properties of its source category.
-**D98 (08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T22:17Z, 2026-08-28T22:27Z, 2026-08-28T22:37Z). Transcript-grounded decisions control documentation repair.** A review of the architecture starts from the user's cited transcript decisions in this file.
-The topic specifications and policies state their normalized consequences.
-Plans cite those fixed requirements and contain only forward obligations, dependency order, acceptance criteria, and return conditions.
-Current code, prior reports, phase status, and an uncited document cannot override a cited decision.
+Decision provenance records architectural choices; topic specifications state the contracts. [D180](#d180) controls document and plan authority. Owner: [Document ownership](system.md).
 
-**D54 (08-22, `01a02a68` 2026-08-22T21:09:14Z).** `CONTRIBUTING.md` holds general principles and patterns grounded in examples, and may hold specific observed antipatterns once they recur enough to matter.
+Source: 08-29, `01a048f6-e3f5-7e42-be2a-1f60f70ac23e` 2026-08-28T22:17Z, 2026-08-28T22:27Z, 2026-08-28T22:37Z.
 
-Specifications are forward-facing.
-They catalogue the desired functionality, nail down the public API, and may hint at internal strategies.
-A specification must be explicit about the expected structure functors. It separates, and does not repeat, the methods expected to arrive by inheritance, keeping one source of truth, though naming a few to ground an example is fine.
-A lattice specification should say that it mentions no cardinality, and that cardinality arrives compositionally along a chain of functors landing in `Sets()` — not from a direct functor to `Sets()`.
+### D54
 
-**D131 (09-01, corrected 09-02; `b55dc6aa` 2026-08-27T16:38:05Z, 16:39:04Z, 18:32:36Z; `01a02a68` 2026-08-22T23:42:08Z; `ee78124f` 2026-08-26T09:05:48Z; `e38ff397` 2026-09-02T15:09:26Z, a queued message). `__eq__` returns a predicate; `__eq__` and `__contains__` take the two `Any` aliases.** `A == B` returns `A.__eq__(B)`, which returns a proposition; predicates strictly generalize bools, so nothing returns a bool; `==` can produce `Unknown`, and `ask(a == b)` is used everywhere to decide (`b55dc6aa` 16:38:05Z, 16:39:04Z, 18:32:36Z; D63). On 08-22 the owner said `__eq__` and `__contains__` always take raw `Any`, never `object`, never an invented indirected type, never a coinage such as `MembershipInput` (`01a02a68` 23:42:08Z; D48). On 09-02 the owner resolved the `Any` exception by introducing two new type aliases, `EqualityInput = Any` and `ContainmentInput = Any` (`e38ff397` 15:09:26Z); that statement governs. No other use of `Any` or `object` is permitted.
+Topic specifications state the desired public interface and immediate structure functors. CONTRIBUTING supplies general principles; [D180](#d180) fixes document ownership. Owner: [Document ownership](system.md).
+
+Source: 08-22, `01a02a68` 2026-08-22T21:09:14Z.
+
+### D131
+
+Equality constructs a proposition. EqualityInput = Any and ContainmentInput = Any are the only permitted Any aliases. These replace the earlier raw-Any spelling. Owner: [Exact types](leaves.md#exact-types).
+
+Source: 09-01, corrected 09-02; `b55dc6aa` 2026-08-27T16:38:05Z, 16:39:04Z, 18:32:36Z; `01a02a68` 2026-08-22T23:42:08Z; `ee78124f` 2026-08-26T09:05:48Z; `e38ff397` 2026-09-02T15:09:26Z, a queued message.
+
+### D133
+
+Kernel engineering, generic Cat mathematics, and cat_kernel generation replace leaf wiring under [D173](#d173)/[D175](#d175). Inference retained: inherited element construction is assigned to the kernel without a located owner statement. The leaf catalogue owns the concrete prohibited shapes. Owner: [Layer ownership](system.md#dependency-directions).
+
+Source: 09-02, `e38ff397` 2026-09-02T14:43:42Z, 14:53:16Z; owner statements `01a03368` 2026-08-24T14:03:20Z, 23:10:13Z, 23:50:43Z; `36d46178` 2026-08-26T10:33:24Z; `1c1a3599` 2026-08-26T23:08:20Z; `4544eba5` 2026-08-28T12:00:37Z; `77631b59` 2026-08-28T19:06:27Z; `b1f26f05` 2026-08-29T04:38:59Z; `8419143e` 2026-09-01T23:35:15Z.
+
+### D134
+
+Durable architectural decisions belong in their owning documents and plans. [D180](#d180) fixes the current ownership and update procedure. Owner: [Document ownership](system.md).
+
+Source: 09-02, `e38ff397` 2026-09-02T14:43:42Z, 15:00:16Z, 15:04:41Z, 15:18:33Z, 15:19:06Z, 15:20:46Z; `2026-08-30-cce86657` 2026-08-29T19:09:08Z, 19:11:16Z; `01a05682` 2026-08-31T09:28:45Z.
+
+### D132
+
+Narrows [D79](#d79): mechanical checks may enforce admitted architectural invariants at exact locations. Conventions and review judgments remain outside those checks. [D180](#d180) owns the current procedure. Owner: [Workflow](../AGENTS.md).
+
+Source: 09-02, `e38ff397` 2026-09-01T23:57:02Z, 2026-09-02T13:46:06Z, 15:26:33Z, 15:30:33Z, 15:37:44Z, 15:40:41Z.
+Additional source locators: `2026-09-02T14:53:16Z`.
+Reference locators: `kernel/sage_runtime.py`.
+
+### D135
+
+The leaf-shape catalogue has one owner in leaves.md. Other documents link its rules; [D180](#d180) controls the current relation to checks and plans. Owner: [Leaf contract](leaves.md#leaf-contract).
+
+Source: 09-02, `91d641ff` 2026-09-02T15:28Z and 2026-09-02T15:40Z.
+
+### D136
+
+The earlier phase-gate protocol required independent acceptance before dependent work. [D180](#d180) owns the current gate and review procedure. Owner: [Workflow](../AGENTS.md).
+
+Source: 09-02, `54674b9b` 2026-09-02T19:00:44Z, 19:40:34Z; `8419143e` 2026-09-01T23:51:20Z, a queued message; `e38ff397` 2026-09-02T14:56:43Z, 15:40:41Z.
+
+### D137
+
+Pre-acceptance production leaves were removed. Production phases reconstruct them against the accepted framework; [D180](#d180) owns current phase execution. Owner: [Workflow](../AGENTS.md).
+
+Source: 09-02, `54674b9b` 2026-09-02T19:30:16Z, the owner's answer to the question asked at that timestamp.
+
+### D138
+
+The earlier plan protocol added independent review, phase-state checks, and defect-return rules. [D180](#d180) controls the consolidated workflow. Owner: [Workflow](../AGENTS.md).
+
+Source: 09-02, `54674b9b` 2026-09-02T19:40Z.
+Additional source locators: `2026-09-02T19:40:57Z`.
+
+### D139
+
+Describe the exact fibration, projection, inclusion, Kan-extension map, source, target, or composite. Endpoints alone select no functor. Owner: [Construction-owned functors](functor.md#construction-named-functors).
+
+Source: 08-25, `01a0375e` 2026-08-25T09:31:57Z, 08:52:59Z, 08:57:58Z.
+
+### D140
+
+A binary categorical operation can route to a common ancestor only through the declared mathematical condition. [D167](#d167) and [D169](#d169) fix inheritance and placement conditions. Owner: [Categorical operators](functor.md#products-coproducts-and-component-functors).
+
+Source: 08-27, `b55dc6aa` 2026-08-27T13:54:22Z, 15:49:13Z, 15:51:20Z, 16:00:08Z.
+
+### D141
+
+Property categories own the constructors for their assumptions. [D150](#d150) specifies that they inherit exactly the ambient constructors. Owner: [Constructors](leaves.md#constructors).
+
+Source: 08-24, `01a03368` 2026-08-24T20:38:59Z.
+
+### D142
+
+The axiom's defining proposition is a private method. cat_kernel generates the public is_P() spelling under [D175](#d175). Owner: [Property categories](property-refinement.md#property-category).
+
+Source: 08-28, `01a048f6` 2026-08-28T23:05:25Z.
+
+### D143
+
+Exact handlers match positively on supported cases. Their SymPy boundary returns None otherwise; public ask() maps that result to Unknown. Owner: [Exact handlers](undecidable-properties.md#proposition-handlers).
+
+Source: 08-25, `01a0375e` 2026-08-25T09:46:21Z, 09:53:12Z.
+
+### D144
+
+Functor equivalence is asserted through construction in its property category. The compiler computes no functor-property decision; selected equivalence data has its separate category. Owner: [Functor properties](functor.md#property-resolution).
+
+Source: 08-28, `353b942d` 2026-08-28T14:41:54Z.
+
+### D145
+
+Gate requirements belong in plans before implementation. [D180](#d180) owns the current planning and review procedure. Owner: [Workflow](../AGENTS.md).
+
+Source: 09-02, `e38ff397` 2026-09-02T15:40:41Z; `54674b9b` 2026-09-02T19:40:34Z.
+
+### D146
+
+Superseded in part by [D154](#d154)/[D161](#d161): C.Point() constructs the point arrow. [D177](#d177) fixes zero-argument monomorphism calls: the named property category is the complete declaration. Owner: [Monomorphism declarations](functor.md#declaring-one).
+
+Source: 09-02, `54674b9b` 2026-09-02T21:26:03Z; superseded in part by D161.
+Additional source locators: `23:31:27Z`.
+Reference locators: `cat/functors.py:190-201`.
+
+### D147
+
+Relations() owns relation subobjects R -> X * X. Posets() is Relations().PartialOrder(), whose axiom and proposition originate on Relations(). Owner: [Order categories](ordered-sets.md).
+
+Source: 09-02, `54674b9b` 2026-09-02T21:26:03Z.
+
+### D148
+
+A named axiom supplies its defining proposition. cat_kernel constructs its implicit property category and inclusion. Named structure functors transport axioms by pullback. Owner: [Property categories](property-refinement.md#property-category).
+
+Source: 09-02, `54674b9b` 2026-09-02T21:26:03Z.
+
+### D149
+
+Superseded in part by [D181](#d181): a product-category element and its image under the chosen product functor have distinct result categories. The uniform product-object operation remains `C.Products()(X, Y)`. Owner: [Categorical operators](functor.md#products-coproducts-and-component-functors).
+
+Source: 09-02, `54674b9b` 2026-09-02T21:26:03Z.
+
+### D150
+
+Constructors take complete construction data. C.P() inherits exactly C's constructors. An existing value enters a property category by assume(X.is_P()). Owner: [Constructors](leaves.md#constructors).
+
+Source: 09-02, `54674b9b` 2026-09-02T21:43:23Z.
+
+### D151
+
+Preference, not a settled implementation mechanism: exact handlers may ask exact subquestions, with SymPy owning cycle safety. The earlier mutual-recursion prohibition is superseded. Owner: [Exact handlers](undecidable-properties.md#proposition-handlers).
+
+Source: 09-02, `54674b9b` 2026-09-02T21:43:23Z.
+
+### D152
+
+The owner endorsed the POL-ONT block and Core Categorical Philosophy at 0c0aef7, narrowed by [D150](#d150)/[D151](#d151). [D180](#d180) controls their current normalized ownership. Owner: [Document ownership](system.md).
+
+Source: 09-02, `54674b9b` 2026-09-02T21:43:23Z.
+
+### D153
+
+[D01](#d01)'s owned graph controls. [D65](#d65)'s two Sage semirings describe the private cardinal engine; Cardinal() is placed in Semirings(Cat()) by its point declaration. Owner: [Cardinal arithmetic](cardinality.md).
+
+Source: 09-02, `54674b9b` 2026-09-02T21:43:23Z.
+
+### D154
+
+Each leaf class automatically declares a point in Cat. Adding C.Point() places its category object in C and supplies the level-shifted surface. [D169](#d169) separates the point arrow from its generated inclusion. Owner: [Points and placement](functor.md#point-categories-and-point-functors).
+
+Source: 09-02, `54674b9b` 2026-09-02T22:00:14Z.
+
+### D155
+
+The three additional templates cover a pullback-defined category, chosen-data fibration, and universal-construction realization. [D180](#d180) owns their current phase assignment. Owner: [Leaf contract](leaves.md#leaf-contract).
+
+Source: 09-02, `54674b9b` 2026-09-02T22:00:14Z.
+
+### D156
+
+An implementing class selects the named category's identity functor as its first structure functor. [D160](#d160) records the specification's concrete binding spelling. Owner: [Named category implementations](functor.md#implementing-a-named-category).
+
+Source: 09-02, `54674b9b` 2026-09-02T22:33:35Z.
+
+### D157
+
+Use the construction's retained methods, including projection(), ev(i), and product_projection(i). G * F is functor composition. Owner: [Construction-owned functors](functor.md#construction-named-functors).
+
+Source: 09-02, `54674b9b` 2026-09-02T22:33:35Z.
+
+### D158
+
+Construct a functor in CreatesLimits(I) to state its theorem. [D160](#d160) fixes the generated spelling is_limit_creating(I); selected limits retain the required universal data. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
+
+Source: 09-02, `54674b9b` 2026-09-02T22:33:35Z.
+
+### D159
+
+When selected routes inherit the same axiom P, they define one C.P(). The declaration order selects the first route and assumes the stated coherence. Owner: [Property inverse images](property-refinement.md#inverse-images).
+
+Source: 09-02, `54674b9b` 2026-09-02T22:33:35Z.
+
+### D160
+
+Specification choices, not message-level owner decisions: End_Cat(x).one(), is_limit_creating(I), a structure_functors method with identity first, and Cat().implement(cls). [D161](#d161) supersedes the earlier point interpretation. Owner: [Named category implementations](functor.md#implementing-a-named-category).
+
+Source: 09-02, `54674b9b` 2026-09-02T22:33:35Z, the owner's answers whose spellings stay open; superseded in part by D161.
+
+### D161
+
+A structure category supplies its own added structure and functors. A named object is an abstract category whose C.Point() declaration produces the categorical level shift. [D169](#d169) fixes the arrow/inclusion distinction. Owner: [Points and placement](functor.md#point-categories-and-point-functors).
+
+Source: 09-02, `54674b9b` 2026-09-02T23:31:27Z.
+
+### D162
+
+Zero-argument functor declarations are confined to monomorphism categories. Other new computing functors require both actions. [D177](#d177) specifies the exact property-category result. Owner: [Monomorphism declarations](functor.md#declaring-one).
+
+Source: 09-02, `54674b9b` 2026-09-02T23:35:49Z.
+
+### D163
+
+The inherited set of a relation or poset (X, R) is X. The projection to R is a distinct functor. Owner: [Order categories](ordered-sets.md).
+
+Source: 09-02, `54674b9b` 2026-09-02T23:36:52Z.
+
+### D164
+
+Superseded in part by [D165](#d165) and [D167](#d167): declared properties license inheritance, while order fixes precedence among licensed selected functors. Owner: [Selected structure functors](functor.md#structure-functors-and-inherited-classes).
+
+Source: 09-02, `54674b9b` 2026-09-02T23:40:18Z.
+
+### D165
+
+Declaration order fixes precedence. [D167](#d167) supersedes order alone as the condition for inheritance; access-only functors inherit nothing. Owner: [Selected structure functors](functor.md#structure-functors-and-inherited-classes).
+
+Source: 09-02, `54674b9b` 2026-09-02T23:47:38Z.
+
+### D166
+
+For a lattice (L, b), the module projection carries inheritance; the form projection supplies access. [D167](#d167) gives the faithful-isofibration condition. Owner: [Selected structure functors](functor.md#structure-functors-and-inherited-classes).
+
+Source: 09-02, `54674b9b` 2026-09-02T23:49:34Z, 23:50:47Z.
+
+### D167
+
+Selected faithful isofibrations carry inheritance; other selected functors supply access. Order fixes precedence. [D177](#d177) records the trusted faithfulness assertion associated with the selected Isofibrations declaration. Owner: [Selected structure functors](functor.md#structure-functors-and-inherited-classes).
+
+Source: 09-02, `54674b9b` 2026-09-02T23:55:17Z; derived from D164, D165, D166 and confirmed by the owner.
+
+### D168
+
+Being a nontrivial product is a parameterized axiom: membership in the essential image of the applicable product functor. Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions).
+
+Source: 09-02, `8419143e` 2026-09-02T14:03:31Z, a queued message; recorded from the R0 gate's reading of the queued surface.
+
+### D169
+
+Placement follows monic isofibrations; inheritance follows selected faithful isofibrations. The point arrow uses its generated full inclusion for both. [D170](#d170) chooses the arrow-condition vocabulary. Owner: [Placement conditions](functor.md#monomorphisms-of-cat-and-placement).
+
+Source: 09-03, `54674b9b` 2026-09-03T00:00:25Z; mathematical answer recorded.
+
+### D170
+
+A subcategory is represented by a monomorphism. State the isofibration condition on the inclusion; full property subcategories carry it. cat_kernel constructs the axiom-derived inclusion under [D175](#d175). Owner: [Placement conditions](functor.md#monomorphisms-of-cat-and-placement).
+
+Source: 09-03, `54674b9b` 2026-09-03T00:06:32Z.
+Reference locators: [replete+subcategory](https://ncatlab.org/nlab/show/replete+subcategory).
+
+### D171
+
+The earlier executor assignment used mechanical-unit, construction-unit, kernel-core-unit, r-gate, and r6-gate. [D172](#d172) narrows the unavailable-executor case; [D180](#d180) owns current assignments. Owner: [Workflow](../AGENTS.md).
+
+Source: 09-03, `54674b9b` 2026-09-03T00:20:40Z, 00:22:11Z.
+
+### D172
+
+The recorded unavailable gate executor could be replaced by Opus 5 at high effort, with the actual executor named. [D180](#d180) owns the current executor policy. Owner: [Workflow](../AGENTS.md).
+
+Source: 09-03, `b560a2d2` 2026-09-03T02:31:37Z, the owner's answer when the R1 gate could not run.
+
+### D173
+
+The kernel owns engineering; Cat owns common categorical mathematics, including endpoints, formal composites, identity, and mathematical word reduction. [D175](#d175) assigns their joint work to cat_kernel. Owner: [Layer ownership](system.md#dependency-directions).
+
+Source: 09-03, `58d79934` 2026-09-03T04:20:28Z, the owner's reading of the R1 gate exchange.
+
+### D174
+
+The recorded gate additions were a closed-contract witness, explicit criterion owners, nonvacuous rule coverage, and a closed kernel surface. Their partition was an agent synthesis of the endorsed options. [D180](#d180) owns the current procedure. Owner: [Workflow](../AGENTS.md).
+
+Source: 09-03, `58d79934` 2026-09-03T04:20:28Z.
+Additional source locators: `2026-09-03T04:53:34.316Z`; `04:26:09.307Z`.
+Reference locators: `scripts/rule_coverage.py`.
+
+### D175
+
+cat_kernel imports from kernel and Cat. Neither imports cat_kernel; leaves reach Cat. cat_kernel builds axiom-derived subcategories and reads inheritance/placement declarations; kernel performs class and placement mechanics. Owner: [Layer ownership](system.md#dependency-directions).
+
+Source: 09-03, `15559161` 2026-09-03T06:47:03.575Z, the owner's answer to the R0 criterion-1 finding on `is_p()`.
+Reference locators: `kernel/predicates.py`; `kernel/refinement.py`.
+
+### D176
+
+Withdrawn. Keep this number unassigned. The rejected rule tried to reconcile target orders across independent category declarations; each category compiles its own classes. Owner: [Workflow](../AGENTS.md).
+
+Source: No source locator recorded; withdrawal retained.
+
+### D177
+
+Inference from [D162](#d162) and the cited decisions: a zero-argument monomorphism call declares exactly its named property category, on one retained identity-on-values functor per endpoint pair. Isofibrations alone does not imply Faithful. Selecting an Isofibrations structure functor asserts the required faithfulness without declaring global containment. Fibrations and Opfibrations retain their inclusions into Isofibrations. Owner: [Monomorphism declarations](functor.md#declaring-one).
+
+Source: 09-04, `54674b9b` 2026-09-02T23:35:49Z, the statement D162 records; derived with D83, D146, D167, D169 and the mathematics, and assigned to M2 unit 3 by D146.
+
+### D178
+
+Inference, not an owner statement: POL-API-024 was read to cover instance-attribute names as well as public methods. Unrelated owners cannot write one attribute name. The recorded search found no owner statement that settled this scope. Owner: [Semantic collisions](resolution.md#semantic-collisions).
+
+Source: 09-04, no owner statement on the subject; derived under `POL-DOC-026` from `POL-API-024` and the R1 gate's reading at `a7c5039`.
+
+### D179
+
+Inference from the established truth-value contract: a leaf subclasses the Predicate exported through Cat. Its SymPy application raises on Python truth conversion. SymPy retains application, Boolean operations, handlers, assumptions, and evaluation. The recorded sources settle the stance but do not name the base class. Owner: [Propositions and typed queries](undecidable-properties.md).
+
+Source: 09-04, no owner statement names the base class; the truth-value stance behind it is the owner's, `b55dc6aa` 2026-08-27T16:38:05Z, 16:39:04Z, 16:43:08Z, 18:32:36Z and `01a048f6` 2026-08-28T18:08:43Z; derived under `POL-DOC-026` with `POL-MATH-035`, `POL-API-015` and D131, and assigned to M3 unit 8 by the M3 card.
 
 
-**D133 (09-02, `e38ff397` 2026-09-02T14:43:42Z, 14:53:16Z; owner statements `01a03368` 2026-08-24T14:03:20Z, 23:10:13Z, 23:50:43Z; `36d46178` 2026-08-26T10:33:24Z; `1c1a3599` 2026-08-26T23:08:20Z; `4544eba5` 2026-08-28T12:00:37Z; `77631b59` 2026-08-28T19:06:27Z; `b1f26f05` 2026-08-29T04:38:59Z; `8419143e` 2026-09-01T23:35:15Z). Engineering in a leaf is a kernel defect, and these shapes are its red flags.** A leaf states its objects, elements, morphisms, constructors from its minimal datum, structure functors, axioms, predicates, and the mathematics first owned there (D77). The leaf writes none of what the structure functors determine: implementation inheritance, initializer threading, element construction, identity and composition, object retention, axiom subcategories and their spellings, and placement. Each of those has an owner, and D173 and D175 name it: the kernel supplies implementation inheritance, initializer threading, object retention, refinement and placement; `Cat` supplies identity and composition, which D44 and D85 already assign to `Cat().ObjectType`, and the kernel supplies inherited element construction from functor images, which `POL-LEAF-065` and `resolution.md` already assign to it and which is marked under `POL-DOC-026`. Searched: every user record of the Claude project store, every session file of `~/.codex/sessions/2026`, the ChatGPT recordings, the queued-message surface, and the four rows `POL-LEAF-065` cites. Found: nothing assigning element construction to any layer; the Claude hits are agent-authored text inside `type: "user"` records, and none of D44, D84, D85 or D121 states it. Inference: the clause entered through `POL-LEAF-065`'s Owner line and was carried forward unchecked. Confidence: high for the Claude and Codex stores, which were read exhaustively; medium for the recordings: its `search` recipe was run and returns hits, and every hit is an assets paste or an assistant turn, so the store was searched rather than only listed, but its shards are not exhaustively read the way the other two stores were. Gaps: an owner statement in a recording shard the keywords did not name would overturn this, and the clause stays in place until one is produced; `cat_kernel` supplies the axiom subcategories with their spellings, the inclusion each carries, and the generated `is_p()`. A leaf carrying any of the following shapes is evidence that the kernel has not paid for itself, and the repair is a generic kernel capability, never a leaf-local patch: (1) an initializer that calls any base initializer or installs an inherited owner's state by hand; (2) a property or construction subcategory built by hand, named by a string, or patched with an accessor; (3) identity, composition, or morphism construction written for structure the leaf inherits; (4) element construction or retention for elements the underlying structure already supplies; (5) kernel role, placement, or refinement machinery used to branch, or used to refine a value after constructing it instead of constructing into the strongest category; (6) a hand-rolled cache or registry of the leaf's own values; (7) kernel state, such as the constructing category, passed by the leaf into a constructor; (8) a Sage parent, element, or Sage category used as the category's own runtime rather than behind a private engine boundary. The kernel is judged by the absence of these shapes from leaves (Philosophy, "Complexity has a direction"). `POL-LEAF-063` through `POL-LEAF-067` and `POL-KERNEL-037` carry the rule; [`leaves.md`](leaves.md) "Red flags" lists the shapes for a leaf writer.
+### D180
 
-**D134 (09-02, `e38ff397` 2026-09-02T14:43:42Z, 15:00:16Z, 15:04:41Z, 15:18:33Z, 15:19:06Z, 15:20:46Z; `2026-08-30-cce86657` 2026-08-29T19:09:08Z, 19:11:16Z; `01a05682` 2026-08-31T09:28:45Z). An agent's understanding is not durable; the written record is.** A chat disappears; a plan is flawed if a decision surfaces in chat that the architecture neither allowed nor denied (`01a05682` 09:28:45Z). It is absurd for an LLM to say it understood or learned something; write it down instead (`e38ff397` 15:18:33Z, 15:19:06Z). The documentation is the decisions, policies, specifications, and plans; a changed architectural decision warrants changing the plans and their gates (15:20:46Z). If the decisions of a discussion are not written down in the plans, they must be (`cce86657` 19:09:08Z, 19:11:16Z). The other decisions are checked against the transcripts to unearth contradictions; there are weeks of transcripts deciding everything an agent could want to know (15:00:16Z, 15:04:41Z). The record is audited by intent: the red flag is an intelligent question such as why a leaf writer should have to remember boilerplate like `super().__init__()`, the realization that this is absurd given what the kernel exists to do, and then uncovering the intention from the transcripts (14:43:42Z). `POL-DOC-024` to `POL-DOC-027` carry the reporting rules.
+Consolidation assigns one source per fact: topic specifications own contracts, this index owns provenance, AGENTS.md owns procedure, and vault cards own work order and acceptance state.
+The current workflow replaces repeated full-context reviews, model-specific acceptance conditions, and automatic re-review of unaffected claims.
+The reorganized core plan places retained property pullbacks with their first consumer, then extends and integrates them.
+Historical reviews remain in Git and existing vault references. Existing accepted revisions retain their historical scope.
+The runtime dependency row is corrected to Sage 10.10.beta8, observed through the project `sage --version` command.
+Derived typing clarification: EqualityInput applies to both equality operators; ContainmentInput applies to containment.
+This resolves the static plan's inequality-input conflict while retaining D131's two aliases and the proposition-valued inequality contract.
+Owner: [Workflow](../AGENTS.md), [system architecture](system.md), and the active vault plans.
 
-**D132 (09-02, `e38ff397` 2026-09-01T23:57:02Z, 2026-09-02T13:46:06Z, 15:26:33Z, 15:30:33Z, 15:37:44Z, 15:40:41Z). Architectural invariants get a mechanical hard stop; conventions do not.** This narrows `D79`. A mechanical check is admissible before 1.0 when it names one acceptance line of [`system.md`](system.md) "Dependency directions" or [`resolution.md`](resolution.md) "Acceptance conditions", or one R-gate criterion, and fails on a file and line. The admitted set, corrected 09-02 (`e38ff397` 2026-09-02T14:53:16Z, 15:26:33Z) to D133: the layered import contract (`Cat` and the kernel import no production leaf; a leaf imports no kernel internal, without exception); and one rule per D133 red flag, each citing its `POL-LEAF` row: no initializer call of any class inside a theory declaration; no constructor name string, no hand-built property or construction subcategory, and no accessor patched onto a value; no identity, composition, morphism construction, or element construction rewritten in a leaf above the `Sets()` base; no hand-rolled retention of a leaf's own values; no constructing category passed into a constructor; and the Sage boundary as an import contract: only `kernel/sage_runtime.py` and the engine modules the contract names import `sage`, so a Sage parent, element, or category can exist only behind a named engine boundary (D40). The kernel's construction context, which raises when one implementation owner initializes twice, is the model: the check states an invariant the specification already owns, and a breach is a defect at a location. A check on wording, naming, style, or any review judgement stays prohibited under `D79`. The checks run in `just architecture` at the push tier; their rules live in `.ast-grep/architecture/` and `[tool.importlinter]`, and each rule cites its owning line. Grounded in the owner's request in this session for mechanical gate checks that give a hard stop on obvious architecture defects, with a leaf threading base initializers by hand as the named example.
+Source: explicit consolidation and workflow-revision instruction in Codex session `01a06ea2-e610-7fd0-acee-d0efc8315d93`, 2026-09-04T23:04:48.090Z.
+The workflow details and work-unit regrouping implement that instruction; they are not quotations of earlier decisions.
 
-**D135 (09-02, `91d641ff` 2026-09-02T15:28Z and 2026-09-02T15:40Z). The leaf red-flag catalogue has one owner, and every red flag has a rule, a policy row, and a gate line.** The leaf code written before the kernel was accepted carries complexity the leaf writer had to adopt; each such shape is a red flag under D133, and the owner asked that the shapes found there be recorded as explicit mechanical rules, as policy rows, as a banned-shape catalogue in the specifications, and as gates on the existing vault plans, with one source of truth that every other document refers to. The catalogue is the "Red flags" section of [`leaves.md`](leaves.md); each entry names the shape, the code that carries it, the owner that supplies it instead, and the gate that finds it. `POL-LEAF-068` through `POL-LEAF-079` extend D133's list with the shapes found in the tree at `c772ccc`: a hand-written property application, a datum-free constructor, a selected functor without its two actions, a retained projection rewritten, a placeholder datum, a union or optional parameter, a property on a datum record, generic parameters on a leaf declaration, import-order wiring, declaration lookup by name string, an accessor standing in for a functor, and two spellings of one fact. Each shape D132 admits a check for has one rule in `.ast-grep/architecture/` whose message cites its row; a shape D132 admits no check for is marked "review" in the catalogue and is found by the gate agent. `POL-KERNEL-037` covers the extended list.
+### D181
 
-**D136 (09-02, `54674b9b` 2026-09-02T19:00:44Z, 19:40:34Z; `8419143e` 2026-09-01T23:51:20Z, a queued message: gates are run by a fresh adversarial subagent; `e38ff397` 2026-09-02T14:56:43Z, 15:40:41Z). Every phase is gated on the architecture checks, cleared by an independent subagent, before any later phase proceeds.** The owner's instruction (`54674b9b` 19:00:44Z): the vault plans are (a) kicked back to early rounds, due to the outstanding violation state, and (b) properly gated on policy checks, with independent subagents on the gates, which must clear correct architecture checks before proceeding; the commit history shows these gates blown through multiple times, summarily checked off, with extensive downstream work that was poisoned and ultimately reintroduced the same architectural violations; understand the reason the kernel and `Cat` have been stalled for nearly a week and ensure the plans maintain a strictly forward gradient. Narration to the owner is useless; record it in plans, docs, and automations (19:40:34Z). The gates in the vault plans need much more work (`e38ff397` 14:56:43Z), and gate work goes into the plans (15:40:41Z; D145). The gate protocol is on the core plan card and in `POL-DOC-028`.
+`(C * D)(X, Y)` constructs the element `(X, Y)` of the product category `C * D`.
+For `D = C`, the chosen product functor maps that element to the product object in `C`.
+This separates the input category from the result category and supersedes the conflated constructor identity in D149.
+Owner: [Products and component functors](functor.md#products-coproducts-and-component-functors).
 
-**D137 (09-02, `54674b9b` 2026-09-02T19:30:16Z, the owner's answer to the question asked at that timestamp). The pre-acceptance leaves leave the tree.** Asked what the tree does with the five leaf packages (`sets`, `ordinals`, `number_sets`, `posets`, `algebra`), written on 09-01 and 09-02 before any kernel gate had a valid record, while M0 through M6 run, the owner chose "Delete them from the tree": Git keeps them; each P-phase rewrites its leaf from the templates against the accepted kernel; the push tier goes green at the kernel boundary; R1 through R6 measure the kernel on the M5 witnesses only (endorsed option text, 19:30:16Z).
-
-**D138 (09-02, `54674b9b` 2026-09-02T19:40Z). A plan anticipates the agent behaviour already observed and carries the gate that stops it.** The owner states that a plan written after witnessing bad agent behaviour must anticipate that behaviour and have a strategy for counteracting it or obviating it entirely (`54674b9b` 2026-09-02T19:40:57Z). The behaviours observed between 08-30 and 09-02, and the gate that now stops each: the executing agent graded its own gate — the gate agent is a fresh subagent with the card, specifications, decisions, and revision only, and the record it writes on the card is the only acceptance (D136); a test file the executor wrote stood as the acceptance — test files are not evidence, the gate agent writes its own falsifying exercise, and `just architecture` reads `tests/kernel` so witness wiring is found mechanically; every phase was left `in-progress` at once and a phase was marked `complete` with no gate — `just plan-state` at the push tier fails unless exactly one phase is `in-progress`, a `complete` phase carries an accepted revision, and every open or complete phase has complete prerequisites; production leaves and a static-projection track were built beside an unaccepted kernel — the tree holds no leaf before R6 (D137), `just plan-state` fails on a leaf package while the core plan is open, and the leaf import contracts return with P1; leaves were polished to pass checks — a red flag closes only by a kernel capability plus deletion (`POL-KERNEL-037`), never by adjusting the witness or narrowing a rule; decisions were extended with agent clauses — every row cites its session and R0 criterion 7 reads every row against the three stores (D134); an acceptance report was kept out of the repository — the record lives on the card in the vault, whose history shows who wrote it; an agent reported understanding instead of writing — `POL-DOC-024`. `POL-DOC-029` carries the mechanical part.
-
-**D139 (08-25, `01a0375e` 2026-08-25T09:31:57Z, 08:52:59Z, 08:57:58Z). "Forgetful functor" is ill-defined; functors are formulated as fibrations, projections, and induced arrows.** The policies encode and discuss how "forgetful functor" is ill-defined, and one instead formulates in terms of fibrations, cofibrations, natural projections and inclusions, arrows induced by Kan extensions, source and target functors, and compositions thereof (09:31:57Z). Categories such as magmas are pullbacks whose objects are pairs, with two "forgetful" functors; for lattices `(L, b)` the colloquial choice `(L, b) -> L` and the symmetric choice `(L, b) -> b` have equal standing; for `Modules(R)` the defining datum is a ring morphism `R -> End(X)`, and the kernel cannot be expected to know which presentation "forget" means (08:52:59Z, 08:57:58Z; D09, D73).
-
-**D140 (08-27, `b55dc6aa` 2026-08-27T13:54:22Z, 15:49:13Z, 15:51:20Z, 16:00:08Z). `X * Y` routes to a common ancestor only along a citable functor property.** `C * D` returns a product object in all cases; `A x B` is an object in `A.category() == B.category()`, or at least some specifically routed common ancestor, for example a finite set times a set is a set; it has all methods of objects in that category, together with projections and the ability to lift morphisms (13:54:22Z). There has to be a mechanism to resolve reasonable allowed common-ancestor tracing: `{1, 2}` is in `Sets().Finite()` and `ZZ` is in `Sets().Countable().TotallyOrdered()`, and the result can trace as far back up as `Sets`, potentially refining into a subcategory again based on its cardinality or extra structure (15:49:13Z). One cannot arbitrarily refine to a least common ancestor (15:51:20Z): there is a property `P` of functors, `Fun.P()`, such that one is allowed to trace common ancestors along such functors, and the mathematical mechanism is decided, never recorded as a correction without one (16:00:08Z; D61).
-
-**D141 (08-24, `01a03368` 2026-08-24T20:38:59Z). Property subcategories hold the constructors for their assumptions.** The assumption context is global, but backend code does not use `assume()`; it constructs into the required category. There are no total constructors with separate constructor paths on a category for various assumptions: the property subcategories themselves have the constructors for those assumptions (D24).
-
-**D142 (08-28, `01a048f6` 2026-08-28T23:05:25Z). The predicate is a private method.** The containment predicate a property subcategory defines is a private method; `cat_kernel` generates the public `is_P()` from it (D89, D175).
-
-**D143 (08-25, `01a0375e` 2026-08-25T09:46:21Z, 09:53:12Z). A computational handler matches positively on the cases it can decide and returns `Unknown` otherwise.** The templates make clear how and where to integrate with `assume`, `ask`, and `.assume()`, and where to wire a computational backend for checking membership; the Codex transcripts hold the example of computing surjectivity of `f: RR -> RR` in SymPy by computing the image set and comparing it with the codomain, which is one `case` in the wired computational backend of the injective set-morphism property subcategory, checking `f.source() == f.target() == RR`, with the `match` falling through to `Unknown` so that it catches only that one case (09:46:21Z). The logic is forward-looking: positively `case`/`match` on the cases you can handle, never `if` statements, so that future cases are added by extending the `match` instead of refactoring branching logic (09:53:12Z).
-
-**D144 (08-28, `353b942d` 2026-08-28T14:41:54Z). The repository never asks whether a functor is an equivalence.** Equivalences of categories are irrelevant to this repository's work: the repository defines categories such as `Sets`, and there is no possible way to compute in Sage that a functor is an equivalence. A leaf writer authors a functor as an equivalence when theorems back that up; the compiler enforces nothing along those lines. "Inclusion functor" and "forgetful functor" were hand-waving with no definition, hence the introduction of isofibrations; hand-waved lifting properties, cartesian morphisms, and Grothendieck constructions, and engineering terminology such as "carrier" and "receiver" in place of real category theory, are the same defect (D139).
-
-**D145 (09-02, `e38ff397` 2026-09-02T15:40:41Z; `54674b9b` 2026-09-02T19:40:34Z). Gate work goes into the plans first.** Mechanical gate checks and their policies are recorded in the plans before anything is implemented (15:40:41Z). Narration in a session is useless; the record is the plans, docs, and automations (19:40:34Z; D134, D136).
-
-**D146 (09-02, `54674b9b` 2026-09-02T21:26:03Z; superseded in part by D161). An inclusion or point functor is spelled by its property category.** A subcategory inclusion or point functor computes nothing (D11, D139) and is declared as the zero-argument call on the property category of `Fun(S, T)`; no actions are written for it. The row gives both the same spelling, `Fun(S, T).Monomorphisms().Isofibrations()()`; D161 separated them two hours later, at `54674b9b` 23:31:27Z against this row's 21:26:03Z. That half does not hold: a subcategory inclusion is an isofibration, and a point arrow `* -> C` is not, because an isomorphism `X -> Y` of `C` has nothing to lift to in `*`. The inclusion keeps `.Isofibrations()`; the point arrow is declared in `Fun(*, C).Monomorphisms()`, and its fullness is not declared, nothing deciding it and nothing reading it. The zero-argument call does not hold for the arrow either: `_construct_property_functor` (`cat/functors.py:190-201`) routes it to `subcategory_monomorphism`, which refines into `Monomorphisms().Isofibrations()` whatever property category was named, so `Fun(*, C).Monomorphisms()()` traces placement and inheritance while `C.Point()`, which supplies the two actions, does not. The zero-argument spelling is the subcategory inclusion's; `C.Point()` constructs the arrow. Whether that call should honour the named property category was M2 unit 3's question, and D177 answers it: the property category named is the whole declaration.
-
-**D147 (09-02, `54674b9b` 2026-09-02T21:26:03Z). `Relations()` is the ambient of `Posets()`.** There is a category `Relations()` over `Sets()` whose objects are relation subobjects `R -> X * X` over varying `X`, and `Posets()` is `Relations().PartialOrder()`, its axiom subcategory. The partial-order axiom and its proposition are declared on `Relations()`.
-
-**D148 (09-02, `54674b9b` 2026-09-02T21:26:03Z). Axioms are string-named, declared on any category, and each comes with the proposition that decides membership.** The mechanism mimics Sage's `with_axiom` without using it raw: any category `D` declares the new axioms introduced on it, an axiom is essentially a string such as `"Finite"`, and `D.Finite()` is a category that implicitly exists. For `F: C -> D` the pullback in `Cat` defines `C.P()`. The leaf obligation is not much more than Sage's idiom, but `cat_kernel` does more: it constructs the minimal structure functor `C.P() -> C` (D175), so that `ObjectType`, `ElementType`, and the rest inherit with no ceremony, objects of `C.P()` being the objects of `C` that satisfy `P`. Unlike `with_axiom`, an axiom is never formal: the leaf writer defines the proposition that decides membership in `C.P()`, even when no class named `C.P()` is ever written; when defining `Sets` one declares the `Finite` axiom together with `X.is_finite() := X.cardinality() < aleph_0`, and that proposition is written in terms of methods that already exist on `Sets`.
-
-**D149 (09-02, `54674b9b` 2026-09-02T21:26:03Z). One product pattern at every level.** `X * Y = C.Products()(X, Y) = (C * C)(X, Y)`. `C * C = Cat().Products()(C, C)` is an object of `Cat().Products()`; an object creates its elements by class call, and a subcategory `D` creates its objects by `D(...)` (classcall). `C` inherits its `Products()` subcategory construction, the nontrivial product objects, propagated down from `Cat`. A product in `C` is never formed from `C * D`. The specifications spell the general case `C.Products()(X, Y)`.
-
-**D150 (09-02, `54674b9b` 2026-09-02T21:43:23Z). A constructor takes construction data; placing an already constructed value is `assume`.** A leaf writer defines the natural classcall and its case/match dispatch on construction data. A property subcategory such as `Sets().Countable()` wires no new constructor: `cat_kernel` gives it exactly the constructors of `Sets()` through the functor `Sets().Countable() -> Sets()`, which `cat_kernel` constructs (D175). A value already constructed is not fed to a constructor to be placed: `Sets().Countable()(X)` is not the placement route; the mechanism is `assume(X in Sets().Countable())`, which the specifications render as `assume(X.is_countable())` because `X in C` is the Boolean protocol that evaluates the proposition (`POL-ONT-003`). `X.ambient_category()(X)` either does nothing or raises because the leaf writer did not handle that case, and no leaf writer writes an idempotent return: that is boilerplate and a sprawling non-uniform API. One way to do everything, as a named method on the relevant object; no shortcuts, aliases, or conveniences.
-
-**D151 (09-02, `54674b9b` 2026-09-02T21:43:23Z). A handler may ask exact subquestions; the recursion ban is provisional.** The owner's stated preference is that a property handler decides the cases it can and may ask exact subquestions, with SymPy owning cycle safety; the owner does not decide this row and reads the mutual-recursion ban of `POL-ONT-006` as a likely agent addition after an implementation problem, possibly from reinventing what SymPy owns. The specification states the preference; the ban is not a rule.
-
-**D152 (09-02, `54674b9b` 2026-09-02T21:43:23Z). The POL-ONT block is endorsed.** The eleven `POL-ONT` rows and the "Core Categorical Philosophy" block of `CONTRIBUTING.md` (commit `0c0aef7`, 09-01), which no transcript store grounds, are endorsed by the owner as of this session; this row is their owner statement, read together with D150 and D151 where those narrow a row.
-
-**D153 (09-02, `54674b9b` 2026-09-02T21:43:23Z). The 08-29 graph statement governs; the 08-27 cardinal statement describes the private engine.** The public category graph is entirely new and shares only the `Parent` root with Sage's (D01); the 08-27 statement that a cardinal's data is two Sage semirings declared into Sage's poset and semiring categories describes the private Sage engine behind `Cardinal()` (D65), which is placed by its point functor into `Semirings(Cat())`.
-
-**D154 (09-02, `54674b9b` 2026-09-02T22:00:14Z). Every leaf class is a point in `Cat`; a point in `C` is a structure functor `C.Point()`.** `C.Point()` constructs an arrow, not an object: `F = C.Point()` is a functor `F: * -> C`, registered automatically into the relevant subcategory of `Fun(*, C)` (the owner asks whether a point functor is always a full and faithful monomorphism in `Cat`; by the standard definition it is faithful and monic, and full exactly when `X` has no nonidentity endomorphism, `POL-MATH-040`). Writing a category class, extending a curated collection of special category classes (`Category`, `CategoryOverRing`, `CategoryOfXObjectsIn`, e.g. `Rings = RingObjectsIn(Sets)`), automatically populates the structure functor `MyNewCategory: * -> Cat`. A one-object subcategory defining a set such as `NN` is a new class, receiving `NN: * -> Cat` automatically, and adding in its leaf class the structure functor `Sets().Point()` (or `Sets().Countable().Point()`); all relevant point diagrams commute. A point in `C` gives `X` itself, not its objects or elements, `C.ObjectType` inheritance, and gives `X.ObjectType` the inheritance of `C.ElementType`, and so on. `on_object` alone does not suffice: `BG` is a point in `Cat`. No further conveniences or shortcuts yet.
-
-**D155 (09-02, `54674b9b` 2026-09-02T22:00:14Z). M0 writes the three missing templates.** The templates `POL-LEAF-014` names for a pullback-defined category, a chosen-datum fibration, and a universal-construction realization are written in M0, before M1 starts.
-
-**D156 (09-02, `54674b9b` 2026-09-02T22:33:35Z). A class declares itself the implementation of a named category through an identity structure functor.** The interface is uniform: `Fun` provides identity functors, and a category class declares itself as the implementation category of a category otherwise named, such as `D.P1().P2().P3()`, by selecting the identity functor of that category as a structure functor: `x = D.P1().P2().P3(); id_x = Fun.Endomorphisms()(1)` on `x` (the spelling of the identity on `x` is the endofunctor category's identity), and `structure_functors = [id_x, ...]`. No bespoke binding field.
-
-**D157 (09-02, `54674b9b` 2026-09-02T22:33:35Z). Retained functors are selected by named methods on their construction and composed by `Cat`'s composition.** A coslice's retained projection is `C.CosliceUnder(X).projection()`, evaluation at `i` is `Fun(I, C).ev(i)`, and composites are `G * F`, the morphism composition of `Cat`; no other spelling.
-
-**D158 (09-02, `54674b9b` 2026-09-02T22:33:35Z). A functor's theorem is the property subcategory it is constructed into.** `CreatesLimits(I)` is a property subcategory of `Fun`, so of `Fun(C, D)` for any `C, D`, with a property `is_limit_creating`; constructing `U` into `Fun(Posets(), Sets()).CreatesLimits(Discrete)` at declaration is the explicit statement, and `assume(U.creates_limits(I))` is only shorthand for refining `U` into that subcategory, a late-stage convenience. The specifications state the explicit form.
-
-**D159 (09-02, `54674b9b` 2026-09-02T22:33:35Z). Two structure functors whose targets both declare `P` define one `C.P()`.** The pullbacks are equivalent by composition; Sage's C3 linearization determines the order, and coherence is assumed with the first one chosen (D37). `Modules(R).Finite()` can only mean one thing, whether inherited through a direct functor to `Sets()` or through one that detours through `Groups().Commutative()`.
-
-**D160 (09-02, `54674b9b` 2026-09-02T22:33:35Z, the owner's answers whose spellings stay open; superseded in part by D161). Spellings the owner left open, and where the specifications choose.** The owner wrote the identity functor as "`Fun.Endomorphisms()(1)` or whatever" (D156) and named the limit-creation property `is_limit_creating` (D158); the specifications spell the identity `End_Cat(x).one()` (`POL-CAT-023`) and the property `is_limit_creating(I)` as the generated `is_P()` of the axiom `CreatesLimits` (`POL-LEAF-068`); a slice's retained projection is `C.SliceOver(X).projection()` by D157 through `Op`. The owner also wrote the selection as the class-body assignment `structure_functors = [id_x, ...]`; the specifications spell it as the `structure_functors` method every category class writes, with the identity first, and `Cat().implement(cls)` beside the class as the read that connects it. Marked under `POL-DOC-026`: the owner stated the declaration and not how `Cat` reads it, and the method is the form both minimal templates and every category in the tree already use. These spellings are the specifications' choices, not owner statements. A structure functor such as the forgetful fibration `Posets() -> Sets()` is defined by the leaf with its two actions, constructed into the strongest property subcategory that states what is known about it, `Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)(on_object, on_morphism)` (D08, D158, D161, D162); `assume` on it afterwards is not used. `POL-LEAF-080` and `POL-LEAF-081` carry D156 and D159. The templates are `finite-set`, `poset`, `finite-poset`, `pointed-sets`, and `poset-products` (`POL-LEAF-014`, D155).
-
-**D161 (09-02, `54674b9b` 2026-09-02T23:31:27Z). A structure category declares its functors; a point makes its objects the elements of a set.** `Posets()` is sets with additional structure, a structure category and not a property subcategory; the kernel and `Cat` know nothing of sets or posets, so the poset leaf's job is to define the functors to the categories it inherits methods from, and the structure it adds is defined by the leaf. A named object such as `NN` is a completely abstract new category that defines a functor registering it as a point in `Sets().Countable()`; later it lifts that point to magmas in two ways, so `+` and `*` are supported naturally, then to monoids, and eventually into semirings. The owner asks whether every point is a replete full faithful subcategory (it is, when "point" denotes the replete full subcategory generated by the object; the functor from the terminal category is faithful and monic, and full exactly when the object has no nonidentity endomorphism, `POL-MATH-040`), so if `NN: * -> Sets()` is a point then `NN` inherits from `Sets().ObjectType`, `NN.ObjectType` inherits from `Sets().ElementType`, and so on: every object of `{NN}` is an element of the set `NN`, and every set is a discrete category. "Retained composite" is agent vocabulary with no owner meaning.
-
-**D162 (09-02, `54674b9b` 2026-09-02T23:35:49Z). No zero-argument functor declaration outside monomorphisms; silent defaults and fallbacks are banned.** A zero-argument call on a property subcategory of `Fun` was never authorized as a way to declare a functor by its properties; as a default or fallback it becomes a footgun. A functor that is an inclusion is declared into a monomorphism subcategory (`Fun(S, T).Monomorphisms().Isofibrations()()`, D146) or requested as an inclusion by name; every other functor, including a structure functor such as `Posets() -> Sets()`, is defined by the leaf with its two actions (D08), constructed into the strongest property subcategory that states what is known about it (D21, D158). Silent defaults and fallbacks are completely banned.
-
-**D163 (09-02, `54674b9b` 2026-09-02T23:36:52Z). The underlying set of a poset is `X`, never the relation.** The functor sending a poset to its underlying set is `(X, R) |-> X`. It is not the functor that takes the underlying relation `R <= X * X` and forgets it to `Sets()`: a relation is a subset of a product, and that is entirely the wrong set for regarding a poset as a set with structure. The same holds for `Relations()`.
-
-**D164 (09-02, `54674b9b` 2026-09-02T23:40:18Z). Properties of functors decide which functor carries inheritance.** `Posets()` admits two functors to `Sets()` that do not agree, `(X, R) |-> X` and `(X, R) |-> R`. It is the job of the properties of functors to determine which one is used for inheritance: inheritance follows the structure functor declared into the property subcategory that licenses it (the fibration to the underlying set, D139, D128), and a functor to the same target without that declaration supplies none. The owner says "kernel" here in the pre-D173 undifferentiated sense the glossary row governs: `cat_kernel` reads the declaration and decides, and the kernel then threads the inheritance (D175). This is a kernel requirement, stated in the M1 and M2 gates.
-
-**D165 (09-02, `54674b9b` 2026-09-02T23:47:38Z). The order of the structure functors determines inheritance; properties alone do not.** A leaf selects an ordered list of structure functors, and that order typically determines what is inherited: for a lattice `(L, b)`, the projection to `L` determines the inheritance, while the projection to `b` is what supplies the lattice with `L.b()`, `L.q()`, and so on. Properties of functors alone are not known to determine everything; the ordered selection is the rule, with the first chosen and coherence assumed (D37, D159). D164 is read with this: a functor not selected, such as `(X, R) |-> R` for posets, supplies nothing; among selected functors, order decides.
-
-**D166 (09-02, `54674b9b` 2026-09-02T23:49:34Z, 23:50:47Z). For a lattice, the projection to the module carries inheritance and the projection to the form gives access.** `(L, b) -> L` and `(L, b) -> b` are both structure functors. A lattice is not a bilinear form; it is a module with a bilinear form. `(L, b) -> b` does not determine inheritance at all, and inheriting bilinear-form methods would be wrong; having access to the bilinear form through a functor is why it is a structure functor, and `L.b()`, `L.q()` are reached through it. Requiring the projection to `L` to appear before the projection to `b` in the declared `structure_functors` determines the intended inheritance.
-
-**D167 (09-02, `54674b9b` 2026-09-02T23:55:17Z and the following "Yes"; derived from D164, D165, D166 and confirmed by the owner). Isofibration decides which structure functors carry inheritance; order decides precedence among them.** Among a leaf's selected structure functors, those declared as faithful isofibrations, the forgetful functors of "an object of `C` is an object of `D` with structure" (`Fun(C, D).Isofibrations()`), carry inheritance from their target; a selected functor without that property gives access to the structure it selects and inherits nothing. `(L, b) |-> L` is an isofibration (a form pulls back along an isomorphism of modules); `(L, b) |-> b` into `Mor(Mod)` is not (an isomorphism of arrows need not be `f * f`), which is the mathematics behind D166. When several selected functors carry inheritance, as for a bimodule's two projections, the declared order fixes precedence, the first chosen and coherence assumed (D37, D159, D165). Order never turns an access functor into an inheritance path.
-
-**D168 (09-02, `8419143e` 2026-09-02T14:03:31Z, a queued message; recorded from the R0 gate's reading of the queued surface). "X is a product" is an axiom.** Being a product is an axiom, equivalent to membership in the essential image of the nontrivial product functor; axioms can be parameterized; Sage's regressive functorial constructions are what is adapted.
-
-**D169 (09-03, `54674b9b` 2026-09-03T00:00:25Z, the owner's question "is it true that all inheritance comes from isofibrations? It is unclear whether `C.P() -> C` is an isofibration", answered by the mathematics and recorded for the R0 gate). `C.P() -> C` is an isofibration exactly when `C.P()` is replete; placement and inheritance carry two licences.** A full subcategory inclusion is an isofibration when the subcategory is closed under isomorphism, so `C.P() -> C` is one exactly when `P` is an isomorphism invariant, which every mathematical property is; a strict image, a skeleton, and an access projection such as `(L, b) |-> b` are not, and carry nothing. A fibration is an isofibration, and `Fun.Fibrations()` is constructed and retained as a full subcategory of `Fun.Isofibrations()` (D83: containment is a declared monomorphism, never induced). Placement into a subcategory needs a monomorphism that is an isofibration (`POL-FUN-036`); inheritance of methods along a structure functor needs a faithful isofibration and not injectivity on objects, since `Groups() -> Sets()` is not injective on objects. `C.Point()` is one thing, the arrow `* -> C` selecting `X` (D154); placement and inheritance run along the inclusion of the replete full subcategory that arrow generates. `cat_kernel` reads every such declaration and trusts it (D175); a wrong declaration is caught only by review. The reader is named here rather than in D11, which states the declaration form and names none.
-
-**D170 (09-03, `54674b9b` 2026-09-03T00:06:32Z). A subcategory is any monomorphism `C -> D`; the isofibration notion is used uniformly, and repleteness is not a separate condition.** Repleteness is a condition on objects where the isofibration condition is one on arrows, and the two are equivalent for an inclusion ([nLab, "replete subcategory"](https://ncatlab.org/nlab/show/replete+subcategory)), so the documents state only the arrow condition. In `cat_kernel` (D175), `C.P()` declares its inclusion as a functor `iota` in `Fun(C.P(), C).Monomorphisms().Isofibrations()`, and every subcategory relation is such a declared monomorphism.
-
-**D171 (09-03, `54674b9b` 2026-09-03T00:20:40Z, 00:22:11Z). Each work unit of the plan names its executor: Sonnet, Opus 5, or Fable 5.1, with the effort level.** The owner asks whether Sonnet subagents can be trusted for implementation without a redo, given the sideways-gradient failures observed, and directs that the plan determine throughout which units require Sonnet agents, which require Opus 5 and at which effort, and which require Fable 5.1 and at which effort. The assignment is by the kind of check that accepts the unit: a unit whose exit is a check that runs goes to Sonnet at medium effort; a unit with a stated contract and a design space goes to Opus 5 at high effort; a unit that must hold several decisions at once, or edits a specification or decision, goes to Fable 5.1 at high effort or the orchestrating session; every gate is Fable 5.1 at high effort, R6 at max. The executor definitions live in `.claude/agents/` (`mechanical-unit`, `construction-unit`, `kernel-core-unit`, `r-gate`, `r6-gate`); the core plan card carries the policy and each phase card its unit table. A production leaf is a Sonnet unit by design, as a measurement of the kernel (D133).
-
-**D172 (09-03, `b560a2d2` 2026-09-03T02:31:37Z, the owner's answer when the R1 gate could not run). A gate whose executor is unavailable runs on Opus 5 at high effort, and its record names the executor that produced it.** D171 assigns every R-gate and P-gate to Fable 5.1 at high effort, R6 at max. Dispatched against `1d65f8c`, the R1 gate stopped before reading anything because the Fable quota was exhausted; gate protocol item 2 forbids the executing session from grading its own gate, so the phase had no route to acceptance. Asked how to proceed, the owner chose to run the gate on Opus 5 and record this row rather than wait or substitute silently. The gate frame, the independence rule, the criterion-by-criterion exercise, the red-flag sweep and the decision check are unchanged; only the model differs, and the record on the phase card states which executor produced it, so the gate can be run again on Fable without ambiguity about what the earlier record is. This narrows D171 for the executor only; nothing here weakens what a gate must exercise.
-
-**D173 (09-03, `58d79934` 2026-09-03T04:20:28Z, the owner's reading of the R1 gate exchange). The kernel is engineering; `Cat` owns the mathematics every category shares.** The owner separates three layers and fixes the direction of dependence: kernel to `Cat` to leaves. The kernel is the engineering layer, with close to no mathematics: class compilation, controlled C3, dynamic classes, initializer threading, construction contexts, retention, refinement, and placement. `Cat` is the middle layer, where the operations every category shares are handled, morphism semantics among them: the two endpoints, formal composition, knowing when a morphism is a composite of others, the identity, and the basic properties generated from the property subcategories, `is_identity` and `is_endomorphism` among them, which the owner puts on `Cat.MorphismType`. Where the generating machinery lives is a separate question the owner answered later: D175 puts it in `cat_kernel`, because building the subcategory and its inclusion needs the kernel's reading of the declaration as well. The generated method still lands on the declaration `Cat` writes, which is what this row's owner statement says. `Sets()` is the first leaf and extends the morphism surface with evaluation on elements. The owner states the test: adding mathematics, such as a formal magma word-reduction engine that tracks composites of morphisms and decides when two are equal, must be an edit inside `Cat`; having to reach into the kernel to extend the mathematics is the signal that the boundary is in the wrong place. Every document written before this row used one word, "kernel", for two owners: D130 and `POL-KERNEL-008` mean the package `sage_categories.kernel`, while D77 and D133 say it where what they state is that the leaf writes none of it. There is no third thing to name; a sentence of that second kind names the owner, the kernel or `Cat`. D133's "identity and composition arrive from the kernel" is read with this row: they arrive from `Cat`, which D44 and D85 already state. `specs/glossary.md` carries the two spellings, `POL-KERNEL-038` carries the closed kernel surface, and the import contract carries the direction.
-
-**D174 (09-03, `58d79934` 2026-09-03T04:20:28Z). Four inserts in the gate protocol, against the four ways the R1 defect passed nine criteria.** The owner asks what steps or gates stop this class of defect from propagating, and directs that all four be added. The request is at `58d79934` 04:20:28Z; the direction is that session's answer at 2026-09-03T04:53:34.316Z, selecting every option of a four-way question put at 04:26:09.307Z. Those four options are A, the vocabulary split, which is D173 and not one of the four inserts below; B, the leaf-contract witness; C, criteria naming their decisions; D, the mechanical backstops. The four inserts below are this session's partition of B, C and D, marked as such under `POL-DOC-026`, and the row states which owner option each serves. The defect: identity, composition, and morphism construction raise for every category that is not a declared full subcategory, so no leaf could compose two morphisms, while R1 criteria 1 to 8 and 10 passed. The four routes it took, and the insert that closes each. (1, option B) The criteria measure the compiler, not the writer; every criterion of R1 asks whether a mechanism runs and none asks whether a category written to D77's closed list can make an identity or a composite. The core plan card gains a standing capability set that every R-gate exercises in full, on a category the gate declares from the closed list alone, growing by one line per phase; a failure is a defect of the open phase. (2, option D) Criterion 8 checks that kernel internals have no public type, which is visibility and not content, and passes with morphism composition defined in the kernel; `POL-KERNEL-038` states the closed kernel surface and a D132 rule fails on a method outside it. (3, option D) A mechanical rule whose file globs match nothing reports green, as nine of R1's ten owned rules did after D137 deleted the five leaf packages, so "green over `src`" was vacuous rather than measured; `just architecture` now runs `scripts/rule_coverage.py` first and fails on any glob in `.ast-grep/architecture/` that matches no file. A rule names only packages that are in the tree, so each P-phase adds its package back to the rules it owns, the way the import contracts already work; removing a glob that matches nothing changes no matched file and is not the scope narrowing gate protocol item 9 rejects. (4, option C) Gate protocol item 5 checks the decisions a gate cites and never requires the gate to find the decisions that own a criterion first, so a gate derives an answer and then looks for support, as the R1 gate did with composition while D44, D85, D84 and D86 were on the books; item 3 now requires each criterion to name its owning decision rows before it is exercised, and a criterion with no owning row is itself a finding. This row extends D138, which requires a plan to carry the gate that stops the agent behaviour already observed.
-
-**D175 (09-03, `15559161` 2026-09-03T06:47:03.575Z, the owner's answer to the R0 criterion-1 finding on `is_p()`). `cat_kernel` is the fourth layer, downstream of both the kernel and `Cat`.** The owner states that the kernel and `Cat` have to work together for this: `Cat` defines functors, and the kernel interprets that `is_P()` is to generate a specifically structured isofibration. Neither owns the joint work alone, and neither may import the other, so the owner adds a layer rather than choosing between the sixteen kernel-side sites and the three `Cat`-side sites the R0 gate at `a2f6817` found. `sage_categories.cat_kernel` sits downstream of both, imports from both, and neither the kernel nor `Cat` imports it. No leaf ever imports `cat_kernel`. The order is therefore kernel and `Cat` first, `cat_kernel` after both, leaves last, with leaves reaching `Cat` and never `cat_kernel`. This narrows D173, which stated one direction, kernel to `Cat` to leaves: that direction still holds between the kernel and `Cat`, and the work that needs both now has a place that is neither. The four runtime edges breaking the contract "The kernel imports no module of `Cat`" — `kernel/predicates.py` to `cat.predicates` and `cat.category`, `kernel/refinement.py` to `cat.category` and `cat.functors` — are exactly the joint work this layer holds, so the contract becomes keepable without moving any mathematics out of `Cat` or any engineering out of the kernel. The import contracts gain the three new edges with the package; until it is in the tree they state neither, and no rule reads a package that does not exist.
-
-**D176 is withdrawn and its number is not reused for its content.** The row settled what happens when two declarations name one pair of structure-functor targets in opposite orders. The owner rejected the premise: two categories declaring the same structure functors are two categories, each compiling its own implementation classes, and neither constrains the other's linearization. The measurement is on the M1 card — zero pairs are named in both orders anywhere in the tree, and no hand-written `structure_functors()` names two same-role targets at all. The number stands empty so that the M1 card's record of the withdrawal keeps meaning what it says.
-
-**D177 (09-04, `54674b9b` 2026-09-02T23:35:49Z, the statement D162 records; derived with D83, D146, D167, D169 and the mathematics, and assigned to M2 unit 3 by D146). The property category a zero-argument call names is the whole declaration, and `Fun.Isofibrations()` states no containment.** D146 left two questions to this unit. **The zero-argument call honours the property category it is called on.** The owner's statement is "You have to DECLARE it into a monomorphism subcategory or request an inclusion by name", and a call that refines into `Monomorphisms().Isofibrations()` whatever category was named declares something the caller did not write, which is the silent default the same statement bans. So `_construct_property_functor` now constructs the retained identity-on-values functor of the endpoint pair and places it in exactly the category named: `Fun(S, T).Monomorphisms()()` is monic and answers `Unknown` for the isofibration condition, and `Fun(S, T).Monomorphisms().Isofibrations()()` is the declaration placement follows (`POL-FUN-036`). The call stays available only on a monomorphism subcategory, which is the other half of the statement and is what D162 requires; every other property category of `Fun(S, T)` refuses it and takes two actions (D08, D21). One identity-on-values functor exists per endpoint pair (`POL-FUN-027`), so two declarations on one pair narrow one retained value. The kernel's own request by name is `Fun.subcategory_monomorphism(S, T)` and `Fun.full_subcategory_monomorphism(S, T)`, which declare `Monomorphisms().Isofibrations()` themselves; no third spelling of the same declaration is added, because that is the alias D162 bans. **`Fun.Isofibrations()` is right as it stands, a full subcategory of nothing but `Fun`.** An isofibration need not be faithful — `Fun(I, C).ev(i)` is one, and a Grothendieck fibration such as the codomain fibration is one — so declaring the containment in `Fun.Faithful()` would state something false, and D83 forbids inducing a containment from an implication between predicates in any case. `Fun.Monomorphisms()` is declared inside `Fun.Faithful()` because monic *is* faithful with injectivity on objects, which is a containment and not an implication. The faithful isofibrations of D167 and `POL-FUN-036` are therefore not the whole of `Fun.Isofibrations()`, and their faithfulness is not separately declared: the leaf writer asserts it by constructing a structure functor into `Fun(C, D).Isofibrations()` or a subcategory of it, and `cat_kernel` reads that declaration and trusts it, exactly as it trusts the isofibration condition, with a wrong declaration caught only by review (D169, D175). Reading a faithfulness conjunct off the placement instead would make the declaration form D160, `POL-FUN-036` and `specs/functor.md` prescribe inert, and would contradict M1 criterion 11, which names the isofibration alone. `Fun.Fibrations()` and `Fun.Opfibrations()` are now constructed and retained inside `Fun.Isofibrations()`, each stating its containment by the monomorphism it retains, which D169 and `specs/functor.md` already required and the tree lacked. `POL-FUN-036` bans inferring the relation from a table of previously constructed functors, so the two handlers that answered the monomorphism and isofibration predicates from the kernel's construction table are gone; placement answers both, and during the bootstrap window the declaration queue holds a declaration that has nowhere to be placed yet.
-
-**D178 (09-04, no owner statement on the subject; derived under `POL-DOC-026` from `POL-API-024` and the R1 gate's reading at `a7c5039`). A declaration's instance-attribute names are the other spelling `POL-API-024` governs, and `POL-API-024` is the row that decides the kernel's state refusal.** `specs/resolution.md` "Semantic collisions" and the two rows it rests on all narrow to a public method spelling: the section says "one **public** spelling", "the same **public** name" and "different mathematical **operations**"; `POL-API-011` says "every **public method-name** collision"; `POL-CAT-011` says "unrelated **method-name** collisions". The acceptance restatement in the same file says "one spelling" unqualified, and `_keep_first_state` refuses two unrelated owners writing one instance-attribute name, which no method-spelling row reaches. `POL-API-024` does reach it: "Give two distinct notions two names… The compiler rejects unrelated declarations with the same name" is written about names and declarations, not about methods, and its last clause is the refusal itself, in the words the refusal's own message uses. So the subject was never unrowed; the specification section stated its owner's rule for one of the two spellings because the section was written about method resolution order, and this row adds the second spelling to it. **Searched:** all 252 session files of `~/.claude/projects/-home-dzack-gitclones-sage-categories/`, `~/.codex/sessions/2026`, and the ChatGPT recordings through the `chat-on-steroids` justfile, on plain user text, on `AskUserQuestion` answers matched to their question by `tool_use` id, and on `queue-operation` records, for the owner on instance state, attribute-name collisions, and the scope of the collision check (`POL-DOC-025`). **Found:** nothing on either side. The owner states the collision rule for method spellings and nowhere narrows it to them or extends it past them; no statement puts a declaration's instance state inside or outside the check. **Inference:** the code's behaviour has an owning row already, and the divergence is between `POL-API-024` and one section of `specs/resolution.md`, not between the code and the owner. **Confidence:** high that `POL-API-024` owns the behaviour, since its last clause states the refusal in the refusal's own words; high that no owner statement narrows or extends the collision check, over the three stores read as `POL-DOC-025` requires. **Gaps:** an owner statement placing a declaration's instance state outside the collision check would strike the guard `be5103d` added, not this row's reading of which row owns it; a statement inside a recording shard the keywords did not name would overturn the miss, and this row stands until one is produced.
-
-**D179 (09-04, no owner statement names the base class; the truth-value stance behind it is the owner's, `b55dc6aa` 2026-08-27T16:38:05Z, 16:39:04Z, 16:43:08Z, 18:32:36Z and `01a048f6` 2026-08-28T18:08:43Z; derived under `POL-DOC-026` with `POL-MATH-035`, `POL-API-015` and D131, and assigned to M3 unit 8 by the M3 card). A leaf defines a predicate by a class statement on the one `Predicate` that `Cat` exports.** M3 measured two applied-predicate classes whose Python truth values disagree: an application built through `Cat` raises on `bool()`, and an application of a subclass of raw `sympy.assumptions.Predicate` answers `True`. That `True` is returned for a proposition nothing decided, so a leaf that subclassed the raw class and wrote `if p:` received an affirmative for an undecided proposition. `specs/leaves.md` and [poset-minimal-template.py](poset-minimal-template.py) wrote the leaf form as a class statement without naming which `Predicate` it names, and the template imported the raw one. The two readings were not equally open. `POL-MATH-035` states without qualification that a proposition's Python truth value raises; `POL-API-015` and [sets.md](sets.md#equality) state the same for the equality proposition and cite SymPy `Relational.__bool__` as the reference implementation; `POL-ASSUME-012` and `POL-ASSUME-015` forbid consuming a mathematical question through a Python Boolean protocol. A leaf-defined predicate's application is a proposition (`POL-MATH-034`), so the second reading, that such an application carries no truth-value guard, contradicts a standing row rather than settling an open question. The base is a SymPy `Predicate`, which is what `POL-ASSUME-001` and `POL-MATH-034` already require and what D125 records the owner asking for, and the raising truth value is SymPy's own idiom for a three-valued expression, so nothing is reinvented: SymPy keeps predicate application, Boolean composition, handler dispatch, `global_assumptions`, and evaluation. This row names the spelling a leaf writes and leaves the layer that holds the class to D173 and D175; a leaf reaches it through `Cat` under either answer, because a leaf imports no kernel internal (D122, `POL-LEAF-066`). The name `Cat` exports as `Predicate` is therefore that base, so that subclassing it yields the guarded application; a construction function offered beside the class statement would be the second spelling of one fact that D162 and `POL-LEAF-079` ban. **Searched:** every record of the 30 session files of `~/.claude/projects/-home-dzack-gitclones-sage-categories/` on all four owner routes, plain user text, `AskUserQuestion` answers inside `tool_result` content, `queue-operation` records, and `queued_command` attachments; the user turns of the 150 session files of `~/.codex/sessions/2026` that name this repository; and the ChatGPT recordings through the `chat-on-steroids` justfile on `Predicate`, `AppliedPredicate`, `__bool__`, `sympy.assumptions`, and `truth value` (`POL-DOC-025`). **Found:** the owner on the stance and nothing on the class. The owner asks why anything returns a `bool`, states that predicates strictly generalize them, states that `==` must be able to produce `Unknown` and that `ask(a == b)` is what decides, rejects reinventing the proposition notion because it comes from Sage or SymPy, and states that the policies ban Booleans outright in favour of predicates and `ask()`. No record names a base class for a leaf-defined predicate. **Inference:** the stance decides the spelling. An application that answers `True` under `if p:` is the exact consumption those statements refuse, and only the exported base refuses it. **Confidence:** high for the Claude and Codex stores, read on the four routes and on the user turns respectively; medium for the recordings, whose keyword hits are pastes of repository files and assistant turns rather than owner statements, and whose shards are not exhaustively read. **Gaps:** an owner statement in a recording shard the keywords did not name, placing a leaf's predicate on the raw SymPy class, would overturn the spelling; the row stands until one is produced. `specs/property-refinement.md` "Inverse images" and "Defining predicate" carry the same underdetermined phrasing and were outside this unit's boundary.
+Source: product-category clarification in Codex session `01a06ea2-e610-7fd0-acee-d0efc8315d93`, 2026-09-04T23:16:38.402Z.
+The product-functor consequence uses the existing chosen-product definition in `functor.md`.

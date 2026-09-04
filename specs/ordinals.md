@@ -279,9 +279,9 @@ For example,
 
 This follows from the limit-power rule in Enderton, [Elements of Set Theory, Chapter 8, Theorem 8L](https://docs.ufpr.br/~hoefel/ensino/CM304_CompleMat_PE3/livros/Enderton_Elements%20of%20set%20theory_%281977%29.pdf).
 
-`alpha.ordinal_power(beta).cardinality()` uses exact ordinal normalization rules.
-If no rule determines the value, it returns a symbolic cardinal expression for the ordinal power.
-It does not replace that expression with cardinal exponentiation.
+`alpha.ordinal_power(beta).cardinality()` is an applied query with result category `Cardinal()`.
+`ask()` uses exact ordinal normalization rules and returns an owned cardinal when determined, otherwise `Unknown`.
+The [typed-query contract](undecidable-properties.md#typed-queries) owns evaluation.
 
 ## Cofinality
 

@@ -65,7 +65,9 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (self.target_projection(),)
 ```
 
-This leaf defines `target_projection()` and selects it for inherited structure.
+This leaf defines and selects the named projection.
+If the projection supplies inheritance, declare it in `Fun(self, D).Isofibrations()` under the [inheritance contract](functor.md#structure-functors-and-inherited-classes).
+The example's bare `Fun(self, D)` declaration supplies its public actions.
 
 ## Retained functor specimen
 

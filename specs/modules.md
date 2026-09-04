@@ -1,8 +1,6 @@
 # Module objects
 
 This specification defines module objects through an action of a monoidal category.
-The current implementation milestone remains `Sets()` and its universal constructions.
-Module objects are a later vertical acceptance target for that foundation.
 
 The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`, `POL-GEN-001`, `POL-GEN-018`, `POL-GEN-020`, `POL-CAT-027`, `POL-CAT-030`, `POL-CAT-031`, and `POL-DOC-003` through `POL-DOC-009`.
 
@@ -115,7 +113,7 @@ Composition and identities come from `C`. The action-preservation equation is st
 
 ## Structure functor
 
-The construction retains the faithful projection
+The construction retains the faithful isofibration
 
 \[
 U_A:\operatorname{Modules}(A,C)\longrightarrow C.
@@ -135,7 +133,7 @@ def on_morphism(f):
     target = on_object(f.codomain())
     return Mor(C)(source, target)(f._ambient_morphism_data())
 
-U_A = Fun(Modules(A, C), C).Faithful()(on_object, on_morphism)
+U_A = Fun(Modules(A, C), C).Isofibrations()(on_object, on_morphism)
 
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (self._U_A,)
@@ -154,7 +152,8 @@ name that does not say which category is making the choice silently. Code that
 wants an object of `C` applies `U_A`; code that wants a set constructs and applies
 the functor into `Sets()`.
 
-`U_A` supplies the complete public surface owned by `C`.
+`U_A` carries the inheritance declared by [functor.md](functor.md#structure-functors-and-inherited-classes).
+The isomorphism lift transports the module action along an isomorphism in `C`.
 
 ## Owned operations
 
@@ -181,6 +180,9 @@ A\longrightarrow \operatorname{End}_C(X)
 
 in `M`. This is the closed or enriched presentation of the same module action.
 The action morphism `A bullet X -> X` remains the definition under the weaker actegory hypotheses.
+
+In the ordinary module setting, elements and morphisms use a tensor representation.
+Vector and matrix constructors are its special cases, with shape and base-ring data (D46).
 
 For ordinary left modules over a ring `R`, take `M = Ab`, regard `R` as a monoid object under tensor product, and use the standard `Ab`-action on `Ab`.
 

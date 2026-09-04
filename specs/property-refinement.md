@@ -19,7 +19,7 @@ j_P:C.P()\hookrightarrow C.
 
 `C` declares the axiom `P` by its name and the proposition that decides membership in `C.P()` ([leaves.md](leaves.md#property-categories); D148).
 `C.P()` exists implicitly and owns the mathematical meaning of `P`.
-A proposition that no existing method supplies applies a SymPy `Predicate` subclass, whose exact SymPy handlers decide the cases known to that owner.
+A proposition that no existing method supplies applies a subclass of the `Predicate` exported by `Cat`, whose exact SymPy handlers decide the cases known to that owner.
 
 The registered axiom identifier determines the public `is_P()` spelling.
 `cat_kernel` generates that method once on the ambient implementation class (D175).
@@ -105,6 +105,8 @@ Several established properties combine through their pullback intersection.
 The refined class contains each applicable implementation class once.
 
 ## Defining predicate
+
+[Public propositions](undecidable-properties.md#public-propositions) owns the exact predicate class and application contract.
 
 The axiom declaration on the ambient category supplies the proposition that decides membership in the property category.
 That proposition is written in terms of methods that already exist on the ambient category, or applies a SymPy predicate the leaf defines ([leaves.md](leaves.md#property-categories); D148).

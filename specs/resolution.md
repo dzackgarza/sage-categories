@@ -10,12 +10,7 @@ Nothing in this file adds a public mathematical object or a leaf declaration.
 
 ## The closed kernel surface
 
-The kernel is engineering and states no mathematics (D130, D173).
-`Cat` owns every operation that all categories share, morphism semantics included: the two
-endpoints, composition, the identity, inverses, and the axiom declarations. The property
-subcategories those axioms name are `cat_kernel`'s: it builds each with its inclusion
-`C.P() -> C` and generates the predicate, which lands on the declaration `Cat` writes
-(D175). The section below states the same split; these two sentences must agree.
+Layer ownership and imports are defined in [system.md](system.md#system-shape).
 The three private role classes of `kernel/roles.py` exist so that Sage has a stable Python
 end for each compiled role.
 Their surface is closed, exactly as the leaf writer's contract is closed under D77, and for
@@ -32,26 +27,10 @@ A kernel role class declares only:
 - the functor image cache reads (`_cached_object_image`, `_cached_morphism_image`);
 - `__hash__`, which is Python object identity.
 
-Everything else is `Cat`'s.
-A morphism's `domain`, `codomain`, and composition belong to `Mor(C).ObjectType`, the generic
-declaration of a morphism of an arbitrary category; a point's `parent`, `defining_morphism`,
-`category`, and `__eq__` belong to `Cat().ElementType` and `Cat().ObjectType`.
-The kernel reads a construction context and hands the value to the compiled class; it never
-defines what the value means.
-A kernel module imports no module of `Cat`, and no module of `cat_kernel` either.
+The kernel reads a construction context and hands the value to the compiled class.
+The generic mathematical operation remains with its owner in [functor.md](functor.md).
 
-`cat_kernel` is the layer downstream of both (D175). `Cat` defines functors; the kernel
-interprets an axiom declaration as a specifically structured isofibration; the work that
-needs both — generating `is_p()` and its property subcategory, and reading a functor's
-declared properties to decide placement and inheritance — is neither `Cat`'s alone nor the
-kernel's alone, and it lives here. Reading is the whole of that half: `cat_kernel` decides
-whether a functor carries placement and inheritance, and the kernel then places the value
-and refines its implementation class, which is what the glossary's kernel row means by
-"places". `cat_kernel` imports from the kernel and from `Cat`;
-neither imports it, and no leaf imports it. A leaf reaches `Cat`.
-
-Because neither layer below imports it, `cat_kernel` hands its work down and the layer
-below asks with what it was handed. `sage_categories/__init__.py` installs it, before
+`cat_kernel` installs callbacks for the layers that consume its interpretation. `sage_categories/__init__.py` installs it, before
 `Cat` is loaded: the kernel asks whether a functor carries placement while `Fun` is still
 building its own property categories, and `Cat()`'s own class declares axioms in its body.
 So `cat_kernel` reaches `Cat` when a reader is called, not when it is imported, and the
@@ -68,7 +47,7 @@ The private runtime assigns these responsibilities:
 
 | Responsibility | Dependency | Verified scope |
 | --- | --- | --- |
-| Python implementation classes, controlled C3, dynamic refinement, identity caches, nested-class binding, introspection, indexed families, and `Unknown` | SageMath 10.9.x | Private Python runtime support. The owned category graph remains authoritative. |
+| Python implementation classes, controlled C3, dynamic refinement, identity caches, nested-class binding, introspection, indexed families, and `Unknown` | SageMath 10.10.beta8 | Private Python runtime support. The owned category graph remains authoritative. |
 | Categories, functors, natural transformations, opposites, category products, and installed universal operations | GAP `>=4.13`; CAP `2026.07-04`; ToolsForHomalg `2026.04-01`; ToolsForCategoricalTowers `2026.08-01`; CartesianCategories `2026.08-02`; MonoidalCategories `2026.08-02`; SubcategoriesForCAP `2026.07-01`; SliceCategories `2026.06-01`; FpCategories `2026.07-03`; FunctorCategories `2026.08-01` | CAP supplies operations installed on CAP categories. ToolsForCategoricalTowers supplies finite decorated-diagram limits and colimits. FunctorCategories requires an object-finite or finitely presented source. FpCategories supplies finite walking shapes and presentations. SliceCategories supplies slices. |
 | Pure-GAP categorical-tower compilation | CompilerForCAP `2026.07-01` | It compiles GAP CAP regions only. |
 | Finite diagram syntax and retained finite presentations | Julia 1.12.7; Catlab 0.17.6; GATlab 0.2.4; JuliaCall `>=0.9.35,<0.10` | Catlab free diagrams have finite object and morphism sets. Its limit and colimit wrappers retain finite diagrams, apexes, and legs. |
@@ -141,16 +120,16 @@ Local declarations take precedence over inherited declarations.
 
 ## Direct inherited execution
 
-For a selected functor `F: C -> D`, the applicable `D` implementation class occurs in the compiled class of `C`.
+For an inheritance-carrying selected functor `F: C -> D`, the applicable `D` implementation class occurs in the compiled class of `C`.
+[functor.md](functor.md#structure-functors-and-inherited-classes) owns the inheritance condition.
 Methods declared by `D` run directly on the source value.
 Python special methods follow the same rule.
 
 The two ordinary actions of `F` remain the sole public description of how target values are
 constructed (D123). The kernel runs `F.on_object` on the source value after the source's own
 local initializer has run, and initializes the `D` implementation on that same value from the
-datum the action feeds to `D`'s constructor (D13). The action can call any method defined on
-`C.ObjectType` and the public methods of the values it reaches. Public functor application
-returns the separate image the action constructs.
+datum the action feeds to `D`'s constructor (D13). During construction, the action reads the source's local state and state supplied by earlier-declared initialized targets.
+Public application receives a completed source and returns the separate image the action constructs.
 
 Initializer threading follows the compiled implementation DAG. The kernel runs each reached
 implementation class's local initializer once, in controlled C3 order, with that class's own
@@ -238,7 +217,7 @@ Do not use selection order to resolve that conflict.
 
 The private runtime satisfies this specification when:
 
-- Sage constructs each owned implementation class from local methods and immediate selected targets;
+- Sage constructs each owned implementation class from local methods and inheritance-carrying immediate targets;
 - the same mechanism handles objects, elements, and morphisms;
 - both branches of a class diamond contribute their local methods;
 - a shared target class occurs once and initializes once;

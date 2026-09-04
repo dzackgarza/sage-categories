@@ -53,7 +53,8 @@ This specification supplies the categorical layers of the tower in [system.md](s
 ## `Cat` and its implementation
 
 `Cat`, the category of categories, is defined by this repository and is read as mathematics.
-The kernel implements it and no leaf redefines it; the kernel is the wiring, not the mathematics.
+The layer responsibilities are fixed in [system.md](system.md#system-shape).
+For this project, assume `Cat` is bicomplete and biclosed; universe-size distinctions are outside its modeled scope (D36).
 Every category in this repository is an object of `Cat` and uses its implementation type:
 
 ```python
@@ -81,7 +82,7 @@ The points `* -> C` are the actual objects of `C`, so every `C.ObjectType` inher
 `C.MorphismType` is `Mor(C).ObjectType`, because a morphism of `C` is an object of the morphism category.
 
 `Cat()` also supplies the uniform categorical constructions, defined once at that level and applicable to every category.
-They are mathematics. The kernel realizes the morphism-category tower; the property subcategories among them are built by `cat_kernel` from their axiom declarations (D175):
+The mathematical constructions live in `Cat`; their runtime interpretation follows [system.md](system.md#system-shape):
 
 ```python
 Mor(C)                     # the category of morphisms of C
@@ -200,6 +201,8 @@ Naturality is trusted.
 
 ## The `Mor(n, C)` tower
 
+`Cat` owns formal composition, recognition of composites, and any mathematical word-reduction extension (D173).
+
 For every category `C` and every `n >= 0`, `Mor(n, C)` is the category whose objects are the `n`-morphisms of `C` and whose morphisms are the `(n+1)`-morphisms of `C`:
 
 - `Mor(0, C) = C`;
@@ -243,6 +246,8 @@ SymPy supplies its public predicate class, applied propositions, assumptions, an
 Fixed endpoints use the same dispatch for every property subcategory `P` of `Mor(K)`: `P(A, B)` is `Mor(K)(A, B).P()`, one cached object.
 
 ## Canonical objects of `Cat`
+
+Canonical shapes include simplicial horns and their boundaries when a construction needs them (D71).
 
 `Cat()` owns these objects, each constructed once and retained by identity:
 
@@ -508,20 +513,20 @@ structure functors and the standard functor properties above.
 
 ## Structure functors and inherited classes
 
-`structure_functors()` declares the immediate implementation edges of the repository's
-entirely new owned category graph. Each entry is an ordinary functor and is called a
-structure functor because the kernel uses its target implementation classes for
-inheritance. This role is analogous to the class-building role of Sage's
-`super_categories()` relation, but the owned graph is not Sage's category graph and no
-Sage category node or edge is reused. Migrating a familiar Sage category means defining a
-new owned category and the owned functors required by its mathematics.
+`structure_functors()` selects immediate named functors in the owned category graph.
+Selection provides access to the declared structure. The inheritance condition below determines which target classes enter the source implementation.
+Sage supplies the private class-building mechanism; the owned graph has its own categories and functors.
 
 Every entry is an ordinary owned object of `Fun`. Its mathematical existence and
 properties come first. A structure functor need not be a subcategory monomorphism.
 For example, the structure functor `Posets() -> Sets()` sends a poset to its underlying set, `(X, R) |-> X`, never to its relation (D163).
 A poset is not thereby an object of `Sets()`, and `Posets()` is not thereby a subcategory of `Sets()`.
 
-Among a leaf's selected structure functors, the ones declared into `Fun(C, D).Isofibrations()` or a subcategory of it such as `Fibrations()` (faithful isofibrations, the forgetful functors of "an object of `C` is an object of `D` with structure") carry inheritance from their targets; a selected functor without that property gives access to the structure it selects and inherits nothing (D164, D166). When several selected functors carry inheritance, the declared order fixes precedence, the first chosen and coherence assumed (D37, D159, D165).
+A selected functor declared in `Fun(C, D).Isofibrations()` or a subcategory of it carries target inheritance (D167, D177).
+In this selection context, the declaration also asserts faithfulness; review checks that assertion.
+`Fun.Isofibrations()` itself has no containment in `Fun.Faithful()`: an arbitrary isofibration need not be faithful.
+A selected functor without the inheritance declaration provides access to its structure through its public actions.
+For several inheritance-carrying targets, declaration order fixes precedence; controlled C3 chooses the first shared occurrence and assumes coherence.
 `Posets()` admits two functors to `Sets()` that do not agree, `(X, R) |-> X` and `(X, R) |-> R`.
 For a lattice `(L, b)`, both projections are structure functors: `(L, b) |-> L` into modules is a faithful isofibration (a form pulls back along an isomorphism of modules), so a lattice is a module and inherits along it; `(L, b) |-> b` into `Mor(Mod)` is not an isofibration (an isomorphism of arrows `M -> Z` with `L * L -> Z` need not be of the form `f * f`), so it gives access to `b`, through which `L.b()` and `L.q()` are reached, and inherits nothing from bilinear forms (D166). A bimodule's two projections are both isofibrations, and the declared order decides between them (D165).
 
@@ -547,7 +552,7 @@ Named convenience constructors belong to `H` or one of its property subcategorie
 There is no parallel `Cat`, kernel, or helper constructor for the same functor
 (`POL-LEAF-061`, `POL-API-028`).
 
-A category returns an immediate structure functor when that exact functor supplies inherited operations.
+A category selects an immediate structure functor for its named structure; the condition above governs inherited operations.
 The complete finite-set declaration appears once in [finite-set-minimal-template.py](finite-set-minimal-template.py).
 
 The categories `Fun(self, D)` can contain many other functors.
@@ -597,7 +602,7 @@ G * F                            # the composite of F: A -> B and G: B -> C
 `G * F` is the morphism composition of `Cat`, and it is the one spelling of a composite functor.
 
 Each category lists only immediate structure functors.
-The kernel supplies their target classes as immediate dynamic bases. Sage dynamic-class
+The kernel supplies inheritance-carrying target classes as immediate dynamic bases. Sage dynamic-class
 construction and Sage's controlled linearization handle transitive inheritance and shared
 ancestors.
 
@@ -623,7 +628,7 @@ exact spelling is deferred.
 ### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 
 A category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly.
-The kernel constructs these classes from the immediate selected functor targets.
+The kernel constructs these classes from the immediate targets satisfying the [inheritance condition](#structure-functors-and-inherited-classes).
 For each selected `F: C -> D`, the applicable `D` implementation class contributes inherited execution on the source value.
 This consequence adds no functor-writer declaration.
 
@@ -1076,7 +1081,8 @@ Universal maps out of the coproduct use the component functors supplied by its d
 
 The binary operators are the two-term cases.
 For categories `C` and `D`, `C * D = Cat().Products()(C, D)` is the product category, an object of `Cat().Products()`, and `C + D` is the coproduct category.
-A subcategory `D` creates its objects by `D(...)`, so `(C * D)(X, Y)` is the pair of `X in C` and `Y in D`; a product in `C` is never formed from `C * D` (D149).
+`(C * D)(X, Y)` constructs the element `(X, Y)` of `C * D`.
+For `D = C`, the chosen binary product functor `C * C -> C` maps this element to its product object in `C` (D181).
 
 `Fun([1], C)` retains its evaluation functors:
 
@@ -1126,14 +1132,17 @@ For each nontrivial discrete shape `J`, the selected limiting cones give a produ
 \operatorname{Prod}_J:C^J\longrightarrow C.
 \]
 
-`C.Products()` is the union of the full images of these chosen product functors. It is the shared apex interface for objects constructed as nontrivial products. `C.Coproducts()` is dual. The essential image gives the category of objects isomorphic to such chosen products; its inclusion is an isofibration. Singleton limits remain available through their standard limit construction; they do not make every object a member of `C.Products()`.
+`C.Products()` is the union of the essential images of these chosen product functors (D168).
+Its objects are isomorphic to nontrivial chosen products; its inclusion is a full monic isofibration.
+`C.Coproducts()` is dual. Singleton limits remain available through their standard limit construction.
+A chosen presentation retains its own legs and universal maps, independently of apex membership.
 
 `C.Products()(X, Y)` selects a product presentation `p in LimitCones((X, Y))` and returns `p.apex()` placed in `C.Products()`. The presentation remains an object over the apex. A second limiting cone can have the same apex without replacing the first.
 
-This is the one product pattern at every level (D149):
+The product-object operation at every level is:
 
 ```python
-X * Y == C.Products()(X, Y) == (C * C)(X, Y)
+X * Y == C.Products()(X, Y)
 ```
 
 `C` inherits its `Products()` subcategory construction, the nontrivial product objects, from `Cat`. The specifications spell the general case `C.Products()(X, Y)`.
@@ -1165,6 +1174,8 @@ state that `F` preserves or creates `I`-limits. `CreatesLimits(I)` is a property
 A functor's theorem is the property subcategory it is constructed into (D158).
 A leaf states that a structure functor `U` creates `I`-limits by constructing `U` into `Fun(C, D).CreatesLimits(I)` at its declaration.
 `Fun.Fibrations()` is the property subcategory of fibrations, constructed and retained as a full subcategory of `Fun.Isofibrations()`: a fibration is an isofibration, since the cartesian lift of an isomorphism is an isomorphism ([nLab, "Grothendieck fibration"](https://ncatlab.org/nlab/show/Grothendieck+fibration), `POL-MATH-040`), and the containment is stated as that monomorphism, not induced (D83). A structure functor declared into `Fibrations()` therefore carries inheritance under D167. A structure functor is defined by the leaf with its two actions and constructed into the strongest property subcategory of `Fun(C, D)` that states what is known about it: the poset leaf defines `U: Posets() -> Sets()`, `(X, R) |-> X`, as `Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)(on_object, on_morphism)` (D08, D158, D161, D162, D163).
+A lifted construction can additionally require its chosen apex and defining morphisms to map exactly to the chosen ambient construction (D76).
+Preservation alone supplies an isomorphic comparison. The construction states which requirement it imposes.
 The general creates-limits construction supplies the lifted cone and its universal maps. The leaf does not implement a separate lift for each named limit ([poset-products template](poset-products-minimal-template.py)).
 
 ## Comma categories, slices, coslices, and fibers
@@ -1222,7 +1233,11 @@ Every object retains its defining morphism.
 
 ## Indexed categories, Yoneda, and representability
 
-For a pseudofunctor `P: C.op() -> Cat()`, `Grothendieck(P)` is its total category. Its objects are pairs `(c, x)` with `x in P(c)`. Its projection to `C` is a fibration and its fiber over `c` is equivalent to `P(c)`. The construction acts on morphisms of indexed categories. See [Mathlib, Grothendieck construction](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Bicategory/Grothendieck.html).
+For a pseudofunctor `P: C.op() -> Cat()`, `Grothendieck(P)` is its total category. Its objects are pairs `(c, x)` with `x in P(c)`. A morphism `(c, x) -> (d, y)` is `(f, phi)` with `f: c -> d` and `phi: x -> P(f)(y)`.
+Its projection to `C` is a fibration and its fiber over `c` is equivalent to `P(c)`. The construction acts on morphisms of indexed categories. See [Mathlib, Grothendieck construction](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Bicategory/Grothendieck.html).
+
+A category of chosen data specifies which morphisms preserve that datum and which morphisms are cartesian (D75).
+Its name alone does not determine these choices. See [Stacks, Definition 4.33.5, tag 02XJ](https://stacks.math.columbia.edu/tag/02XJ) and [nLab, Grothendieck construction](https://ncatlab.org/nlab/show/Grothendieck+construction).
 
 Conversely, a fibration `p: E -> C` supplies fibers and cartesian reindexing. Base change along `F: D -> C` is `F.base_change(p)`. This is the general transfer operation for categories of objects equipped with selected data. An inverse-image property category is the subterminal-fiber case.
 
@@ -1290,17 +1305,10 @@ The construction `Fun([1], C)` creates `Fun([1], C).ev(0)` and `Fun([1], C).ev(1
 
 ## Compiled public consequence
 
-`structure_functors()` contains the immediate named functors selected for inherited execution.
-Each selected functor is already a complete object of `Fun`.
-Its actions construct its separate public images.
-
-The kernel makes the applicable target implementation classes available on the source value.
-An inherited method then runs directly with the same arguments.
-This effect applies to objects, elements, and morphisms.
-
-Selection adds no mathematical data to the functor.
-It does not establish a subcategory relation or identify a source value with its functor image.
-The private Sage mechanism lives only in [resolution.md](resolution.md).
+[Structure functors](#structure-functors-and-inherited-classes) owns the declaration and inheritance condition.
+For a target that carries inheritance, its methods run directly on the initialized source object, element, or morphism.
+The named functor constructs its separate public images.
+[resolution.md](resolution.md#direct-inherited-execution) owns the private mechanism.
 
 ## Mathlib correspondence
 
@@ -1423,7 +1431,7 @@ It is kernel infrastructure over already established mathematical functors.
 
 - `Cones(D)` and `LimitCones(D)` separate the universal presentation from its apex.
 
-- The total category of limiting cones retains its diagram projection and apex functor. Apex interfaces are full images of the applicable chosen limit functors.
+- The total category of limiting cones retains its diagram projection and apex functor. Product and coproduct apex interfaces use the essential images specified above.
 
 - `.PreservesLimits(I)` and `.CreatesLimits(I)` are functor-property categories. Their colimit forms derive through `Op`.
 

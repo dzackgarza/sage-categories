@@ -104,8 +104,8 @@ The [poset template](poset-minimal-template.py) shows this constructor, the axio
 ## Structure functors
 
 Each entry in `C.structure_functors()` is an ordinary object of `Fun(C, D)`.
-Selection contributes the applicable target implementation classes.
-It does not change the functor's type or mathematical action.
+Selection follows the access and inheritance conditions in [functor.md](functor.md#structure-functors-and-inherited-classes).
+The functor retains its mathematical action.
 These declarations build the repository's new owned category graph. They do not import,
 reuse, or modify Sage's mathematical category graph; a migrated Sage category is a new
 owned leaf or construction in this graph.
@@ -257,6 +257,7 @@ The caller does not select an engine.
 ## Exact types
 
 Every public signature uses the exact mathematical input and result types.
+The authorized equality and containment input aliases are specified by `POL-TYPE-004` in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 - Use `C.ObjectType`, `C.ElementType`, and `C.MorphismType` for category-owned values.
 - Use an owned set, ordered set, indexed family, or other named collection.
@@ -291,8 +292,9 @@ The category-owned classes retain public signatures, semantic result constructio
 
 ## Red flags
 
-A leaf that contains any of these shapes exposes a kernel defect (D133, D135, `POL-LEAF-063` to `POL-LEAF-079`, `POL-KERNEL-037`); `POL-LEAF-080` and `POL-LEAF-081` state the positive rules of D156 and D159.
-Repair the kernel; do not polish the leaf.
+These shapes expose behavior assigned to the wrong owner (`POL-LEAF-063` to `POL-LEAF-079`, `POL-KERNEL-037`).
+Repair the owner named in the row under the layer boundaries of [system.md](system.md#system-shape).
+`POL-LEAF-080` and `POL-LEAF-081` state the positive rules of D156 and D159.
 
 This section is the catalogue.
 Each entry names the shape, the code that carries it, the owner that supplies it instead, and the gate that finds it.
@@ -410,7 +412,7 @@ A leaf satisfies this specification when:
 - it declares `ObjectType`, `ElementType`, and `MorphismType` under their exact names;
 - each locally owned public operation has one executable method body;
 - each new functor that computes its images has complete object and morphism actions;
-- `structure_functors()` returns only the immediate named functors that supply inheritance;
+- `structure_functors()` returns immediate named functors, with inheritance governed by their declared properties;
 - the leaf reuses functors and universal data retained by its defining constructions;
 - every public signature uses exact mathematical types;
 - each category-specific computation adapter reconstructs an owned mathematical result;

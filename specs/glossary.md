@@ -1,82 +1,77 @@
-# Vocabulary contract
+# Vocabulary and references
 
-This file is the deterministic vocabulary contract for agent-facing documentation.
-Read it before writing or editing that documentation (`POL-MATH-050`).
-
-Use the exact mathematical owner and public spelling in this file.
-Do not record retired names in current documentation.
+Use the mathematical terms below. Each linked topic owns its full definition and public interface.
+[System architecture](system.md) owns layer boundaries; [decisions.md](decisions.md) retains provenance.
 
 ## Required distinctions
 
-| Concept | Required statement |
-| --- | --- |
-| The kernel | The package `sage_categories.kernel`. It compiles implementation classes, asks Sage for controlled C3 and dynamic classes, threads initializers, retains values, refines, and places. It states no mathematics: it defines no operation of a category, an object, an element, or a morphism (D130, D173, `POL-KERNEL-008`, `POL-KERNEL-038`). D77 and D133 say "the kernel" where what they state is that the leaf writes none of it; each such sentence names the owner, this package or `Cat` (D173). |
-| `Cat` | The package `sage_categories.cat`. It owns every mathematical operation that all categories share: morphism endpoints, composition, identity, inverses, `Mor`, `Fun`, the axiom declarations, and the universal constructions. The property subcategories those axioms name are `cat_kernel`'s: it builds each one with its inclusion `C.P() -> C` and generates the predicate, which lands on the declaration `Cat` writes (D175). `Cat().ObjectType` and `Mor(C).ObjectType` define each once and every category inherits it (D44, D85, D173). |
-| `cat_kernel` | The package `sage_categories.cat_kernel`, downstream of both the kernel and `Cat` (D175). It holds the work neither owns alone: `Cat` defines functors, the kernel interprets an axiom declaration as a specifically structured isofibration, and generating `is_p()` with its property subcategory needs both. It also reads a functor's declared properties to decide whether it carries placement and inheritance; the kernel then places the value, which is what "places" means in the row above. It imports from the kernel and from `Cat`; neither imports it, and no leaf imports it. |
-| `C.ElementType` | The shared implementation and API for elements of objects of `C`. |
-| Point of a category `X` | A functor `* -> X`. This is an actual object of `X`; a set uses its discrete, 0-truncated category. |
-| `C.Point()` | The functor `* -> C`, an arrow and not an object. Every category class is a point in `Cat` automatically; a leaf class places its object `X` in `C` by adding `C.Point()` to its structure functors, which gives `X` the `C.ObjectType` inheritance and `X.ObjectType` the `C.ElementType` inheritance (D128, D154). |
-| Point of `C in Cat()` | A functor `* -> C`. This is an actual object of `C` and a `Cat().ElementType` value. |
-| Generalized element of `X` | A functor `T -> X`. |
-| Morphism of `C` | An object of `Mor(C)`. Thus `C.MorphismType = Mor(C).ObjectType`. |
-| Functor | An ordinary object of `Fun(C, D)`. A category can name many functors with the same endpoints. |
-| Owned category graph | The entirely new graph whose nodes are package-owned objects of `Cat()` and whose selected implementation edges are owned structure functors. It is not Sage's mathematical category graph. Migrating a Sage concept creates a new owned category and the functors required by its mathematics. |
-| Structure functor | An ordinary functor returned by `C.structure_functors()` and used by the kernel as an edge of the owned implementation graph. Its ordinary object and morphism actions are already complete and accept source values whose own local state is initialized. It need not be a subcategory monomorphism. |
-| Private Sage implementation graph | The runtime-only graph of private Sage categories used to ask Sage for controlled C3 and dynamic implementation classes corresponding to the owned graph. It has no mathematical edges or nodes in the owned `Cat()` graph; the systems share only low-level Python/Sage `Parent` runtime ancestry. |
-| Unresolved structural diamond | Two or more owned structure-functor paths reaching one implementation owner with no explicit owned coherence yet supplied between the relevant composites. C3 still chooses one occurrence and compilation proceeds; the condition is reported only at `DEBUG` level. |
-| Fixed-object constructions | `C.Subobjects(X)`, `C.Superobjects(X)`, `C.CoveringObjects(X)`, and `C.CoveredObjects(X)`. |
-| Named construction map | The exact retained projection, inclusion, evaluation, or adjoint with stated endpoints. |
-| Functor actions | `F.on_object(X)` and `F.on_morphism(f)` construct the public images owned by `F` from completed values in the stated source category. Selection for inheritance lets the kernel run the object action during construction to initialize the target implementation on the source value (D13). |
-| Subcategory relation | A declared subcategory monomorphism. Python class inheritance and selection as a structure functor do not establish it. |
-| Classes specified by a category `C` | The category specifies `C.ObjectType`, `C.ElementType`, and `C.MorphismType` directly. The kernel constructs them dynamically from structure functors. |
-| Public functor image | The image constructed by the named action `F.on_object(x)` or `F.on_morphism(f)`. |
-| Inherited execution | A structure-functor target class is in the source class MRO. Its method runs on the initialized source instance. |
-| Mathematical predicate | A proposition-valued operation owned by its category, property category, or equality operation. |
-| Public SymPy predicate | The SymPy `Predicate` subclass that represents one mathematical predicate. SymPy owns its application and evaluation machinery. |
-| Applied proposition | A SymPy `AppliedPredicate` or Boolean expression. `ask()` returns `True`, `False`, or Sage `Unknown`. |
-| Typed query | A repository-owned operation with an exact non-Boolean result category. Its application remains unevaluated until `ask()` returns an owned result or `Unknown`. |
-| Owned value | A public mathematical value constructed by its exact owning category. |
-| Engine representation | A private runtime value used to compute with an owned value. It is not public mathematics. |
-| Mathematical owner | The category, functor, property, query, or universal construction that defines one fact or operation. |
-| Implementation-class owner | The category that declares the local `ObjectType`, `ElementType`, or `MorphismType` method provider. |
-| Runtime substrate | The private compiler, dispatch, refinement, assumption, and computation machinery that executes the mathematical tower. |
-| Foundational leaf | A production category required by later layers of the mathematical tower. |
-| `Posets()` | The category of partially ordered sets and monotone maps. This is the public category spelling. |
-| Private Sage implementation category | One node of the private Sage implementation graph that compiles one of `C.ObjectType`, `C.ElementType`, or `C.MorphismType`. It states no relation in the owned `Cat` graph. |
-
-The point and generalized-element distinction follows the nLab entry [generalized element](https://ncatlab.org/nlab/show/generalized+element), including its “Global elements” section.
+| Term | Meaning | Owner |
+| --- | --- | --- |
+| The kernel | Private class compilation, initialization, retention, refinement, and placement mechanics. | [Private runtime](resolution.md#the-closed-kernel-surface) |
+| Cat | The mathematical owner of operations shared by all categories. | [System ownership](system.md); [Cat](functor.md#cat-and-its-implementation) |
+| cat_kernel | The joint layer that builds axiom-derived categories and reads placement and inheritance declarations. | [Layer dependencies](system.md#dependency-directions) |
+| C.ElementType | The shared implementation and API for elements of objects of C. | [Implementation classes](functor.md#cobjecttype-celementtype-and-cmorphismtype) |
+| Point of X | A functor * -> X, presenting an object of X; sets use discrete categories. | [Points](functor.md#point-categories-and-point-functors); [nLab, generalized element, Global elements](https://ncatlab.org/nlab/show/generalized+element) |
+| C.Point() | The point arrow selected in a leaf class to place its category object in C. | [Point declaration and level shift](functor.md#point-categories-and-point-functors) |
+| Generalized element of X | A functor T -> X with a supplied domain T. | [Points](functor.md#point-categories-and-point-functors) |
+| Morphism of C | An object of Mor(C); C.MorphismType = Mor(C).ObjectType. | [Morphism tower](functor.md#the-morn-c-tower) |
+| Functor | An object of Fun(C, D), with exact endpoints and ordinary actions. | [Functors](functor.md#functors-as-morphisms-of-cat) |
+| Owned category graph | The graph of repository-owned categories and their named mathematical functors. | [System architecture](system.md) |
+| Structure functor | An ordinary functor selected in structure_functors(); its declared properties determine whether it supplies inheritance or access. | [Selected functors](functor.md#structure-functors-and-inherited-classes) |
+| Private Sage implementation graph | The runtime mirror used for controlled C3 and dynamic classes. | [Sage compilation](resolution.md#sage-class-construction) |
+| Private Sage implementation category | A runtime node that compiles one category-owned implementation class. | [Sage compilation](resolution.md#sage-class-construction) |
+| Unresolved structural diamond | Selected inheritance paths reach one implementation owner without supplied coherence between their composites. | [Diamond diagnostics](resolution.md#diamond-diagnostics-and-future-coherence) |
+| Fixed-object constructions | C.Subobjects(X), C.Superobjects(X), C.CoveringObjects(X), and C.CoveredObjects(X). | [Fixed-object constructions](functor.md#fixed-object-construction-categories) |
+| Named construction map | A retained projection, inclusion, evaluation, adjoint, or universal map with exact endpoints. | [Construction-owned functors](functor.md#construction-named-functors) |
+| Functor actions | F.on_object(X) and F.on_morphism(f) construct the named functor's images. | [Executable actions](functor.md#functor-actions-are-concrete-constructors) |
+| Subcategory relation | A represented monomorphism of categories; placement additionally requires its isofibration declaration. | [Placement conditions](functor.md#monomorphisms-of-cat-and-placement) |
+| Classes specified by C | The local ObjectType, ElementType, and MorphismType declarations that the compiler builds. | [Implementation classes](functor.md#cobjecttype-celementtype-and-cmorphismtype) |
+| Public functor image | The image returned by the named ordinary functor action. | [Functor actions](functor.md#functor-actions-are-concrete-constructors) |
+| Inherited execution | A target owner's method runs directly on the initialized source instance through its compiled class. | [Construction execution](resolution.md#direct-inherited-execution) |
+| Mathematical predicate | A proposition-valued operation with one mathematical owner. | [Questions](undecidable-properties.md#mathematical-questions) |
+| Public SymPy predicate | The category-owned Predicate subclass exposed through Cat's exported base. | [Public propositions](undecidable-properties.md#public-propositions) |
+| Applied proposition | A SymPy AppliedPredicate or Boolean expression evaluated through ask(). | [Public propositions](undecidable-properties.md#public-propositions) |
+| Typed query | A partial mathematical operation with an exact non-Boolean result category. | [Typed queries](undecidable-properties.md#typed-queries) |
+| Owned value | A public mathematical value constructed by its exact category. | [Ownership](system.md) |
+| Engine representation | A private runtime representation used for computation. | [Computation engines](leaves.md#computation-engine-boundary) |
+| Mathematical owner | The category, functor, property, query, or construction that defines a fact or operation. | [Ownership](system.md) |
+| Implementation-class owner | The category declaring a local ObjectType, ElementType, or MorphismType method provider. | [Implementation classes](leaves.md#owned-implementation-classes) |
+| Runtime substrate | Private compilation, dispatch, refinement, assumptions, and computation support. | [Runtime](resolution.md) |
+| Foundational leaf | A production category consumed by later mathematical layers. | [System tower](system.md) |
+| Posets() | The category of partially ordered sets and monotone maps. | [Order categories](ordered-sets.md) |
 
 ## Inspected sources
 
-Every term below was checked against the cited source before it was recorded (`POL-MATH-040`). A term with no source and no plain definition names an implementation artifact: report the missing construction rather than opening a row (`POL-MATH-052`).
+These exact reference locators were recorded with the definitions before consolidation.
+The topic link gives the current repository contract.
 
-| Term | Source |
-| --- | --- |
-| separator | [nLab, "separator"](https://ncatlab.org/nlab/show/separator): an object `S` such that for every parallel pair `f, g: X -> Y`, if `f . e = g . e` for every `e: S -> X` then `f = g`. Also called a generator, separating object, or generating object. In a locally small category this says `Hom(S, -)` is faithful. |
-| replete | [nLab, "replete subcategory"](https://ncatlab.org/nlab/show/replete+subcategory): a subcategory `D` of `C` such that for any object `x` of `D` and any isomorphism `f: x -> y` in `C`, both `y` and `f` lie in `D`. This object condition is equivalent to the arrow condition that the inclusion `D -> C` is an isofibration, which is what makes strict membership respect the principle of equivalence; the specifications and policies state the isofibration form (D170). |
-| fibred category | [Stacks Project, Categories, Definition 4.33.5, tag 02XJ](https://stacks.math.columbia.edu/tag/02XJ): "We say `S` is a fibred category over `C` if given any `x` in `Ob(S)` lying over `U` in `Ob(C)` and any morphism `f: V -> U` of `C`, there exists a strongly cartesian morphism `f^*x -> x` lying over `f`." Lemma 4.33.7 gives the pseudofunctor from `C^opp` to the (2,1)-category of categories once pullbacks are chosen. |
-| Grothendieck construction | [nLab, "Grothendieck construction"](https://ncatlab.org/nlab/show/Grothendieck+construction): for a pseudofunctor `F: C^op -> Cat`, the category `∫F` has as objects the pairs `(c, a)` with `c` in `Ob(C)` and `a` in `Ob(F(c))`, and as morphisms `(c, a) -> (c', a')` the pairs of `f: c -> c'` in `C` and `phi: a -> F(f)(a')` in `F(c)`. The projection `p: ∫F -> C` takes a pair to its first component, and `∫` is an equivalence of 2-categories between pseudofunctors `C^op -> Cat` and Grothendieck fibrations over `C`. This is the construction behind every category of objects carrying a chosen datum (`POL-CAT-098`). |
-| opposite category and dualizing functor | [Mathlib, `CategoryTheory.Opposites`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Opposites.html): `C^op` has the objects of `C` and reverses its morphisms. [Mathlib, `CategoryTheory.Cat.opFunctor`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Category/Cat/Op.html): `Op: Cat -> Cat` sends categories and functors to their opposites and has a natural isomorphism `Op * Op ≅ Id`. |
-| inverse-image subcategory | [Mathlib, `ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html): for `F: D -> C` and an object property `P` on `C`, the inverse image contains the objects `X` of `D` for which `P(F(X))` holds. Its associated [full subcategory](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html) is the pullback `D ×_C C.P()`. |
-| whiskering and horizontal composition | [Mathlib, `CategoryTheory.Whiskering`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Whiskering.html): composition on either side is functorial on functor categories. Its action on natural transformations is left or right whiskering; their composite gives horizontal composition. |
-| comma category | [Mathlib, `CategoryTheory.Comma`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Basic.html): for `F: A -> C` and `G: B -> C`, an object is `(a, b, f)` with `f: F(a) -> G(b)`. The category has projections to `A` and `B` and a natural transformation between the induced composites to `C`. |
-| fiber of a functor | [Mathlib, `CategoryTheory.Functor.Fiber`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/FiberedCategory/Fiber.html): for `p: E -> B` and `b in B`, the fiber has objects of `E` over `b` and morphisms over the identity of `b`. |
-| strict, full, and essential image | The strict image has the literal object image and those target morphisms equal to morphism images. The full image is the full subcategory spanned by the literal object image. [Mathlib, `CategoryTheory.EssentialImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/EssentialImage) is the full subcategory on objects isomorphic to an object image, whose inclusion is an isofibration, and supplies the essentially-surjective/fully-faithful factorization. |
-| adjunction | [Mathlib, `CategoryTheory.Adjunction`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Basic.html): selected data `F ⊣ G` consists of a unit, a counit, and the two triangle identities. |
-| equivalence of categories | [Mathlib, `CategoryTheory.Equivalence`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Equivalence.html): selected data consists of a functor, an inverse functor, and unit and counit natural isomorphisms with coherence. Equivalences `C ≌ D` form a category whose morphisms are natural transformations between the forward functors. |
-| cone and limiting cone | [Mathlib, cone categories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/ConeCategory.html): cones over a diagram form a category, and a cone is limiting exactly when it is terminal in that category. |
-| preserves and creates limits | [Mathlib, adjunctions and limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Limits.html) and [Mathlib, creates limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html): preservation sends limiting cones to limiting cones; creation gives the unique lifted limiting cone whose image is the supplied one. |
-| Yoneda embedding | [Mathlib, `CategoryTheory.yoneda`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Yoneda.html): the fully faithful functor `C -> Fun(C.op(), Sets())` sending `X` to `Mor(C)(-, X)`. |
-| representation of a functor | [Mathlib, `Functor.RepresentableBy`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/RepresentedBy.html): selected data consists of `X in C` and a natural isomorphism `yoneda(X) -> F`. A morphism is a map of representing objects compatible with these isomorphisms. Representability is the existence of such data. |
-| twin-prime conjecture | [MathWorld, “Twin Primes”](https://mathworld.wolfram.com/TwinPrimes.html), the paragraphs on the conjecture and bounded gaps: infinitude of prime pairs separated by exactly two remains open, and bounded-gap theorems do not decide it. |
-| `Predicate`, `AppliedPredicate`, `ask()` | [SymPy assumptions documentation](https://docs.sympy.org/latest/modules/assumptions/assume.html): a predicate is Boolean-valued, its application remains unevaluated, and `ask()` returns `True`, `False`, or an undecided result. |
-| `dynamic_class(name, bases, cls)` | Sage, `src/sage/structure/dynamic_class.py:128`. With `cls` given, its methods are inserted into the built class and its bases are prepended. |
-| `Category.parent_class`, `_make_named_class` | Sage, `src/sage/categories/category.py:1498` and `:1670`. Builds `parent_class` from `ParentMethods`, `element_class` from `ElementMethods`, `morphism_class` from `MorphismMethods`. |
-| `Category._all_super_categories`, `_super_categories_for_classes` | Sage, `src/sage/categories/category.py:845`. Uses controlled C3 to compute the category linearization and the minimal supercategories needed as direct class bases. |
-| `HierarchyElement` | Sage, `src/sage/misc/c3_controlled.pyx:960`. Computes a controlled linearization from an arbitrary successor relation. |
-| `Parent._refine_category_` | Sage, `src/sage/structure/parent.pyx:372`. Joins the current category with the new category and changes the parent to a cached dynamic class containing the joined `parent_class`. |
-| `CategoryWithAxiom`, `_base_category_class_and_axiom` | Sage, `src/sage/categories/category_with_axiom.py`. Supplies the private axiom binding, category construction, and canonical runtime identity behind a class's identity structure functor (D156). The owned `Cat` declaration supplies the axiom's mathematical meaning. |
-| `FunctorialConstructionCategory`, `CartesianProductsCategory` | Sage, `src/sage/categories/covariant_functorial_construction.py` and `src/sage/categories/cartesian_product.py`. Supplies private construction-family binding, base-category access, caching, and method-provider assembly. The owned graph derives its own functors and universal presentations rather than importing Sage's supercategory deductions. |
-| `Hom`, `Homset`, `Map`, `Morphism`, `IdentityMorphism` | Sage, `src/sage/categories/homset.py`, `map.pyx`, and `morphism.pyx`. Supplies the concrete endpoint, parent, composition, and identity protocols used when both endpoints are Sage parents. |
-| `sage.categories.functor.Functor` | Sage, `src/sage/categories/functor.py`. Supplies the reference object and morphism action protocol. Its endpoints are Sage categories, so generic owned functors do not inherit it. |
-| `ModulesWithBasis` | Sage, `src/sage/categories/modules_with_basis.py:179`: "The category of modules with a distinguished basis." A name for the phenomenon on the same axiom machinery as `Finite`. Its morphisms are ordinary module morphisms while its homset reads a matrix in the distinguished bases (`:47`), so the name settles neither the fibration nor the morphisms. |
+| Reference term | Topic owner | Exact source |
+| --- | --- | --- |
+| separator | [Generators](separating-families-and-categorical-generators.md#separation-and-density) | [nLab, "separator"](https://ncatlab.org/nlab/show/separator) |
+| replete | [Placement](functor.md#monomorphisms-of-cat-and-placement) | [nLab, "replete subcategory"](https://ncatlab.org/nlab/show/replete+subcategory) |
+| fibred category | [Indexed categories](functor.md#indexed-categories-yoneda-and-representability) | [Stacks Project, Categories, Definition 4.33.5, tag 02XJ](https://stacks.math.columbia.edu/tag/02XJ); Lemma 4.33.7 for the pseudofunctor after choosing pullbacks |
+| Grothendieck construction | [Indexed categories](functor.md#indexed-categories-yoneda-and-representability) | [nLab, "Grothendieck construction"](https://ncatlab.org/nlab/show/Grothendieck+construction) |
+| opposite category and dualizing functor | [Dualization](functor.md#opposites-and-dualization) | [Mathlib, `CategoryTheory.Opposites`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Opposites.html); [Mathlib, `CategoryTheory.Cat.opFunctor`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Category/Cat/Op.html) |
+| inverse-image subcategory | [Inverse images](property-refinement.md#inverse-images) | [Mathlib, `ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html); [full subcategory](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html) |
+| whiskering and horizontal composition | [Functor calculus](functor.md#functor-category-calculus) | [Mathlib, `CategoryTheory.Whiskering`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Whiskering.html) |
+| comma category | [Comma categories](functor.md#comma-categories-slices-coslices-and-fibers) | [Mathlib, `CategoryTheory.Comma`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Basic.html) |
+| fiber of a functor | [Fibers](functor.md#comma-categories-slices-coslices-and-fibers) | [Mathlib, `CategoryTheory.Functor.Fiber`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/FiberedCategory/Fiber.html) |
+| strict, full, and essential image | [Images](functor.md#strict-full-and-essential-images) | [Mathlib, `CategoryTheory.EssentialImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/EssentialImage) |
+| adjunction | [Adjunctions](functor.md#adjunctions-and-equivalences) | [Mathlib, `CategoryTheory.Adjunction`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Basic.html) |
+| equivalence of categories | [Equivalences](functor.md#adjunctions-and-equivalences) | [Mathlib, `CategoryTheory.Equivalence`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Equivalence.html) |
+| cone and limiting cone | [Universal presentations](functor.md#diagram-shapes-and-universal-constructions) | [Mathlib, cone categories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/ConeCategory.html) |
+| preserves and creates limits | [Universal constructions](functor.md#diagram-shapes-and-universal-constructions) | [Mathlib, adjunctions and limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Adjunction/Limits.html); [Mathlib, creates limits](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html) |
+| Yoneda embedding | [Yoneda](functor.md#indexed-categories-yoneda-and-representability) | [Mathlib, `CategoryTheory.yoneda`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Yoneda.html) |
+| representation of a functor | [Representations](functor.md#indexed-categories-yoneda-and-representability) | [Mathlib, `Functor.RepresentableBy`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/RepresentedBy.html) |
+| twin-prime conjecture | [Twin-prime set](undecidable-properties.md#twin-prime-set) | [MathWorld, “Twin Primes”](https://mathworld.wolfram.com/TwinPrimes.html) |
+| `Predicate`, `AppliedPredicate`, `ask()` | [Propositions](undecidable-properties.md#public-propositions) | [SymPy assumptions documentation](https://docs.sympy.org/latest/modules/assumptions/assume.html) |
+| `dynamic_class(name, bases, cls)` | [Sage compilation](resolution.md#sage-class-construction) | `src/sage/structure/dynamic_class.py:128` |
+| `Category.parent_class`, `_make_named_class` | [Sage compilation](resolution.md#sage-class-construction) | `src/sage/categories/category.py:1498`; `src/sage/categories/category.py:1670` |
+| `Category._all_super_categories`, `_super_categories_for_classes` | [Sage compilation](resolution.md#sage-class-construction) | `src/sage/categories/category.py:845` |
+| `HierarchyElement` | [Sage compilation](resolution.md#sage-class-construction) | `src/sage/misc/c3_controlled.pyx:960` |
+| `Parent._refine_category_` | [Runtime refinement](resolution.md#runtime-categories-and-caches) | `src/sage/structure/parent.pyx:372` |
+| `CategoryWithAxiom`, `_base_category_class_and_axiom` | [Private property binding](resolution.md#properties-and-constructions) | `src/sage/categories/category_with_axiom.py` |
+| `FunctorialConstructionCategory`, `CartesianProductsCategory` | [Construction binding](resolution.md#properties-and-constructions) | `src/sage/categories/covariant_functorial_construction.py`; `src/sage/categories/cartesian_product.py` |
+| `Hom`, `Homset`, `Map`, `Morphism`, `IdentityMorphism` | [Private morphism protocols](resolution.md#properties-and-constructions) | `src/sage/categories/homset.py`; `src/sage/categories/map.pyx`; `src/sage/categories/morphism.pyx` |
+| `sage.categories.functor.Functor` | [Functor actions](functor.md#functor-actions-are-concrete-constructors) | `src/sage/categories/functor.py` |
+| `ModulesWithBasis` | [Chosen-data morphisms](functor.md#indexed-categories-yoneda-and-representability) | `src/sage/categories/modules_with_basis.py:179`; `src/sage/categories/modules_with_basis.py:47` (ordinary module morphisms; bases supply matrix coordinates) |

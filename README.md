@@ -4,19 +4,7 @@
 It uses explicit categories, functors, and universal constructions as its reuse model.
 Sage and other computation systems remain private engines.
 
-The public API is not stable. The active plan closes the categorical core before any production leaf.
-
-The system is one mathematical tower over one private runtime substrate:
-
-```text
-Cat and generic constructions
-        -> properties and queries
-        -> sets and order
-        -> algebra
-```
-
-The active M0 through M6 plan closes the categorical core.
-The production foundation follows in dependency order after that plan.
+The public API is not stable. [System architecture](specs/system.md) describes the mathematical foundation and production order.
 
 ## Public import
 
@@ -31,7 +19,7 @@ Public operations return owned mathematical values or authorized SymPy propositi
 
 | Subject | Owner |
 | --- | --- |
-| Complete system shape, dependency order, and agent context | [`specs/system.md`](specs/system.md) |
+| System layers and dependency order | [`specs/system.md`](specs/system.md) |
 | Mathematical decisions and supersession | [`specs/decisions.md`](specs/decisions.md) |
 | `Cat`, `Mor`, `Fun`, functor actions, and selected structure functors | [`specs/functor.md`](specs/functor.md) |
 | Private Sage compiler and runtime | [`specs/resolution.md`](specs/resolution.md) |
@@ -39,6 +27,6 @@ Public operations return owned mathematical values or authorized SymPy propositi
 | Property categories, inverse images, and refinement | [`specs/property-refinement.md`](specs/property-refinement.md) |
 | Propositions, typed queries, and `ask()` | [`specs/undecidable-properties.md`](specs/undecidable-properties.md) |
 | Compact review policies | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
-| Agent workflow and current scope | [`AGENTS.md`](AGENTS.md) |
+| Agent workflow | [`AGENTS.md`](AGENTS.md) |
 
 Category specifications under [`specs/`](specs/) state their local mathematics and link to these owners.

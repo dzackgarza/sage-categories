@@ -26,8 +26,15 @@ __all__ = [
     "AdditiveMonoidsCategory",
     "MultiplicativeMonoids",
     "MultiplicativeMonoidsCategory",
+    "Groups",
+    "GroupsCategory",
+    "AdditiveGroups",
+    "AdditiveGroupsCategory",
     "EilenbergMoore",
 ]
+
+from collections.abc import Callable
+from functools import cache, partial
 
 from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -38,10 +45,10 @@ from sage_categories.cat.diagrams import cospan_diagram, from_sequence
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.calculus import pair_maps
+from sage_categories.cat.calculus import binary_product_data, pair_maps, product_functor, terminal_map
 from sage_categories.cat.monoidal import Cartesian, MonoidalStructuresCategory, tensor_morphism, tensor_parentheses, tensor_units
-from sage_categories.cat.predicates import ask
-from sage_categories.cat.properties import FullSubcategory
+from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask
+from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
@@ -114,7 +121,7 @@ class InserterCategory(LimitSubcategory):
 def Inserter(
     first: Functor,
     second: Functor,
-    category_type: type[InserterCategory] = InserterCategory,
+    category_type: Callable[[Functor], InserterCategory] = InserterCategory,
 ) -> InserterCategory:
     """The inserter of ``first`` and ``second``, retained as the named construction ``category_type``."""
     assert first.domain() is second.domain() and first.codomain() is second.codomain()
@@ -174,12 +181,28 @@ def EndofunctorAlgebras(endofunctor: Functor) -> InserterCategory:
     return Inserter(endofunctor, Fun(endofunctor.domain(), endofunctor.domain()).one())
 
 
+class _CommutativePredicate(Predicate):
+    """``μ ∘ τ_{X,X} = μ`` for a selected braiding ``τ``; without a selected braiding the proposition stays undecided."""
+
+    name = "commutative_operation"
+
+
+class _GroupPredicate(Predicate):
+    """The shear map of a monoid object is an isomorphism; stated only for a cartesian tensor."""
+
+    name = "group_object"
+
+
+commutative_operation = _CommutativePredicate()
+group_object = _GroupPredicate()
+
+
 class MagmaCategory(InserterCategory):
     """Magma objects ``(X, μ: X ⊗ X -> X)`` for a selected tensor: one operation, no notation.
 
-    A magma has one operation and nothing names it further; ``+`` and ``*`` are labels a
-    category built from several operations gives to the legs of its own presentation
-    (``specs/magmas-monoids-semirings.md``, D185).
+    A magma has one operation and nothing names it further; ``+`` and ``*`` are the
+    renamed generators of the named copies ``AdditiveMagmas(V)`` and
+    ``MultiplicativeMagmas(V)`` (``specs/magmas-monoids-semirings.md``, D185).
     """
 
     class ObjectType:
@@ -200,6 +223,29 @@ class MagmaCategory(InserterCategory):
         def underlying_morphism(self) -> MorphismCategory.ObjectType:
             return self.family_component(0)
 
+    def __init__(self, diagram: Functor, tensor: Functor) -> None:
+        self._tensor = tensor
+        super().__init__(diagram)
+
+    def tensor(self) -> Functor:
+        """The selected tensor bifunctor ``⊗: C × C -> C`` whose algebras these are."""
+        return self._tensor
+
+    def _commutative(self, magma: MagmaCategory.ObjectType) -> Proposition:
+        """``μ ∘ τ_{X,X} == μ``: for the cartesian tensor the braiding is the swap ``⟨π_1, π_0⟩`` (nLab, commutative monoid in a symmetric monoidal category).
+
+        A tensor without a selected braiding gives the bare predicate application, which
+        no handler decides.
+        """
+        base = self.forgetful().codomain()
+        if self.tensor() is not product_functor(base):
+            return commutative_operation(magma)
+        operation = magma.operation()
+        data = binary_product_data(base, magma.carrier(), magma.carrier())
+        return operation * pair_maps(base, data.leg(1), data.leg(0)) == operation
+
+    Commutative = Axiom(_commutative)
+
 
 @cached_function(key=identity_key)
 def Magmas(structure: Functor | MonoidalStructuresCategory.ObjectType) -> MagmaCategory:
@@ -214,7 +260,7 @@ def Magmas(structure: Functor | MonoidalStructuresCategory.ObjectType) -> MagmaC
         and pairs.product_projection(1).codomain() is source
     )
     diagonal = pair_maps(Cat(), Fun(source, source).one(), Fun(source, source).one())
-    return Inserter(tensor * diagonal, Fun(source, source).one(), MagmaCategory)
+    return Inserter(tensor * diagonal, Fun(source, source).one(), partial(MagmaCategory, tensor=tensor))
 
 
 @cached_function(key=identity_key)
@@ -249,6 +295,20 @@ class MonoidCategory(EquifierCategory):
 
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
         return self._monoidal
+
+    def _group(self, monoid: MonoidCategory.ObjectType) -> Proposition:
+        """The shear map ``⟨π_0, μ⟩: X × X -> X × X`` is an isomorphism (``specs/magmas-monoids-semirings.md``, "Groups").
+
+        The shear map needs the diagonal, so a non-cartesian tensor gives the bare
+        predicate application, which no handler decides.
+        """
+        monoidal = self.monoidal_structure()
+        base = monoidal.underlying_category()
+        if monoidal.tensor() is not product_functor(base):
+            return group_object(monoid)
+        return Mor(base).Isomorphisms().membership_proposition(_shear(monoid))
+
+    Group = Axiom(_group)
 
     def __call__(self, operation: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType) -> MonoidCategory.ObjectType:
         monoidal = self.monoidal_structure()
@@ -322,6 +382,53 @@ def Monoids(structure: Category | MonoidalStructuresCategory.ObjectType) -> Mono
     return MonoidCategory(first.whisker_right(inclusion), second.whisker_right(inclusion), structure)
 
 
+# -- group objects: monoid objects whose shear map is an isomorphism -----------------------------
+
+
+@cached_function(key=identity_key)
+def _shear(monoid: MonoidCategory.ObjectType) -> MorphismCategory.ObjectType:
+    """``⟨π_0, μ⟩: X × X -> X × X``, ``(x, y) ↦ (x, xy)``: the shear map of the left regular action.
+
+    The action is regular exactly when this map is an isomorphism (nLab, shear map,
+    "Definition"), and a monoid whose left regular action is regular is a group.
+    """
+    operation = monoid.operation()
+    base, carrier = operation.base_category(), operation.codomain()
+    return pair_maps(base, binary_product_data(base, carrier, carrier).leg(0), operation)
+
+
+class GroupsCategory(PropertySubcategory):
+    """``Monoids(V).Group()``: monoid objects whose shear map is an isomorphism, with the inversion that isomorphism determines."""
+
+    _base_category_class_and_axiom = (MonoidCategory, "Group")
+
+    class ObjectType:
+        @cache
+        def inversion(self) -> MorphismCategory.ObjectType:
+            """``ι = π_1 ∘ ⟨π_0, μ⟩⁻¹ ∘ ⟨1_X, η ∘ !_X⟩``: the shear inverse read at ``(x, e)`` gives ``(x, x⁻¹)``."""
+            operation = self.operation()
+            base, carrier = operation.base_category(), operation.codomain()
+            shear = _shear(self)
+            assert shear in Mor(base).Isomorphisms(), f"{self!r} is placed among group objects but its shear map is not an isomorphism"
+            unit_everywhere = self.unit_morphism() * terminal_map(base, carrier)
+            at_unit = pair_maps(base, Mor(base)(carrier, carrier).one(), unit_everywhere)
+            return binary_product_data(base, carrier, carrier).leg(1) * shear.inverse() * at_unit
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+
+@cached_function(key=identity_key)
+def Groups(structure: Category | MonoidalStructuresCategory.ObjectType) -> GroupsCategory:
+    """``Monoids(V).Group()`` for a cartesian monoidal ``V``: group objects, a full property subcategory of the monoid objects."""
+    if isinstance(structure, Category):
+        return Groups(Cartesian(structure))
+    return Monoids(structure).Group()
+
+
 # -- named operations: a structure category tagged by the one-object category of a symbol (D185) --
 #
 # Notation is not mathematics.  ``+`` and ``*`` are renamings of the one generator of the
@@ -341,9 +448,30 @@ def _symbol_category(symbol: str) -> Category:
 
 
 def _named_copy(neutral: Category, symbol: str, category_type: type[NamedOperationCategory]) -> NamedOperationCategory:
-    """``neutral × 1_s`` in ``Cat``, retained as ``category_type`` with its projections."""
+    """``neutral × 1_s`` in ``Cat``, retained as ``category_type`` with its projections.
+
+    The retained first projection is also selected on the copy as a plain functor: it
+    supplies access, so the axioms of the neutral category reach the copy as inverse
+    images along it, and carries no inheritance (D167, D185).
+    """
     diagram = from_sequence(Cat(), (neutral, _symbol_category(symbol)))
-    return limit_of_categories(diagram, Cat().Limits(diagram.domain()), category_type)
+    copy = limit_of_categories(diagram, Cat().Limits(diagram.domain()), category_type)
+    copy._retain_structure_functor(copy.product_projection(0))
+    return copy
+
+
+def _carrier_point(point: CategoryOfCategories.ElementType) -> tuple[Category, MorphismCategory.ObjectType]:
+    """The point read in the carrier through the retained point comparison, as its morphism ``1_C -> X``, with ``C``."""
+    comparison = point.parent().point_comparison()
+    carrier = comparison.codomain().index_set()
+    base = carrier.category()
+    return base, base.point_morphism(comparison.on_object(point).point())
+
+
+def _apply(point: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> CategoryOfCategories.ElementType:
+    """``f ∘ x``: an endomorphism of the carrier applied to a point, re-owned by the structured object."""
+    base, x = _carrier_point(point)
+    return point.parent().object_at(base.element_from_defining_morphism(arrow * x))
 
 
 def _combine(
@@ -360,12 +488,9 @@ def _combine(
     """
     owner = first.parent()
     assert second.parent() is owner, f"{first!r} and {second!r} are points of different objects"
-    comparison = owner.point_comparison()
-    carrier = comparison.codomain().index_set()
-    base = carrier.category()
-    x, y = (comparison.on_object(point).point() for point in (first, second))
-    arrow = operation * pair_maps(base, base.point_morphism(x), base.point_morphism(y))
-    return owner.object_at(base.element_from_defining_morphism(arrow))
+    base, x = _carrier_point(first)
+    _, y = _carrier_point(second)
+    return owner.object_at(base.element_from_defining_morphism(operation * pair_maps(base, x, y)))
 
 
 def _unit_point(owner: CategoryOfCategories.ElementType, unit: MorphismCategory.ObjectType) -> CategoryOfCategories.ElementType:
@@ -448,6 +573,23 @@ class NamedOperationCategory(LimitSubcategory):
     def named_magmas(self) -> NamedOperationCategory:
         """The magma copy under the same symbol this category restricts to."""
         raise AssertionError(f"{self!r} names no magma copy its structure functor restricts to")
+
+    @cached_method
+    def to_named_monoids(self) -> Functor:
+        """``(G, s) ↦ (G, s)``: restriction along the inclusion of presentations ``{s, e} ⊂ {s, e, ι}``; a group object is its monoid object."""
+        monoids = self.named_monoids()
+
+        def on_object(value: NamedOperationCategory.ObjectType) -> NamedOperationCategory.ObjectType:
+            return monoids.renamed(value.neutral())
+
+        def on_morphism(arrow: NamedOperationCategory.MorphismType) -> NamedOperationCategory.MorphismType:
+            return monoids.homomorphism(on_object(arrow.domain()), on_object(arrow.codomain()), arrow.neutral_morphism())
+
+        return Fun(self, monoids).Faithful().Isofibrations()(on_object, on_morphism)
+
+    def named_monoids(self) -> NamedOperationCategory:
+        """The monoid copy under the same symbol this category restricts to."""
+        raise AssertionError(f"{self!r} names no monoid copy its structure functor restricts to")
 
 
 class AdditiveMagmasCategory(NamedOperationCategory):
@@ -542,6 +684,43 @@ class MultiplicativeMonoidsCategory(NamedOperationCategory):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (*super().structure_functors(), self.to_named_magmas())
+
+
+class AdditiveGroupsCategory(NamedOperationCategory):
+    """``Groups(V) × 1_+``: the inversion is written ``negation()``, ``-x``, and ``x - y := x + (-y)``; ``zero()``, ``addition()``, and ``+`` arrive from ``AdditiveMonoids(V)``."""
+
+    class ObjectType:
+        def neutral(self) -> CategoryOfCategories.ElementType:
+            return self.family_component(0)
+
+        def negation(self) -> MorphismCategory.ObjectType:
+            """``ι_X: X -> X``, the inversion of the group object."""
+            return self.neutral().inversion()
+
+    class ElementType:
+        def __neg__(self) -> CategoryOfCategories.ElementType:
+            return _apply(self, self.parent().negation())
+
+        def __sub__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            return self + (-other)
+
+    class MorphismType:
+        def neutral_morphism(self) -> MorphismCategory.ObjectType:
+            return self.family_component(0)
+
+    def named_monoids(self) -> AdditiveMonoidsCategory:
+        return AdditiveMonoids(self.neutral_category().ambient().monoidal_structure())
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (*super().structure_functors(), self.to_named_monoids())
+
+
+@cached_function(key=identity_key)
+def AdditiveGroups(structure: Category | MonoidalStructuresCategory.ObjectType) -> AdditiveGroupsCategory:
+    """``Groups(V) × 1_+``: group objects whose operation is written ``+``, with ``zero()``, ``negation()``, and ``-``."""
+    if isinstance(structure, Category):
+        return AdditiveGroups(Cartesian(structure))
+    return _named_copy(Groups(structure), "+", AdditiveGroupsCategory)
 
 
 @cached_function(key=identity_key)

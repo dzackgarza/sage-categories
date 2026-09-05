@@ -169,7 +169,9 @@ When `T` is terminal, `x` and `y` are points and the result is an actual element
 The point operators evaluate it: the points are read in the carrier through the retained point comparison, `C.point_morphism(x)` and `C.point_morphism(y)` are their morphisms `1_C -> X`, `pair_maps` forms `x × y` on the diagonal, and the resulting point of `X` is re-owned by the structured object.
 For `C = Sets()`, this gives the usual binary operation on elements.
 
-When `V` is braided monoidal, `Magmas(V).Commutative()` is defined by equality of `mu_X` and its composite with the braiding on `X tensor X`. `AdditiveMagmas(V).Commutative()` is its inverse image along the renaming projection, and likewise for the other copies.
+When `V` is braided monoidal, `Magmas(V).Commutative()` is defined by equality of `mu_X` and its composite with the braiding on `X tensor X`.
+The axiom is declared once on the magma category; for the cartesian tensor the braiding is the swap `<pi_1, pi_0>` of the chosen product, and the ambient decides the equality. A tensor with no selected braiding leaves the proposition undecided.
+`AdditiveMagmas(V).Commutative()` is its inverse image along the renaming projection, which each copy selects as an access-only structure functor, and likewise for the other copies.
 
 ## Monoids
 
@@ -219,49 +221,40 @@ The named copies `AdditiveMonoids(V)` and `MultiplicativeMonoids(V)` are defined
 
 ## Groups
 
-When `V` is cartesian monoidal, `Groups(V)` is the full property subcategory of `Monoids(V)` on objects with an inversion morphism
+When `V` is cartesian monoidal, `Groups(V)` is `Monoids(V).Group()`: the property subcategory of `Monoids(V)` on the monoid objects whose shear map
 
 \[
-\iota_X:X\longrightarrow X
+\langle\pi_0,\mu_X\rangle:X\times X\longrightarrow X\times X,
+\qquad
+(x,y)\longmapsto(x,\,xy),
 \]
 
-that satisfies the left and right inverse diagrams.
-A monoid morphism between group objects preserves inversion.
-`G.inversion()` reads `iota_X`; no operator is put on points.
-`AdditiveGroups(V)` is the named copy `Groups(V) × 1_+` under [Named operations](#named-operations); it writes `negation()`, unary `-`, and subtraction, and reaches `AdditiveMonoids(V)` by restriction along the inclusion of presentations.
-The commutative additive group category is `AdditiveGroups(V).Commutative()`.
+is an isomorphism.
+This is the shear map of the left regular action of `X` on itself. The action is regular exactly when the shear map is an isomorphism ([nLab shear map](https://ncatlab.org/nlab/show/shear+map), section "Definition"), and a monoid whose left regular action is regular is a group: solving `x y = e` gives every element a left inverse, and a monoid with left inverses is a group.
+Segal's group-like condition on a commutative monoid, that `(x, y) -> (x + y, y)` is an equivalence, is the same map up to the symmetry (Segal, *Categories and cohomology theories*, Topology 13, 1974).
 
-The leaf constructs the functor through its complete actions:
+The axiom is declared once on the monoid category:
 
 ```python
-def to_monoids(self) -> Cat().MorphismType:
-    D = Monoids(V)
+class MonoidCategory(Category):
+    def _group(self, M: Monoids(V).ObjectType) -> Proposition:
+        return Mor(C).Isomorphisms().membership_proposition(shear(M))
 
-    def on_object(G):
-        return D(G.operation(), G.unit_morphism())
-
-    def on_morphism(f):
-        source = on_object(f.domain())
-        target = on_object(f.codomain())
-        return Mor(D)(source, target)(f._monoid_morphism_data())
-
-    return Fun(self, D).Monomorphisms().Isofibrations().Full()(
-        on_object,
-        on_morphism,
-    )
-
-def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (self.to_monoids(),)
+    Group = Axiom(_group)
 ```
 
-`on_object` constructs an actual monoid through the public `Monoids(V)` constructor.
-`on_morphism` constructs an actual monoid morphism through its target hom category.
-`_monoid_morphism_data()` is private because this example gives it no consumer outside the functor action.
+`cat_kernel` builds the inclusion `Groups(V) -> Monoids(V)` and the generated `M.is_group()`. The ambient decides the proposition: `Sets()` decides it by finite bijectivity, and a non-cartesian `V` leaves it undecided because the shear map needs the diagonal.
+A monoid morphism between group objects preserves inversion, so the subcategory is full.
 
-The structure functor's object action calls the public monoid constructor with the multiplication morphism and unit.
-`Groups(V)` adds only the inversion morphism and its laws.
-Membership is the property that such an inversion exists.
-The inverse laws make the inversion morphism unique, so the property implementation exposes that morphism without adding a separate chosen-inverse category.
+The inverse laws make the inversion morphism unique, and the shear isomorphism computes it. The implementation of the axiom exposes
+
+\[
+\iota_X=\pi_1\circ\langle\pi_0,\mu_X\rangle^{-1}\circ\langle 1_X,\ \eta_X\circ !_X\rangle:X\longrightarrow X
+\]
+
+as `G.inversion()`: the ambient's inverse of the shear map, read at `(x, e)`, is `(x, x^{-1})`. No operator is put on points.
+`AdditiveGroups(V)` is the named copy `Groups(V) × 1_+` under [Named operations](#named-operations); it writes `negation()`, unary `-`, and subtraction `x - y := x + (-y)`, and reaches `AdditiveMonoids(V)` by restriction along the inclusion of presentations `{+, 0} ⊂ {+, 0, -}`.
+The commutative additive group category is `AdditiveGroups(V).Commutative()`, the inverse image of `Monoids(V).Commutative()` along the renaming projection and the inclusion.
 
 At `V = Sets()`, an object is an ordinary group.
 At `V = Cat()`, an object is a strict 2-group: a category `X` whose multiplication, unit, and inversion are functors and whose group laws are equalities of functors.

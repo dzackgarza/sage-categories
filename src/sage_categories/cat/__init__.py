@@ -45,9 +45,11 @@ from sage_categories.cat.relations import Relations
 from sage_categories.cat.monoidal import Actions, Cartesian, Composition, MonoidalStructures, SelfAction, TrivialAction
 from sage_categories.cat.structured_objects import (
     EndofunctorAlgebras,
+    Groups,
     EilenbergMoore,
     Equifier,
     Inserter,
+    AdditiveGroups,
     AdditiveMagmas,
     AdditiveMonoids,
     Magmas,
@@ -108,9 +110,11 @@ __all__ = [
     "transpose",
     "uncurry",
     "EndofunctorAlgebras",
+    "Groups",
     "EilenbergMoore",
     "Equifier",
     "Inserter",
+    "AdditiveGroups",
     "AdditiveMagmas",
     "AdditiveMonoids",
     "Magmas",

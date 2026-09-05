@@ -83,9 +83,11 @@ __all__ = [
     "transpose",
     "uncurry",
     "EndofunctorAlgebras",
+    "Groups",
     "EilenbergMoore",
     "Equifier",
     "Inserter",
+    "AdditiveGroups",
     "AdditiveMagmas",
     "AdditiveMonoids",
     "Magmas",
@@ -146,6 +148,7 @@ from sage_categories.cat.monoidal import Actions, Cartesian, Composition, Monoid
 
 from sage_categories import (
     EndofunctorAlgebras,
+    Groups,
     DiagramPresentation,
     EilenbergMoore,
     Elements,
@@ -153,6 +156,7 @@ from sage_categories import (
     InitialObjects,
     Inserter,
     LeftUniversalArrows,
+    AdditiveGroups,
     AdditiveMagmas,
     AdditiveMonoids,
     Magmas,

@@ -13,6 +13,8 @@ from collections.abc import Callable, Hashable, Iterable, Iterator
 from functools import cache
 from typing import Literal, overload
 
+from sympy import true
+
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
@@ -174,6 +176,37 @@ class SetsCategory(Category[[Map], []]):
         return first.parent() is second.parent() and _equal_datum(
             first.datum(), second.datum()
         )
+
+    # -- monomorphisms, epimorphisms, isomorphisms (``specs/sets.md``, "Morphisms") ------------
+
+    def _injective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
+        """A map with an enumerated domain is monic exactly when it identifies no two points."""
+        if not isinstance(arrow.domain()._presentation, tuple):
+            return None
+        images = tuple(arrow._action(value) for value in arrow.domain()._values)
+        return all(not _equal_datum(images[i], images[j]) for i in range(len(images)) for j in range(i))
+
+    def _surjective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
+        """A map between enumerated sets is epic exactly when every point of the codomain is a value."""
+        if not isinstance(arrow.domain()._presentation, tuple) or not isinstance(arrow.codomain()._presentation, tuple):
+            return None
+        images = tuple(arrow._action(value) for value in arrow.domain()._values)
+        return all(any(_equal_datum(target, image) for image in images) for target in arrow.codomain()._values)
+
+    def _bijective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
+        injective, surjective = self._injective(arrow, assumptions), self._surjective(arrow, assumptions)
+        return None if injective is None or surjective is None else injective and surjective
+
+    def inverse_morphism(self, morphism: SetsCategory.MorphismType) -> SetsCategory.MorphismType:
+        """The inverse of a bijection between enumerated sets is the owned map reading its table backwards."""
+        if self.retained_inverse(morphism) is None and self._bijective(morphism, true) is True:
+            domain, codomain = morphism.domain(), morphism.codomain()
+            table = {codomain.representative(morphism._action(value)): value for value in domain._values}
+            self.retain_inverses(
+                morphism,
+                self.MorphismType(domain=codomain, codomain=domain, data=lambda datum: table[codomain.representative(datum)]),
+            )
+        return super().inverse_morphism(morphism)
 
     @overload
     def __call__(self) -> SetsCategory: ...
@@ -417,3 +450,6 @@ FiniteSets = Sets.Finite()
 register_handler(Sets.equality(), Sets._equal_objects)
 register_handler(Sets.equality(), Sets._equal_morphisms)
 register_handler(Sets.equality(), Sets._equal_points)
+register_handler(Mor(Sets).Monomorphisms().predicate(), Sets._injective)
+register_handler(Mor(Sets).Epimorphisms().predicate(), Sets._surjective)
+register_handler(Mor(Sets).Isomorphisms().predicate(), Sets._bijective)

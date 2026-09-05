@@ -47,13 +47,13 @@ Ran 54 rules on 255 files: 14 findings.
                                 
           424┆ if getattr(type(category), self._name, None) is not self:
             ⋮┆----------------------------------------
-          492┆ declared = getattr(type(category), name, None)
+          498┆ declared = getattr(type(category), name, None)
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          495┆ for functor in vars(category).get("_selected_functors", ()):
+          501┆ for functor in vars(category).get("_selected_functors", ()):
                                           
     src/sage_categories/kernel/compiler.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default

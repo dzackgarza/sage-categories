@@ -109,10 +109,19 @@ def _atom_type(domain: type) -> type[_OwnedValueAtom]:
 
 
 def _owned_atom(value: Argument) -> _OwnedValueAtom:
-    if value not in _atoms:
+    """The private identity atom of ``value``, typed by the semantic domain its class carries now.
+
+    Refinement narrows a value's class in place, so an atom made before a value entered a
+    property category carries a domain that no longer states what the value is; a handler
+    dispatched on the property's domain would never see it.  The atom is remade for the
+    refined class, and an expression built earlier keeps the atom it was built with: both
+    resolve to the one value through its identity.
+    """
+    atom_type = _atom_type(type(value))
+    if value not in _atoms or type(_atoms[value]) is not atom_type:
         identity = id(value)
         _values[identity] = value
-        _atoms[value] = _atom_type(type(value))(identity)
+        _atoms[value] = atom_type(identity)
     return _atoms[value]
 
 

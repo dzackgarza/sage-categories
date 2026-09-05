@@ -15,7 +15,7 @@ mathematical. Excludes defects fixed within the same workstream.
 
 Short answer: the philosophy is half-met. The spine works and is genuinely thin.
 "A mathematician who doesn't program can reason into correct code" is undercut by
-about eight concrete warts, several of which I hit head-on writing the poset leaf,
+about nine concrete warts, several of which I hit head-on writing the poset leaf,
 and two of which my own leaf now carries.
 
 ### What actually worked (the win)
@@ -45,48 +45,62 @@ relation object. That is the philosophy delivering, and it is thin.
    I could not reuse it, so `order/posets.py` re-decides the three laws over raw
    `.datum()` tuples. That duplication is a real design smell, and my leaf owns it.
 
-**Tier 2 — kernel/Cat gaps the leaf author should not have to patch.**
+**Tier 2 — kernel/Cat design deficiencies.**
 
-3. Terminal objects that exist and are computable are not derived.
-   `Category.Terminal()` unconditionally raises "declares no terminal object"
-   unless a category overrides it. `Fun(C, D)` has a pointwise terminal, the
-   constant diagram at `D`'s terminal, derivable from its `limit_construction`; a
-   finite presented category has a terminal object computable from its finite
-   morphism enumeration. Neither is computed, so I added `Terminal()` to both
-   `FunctorCategory` and `FinitePresentedCategory`. Consumers hit the error on
-   objects as basic as `[1]` and `Fun(C, C)` that mathematically have a terminal.
-   A category with genuinely no terminal, such as the walking parallel pair,
-   raising is correct; the gap is only the computable terminals.
+3. Cat cannot encode or carry standard categorical structure facts. There is no
+   first-class way to state and retain that a category has a terminal or initial
+   object, is pointed, has products or coproducts, has (small, filtered, or other)
+   limits or colimits, is complete, cocomplete, or bicomplete, is closed under
+   pullbacks or pushouts, is monoidal with respect to one or more structures, or
+   is abelian. Nor are the theorems that derive these facts baked in — for
+   example, that `Fun(C, D)` has a terminal object because `D` does, or that a
+   functor category into a complete category is complete. Downstream code cannot
+   reason from such a fact because the framework has nowhere to hold it. The
+   terminal problem in (4) is one narrow symptom.
 
-4. Claiming a declaration has no mechanism for axiom-subcategory leaves.
+4. An unmet contract obligation surfaces as a runtime raise, not at instantiation.
+   `Category.Terminal()` raises "declares no terminal object" only when the method
+   is called; a leaf author learns which parts of the inherited contract are
+   unimplemented by hitting runtime errors during execution rather than from
+   defining or instantiating the leaf. `Fun(C, D)` and a finite presented category
+   both have a terminal object — `[1]` and `Fun(C, C)` among them — computable from
+   machinery they already carry (pointwise limits; finite morphism enumeration),
+   yet nothing signalled the method was unimplemented until the call failed, and I
+   supplied `Terminal()` on both by hand. A category with genuinely no terminal,
+   such as the walking parallel pair, should express that absence as a property,
+   not communicate it only by raising when asked.
+
+5. Claiming a declaration has no mechanism for axiom-subcategory leaves.
    `leaf-scaffolding.md` says the declared `Posets`/`TotallyOrderedSets` must be
    claimed; `ordered-sets.md` realizes them as `BinaryRelations().PartialOrder()`.
    Nothing binds an open declaration to an axiom subcategory of a constructed
    category, so the declared symbols are unclaimed and only accessors exist.
 
-5. The least common category of two property-refined placements needs
+6. The least common category of two property-refined placements needs
    hand-declared inclusions. I fixed the monoid-forgetful case, but
    `NarrowedProperty` still enumerates cross-inclusions imperatively, so composing
    property-intersection placements can still report "no least common category,"
-   which is a missing edge, not a mathematical fact.
+   which is a missing edge, not a mathematical fact — the property lattice is
+   maintained by hand rather than derived, a facet of the same gap as (3).
 
 **Tier 3 — plumbing leaking into leaf mathematics.**
 
-6. Predicate-handler registration is definition-order sensitive with an opaque
+7. Predicate-handler registration is definition-order sensitive with an opaque
    error ("unresolved semantic domain"); registrations must sit below the classes
    they annotate. A mathematician would not predict that.
 
-7. Construct versus refine take different argument types. `Posets()(subobject)`
+8. Construct versus refine take different argument types. `Posets()(subobject)`
    works, `Posets()(relation_object)` does not, because the property-subcategory
    constructor re-runs the base constructor on the base's construction datum.
 
-8. `.datum()` and `.point()` unwrapping is everywhere. "The relation on X×X
+9. `.datum()` and `.point()` unwrapping is everywhere. "The relation on X×X
    selected by ≤" becomes tuple decomposition and rewrapping.
 
 ### Net
 
 The "up and running is thin" claim holds only for the inheritance spine. Getting a
 leaf *functional* today demands knowing the handler-ordering rule, the
-Axiom/PropertySubcategory wiring, that a computable `Terminal` is not derived, and
-that the template does not run. That is more kernel knowledge than the philosophy
-wants at the prototyping stage.
+Axiom/PropertySubcategory wiring, that the contract announces unmet obligations
+only by raising at call time, that Cat cannot hold the categorical structure facts
+downstream code needs, and that the template does not run. That is more kernel
+knowledge than the philosophy wants at the prototyping stage.

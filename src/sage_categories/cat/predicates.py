@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from functools import partial
+import operator
 from typing import TYPE_CHECKING
 
 from sympy import And, Implies, Not, Or, ask as sympy_ask
@@ -58,7 +59,7 @@ __all__ = [
 
 # What a predicate is applied to: owned values, and the integer convenience of the
 # cardinal and ordinal orders (POL-TYPE-004).
-type Argument = CategoryOfCategories.ElementType | int
+type Argument = CategoryOfCategories.ElementType | AppliedQuery | int
 type Decision = bool | UnknownClass
 type PredicateDecision = bool | None
 
@@ -144,8 +145,55 @@ class AppliedQuery:
     def __bool__(self) -> bool:
         raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
 
+    def _sympy_(self):
+        from sage_categories.kernel.predicates import _owned_atom
+
+        return _owned_atom(self)
+
+    def __hash__(self) -> int:
+        return object.__hash__(self)
+
+    def __eq__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        return _query_comparison("eq")(self, other)
+
+    def __ne__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        return ~self.__eq__(other)
+
+    def __lt__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        return _query_comparison("lt")(self, other)
+
+    def __le__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        return _query_comparison("le")(self, other)
+
+    def __gt__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        return _query_comparison("gt")(self, other)
+
+    def __ge__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        return _query_comparison("ge")(self, other)
+
     def __repr__(self) -> str:
         return f"{self._query}({', '.join(map(repr, self._arguments))})"
+
+
+_query_comparisons: dict[str, Predicate] = {}
+
+
+def _query_comparison(operation: str) -> Predicate:
+    """Defer a comparison to the query's owned answer and its mathematical operation."""
+    if operation not in _query_comparisons:
+        predicate = owned_predicate(f"query_{operation}")
+        compare = getattr(operator, operation)
+
+        def evaluate(left: AppliedQuery, right: CategoryOfCategories.ElementType, assumptions: Proposition) -> PredicateDecision:
+            answer = ask_query(left)
+            if answer is Unknown:
+                return None
+            assert right in left.query().result_category()
+            return sympy_ask(compare(answer, right), assumptions)
+
+        register_handler(predicate, evaluate)
+        _query_comparisons[operation] = predicate
+    return _query_comparisons[operation]
 
 
 def conjunction(parts: Iterable[bool | Proposition]) -> Proposition:
@@ -373,6 +421,22 @@ class Axiom:
             defining_functor = category.subcategory_monomorphism()
             if declared_axiom(defining_functor.codomain(), self._name) is self:
                 return defining_functor.inverse_image(self._declared_on(defining_functor.codomain(), *parameters))
+        if getattr(type(category), self._name, None) is not self:
+            from sage_categories.cat.properties import retain_inverse_image
+
+            routes = tuple(
+                functor for functor in category.selected_functors()
+                if declared_axiom(functor.codomain(), self._name) is self
+            )
+            assert routes, f"{category!r} has no selected route to {self!r}"
+            first = routes[0]
+            result = first.inverse_image(self._declared_on(first.codomain(), *parameters))
+            for functor in routes[1:]:
+                target = self._declared_on(functor.codomain(), *parameters)
+                projection = functor.restrict(result, target)
+                result._retain_structure_functor(projection)
+                retain_inverse_image(functor, target, result, result.subcategory_monomorphism(), projection)
+            return result
         containing = tuple(axiom._declared_on(category) for axiom in self._full_subcategory_of)
         constructed = (self._implementation or _property_subcategory())(category, self._name, containing, *parameters)
         if self._deciding is not None:
@@ -428,9 +492,14 @@ def declared_axiom(category: Category, name: str) -> Axiom | None:
     declared = getattr(type(category), name, None)
     if isinstance(declared, Axiom):
         return declared
-    if not category.has_ambient():
-        return None
-    return declared_axiom(category.subcategory_monomorphism().codomain(), name)
+    for functor in vars(category).get("_selected_functors", ()):
+        target = functor.codomain()
+        if target is category:
+            continue
+        inherited = declared_axiom(target, name)
+        if inherited is not None:
+            return inherited
+    return None
 
 
 def _retention_key(

@@ -56,6 +56,7 @@ from sage_categories.cat.cones import (
     LimitConesCategory,
     cocone,
     cocone_apex,
+    colimit_cocones,
     cone,
     cone_apex,
     cones,
@@ -104,11 +105,7 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
     from sage_categories.cat.opposites import OppositeCategory
 
     if isinstance(shape, OppositeCategory):
-        # A positive decision on a dual shape places the apex in both ``C.Colimits(J)``
-        # and ``C.op().Products()``, two parallel universal surfaces that each declare
-        # ``index_category``; the dual family stays undecided until the colimit
-        # surface is the one opposite view of the op-side family (M4).
-        return None
+        return _nontrivial_discrete(shape.original())
     # A finite presented shape decides by its label count without touching the owned
     # object set, so the categorical core stays executable before the production Sets
     # leaf (D126, D129).
@@ -495,9 +492,6 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
             presentation = product_presenting_family(self).presentation(self)
             return presentation.diagram()
 
-        def index_category(self) -> Category:
-            return self.product_factors().domain()
-
         def cone(self) -> NaturalTransformation:
             """The product cone ``constant(self) => diagram``, whose components are the projections."""
             presentation = product_presenting_family(self).presentation(self)
@@ -507,11 +501,6 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
             """``pi_i: self -> X_i`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
             presentation = product_presenting_family(self).presentation(self)
             return presentation.leg(index)
-
-        def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismCategory.ObjectType:
-            """The mediating morphism from the apex of another cone over the same diagram."""
-            presentation = product_presenting_family(self).presentation(self)
-            return presentation.lift(cones(presentation.diagram())(candidate_cone))
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         self._candidate_families: list[LimitsCategory] = []
@@ -575,9 +564,13 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     def __call__(
         self,
         family: Functor | tuple[CategoryOfCategories.ElementType, ...],
+        *factors: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
         """Construct a known nontrivial discrete limit, or use the sequence form."""
-        diagram = self._sequence_diagram(family) if isinstance(family, tuple) else family
+        if factors:
+            diagram = self._sequence_diagram((family, *factors))
+        else:
+            diagram = self._sequence_diagram(family) if isinstance(family, tuple) else family
         shape = diagram.domain()
         assert _nontrivial_discrete(shape) is True, (
             f"{shape!r} is not known to have at least two objects; use {self.ambient()!r}.Limits({shape!r})"
@@ -623,38 +616,13 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
     class ObjectType:
         """A chosen colimit apex presented by one limiting cone in ``C.op()``."""
 
-        def diagram(self) -> Functor:
-            return presenting_family(self).presenting_diagram(self)
-
-        def index_category(self) -> Category:
-            return self.diagram().domain()
-
         def cocone(self) -> NaturalTransformation:
             """The colimiting cocone ``diagram => constant(self)``."""
-            family = presenting_family(self)
-            presentation = family.presentation(self)
-            diagram = family.lowered(self.diagram())
-            return cocone(diagram, self, lambda vertex: presentation.leg(vertex).op())
+            return presenting_family(self).presentation(self).transformation()
 
         def injection(self, index: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             """The cocone component ``D(i) -> self``."""
-            return presenting_family(self).presentation(self).leg(index).op()
-
-        def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismCategory.ObjectType:
-            """The mediating morphism to the apex of another cocone under the same diagram."""
-            family = presenting_family(self)
-            presentation = family.presentation(self)
-            diagram = family.lowered(self.diagram())
-            assert candidate_cocone in Fun(diagram.domain(), diagram.codomain()).morphism_category(1)
-            assert candidate_cocone.domain() is diagram
-            dual_candidate = candidate_cocone.op()
-            assert dual_candidate.codomain() is presentation.diagram()
-            candidate = cone(
-                presentation.diagram(),
-                cocone_apex(candidate_cocone),
-                lambda vertex: dual_candidate.component(vertex),
-            )
-            return presentation.lift(cones(presentation.diagram())(candidate)).op()
+            return presenting_family(self).presentation(self).leg(index)
 
     def __init__(
         self,
@@ -669,6 +637,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         self._dual_limits = ambient.op().Limits(shape.op())
         self._lowered: MonoDict = MonoDict()
         self._dual_diagrams: MonoDict = MonoDict()
+        self._presentations: MonoDict = MonoDict()
         self._colimit_functor: Functor | None = None
         super().__init__(ambient, name, (*full_subcategory_of, *_union_containment(ambient.Coproducts(), shape)))
         self.colimit_functor()
@@ -734,8 +703,17 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         return self.universal_data(diagram).apex()
 
     def universal_data(self, diagram: Functor) -> UniversalPresentation:
-        dual_diagram = self._dual_diagram(diagram)
-        return self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
+        from sage_categories.cat.opposites import opposite_morphism
+
+        if diagram not in self._presentations:
+            dual_diagram = self._dual_diagram(diagram)
+            dual = self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
+            transformation = cocone(diagram, dual.apex(), lambda vertex: opposite_morphism(dual.leg(vertex)))
+            self._presentations[diagram] = colimit_cocones(diagram).with_universal_data(
+                transformation,
+                lambda candidate: opposite_morphism(dual.lift(cones(dual.diagram())(candidate.transformation().op()))),
+            )
+        return self._presentations[diagram]
 
     def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
         return tuple(
@@ -757,7 +735,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         self.accepts(diagram)
         dual_diagram = self._dual_diagram(diagram)
         if not self._dual_limits.has_construction(self._dual_limits.lowered(dual_diagram)):
-            self.ambient().colimit_construction(self._shape)(diagram)
+            self._dual_limits(dual_diagram)
         presentation = self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
         return self._associate(presentation)
 
@@ -769,6 +747,8 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         mediator: Mediator,
     ) -> CategoryOfCategories.ElementType:
         """Select the dual limiting cone from supplied colimit data."""
+        from sage_categories.cat.opposites import opposite_morphism
+
         assert diagram in self.diagrams()
         assert colimiting_cocone in self.diagrams().morphism_category(1)
         assert colimiting_cocone.domain() is diagram
@@ -778,7 +758,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
             dual_diagram,
             self.ambient().op()(apex),
             colimiting_cocone.op(),
-            lambda candidate: mediator(candidate.transformation().op()).op(),
+            lambda candidate: opposite_morphism(mediator(candidate.op())),
         )
         presentation = self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
         return self._associate(presentation)
@@ -824,7 +804,7 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
 
         def coproduct_injection(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
             """``iota_i: X_i -> self`` for ``i`` an object of the index category or a datum of the index set (POL-CAT-093)."""
-            return coproduct_presenting_family(self).presentation(self).leg(index).op()
+            return coproduct_presenting_family(self).presentation(self).leg(index)
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         self._candidate_families: list[ColimitsCategory] = []
@@ -886,9 +866,13 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
     def __call__(
         self,
         family: Functor | tuple[CategoryOfCategories.ElementType, ...],
+        *summands: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
         """Construct a known nontrivial discrete colimit, or use the sequence form."""
-        diagram = self._sequence_diagram(family) if isinstance(family, tuple) else family
+        if summands:
+            diagram = self._sequence_diagram((family, *summands))
+        else:
+            diagram = self._sequence_diagram(family) if isinstance(family, tuple) else family
         shape = diagram.domain()
         assert _nontrivial_discrete(shape) is True, (
             f"{shape!r} is not known to have at least two objects; use {self.ambient()!r}.Colimits({shape!r})"

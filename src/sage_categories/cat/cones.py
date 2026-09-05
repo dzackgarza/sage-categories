@@ -51,10 +51,12 @@ def cocone(
     components: Components,
 ) -> NaturalTransformation:
     """Construct the cocone ``diagram => constant(apex)`` through ``Op``."""
+    from sage_categories.cat.opposites import opposite_morphism
+
     dual_cone = cone(
         diagram.op(),
         apex,
-        lambda vertex: components(vertex).op(),
+        lambda vertex: opposite_morphism(components(vertex)),
     )
     return dual_cone.op()
 
@@ -92,6 +94,7 @@ class ConeData:
     """The cone transformation retained by one cone presentation."""
 
     transformation: NaturalTransformation
+    dual: bool = False
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -105,17 +108,23 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     """``Cones(D)`` for one diagram ``D: I -> C``."""
 
     LimitCones = Axiom()
+    ColimitCocones = Axiom()
 
     class ObjectType:
         """A cone over the fixed diagram."""
 
         def __init__(self, data: ConeData) -> None:
             self._cone_transformation = data.transformation
+            self._cone_is_dual = data.dual
 
         def diagram(self) -> Functor:
+            if self._cone_is_dual:
+                return self._cone_transformation.domain()
             return self._cone_transformation.codomain()
 
         def apex(self) -> CategoryOfCategories.ElementType:
+            if self._cone_is_dual:
+                return cocone_apex(self._cone_transformation)
             return cone_apex(self._cone_transformation)
 
         def leg(
@@ -142,8 +151,9 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
         def apex_morphism(self) -> MorphismCategory.ObjectType:
             return self._apex_morphism
 
-    def __init__(self, diagram: Functor) -> None:
+    def __init__(self, diagram: Functor, dual: bool = False) -> None:
         self._diagram = diagram
+        self._dual = dual
         self._objects: MonoDict = MonoDict()
         self._apex_functor: Functor | None = None
         super().__init__()
@@ -157,11 +167,13 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     ) -> ConeCategory.ObjectType:
         functors = Fun(self._diagram.domain(), self._diagram.codomain())
         assert transformation in functors.morphism_category(1)
-        assert transformation.codomain() is self._diagram
-        assert functors.has_constant_value(transformation.domain())
+        defining = transformation.op() if self._dual else transformation
+        expected = self._diagram.op() if self._dual else self._diagram
+        assert defining.codomain() is expected
+        assert Fun(expected.domain(), expected.codomain()).has_constant_value(defining.domain())
         if transformation not in self._objects:
             self._objects[transformation] = self.ObjectType(
-                data=ConeData(transformation),
+                data=ConeData(transformation, self._dual),
             )
         return self._objects[transformation]
 
@@ -244,6 +256,8 @@ class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []])
 
 
 _cones: MonoDict = MonoDict()
+_cocones: MonoDict = MonoDict()
+ConeCategory.ColimitCocones.implemented_by(LimitConesCategory)
 
 
 def cones(diagram: Functor) -> ConeCategory:
@@ -259,10 +273,12 @@ def limit_cones(diagram: Functor) -> LimitConesCategory:
 
 
 def cocones(diagram: Functor) -> ConeCategory:
-    """Return cocones under ``diagram`` as cones over ``diagram.op()``."""
-    return cones(diagram.op())
+    """Return cocones under ``diagram``, with the original diagram and leg orientation."""
+    if diagram not in _cocones:
+        _cocones[diagram] = ConeCategory(diagram, dual=True)
+    return _cocones[diagram]
 
 
 def colimit_cocones(diagram: Functor) -> LimitConesCategory:
-    """Return colimiting cocones as terminal cones over ``diagram.op()``."""
-    return limit_cones(diagram.op())
+    """Return the full subcategory of initial cocones under ``diagram``."""
+    return cocones(diagram).ColimitCocones()

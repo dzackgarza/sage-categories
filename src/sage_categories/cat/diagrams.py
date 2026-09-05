@@ -145,6 +145,11 @@ def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory
 
 def sequence_position(vertex: DiscreteCategory.ObjectType) -> int:
     """The position ``k`` of an object of ``Discrete([n])`` at the point ``k`` of ``[n]``."""
+    from sage_categories.cat.canonical import FinitePresentedCategory
+
+    shape = vertex.category().narrowing_base()
+    if isinstance(shape, FinitePresentedCategory):
+        return int(shape.label(vertex))
     simplex = vertex.category().index_set()
     enumeration = Sets.Finite().chosen_enumeration(simplex)
     return next(position for position, datum in enumerate(enumeration) if ask(vertex.point() == simplex.point(datum)))

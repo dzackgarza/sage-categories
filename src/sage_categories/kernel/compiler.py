@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import logging
 from collections.abc import Callable, Iterator
-from itertools import pairwise
+from itertools import count
 from types import FunctionType, GenericAlias
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
 
@@ -48,6 +48,7 @@ from sage_categories.kernel.roles import (
     install_category_object_class,
     install_cat_element_root,
     kernel_base,
+    record_attribute_writes,
 )
 from sage_categories.kernel.sage_runtime import MonoDict, SageCategory, dynamic_class, lazy_attribute
 
@@ -72,6 +73,9 @@ __all__ = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
+
+
+_runtime_ordinals = count()
 
 
 class SemanticCollisionError(Exception):
@@ -113,13 +117,13 @@ class _RuntimeImplementationCategory(SageCategory):
     def __init__(self, current: Node, targets: tuple[SageCategory, ...]) -> None:
         self._current = current
         self._targets = targets
+        self._ordinal = next(_runtime_ordinals)
         self.ParentMethods = current.category.local_role_class(current.role)
         super().__init__()
 
     @property
     def _cmp_key(self) -> tuple[int, int, int, int]:
-        role, ordinal = node_key(self._current)
-        return (0, role, ordinal, 0)
+        return (0, _ROLE_POSITIONS[self._current.role], self._ordinal, 0)
 
     def super_categories(self) -> list[SageCategory]:
         return list(self._targets)
@@ -170,148 +174,6 @@ _ROLE_POSITIONS: dict[Role, int] = {
 }
 
 _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
-
-_declared_ranks: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
-
-
-def node_key(current: Node) -> tuple[int, int]:
-    """The position of ``current`` in the total order the C3 merge is controlled by.
-
-    Role order comes first because an object node can acquire a newer element node when
-    the category value enters a new placement.  Within one role, the rank is the declared
-    one: a category outranks every structural target it selects, and the targets of one
-    declaration rank in the order ``structure_functors()`` names them (D165, D166, D167).
-    """
-    table = _declared_ranks[current.role]
-    assert current.category in table, f"{current.category!r}.{current.role.value} is not ranked"
-    return (_ROLE_POSITIONS[current.role], table[current.category])
-
-
-def _selected_in_role(category: Category, role: Role) -> list[Category]:
-    """The categories one declaration selects an inheriting functor into, in declared order."""
-    return [target.category for _, target in successors(Node(category, role)) if target.role is role]
-
-
-def _ordered_in_role(category: Category, role: Role) -> list[Category]:
-    """The targets whose order this declaration fixes, in the order it names them.
-
-    D165, D166 and D167 give the rule to a category's ordered selection: the projections a
-    leaf writes, of which the declared first carries the inheritance.  A subcategory
-    inclusion is not one of those.  It states a containment, it is generated from the
-    recorded containments rather than named in an order
-    (``cat_kernel.subcategory_inclusions``, ``POL-FUN-024``, D83), and the containment it
-    states is already an edge of the structural graph.  Reading that off the functor's own
-    declaration is the same reading placement uses (``traces_placement``, D169, D175).
-    """
-    from sage_categories.kernel.refinement import traces_placement
-
-    return [
-        target.category
-        for functor, target in successors(Node(category, role))
-        if target.role is role and not traces_placement(functor)
-    ]
-
-
-def _rank_declaration(category: Category, role: Role) -> None:
-    """Rank ``category`` in one role, and take the role's ranks again if it reorders a pair.
-
-    A category is newer than every target it selects, so a declaration that names its
-    targets in the order they already stand in takes the top rank and leaves the rest of
-    the order alone.
-    """
-    ranks = _declared_ranks[role]
-    reached = _ordered_in_role(category, role)
-    if category not in ranks and all(
-        ahead in ranks and behind in ranks and ranks[ahead] > ranks[behind]
-        for ahead, behind in pairwise(reached)
-    ):
-        ranks[category] = 1 + max((rank for _, rank in ranks.items()), default=0)
-        return
-    _declared_ranks[role] = _rank_declarations(role, (category,))
-
-
-def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict:
-    """Rank one role's nodes, highest first, from the declared structural graph.
-
-    Sage's controlled C3 asks its client for a total order on the hierarchy and returns the
-    method resolution order that follows it (``sage.misc.c3_controlled``, "A strategy to
-    solve the problem").  This is that order.  Its first relation is the selected structural
-    graph, which puts a category above every target it selects.  Its second is the declared
-    order of the targets one declaration orders (``_ordered_in_role``; D56, D165, D166,
-    D167).  The second yields to the first, exactly as a base list yields to inheritance in
-    C3 itself: a declaration orders the targets its graph leaves unordered, and never turns
-    a category into a base of one it already stands above.
-
-    The order a category already holds is the preference, so a declaration that adds no
-    relation between two categories leaves their order alone.  Two categories that order one
-    pair oppositely are two categories and neither constrains the other's chain; where no
-    order satisfies both, the first route is chosen and the diamond stays unresolved, whose
-    only effect is the ``DEBUG`` record of ``_debug_unresolved_diamonds`` (D37, D159).
-    """
-    incoming: MonoDict = MonoDict()
-    ordered: MonoDict = MonoDict()
-
-    def expand(category: Category) -> None:
-        if category in incoming:
-            return
-        incoming[category] = []
-        ordered[category] = _ordered_in_role(category, role)
-        for target in _selected_in_role(category, role):
-            expand(target)
-            incoming[target].append(category)
-
-    for root in (*roots, *(category for category, _ in _runtime_categories[role].items())):
-        expand(root)
-
-    def outranks(source: Category, category: Category) -> bool:
-        """Whether ``source`` already stands above ``category``."""
-        frontier = [category]
-        seen: MonoDict = MonoDict()
-        while frontier:
-            for above in incoming[frontier.pop()]:
-                if above is source:
-                    return True
-                if above in seen:
-                    continue
-                seen[above] = None
-                frontier.append(above)
-        return False
-
-    preferred = _declared_ranks[role]
-    declaring = [category for category, _ in ordered.items()]
-    declaring.sort(key=lambda category: category.ordinal())
-    for category in declaring:
-        for ahead, behind in pairwise(ordered[category]):
-            if ahead in preferred and behind in preferred and preferred[ahead] > preferred[behind]:
-                # The two already stand this way, and the ranks below prefer that order.
-                continue
-            if not outranks(behind, ahead):
-                incoming[behind].append(ahead)
-
-    unranked = 1 + sum(1 for _ in incoming.items())
-    pending = [category for category, _ in incoming.items()]
-    pending.sort(
-        key=lambda category: (preferred[category] if category in preferred else unranked, category.ordinal()),
-        reverse=True,
-    )
-    ranked: list[Category] = []
-    placed: MonoDict = MonoDict()
-
-    def place(category: Category) -> None:
-        if category in placed:
-            return
-        placed[category] = None
-        for source in incoming[category]:
-            place(source)
-        ranked.append(category)
-
-    for category in pending:
-        place(category)
-    ranks: MonoDict = MonoDict()
-    for position, category in enumerate(ranked):
-        ranks[category] = len(ranked) - position
-    return ranks
-
 
 def node(category: Category, role: Role) -> Node:
     """The normalized node: ``(Mor(C), object)`` is ``(C, morphism)``."""
@@ -768,6 +630,7 @@ def _keep_first_state(
     installed: dict[str, tuple[object, Node]],
     kernel_state: frozenset[str],
     owner: Node,
+    written: set[str],
 ) -> None:
     """Restore the state an earlier related owner installed over a later owner's write (D37, D56).
 
@@ -800,16 +663,15 @@ def _keep_first_state(
     ``_roots`` and a leaf category's own fields are all present before any turn.  Those are
     the parameters of the one class the value names, not state a reached owner installed.
     """
-    for name, state in list(vars(instance).items()):
+    for name in written:
         if name in kernel_state:
             continue
+        state = vars(instance)[name]
         first = installed.get(name)
         if first is None:
             installed[name] = (state, owner)
             continue
         kept, first_owner = first
-        if state is kept:
-            continue
         if _unrelated_owners(first_owner, owner):
             raise SemanticCollisionError(
                 f"{name!r} is written by both "
@@ -817,6 +679,14 @@ def _keep_first_state(
                 f"{_declaration_name(owner.category.local_role_class(owner.role))}, "
                 "which are incomparable; name the two mathematical states distinctly"
             )
+        if (
+            owner.category.local_role_class(owner.role) is not first_owner.category.local_role_class(first_owner.role)
+            and issubclass(_runtime(owner).owner, _runtime(first_owner).owner)
+        ):
+            installed[name] = (state, owner)
+            continue
+        if state is kept:
+            continue
         setattr(instance, name, kept)
         _LOGGER.debug(
             "kept the %s written for %r over the one written for %r on %r",
@@ -891,7 +761,16 @@ def _initialize_graph(
             return True
         return False
 
-    for owner in context.nodes:
+    pending = [current]
+    ordered: list[Node] = []
+    while pending:
+        owner = pending.pop()
+        if any(same_node(owner, known) for known in ordered):
+            continue
+        ordered.append(owner)
+        pending.extend(reversed([target for _, target in successors(owner)]))
+    ordered.extend(owner for owner in context.nodes if not any(same_node(owner, known) for known in ordered))
+    for owner in ordered:
         is_point_node = _is_cat_element_root(owner) or (owner.role is Role.ELEMENT and current.role is not Role.ELEMENT)
         while not is_point_node and resolution(owner) is None and run_next_action():
             pass
@@ -901,8 +780,9 @@ def _initialize_graph(
         )
         datum, representative = found
         runtime = _runtime(owner)
-        context.run(owner, lambda runtime=runtime, datum=datum: runtime.initializer(instance, datum))
-        _keep_first_state(instance, installed, kernel_state, owner)
+        with record_attribute_writes(instance) as written:
+            context.run(owner, lambda runtime=runtime, datum=datum: runtime.initializer(instance, datum))
+        _keep_first_state(instance, installed, kernel_state, owner, written)
         if owner.role is not current.role:
             continue
         queued.extend(
@@ -1219,12 +1099,6 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         f"{category!r} selects one functor twice"
     )
     _debug_unresolved_diamonds(category)
-    # The declaration this category just read adds relations to the total order the C3
-    # merge follows, so the ranks are taken again before any class is compiled from them.
-    for role in Role:
-        declaring = node(category, role)
-        if declaring.role is role:
-            _rank_declaration(declaring.category, role)
     for role in _COMPILE_ORDER:
         current = node(category, role)
         if current.category is not category:
@@ -1301,6 +1175,8 @@ def apply_level_shift(member: Category, placement: Category) -> None:
         for runtime in affected
     }
     changed._targets = _runtime_targets(current)
+    for runtime in reversed(affected):
+        runtime._ordinal = next(_runtime_ordinals)
     for runtime in affected:
         for name in _RUNTIME_CACHE_NAMES:
             runtime.__dict__.pop(name, None)

@@ -261,6 +261,13 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
     def _vertices(self) -> tuple[CategoryOfCategories.ElementType, ...] | UnknownClass:
         """The objects of the shape in its chosen enumeration, or ``Unknown`` when it chooses none."""
+        from sage_categories.cat.canonical import FinitePresentedCategory
+        from sage_categories.cat.opposites import OppositeCategory
+
+        shape = self.shape()
+        original = shape.original() if isinstance(shape, OppositeCategory) else shape
+        if isinstance(original, FinitePresentedCategory):
+            return tuple(original(label) for label in original.labels())
         shape, objects, finite = self.shape(), self.shape().object_set(), Sets.Finite()
         if not finite.has_chosen_enumeration(objects):
             return Unknown
@@ -271,8 +278,11 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     def __call__(
         self,
         family: ObjectRule | tuple[CategoryOfCategories.ElementType, ...],
+        *components: CategoryOfCategories.ElementType,
     ) -> LimitCategory.ObjectType:
         """``L(rule)`` for a family by rule; ``L((X_0, ..., X_n))`` for the sequence convenience over ``Discrete([n])``, retained per tuple."""
+        if components:
+            return self._from_sequence((family, *components))
         if not callable(family):
             return self._from_sequence(tuple(family))
         rule = family
@@ -375,18 +385,13 @@ def limit_of_categories(
             return limit(component_rule)
 
         def on_morphism(morphism: LimitCategory.MorphismType) -> LimitCategory.MorphismType:
-            def domain_rule(vertex: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-                return candidate_cone.component(vertex).on_object(morphism.domain())
-
-            def codomain_rule(vertex: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-                return candidate_cone.component(vertex).on_object(morphism.codomain())
-
             def family_rule(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
                 return candidate_cone.component(vertex).on_morphism(morphism)
 
-            return limit.construct_morphism(limit(domain_rule), limit(codomain_rule), family_rule)
+            return limit.construct_morphism(induced.on_object(morphism.domain()), induced.on_object(morphism.codomain()), family_rule)
 
-        return Fun(source, limit)(on_object, on_morphism)
+        induced = Fun(source, limit)(on_object, on_morphism)
+        return induced
 
     lowered = family.lowered(diagram)
     return family.with_universal_data(lowered, limit, cone(lowered, limit, projection), mediator)

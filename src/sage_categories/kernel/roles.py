@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from contextvars import ContextVar
 from enum import Enum
 from typing import TYPE_CHECKING, Generic
 
@@ -59,8 +60,28 @@ def building_role_classes() -> Iterator[None]:
         _building_role_class = previous
 
 
+_attribute_writes: ContextVar[tuple[CategoryPoint, set[str]] | None] = ContextVar("attribute_writes", default=None)
+
+
+@contextmanager
+def record_attribute_writes(value: CategoryPoint) -> Iterator[set[str]]:
+    """Record assignment names during one local initializer, including equal-value writes."""
+    names: set[str] = set()
+    token = _attribute_writes.set((value, names))
+    try:
+        yield names
+    finally:
+        _attribute_writes.reset(token)
+
+
 class CategoryPoint:
     """The stable Python end of the compiled ``Cat().ElementType`` role."""
+
+    def __setattr__[State](self, name: str, value: State) -> None:
+        recording = _attribute_writes.get()
+        if recording is not None and recording[0] is self:
+            recording[1].add(name)
+        super().__setattr__(name, value)
 
     def _is_element(self) -> bool:
         return role_of(self) is Role.ELEMENT

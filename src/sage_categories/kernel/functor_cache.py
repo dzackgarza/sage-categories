@@ -39,3 +39,11 @@ class FunctorImageCache:
         if key not in self._morphisms:
             self._morphisms[key] = construct(source)
         return self._morphisms[key]
+
+    def has_object_image(self, value: ObjectOfCategory) -> bool:
+        """Whether a completed object action retained this exact value."""
+        return any(image is value for _, image in self._objects.items())
+
+    def has_morphism_image(self, value: MorphismOfCategory) -> bool:
+        """Whether a completed morphism action retained this exact value."""
+        return any(image is value for _, image in self._morphisms.items())

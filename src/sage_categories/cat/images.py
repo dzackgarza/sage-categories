@@ -10,7 +10,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition, register_handler
-from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.cat.properties import PredicateSubcategory
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.sage_runtime import MonoDict
 
@@ -112,14 +112,18 @@ class ImageCategory[**MorphismData, **TwoMorphismData](
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        return True if candidate in self._object_members else None
+        if candidate in self._object_members or self._defining_functor._image_cache.has_object_image(candidate):
+            return True
+        return None
 
     def _morphism_membership(
         self,
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        return True if candidate in self._morphism_members else None
+        if candidate in self._morphism_members or self._defining_functor._image_cache.has_morphism_image(candidate):
+            return True
+        return None
 
     def _retain_object(
         self,
@@ -264,7 +268,7 @@ class FullImageCategory[**MorphismData, **TwoMorphismData](
 
 
 class EssentialImageCategory[**MorphismData, **TwoMorphismData](
-    PropertySubcategory[MorphismData, TwoMorphismData]
+    PredicateSubcategory[MorphismData, TwoMorphismData]
 ):
     """The full replete subcategory on objects isomorphic to some ``F(X)``.
 
@@ -305,6 +309,15 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](
 
     def defining_functor(self) -> Functor:
         return self._defining_functor
+
+    def _predicate(
+        self,
+        candidate: CategoryOfCategories.ElementType,
+        assumptions: Proposition,
+    ) -> bool | None:
+        if self._defining_functor._image_cache.has_object_image(candidate):
+            return True
+        return None
 
     def object_image(
         self,

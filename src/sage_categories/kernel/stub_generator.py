@@ -8,6 +8,8 @@ never reads a tracked ``.pyi`` file as input (`POL-TYPE-025`, `POL-TYPE-026`).
 from __future__ import annotations
 
 import ast
+import subprocess
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -18,6 +20,23 @@ __all__ = ["generate_stubs"]
 
 def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     """Write the compiler-derived stub projection for ``package`` to its package directory."""
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys; from pathlib import Path; "
+            "from sage_categories.kernel.stub_generator import _generate_stubs; "
+            "_generate_stubs(sys.argv[1], Path(sys.argv[2]))",
+            package,
+            str(output_directory.resolve()),
+        ],
+        check=True,
+    )
+    return tuple(sorted(output_directory.rglob("*.pyi")))
+
+
+def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
+    """Project declarations from a fresh package bootstrap in the current Sage interpreter."""
     from mypy.stubgen import main as stubgen_main
 
     sources = tuple(sorted(output_directory.rglob("*.py")))

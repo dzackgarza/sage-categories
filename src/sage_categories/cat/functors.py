@@ -305,6 +305,12 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
 
         return evaluation(self, vertex)
 
+    def ev(self, vertex: CategoryOfCategories.ElementType | int) -> Functor:
+        """The retained evaluation at a shape object or its finite label."""
+        from sage_categories.cat.cones import vertex_of
+
+        return self.evaluation(vertex_of(self.domain(), vertex))
+
     def constant(self, value: CategoryOfCategories.ElementType) -> Functor:
         """The constant diagram at an object of the codomain."""
         from sage_categories.cat.diagrams import constant

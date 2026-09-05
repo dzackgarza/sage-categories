@@ -81,7 +81,7 @@ class _OwnedValueAtom(AtomicExpr):
 
 
 _atoms: MonoDict = MonoDict()
-_values: dict[int, CategoryPoint] = {}
+_values: dict[int, Argument] = {}
 _atom_types: dict[type, type[_OwnedValueAtom]] = {}
 _property_categories: dict[OwnedPredicate, Category] = {}
 _identity_predicates: set[OwnedPredicate] = set()
@@ -108,7 +108,7 @@ def _atom_type(domain: type) -> type[_OwnedValueAtom]:
     return result
 
 
-def _owned_atom(value: CategoryPoint) -> _OwnedValueAtom:
+def _owned_atom(value: Argument) -> _OwnedValueAtom:
     if value not in _atoms:
         identity = id(value)
         _values[identity] = value

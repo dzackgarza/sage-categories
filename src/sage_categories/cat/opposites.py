@@ -147,8 +147,7 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         return self.construct_morphism(morphism.codomain(), morphism.domain(), original)
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        shape_orig = shape._original if isinstance(shape, OppositeCategory) else shape
-        return self._original.colimit_construction(shape_orig)
+        return Category.limit_construction(self, shape)
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         shape_orig = shape._original if isinstance(shape, OppositeCategory) else shape

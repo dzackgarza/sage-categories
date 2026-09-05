@@ -198,7 +198,9 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
             defining = self._functor
 
             def on_object(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-                return target(defining.on_object(value))
+                image = defining.on_object(value)
+                refine(image, target)
+                return image
 
             def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
                 image = defining.on_morphism(morphism)
@@ -468,7 +470,9 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
             to_self = candidate_cone.component(shape(0))
 
             def on_object(value):
-                return result(to_self.on_object(value))
+                image = to_self.on_object(value)
+                refine(image, result)
+                return image
 
             def on_morphism(morphism):
                 image = to_self.on_morphism(morphism)

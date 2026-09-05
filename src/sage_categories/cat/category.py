@@ -1222,6 +1222,32 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             """``Y ** X``: the exponential object in the least category receiving both."""
             return _shared_category(self, exponent).exponential(exponent, self)
 
+        def _universal_presentation(self):
+            from sage_categories.cat.constructions import presenting_family
+
+            return presenting_family(self).presentation(self)
+
+        def diagram(self) -> Functor:
+            """The diagram of this object's unique selected universal presentation."""
+            return self._universal_presentation().diagram()
+
+        def index_category(self) -> Category:
+            """The exact index category retained by the selected presentation."""
+            return self.diagram().domain()
+
+        def projection(self, index: CategoryOfCategories.ElementType | int) -> MorphismCategory.ObjectType:
+            """The leg of the selected limiting presentation."""
+            return self._universal_presentation().leg(index)
+
+        def universal_morphism(self, candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+            """The universal map determined by a cone or cocone over the selected diagram."""
+            from sage_categories.cat.cones import cocones, cones
+
+            presentation = self._universal_presentation()
+            diagram = presentation.diagram()
+            presentations = cocones(diagram) if candidate.domain() is diagram else cones(diagram)
+            return presentation.lift(presentations(candidate))
+
         def __repr__(self) -> str:
             return f"point of {self.parent()!r}"
 
@@ -1316,6 +1342,30 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             from sage_categories.cat.base_change import base_change
 
             return base_change(self, defining_functor)
+
+        @cached_method(key=lambda self, source, target: ((id(source), source), (id(target), target)))
+        def restrict(self, source: Category, target: Category) -> Functor:
+            """Restrict both actions along supplied subcategory inclusions.
+
+            The caller supplies the factorization theorem; the actions retain its exact target placement.
+            See Mathlib CategoryTheory.Functor.factorization through a full subcategory.
+            """
+            from sage_categories.cat.functors import Fun
+
+            assert is_subcategory(source, self.domain())
+            assert is_subcategory(target, self.codomain())
+
+            def on_object(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+                image = self.on_object(value)
+                refine(image, target)
+                return image
+
+            def on_morphism(value: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+                image = self.on_morphism(value)
+                refine(image, target.morphism_category(1))
+                return image
+
+            return Fun(source, target)(on_object, on_morphism)
 
         def op(self) -> Functor:
             """Return the retained opposite functor."""
@@ -1683,14 +1733,14 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     # -- the constructions Cat() owns (POL-CAT-050; ``cat/cat_constructions.py``) --------
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        """Products over ``Discrete(S)`` and strict pullbacks over ``L(2, 2)``; ``Cat()`` owns no other limit construction."""
-        from sage_categories.cat.cat_constructions import product_of_categories, pullback_of_categories
+        """The category of compatible object and morphism families over the supplied shape."""
+        from sage_categories.cat.cat_constructions import limit_of_categories, product_of_categories, pullback_of_categories
 
         if shape.is_discrete():
             return product_of_categories
         if shape is self.WalkingCospan():
             return pullback_of_categories
-        raise AssertionError(f"Cat owns no {shape!r}-limit construction: products over Discrete(S) and pullbacks over L(2, 2) are its owned shapes; supply universal data")
+        return lambda diagram: limit_of_categories(diagram, self.Limits(shape))
 
     def exponential(self, exponent: Category, base: Category) -> Category:
         """``D ** C = Fun(C, D)``: ``Cat()`` is cartesian closed (Mathlib ``Cat.exp_obj``; inspected 2026-08-26)."""

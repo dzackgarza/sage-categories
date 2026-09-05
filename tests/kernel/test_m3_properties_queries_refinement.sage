@@ -275,7 +275,9 @@ def test_narrowed_construction_containment_is_retained_and_navigable() -> None:
     shape = apex.index_category()
     limits, products = cat.Limits(shape), cat.Products()
 
-    assert apex.category() is products
+    # The apex is placed once, in its shape family, and reaches the union of product
+    # families along the declared containment ``Limits(J) -> Products()``.
+    assert apex.category() is limits
     assert apex in products
     comparison = next(functor for functor in limits.selected_functors() if functor.codomain() is products)
     assert comparison in Fun(limits, products).Monomorphisms().Isofibrations().Full()
@@ -301,7 +303,8 @@ def test_narrowed_construction_containment_is_retained_and_navigable() -> None:
     colimits, coproducts = cat.Colimits(coproduct_shape), cat.Coproducts()
     comparison = next(functor for functor in colimits.selected_functors() if functor.codomain() is coproducts)
     assert comparison in Fun(colimits, coproducts).Monomorphisms().Isofibrations().Full()
-    assert coproduct_apex.category() is coproducts
+    assert coproduct_apex in colimits
+    assert coproduct_apex in coproducts
 
 
 def test_opposite_narrowing_constructs_into_each_selected_root() -> None:

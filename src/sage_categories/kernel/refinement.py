@@ -139,9 +139,65 @@ def is_placed(candidate: RoleCandidate, category: Category) -> bool:
     )
 
 
+def _narrowing_roots(category: Category) -> tuple[Category, ...] | None:
+    """The roots of a genuine narrowing, or ``None`` for a base or a single property category.
+
+    A property category is its own one root, so reasoning about it through its roots
+    would ask the same question again.
+    """
+    roots = category.narrowing_roots()
+    if not roots or any(root is category for root in roots):
+        return None
+    return roots
+
+
+def _contained_by_roots(inner: Category, outer: Category) -> bool:
+    """Whether two narrowings of one base are contained by the monotonicity of intersection.
+
+    Intersection is monotone in each factor (Mathlib ``Set.inter_subset_inter``): the
+    narrowing by roots ``S`` lies in the narrowing by roots ``T`` when every root of ``T``
+    contains some root of ``S``.  Each root containment is a declared monomorphism, read
+    by ``is_subcategory``; the theorem is applied here rather than declared as one
+    monomorphism per narrowing by containers, which would construct a category per subset
+    (``cat/properties.py``, ``NarrowedProperty.structure_functors``).
+    """
+    inner_roots, outer_roots = _narrowing_roots(inner), _narrowing_roots(outer)
+    if inner_roots is None or outer_roots is None or inner.narrowing_base() is not outer.narrowing_base():
+        return False
+    return all(any(is_subcategory(root, container) for root in inner_roots) for container in outer_roots)
+
+
 def is_subcategory(inner: Category, outer: Category) -> bool:
     """Whether ``inner`` is ``outer`` or a declared subcategory of it, through placement-tracing functors."""
-    return any(found is outer for found in _reached_subcategories(inner))
+    return any(found is outer for found in _reached_subcategories(inner)) or _contained_by_roots(inner, outer)
+
+
+def _meet_by_roots(first: Category, second: Category) -> Category | None:
+    """The narrowing of the common base by the least declared containers of the two root sets.
+
+    For a root ``s`` of ``first`` and a root ``r`` of ``second``, every declared category
+    containing both is a container of the meet; the minimal ones among them narrow the
+    base to the least narrowing containing both, by the same monotonicity that
+    ``_contained_by_roots`` reads.  The base itself is the answer when no root pair has a
+    common container below it.
+    """
+    if first.narrowing_base() is not second.narrowing_base():
+        return None
+    base = first.narrowing_base()
+    containers: list[Category] = []
+    for root in first.narrowing_roots():
+        for other in second.narrowing_roots():
+            for candidate in _reached_subcategories(root):
+                if candidate is base or any(candidate is known for known in containers):
+                    continue
+                if is_subcategory(other, candidate):
+                    containers.append(candidate)
+    minimal = tuple(
+        candidate
+        for candidate in containers
+        if not any(other is not candidate and is_subcategory(other, candidate) for other in containers)
+    )
+    return base.intersection(minimal) if minimal else base
 
 
 def common_ancestor(first: Category, second: Category) -> Category | None:
@@ -152,9 +208,15 @@ def common_ancestor(first: Category, second: Category) -> Category | None:
     reach a wider category before a narrower one.  A selected functor that does not trace
     placement changes structure and is not walked, so a poset and a set meet nowhere.  The
     caller states the precondition, because only the caller knows the two values.
+
+    Two narrowings of one base whose declared containments do not meet along the walk
+    meet by the monotonicity of intersection (``_meet_by_roots``).
     """
     common = [reached for reached in _reached_subcategories(first) if is_subcategory(second, reached)]
-    return next((candidate for candidate in common if all(is_subcategory(candidate, other) for other in common)), None)
+    narrowest = next((candidate for candidate in common if all(is_subcategory(candidate, other) for other in common)), None)
+    if narrowest is not None:
+        return narrowest
+    return _meet_by_roots(first, second)
 
 
 def place(value: CategoryPoint, category: Category) -> None:

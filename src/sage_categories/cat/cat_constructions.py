@@ -179,6 +179,10 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     def shape(self) -> Category:
         return self._diagram.domain()
 
+    def defining_diagram(self) -> Functor:
+        """The diagram ``D: I -> Cat()`` whose compatible families are the objects of this category."""
+        return self._diagram
+
     def factor(self, index: CategoryOfCategories.ElementType | Hashable) -> Category:
         return self._diagram.on_object(vertex_of(self.shape(), index))
 
@@ -288,7 +292,14 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
             return tuple(original(label) for label in original.labels())
         if shape.generating_morphisms() is Unknown:
             return Unknown
-        shape, objects, finite = self.shape(), self.shape().object_set(), Sets.Finite()
+        if not shape.is_discrete():
+            # A comma category or an arrow category declares no set of objects; its
+            # exact finite evaluation enumerates them (``cat/finite_categories.py``).
+            from sage_categories.cat.finite_categories import finite_category
+
+            data = finite_category(shape)
+            return Unknown if data is Unknown else data.objects
+        objects, finite = shape.object_set(), Sets.Finite()
         if not finite.has_chosen_enumeration(objects):
             return Unknown
         return tuple(shape.object_at(objects.point(datum)) for datum in finite.chosen_enumeration(objects))

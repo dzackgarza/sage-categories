@@ -32,7 +32,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable
-from itertools import combinations
 from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar, Literal
 
@@ -681,33 +680,22 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         ``P``: that containment is the statement, and each is declared here (D83, D159,
         ``POL-LEAF-081``).  ``is_subcategory`` reads the declarations, so a containment
         the base's first ambient does not carry has nowhere else to be read from.
+
+        A narrowing by containers of these roots, ``D.Products()`` for ``D.Limits(J)``,
+        is not declared here: intersection is monotone in each factor (Mathlib
+        ``Set.inter_subset_inter``), and ``is_subcategory`` decides that containment from
+        the roots' own declared monomorphisms (``kernel/refinement.py``).  Declaring one
+        monomorphism per such narrowing constructs a category per subset of the roots and
+        their containers, which is exponential in a value's refinement history.
         """
         targets: list[Category] = [self._ambient, *self._roots]
-        # Intersection is monotone in each factor (Mathlib ``Set.inter_subset_inter``):
-        # for a subset ``S`` of the roots whose narrowing ``D ∩ S`` is declared inside
-        # ``T``, this category lies in ``D ∩ ((roots − S) ∪ {T})``.  ``T = D`` gives the
-        # narrowing by the remaining roots; ``T`` a root of ``S`` gives the smaller subsets.
         own = {root.ordinal() for root in self._roots}
-
-        def narrowing_by(roots: tuple[Category, ...]) -> Category | None:
-            """The narrowing of the base by ``roots``, or ``None`` when that is this category."""
-            closed = self._ambient.closed_roots(roots)
-            if {root.ordinal() for root in closed} == own:
-                return None
-            return self._ambient.intersection(closed)
-
-        for size in range(1, len(self._roots)):
-            for selected in combinations(self._roots, size):
-                narrowing = selected[0] if size == 1 else narrowing_by(selected)
-                if narrowing is None:
-                    continue
-                kept = tuple(root for root in self._roots if not any(root is chosen for chosen in selected))
-                for inclusion in narrowing.selected_functors():
-                    if not _functors().declares_subcategory(inclusion):
-                        continue
-                    target = narrowing_by((*kept, inclusion.codomain()))
-                    if target is not None:
-                        targets.append(target)
+        for omitted in self._roots:
+            kept = self._ambient.closed_roots(tuple(root for root in self._roots if root is not omitted))
+            # A root can carry the omitted one among its own roots, so the closure of the
+            # remaining roots can be this category again, which declares nothing.
+            if kept and {root.ordinal() for root in kept} != own:
+                targets.append(self._ambient.intersection(kept))
         for functor in self._ambient.selected_functors():
             if _functors().declares_subcategory(functor):
                 targets.append(functor.codomain().intersection(self._roots))

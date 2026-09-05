@@ -71,6 +71,7 @@ __all__ = [
     "apply_level_shift",
     "install_on_declaration",
     "node",
+    "realize_implementation_class",
     "recompile_category",
     "same_node",
 ]
@@ -474,23 +475,75 @@ def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
                 )
 
 
-def _refine_implementation_class(value: CategoryPoint, role_class: type[CategoryPoint]) -> None:
-    """Refine one owned value with a compiled implementation class."""
-    if issubclass(type(value), role_class):
+def _own_classes(value: CategoryPoint) -> tuple[type[CategoryPoint], ...]:
+    """The classes ``value`` carries on its own, each read through its current compiled version.
+
+    They are the class the value was constructed with, recorded at its first refinement
+    before any join replaces the value's class, and every category class the value was
+    realized as (``realize_implementation_class``): a finite set is also the discrete
+    category of its points.  A compiled role class is read back through its node, so a
+    class the compiler has since rebuilt is not carried forward stale.
+    """
+    recorded = vars(value).setdefault("_own_classes", (type(value),))
+    current_classes = []
+    for own in recorded:
+        current = _runtime_node(own)
+        if current is not None and current.category in _node_runtimes[current.role]:
+            current_classes.append(_runtime(current).owner)
+        else:
+            current_classes.append(own)
+    return tuple(current_classes)
+
+
+def _install_class_join(value: CategoryPoint, classes: tuple[type[CategoryPoint], ...]) -> None:
+    """Set the value's class to the join of ``classes``, in that order, with subsumed classes dropped."""
+    bases = tuple(
+        candidate
+        for position, candidate in enumerate(classes)
+        if not any(other is not candidate and issubclass(other, candidate) for other in classes)
+        and not any(other is candidate for other in classes[:position])
+    )
+    if len(bases) == 1:
+        object.__setattr__(value, "__class__", bases[0])
         return
-    if issubclass(role_class, type(value)):
-        object.__setattr__(value, "__class__", role_class)
-        return
-    declared = type(value)
     with building_role_classes():
         refined = dynamic_class(
-            f"{declared.__name__}_with_category",
-            (declared, role_class),
-            doccls=declared,
+            f"{bases[0].__name__}_with_category",
+            bases,
+            doccls=bases[0],
             prepend_cls_bases=False,
             cache=True,
         )
     object.__setattr__(value, "__class__", refined)
+
+
+def realize_implementation_class(value: CategoryPoint, category_type: type[CategoryPoint]) -> None:
+    """Give ``value`` the written class ``category_type`` beside the classes it already carries."""
+    own = _own_classes(value)
+    if not any(issubclass(cls, category_type) for cls in own):
+        vars(value)["_own_classes"] = (*vars(value)["_own_classes"], category_type)
+        own = (*own, category_type)
+    _install_class_join(value, own)
+
+
+def _refine_implementation_class(value: CategoryPoint, role_class: type[CategoryPoint]) -> None:
+    """Refine one owned value with a compiled implementation class.
+
+    The refined class is the join of the value's own classes with the role class of its
+    placement, and of nothing else: the placement is one narrowing whose role class
+    already linearizes every root's class in the kernel's one order, so the join adds no
+    ordering of its own.  Joining the previous refined class instead would pin the
+    arrival order of earlier roots, which the kernel's order can contradict once a later
+    narrowing sorts them differently.  A role class that refines one of the own classes
+    takes its place, so the value's own class stays first (``refinement.place``).
+    """
+    own = _own_classes(value)
+    if issubclass(type(value), role_class) and all(issubclass(type(value), cls) for cls in own):
+        return
+    classes = tuple(role_class if issubclass(role_class, cls) else cls for cls in own)
+    if not any(cls is role_class for cls in classes):
+        classes = (*classes, role_class)
+    _install_class_join(value, classes)
 
 
 class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
@@ -968,11 +1021,17 @@ def construct_category_value(instance: ObjectOfCategory) -> None:
 
 
 def _construction_node(instance: CategoryPoint, role: Role) -> Node:
-    """The compiled node whose direct role class constructed ``instance``."""
-    by_class = {runtime.owner: Node(category, role) for category, runtime in _node_runtimes[role].items()}
-    current = next((by_class[base] for base in type(instance).__mro__ if base in by_class), None)
-    assert current is not None, f"{type(instance)!r} has no compiled {role.value} class"
-    return current
+    """The compiled node whose direct role class constructed ``instance``.
+
+    A compiled class carries its node (``_install_runtime_node``), so the first such class
+    of the requested role in the instance's linearization names it; building a table of
+    every compiled class per construction would cost the size of the runtime graph each time.
+    """
+    for base in type(instance).__mro__:
+        current = _runtime_node(base)
+        if current is not None and current.role is role and current.category in _node_runtimes[role]:
+            return current
+    raise AssertionError(f"{type(instance)!r} has no compiled {role.value} class")
 
 
 def _reject_base_initializer_call(instance: CategoryPoint) -> None:
@@ -1188,6 +1247,7 @@ def implement_category(category: Category, implementation: type[Category]) -> No
     The ordinary initializer supplies implementation state before roles are compiled.
     """
     object.__setattr__(category, "__class__", implementation)
+    vars(category)["_own_classes"] = (implementation,)
     implementation.__init__(category)
     category.recompile()
 

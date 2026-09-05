@@ -956,12 +956,17 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     def generating_morphisms(self) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
         """A finite family of morphisms generating this category under composition, or ``Unknown``.
 
-        The default is every morphism when the morphism set is finite and enumerated.
+        The default is every morphism when the morphism set is finite and enumerated, or
+        when the owned exact finite evaluation enumerates it (``hom_morphisms`` reads the
+        same evaluation): a finite comma category states its compatibility conditions this way.
         """
         morphisms = ask(self.morphism_set())
-        if morphisms is Unknown:
-            return Unknown
-        return tuple(self.morphism_at(point) for point in morphisms)
+        if morphisms is not Unknown:
+            return tuple(self.morphism_at(point) for point in morphisms)
+        from sage_categories.cat.finite_categories import finite_category
+
+        finite = finite_category(self)
+        return Unknown if finite is Unknown else finite.morphisms
 
     def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
         """An exact finite enumeration of a hom, when owned evaluation supplies it."""

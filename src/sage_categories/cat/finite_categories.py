@@ -127,7 +127,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
 
     def agrees(components: tuple[CategoryOfCategories.ElementType, ...], morphisms: bool) -> bool:
         for edge in shape.morphisms:
-            functor = category.diagram().on_morphism(edge)
+            functor = category.defining_diagram().on_morphism(edge)
             source = components[vertex_positions[id(edge.domain())]]
             image = functor.on_morphism(source) if morphisms else functor.on_object(source)
             if not equal(image, components[vertex_positions[id(edge.codomain())]]):

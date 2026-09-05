@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sage_categories.kernel.compiler import _refine_implementation_class
+from sage_categories.kernel.compiler import realize_implementation_class
 from sage_categories.kernel.construction import (
     active_object_context,
     install_object_realization,
@@ -24,7 +24,7 @@ def realize_object(value: ObjectOfCategory, category_type: type[ObjectOfCategory
     assert context is not None and context.canonical_image is value
     assert context.initializing_image is not None
     placement = value.category()
-    _refine_implementation_class(value, category_type)
+    realize_implementation_class(value, category_type)
     value._index_set = context.initializing_image
     CategoryDeclaration._initialize(value, Cat())
     place(value, placement)

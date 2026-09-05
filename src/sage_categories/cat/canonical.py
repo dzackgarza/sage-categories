@@ -5,9 +5,8 @@ shape: named vertices, generating edges, and rewriting relations between
 composable words.  Its morphisms are the reduced words of the free category on
 the graph modulo the relations; composition concatenates and reduces (nLab "free
 category": objects are the vertices, morphisms the tuples of composable edges;
-inspected 2026-08-26).  The writer asserts that a supplied relation system is
-terminating and confluent, so reduced words are normal forms and word equality
-decides morphism equality exactly.
+inspected 2026-08-26). GAP KBMAG completes the path equations. Distinct reduced
+words decide inequality only after completion proves confluence.
 
 The canonical shapes (nLab "walking structure", Kerodon 1.1; inspected 2026-08-26):
 
@@ -31,10 +30,11 @@ from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.declarations import Sets
-from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
+from sage_categories.cat.predicates import Decision, Proposition, Unknown, UnknownClass
 from sage_categories.cat.predicates import ask, register_handler
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
+from sage_categories.kernel.word_rewriting import WordRewriter
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -102,15 +102,35 @@ class FinitePresentedCategory(Category[[Word], []]):
         self._name = name
         self._labels = labels
         self._generator_endpoints = {generator: (source, target) for generator, source, target in generators}
+        assert len(set(labels)) == len(labels), "category vertices require distinct labels"
+        assert len(self._generator_endpoints) == len(generators), "category generators require distinct names"
+        assert all(source in labels and target in labels for _, source, target in generators)
+        for left, right in relations:
+            first, second = self._path_endpoints(left), self._path_endpoints(right)
+            if first is not None and second is not None:
+                assert first == second, "a relation must equate parallel paths"
+            elif first is not None or second is not None:
+                source, target = first if first is not None else second
+                assert source == target, "a path equal to an identity must be a loop"
         self._relations = relations
+        self._rewriter: WordRewriter | None = None
+        self._generator_indices = {name: index for index, name in enumerate(self._generator_endpoints)}
         # One retained path per (source label, reduced word) (specs/functor.md, "Canonical objects of Cat"): a morphism of a
         # finitely presented category exists once by identity.
         self._paths: dict[tuple[Hashable, Word], FinitePresentedCategory.MorphismType] = {}
         self._object_set: MonoDict = MonoDict()
         self._morphism_set: MonoDict = MonoDict()
+        self._finite_arrows: tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass | None = None
         super().__init__()
         self._vertices = {label: self.ObjectType(VertexData(label)) for label in labels}
-        register_handler(self._equality, self._equal)
+        register_handler(self._equality, self._equal_objects)
+        register_handler(self._equality, self._equal_morphisms)
+
+    def _equal_objects(self, first: FinitePresentedCategory.ObjectType, second: FinitePresentedCategory.ObjectType, assumptions: Proposition) -> bool | None:
+        return self._equal(first, second, assumptions)
+
+    def _equal_morphisms(self, first: FinitePresentedCategory.MorphismType, second: FinitePresentedCategory.MorphismType, assumptions: Proposition) -> bool | None:
+        return self._equal(first, second, assumptions)
 
     def __call__(self, label: Hashable) -> FinitePresentedCategory.ObjectType:
         """The retained vertex with this label."""
@@ -166,10 +186,20 @@ class FinitePresentedCategory(Category[[Word], []]):
         return any(reaches(label, (label,)) for label in self._labels)
 
     def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
-        """The finite set of morphisms, as data ``(source label, reduced word)``, when the quiver is acyclic."""
-        if self._has_directed_cycle():
+        """The finite set of morphisms when the presentation determines a finite normal-form language."""
+        arrows = self.finite_morphisms()
+        if arrows is Unknown:
             return Unknown
         if self not in self._morphism_set:
+            self._morphism_set[self] = Sets.Finite()(tuple((self.label(arrow.domain()), arrow.word()) for arrow in arrows))
+        return self._morphism_set[self]
+
+    def finite_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass:
+        """The exact finite path enumeration, independent of the production set category."""
+        if self._finite_arrows is None:
+            if self._has_directed_cycle() and (not self._relations or not self._word_rewriter().finite()):
+                self._finite_arrows = Unknown
+                return Unknown
             words: list[tuple[Hashable, Word]] = [(label, ()) for label in self._labels]
             frontier = list(words)
             while frontier:
@@ -181,8 +211,11 @@ class FinitePresentedCategory(Category[[Word], []]):
                         if extended not in words:
                             words.append(extended)
                             frontier.append(extended)
-            self._morphism_set[self] = Sets.Finite()(words)
-        return self._morphism_set[self]
+            self._finite_arrows = tuple(
+                self.construct_morphism(self(source), self(source if not word else self._generator_endpoints[word[-1]][1]), word)
+                for source, word in words
+            )
+        return self._finite_arrows
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.MorphismType:
         source, word = enumerated_datum(ask(self.morphism_set()), point)
@@ -193,19 +226,65 @@ class FinitePresentedCategory(Category[[Word], []]):
         """The generators: every morphism is a composite of them."""
         return tuple(self.generator(name) for name in self._generator_endpoints)
 
+    def relations(self) -> tuple[Relation, ...]:
+        """The defining equalities between parallel paths."""
+        return self._relations
+
+    def _path_endpoints(self, word: Word) -> tuple[Hashable, Hashable] | None:
+        if not word:
+            return None
+        source, position = self._generator_endpoints[word[0]]
+        for name in word[1:]:
+            start, target = self._generator_endpoints[name]
+            assert start == position, "the generators in a path must compose"
+            position = target
+        return source, position
+
+    def _word_rewriter(self) -> WordRewriter:
+        """Complete the category's consolidation with separate local identities and zero."""
+        if self._rewriter is not None:
+            return self._rewriter
+        size = len(self._generator_indices)
+        vertices = {label: size + index for index, label in enumerate(self._labels)}
+        zero = size + len(vertices)
+        endpoints = {index: pair for name, pair in self._generator_endpoints.items() for index in (self._generator_indices[name],)}
+        endpoints.update({index: (label, label) for label, index in vertices.items()})
+        equations: list[tuple[tuple[int, ...], tuple[int, ...]]] = []
+        for first, (source, middle) in endpoints.items():
+            for second, (start, target) in endpoints.items():
+                if middle != start:
+                    equations.append(((first, second), (zero,)))
+                elif first >= size:
+                    equations.append(((first, second), (second,)))
+                elif second >= size:
+                    equations.append(((first, second), (first,)))
+        for index in range(zero + 1):
+            equations.extend((((zero, index), (zero,)), ((index, zero), (zero,))))
+        for left, right in self._relations:
+            if not left and not right:
+                continue
+            word = left or right
+            source = self._generator_endpoints[word[0]][0]
+            def letters(path: Word) -> tuple[int, ...]:
+                if not path:
+                    return (vertices[source],)
+                return tuple(self._generator_indices[name] for name in path)
+            equations.append((letters(left), letters(right)))
+        self._rewriter = WordRewriter(zero + 1, tuple(equations))
+        return self._rewriter
+
     def _reduce(self, word: Word) -> Word:
-        reduced = word
-        while True:
-            for left, right in self._relations:
-                for start in range(len(reduced) - len(left) + 1):
-                    if reduced[start : start + len(left)] == left:
-                        reduced = (*reduced[:start], *right, *reduced[start + len(left) :])
-                        break
-                else:
-                    continue
-                break
-            else:
-                return reduced
+        if not word or not self._relations:
+            return word
+        names = tuple(self._generator_indices)
+        rewriter = self._word_rewriter()
+        reduced = rewriter.reduce(tuple(self._generator_indices[name] for name in word))
+        source = self._generator_endpoints[word[0]][0]
+        identity = len(names) + self._labels.index(source)
+        if reduced == rewriter.reduce((identity,)):
+            return ()
+        assert len(names) + len(self._labels) not in reduced, "a category path reduced to the consolidation zero"
+        return tuple(names[index] for index in reduced if index < len(names))
 
     def construct_morphism(self, domain: FinitePresentedCategory.ObjectType, codomain: FinitePresentedCategory.ObjectType, word: Word) -> FinitePresentedCategory.MorphismType:
         """The path along the named generators, reduced modulo the relations."""
@@ -261,7 +340,11 @@ class FinitePresentedCategory(Category[[Word], []]):
         morphisms = self.morphism_category(1)
         if first not in morphisms or candidate not in morphisms:
             return None
-        return first.domain() is candidate.domain() and first.codomain() is candidate.codomain() and first.word() == candidate.word()
+        if first.domain() is not candidate.domain() or first.codomain() is not candidate.codomain():
+            return False
+        if first.word() == candidate.word():
+            return True
+        return False if not self._relations or self._word_rewriter().confluent else None
 
     def __repr__(self) -> str:
         return self._name

@@ -1,3 +1,4 @@
+import sage_categories
 from collections.abc import Callable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -12,13 +13,13 @@ class _OppositeMorphismData:
 
 class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: _OppositeMorphismData) -> None:
             ...

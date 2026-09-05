@@ -143,6 +143,10 @@ def prepare_category_subclass(cls: type[CategoryPoint]) -> None:
     """
     if _building_role_class:
         return
+    for role in Role:
+        declared = vars(cls).get(role.value)
+        if isinstance(declared, type):
+            _declaration_owners.setdefault(declared, (cls, role))
     _install_category_initializer(cls)
 
 
@@ -318,7 +322,7 @@ def _require_declarations(
             "it adds no new mathematics its body is empty (POL-CAT-057)"
         )
         owner = _declaration_owners.get(declared)
-        assert owner is None or owner[1] is not role, (
+        assert owner is None or owner[0] is category_class or owner[1] is not role, (
             f"{category_class.__name__}.{role.value} names the {role.value} declaration of {owner[0].__name__}, whose "
             f"mathematics it would state instead of its own.  Write this category's own class; where it adds no "
             "new mathematics its body is empty (POL-CAT-053, POL-CAT-057)"
@@ -382,6 +386,16 @@ def category_universal_class() -> type[CategoryPoint]:
 
 def kernel_base(role: Role) -> type[CategoryPoint]:
     return _BASES[role]
+
+
+def declaration_role(declaration: type[CategoryPoint]) -> Role | None:
+    owner = _declaration_owners.get(declaration)
+    return None if owner is None else owner[1]
+
+
+def declared_roles() -> tuple[tuple[type[CategoryPoint], Role], ...]:
+    """The source role declarations, including parameterized categories not yet instantiated."""
+    return tuple((declaration, owner[1]) for declaration, owner in _declaration_owners.items())
 
 
 def install_cat_element_root(root: type[CategoryPoint]) -> None:

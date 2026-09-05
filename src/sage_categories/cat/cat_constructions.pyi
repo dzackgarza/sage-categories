@@ -1,10 +1,11 @@
+import sage_categories
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition
-__all__ = ['LimitCategory', 'limit_of_categories', 'product_of_categories', 'pullback_of_categories']
+__all__ = ['LimitCategory', 'LimitSubcategory', 'limit_of_categories', 'product_of_categories', 'pullback_of_categories']
 type ObjectRule = Callable[['CategoryOfCategories.ElementType'], 'CategoryOfCategories.ElementType']
 type MorphismRule = Callable[['CategoryOfCategories.ElementType'], MorphismCategory.ObjectType]
 
@@ -21,7 +22,7 @@ class _ComponentsAgreePredicate(Predicate):
 
 class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, ...]], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
 
         def __init__(self, data: FamilyObjectData) -> None:
             ...
@@ -29,7 +30,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         def component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: FamilyMorphismData) -> None:
             ...
@@ -37,7 +38,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         def component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
     def __init__(self, diagram: Functor) -> None:
@@ -61,7 +62,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> LimitCategory.MorphismType:
         ...
 
-    def __call__(self, family: ObjectRule | tuple[CategoryOfCategories.ElementType, ...]) -> LimitCategory.ObjectType:
+    def __call__(self, family: ObjectRule | CategoryOfCategories.ElementType | tuple[CategoryOfCategories.ElementType, ...], *components: CategoryOfCategories.ElementType) -> LimitCategory.ObjectType:
         ...
 
     def construct_morphism(self, domain: LimitCategory.ObjectType, codomain: LimitCategory.ObjectType, family: MorphismRule | tuple[MorphismCategory.ObjectType, ...]) -> LimitCategory.MorphismType:
@@ -71,6 +72,23 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         ...
 
     def composite(self, second: LimitCategory.MorphismType, first: LimitCategory.MorphismType) -> LimitCategory.MorphismType:
+        ...
+
+class LimitSubcategory(LimitCategory):
+
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        ...
+
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+        ...
+
+    def __init__(self, diagram: Functor) -> None:
+        ...
+
+    def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
 def limit_of_categories(diagram: Functor, family: Category, category_type: Callable[[Functor], LimitCategory]=...) -> CategoryOfCategories.ElementType:
@@ -93,7 +111,7 @@ class _TaggedMorphismData:
 
 class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
 
         def __init__(self, data: _TaggedObjectData) -> None:
             ...
@@ -104,7 +122,7 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
         def member(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: _TaggedMorphismData) -> None:
             ...
@@ -112,7 +130,7 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
         def morphism(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
     def __init__(self, diagram: Functor) -> None:

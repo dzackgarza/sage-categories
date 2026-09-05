@@ -1,6 +1,7 @@
+import sage_categories
 from collections.abc import Hashable
 from dataclasses import dataclass
-from sage_categories.cat.cat_constructions import LimitCategory
+from sage_categories.cat.cat_constructions import LimitSubcategory
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
@@ -21,15 +22,15 @@ class _SliceMemberPredicate(Predicate):
 
 class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
 
         def __init__(self, data: SliceObjectData) -> None:
             ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: SliceTriangleData) -> None:
             ...
@@ -103,15 +104,15 @@ def slice_over(base: Category, fixed: CategoryOfCategories.ElementType) -> Slice
 def coslice_under(base: Category, fixed: CategoryOfCategories.ElementType) -> SliceLikeCategory:
     ...
 
-class CommaCategory(LimitCategory):
+class CommaCategory(LimitSubcategory):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __init__(self, diagram: Functor, first: Functor, second: Functor) -> None:
@@ -143,13 +144,13 @@ class _HasMorphismPropertyPredicate(Predicate):
 
 class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __init__(self, ambient: SliceLikeCategory, property_category: Category) -> None:
@@ -178,13 +179,13 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
 class SubobjectsOfProduct(SliceProperty):
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
 
         def product_projection(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
             ...

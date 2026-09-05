@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, member
-from sage_categories.cat.cat_constructions import LimitCategory, limit_of_categories
+from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
 from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
@@ -288,6 +288,8 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
         if is_placed(value, self):
             return value
         morphism = _denoted_morphism(value)
+        if morphism not in self._base_of_slice.morphism_category(1) and value in self.arrows():
+            morphism = self.arrows().diagram(value).on_morphism(_walking_arrow().generator("0->1"))
         assert morphism in self._base_of_slice.morphism_category(1), f"{value!r} denotes no morphism of {self._base_of_slice!r}"
         assert ask(self.fixed_end(morphism) == self._fixed) is not False, f"{morphism!r} does not end at {self._fixed!r}"
         if morphism not in self._objects:
@@ -390,7 +392,7 @@ def coslice_under(base: Category, fixed: CategoryOfCategories.ElementType) -> Sl
 # -- comma categories ------------------------------------------------------------------------
 
 
-class CommaCategory(LimitCategory):
+class CommaCategory(LimitSubcategory):
     """``Comma(F, G)`` with its two projections and defining natural transformation."""
 
     class ObjectType:
@@ -441,7 +443,7 @@ class CommaCategory(LimitCategory):
             target = second * self.second_projection()
             arrows = self.arrow_projection()
             self._defining_transformation = Fun(self, first.codomain()).morphism_category(1)(source, target)(
-                lambda member_object: arrows.on_object(member_object)
+                lambda member_object: arrows.codomain().diagram(arrows.on_object(member_object)).on_morphism(_walking_arrow().generator("0->1"))
             )
         return self._defining_transformation
 
@@ -472,6 +474,10 @@ def _endpoint_functor(base: Category) -> Functor:
 
 def comma_category(first: Functor, second: Functor) -> Category:
     """The comma category ``(F, G)``: the pullback of ``(ev_0, ev_1)`` along ``F * G``, retained per pair; objects ``((a, b), f: F a -> G b)``."""
+    return Cat().Comma(first, second)
+
+
+def _construct_comma_category(first: Functor, second: Functor) -> Category:
     diagram = cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain()))
     result = limit_of_categories(diagram, Cat().Pullbacks(), lambda defining_diagram: CommaCategory(defining_diagram, first, second))
     assert result in Cat().Pullbacks()

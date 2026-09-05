@@ -166,13 +166,6 @@ def place(value: CategoryPoint, category: Category) -> None:
     target = compiler.node(category, Role.OBJECT)
     role_class = target.category.role_class(target.role)
     value._category = category
-    match role_of(value):
-        case Role.OBJECT | Role.MORPHISM:
-            from sage_categories.kernel.construction import CategoryPointIdentity
-
-            # A morphism of ``C`` is an object of ``Mor(C)``, and ``category`` is that
-            # placement, so both roles are the point ``* -> category``.
-            value._cat_element_identity = CategoryPointIdentity(category)
     compiler._refine_implementation_class(value, role_class)
     if is_category(value):
         compiler.apply_level_shift(value, category)

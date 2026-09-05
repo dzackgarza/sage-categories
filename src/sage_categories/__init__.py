@@ -38,24 +38,31 @@ from sage_categories.cat.declarations import (
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.adjunctions import Adjunctions, Equivalences
-from sage_categories.cat.cones import cones as Cones, limit_cones as LimitCones
+from sage_categories.cat.cones import cones as Cones, limit_cones as LimitCones, cocones as Cocones, colimit_cocones as ColimitCocones
+from sage_categories.cat.indexed import Grothendieck, IndexedCategories
+from sage_categories.cat.kan import left_kan_desc, left_kan_extension, left_kan_unit, right_kan_counit, right_kan_extension, right_kan_lift
 from sage_categories.cat.opposites import Op
 from sage_categories.cat.total_cones import total_cones as TotalCones
 from sage_categories.cat.shapes import Discrete, Thin
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import Predicate, ask, assume, retract
+from sage_categories.cat.predicates import Axiom, Predicate, Query, ask, assume, retract
 
 __all__ = [
     "Adjunctions",
+    "Axiom",
     "NN",
     "ZZ",
     "Cat",
     "Category",
     "Cones",
+    "Cocones",
+    "ColimitCocones",
     "Decision",
     "Discrete",
     "Equivalences",
     "Fun",
+    "Grothendieck",
+    "IndexedCategories",
     "LimitCones",
     "MagmaObjects",
     "Mor",
@@ -63,6 +70,7 @@ __all__ = [
     "Op",
     "Posets",
     "Predicate",
+    "Query",
     "RingObjects",
     "SemiringObjects",
     "Sets",
@@ -77,6 +85,12 @@ __all__ = [
     "omega",
     "retract",
     "version",
+    "left_kan_desc",
+    "left_kan_extension",
+    "left_kan_unit",
+    "right_kan_counit",
+    "right_kan_extension",
+    "right_kan_lift",
 ]
 
 # One source of truth. The version is declared once, in pyproject.toml, and

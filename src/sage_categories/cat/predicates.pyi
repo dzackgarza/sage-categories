@@ -5,7 +5,7 @@ from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredica
 from sage_categories.kernel.sage_runtime import Unknown as Unknown, UnknownClass as UnknownClass
 from sympy.logic.boolalg import Boolean
 __all__ = ['AppliedPredicate', 'Predicate', 'Unknown', 'UnknownClass', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'DecidingProposition', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom', 'declared_axiom']
-type Argument = CategoryOfCategories.ElementType | int
+type Argument = CategoryOfCategories.ElementType | AppliedQuery | int
 type Decision = bool | UnknownClass
 type PredicateDecision = bool | None
 type QueryAnswer = CategoryOfCategories.ElementType | UnknownClass
@@ -50,6 +50,27 @@ class AppliedQuery:
         ...
 
     def __bool__(self) -> bool:
+        ...
+
+    def __hash__(self) -> int:
+        ...
+
+    def __eq__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        ...
+
+    def __ne__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        ...
+
+    def __lt__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        ...
+
+    def __le__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        ...
+
+    def __gt__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+        ...
+
+    def __ge__(self, other: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
 def conjunction(parts: Iterable[bool | Proposition]) -> Proposition:

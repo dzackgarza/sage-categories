@@ -18,6 +18,7 @@ from sage_categories.kernel.sage_runtime import Integer, MonoDict, TripleDict, c
 
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
+    from sage_categories.cat.constructions import UniversalPresentation
     from sage_categories.cat.declarations import CategoryFamily
     from sage_categories.cat.functors import Fun, Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
@@ -29,8 +30,7 @@ __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism"
 # The compilation order of categories: a category takes its ordinal after its
 # selected functors exist, so decreasing ordinal is a linear extension of the
 # selected graph, and narrowings are canonicalized by the ordinals of their roots.
-# The kernel ranks role classes by the declared order of ``structure_functors()``
-# instead (``kernel/compiler.py``, ``_rank_declarations``; D165, D166, D167).
+# Initializers follow the selected functors in declaration order (D165 to D167).
 _category_ordinals = itertools.count()
 
 # The construction data of ``Cat()``: a functor's actions and a natural
@@ -550,6 +550,11 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def compose_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         """``second * first`` through the owned composition; a composite of retained-invertible morphisms retains ``first⁻¹ * second⁻¹``."""
+        assert first.codomain() is second.domain()
+        if first.domain() in self._identities and self._identities[first.domain()] is first:
+            return second
+        if second.domain() in self._identities and self._identities[second.domain()] is second:
+            return first
         composite = self.composite(second, first)
         if first in self._inverses and second in self._inverses and composite not in self._inverses:
             self.retain_inverses(composite, self.composite(self._inverses[first], self._inverses[second]))
@@ -828,11 +833,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             if original is Cat():
                 from sage_categories.cat.cat_constructions import _limit_of_opposite_categories
 
-                if shape.is_discrete() or (
-                    isinstance(shape, OppositeCategory)
-                    and shape.original() is Cat().WalkingSpan()
-                ):
-                    return _limit_of_opposite_categories
+                return _limit_of_opposite_categories
             if isinstance(original, FunctorCategory):
                 return _pointwise_limit_in_opposite_functor_category
         raise AssertionError(f"{self!r} owns no {shape!r}-limit construction; supply universal data")
@@ -1222,7 +1223,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             """``Y ** X``: the exponential object in the least category receiving both."""
             return _shared_category(self, exponent).exponential(exponent, self)
 
-        def _universal_presentation(self):
+        def _universal_presentation(self) -> UniversalPresentation:
             from sage_categories.cat.constructions import presenting_family
 
             return presenting_family(self).presentation(self)
@@ -1273,9 +1274,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return self._cached_object_image(member_object, self._construct_object_image)
 
         def _construct_object_image(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-            assert member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
+            assert is_placed(member_object, self.domain()) or member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
             image = self._on_object(member_object)
-            assert image in self.codomain(), f"{image!r} is not an object of {self.codomain()!r}"
+            assert is_placed(image, self.codomain()) or image in self.codomain(), f"{image!r} is not an object of {self.codomain()!r}"
             from sage_categories.cat.images import retain_object_image
 
             retain_object_image(self, image)
@@ -1633,7 +1634,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 refine(composite, property_category)
         return composite
 
-    def construct_two_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, assignment: Assignment) -> NaturalTransformation:
+    def construct_two_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, assignment: Assignment, source_functor: Functor | None = None, target_functor: Functor | None = None) -> NaturalTransformation:
         """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (POL-FUN-007).
 
         The endpoints are objects of ``Fun(C, D)``: functors, or the points of ``D``
@@ -1642,13 +1643,14 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         from sage_categories.cat.functors import NaturalTransformationData, diagram_of
 
         functors = self.morphism_category(1)
-        source_functor, target_functor = diagram_of(source), diagram_of(target)
+        source_functor = diagram_of(source) if source_functor is None else source_functor
+        target_functor = diagram_of(target) if target_functor is None else target_functor
         assert source_functor in functors and target_functor in functors
         assert source_functor.domain() is target_functor.domain() and source_functor.codomain() is target_functor.codomain()
         return functors.MorphismType(
             domain=source,
             codomain=target,
-            data=NaturalTransformationData(assignment),
+            data=NaturalTransformationData(assignment, source_functor, target_functor),
         )
 
     def identity_two_morphism(self, member_object: CategoryOfCategories.ElementType) -> NaturalTransformation:
@@ -1669,6 +1671,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             first.domain(),
             second.codomain(),
             lambda x: second.component(x) * first.component(x),
+            first.source_functor(),
+            second.target_functor(),
         )
 
     # -- horizontal composition with 1-morphisms: whiskering (POL-CAT-021, POL-MATH-036) ---
@@ -1748,13 +1752,13 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def Comma(self, first: Functor, second: Functor) -> Category:
         """``Comma(F, G)`` for functors with a common codomain, retained per ordered pair."""
-        from sage_categories.cat.slices import comma_category
+        from sage_categories.cat.slices import _construct_comma_category
 
         assert first in self.morphism_category(1) and second in self.morphism_category(1)
         assert first.codomain() is second.codomain(), f"{first!r} and {second!r} have different codomains"
         key = (first, second, self)
         if key not in self._comma_categories:
-            self._comma_categories[key] = comma_category(first, second)
+            self._comma_categories[key] = _construct_comma_category(first, second)
         return self._comma_categories[key]
 
     def postcompose(self, functor: Functor, diagram: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:

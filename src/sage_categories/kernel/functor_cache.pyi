@@ -12,3 +12,9 @@ class FunctorImageCache:
 
     def morphism_image(self, source: MorphismOfCategory, on_object: Callable[[ObjectOfCategory], ObjectOfCategory], construct: Callable[[MorphismOfCategory], MorphismOfCategory]) -> MorphismOfCategory:
         ...
+
+    def has_object_image(self, value: ObjectOfCategory) -> bool:
+        ...
+
+    def has_morphism_image(self, value: MorphismOfCategory) -> bool:
+        ...

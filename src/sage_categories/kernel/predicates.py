@@ -334,9 +334,10 @@ def ask_query(application: AppliedQuery) -> Answer:
         return Unknown
     _, evaluator = registered
     try:
-        value = evaluator(*application.arguments())
+        method, _ = evaluator.resolve_method(application.arguments())
     except NotFoundLookupError:
         return Unknown
+    value = method(*application.arguments())
     if value is Unknown:
         return Unknown
     assert value in query.result_category()

@@ -214,6 +214,14 @@ def test_two_selected_targets_supply_one_inherited_property() -> None:
         assert presentation.leg(0).on_object(value) is value
         assert presentation.leg(1).on_object(value) is functor.on_object(value)
         assert presentation.leg(1).on_object(value) in target.Positive()
+    existing = source(4)
+    parent, defining = existing.parent(), existing.defining_morphism()
+    images = tuple(functor.on_object(existing) for functor in source.selected_functors())
+    assert ask(existing.is_positive()) is True
+    assert existing.category() is positive
+    assert existing.parent() is parent
+    assert existing.defining_morphism() is defining
+    assert all(functor.on_object(existing) is image for functor, image in zip(source.selected_functors(), images))
 
 
 def test_product_elements_and_universal_functor_actions() -> None:
@@ -271,6 +279,13 @@ def test_images_requested_after_the_functor_action_recognize_the_retained_values
         assert functor.on_object(category(0)) is value
         assert functor.on_morphism(category.generator("0->1")) is arrow
         assert value in image
+    identity = Mor(category)(value, value).one()
+    square = Mor(Fun(Cat().Simplex(1), category))(identity, arrow)(
+        lambda vertex: identity if vertex is Cat().Simplex(1)(0) else arrow,
+    )
+    assert square.source_functor().codomain() is category
+    assert square.target_functor().codomain() is category
+    assert square.component(Cat().Simplex(1)(1)) is arrow
 
 
 for name, value in tuple(globals().items()):

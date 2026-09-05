@@ -35,6 +35,8 @@ from collections.abc import Callable
 from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar
 
+from sympy import ask as sympy_ask
+
 from sage_categories.cat.category import Category
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, property_predicate, register_handler
@@ -173,7 +175,9 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
         self._functor = functor
         self._target_subcategory = target_subcategory
         self._target_projection: Functor | None = None
+        self._inverse_image_predicate = property_predicate("inverse_image", self)
         super().__init__(functor.domain())
+        register_handler(self._inverse_image_predicate, self._decide_membership)
 
     def defining_functor(self) -> Functor:
         return self._functor
@@ -218,9 +222,13 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
 
     @cached_method(key=lambda self, candidate: (id(candidate), candidate))
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
-        return self._ambient.membership_proposition(candidate) & self._target_subcategory.membership_proposition(
-            self._functor.on_object(candidate)
-        )
+        return self._ambient.membership_proposition(candidate) & self._inverse_image_predicate(candidate)
+
+    def _decide_membership(self, candidate: CategoryOfCategories.ElementType, assumptions: Proposition) -> bool | None:
+        ambient = sympy_ask(self._ambient.membership_proposition(candidate), assumptions)
+        if ambient is not True:
+            return ambient
+        return sympy_ask(self._target_subcategory.membership_proposition(self._functor.on_object(candidate)), assumptions)
 
     def __call__[Datum](self, *construction_data: Datum, **keywords: Datum) -> CategoryOfCategories.ElementType:
         """``F.inverse_image(P)(data)``: ``D``'s constructor, with the result narrowed into the pullback.

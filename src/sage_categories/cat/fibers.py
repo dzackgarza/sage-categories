@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sage_categories.cat.cat_constructions import LimitCategory, limit_of_categories
+from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Cat, Functor
 from sage_categories.kernel.sage_runtime import MonoDict
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 __all__ = ["FiberCategory", "fiber"]
 
 
-class FiberCategory(LimitCategory):
+class FiberCategory(LimitSubcategory):
     """The strict fiber of a functor over one object of its codomain."""
 
     def __init__(

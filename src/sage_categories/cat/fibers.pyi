@@ -1,9 +1,9 @@
-from sage_categories.cat.cat_constructions import LimitCategory
+from sage_categories.cat.cat_constructions import LimitSubcategory
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Functor
 __all__ = ['FiberCategory', 'fiber']
 
-class FiberCategory(LimitCategory):
+class FiberCategory(LimitSubcategory):
 
     def __init__(self, diagram: Functor, defining_functor: Functor, base_object: CategoryOfCategories.ElementType) -> None:
         ...

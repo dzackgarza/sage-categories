@@ -48,6 +48,7 @@ from sage_categories.kernel.roles import (
     install_category_object_class,
     install_cat_element_root,
     kernel_base,
+    declaration_role,
     record_attribute_writes,
 )
 from sage_categories.kernel.sage_runtime import MonoDict, SageCategory, dynamic_class, lazy_attribute
@@ -123,7 +124,11 @@ class _RuntimeImplementationCategory(SageCategory):
 
     @property
     def _cmp_key(self) -> tuple[int, int, int, int]:
-        return (0, _ROLE_POSITIONS[self._current.role], self._ordinal, 0)
+        return (0, _ROLE_POSITIONS[self._current.role], self._depth, self._ordinal)
+
+    @lazy_attribute
+    def _depth(self) -> int:
+        return 1 + max((target._cmp_key[2] for target in self._targets), default=-1)
 
     def super_categories(self) -> list[SageCategory]:
         return list(self._targets)
@@ -141,6 +146,7 @@ class Node(NamedTuple):
 _runtime_categories: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 _RUNTIME_CACHE_NAMES = (
+    "_depth",
     "parent_class",
     "_all_super_categories",
     "_all_super_categories_proper",
@@ -311,7 +317,7 @@ def _projection_providers() -> Iterator[tuple[str, Category, Role, type[Category
     """Yield normalized declaration providers once for every installed role surface."""
     seen: list[Node] = []
     for role in Role:
-        for category, _ in _node_runtimes[role].items():
+        for category, _ in sorted(_node_runtimes[role].items(), key=lambda item: item[0]._ordinal):
             current = node(category, role)
             if any(same_node(current, known) for known in seen):
                 continue
@@ -334,6 +340,15 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
         result[surface_name][provider_name] = tuple(
             dict.fromkeys(existing + entry)
         )
+    from sage_categories.kernel.roles import declared_roles, category_universal_class
+
+    for provider, role in declared_roles():
+        provider_name = _declaration_name(provider)
+        relations = result.setdefault(_projection_surface(role), {})
+        if provider_name in relations:
+            continue
+        base = _installed_root_declarations.get(kernel_base(role), category_universal_class().ElementType)
+        relations[provider_name] = () if provider is base else (_declaration_name(base),)
     return result
 
 
@@ -473,11 +488,7 @@ _node_runtimes: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 
 def _runtime_node(runtime_class: type[CategoryPoint]) -> Node | None:
-    for role, table in _node_runtimes.items():
-        for category, runtime in table.items():
-            if runtime.owner is runtime_class:
-                return Node(category, role)
-    return None
+    return vars(runtime_class).get("_category_runtime_node")
 
 
 def runtime_declaration(runtime_class: type[CategoryPoint]) -> type[CategoryPoint] | None:
@@ -548,6 +559,17 @@ def runtime_semantic_bases(
     """
     current = _runtime_node(runtime_class)
     if current is None:
+        for role, table in _node_runtimes.items():
+            for category, runtime in table.items():
+                if category.local_role_class(role) is runtime_class:
+                    installed = _installed_root_declarations.get(_stable_role_class(runtime.owner, role))
+                    if installed is not None and installed is not runtime_class:
+                        return (installed,)
+        role = declaration_role(runtime_class)
+        if role is not None:
+            installed = _installed_root_declarations.get(kernel_base(role))
+            if installed is not None and installed is not runtime_class:
+                return (installed,)
         return None
     supplied = [
         source.category.local_role_class(source.role)
@@ -1120,8 +1142,9 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
 def _install_runtime_node(current: Node) -> type[CategoryPoint]:
     """Install one compiled node from its private Sage runtime category."""
     compiled = _compiled_class(current)
+    compiled._category_runtime_node = current
     _assert_no_semantic_collisions(compiled)
-    node_initializer = vars(compiled).get("__init__")
+    node_initializer = vars(current.category.local_role_class(current.role)).get("__init__")
     written = node_initializer is not None
     if node_initializer is None:
         node_initializer = _silent_initializer
@@ -1175,8 +1198,6 @@ def apply_level_shift(member: Category, placement: Category) -> None:
         for runtime in affected
     }
     changed._targets = _runtime_targets(current)
-    for runtime in reversed(affected):
-        runtime._ordinal = next(_runtime_ordinals)
     for runtime in affected:
         for name in _RUNTIME_CACHE_NAMES:
             runtime.__dict__.pop(name, None)

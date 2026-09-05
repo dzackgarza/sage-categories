@@ -34,10 +34,12 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.morphisms import MorphismCategory
 
-__all__ = ["left_kan_extension", "left_kan_unit", "right_kan_counit", "right_kan_extension"]
+__all__ = ["left_kan_desc", "left_kan_extension", "left_kan_unit", "right_kan_counit", "right_kan_extension", "right_kan_lift"]
 
 _left: TripleDict = TripleDict(weak_values=False)
 _right: TripleDict = TripleDict(weak_values=False)
+_left_factors: TripleDict = TripleDict(weak_values=False)
+_right_factors: TripleDict = TripleDict(weak_values=False)
 
 
 def _star() -> CategoryOfCategories.ElementType:
@@ -61,7 +63,8 @@ def _comma_pair(vertex: CategoryOfCategories.ElementType) -> CategoryOfCategorie
 
 def _comma_arrow(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
     """The component at the second vertex: the arrow ``F a -> G b``."""
-    return vertex.component(_cospan()(1))
+    arrows = vertex.category().narrowing_base().factor(_cospan()(1))
+    return arrows.diagram(vertex.component(_cospan()(1))).on_morphism(Cat().Simplex(1).generator("0->1"))
 
 
 def _comma_object(
@@ -179,3 +182,49 @@ def right_kan_extension(along: Functor, functor: Functor) -> Functor:
 def right_kan_counit(along: Functor, functor: Functor) -> NaturalTransformation:
     """The counit ``Ran_K F * K => F`` retained by the right Kan extension construction."""
     return _right_retained(along, functor)[1]
+
+
+def right_kan_lift(along: Functor, functor: Functor, candidate: Functor, transformation: NaturalTransformation) -> NaturalTransformation:
+    """The unique ``H => Ran_K(F)`` induced by ``H K => F``."""
+    extension = right_kan_extension(along, functor)
+    assert candidate in Fun(along.codomain(), functor.codomain())
+    assert transformation in Fun(along.domain(), functor.codomain()).morphism_category(1)(candidate * along, functor)
+    key = (along, functor, candidate)
+    if key not in _right_factors:
+        _right_factors[key] = MonoDict()
+    retained = _right_factors[key]
+    if transformation not in retained:
+        def component(value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            limit = extension.on_object(value)
+            shape = limit.index_category()
+            return limit.universal_morphism(cone(
+                limit.diagram(), candidate.on_object(value),
+                lambda vertex: transformation.component(shape.second_projection().on_object(vertex))
+                * candidate.on_morphism(_comma_arrow(vertex)),
+            ))
+
+        retained[transformation] = Fun(along.codomain(), functor.codomain()).morphism_category(1)(candidate, extension)(component)
+    return retained[transformation]
+
+
+def left_kan_desc(along: Functor, functor: Functor, candidate: Functor, transformation: NaturalTransformation) -> NaturalTransformation:
+    """The unique ``Lan_K(F) => H`` induced by ``F => H K``."""
+    extension = left_kan_extension(along, functor)
+    assert candidate in Fun(along.codomain(), functor.codomain())
+    assert transformation in Fun(along.domain(), functor.codomain()).morphism_category(1)(functor, candidate * along)
+    key = (along, functor, candidate)
+    if key not in _left_factors:
+        _left_factors[key] = MonoDict()
+    retained = _left_factors[key]
+    if transformation not in retained:
+        def component(value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            colimit = extension.on_object(value)
+            shape = colimit.index_category()
+            return colimit.universal_morphism(cocone(
+                colimit.diagram(), candidate.on_object(value),
+                lambda vertex: candidate.on_morphism(_comma_arrow(vertex))
+                * transformation.component(shape.first_projection().on_object(vertex)),
+            ))
+
+        retained[transformation] = Fun(along.codomain(), functor.codomain()).morphism_category(1)(extension, candidate)(component)
+    return retained[transformation]

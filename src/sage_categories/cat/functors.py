@@ -75,6 +75,8 @@ class NaturalTransformationData:
     """The local state introduced by the natural-transformation role."""
 
     assignment: Assignment
+    source: Functor
+    target: Functor
 
 
 Cat = _category.Cat
@@ -277,7 +279,9 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
             return value
         assert value in self, f"{value!r} is not a diagram of shape {self.domain()!r} in {self.codomain()!r}"
         if self.domain() is Cat().Terminal():
-            return value.defining_morphism()
+            return self.codomain().point_functor(value)
+        if self.domain() is Cat().Simplex(1) and value._is_morphism():
+            return self.codomain().arrow_functor(value)
         return diagram_of(value)
 
     def construct_morphism(
@@ -295,7 +299,15 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
             assert ask(square_target * first == second * square_source) is not False, (
                 f"({first!r}, {second!r}) is not a commuting square from {square_source!r} to {square_target!r}"
             )
-        return super().construct_morphism(source, target, assignment)
+        return Cat().construct_two_morphism(source, target, assignment, self.diagram(source), self.diagram(target))
+
+    def construct_identity(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation:
+        diagram = self.diagram(value)
+        return Cat().construct_two_morphism(
+            value, value,
+            lambda vertex: diagram.codomain().morphism_category(1)(diagram.on_object(vertex), diagram.on_object(vertex)).one(),
+            diagram, diagram,
+        )
 
     # -- diagrams (POL-FUN-029) -----------------------------------------------------
 
@@ -403,14 +415,16 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
         def __init__(self, data: NaturalTransformationData) -> None:
             self._assignment = data.assignment
+            self._source_functor = data.source
+            self._target_functor = data.target
             self._components: MonoDict = MonoDict()
             self._component_family = LazyFamily(self.source_functor().domain(), self._component_from_assignment)
 
         def source_functor(self) -> Functor:
-            return diagram_of(self.domain())
+            return self._source_functor
 
         def target_functor(self) -> Functor:
-            return diagram_of(self.codomain())
+            return self._target_functor
 
         def _component_from_assignment(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             if member_object in self._components:

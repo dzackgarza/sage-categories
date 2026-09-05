@@ -28,6 +28,7 @@ def vertex_of(shape: Category, index: CategoryOfCategories.ElementType | Hashabl
 @dataclass(frozen=True, eq=False, slots=True)
 class ConeData:
     transformation: NaturalTransformation
+    dual: bool = ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class ConeMorphismData:
@@ -35,6 +36,7 @@ class ConeMorphismData:
 
 class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     LimitCones: Incomplete
+    ColimitCocones: Incomplete
 
     class ObjectType(sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -64,7 +66,7 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
         def apex_morphism(self) -> MorphismCategory.ObjectType:
             ...
 
-    def __init__(self, diagram: Functor) -> None:
+    def __init__(self, diagram: Functor, dual: bool=False) -> None:
         ...
 
     def diagram(self) -> Functor:

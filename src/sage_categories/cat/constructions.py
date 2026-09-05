@@ -563,7 +563,7 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
 
     def __call__(
         self,
-        family: Functor | tuple[CategoryOfCategories.ElementType, ...],
+        family: CategoryOfCategories.ElementType | tuple[CategoryOfCategories.ElementType, ...],
         *factors: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
         """Construct a known nontrivial discrete limit, or use the sequence form."""
@@ -865,7 +865,7 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
 
     def __call__(
         self,
-        family: Functor | tuple[CategoryOfCategories.ElementType, ...],
+        family: CategoryOfCategories.ElementType | tuple[CategoryOfCategories.ElementType, ...],
         *summands: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
         """Construct a known nontrivial discrete colimit, or use the sequence form."""

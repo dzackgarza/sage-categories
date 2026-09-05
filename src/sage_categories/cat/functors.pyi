@@ -11,6 +11,8 @@ __all__ = ['Functor', 'FunctorProperty', 'FunctorCategory', 'FunctorsCategory', 
 @dataclass(frozen=True, eq=False, slots=True)
 class NaturalTransformationData:
     assignment: Assignment
+    source: Functor
+    target: Functor
 Cat = _category.Cat
 Functor: Incomplete
 
@@ -24,13 +26,13 @@ class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [A
 
 class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
 
-    class ObjectType(sage_categories.cat.functors.FunctorCategory.ObjectType, sage_categories.cat.properties.NarrowedProperty.ObjectType, sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType(sage_categories.cat.functors.FunctorCategory.ElementType, sage_categories.cat.properties.NarrowedProperty.ElementType, sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.properties.NarrowedProperty.MorphismType, sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
@@ -65,7 +67,13 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
     def construct_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, assignment: Assignment) -> NaturalTransformation:
         ...
 
+    def construct_identity(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation:
+        ...
+
     def evaluation(self, vertex: CategoryOfCategories.ElementType) -> Functor:
+        ...
+
+    def ev(self, vertex: CategoryOfCategories.ElementType | int) -> Functor:
         ...
 
     def constant(self, value: CategoryOfCategories.ElementType) -> Functor:

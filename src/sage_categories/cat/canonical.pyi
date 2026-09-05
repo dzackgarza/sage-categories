@@ -2,6 +2,7 @@ import sage_categories
 from collections.abc import Hashable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.predicates import UnknownClass
 __all__ = ['FinitePresentedCategory', 'enumerated_datum', 'empty_category', 'simplex', 'boundary', 'horn', 'walking_isomorphism', 'walking_parallel_pair']
 type Word = tuple[str, ...]
 type Generator = tuple[str, Hashable, Hashable]
@@ -63,10 +64,16 @@ class FinitePresentedCategory(Category[[Word], []]):
     def object_point(self, vertex: FinitePresentedCategory.ObjectType) -> CategoryOfCategories.ElementType:
         ...
 
+    def finite_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass:
+        ...
+
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.MorphismType:
         ...
 
     def generating_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...]:
+        ...
+
+    def relations(self) -> tuple[Relation, ...]:
         ...
 
     def construct_morphism(self, domain: FinitePresentedCategory.ObjectType, codomain: FinitePresentedCategory.ObjectType, word: Word) -> FinitePresentedCategory.MorphismType:

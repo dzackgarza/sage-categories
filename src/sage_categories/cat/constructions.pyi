@@ -16,13 +16,13 @@ def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category
 
 class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], name: str, full_subcategory_of: tuple[Category, ...]) -> None:
@@ -106,16 +106,10 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         def product_factors(self) -> Functor:
             ...
 
-        def index_category(self) -> Category:
-            ...
-
         def cone(self) -> NaturalTransformation:
             ...
 
         def product_projection(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
-            ...
-
-        def universal_morphism(self, candidate_cone: NaturalTransformation) -> MorphismCategory.ObjectType:
             ...
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...]) -> None:
@@ -133,7 +127,7 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     def diagrams(self, shape: Category) -> Category:
         ...
 
-    def __call__(self, family: Functor | tuple[CategoryOfCategories.ElementType, ...]) -> CategoryOfCategories.ElementType:
+    def __call__(self, family: CategoryOfCategories.ElementType | tuple[CategoryOfCategories.ElementType, ...], *factors: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         ...
 
     def with_universal_data(self, diagram: Functor, apex: CategoryOfCategories.ElementType, limiting_cone: NaturalTransformation, mediator: Mediator) -> CategoryOfCategories.ElementType:
@@ -141,27 +135,18 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
 
 class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType:
-
-        def diagram(self) -> Functor:
-            ...
-
-        def index_category(self) -> Category:
-            ...
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
 
         def cocone(self) -> NaturalTransformation:
             ...
 
         def injection(self, index: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-            ...
-
-        def universal_morphism(self, candidate_cocone: NaturalTransformation) -> MorphismCategory.ObjectType:
             ...
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...], shape: Category) -> None:
@@ -214,13 +199,13 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
 class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
 
         def coproduct_summands(self) -> Functor:
             ...
@@ -243,7 +228,7 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
     def diagrams(self, shape: Category) -> Category:
         ...
 
-    def __call__(self, family: Functor | tuple[CategoryOfCategories.ElementType, ...]) -> CategoryOfCategories.ElementType:
+    def __call__(self, family: CategoryOfCategories.ElementType | tuple[CategoryOfCategories.ElementType, ...], *summands: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         ...
 
     def with_universal_data(self, diagram: Functor, apex: CategoryOfCategories.ElementType, colimiting_cocone: NaturalTransformation, mediator: Mediator) -> CategoryOfCategories.ElementType:

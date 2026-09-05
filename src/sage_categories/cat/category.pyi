@@ -299,6 +299,18 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __pow__(self, exponent: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             ...
 
+        def diagram(self) -> Functor:
+            ...
+
+        def index_category(self) -> Category:
+            ...
+
+        def projection(self, index: CategoryOfCategories.ElementType | int) -> MorphismCategory.ObjectType:
+            ...
+
+        def universal_morphism(self, candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+            ...
+
     class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: FunctorData) -> None:
@@ -320,6 +332,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             ...
 
         def base_change(self, defining_functor: Functor) -> Functor:
+            ...
+
+        def restrict(self, source: Category, target: Category) -> Functor:
             ...
 
         def op(self) -> Functor:
@@ -382,7 +397,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def composite(self, second: Functor, first: Functor) -> Functor:
         ...
 
-    def construct_two_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, assignment: Assignment) -> NaturalTransformation:
+    def construct_two_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, assignment: Assignment, source_functor: Functor | None=None, target_functor: Functor | None=None) -> NaturalTransformation:
         ...
 
     def identity_two_morphism(self, member_object: CategoryOfCategories.ElementType) -> NaturalTransformation:

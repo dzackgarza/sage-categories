@@ -15,6 +15,9 @@ def building_role_classes() -> Iterator[None]:
 
 class CategoryPoint:
 
+    def __setattr__[State](self, name: str, value: State) -> None:
+        ...
+
     def __hash__(self) -> int:
         ...
 

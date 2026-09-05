@@ -1,3 +1,4 @@
+import sage_categories
 from _typeshed import Incomplete
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -16,15 +17,15 @@ class TotalConeMorphismData:
 class TotalConesCategory(CommaCategory):
     LimitCones: Incomplete
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
 
         def presentation(self) -> ConeCategory.ObjectType:
             ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def apex_morphism(self) -> MorphismCategory.ObjectType:
             ...
@@ -67,13 +68,13 @@ class TotalConesCategory(CommaCategory):
 
 class TotalLimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType, NaturalTransformation], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
 def total_cones(diagrams: FunctorCategory) -> TotalConesCategory:

@@ -1,3 +1,4 @@
+import sage_categories
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
@@ -11,7 +12,7 @@ class DiscreteObjectData:
 
 class DiscreteCategory(Category[[], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
 
         def __init__(self, data: DiscreteObjectData) -> None:
             ...
@@ -19,10 +20,10 @@ class DiscreteCategory(Category[[], []]):
         def point(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
     def __init__(self, index_set: CategoryOfCategories.ElementType) -> None:
@@ -71,13 +72,13 @@ class _ComparablePredicate(Predicate):
 
 class ThinMorphisms(MorphismCategory[[], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
@@ -85,7 +86,7 @@ class ThinMorphisms(MorphismCategory[[], []]):
 
 class ThinCategory(Category[[], []]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
 
         def __init__(self, data: ThinObjectData) -> None:
             ...
@@ -93,10 +94,10 @@ class ThinCategory(Category[[], []]):
         def point(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
     def __init__(self, carrier: CategoryOfCategories.ElementType, order: Predicate) -> None:

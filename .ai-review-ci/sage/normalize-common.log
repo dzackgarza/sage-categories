@@ -9,11 +9,11 @@
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 258 files tracked by git with 228 Code rules:
+  Scanning 259 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     258          Community     160                                                                
+  <multilang>       7     259          Community     160                                                                
   python           36     119          Custom         68                                                                
   yaml             11      27                                                                                           
                                                                                                                         
@@ -26,13 +26,13 @@ No files modified by autofix.
 ✅ Scan completed successfully.
  • Findings: 14 (14 blocking)
  • Rules run: 54
- • Targets scanned: 258
+ • Targets scanned: 259
  • Parsed lines: ~100.0%
  • Scan skipped: 
    ◦ Matching --exclude patterns: 2
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 258 files: 14 findings.
+Ran 54 rules on 259 files: 14 findings.
                     
                     
 ┌──────────────────┐
@@ -46,13 +46,13 @@ Ran 54 rules on 258 files: 14 findings.
                                 
           424┆ if getattr(type(category), self._name, None) is not self:
             ⋮┆----------------------------------------
-          498┆ declared = getattr(type(category), name, None)
+          503┆ declared = getattr(type(category), name, None)
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          501┆ for functor in vars(category).get("_selected_functors", ()):
+          506┆ for functor in vars(category).get("_selected_functors", ()):
                                           
     src/sage_categories/kernel/compiler.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default

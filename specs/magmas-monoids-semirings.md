@@ -258,6 +258,10 @@ The implementation of the axiom exposes
 as `G.inversion()`: the ambient's inverse of the shear map, read at `(x, e)`, is `(x, x^{-1})`. No operator is put on points.
 `AdditiveGroups(V)` is the named copy `Groups(V) × 1_+` under [Named operations](#named-operations); it writes `negation()`, unary `-`, and subtraction `x - y := x + (-y)`, and reaches `AdditiveMonoids(V)` by restriction along the inclusion of presentations `{+, 0} ⊂ {+, 0, -}`. The commutative additive group category is `AdditiveGroups(V).Commutative()`, the inverse image of `Monoids(V).Commutative()` along the renaming projection and the inclusion.
 
+The leaf `sage_categories.algebra` names `AbelianGroups()` for `AdditiveGroups(Cartesian(Sets())).Commutative()` and supplies its presented objects and tensor product.
+`presented_abelian_group(engine)` is the object carried by the elements of a finite Sage `AdditiveAbelianGroup` or `ZZ^n / W` module with the engine's addition, decided a commutative group on construction; `integer_group()` is `Z` on its rule-defined carrier with symbolic addition.
+`AbelianTensor()` is the selected monoidal structure `(Ab, tensor, Z)`: for presented groups in Smith generators of orders `(d_i)` and `(d'_j)`, `A tensor B` is `Z^{nm} / (d_i e_{ij}, d'_j e_{ij})`, the standard presentation from right exactness ([Stacks, tag 00CV](https://stacks.math.columbia.edu/tag/00CV)). `bilinear_map(A, B)` is the universal biadditive map `(a, b) -> sum a_i b_j e_{ij}` on the product of the carriers, and `tensor_mediator(A, B, C, f)` is the morphism `A tensor B -> C` through which a biadditive rule factors, sending the class of `e_{ij}` to `f(e_i, e_j)`. The tensor acts on morphisms as the mediator of `(a, b) -> f(a) tensor g(b)`; the associator and unitors are mediators written through lifts, with executable inverses.
+
 At `V = Sets()`, an object is an ordinary group.
 At `V = Cat()`, an object is a strict 2-group: a category `X` whose multiplication, unit, and inversion are functors and whose group laws are equalities of functors.
 The cartesian hypothesis is not cosmetic.

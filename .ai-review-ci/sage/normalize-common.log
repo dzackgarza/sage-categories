@@ -60,30 +60,30 @@ Ran 54 rules on 249 files: 13 findings.
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          342┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          351┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          342┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          351┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
             ⋮┆----------------------------------------
-          350┆ relations = result.setdefault(_projection_surface(role), {})
+          359┆ relations = result.setdefault(_projection_surface(role), {})
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          353┆ base = _installed_root_declarations.get(kernel_base(role),
+          362┆ base = _installed_root_declarations.get(kernel_base(role),
                category_universal_class().ElementType)                   
             ⋮┆----------------------------------------
-          368┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          377┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          368┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          377┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
                                        
     src/sage_categories/kernel/roles.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default

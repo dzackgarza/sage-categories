@@ -104,3 +104,52 @@ Axiom/PropertySubcategory wiring, that the contract announces unmet obligations
 only by raising at call time, that Cat cannot hold the categorical structure facts
 downstream code needs, and that the template does not run. That is more kernel
 knowledge than the philosophy wants at the prototyping stage.
+
+### Provisional: what could be reabsorbed upstream
+
+*Advisory only — a post-mortem sweep of this workstream's code, not a mandate, a
+plan, or an approved design. Each note points at leaf or kernel code written here
+that a more capable Cat or kernel could absorb, with the reduction it would yield.
+Ideas, to be weighed, not obligations.*
+
+- **Derive named universal objects from the construction already present.**
+  `Terminal()` was hand-written this workstream on both `FunctorCategory` and
+  `FinitePresentedCategory`, yet each is computable from machinery the category
+  already carries — the empty pointwise limit, and finite morphism enumeration. A
+  generic derivation of `Terminal`, `Initial`, and the other named universal
+  objects from `limit_construction` and finite enumeration would delete both
+  patches and spare every later leaf the same. (Touches warts 3, 4.)
+
+- **A generic endorelation-from-predicate construction with finite property
+  decision.** Most of `order/posets.py` is "a set plus a binary predicate," with
+  reflexivity, antisymmetry, transitivity, and totality decided over the finite
+  carrier (`_related_pairs`, `_decide_partial_order`, `_decide_total_order`,
+  `_decide_order_related`, `from_predicate`). None of it is order-specific. Lifted
+  into Cat, or unified with the existing `cat/relations.py` law predicates, the
+  order leaf would state only which properties name `Posets` and
+  `TotallyOrderedSets`, removing roughly the enumeration half of the module and
+  generalizing to any "structured set decided by a finite predicate" leaf.
+  (Touches warts 1, 2, 9.)
+
+- **A faithful-structure-over-a-base scaffold.** The leaf's
+  `construct_identity`, `composite`, `construct_morphism`, and its
+  relation-preservation check are the mechanical content of "objects are base
+  objects with extra data; morphisms are base morphisms preserving it." The
+  algebraic leaves already get this shape from `InserterCategory`; a lighter base
+  for structure-by-a-forgetful-functor leaves would absorb the identity and
+  composite wiring and take only the preservation predicate. (Touches warts 8, 9.)
+
+- **Pair-membership as a proposition on the relation subobject.** If the subobject
+  value answered "is this ordered pair in me?" as a proposition, the template's
+  intended `__le__` would run and the bespoke `order_related` predicate and handler
+  would be unnecessary. (Touches wart 1.)
+
+- **Lazy predicate-handler domain resolution.** Resolving a handler's semantic
+  domain when first needed rather than at registration would remove the
+  definition-order constraint and the "registrations at the module bottom" dance.
+  (Touches wart 7.)
+
+- **Derived property-subcategory inclusions.** Deriving the cross-inclusions
+  `NarrowedProperty` needs for a decidable least-common-category, rather than
+  enumerating them imperatively, would retire the hand-fix made this workstream and
+  the residual "no least common category" failures. (Touches wart 6.)

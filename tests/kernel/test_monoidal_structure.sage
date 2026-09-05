@@ -92,7 +92,7 @@ def test_composition_tensor() -> None:
     assert ask(monoid.unit_morphism().component(C(0)) == edge(0, 1)) is True
     assert monoid.unit_morphism().domain() is identity
     assert monoid.unit_morphism().codomain() is closure
-    assert monoid.multiplication().component(C(2)).codomain() is C(2)
+    assert monoid.operation().component(C(2)).codomain() is C(2)
     assert Monoids(structure).to_magmas().on_object(monoid) is magma
 
 
@@ -115,8 +115,8 @@ def test_closure_monad_on_two_element_chain() -> None:
     assert structure.unit() is identity
     assert ask(identity == endofunctors.Terminal()) is False
     assert ask(monad.unit_morphism().component(interval(0)) == edge) is True
-    assert monad.multiplication().component(interval(0)).domain() is interval(1)
-    assert monad.multiplication().component(interval(0)).codomain() is interval(1)
+    assert monad.operation().component(interval(0)).domain() is interval(1)
+    assert monad.operation().component(interval(0)).codomain() is interval(1)
 
 
 test_functor_and_transformation_equality()

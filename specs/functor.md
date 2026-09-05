@@ -1361,7 +1361,7 @@ Reflexivity, transitivity, and antisymmetry ask `Delta <= R`, `R R <= R`, and `R
 
 ### Monoid objects
 
-For a selected monoidal category `V`, `Monoids(V)` is notation-neutral.
+For a selected monoidal category `V`, `Monoids(V)` has one operation and one unit and names neither further.
 It is a subcategory of `Magmas(V)` because its morphisms preserve all monoid structure:
 
 ```python
@@ -1370,7 +1370,7 @@ class MonoidsCategory(Category):
         return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations()(),)
 ```
 
-The additive and multiplicative refinements retain their selected element interfaces.
+The symbols `+` and `*` live on the named copies `AdditiveMonoids(V) = Monoids(V) × 1_+` and `MultiplicativeMonoids(V)`, whose renaming projection to `Monoids(V)` carries access only and whose carrier functor carries inheritance ([Named operations](magmas-monoids-semirings.md#named-operations), D185).
 
 ### Pointed sets
 

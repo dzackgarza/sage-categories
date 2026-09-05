@@ -708,6 +708,15 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """
         raise AssertionError(f"{self!r} declares no terminal object")
 
+    def point_morphism(self, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        """The morphism ``1_C -> X`` that selects a point of ``X``, the converse of ``element_from_defining_morphism``.
+
+        A category whose points are morphisms from its terminal object states this
+        reading; it is what lets a generalized-element diagram such as ``μ ∘ ⟨x, y⟩`` be
+        evaluated on points.
+        """
+        raise AssertionError(f"{self!r} declares no morphism from its terminal object selecting a point")
+
     def point_functor(self, member_object: CategoryOfCategories.ElementType) -> Functor:
         """The point ``* -> self`` selecting the object ``member_object``.
 

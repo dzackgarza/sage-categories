@@ -106,38 +106,60 @@ and no law.
 
 The constructor receives or defines `mu_X`.
 The specification does not prescribe its private storage.
-The public surface has no generic `operation()` or `combine()` alias.
+The public surface names the operation once, `X.operation()`, and puts no operator on points.
 The fixed-endpoint magma-morphism category owns the operation-preservation containment predicate.
 `cat_kernel` derives its standard property application (D175).
 
-## Additive and multiplicative forms
+## Named operations
 
-The two notation subcategories are
+Notation is not mathematics (D185).
+The symbols `+` and `*` are renamings of the one generator of the magma theory.
+A renaming of generators is an isomorphism of presented theories, so its models form a category isomorphic to `Magmas(V)` and distinct from it.
+That category is the product with the one-object category on the symbol:
 
 ```python
-Magmas(V).Additive()
-Magmas(V).Multiplicative()
+AdditiveMagmas(V)        # Magmas(V)  × 1_+
+MultiplicativeMagmas(V)  # Magmas(V)  × 1_*
+AdditiveMonoids(V)       # Monoids(V) × 1_+
+MultiplicativeMonoids(V) # Monoids(V) × 1_*
 ```
 
-They retain the same underlying object, multiplication morphism, and morphisms.
-The additive subcategory exposes `+` on points.
-The multiplicative subcategory exposes `*` on points.
-These operators belong to the two presentation subcategories, not to the kernel.
-A later conventional presentation can declare its own category-owned point operation and inclusion into `Magmas(V)`.
-The current foundation has no operator-registration framework.
-Their complete immediate structure-functor tuples are
+Here `1_s` is `Discrete({s})`, the discrete category on the one-point set of the symbol.
+Each product is retained in `Cat().Products()` with its two projections.
+An object is a pair `(X, s)` of a neutral object and the symbol; `AdditiveMonoids(V).renamed(M)` constructs it over a neutral monoid `M`, and `homomorphism(source, target, f)` constructs its morphism over a neutral morphism `f`.
+The first projection is the renaming isomorphism, restriction along `· ↦ s`; it is retained for access and carries no name.
+Names pass only along restriction functors induced by inclusions of presentations.
+The complete immediate structure-functor tuples are
 
 ```python
-# Magmas(V).Additive()
+# AdditiveMagmas(V), MultiplicativeMagmas(V): restriction along the inclusion of the empty theory
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations().Full()(),)
+    return (
+        Fun(self, LimitCategory(diagram)).Monomorphisms().Isofibrations().Full()(),
+        self.to_carrier(),     # Fun(self, C).Faithful().Isofibrations()((X, μ, s) ↦ X)
+    )
 ```
 
 ```python
-# Magmas(V).Multiplicative()
+# AdditiveMonoids(V), MultiplicativeMonoids(V): restriction along the inclusion {s} ⊂ {s, e}
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations().Full()(),)
+    return (
+        Fun(self, LimitCategory(diagram)).Monomorphisms().Isofibrations().Full()(),
+        self.to_named_magmas(),  # Fun(self, AdditiveMagmas(V)).Faithful().Isofibrations()((M, s) ↦ (magma of M, s))
+    )
 ```
+
+The owned surface of each copy is its renamed generator:
+
+| Category | Owned surface |
+| --- | --- |
+| `AdditiveMagmas(V)` | `X.addition()`, `x + y` on points. |
+| `MultiplicativeMagmas(V)` | `X.multiplication()`, `x * y` on points. |
+| `AdditiveMonoids(V)` | `X.zero()` when the monoidal unit is terminal; `addition()` and `+` through `AdditiveMagmas(V)`. |
+| `MultiplicativeMonoids(V)` | `X.one()` when the monoidal unit is terminal; `multiplication()` and `*` through `MultiplicativeMagmas(V)`. |
+
+`X.neutral()` and `f.neutral_morphism()` read the neutral object and morphism under the renaming.
+No neutral name, `operation()` or `unit_morphism()`, reaches a named copy.
 
 For cartesian `V`, two generalized elements `x,y:T -> X` combine through
 
@@ -149,9 +171,11 @@ T\xrightarrow{\Delta_T}T\times T
 
 This diagram is the generalized-element meaning of the syntax.
 When `T` is terminal, `x` and `y` are points and the result is an actual element.
+The point operators evaluate it: the points are read in the carrier through the retained point comparison, `C.point_morphism(x)` and `C.point_morphism(y)` are their morphisms `1_C -> X`, `pair_maps` forms `x × y` on the diagonal, and the resulting point of `X` is re-owned by the structured object.
 For `C = Sets()`, this gives the usual binary operation on elements.
 
-When `V` is braided monoidal, `Magmas(V).Commutative()` is defined by equality of `mu_X` and its composite with the braiding on `X tensor X`. It propagates to both notation subcategories through property inverse image.
+When `V` is braided monoidal, `Magmas(V).Commutative()` is defined by equality of `mu_X` and its composite with the braiding on `X tensor X`.
+`AdditiveMagmas(V).Commutative()` is its inverse image along the renaming projection, and likewise for the other copies.
 
 ## Monoids
 
@@ -196,28 +220,10 @@ M.unit_morphism()
 
 `unit_morphism()` returns `eta_X:I -> X`.
 It is a point only when `I` is terminal.
+`M.operation()` reads the operation of the underlying magma.
 
-The notation subcategories are
-
-```python
-Monoids(V).Additive()
-Monoids(V).Multiplicative()
-```
-
-Let `U: Monoids(V) -> Magmas(V)` be the structure functor above.
-The notation subcategories are the inverse images of the matching `Magmas(V)` subcategories along `U`:
-
-```python
-Monoids(V).Additive()        is U.inverse_image(Magmas(V).Additive())
-Monoids(V).Multiplicative()  is U.inverse_image(Magmas(V).Multiplicative())
-```
-
-The pullback owns each resulting category and both of its structure functors, the projections to `Monoids(V)` and to the `Magmas(V)` subcategory ([functor.md](functor.md#inverse-image-subcategories)).
-
-When `V` is cartesian, the additive form names the unit point `zero()` and the multiplicative form names it `one()`.
-
-`Monoids(V).Additive().Commutative()` denotes commutative additive monoid objects.
-The matching multiplicative expression denotes commutative multiplicative monoid objects.
+`Monoids(V).Commutative()` denotes commutative monoid objects.
+The named copies `AdditiveMonoids(V)` and `MultiplicativeMonoids(V)` are defined under [Named operations](#named-operations); `AdditiveMonoids(V).Commutative()` is the inverse image of `Monoids(V).Commutative()` along the renaming projection.
 
 ## Groups
 
@@ -229,8 +235,9 @@ When `V` is cartesian monoidal, `Groups(V)` is the full property subcategory of 
 
 that satisfies the left and right inverse diagrams.
 A monoid morphism between group objects preserves inversion.
-The additive form `Groups(V).Additive()` exposes unary `-` and subtraction.
-The commutative additive group category is `Groups(V).Additive().Commutative()`.
+`G.inversion()` reads `iota_X`; no operator is put on points.
+`AdditiveGroups(V)` is the named copy `Groups(V) × 1_+` under [Named operations](#named-operations); it writes `negation()`, unary `-`, and subtraction, and reaches `AdditiveMonoids(V)` by restriction along the inclusion of presentations.
+The commutative additive group category is `AdditiveGroups(V).Commutative()`.
 
 The leaf constructs the functor through its complete actions:
 
@@ -239,7 +246,7 @@ def to_monoids(self) -> Cat().MorphismType:
     D = Monoids(V)
 
     def on_object(G):
-        return D(G.multiplication(), G.unit_morphism())
+        return D(G.operation(), G.unit_morphism())
 
     def on_morphism(f):
         source = on_object(f.domain())
@@ -295,7 +302,7 @@ At `C = Cat()`, an object is a category `X` with two functors
 two functors `1 -> X` that select the zero object and the one object, and every law an equality of functors.
 `Cardinal()` is the object of `Semirings(Cat())` that this package constructs; see [Cardinalities and ordinals](cardinality.md).
 
-The strict internal category is the subcategory of `Monoids(C_x).Additive().Commutative() * Monoids(C_x).Multiplicative()` whose two underlying objects agree and whose distributivity and absorption diagrams commute.
+The strict internal category is the pullback of `AdditiveMonoids(C_x).Commutative()` and `MultiplicativeMonoids(C_x)` over `C` along their carrier functors, cut down to the objects whose distributivity and absorption diagrams commute.
 Its defining presentation retains both component projections.
 
 The complete immediate structure-functor tuple is
@@ -308,8 +315,8 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-The shared ambient `C.ObjectType` occurs once in Sage's dynamic-class MRO.
-The two immediate structure functors supply the additive and multiplicative element interfaces.
+The two legs land in distinct categories, so a semiring inherits `zero()` and `+` along one and `one()` and `*` along the other; both composites to `C` are equal, and the carrier is inherited once.
+No neutral name, `operation()` or `unit_morphism()`, reaches a semiring (D185).
 
 `Semirings(C)` owns the compatibility laws and the combined additive and multiplicative surface.
 Its object interface exposes both unit points.
@@ -343,7 +350,7 @@ Each structure functor acts on objects and morphisms.
 Point transport uses ordinary composition for a functor whose domain is the category that carries the point.
 Compiled element inheritance is a private compiler consequence of selecting the two functors.
 
-The additive and multiplicative refinements use subcategory monomorphisms.
+The named copies are products with a one-object category; their renaming projections are retained for access, and their carrier and presentation-inclusion functors are declared faithful isofibrations.
 The semiring component functors come from the generic subobject-of-product construction.
 Longer routes to `C` arise through the projections of `C_x`.
 
@@ -351,14 +358,14 @@ Longer routes to `C` arise through the projections of `C_x`.
 
 | Category | New public mathematics |
 | --- | --- |
-| `Magmas(V)` | Operation-preservation predicate on morphisms. |
-| `Magmas(V).Additive()` | `+` on points. |
-| `Magmas(V).Multiplicative()` | `*` on points. |
-| `Monoids(V)` | Associativity, unit laws, and unit-preserving morphisms. |
-| `Monoids(V).Additive()` | `zero()` when the monoidal unit is terminal. |
-| `Monoids(V).Multiplicative()` | `one()` when the monoidal unit is terminal. |
-| `Groups(V)` | Inversion and the inverse laws. |
-| `Groups(V).Additive()` | Unary `-` and subtraction. |
+| `Magmas(V)` | `operation()`; operation-preservation predicate on morphisms. |
+| `AdditiveMagmas(V)` | `addition()`, `+` on points. |
+| `MultiplicativeMagmas(V)` | `multiplication()`, `*` on points. |
+| `Monoids(V)` | `unit_morphism()`; associativity, unit laws, and unit-preserving morphisms. |
+| `AdditiveMonoids(V)` | `zero()` when the monoidal unit is terminal. |
+| `MultiplicativeMonoids(V)` | `one()` when the monoidal unit is terminal. |
+| `Groups(V)` | `inversion()` and the inverse laws. |
+| `AdditiveGroups(V)` | `negation()`, unary `-`, and subtraction. |
 | `Semirings(C)` | Distributivity, absorption, and both selected monoid structures. |
 
 Inherited capabilities come from the listed structure functors.

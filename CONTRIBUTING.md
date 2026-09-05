@@ -200,7 +200,7 @@ Phase cards alone record current work and acceptance state.
 | `POL-CAT-030` | Establish the stated `Sets()` placement or apply an explicit functor to `Sets()` before using set elements, membership, cardinality, enumeration, subsets, or set equality. |
 | `POL-CAT-031`, `POL-CAT-035`, `POL-CAT-055`, `POL-CAT-080` | [Starting a work unit]. |
 | `POL-CAT-032` | An operation belongs at the most general category declaring its result, even when its value is partial or no general algorithm exists. |
-| `POL-CAT-033` | Subcategories state mathematical properties or structure, never implementation selection. Additive and multiplicative forms use `+` and `*`, without `operation()` or `combine()` aliases. |
+| `POL-CAT-033` | Subcategories state mathematical properties or structure, never implementation selection. A structure category names its operation once, `operation()`; `+` and `*` belong to the named copies `AdditiveMonoids(V) = Monoids(V) × 1_+` and `MultiplicativeMonoids(V)`, which rename the generator and receive no neutral name (D185). |
 | `POL-CAT-034` | Use `POL-API-021`. This identifier remains reserved. |
 | `POL-CAT-037`, `POL-CAT-038`, `POL-CAT-067`, `POL-CAT-068`, `POL-CAT-069`, `POL-CAT-074`, `POL-CAT-081`, `POL-CAT-082` | [Same-object refinement]. |
 | `POL-CAT-040`, `POL-CAT-041`, `POL-CAT-042` | Evaluate a morphism only on owned elements of its domain and return owned codomain elements. Validate parents in the base category and exact endpoints. Convert raw representations before evaluation. |

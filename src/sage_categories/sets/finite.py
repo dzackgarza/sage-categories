@@ -203,6 +203,10 @@ class SetsCategory(Category[[Map], []]):
     def Terminal(self) -> SetsCategory.ObjectType:
         return self(((),))
 
+    def point_morphism(self, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
+        """The constant map ``1 -> X`` at a point of ``X``."""
+        return self.constant(self.Terminal(), point)
+
     def element_from_defining_morphism(
         self, arrow: MorphismCategory.ObjectType
     ) -> SetsCategory.ElementType:

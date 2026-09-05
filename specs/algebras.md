@@ -116,9 +116,9 @@ whose factors are:
 ## Owned operations
 
 `Algebras(R, C)` owns the base-relative placement and its scalar-change functors.
-`Monoids(V_R)` owns the multiplication morphism, `unit_morphism()`, associativity, and
-unit laws. Its multiplicative presentation supplies `unit_morphism()`, `*`, and `one()`
-through ordinary inheritance. The defining morphisms remain constructor data.
+`Monoids(V_R)` owns `operation()`, `unit_morphism()`, associativity, and the unit laws.
+The named copy `MultiplicativeMonoids(V_R)` supplies `multiplication()`, `*`, and `one()`
+([Named operations](magmas-monoids-semirings.md#named-operations)). The defining morphisms remain constructor data.
 
 The module action and every operation owned by `C` arrive along `U_R`. No algebra
 constructor repeats those operations, and no accessor stands in for the composite

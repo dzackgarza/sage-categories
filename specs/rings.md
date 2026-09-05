@@ -33,8 +33,9 @@ An object of `Rings(C)` is an object `R in C` with morphisms
 \]
 
 These morphisms make `(R, +, 0, -)` an object of
-`Groups(C_x).Additive().Commutative()`.
-They make `(R, multiplication, 1)` an object of `Monoids(C_x).Multiplicative()`.
+`AdditiveGroups(C_x).Commutative()`.
+They make `(R, multiplication, 1)` an object of `MultiplicativeMonoids(C_x)`
+([Named operations](magmas-monoids-semirings.md#named-operations)).
 
 Each chosen addition or multiplication law is a morphism out of a product in `C`, in the sense stated by
 [Magmas, monoids, and semirings](magmas-monoids-semirings.md#magmas).
@@ -95,11 +96,11 @@ It remains an object of `Semirings(Cat())`.
 Let
 
 \[
-\mathcal A=\operatorname{Monoids}(C_x).\operatorname{Additive}().\operatorname{Commutative}().
+\mathcal A=\operatorname{AdditiveMonoids}(C_x).\operatorname{Commutative}().
 \]
 
 The additive-structure functors from `Semirings(C)` and
-`Groups(C_x).Additive().Commutative()` both land in \(\mathcal A\).
+`AdditiveGroups(C_x).Commutative()` both land in \(\mathcal A\).
 The defining category is their pullback:
 
 \[
@@ -107,7 +108,7 @@ The defining category is their pullback:
 =
 \operatorname{Semirings}(C)
 \times_{\mathcal A}
-\operatorname{Groups}(C_x).\operatorname{Additive}().\operatorname{Commutative}().
+\operatorname{AdditiveGroups}(C_x).\operatorname{Commutative}().
 \]
 
 Thus the two branches have one addition and one zero.
@@ -122,12 +123,10 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     )
 ```
 
-The semiring projection supplies the additive and multiplicative element interfaces and their unit points.
-The additive-group projection supplies inversion and subtraction.
-Sage's dynamic-class MRO contains each shared additive-monoid and ambient-object class once.
-The compatibility of the two branches is the retained pullback mathematics above; the
-kernel does not reconcile the diamond by comparing branchwise constructor data or public
-functor images.
+The semiring projection supplies `zero()`, `one()`, `+`, and `*`.
+The additive-group projection supplies `negation()`, unary `-`, and subtraction.
+The two composites to \(\mathcal A\) are equal, so a ring inherits its additive monoid and its carrier once; no neutral name reaches it (D185).
+The compatibility of the two branches is the retained pullback mathematics above.
 
 Both projections state their laws in the supplied ambient
 ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
@@ -136,7 +135,7 @@ Both projections state their laws in the supplied ambient
 
 `Rings(C)` owns the compatibility between the semiring and additive-group structures.
 The two projections retain all five structure morphisms.
-Unary `-` and subtraction come from `Groups(C_x).Additive().Commutative()`.
+Unary `-` and subtraction come from `AdditiveGroups(C_x).Commutative()`.
 Addition, multiplication, zero, and one come from `Semirings(C)`.
 
 At `C = Sets()`, the internal diagrams give the usual element operations.
@@ -148,7 +147,7 @@ For a general `C`, the morphisms and diagrams above remain the public definition
 - Its structure maps are morphisms in `C`.
 - Its axioms are commutative diagrams in `C`.
 - Its structure functors target `Semirings(C)` and
-  `Groups(C_x).Additive().Commutative()`.
+  `AdditiveGroups(C_x).Commutative()`.
 - `Rings(Sets())` gives ordinary rings; `Rings(Cat())` states its laws as equalities of
   functors.
 - `Rings(C).Commutative()` is a full property subcategory.

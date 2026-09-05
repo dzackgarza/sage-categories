@@ -305,9 +305,12 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
             return self._from_sequence((family, *components))
         if not callable(family):
             return self._from_sequence(tuple(family))
-        rule = family
+        return self.from_components(family)
+
+    def from_components(self, rule: ObjectRule) -> LimitCategory.ObjectType:
+        """Construct the compatible family specified at every vertex of the diagram."""
         result = self.ObjectType(FamilyObjectData(rule))
-        assert ask(components_agree(result, self)) is not False, f"{family!r} is no compatible family over {self._diagram!r}"
+        assert ask(components_agree(result, self)) is not False, f"{rule!r} is no compatible family over {self._diagram!r}"
         return result
 
     @cached_method(key=lambda self, sequence: tuple((id(member_object), member_object) for member_object in sequence))
@@ -326,12 +329,21 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         family: MorphismRule | tuple[MorphismCategory.ObjectType, ...],
     ) -> LimitCategory.MorphismType:
         rule = family if callable(family) else _sequence_rule(tuple(family))
+        return self.morphism_from_components(domain, codomain, rule)
+
+    def morphism_from_components(
+        self,
+        domain: LimitCategory.ObjectType,
+        codomain: LimitCategory.ObjectType,
+        rule: MorphismRule,
+    ) -> LimitCategory.MorphismType:
+        """Construct a morphism from its compatible component morphisms."""
         result = self.MorphismType(
             domain=domain,
             codomain=codomain,
             data=FamilyMorphismData(rule),
         )
-        assert ask(components_agree(result, self)) is not False, f"{family!r} is no compatible morphism family over {self._diagram!r}"
+        assert ask(components_agree(result, self)) is not False, f"{rule!r} is no compatible morphism family over {self._diagram!r}"
         return result
 
     def construct_identity(self, member_object: LimitCategory.ObjectType) -> LimitCategory.MorphismType:
@@ -388,8 +400,12 @@ class LimitSubcategory(LimitCategory):
         pass
 
     def __init__(self, diagram: Functor) -> None:
-        self._family_category = LimitCategory(diagram)
+        self._family_category = self.family_category(diagram)
         super().__init__(diagram)
+
+    def family_category(self, diagram: Functor) -> LimitCategory:
+        """The category of families this specified construction specializes."""
+        return LimitCategory(diagram)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun.full_subcategory_monomorphism(self, self._family_category),)
@@ -425,13 +441,13 @@ def limit_of_categories(
             def component_rule(vertex: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
                 return candidate_cone.component(vertex).on_object(member_object)
 
-            return limit(component_rule)
+            return limit.from_components(component_rule)
 
         def on_morphism(morphism: LimitCategory.MorphismType) -> LimitCategory.MorphismType:
             def family_rule(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
                 return candidate_cone.component(vertex).on_morphism(morphism)
 
-            return limit.construct_morphism(induced.on_object(morphism.domain()), induced.on_object(morphism.codomain()), family_rule)
+            return limit.morphism_from_components(induced.on_object(morphism.domain()), induced.on_object(morphism.codomain()), family_rule)
 
         induced = Fun(source, limit)(on_object, on_morphism)
         return induced

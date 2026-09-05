@@ -5,6 +5,8 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Proposition
+from sage_categories.kernel.retention import retained_involution
+from sage_categories.kernel.roles import Role
 __all__ = ['OppositeCategory', 'opposite_category', 'opposite_morphism', 'Op', 'opposite_functor', 'opposite_transformation', 'op_squared_isomorphism']
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -34,6 +36,9 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCate
         ...
 
     def is_discrete(self) -> bool:
+        ...
+
+    def role_source(self, role: Role) -> tuple[Category, Role]:
         ...
 
     def narrowing_base(self) -> Category:
@@ -85,6 +90,7 @@ Op: Functor
 def opposite_functor(functor: Functor) -> Functor:
     ...
 
+@retained_involution
 def opposite_transformation(transformation: NaturalTransformation) -> NaturalTransformation:
     ...
 

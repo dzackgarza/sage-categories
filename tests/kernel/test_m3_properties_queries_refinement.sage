@@ -305,15 +305,24 @@ def test_narrowed_construction_containment_is_retained_and_navigable() -> None:
 
 
 def test_opposite_narrowing_constructs_into_each_selected_root() -> None:
-    tokens = Tokens()
-    first, second = tokens.Light(), tokens.Tagged()
-    both = tokens.op().intersection((first.op(), second.op()))
-    value = both(5)
-
-    assert value.category() is both
-    assert value in both
-    assert value in first.op()
-    assert value in second.op()
+    for dual_first in (True, False):
+        tokens = Tokens()
+        first, second = tokens.Light(), tokens.Tagged()
+        if dual_first:
+            both = tokens.op().intersection((first.op(), second.op()))
+            original = tokens.intersection((first, second))
+        else:
+            original = tokens.intersection((first, second))
+            both = original.op()
+        assert original.op() is both
+        assert both.op() is original
+        assert tokens.op().intersection((second.op(), first.op())) is both
+        value = both(5)
+        assert value.weight() == 5
+        assert value.category() is both
+        assert value in both
+        assert value in first.op()
+        assert value in second.op()
 
 
 def test_functor_property_axioms_have_retained_containments() -> None:

@@ -15,7 +15,8 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Fun, FunctorCategory, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import cached_function
 
 __all__ = ["dual_functor_category_equivalence"]
 
@@ -38,18 +39,13 @@ def _identity_transformation(
     )
 
 
-_dual_functor_category_equivalences: MonoDict = MonoDict()
-
-
+@cached_function(key=identity_key)
 def dual_functor_category_equivalence(
     shape: Category,
     target: Category,
 ) -> EquivalencesCategory.ObjectType:
     """Return ``Fun(I, C) ≃ Fun(I.op(), C.op()).op()`` with retained data."""
     source = Fun(shape, target)
-    if source in _dual_functor_category_equivalences:
-        return _dual_functor_category_equivalences[source]
-
     dual = Fun(shape.op(), target.op())
     opposite_dual = dual.op()
 
@@ -136,11 +132,9 @@ def dual_functor_category_equivalence(
     )(counit_inverse_component)
     target_endofunctors.retain_inverses(counit, counit_inverse)
 
-    equivalence = Equivalences(source, opposite_dual)(
+    return Equivalences(source, opposite_dual)(
         forward,
         inverse,
         unit,
         counit,
     )
-    _dual_functor_category_equivalences[source] = equivalence
-    return equivalence

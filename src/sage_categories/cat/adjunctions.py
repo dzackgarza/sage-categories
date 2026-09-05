@@ -16,8 +16,10 @@ from sympy import ask as sympy_ask
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.predicates import Decision, Proposition, Unknown, ask, register_handler
+from sage_categories.kernel.construction import retained_objects
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 __all__ = [
     "Adjunctions",
@@ -114,7 +116,6 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         )
         self._forward = forward
         self._inverse = inverse
-        self._objects: MonoDict = MonoDict()
         super().__init__()
         register_handler(self._equality, self._equal)
 
@@ -151,6 +152,7 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
             )
         return None
 
+    @cached_method(key=identity_key)
     def __call__(
         self,
         unit: NaturalTransformation,
@@ -179,14 +181,7 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
             == inverse_functors.morphism_category(1)(self._inverse, self._inverse).one()
         ) is not False, "the unit and counit fail the triangle identity on the inverse functor"
 
-        if unit not in self._objects:
-            self._objects[unit] = MonoDict()
-        by_counit = self._objects[unit]
-        if counit not in by_counit:
-            by_counit[counit] = self.ObjectType(
-                data=AdjunctionData(self._forward, self._inverse, unit, counit),
-            )
-        return by_counit[counit]
+        return self.ObjectType(data=AdjunctionData(self._forward, self._inverse, unit, counit))
 
     def construct_morphism(
         self,
@@ -249,7 +244,7 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         )
 
     def _chosen_inhabitation(self) -> Decision:
-        return True if self._objects else Unknown
+        return True if retained_objects(self) else Unknown
 
     def __repr__(self) -> str:
         return f"Adjunctions({self._forward!r}, {self._inverse!r})"
@@ -303,8 +298,6 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
         assert source in Cat() and target in Cat()
         self._source = source
         self._target = target
-        self._objects: MonoDict = MonoDict()
-        self._forward_projection: Functor | None = None
         super().__init__()
         register_handler(self._equality, self._equal)
 
@@ -336,6 +329,7 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
             )
         return None
 
+    @cached_method(key=identity_key)
     def __call__(
         self,
         forward: Functor,
@@ -354,20 +348,7 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
         refine(forward, forward_functors.Equivalences())
         refine(inverse, inverse_functors.Equivalences())
 
-        if forward not in self._objects:
-            self._objects[forward] = MonoDict()
-        by_inverse = self._objects[forward]
-        if inverse not in by_inverse:
-            by_inverse[inverse] = MonoDict()
-        by_unit = by_inverse[inverse]
-        if unit not in by_unit:
-            by_unit[unit] = MonoDict()
-        by_counit = by_unit[unit]
-        if counit not in by_counit:
-            by_counit[counit] = self.ObjectType(
-                data=EquivalenceData(forward, inverse, unit, counit),
-            )
-        return by_counit[counit]
+        return self.ObjectType(data=EquivalenceData(forward, inverse, unit, counit))
 
     def construct_morphism(
         self,
@@ -409,41 +390,28 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
             second.transformation() * first.transformation(),
         )
 
+    @cached_method
     def forward_projection(self) -> Functor:
         """The retained functor ``Equivalences(C, D) -> Fun(C, D)``."""
-        if self._forward_projection is None:
-            self._forward_projection = Fun(self, Fun(self._source, self._target))(
-                lambda equivalence: equivalence.forward(),
-                lambda morphism: morphism.transformation(),
-            )
-        return self._forward_projection
+        return Fun(self, Fun(self._source, self._target))(
+            lambda equivalence: equivalence.forward(),
+            lambda morphism: morphism.transformation(),
+        )
 
     def _chosen_inhabitation(self) -> Decision:
-        return True if self._objects else Unknown
+        return True if retained_objects(self) else Unknown
 
     def __repr__(self) -> str:
         return f"Equivalences({self._source!r}, {self._target!r})"
 
 
-_adjunctions: MonoDict = MonoDict()
-_equivalences: MonoDict = MonoDict()
-
-
+@cached_function(key=identity_key)
 def Adjunctions(forward: Functor, inverse: Functor) -> AdjunctionsCategory:
     """Return the retained category of adjunction data for ``forward`` and ``inverse``."""
-    if forward not in _adjunctions:
-        _adjunctions[forward] = MonoDict()
-    by_inverse = _adjunctions[forward]
-    if inverse not in by_inverse:
-        by_inverse[inverse] = AdjunctionsCategory(forward, inverse)
-    return by_inverse[inverse]
+    return AdjunctionsCategory(forward, inverse)
 
 
+@cached_function(key=identity_key)
 def Equivalences(source: Category, target: Category) -> EquivalencesCategory:
     """Return the retained category of equivalence data from ``source`` to ``target``."""
-    if source not in _equivalences:
-        _equivalences[source] = MonoDict()
-    by_target = _equivalences[source]
-    if target not in by_target:
-        by_target[target] = EquivalencesCategory(source, target)
-    return by_target[target]
+    return EquivalencesCategory(source, target)

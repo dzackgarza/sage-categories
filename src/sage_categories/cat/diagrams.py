@@ -46,7 +46,8 @@ from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.shapes import Discrete, DiscreteCategory
 from sage_categories.cat.predicates import Decision
 from sage_categories.cat.predicates import ask
-from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_function
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -72,6 +73,7 @@ __all__ = [
 ]
 
 
+@cached_function(key=identity_key)
 def evaluation(functors: FunctorCategory, vertex: CategoryOfCategories.ElementType) -> Functor:
     """``ev_i: Fun(I, C) -> C`` for an object ``i`` of ``I``, retained per ``i``.
 
@@ -79,68 +81,55 @@ def evaluation(functors: FunctorCategory, vertex: CategoryOfCategories.ElementTy
     ``ev_0`` its cocartesian lifts by pushout (POL-FUN-029).
     """
     assert vertex in functors.domain(), f"{vertex!r} is not an object of {functors.domain()!r}"
-    if vertex not in functors._evaluations:
-        evaluation_functor = Fun(functors, functors.codomain())(
-            lambda diagram: functors.diagram(diagram).on_object(vertex),
-            lambda transformation: transformation.component(vertex),
-        )
-        functors._evaluations[vertex] = evaluation_functor
-        if functors.domain() is Cat().Simplex(1) and functors.domain().label(vertex) == 1:
-            evaluation_functor.retain_cartesian_lifts(lambda morphism, member_object: codomain_lift(functors, morphism, member_object))
-        if functors.domain() is Cat().Simplex(1) and functors.domain().label(vertex) == 0:
-            evaluation_functor.retain_cocartesian_lifts(lambda morphism, member_object: domain_lift(functors, morphism, member_object))
-    return functors._evaluations[vertex]
+    evaluation_functor = Fun(functors, functors.codomain())(
+        lambda diagram: functors.diagram(diagram).on_object(vertex),
+        lambda transformation: transformation.component(vertex),
+    )
+    if functors.domain() is Cat().Simplex(1) and functors.domain().label(vertex) == 1:
+        evaluation_functor.retain_cartesian_lifts(lambda morphism, member_object: codomain_lift(functors, morphism, member_object))
+    if functors.domain() is Cat().Simplex(1) and functors.domain().label(vertex) == 0:
+        evaluation_functor.retain_cocartesian_lifts(lambda morphism, member_object: domain_lift(functors, morphism, member_object))
+    return evaluation_functor
 
 
+@cached_function(key=identity_key)
 def constant(functors: FunctorCategory, value: CategoryOfCategories.ElementType) -> Functor:
     """The constant diagram at ``value``, retained per value."""
     assert value in functors.codomain(), f"{value!r} is not an object of {functors.codomain()!r}"
-    if value not in functors._constants:
-        identity = functors.codomain().morphism_category(1)(value, value).one()
-        diagram = functors(lambda vertex: value, lambda morphism: identity)
-        functors._constants[value] = diagram
-        functors._constant_values[diagram] = value
-    return functors._constants[value]
+    identity = functors.codomain().morphism_category(1)(value, value).one()
+    diagram = functors(lambda vertex: value, lambda morphism: identity)
+    functors._constant_values[diagram] = value
+    return diagram
 
 
+@cached_function(key=identity_key)
 def diagonal(functors: FunctorCategory) -> Functor:
     """Return the diagonal functor ``C -> Fun(I, C)``."""
-    if functors._diagonal is None:
-        functors._diagonal = Fun(functors.codomain(), functors)(
-            lambda member_object: functors.constant(member_object),
-            lambda morphism: functors.morphism_category(1)(
-                functors.constant(morphism.domain()),
-                functors.constant(morphism.codomain()),
-            )(lambda vertex: morphism),
-        )
-    return functors._diagonal
-
-
-# A diagram constructor called on identical data returns the retained functor
-# (POL-CAT-083): discrete object rules per shape and rule, sequences per sequence and
-# ambient, cospans and spans per pair of legs and base.  Every table keys by identity.
-_object_rule_diagrams: MonoDict = MonoDict()
-_cospan_diagrams: TripleDict = TripleDict(weak_values=False)
-_span_diagrams: TripleDict = TripleDict(weak_values=False)
+    return Fun(functors.codomain(), functors)(
+        lambda member_object: functors.constant(member_object),
+        lambda morphism: functors.morphism_category(1)(
+            functors.constant(morphism.domain()),
+            functors.constant(morphism.codomain()),
+        )(lambda vertex: morphism),
+    )
 
 
 def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory.ObjectType], CategoryOfCategories.ElementType]) -> Functor:
-    """A diagram over a discrete shape from its object rule, retained per shape and rule; the morphism rule is forced."""
-    shape = functors.domain()
-    assert shape.is_discrete(), f"{shape!r} is not a discrete shape; supply a morphism rule"
-    if shape not in _object_rule_diagrams:
-        _object_rule_diagrams[shape] = MonoDict()
-    diagrams = _object_rule_diagrams[shape]
-    if rule not in diagrams:
-
-        def image_identity(identity: DiscreteCategory.MorphismType) -> MorphismCategory.ObjectType:
-            image = rule(identity.domain())
-            return image.category().morphism_category(1)(image, image).one()
-
-        diagrams[rule] = functors(rule, image_identity)
-    diagram = diagrams[rule]
+    """The diagram determined by a discrete shape and its object rule."""
+    assert functors.domain().is_discrete(), f"{functors.domain()!r} is not a discrete shape; supply a morphism rule"
+    diagram = _discrete_diagram(functors, rule)
     assert diagram.codomain() is functors.codomain(), f"{rule!r} already defines a diagram in {diagram.codomain()!r}"
     return diagram
+
+
+@cached_function(key=lambda functors, rule: identity_key(functors.domain(), rule))
+def _discrete_diagram(functors: FunctorCategory, rule: Callable[[DiscreteCategory.ObjectType], CategoryOfCategories.ElementType]) -> Functor:
+    """A discrete diagram sends each identity to the identity of its image."""
+    def image_identity(identity: DiscreteCategory.MorphismType) -> MorphismCategory.ObjectType:
+        image = rule(identity.domain())
+        return image.category().morphism_category(1)(image, image).one()
+
+    return functors(rule, image_identity)
 
 
 def sequence_position(vertex: DiscreteCategory.ObjectType) -> int:
@@ -231,6 +220,7 @@ def _fold(
     return image
 
 
+@cached_function(key=identity_key)
 def cospan_diagram(
     base: Category,
     first: MorphismCategory.ObjectType,
@@ -238,15 +228,13 @@ def cospan_diagram(
 ) -> Functor:
     """The diagram ``L(2, 2) -> C`` with legs ``first: 0 -> 2`` and ``second: 1 -> 2``, retained per legs and base."""
     assert first.codomain() is second.codomain()
-    key = (first, second, base)
-    if key not in _cospan_diagrams:
-        cospan = Cat().WalkingCospan()
-        objects = {0: first.domain(), 1: second.domain(), 2: first.codomain()}
-        images = {"0->2": first, "1->2": second}
-        _cospan_diagrams[key] = Fun(cospan, base)(lambda vertex: objects[cospan.label(vertex)], lambda path: _fold(images, lambda vertex: _vertex_identity(objects, cospan, vertex), path))
-    return _cospan_diagrams[key]
+    cospan = Cat().WalkingCospan()
+    objects = {0: first.domain(), 1: second.domain(), 2: first.codomain()}
+    images = {"0->2": first, "1->2": second}
+    return Fun(cospan, base)(lambda vertex: objects[cospan.label(vertex)], lambda path: _fold(images, lambda vertex: _vertex_identity(objects, cospan, vertex), path))
 
 
+@cached_function(key=identity_key)
 def span_diagram(
     base: Category,
     first: MorphismCategory.ObjectType,
@@ -254,13 +242,10 @@ def span_diagram(
 ) -> Functor:
     """The diagram ``L(2, 0) -> C`` with legs ``first: 0 -> 1`` and ``second: 0 -> 2``, retained per legs and base."""
     assert first.domain() is second.domain()
-    key = (first, second, base)
-    if key not in _span_diagrams:
-        span = Cat().WalkingSpan()
-        objects = {0: first.domain(), 1: first.codomain(), 2: second.codomain()}
-        images = {"0->1": first, "0->2": second}
-        _span_diagrams[key] = Fun(span, base)(lambda vertex: objects[span.label(vertex)], lambda path: _fold(images, lambda vertex: _vertex_identity(objects, span, vertex), path))
-    return _span_diagrams[key]
+    span = Cat().WalkingSpan()
+    objects = {0: first.domain(), 1: first.codomain(), 2: second.codomain()}
+    images = {"0->1": first, "0->2": second}
+    return Fun(span, base)(lambda vertex: objects[span.label(vertex)], lambda path: _fold(images, lambda vertex: _vertex_identity(objects, span, vertex), path))
 
 
 def codomain_lift(

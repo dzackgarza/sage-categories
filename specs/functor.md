@@ -928,6 +928,7 @@ eta.op()     # G.op() => F.op(), for eta: F => G
 
 It retains the natural isomorphism `Op * Op ≅ Id`.
 Thus duality acts on categories, functors, and natural transformations.
+Dualizing an intersection retains the intersection of its dual roots, independently of construction order.
 The limit-side constructions own the implementation: terminal objects, products, limits, slices, monomorphisms, fibrations, and right Kan extensions.
 Their duals are initial objects, coproducts, colimits, coslices, epimorphisms, opfibrations, and left Kan extensions.
 For example, a colimit in `C` is the opposite of the corresponding limit in `C.op()`, and a coslice is the opposite of the corresponding slice in `C.op()`.
@@ -1194,6 +1195,16 @@ The [poset-products template](poset-products-minimal-template.py) supplies compo
 ## Comma categories, slices, coslices, and fibers
 
 For `F: A -> C` and `G: B -> C`, `Comma(F, G)` has objects `(a, b, f)` with `f: F(a) -> G(b)`. It retains its projections to `A` and `B` and the natural transformation between their composites with `F` and `G`. It is the pullback of `(ev(0), ev(1)): Fun([1], C) -> C * C` along `F * G`. This is the standard comma construction in [Mathlib](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Comma/Basic.html).
+
+For `K = Cat().Comma(F, G)`, `K.from_arrow(a, b, f)` constructs that object.
+Its `first()`, `second()`, and `arrow()` methods return `a`, `b`, and `f`.
+`Mor(K)(x, y)(u, v)` constructs the pair satisfying `G(v) * x.arrow() == y.arrow() * F(u)`.
+The morphism's `first()` and `second()` return its components.
+The generic limit of categories supplies componentwise identity, composition, and universal mediation.
+
+`Fun(I, C).TotalCones()` specializes the comma category of the diagonal `C -> Fun(I, C)` and the identity of `Fun(I, C)`.
+It inherits the comma constructors and maps through its declared inclusion.
+Its objects recover their cone presentations from the defining arrows; its morphisms expose the apex map and diagram transformation.
 
 `C.SliceOver(x)` and `C.CosliceUnder(x)` are the fixed-object comma categories. Equivalently, the slice is the pullback of `Fun([1], C).ev(1)` along `x: * -> C`, and the coslice is the pullback of `Fun([1], C).ev(0)` along `x`. Each retains its pullback projection to `Fun([1], C)`, selected as `C.SliceOver(x).projection()` or `C.CosliceUnder(x).projection()` (D157). The varying object is the composite of that projection with `Fun([1], C).ev(0)` or `Fun([1], C).ev(1)`.
 

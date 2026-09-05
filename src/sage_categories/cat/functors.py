@@ -263,10 +263,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         """A natural transformation ``F => G``."""
 
     def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
-        self._evaluations: MonoDict = MonoDict()
-        self._constants: MonoDict = MonoDict()
         self._constant_values: MonoDict = MonoDict()
-        self._diagonal: Functor | None = None
         self._finite_data: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 

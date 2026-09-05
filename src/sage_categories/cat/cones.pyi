@@ -6,6 +6,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.kernel.sage_runtime import cached_method
 __all__ = ['cone', 'cocone', 'cone_apex', 'cocone_apex', 'vertex_of', 'ConeCategory', 'LimitConesCategory', 'cones', 'limit_cones', 'cocones', 'colimit_cocones']
 type Components = Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
 type Lift = Callable[[ConeCategory.ObjectType], MorphismCategory.ObjectType]
@@ -26,11 +27,6 @@ def vertex_of(shape: Category, index: CategoryOfCategories.ElementType | Hashabl
     ...
 
 @dataclass(frozen=True, eq=False, slots=True)
-class ConeData:
-    transformation: NaturalTransformation
-    dual: bool = ...
-
-@dataclass(frozen=True, eq=False, slots=True)
 class ConeMorphismData:
     apex_morphism: MorphismCategory.ObjectType
 
@@ -40,7 +36,7 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
 
     class ObjectType(sage_categories.kernel.roles.ObjectOfCategory):
 
-        def __init__(self, data: ConeData) -> None:
+        def __init__(self, data: NaturalTransformation) -> None:
             ...
 
         def diagram(self) -> Functor:
@@ -72,6 +68,9 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     def diagram(self) -> Functor:
         ...
 
+    def apex_of(self, transformation: NaturalTransformation) -> CategoryOfCategories.ElementType:
+        ...
+
     def __call__(self, transformation: NaturalTransformation) -> ConeCategory.ObjectType:
         ...
 
@@ -84,6 +83,7 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     def composite(self, second: ConeCategory.MorphismType, first: ConeCategory.MorphismType) -> ConeCategory.MorphismType:
         ...
 
+    @cached_method
     def apex_functor(self) -> Functor:
         ...
 

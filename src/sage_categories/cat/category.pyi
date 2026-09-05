@@ -9,6 +9,7 @@ from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTrans
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import AppliedQuery, Predicate, Proposition, UnknownClass
+from sage_categories.cat.slices import CommaCategory
 from sage_categories.kernel.sage_runtime import Integer
 from typing import Literal, overload
 __all__ = ['OnObject', 'OnMorphism', 'Assignment', 'member', 'Category', 'CategoryOfCategories', 'Cat']
@@ -250,6 +251,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def property_subcategory(self, property_category: Category[MorphismData, TwoMorphismData]) -> Category[MorphismData, TwoMorphismData]:
         ...
 
+    def retain_intersection(self, roots: tuple[Category, ...], intersection: Category) -> None:
+        ...
+
     def __getattr__(self, name: str) -> Callable[..., Category[MorphismData, TwoMorphismData]]:
         ...
 
@@ -428,7 +432,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def exponential(self, exponent: Category, base: Category) -> Category:
         ...
 
-    def Comma(self, first: Functor, second: Functor) -> Category:
+    def Comma(self, first: Functor, second: Functor) -> CommaCategory:
         ...
 
     def postcompose(self, functor: Functor, diagram: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:

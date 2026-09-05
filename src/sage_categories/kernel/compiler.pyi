@@ -5,7 +5,7 @@ from sage_categories.cat.functors import Functor
 from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
 from sage_categories.kernel.sage_runtime import SageCategory, lazy_attribute
 from typing import Concatenate, NamedTuple
-__all__ = ['SemanticCollisionError', 'Node', 'node', 'same_node', 'inheriting_functors', 'declared_inheritance', 'declared_subtyping', 'compiler', 'install_on_declaration', 'construct_category_value', 'compile_category', 'recompile_category', 'apply_level_shift']
+__all__ = ['SemanticCollisionError', 'Node', 'node', 'same_node', 'inheriting_functors', 'declared_inheritance', 'declared_subtyping', 'compiler', 'install_on_declaration', 'construct_category_value', 'compile_category', 'recompile_category', 'implement_category', 'apply_level_shift']
 
 class SemanticCollisionError(Exception):
     ...
@@ -88,6 +88,9 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     ...
 
 def recompile_category(category: Category, functors: tuple[Functor, ...]) -> None:
+    ...
+
+def implement_category(category: Category, implementation: type[Category]) -> None:
     ...
 
 def apply_level_shift(member: Category, placement: Category) -> None:

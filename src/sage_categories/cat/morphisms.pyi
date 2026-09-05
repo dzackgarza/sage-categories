@@ -3,6 +3,7 @@ from _typeshed import Incomplete
 from sage_categories.cat.category import Category, CategoryOfCategories, Decision, Predicate, Proposition
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.properties import FixedEndpointProperty, FullSubcategory, PredicateSubcategory, PropertySubcategory
+from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import Integer
 from typing import Literal, overload
 __all__ = ['Mor', 'hom_inhabitation', 'MorphismCategory', 'IsomorphismsCategory', 'EndomorphismsCategory', 'FixedEndpointCategory']
@@ -107,6 +108,9 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
+        ...
+
+    def role_source(self, role: Role) -> tuple[Category, Role]:
         ...
 
     def equality(self) -> Predicate:

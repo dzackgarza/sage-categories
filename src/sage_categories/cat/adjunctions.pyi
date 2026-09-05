@@ -2,6 +2,7 @@ import sage_categories
 from dataclasses import dataclass
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor, NaturalTransformation
+from sage_categories.kernel.sage_runtime import cached_method
 __all__ = ['AdjunctionsCategory', 'EquivalencesCategory', 'Adjunctions', 'Equivalences']
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -141,6 +142,7 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
     def composite(self, second: EquivalencesCategory.MorphismType, first: EquivalencesCategory.MorphismType) -> EquivalencesCategory.MorphismType:
         ...
 
+    @cached_method
     def forward_projection(self) -> Functor:
         ...
 

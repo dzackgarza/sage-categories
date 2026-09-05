@@ -17,7 +17,9 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Proposition
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.refinement import is_placed
+from sage_categories.kernel.retention import deferred_category, retained_involution
+from sage_categories.kernel.roles import Role
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -61,7 +63,6 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
 
     def __init__(self, original: Category[MorphismData, TwoMorphismData]) -> None:
         self._original = original
-        self._derive_structure_functors = False
         super().__init__()
 
     def original(self) -> Category[MorphismData, TwoMorphismData]:
@@ -72,9 +73,9 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         """A discrete category is its own opposite's representation."""
         return self._original.is_discrete()
 
-    def _object_role_source(self) -> tuple[Category, bool]:
-        """Share the object implementation node with the original category."""
-        return self._original._object_role_source()
+    def role_source(self, role: Role) -> tuple[Category, Role]:
+        """A category and its opposite have the same objects."""
+        return (self._original, role) if role is Role.OBJECT else (self, role)
 
     def narrowing_base(self) -> Category:
         """The opposite of the original narrowing base."""
@@ -86,13 +87,7 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The opposites of the original category's selected functors."""
-        if not self._derive_structure_functors:
-            return ()
-        return tuple(_opposite_structure_functor(functor) for functor in self._original.selected_functors())
-
-    def _enable_structure_functors(self) -> None:
-        self._derive_structure_functors = True
-        self.recompile()
+        return tuple(opposite_functor(functor) for functor in self._original.selected_functors())
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return self._original.membership_proposition(candidate)
@@ -157,48 +152,17 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         return f"{self._original!r}.op()"
 
 
-_opposite_categories: MonoDict = MonoDict()
-_opposite_functors: MonoDict = MonoDict()
-_opposite_transformations: MonoDict = MonoDict()
-
-
-def _opposite_structure_functor(functor: Functor) -> Functor:
-    """Dualize one selected functor while preserving its placement relation."""
-    from sage_categories.kernel.refinement import is_placed
-
-    if not Fun.declares_subcategory(functor):
-        return opposite_functor(functor)
-    source = opposite_category(functor.domain())
-    target = opposite_category(functor.codomain())
-    if is_placed(functor, Fun.Full()):
-        opposite = Fun.full_subcategory_monomorphism(source, target)
-    else:
-        opposite = Fun.subcategory_monomorphism(source, target)
-    if functor in _opposite_functors:
-        assert _opposite_functors[functor] is opposite
-    else:
-        _opposite_functors[functor] = opposite
-        _opposite_functors[opposite] = functor
-    return opposite
-
-
 def opposite_category(category: Category) -> Category:
     """Return the retained opposite category, with ``C.op().op() is C``."""
-    if category not in _opposite_categories:
-        for functor in category.selected_functors():
-            opposite_category(functor.codomain())
-        opposite = OppositeCategory(category)
-        _opposite_categories[category] = opposite
-        _opposite_categories[opposite] = category
-        base = opposite.narrowing_base()
-        if base is not opposite:
-            key = tuple(sorted(root.ordinal() for root in opposite.narrowing_roots()))
-            if key in base._narrowings:
-                assert base._narrowings[key] is opposite
-            else:
-                base._narrowings[key] = opposite
-        opposite._enable_structure_functors()
-    return _opposite_categories[category]
+    base, roots = category.narrowing_base(), category.narrowing_roots()
+    if base is not category and not any(root is category for root in roots):
+        return base.op().intersection(tuple(root.op() for root in roots))
+    return _opposite_category(category)
+
+
+@retained_involution
+def _opposite_category(category: Category) -> Category:
+    return deferred_category(OppositeCategory, category)
 
 
 def _opposite_morphism(
@@ -206,7 +170,7 @@ def _opposite_morphism(
     morphism: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Reverse one morphism while preserving the retained double-opposite identity."""
-    if isinstance(category, OppositeCategory):
+    if isinstance(category.narrowing_base(), OppositeCategory):
         assert morphism in category.morphism_category(1)
         return morphism.original()
     opposite = opposite_category(category)
@@ -218,14 +182,15 @@ def opposite_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory
     return _opposite_morphism(morphism.base_category(), morphism)
 
 
+@retained_involution
 def _construct_opposite_functor(functor: Functor) -> Functor:
-    if functor in _opposite_functors:
-        return _opposite_functors[functor]
-
+    """Dualize both actions, preserving a declared subcategory inclusion."""
     source = opposite_category(functor.domain())
     target = opposite_category(functor.codomain())
-    if functor in _opposite_functors:
-        return _opposite_functors[functor]
+    if Fun.declares_subcategory(functor):
+        if is_placed(functor, Fun.Full()):
+            return Fun.full_subcategory_monomorphism(source, target)
+        return Fun.subcategory_monomorphism(source, target)
 
     def on_object(
         value: CategoryOfCategories.ElementType,
@@ -236,10 +201,7 @@ def _construct_opposite_functor(functor: Functor) -> Functor:
         original = _opposite_morphism(source, morphism)
         return _opposite_morphism(functor.codomain(), functor.on_morphism(original))
 
-    opposite = Fun(source, target)(on_object, on_morphism)
-    _opposite_functors[functor] = opposite
-    _opposite_functors[opposite] = functor
-    return opposite
+    return Fun(source, target)(on_object, on_morphism)
 
 
 Op: Functor = Fun(Cat(), Cat())(opposite_category, _construct_opposite_functor)
@@ -250,22 +212,17 @@ def opposite_functor(functor: Functor) -> Functor:
     return Op.on_morphism(functor)
 
 
+@retained_involution
 def opposite_transformation(transformation: NaturalTransformation) -> NaturalTransformation:
     """Return ``eta.op(): G.op() => F.op()`` for ``eta: F => G``."""
-    if transformation in _opposite_transformations:
-        return _opposite_transformations[transformation]
-
     source = transformation.source_functor()
     target = transformation.target_functor()
     source_op = opposite_functor(source)
     target_op = opposite_functor(target)
     functors = Fun(source_op.domain(), source_op.codomain())
-    opposite = functors.morphism_category(1)(target_op, source_op)(
+    return functors.morphism_category(1)(target_op, source_op)(
         lambda value: _opposite_morphism(source.codomain(), transformation.component(value))
     )
-    _opposite_transformations[transformation] = opposite
-    _opposite_transformations[opposite] = transformation
-    return opposite
 
 
 def _construct_op_squared_isomorphism() -> NaturalTransformation:

@@ -164,11 +164,20 @@ In particular, use `Mor(C).ObjectType = C.MorphismType`.
 Use Sage cache facilities according to key equality:
 
 - use `CachedRepresentation`, `UniqueRepresentation`, and `cached_method` for ordinary exact keys;
-- use `MonoDict` and `TripleDict` when a key contains an owned value with proposition-valued equality;
+- use `MonoDict` and `TripleDict` for identity tables, or Sage cached functions and methods with `kernel.retention.identity_key` for constructors whose arguments have proposition-valued equality;
 - use `dynamic_class(..., cache=True)` for a class built directly by the kernel.
 
 These caches preserve runtime identity only.
 They do not own mathematical equality or categorical structure.
+
+`kernel.retention` completes mutually identified constructions after registering their identities.
+A staged category first receives its local state, runtime roles, and placement.
+The kernel then reads all pending declarations and compiles their selected targets before their sources, using Python's `TopologicalSorter`.
+`Cat` supplies each construction and its required identity relations, including opposite involutions and intersection identifications.
+The kernel resolves chains of declared role identities through `role_source`; this includes shared objects and the morphism tower.
+
+The kernel also installs a category implementation on its retained declaration.
+It runs the implementing class's ordinary initializer before recompiling the roles and preserves the declared identity and ordinal.
 
 ## Properties and constructions
 

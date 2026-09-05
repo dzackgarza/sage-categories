@@ -1,6 +1,5 @@
 import sage_categories
 from _typeshed import Incomplete
-from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import ConeCategory
 from sage_categories.cat.functors import Functor, FunctorCategory, NaturalTransformation
@@ -8,11 +7,6 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.slices import CommaCategory
 __all__ = ['TotalConesCategory', 'TotalLimitConesCategory', 'total_cones']
-
-@dataclass(frozen=True, eq=False, slots=True)
-class TotalConeMorphismData:
-    apex: MorphismCategory.ObjectType
-    diagram: NaturalTransformation
 
 class TotalConesCategory(CommaCategory):
     LimitCones: Incomplete
@@ -33,7 +27,7 @@ class TotalConesCategory(CommaCategory):
         def diagram_transformation(self) -> NaturalTransformation:
             ...
 
-    def __init__(self, defining_diagram: Functor, diagrams: FunctorCategory, diagonal: Functor, identity: Functor) -> None:
+    def family_category(self, diagram: Functor) -> CommaCategory:
         ...
 
     def diagrams(self) -> FunctorCategory:
@@ -55,15 +49,6 @@ class TotalConesCategory(CommaCategory):
         ...
 
     def __call__(self, presentation: ConeCategory.ObjectType) -> TotalConesCategory.ObjectType:
-        ...
-
-    def construct_morphism(self, source: TotalConesCategory.ObjectType, target: TotalConesCategory.ObjectType, apex: MorphismCategory.ObjectType, diagram: NaturalTransformation) -> TotalConesCategory.MorphismType:
-        ...
-
-    def construct_identity(self, member_object: TotalConesCategory.ObjectType) -> TotalConesCategory.MorphismType:
-        ...
-
-    def composite(self, second: TotalConesCategory.MorphismType, first: TotalConesCategory.MorphismType) -> TotalConesCategory.MorphismType:
         ...
 
 class TotalLimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType, NaturalTransformation], []]):

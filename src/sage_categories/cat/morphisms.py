@@ -35,6 +35,7 @@ from sage_categories.cat.category import (
 from sage_categories.cat.predicates import register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
 from sage_categories.kernel.refinement import common_ancestor, is_placed
+from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import Integer, TripleDict, Unknown
 
 if TYPE_CHECKING:
@@ -352,8 +353,9 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             return (self.subcategory_monomorphism(),)
         return ()
 
-    def _object_role_source(self) -> tuple[Category, bool]:
-        return self._base, True
+    def role_source(self, role: Role) -> tuple[Category, Role]:
+        """Objects of ``Mor(C)`` are morphisms of ``C``."""
+        return (self._base, Role.MORPHISM) if role is Role.OBJECT else (self, role)
 
     def equality(self) -> Predicate:
         return self._base.equality()

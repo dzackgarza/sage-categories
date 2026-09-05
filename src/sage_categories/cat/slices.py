@@ -34,7 +34,8 @@ from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.predicates import Decision, Unknown
 from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
 from sage_categories.kernel.refinement import is_placed, refine
-from sage_categories.kernel.sage_runtime import MonoDict, TripleDict
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -398,18 +399,76 @@ class CommaCategory(LimitSubcategory):
     class ObjectType:
         """A triple ``(a, b, f)`` with ``f: F(a) -> G(b)``."""
 
+        def first(self) -> CategoryOfCategories.ElementType:
+            return self.category().narrowing_base().first_projection().on_object(self)
+
+        def second(self) -> CategoryOfCategories.ElementType:
+            return self.category().narrowing_base().second_projection().on_object(self)
+
+        def arrow(self) -> MorphismCategory.ObjectType:
+            category = self.category().narrowing_base()
+            projection = category.arrow_projection()
+            return projection.codomain().diagram(projection.on_object(self)).on_morphism(_walking_arrow().generator("0->1"))
+
     class ElementType:
         """A generalized element of a comma object."""
 
     class MorphismType:
         """A pair of morphisms that commutes with the two defining arrows."""
 
+        def first(self) -> MorphismCategory.ObjectType:
+            return self.base_category().narrowing_base().first_projection().on_morphism(self)
+
+        def second(self) -> MorphismCategory.ObjectType:
+            return self.base_category().narrowing_base().second_projection().on_morphism(self)
+
     def __init__(self, diagram: Functor, first: Functor, second: Functor) -> None:
         self._comma_functors = (first, second)
-        self._first_projection: Functor | None = None
-        self._second_projection: Functor | None = None
-        self._defining_transformation: NaturalTransformation | None = None
         super().__init__(diagram)
+
+    @cached_method(key=identity_key)
+    def from_arrow(
+        self,
+        first: CategoryOfCategories.ElementType,
+        second: CategoryOfCategories.ElementType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> CommaCategory.ObjectType:
+        """Construct ``(a, b, f)`` for ``f: F(a) -> G(b)``."""
+        forward, backward = self.comma_functors()
+        assert first in forward.domain() and second in backward.domain()
+        first_image, second_image = forward.on_object(first), backward.on_object(second)
+        assert arrow in forward.codomain().morphism_category(1)(first_image, second_image)
+        components = (
+            self.factor(0)((first, second)),
+            arrow,
+            self.factor(2)((first_image, second_image)),
+        )
+        return self.from_components(lambda vertex: components[self.shape().label(vertex)])
+
+    def construct_morphism(
+        self,
+        source: CommaCategory.ObjectType,
+        target: CommaCategory.ObjectType,
+        first: MorphismCategory.ObjectType,
+        second: MorphismCategory.ObjectType,
+    ) -> CommaCategory.MorphismType:
+        """Construct ``(u, v)`` with ``G(v) f = f' F(u)``."""
+        assert source in self and target in self
+        forward, backward = self.comma_functors()
+        assert first in forward.domain().morphism_category(1)(source.first(), target.first())
+        assert second in backward.domain().morphism_category(1)(source.second(), target.second())
+        first_image, second_image = forward.on_morphism(first), backward.on_morphism(second)
+        assert ask(second_image * source.arrow() == target.arrow() * first_image) is not False
+        pair, arrows, endpoints = self.factor(0), self.factor(1), self.factor(2)
+        square = (first_image, second_image)
+        components = (
+            pair.construct_morphism(source.component(0), target.component(0), (first, second)),
+            arrows.morphism_category(1)(source.component(1), target.component(1))(
+                lambda vertex: square[arrows.domain().label(vertex)]
+            ),
+            endpoints.construct_morphism(source.component(2), target.component(2), square),
+        )
+        return self.morphism_from_components(source, target, lambda vertex: components[self.shape().label(vertex)])
 
     def pair_projection(self) -> Functor:
         """The retained pullback projection to ``A * B``."""
@@ -421,31 +480,25 @@ class CommaCategory(LimitSubcategory):
         presentation = Cat().Pullbacks().presentation(self)
         return presentation.transformation().component(presentation.diagram().domain()(1))
 
+    @cached_method
     def first_projection(self) -> Functor:
         """The retained projection ``Comma(F, G) -> A``."""
-        if self._first_projection is None:
-            pair = self.pair_projection()
-            self._first_projection = pair.codomain().product_projection(0) * pair
-        return self._first_projection
+        pair = self.pair_projection()
+        return pair.codomain().product_projection(0) * pair
 
+    @cached_method
     def second_projection(self) -> Functor:
         """The retained projection ``Comma(F, G) -> B``."""
-        if self._second_projection is None:
-            pair = self.pair_projection()
-            self._second_projection = pair.codomain().product_projection(1) * pair
-        return self._second_projection
+        pair = self.pair_projection()
+        return pair.codomain().product_projection(1) * pair
 
+    @cached_method
     def defining_transformation(self) -> NaturalTransformation:
         """The retained transformation ``F pi_A => G pi_B``."""
-        if self._defining_transformation is None:
-            first, second = self.comma_functors()
-            source = first * self.first_projection()
-            target = second * self.second_projection()
-            arrows = self.arrow_projection()
-            self._defining_transformation = Fun(self, first.codomain()).morphism_category(1)(source, target)(
-                lambda member_object: arrows.codomain().diagram(arrows.on_object(member_object)).on_morphism(_walking_arrow().generator("0->1"))
-            )
-        return self._defining_transformation
+        first, second = self.comma_functors()
+        source = first * self.first_projection()
+        target = second * self.second_projection()
+        return Fun(self, first.codomain()).morphism_category(1)(source, target)(lambda member_object: member_object.arrow())
 
     def comma_functors(self) -> tuple[Functor, Functor]:
         """The defining ordered pair ``(F, G)``."""
@@ -472,14 +525,18 @@ def _endpoint_functor(base: Category) -> Functor:
     return target.universal_morphism(cone(target.product_factors(), squares, lambda vertex: legs[sequence_position(vertex)]))
 
 
-def comma_category(first: Functor, second: Functor) -> Category:
+def comma_category(first: Functor, second: Functor) -> CommaCategory:
     """The comma category ``(F, G)``: the pullback of ``(ev_0, ev_1)`` along ``F * G``, retained per pair; objects ``((a, b), f: F a -> G b)``."""
     return Cat().Comma(first, second)
 
 
-def _construct_comma_category(first: Functor, second: Functor) -> Category:
+def _construct_comma_category(
+    first: Functor,
+    second: Functor,
+    category_type: type[CommaCategory] = CommaCategory,
+) -> CommaCategory:
     diagram = cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain()))
-    result = limit_of_categories(diagram, Cat().Pullbacks(), lambda defining_diagram: CommaCategory(defining_diagram, first, second))
+    result = limit_of_categories(diagram, Cat().Pullbacks(), lambda defining_diagram: category_type(defining_diagram, first, second))
     assert result in Cat().Pullbacks()
     result.defining_transformation()
     return result

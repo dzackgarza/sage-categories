@@ -107,7 +107,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
         return True
 
     families = tuple(components for components in product(*(factor.objects for factor in factors)) if agrees(components, False))
-    objects = tuple(category(lambda vertex, components=components: components[vertex_positions[id(vertex)]]) for components in families)
+    objects = tuple(category.from_components(lambda vertex, components=components: components[vertex_positions[id(vertex)]]) for components in families)
 
     def endpoint(components: tuple[CategoryOfCategories.ElementType, ...]) -> CategoryOfCategories.ElementType:
         for index, family in enumerate(families):
@@ -116,7 +116,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
         raise AssertionError("a compatible arrow family has no endpoint in its limit")
 
     arrows = tuple(
-        category.construct_morphism(
+        category.morphism_from_components(
             endpoint(tuple(arrow.domain() for arrow in components)),
             endpoint(tuple(arrow.codomain() for arrow in components)),
             lambda vertex, components=components: components[vertex_positions[id(vertex)]],

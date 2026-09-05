@@ -1,5 +1,4 @@
 import sage_categories
-from _typeshed import Incomplete
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
@@ -20,10 +19,6 @@ class DeclaredCategory(Category[[], []]):
         ...
 
     def name(self) -> str:
-        ...
-    __class__: Incomplete
-
-    def implemented_by(self, implementation: type[Category]) -> None:
         ...
 
 class CategoryFamily:

@@ -63,6 +63,7 @@ __all__ = [
     "compile_category",
     "compiler",
     "construct_category_value",
+    "implement_category",
     "declared_inheritance",
     "declared_subtyping",
     "inheriting_functors",
@@ -183,11 +184,7 @@ _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
 
 def node(category: Category, role: Role) -> Node:
     """The normalized node: ``(Mor(C), object)`` is ``(C, morphism)``."""
-    if role is Role.OBJECT:
-        source, is_morphism = category._object_role_source()
-        source_role = Role.MORPHISM if is_morphism else Role.OBJECT
-    else:
-        source, source_role = category.role_source(role)
+    source, source_role = category.role_source(role)
     if source is category and source_role is role:
         return Node(category, role)
     return node(source, source_role)
@@ -465,17 +462,18 @@ def _refine_implementation_class(value: CategoryPoint, role_class: type[Category
     if issubclass(type(value), role_class):
         return
     if issubclass(role_class, type(value)):
-        value.__class__ = role_class
+        object.__setattr__(value, "__class__", role_class)
         return
     declared = type(value)
     with building_role_classes():
-        value.__class__ = dynamic_class(
+        refined = dynamic_class(
             f"{declared.__name__}_with_category",
             (declared, role_class),
             doccls=declared,
             prepend_cls_bases=False,
             cache=True,
         )
+    object.__setattr__(value, "__class__", refined)
 
 
 class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
@@ -1124,16 +1122,15 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     for role in _COMPILE_ORDER:
         current = node(category, role)
         if current.category is not category:
-            if current.role is role:
-                setattr(category, role.value, current.category.role_class(current.role))
-                continue
-            assert role is Role.OBJECT and current.role is Role.MORPHISM
-            normalization_owner = next(
-                owner for owner in type(category).__mro__ if "_object_role_source" in vars(owner)
-            )
-            root, declaration = kernel_base(current.role), vars(normalization_owner)[Role.OBJECT.value]
-            _install_written_body(root, declaration)
-            _installed_root_declarations[root] = declaration
+            _, declared_role = category.role_source(role)
+            if declared_role is not role:
+                assert role is Role.OBJECT and declared_role is Role.MORPHISM
+                normalization_owner = next(
+                    owner for owner in type(category).__mro__ if "role_source" in vars(owner)
+                )
+                root, declaration = kernel_base(current.role), vars(normalization_owner)[Role.OBJECT.value]
+                _install_written_body(root, declaration)
+                _installed_root_declarations[root] = declaration
             setattr(category, role.value, current.category.role_class(current.role))
             continue
         _install_runtime_node(current)
@@ -1179,6 +1176,17 @@ def recompile_category(category: Category, functors: tuple[Functor, ...]) -> Non
     compile_category(category, functors)
 
 
+def implement_category(category: Category, implementation: type[Category]) -> None:
+    """Install a declared implementation on its retained category identity.
+
+    Python's in-place class assignment preserves references to the declaration.
+    The ordinary initializer supplies implementation state before roles are compiled.
+    """
+    object.__setattr__(category, "__class__", implementation)
+    implementation.__init__(category)
+    category.recompile()
+
+
 def apply_level_shift(member: Category, placement: Category) -> None:
     """Rebuild the object implementation graph after a category placement changes."""
     current = node(member, Role.OBJECT)
@@ -1214,7 +1222,7 @@ def apply_level_shift(member: Category, placement: Category) -> None:
             if not any(same_node(reached, old) for old in old_nodes[runtime])
         )
         for constructed in _placed_objects(runtime._current.category):
-            constructed.__class__ = _replace_runtime_classes(type(constructed), replacements)
+            object.__setattr__(constructed, "__class__", _replace_runtime_classes(type(constructed), replacements))
             _initialize_added_object_nodes(constructed, added)
 
 

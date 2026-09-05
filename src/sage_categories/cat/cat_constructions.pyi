@@ -65,7 +65,13 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     def __call__(self, family: ObjectRule | CategoryOfCategories.ElementType | tuple[CategoryOfCategories.ElementType, ...], *components: CategoryOfCategories.ElementType) -> LimitCategory.ObjectType:
         ...
 
+    def from_components(self, rule: ObjectRule) -> LimitCategory.ObjectType:
+        ...
+
     def construct_morphism(self, domain: LimitCategory.ObjectType, codomain: LimitCategory.ObjectType, family: MorphismRule | tuple[MorphismCategory.ObjectType, ...]) -> LimitCategory.MorphismType:
+        ...
+
+    def morphism_from_components(self, domain: LimitCategory.ObjectType, codomain: LimitCategory.ObjectType, rule: MorphismRule) -> LimitCategory.MorphismType:
         ...
 
     def construct_identity(self, member_object: LimitCategory.ObjectType) -> LimitCategory.MorphismType:
@@ -86,6 +92,9 @@ class LimitSubcategory(LimitCategory):
         ...
 
     def __init__(self, diagram: Functor) -> None:
+        ...
+
+    def family_category(self, diagram: Functor) -> LimitCategory:
         ...
 
     def structure_functors(self) -> tuple[Functor, ...]:

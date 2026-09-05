@@ -70,7 +70,7 @@ class DeclaredCategory(Category[[], []]):
     Declaring says that the category exists and says nothing about its mathematics, so
     the three classes below name the three kinds and no operation on any of them.  That
     is the whole content of a declaration, and it is why implementing is a second act.
-    ``implemented_by`` completes the connection on this one object: the class is
+    ``Cat().implement`` completes the connection on this one object: the class is
     strengthened in place -- the same in-place strengthening every value receives when its
     placement improves -- and the roles are compiled again from the implementation's own
     declarations, keeping the ordinal declaration gave it.
@@ -78,7 +78,7 @@ class DeclaredCategory(Category[[], []]):
     These three bodies are empty, and writing them is not the same as the kernel filling
     the gap.  Written, they are a statement ``Cat`` makes on its own authority about a
     category it has only declared, and the author of every role is known before and after
-    ``implemented_by``: ``Cat`` here, the implementation afterwards.  A class the kernel
+    ``Cat().implement``: ``Cat`` here, the implementation afterwards.  A class the kernel
     supplied is nobody's statement, and under it a category that is deliberately silent
     and one whose author forgot a declaration are the same category (POL-CAT-057).
     """
@@ -98,15 +98,6 @@ class DeclaredCategory(Category[[], []]):
 
     def name(self) -> str:
         return self._name
-
-    def implemented_by(self, implementation: type[Category]) -> None:
-        """Become the implementing class and compile again; the ordinal is not retaken."""
-        assert issubclass(implementation, self.universe().ObjectType), (
-            f"{implementation!r} implements the declared category {self._name!r} and is not a category class"
-        )
-        self.__class__ = implementation
-        self._init_local_state()
-        self.recompile()
 
     def __repr__(self) -> str:
         return self._name

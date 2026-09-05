@@ -13,6 +13,7 @@ from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, register_handler
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
+from sage_categories.kernel.retention import category_construction_functors, identity_key
 from sage_categories.kernel.roles import prepare_category_subclass
 from sage_categories.kernel.sage_runtime import Integer, MonoDict, TripleDict, cached_method
 
@@ -24,14 +25,14 @@ if TYPE_CHECKING:
     from sage_categories.cat.functors import Fun, Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
     from sage_categories.cat.points import PointCategory
+    from sage_categories.cat.slices import CommaCategory
 
 __all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
 
 
-# The compilation order of categories: a category takes its ordinal after its
-# selected functors exist, so decreasing ordinal is a linear extension of the
-# selected graph, and narrowings are canonicalized by the ordinals of their roots.
-# Initializers follow the selected functors in declaration order (D165 to D167).
+# Stable category identities order the roots of an intersection. The compiler
+# follows selected targets in dependency order and initializers in declaration
+# order (D165 to D167).
 _category_ordinals = itertools.count()
 
 # The construction data of ``Cat()``: a functor's actions and a natural
@@ -157,14 +158,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             return
         self._initialize(self.category())
 
-    def _init_local_state(self) -> None:
-        """Initialize the local runtime state the implementing category owns.
-
-        ``implemented_by`` swaps the declared value's class in place, so no ``__init__``
-        runs there; it calls this once instead (``cat/declarations.py``).  A category
-        with no local runtime state initializes nothing.
-        """
-
     def is_discrete(self) -> bool:
         """Whether this category is one of the kernel's discrete diagram representations.
 
@@ -254,10 +247,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         self._equality = equality_predicate()
         self._ambient_category: Category | None = None
         self._ambient_monomorphism: Functor | None = None
-        # The selected functors are constructed before the ordinal is taken, so every
-        # codomain (and every narrowing a declaration constructs) is older than this
-        # category.
-        functors = self._select_functors()
+        functors = category_construction_functors(self)
+        self._selected_functors = functors
         implemented = _declares_implementation(functors[0]) if functors else None
         if implemented is not None:
             # The declaration says this class implements a category that already exists,
@@ -319,10 +310,17 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
         An implementation claims a declared category after ``Cat`` constructed it, and
         the declared object is the final one: its class was strengthened in place, and
-        its nested classes and structure functors are read again here.  The ordinal is not
-        retaken, so every codomain stays older than the category that selects it.
+        its nested classes and structure functors are read again here. Its ordinal
+        continues to identify it in retained intersections.
         """
-        self._recompile_category(self._select_functors())
+        self._recompile_category(self._complete_declarations())
+
+    def _complete_declarations(self) -> tuple[Functor, ...]:
+        """Identify this category's intersection and select its defining functors."""
+        base = self.narrowing_base()
+        if base is not self:
+            base.retain_intersection(self.narrowing_roots(), self)
+        return self._select_functors()
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The selected structural graph: immediate functors, in preference order (POL-CAT-016, POL-FUN-003)."""
@@ -1016,6 +1014,15 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """``self.P()``: the narrowing of this placement by the roots of ``P`` (POL-CAT-084)."""
         return self.narrowing_base().intersection((*self.narrowing_roots(), *property_category.narrowing_roots()))
 
+    def retain_intersection(self, roots: tuple[Category, ...], intersection: Category) -> None:
+        """Identify a constructed category with the intersection of these roots."""
+        assert intersection.narrowing_base() is self
+        key = tuple(sorted(root.ordinal() for root in roots))
+        if key in self._narrowings:
+            assert self._narrowings[key] is intersection
+        else:
+            self._narrowings[key] = intersection
+
     def __getattr__(self, name: str) -> Callable[..., Category[MorphismData, TwoMorphismData]]:
         """``C.P().Q()``: an axiom of the ambient is an axiom here, along the subcategory monomorphism (D77 item 4).
 
@@ -1505,7 +1512,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         self._declarations: dict[str, Category | CategoryFamily] = {}
         self._implementations: dict[str, type[Category]] = {}
         self._open_declarations: MonoDict = MonoDict()
-        self._comma_categories: TripleDict = TripleDict(weak_values=False)
         super().__init__()
 
     # -- the categories Cat declares (D80, D82) ------------------------------------
@@ -1586,13 +1592,16 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         declaration therefore uses the implementation the moment it lands, with no edit
         and no resolution pass.
         """
+        from sage_categories.kernel.compiler import implement_category
+
+        assert issubclass(implementation, self.ObjectType)
         name = self.open_declaration(declared)
         assert name is not None, (
             f"{implementation!r} implements {declared!r}, which is not a declaration of Cat awaiting one"
         )
         self._implementations[name] = implementation
         del self._open_declarations[declared]
-        declared.implemented_by(implementation)
+        implement_category(declared, implementation)
 
     def morphism_category_type(self) -> type[FunctorsCategory]:
         from sage_categories.cat.functors import FunctorsCategory
@@ -1791,16 +1800,14 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """``D ** C = Fun(C, D)``: ``Cat()`` is cartesian closed (Mathlib ``Cat.exp_obj``; inspected 2026-08-26)."""
         return self.morphism_category(1)(exponent, base)
 
-    def Comma(self, first: Functor, second: Functor) -> Category:
+    @cached_method(key=identity_key)
+    def Comma(self, first: Functor, second: Functor) -> CommaCategory:
         """``Comma(F, G)`` for functors with a common codomain, retained per ordered pair."""
         from sage_categories.cat.slices import _construct_comma_category
 
         assert first in self.morphism_category(1) and second in self.morphism_category(1)
         assert first.codomain() is second.codomain(), f"{first!r} and {second!r} have different codomains"
-        key = (first, second, self)
-        if key not in self._comma_categories:
-            self._comma_categories[key] = _construct_comma_category(first, second)
-        return self._comma_categories[key]
+        return _construct_comma_category(first, second)
 
     def postcompose(self, functor: Functor, diagram: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         """``F . G`` for an object ``G`` of ``Fun(I, D)`` and ``F: D -> E``: the object action of ``Fun(I, F)``.

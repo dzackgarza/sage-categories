@@ -185,8 +185,10 @@ class ObjectOfCategory(CategoryPoint):
         return self, role
 
     def _object_role_source(self: Category) -> tuple[Category, bool]:
-        source, role = self.role_source(Role.OBJECT)
-        return source, role is Role.MORPHISM
+        from sage_categories.kernel.compiler import node
+
+        source = node(self, Role.OBJECT)
+        return source.category, source.role is Role.MORPHISM
 
     def _initialize_placement(self) -> None:
         """Read the object construction context, which is the one an object is built in.

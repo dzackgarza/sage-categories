@@ -47,10 +47,16 @@ relation object. That is the philosophy delivering, and it is thin.
 
 **Tier 2 — kernel/Cat gaps the leaf author should not have to patch.**
 
-3. Terminal and empty-limit objects are not derived. I had to add `Terminal()` to
-   both `FunctorCategory` and `FinitePresentedCategory`, even though both already
-   supply `limit_construction`. Leaves and consumers hit "declares no terminal
-   object" on objects as basic as `[1]` and `Fun(C, C)`.
+3. Terminal objects that exist and are computable are not derived.
+   `Category.Terminal()` unconditionally raises "declares no terminal object"
+   unless a category overrides it. `Fun(C, D)` has a pointwise terminal, the
+   constant diagram at `D`'s terminal, derivable from its `limit_construction`; a
+   finite presented category has a terminal object computable from its finite
+   morphism enumeration. Neither is computed, so I added `Terminal()` to both
+   `FunctorCategory` and `FinitePresentedCategory`. Consumers hit the error on
+   objects as basic as `[1]` and `Fun(C, C)` that mathematically have a terminal.
+   A category with genuinely no terminal, such as the walking parallel pair,
+   raising is correct; the gap is only the computable terminals.
 
 4. Claiming a declaration has no mechanism for axiom-subcategory leaves.
    `leaf-scaffolding.md` says the declared `Posets`/`TotallyOrderedSets` must be
@@ -81,6 +87,6 @@ relation object. That is the philosophy delivering, and it is thin.
 
 The "up and running is thin" claim holds only for the inheritance spine. Getting a
 leaf *functional* today demands knowing the handler-ordering rule, the
-Axiom/PropertySubcategory wiring, that `Terminal` may be absent, and that the
-template does not run. That is more kernel knowledge than the philosophy wants at
-the prototyping stage.
+Axiom/PropertySubcategory wiring, that a computable `Terminal` is not derived, and
+that the template does not run. That is more kernel knowledge than the philosophy
+wants at the prototyping stage.

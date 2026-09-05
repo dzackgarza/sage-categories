@@ -30,13 +30,17 @@ __all__ = [
     "GroupsCategory",
     "AdditiveGroups",
     "AdditiveGroupsCategory",
+    "MonoidPairsCategory",
+    "SemiringCategory",
+    "Semirings",
     "EilenbergMoore",
 ]
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import cache, partial
 
-from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
+from sage_categories.cat.cat_constructions import FamilyObjectData, LimitSubcategory, components_agree, limit_of_categories
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import comma_objects
 from sage_categories.cat.cones import cone
@@ -498,14 +502,28 @@ def _unit_point(owner: CategoryOfCategories.ElementType, unit: MorphismCategory.
     return owner.object_at(unit.codomain().category().element_from_defining_morphism(unit))
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class NamedFamilyData(FamilyObjectData):
+    """The local state of an object of a named copy: its family and the neutral object it renames.
+
+    A copy's declaration reads ``neutral`` in its own initializer and keeps what it needs
+    under its own attribute name, so a category built from several copies (a semiring, a
+    ring) receives each copy's state along the leg that reaches it (D13, D56), and no
+    inherited method reads the family of a different level.
+    """
+
+    neutral: CategoryOfCategories.ElementType
+
+
 class NamedOperationCategory(LimitSubcategory):
     """``N × 1_s``: the neutral structure category ``N`` tagged by the one-object category of a symbol.
 
     An object is the pair of a neutral object and the symbol; ``renamed`` constructs it
     over a neutral object.  ``product_projection(0)`` is the renaming isomorphism onto
-    ``N``, a retained leg carrying no inheritance.  Each concrete copy writes its own
-    role declarations (POL-CAT-057): ``neutral()`` and ``neutral_morphism()`` read the
-    first component, the renamed generator is its surface, and its structure functor
+    ``N``, a retained leg selected for access only: it carries no inheritance, and it is
+    the public way to the neutral object.  Each concrete copy writes its own role
+    declarations (POL-CAT-057): its initializer keeps the renamed generator's owner under
+    its own name, the renamed generator is its surface, and its structure functor
     carries the carrier.
     """
 
@@ -517,6 +535,11 @@ class NamedOperationCategory(LimitSubcategory):
 
     class MorphismType:
         pass
+
+    def from_components(self, rule: Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]) -> NamedOperationCategory.ObjectType:
+        result = self.ObjectType(NamedFamilyData(rule, rule(self.shape()(0))))
+        assert ask(components_agree(result, self)) is not False, f"{rule!r} is no compatible family over {self.defining_diagram()!r}"
+        return result
 
     def neutral_category(self) -> Category:
         return self.factor(0)
@@ -550,8 +573,8 @@ class NamedOperationCategory(LimitSubcategory):
         """``(X, μ, s) ↦ X``: restriction along the inclusion of the empty theory, declared to carry inheritance."""
         carrier = self.neutral_category().forgetful()
         return Fun(self, carrier.codomain()).Faithful().Isofibrations()(
-            lambda value: carrier.on_object(value.neutral()),
-            lambda arrow: carrier.on_morphism(arrow.neutral_morphism()),
+            lambda value: carrier.on_object(value.family_component(0)),
+            lambda arrow: carrier.on_morphism(arrow.family_component(0)),
         )
 
     @cached_method
@@ -561,11 +584,11 @@ class NamedOperationCategory(LimitSubcategory):
         magmas, to_magmas = self.named_magmas(), neutral.to_magmas()
 
         def on_object(value: NamedOperationCategory.ObjectType) -> NamedOperationCategory.ObjectType:
-            return magmas.renamed(to_magmas.on_object(value.neutral()))
+            return magmas.renamed(to_magmas.on_object(value.family_component(0)))
 
         def on_morphism(arrow: NamedOperationCategory.MorphismType) -> NamedOperationCategory.MorphismType:
             return magmas.homomorphism(
-                on_object(arrow.domain()), on_object(arrow.codomain()), to_magmas.on_morphism(arrow.neutral_morphism())
+                on_object(arrow.domain()), on_object(arrow.codomain()), to_magmas.on_morphism(arrow.family_component(0))
             )
 
         return Fun(self, magmas).Faithful().Isofibrations()(on_object, on_morphism)
@@ -580,10 +603,10 @@ class NamedOperationCategory(LimitSubcategory):
         monoids = self.named_monoids()
 
         def on_object(value: NamedOperationCategory.ObjectType) -> NamedOperationCategory.ObjectType:
-            return monoids.renamed(value.neutral())
+            return monoids.renamed(value.family_component(0))
 
         def on_morphism(arrow: NamedOperationCategory.MorphismType) -> NamedOperationCategory.MorphismType:
-            return monoids.homomorphism(on_object(arrow.domain()), on_object(arrow.codomain()), arrow.neutral_morphism())
+            return monoids.homomorphism(on_object(arrow.domain()), on_object(arrow.codomain()), arrow.family_component(0))
 
         return Fun(self, monoids).Faithful().Isofibrations()(on_object, on_morphism)
 
@@ -596,19 +619,18 @@ class AdditiveMagmasCategory(NamedOperationCategory):
     """``Magmas(V) × 1_+``: the operation is written ``addition()`` and ``+`` on points."""
 
     class ObjectType:
-        def neutral(self) -> CategoryOfCategories.ElementType:
-            return self.family_component(0)
+        def __init__(self, data: NamedFamilyData) -> None:
+            self._additive_magma = data.neutral
 
         def addition(self) -> MorphismCategory.ObjectType:
-            return self.neutral().operation()
+            return self._additive_magma.operation()
 
     class ElementType:
         def __add__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             return _combine(self, other, self.parent().addition())
 
     class MorphismType:
-        def neutral_morphism(self) -> MorphismCategory.ObjectType:
-            return self.family_component(0)
+        pass
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (*super().structure_functors(), self.to_carrier())
@@ -618,19 +640,18 @@ class MultiplicativeMagmasCategory(NamedOperationCategory):
     """``Magmas(V) × 1_*``: the operation is written ``multiplication()`` and ``*`` on points."""
 
     class ObjectType:
-        def neutral(self) -> CategoryOfCategories.ElementType:
-            return self.family_component(0)
+        def __init__(self, data: NamedFamilyData) -> None:
+            self._multiplicative_magma = data.neutral
 
         def multiplication(self) -> MorphismCategory.ObjectType:
-            return self.neutral().operation()
+            return self._multiplicative_magma.operation()
 
     class ElementType:
         def __mul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             return _combine(self, other, self.parent().multiplication())
 
     class MorphismType:
-        def neutral_morphism(self) -> MorphismCategory.ObjectType:
-            return self.family_component(0)
+        pass
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (*super().structure_functors(), self.to_carrier())
@@ -640,19 +661,18 @@ class AdditiveMonoidsCategory(NamedOperationCategory):
     """``Monoids(V) × 1_+``: the unit is written ``zero()``; ``addition()`` and ``+`` arrive from ``AdditiveMagmas(V)``."""
 
     class ObjectType:
-        def neutral(self) -> CategoryOfCategories.ElementType:
-            return self.family_component(0)
+        def __init__(self, data: NamedFamilyData) -> None:
+            self._additive_monoid = data.neutral
 
         def zero(self) -> CategoryOfCategories.ElementType:
             """The point the unit selects, when the monoidal unit is terminal."""
-            return _unit_point(self, self.neutral().unit_morphism())
+            return _unit_point(self, self._additive_monoid.unit_morphism())
 
     class ElementType:
         pass
 
     class MorphismType:
-        def neutral_morphism(self) -> MorphismCategory.ObjectType:
-            return self.family_component(0)
+        pass
 
     def named_magmas(self) -> AdditiveMagmasCategory:
         return AdditiveMagmas(self.neutral_category().monoidal_structure())
@@ -665,19 +685,18 @@ class MultiplicativeMonoidsCategory(NamedOperationCategory):
     """``Monoids(V) × 1_*``: the unit is written ``one()``; ``multiplication()`` and ``*`` arrive from ``MultiplicativeMagmas(V)``."""
 
     class ObjectType:
-        def neutral(self) -> CategoryOfCategories.ElementType:
-            return self.family_component(0)
+        def __init__(self, data: NamedFamilyData) -> None:
+            self._multiplicative_monoid = data.neutral
 
         def one(self) -> CategoryOfCategories.ElementType:
             """The point the unit selects, when the monoidal unit is terminal."""
-            return _unit_point(self, self.neutral().unit_morphism())
+            return _unit_point(self, self._multiplicative_monoid.unit_morphism())
 
     class ElementType:
         pass
 
     class MorphismType:
-        def neutral_morphism(self) -> MorphismCategory.ObjectType:
-            return self.family_component(0)
+        pass
 
     def named_magmas(self) -> MultiplicativeMagmasCategory:
         return MultiplicativeMagmas(self.neutral_category().monoidal_structure())
@@ -690,12 +709,12 @@ class AdditiveGroupsCategory(NamedOperationCategory):
     """``Groups(V) × 1_+``: the inversion is written ``negation()``, ``-x``, and ``x - y := x + (-y)``; ``zero()``, ``addition()``, and ``+`` arrive from ``AdditiveMonoids(V)``."""
 
     class ObjectType:
-        def neutral(self) -> CategoryOfCategories.ElementType:
-            return self.family_component(0)
+        def __init__(self, data: NamedFamilyData) -> None:
+            self._additive_group = data.neutral
 
         def negation(self) -> MorphismCategory.ObjectType:
             """``ι_X: X -> X``, the inversion of the group object."""
-            return self.neutral().inversion()
+            return self._additive_group.inversion()
 
     class ElementType:
         def __neg__(self) -> CategoryOfCategories.ElementType:
@@ -705,8 +724,7 @@ class AdditiveGroupsCategory(NamedOperationCategory):
             return self + (-other)
 
     class MorphismType:
-        def neutral_morphism(self) -> MorphismCategory.ObjectType:
-            return self.family_component(0)
+        pass
 
     def named_monoids(self) -> AdditiveMonoidsCategory:
         return AdditiveMonoids(self.neutral_category().ambient().monoidal_structure())
@@ -753,6 +771,169 @@ def MultiplicativeMonoids(structure: Category | MonoidalStructuresCategory.Objec
     if isinstance(structure, Category):
         return MultiplicativeMonoids(Cartesian(structure))
     return _named_copy(Monoids(structure), "*", MultiplicativeMonoidsCategory)
+
+
+# -- semiring objects: two named monoid structures on one carrier, with distributivity and absorption --
+
+
+class MonoidPairsCategory(LimitSubcategory):
+    """The pullback of ``AdditiveMonoids(C_x).Commutative()`` and ``MultiplicativeMonoids(C_x)`` over ``C``.
+
+    An object is ``(A, M, X)`` with ``A`` an additive commutative monoid structure on
+    ``X`` and ``M`` a multiplicative monoid structure on the same ``X``.  Both legs are
+    declared faithful isofibrations, so the pair inherits ``zero()`` and ``+`` along one
+    and ``one()`` and ``*`` along the other, and the carrier once
+    (``specs/magmas-monoids-semirings.md``, "Semirings").
+    """
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    @cached_method
+    def to_additive(self) -> Functor:
+        return Fun(self, self.factor(0)).Faithful().Isofibrations()(
+            lambda value: value.family_component(0), lambda arrow: arrow.family_component(0)
+        )
+
+    @cached_method
+    def to_multiplicative(self) -> Functor:
+        return Fun(self, self.factor(1)).Faithful().Isofibrations()(
+            lambda value: value.family_component(1), lambda arrow: arrow.family_component(1)
+        )
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (*super().structure_functors(), self.to_additive(), self.to_multiplicative())
+
+
+class SemiringCategory(EquifierCategory):
+    """Semiring objects in a cartesian ``C``: monoid pairs whose distributivity and absorption diagrams commute."""
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __init__(
+        self,
+        first: NaturalTransformation,
+        second: NaturalTransformation,
+        monoidal: MonoidalStructuresCategory.ObjectType,
+        pairs: MonoidPairsCategory,
+    ) -> None:
+        self._monoidal, self._pairs = monoidal, pairs
+        super().__init__(first, second)
+
+    def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
+        return self._monoidal
+
+    @cached_method
+    def to_additive(self) -> Functor:
+        """The retained leg to ``AdditiveMonoids(C_x).Commutative()``."""
+        return self._pairs.to_additive() * Fun.full_subcategory_monomorphism(self, self._pairs)
+
+    @cached_method
+    def to_multiplicative(self) -> Functor:
+        """The retained leg to ``MultiplicativeMonoids(C_x)``."""
+        return self._pairs.to_multiplicative() * Fun.full_subcategory_monomorphism(self, self._pairs)
+
+    def __call__(
+        self,
+        addition: MorphismCategory.ObjectType,
+        zero: MorphismCategory.ObjectType,
+        multiplication: MorphismCategory.ObjectType,
+        one: MorphismCategory.ObjectType,
+    ) -> SemiringCategory.ObjectType:
+        monoidal = self.monoidal_structure()
+        additive = AdditiveMonoids(monoidal).renamed(Monoids(monoidal)(addition, zero))
+        assert additive in AdditiveMonoids(monoidal).Commutative(), f"{addition!r} is not commutative"
+        multiplicative = MultiplicativeMonoids(monoidal).renamed(Monoids(monoidal)(multiplication, one))
+        return super().__call__(self._pairs((additive, multiplicative, addition.codomain())))
+
+
+@cached_function(key=identity_key)
+def Semirings(base: Category) -> SemiringCategory:
+    """Semiring objects of a category with finite products, both structures over its cartesian monoidal structure."""
+    monoidal = Cartesian(base)
+    tensor = monoidal.tensor()
+    additive, multiplicative = AdditiveMonoids(monoidal).Commutative(), MultiplicativeMonoids(monoidal)
+    additive_carrier = AdditiveMagmas(monoidal).to_carrier() * AdditiveMonoids(monoidal).to_named_magmas() * additive.subcategory_monomorphism()
+    multiplicative_carrier = MultiplicativeMagmas(monoidal).to_carrier() * multiplicative.to_named_magmas()
+    pairs = limit_of_categories(cospan_diagram(Cat(), additive_carrier, multiplicative_carrier), Cat().Pullbacks(), MonoidPairsCategory)
+    carrier = additive_carrier * pairs.to_additive()
+    renaming = AdditiveMonoids(monoidal).product_projection(0)
+
+    def operations(value: CategoryOfCategories.ElementType) -> tuple[CategoryOfCategories.ElementType, ...]:
+        """``X``, ``α``, ``μ``, and ``0 ∘ !_X`` of a monoid pair."""
+        x = value.family_component(2)
+        alpha, mu = value.family_component(0).addition(), value.family_component(1).multiplication()
+        zero = renaming.on_object(value.family_component(0)).unit_morphism()
+        return x, alpha, mu, zero * terminal_map(base, x)
+
+    def left_distributive(value: CategoryOfCategories.ElementType, law: bool) -> MorphismCategory.ObjectType:
+        """``μ ∘ (1 × α)`` and ``α ∘ ⟨μ ∘ ⟨x, y⟩, μ ∘ ⟨x, z⟩⟩`` on ``X × (X × X)``."""
+        x, alpha, mu, _ = operations(value)
+        if law:
+            return mu * tensor_morphism(tensor, Mor(base)(x, x).one(), alpha)
+        inner = binary_product_data(base, x, x)
+        outer = binary_product_data(base, x, inner.apex())
+        first, second, third = outer.leg(0), inner.leg(0) * outer.leg(1), inner.leg(1) * outer.leg(1)
+        return alpha * pair_maps(base, mu * pair_maps(base, first, second), mu * pair_maps(base, first, third))
+
+    def right_distributive(value: CategoryOfCategories.ElementType, law: bool) -> MorphismCategory.ObjectType:
+        """``μ ∘ (α × 1)`` and ``α ∘ ⟨μ ∘ ⟨x, z⟩, μ ∘ ⟨y, z⟩⟩`` on ``(X × X) × X``."""
+        x, alpha, mu, _ = operations(value)
+        if law:
+            return mu * tensor_morphism(tensor, alpha, Mor(base)(x, x).one())
+        inner = binary_product_data(base, x, x)
+        outer = binary_product_data(base, inner.apex(), x)
+        first, second, third = inner.leg(0) * outer.leg(0), inner.leg(1) * outer.leg(0), outer.leg(1)
+        return alpha * pair_maps(base, mu * pair_maps(base, first, third), mu * pair_maps(base, second, third))
+
+    def absorbing(value: CategoryOfCategories.ElementType, left: bool) -> MorphismCategory.ObjectType:
+        """``μ ∘ ⟨0 ∘ !, 1⟩`` and ``μ ∘ ⟨1, 0 ∘ !⟩`` on ``X``; each must equal ``0 ∘ !``."""
+        x, _, mu, zero_everywhere = operations(value)
+        identity = Mor(base)(x, x).one()
+        return mu * pair_maps(base, zero_everywhere if left else identity, identity if left else zero_everywhere)
+
+    transformations = Mor(Fun(pairs, base))
+    triples = monoidal.associator().domain().domain()
+    diagonal = triples.universal_morphism(cone(triples.product_factors(), base, lambda vertex: Fun(base, base).one()))
+    left, right = (parentheses * diagonal for parentheses in tensor_parentheses(tensor))
+    equations = (
+        (
+            transformations(right * carrier, carrier)(lambda value: left_distributive(value, True)),
+            transformations(right * carrier, carrier)(lambda value: left_distributive(value, False)),
+        ),
+        (
+            transformations(left * carrier, carrier)(lambda value: right_distributive(value, True)),
+            transformations(left * carrier, carrier)(lambda value: right_distributive(value, False)),
+        ),
+        (
+            transformations(carrier, carrier)(lambda value: absorbing(value, True)),
+            transformations(carrier, carrier)(lambda value: operations(value)[3]),
+        ),
+        (
+            transformations(carrier, carrier)(lambda value: absorbing(value, False)),
+            transformations(carrier, carrier)(lambda value: operations(value)[3]),
+        ),
+    )
+    result = pairs
+    for first, second in equations[:-1]:
+        inclusion = Fun.full_subcategory_monomorphism(result, pairs) if result is not pairs else Fun(pairs, pairs).one()
+        result = Equifier(first.whisker_right(inclusion), second.whisker_right(inclusion))
+    inclusion = Fun.full_subcategory_monomorphism(result, pairs)
+    first, second = equations[-1]
+    return SemiringCategory(first.whisker_right(inclusion), second.whisker_right(inclusion), monoidal, pairs)
 
 
 @cached_function(key=identity_key)

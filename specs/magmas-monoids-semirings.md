@@ -153,7 +153,8 @@ The owned surface of each copy is its renamed generator:
 | `AdditiveMonoids(V)` | `X.zero()` when the monoidal unit is terminal; `addition()` and `+` through `AdditiveMagmas(V)`. |
 | `MultiplicativeMonoids(V)` | `X.one()` when the monoidal unit is terminal; `multiplication()` and `*` through `MultiplicativeMagmas(V)`. |
 
-`X.neutral()` and `f.neutral_morphism()` read the neutral object and morphism under the renaming.
+The renaming projection is the public access to the neutral object: `AdditiveMonoids(V).product_projection(0).on_object(X)` is the monoid `X` renames.
+A copy's initializer keeps that neutral object under its own attribute name, so a category built from several copies receives each copy's state along the leg that reaches it (D13, D56), and no inherited method reads the family of another level.
 No neutral name, `operation()` or `unit_morphism()`, reaches a named copy.
 
 For cartesian `V`, two generalized elements `x,y:T -> X` combine through
@@ -295,12 +296,11 @@ The complete immediate structure-functor tuple is
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (
-        self.product_projection(0),
-        self.product_projection(1),
-    )
+    return (self.to_additive(), self.to_multiplicative())
 ```
 
+`to_additive()` and `to_multiplicative()` are the legs of the pullback, declared faithful isofibrations.
+`Semirings(C)(addition, zero, multiplication, one)` constructs the two named monoids, decides commutativity of the addition, forms the pair over the carrier, and asserts the distributivity and absorption equations through equifiers, as `Monoids(V)` asserts its laws.
 The two legs land in distinct categories, so a semiring inherits `zero()` and `+` along one and `one()` and `*` along the other; both composites to `C` are equal, and the carrier is inherited once.
 No neutral name, `operation()` or `unit_morphism()`, reaches a semiring (D185).
 

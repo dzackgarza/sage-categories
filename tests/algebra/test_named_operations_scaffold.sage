@@ -30,9 +30,9 @@ def test_additive_and_multiplicative_monoids_on_one_carrier() -> None:
 
     # The renaming projection is the retained first leg of the product ``Monoids(V) × 1_+``.
     renaming = AdditiveMonoids(structure).product_projection(0)
-    assert renaming.on_object(additive) is additive.neutral()
-    assert additive.neutral() in Monoids(structure)
-    assert additive.neutral() is not multiplicative.neutral()
+    neutral_monoid = renaming.on_object(additive)
+    assert neutral_monoid in Monoids(structure)
+    assert neutral_monoid is not MultiplicativeMonoids(structure).product_projection(0).on_object(multiplicative)
 
     # Points carry the carrier's data and combine through the renamed operation.
     assert additive.zero().parent() is additive
@@ -46,7 +46,6 @@ def test_additive_and_multiplicative_monoids_on_one_carrier() -> None:
 
     # Doubling is an automorphism of the additive monoid; its renamed image acts on renamed points.
     doubling = Mor(Sets)(carrier, carrier)(lambda value: (2 * value) % 3)
-    neutral_monoid = additive.neutral()
     magma = Monoids(structure).to_magmas().on_object(neutral_monoid)
     magma_map = Magmas(structure).homomorphism(magma, magma, doubling)
     monoid_map = PointedMagmas(structure.tensor(), structure.unit()).homomorphism(neutral_monoid, neutral_monoid, magma_map)

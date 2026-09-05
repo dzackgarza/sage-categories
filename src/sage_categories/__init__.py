@@ -117,6 +117,7 @@ from sage_categories.cat.structured_objects import (
     MultiplicativeMagmas,
     MultiplicativeMonoids,
     PointedMagmas,
+    Semirings,
 )
 from sage_categories.cat.total_cones import total_cones as TotalCones
 from sage_categories.cat.universal_arrows import (
@@ -217,6 +218,7 @@ __all__ = [
     "MultiplicativeMagmas",
     "MultiplicativeMonoids",
     "PointedMagmas",
+    "Semirings",
     "InitialObjects",
     "LeftUniversalArrows",
     "RightUniversalArrows",

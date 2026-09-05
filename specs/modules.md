@@ -23,7 +23,8 @@ The public constructor is
 Modules(A, C)
 ```
 
-The call supplies the actegory explicitly: the object of `Actions(M, C)` that carries the underlying category `C` and the selected action with its coherence isomorphisms. The category of `A` determines `M`, while the selected actegory data determines how `A` acts on objects of `C`. Two actions on the same underlying category give different module categories, so the bare category `C` selects no instance.
+The call supplies the actegory explicitly: the object of `Actions(M, C)` that carries the underlying category `C` and the selected action with its coherence isomorphisms.
+The category of `A` determines `M`, while the selected actegory data determines how `A` acts on objects of `C`. Two actions on the same underlying category give different module categories, so the bare category `C` selects no instance.
 
 The four items above are the parameters of the definition.
 No ambient category supplies them by itself.
@@ -84,8 +85,7 @@ The default object call accepts the defining action morphism:
 Modules(A, C)(rho_X)
 ```
 
-The codomain of `rho_X: A bullet X -> X` determines `X`.
-The constructor checks the action endpoints and asserts the two module diagrams.
+The codomain of `rho_X: A bullet X -> X` determines `X`. The constructor checks the action endpoints and asserts the two module diagrams.
 It does not ask the caller to repeat `X`.
 
 Named constructors can accept other complete semantic presentations:
@@ -120,15 +120,12 @@ U_A:\operatorname{Modules}(A,C)\longrightarrow C.
 
 It sends `(X, rho_X)` to `X` and sends each module morphism to its morphism in `C`.
 
-The module construction specializes the endofunctor-algebra inserter for `A bullet -`
-and imposes the unit and associativity equations with equifiers.
+The module construction specializes the endofunctor-algebra inserter for `A bullet -` and imposes the unit and associativity equations with equifiers.
 It retains the resulting projection to `C`, with its object and morphism actions.
 The module leaf supplies the action data and equations; Cat supplies the projection and its construction machinery.
 
 The object action returns the codomain `X` of the module action.
-The morphism action returns the ambient map in `Mor(C)(X, Y)`.
-Code that requires an object of `C` applies `U_A`.
-Code that requires a set constructs and applies the selected functor into `Sets()` (`POL-FUN-037`).
+The morphism action returns the ambient map in `Mor(C)(X, Y)`. Code that requires an object of `C` applies `U_A`. Code that requires a set constructs and applies the selected functor into `Sets()` (`POL-FUN-037`).
 
 `U_A` carries the inheritance declared by [functor.md](functor.md#structure-functors-and-inherited-classes).
 The isomorphism lift transports the module action along an isomorphism in `C`.
@@ -146,7 +143,8 @@ X.action()
 ```
 
 `action()` returns `rho_X` in `Mor(C)(A bullet X, X)`. At compatible point domains, scalar action evaluates this morphism through the selected actegory action.
-`Modules(A, C).homomorphism(source, target, f)` constructs the module morphism over `f`, and the algebra square `f rho_X = rho_Y (A bullet f)` must commute. `transport(module, phi)` moves an action along an isomorphism `phi` of `C` by the conjugation `phi rho_X (A bullet phi^{-1})`. `restriction(f)` is the restriction-of-scalars functor along a monoid morphism `f: B -> A`, sending `(X, rho)` to `(X, rho (f bullet X))`.
+`Modules(A, C).homomorphism(source, target, f)` constructs the module morphism over `f`, and the algebra square `f rho_X = rho_Y (A bullet f)` must commute.
+`transport(module, phi)` moves an action along an isomorphism `phi` of `C` by the conjugation `phi rho_X (A bullet phi^{-1})`. `restriction(f)` is the restriction-of-scalars functor along a monoid morphism `f: B -> A`, sending `(X, rho)` to `(X, rho (f bullet X))`.
 
 All other capabilities come through the structure functor to `C` or through later property subcategories of `Modules(A, C)`.
 

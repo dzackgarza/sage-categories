@@ -1,4 +1,4 @@
 =============================
 === Running: Sage syntax validation ===
 # Preparses .sage files and byte-compiles the generated Python to catch syntax errors early
-# Preparsing and compiling 23 Sage file(s)
+# Preparsing and compiling 24 Sage file(s)

@@ -1,2 +1,0 @@
-4:Warning: Refusing to write specs/decisions.md: reformatting would change what pandoc reads (block 149: Para content differs). The file is unchanged. This is a flowmark bug -- please report it with the input document. To skip this check and format anyway, pass --no-verify.
-5:Warning: 1 file left unformatted because reformatting would have changed the pandoc-parsed meaning (see warnings above; each is a flowmark bug or ambiguous markdown worth reporting).

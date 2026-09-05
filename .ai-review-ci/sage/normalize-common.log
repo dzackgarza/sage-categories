@@ -1,8 +1,7 @@
 =============================
 === Running: structured text formatting ===
 # Formats Markdown (flowmark), JSON, and YAML (prettier) before agents spend time on whitespace
-Warning: Refusing to write specs/decisions.md: reformatting would change what pandoc reads (block 149: Para content differs). The file is unchanged. This is a flowmark bug -- please report it with the input document. To skip this check and format anyway, pass --no-verify.
-Warning: 1 file left unformatted because reformatting would have changed the pandoc-parsed meaning (see warnings above; each is a flowmark bug or ambiguous markdown worth reporting).
+No staged Markdown, JSON, or YAML files found
 =============================
 === Running: semgrep auto-fix ===
 # Applies Semgrep autofixes; CI-tier Semgrep verification owns remaining findings
@@ -11,13 +10,13 @@ Warning: 1 file left unformatted because reformatting would have changed the pan
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 182 files tracked by git with 228 Code rules:
+  Scanning 245 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     182          Community     160                                                                
-  python           36      72          Custom         68                                                                
-  yaml             11      26                                                                                           
+  <multilang>       7     245          Community     160                                                                
+  python           36     115          Custom         68                                                                
+  yaml             11      27                                                                                           
                                                                                                                         
 No files modified by autofix.
                 
@@ -26,61 +25,90 @@ No files modified by autofix.
 │ Scan Summary │
 └──────────────┘
 ✅ Scan completed successfully.
- • Findings: 7 (7 blocking)
+ • Findings: 13 (13 blocking)
  • Rules run: 54
- • Targets scanned: 182
+ • Targets scanned: 245
  • Parsed lines: ~100.0%
+ • Scan skipped: 
+   ◦ Matching --exclude patterns: 2
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 182 files: 7 findings.
-                   
-                   
-┌─────────────────┐
-│ 7 Code Findings │
-└─────────────────┘
+Ran 54 rules on 245 files: 13 findings.
+                    
+                    
+┌──────────────────┐
+│ 13 Code Findings │
+└──────────────────┘
+                                         
+    src/sage_categories/cat/predicates.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          424┆ if getattr(type(category), self._name, None) is not self:
+            ⋮┆----------------------------------------
+          492┆ declared = getattr(type(category), name, None)
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          495┆ for functor in vars(category).get("_selected_functors", ()):
                                           
     src/sage_categories/kernel/compiler.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          306┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          336┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          306┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          336┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+            ⋮┆----------------------------------------
+          344┆ relations = result.setdefault(_projection_surface(role), {})
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          323┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          347┆ base = _installed_root_declarations.get(kernel_base(role),
+               category_universal_class().ElementType)                   
+            ⋮┆----------------------------------------
+          362┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          323┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          362┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+                                       
+    src/sage_categories/kernel/roles.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          122┆ if written is None or getattr(written, "_runs_the_kernel_initializer", False):
                                                 
     src/sage_categories/kernel/stub_generator.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-           83┆ candidates.setdefault(name, []).append(module)
+          105┆ candidates.setdefault(name, []).append(module)
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          132┆ module = canonical_exports.get(alias.name, statement.module)
+          165┆ module = canonical_exports.get(alias.name, statement.module)
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          133┆ grouped.setdefault(module, []).append(alias)
+          166┆ grouped.setdefault(module, []).append(alias)
 
 Common normalization completed

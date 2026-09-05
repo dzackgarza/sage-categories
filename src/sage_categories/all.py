@@ -127,6 +127,7 @@ __all__ = [
     "left_kan_adjunction",
     "right_kan_adjunction",
     "FiniteSets",
+    "Sets",
     "coyoneda",
     "natural_isomorphism",
 ]
@@ -187,4 +188,4 @@ from sage_categories import (
     weighted_projection,
     yoneda,
 )
-from sage_categories.sets import FiniteSets
+from sage_categories.sets import FiniteSets, Sets

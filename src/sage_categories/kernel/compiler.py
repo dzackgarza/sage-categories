@@ -116,11 +116,13 @@ class _KernelRoleRootCategory(SageCategory):
 class _RuntimeImplementationCategory(SageCategory):
     """A private Sage category whose ``parent_class`` is one owned implementation role."""
 
-    def __init__(self, current: Node, targets: tuple[SageCategory, ...]) -> None:
+    def __init__(
+        self, current: Node, targets: tuple[SageCategory, ...], declaration: type[CategoryPoint]
+    ) -> None:
         self._current = current
         self._targets = targets
         self._ordinal = next(_runtime_ordinals)
-        self.ParentMethods = current.category.local_role_class(current.role)
+        self.ParentMethods = declaration
         super().__init__()
 
     @property
@@ -199,7 +201,11 @@ def _runtime_category(current: Node) -> _RuntimeImplementationCategory:
     table = _runtime_categories[current.role]
     if current.category in table:
         return table[current.category]
-    runtime = _RuntimeImplementationCategory(current, _runtime_targets(current))
+    # Sage CachedRepresentation keys on constructor arguments. A retained category
+    # can acquire a new written implementation through Cat.implement.
+    runtime = _RuntimeImplementationCategory(
+        current, _runtime_targets(current), current.category.local_role_class(current.role)
+    )
     table[current.category] = runtime
     return runtime
 

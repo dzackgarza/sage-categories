@@ -53,6 +53,7 @@ from typing import TYPE_CHECKING
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.cones import (
+    ConeCategory,
     LimitConesCategory,
     cocone,
     cocone_apex,
@@ -259,6 +260,26 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
 
     def universal_data(self, diagram: Functor) -> UniversalPresentation:
         """The universal data retained for ``diagram``: its diagram, cone or cocone, and mediator rule."""
+        if diagram not in self._data and diagram in self._constructed:
+            lowered = self.lowered(diagram)
+            assert lowered is not diagram
+            ambient_data = self.universal_data(lowered)
+            base, apex = diagram.codomain(), ambient_data.apex()
+            assert ask(base.membership_proposition(apex)) is True
+            refine(apex, base)
+
+            def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+                arrow = ambient_data.leg(vertex)
+                refine(arrow, base.morphism_category(1))
+                return arrow
+
+            def lift(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
+                image_cone = cone(lowered, candidate.apex(), candidate.leg)
+                arrow = ambient_data.lift(cones(lowered)(image_cone))
+                refine(arrow, base.morphism_category(1))
+                return arrow
+
+            self._data[diagram] = limit_cones(diagram).with_universal_data(cone(diagram, apex, leg), lift)
         assert diagram in self._data, f"{self!r} retains no construction of {diagram!r}"
         return self._data[diagram]
 
@@ -284,8 +305,8 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
     def chosen(self, diagram: Functor, construction: Construction) -> CategoryOfCategories.ElementType:
         """The constructed object of ``diagram``, constructed once; a diagram and its lowering share it."""
         if not self.has_construction(diagram):
-            construction(diagram)
             lowered = self.lowered(diagram)
+            construction(lowered)
             if lowered is not diagram:
                 self._constructed[diagram] = self.chosen_object(lowered)
         return self.chosen_object(diagram)
@@ -783,7 +804,9 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
             transformation = cocone(diagram, dual.apex(), lambda vertex: opposite_morphism(dual.leg(vertex)))
             self._presentations[diagram] = colimit_cocones(diagram).with_universal_data(
                 transformation,
-                lambda candidate: opposite_morphism(dual.lift(cones(dual.diagram())(candidate.transformation().op()))),
+                lambda candidate: opposite_morphism(dual.lift(cones(dual.diagram())(
+                    cone(dual.diagram(), candidate.apex(), lambda vertex: opposite_morphism(candidate.leg(vertex)))
+                ))),
             )
         return self._presentations[diagram]
 
@@ -985,7 +1008,11 @@ def constructed_data(family: Category, diagram: Functor) -> UniversalPresentatio
     it reads their data at the diagrams: one object can present several of them.
     """
     family(diagram)
-    return family.universal_data(family.lowered(diagram))
+    (owner,) = (
+        root for root in family.narrowing_roots()
+        if isinstance(root, (LimitsCategory, ColimitsCategory))
+    )
+    return owner.universal_data(diagram)
 
 
 def limit_functor(family: Category) -> Functor:

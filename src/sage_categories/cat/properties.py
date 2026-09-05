@@ -33,12 +33,12 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Callable
 from types import ModuleType
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category
-from sage_categories.cat.predicates import Decision
+from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, property_predicate, register_handler
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
 from sage_categories.kernel.refinement import refine
@@ -148,6 +148,36 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         return self._ambient.colimit_construction(shape)
+
+    def Terminal(self) -> CategoryOfCategories.ElementType:
+        terminal = self._ambient.Terminal()
+        assert ask(self.membership_proposition(terminal)) is True, "the ambient terminal object must belong to the full subcategory"
+        refine(terminal, self)
+        return terminal
+
+    def image_factorization(self, arrow: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+        factor, inclusion = self._ambient.image_factorization(arrow)
+        image = inclusion.domain()
+        assert ask(self.membership_proposition(image)) is True, "the ambient image must belong to the full subcategory"
+        refine(image, self)
+        refine(factor, self.morphism_category(1))
+        refine(inclusion, self.morphism_category(1))
+        return factor, inclusion
+
+    def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False] | UnknownClass:
+        factor = self._ambient.factor_through_monomorphism(mono, arrow)
+        if factor is False or factor is Unknown:
+            return factor
+        refine(factor, self.morphism_category(1))
+        return factor
+
+    def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
+        arrows = self._ambient.hom_morphisms(source, target)
+        if arrows is Unknown:
+            return Unknown
+        for arrow in arrows:
+            refine(arrow, self.morphism_category(1))
+        return arrows
 
 
 _inverse_images: TripleDict = TripleDict(weak_values=False)

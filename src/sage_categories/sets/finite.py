@@ -19,7 +19,7 @@ from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.cones import cone, cocone, cone_apex, cocone_apex
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, register_handler
-from sympy import true, false
+from sage_categories.cat.slices import SliceProperty, SliceLikeCategory
 from sage_categories.sets._finite import cartesian, quotient
 
 type Map = Callable[[Hashable], Hashable]
@@ -279,7 +279,7 @@ class SetsCategory(Category[[Map], []]):
             apex = self(
                 value
                 for value in first.domain()._values
-                if first._action(value) == second._action(value)
+                if _equal_datum(first._action(value), second._action(value))
             )
             legs = lambda vertex: Mor(self)(apex, diagram.on_object(vertex))(
                 lambda value: (
@@ -380,9 +380,6 @@ def _set_member(
     assumptions: Proposition,
 ) -> bool:
     return point.parent() is value
-
-
-from sage_categories.cat.slices import SliceProperty, SliceLikeCategory
 
 
 class SetSubobjects(SliceProperty):

@@ -216,18 +216,23 @@ class SliceLikeCategory(CommaSpecialization):
         return self.defining_arrow().on_object(candidate)
 
     def property_type(self, property_category: Category) -> type[SliceProperty]:
-        """The subobjects of a product state their components (POL-CAT-094); otherwise the base category supplies its subobjects class (POL-CAT-092)."""
+        """The base category supplies its subobject realization (POL-CAT-092)."""
         monomorphisms = self._base_of_slice.morphism_category(1).Monomorphisms()
         if self._fixed_label == 1 and property_category is monomorphisms:
-            if self._fixed in self._base_of_slice.Products():
-                return SubobjectsOfProduct
             return self._base_of_slice.subobjects_type()
         return SliceProperty
 
     def _property(self, property_category: Category) -> Category:
         """The pullback of a property subcategory of ``Mor(C)`` along the defining-arrow functor, retained per property."""
         if property_category not in self._properties:
-            self._properties[property_category] = self.property_type(property_category)(self, property_category)
+            family = self.property_type(property_category)(self, property_category)
+            if (
+                self._fixed_label == 1
+                and property_category is self._base_of_slice.morphism_category(1).Monomorphisms()
+                and self._fixed in self._base_of_slice.Products()
+            ):
+                family._product_subobjects = SubobjectsOfProduct(family, property_category)
+            self._properties[property_category] = family
         return self._properties[property_category]
 
     def Monomorphisms(self) -> Category:
@@ -404,9 +409,10 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
     class MorphismType:
         """A triangle of the slice between two such objects."""
 
-    def __init__(self, ambient: SliceLikeCategory, property_category: Category) -> None:
+    def __init__(self, ambient: SliceLikeCategory | SliceProperty, property_category: Category) -> None:
         self._property_category = property_category
         self._retained: MonoDict = MonoDict()
+        self._product_subobjects: SubobjectsOfProduct | None = None
         super().__init__(ambient)
 
     def property_category(self) -> Category:
@@ -438,6 +444,8 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
         refine(self.defining_arrow_of(value), self._property_category)
         member_object = self._ambient(value)
         refine(member_object, self)
+        if self._product_subobjects is not None:
+            refine(member_object, self._product_subobjects)
         return member_object
 
     def __repr__(self) -> str:
@@ -447,9 +455,8 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
 class SubobjectsOfProduct(SliceProperty):
     """``C.Subobjects(P)`` for a product ``P``: the subobjects that read ``P``'s components through their own monomorphism.
 
-    ``SliceLikeCategory.property_type`` names this class exactly when the fixed object is a
-    product, so the method belongs to the subobjects of a product and to no other
-    subobject (POL-CAT-094, POL-KERNEL-025).
+    The fixed slice selects this specialization of its base subobject realization
+    when its fixed object is a product (POL-CAT-094, POL-KERNEL-025).
     """
 
     # The product structure of ``P`` adds no point and no triangle; it adds

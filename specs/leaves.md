@@ -158,7 +158,7 @@ new category, which registers itself as a point in `D` by adding `D.Point()` to 
 structure functors; `X` then inherits `D.ObjectType` and `X.ObjectType` inherits
 `D.ElementType` (D154, D161; [functor.md](functor.md#point-categories-and-point-functors)).
 A structure category, sets with additional structure, defines its own functors to the categories it inherits methods from (D161).
-A structure functor such as `Posets() -> Sets()` is defined by the leaf with its two actions and constructed into the strongest property subcategory of `Fun(C, D)` that states what is known about it, `Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)(on_object, on_morphism)`; the underlying set of a poset or relation is `X`, `(X, R) |-> X`, never the relation (D08, D158, D162, D163).
+A structure functor such as `Posets() -> Sets()` is defined by the leaf with its two actions. The poset functor is faithful, an isofibration, and limit-preserving; [ordered sets](ordered-sets.md#products) owns its declaration and lifting data. Its object action returns the carrier `X` of `R -> X * X` (D08, D158, D162, D163).
 The leaf selects a projection retained by its defining construction (`POL-LEAF-071`), by the named method of that construction: `C.CosliceUnder(X).projection()`, `Fun(I, C).ev(i)`, `P.product_projection(i)`; a composite is `G * F` (D157; [functor.md](functor.md#selecting-a-retained-functor)).
 A leaf states a theorem about a functor by constructing that functor into the property subcategory of `Fun(C, D)` that names it, such as `Fun(C, D).CreatesLimits(I)` (D158; [functor.md](functor.md#diagram-shapes-and-universal-constructions)).
 
@@ -188,7 +188,7 @@ Examples include:
 - an inherited property category comes from `F.inverse_image(C.P())`.
 
 For a universal construction, `Cat` owns the shape, diagram, cone or cocone, legs, apex, and universal map.
-The leaf states the additional leaf structure and the theorem that the construction preserves or creates it, by constructing the functor into `Fun(C, D).CreatesLimits(I)` (D158).
+The leaf supplies the additional structure on the ambient apex and its existing morphism constructor through `U.with_limit_lifting(I, on_apex, on_morphism)`. The [lifting contract](functor.md#diagram-shapes-and-universal-constructions) states the required existence theorem and faithfulness condition. The generic construction supplies projections and mediators. Proven functor properties remain declarations in their exact property subcategories (D158).
 
 One apex can have many presentations.
 Operations that depend on one presentation remain on that presentation object.

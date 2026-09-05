@@ -247,7 +247,7 @@ Phase cards alone record current work and acceptance state.
 | `POL-LEAF-006`, `POL-LEAF-025`, `POL-LEAF-026`, `POL-LEAF-036`, `POL-LEAF-039`, `POL-LEAF-052` | [Repeated failures]. |
 | `POL-LEAF-009`, `POL-LEAF-044`, `POL-LEAF-048` | [Computation boundary]. |
 | `POL-LEAF-010` | [Verification]. |
-| `POL-LEAF-011`, `POL-LEAF-017` | [Inherited constructions] and [Diagrams and universal constructions]: declare `.CreatesLimits(I)` where established; the generic construction supplies the lift. Otherwise name the actual leaf construction. |
+| `POL-LEAF-011`, `POL-LEAF-017` | [Inherited constructions] and [Diagrams and universal constructions]: supply the mathematical lifting data at the structure functor; the generic construction supplies projections and mediators. Declare `.CreatesLimits(I)` where its reflection condition also holds. |
 | `POL-LEAF-012`, `POL-LEAF-021`, `POL-LEAF-056`, `POL-LEAF-060` | [Inherited constructions]. |
 | `POL-LEAF-013`, `POL-LEAF-015` | A leaf author uses its mathematics and nearby category contracts. Adding a leaf requires neither kernel changes nor knowledge of distant subtrees. |
 | `POL-LEAF-014` | Maintain the [leaf design templates]: ordinary leaves, property implementations, pullback-defined categories, chosen-datum fibrations, and universal-construction realizations. They show minimal constructors, complete actions, immediate retained functors, new methods, and exact handlers. Templates are design pseudocode, never executed, imported, type-checked, or graded by spelling; their shape must compile without duplicate ownership or layer violations. |
@@ -342,7 +342,7 @@ Phase cards alone record current work and acceptance state.
 | `POL-FUN-024`, `POL-FUN-025` | [Functor properties]. |
 | `POL-FUN-026`, `POL-FUN-034` | [Functor property resolution]. |
 | `POL-FUN-027` | [Functor construction]. |
-| `POL-FUN-028` | [Construction-named functors] and [Leaf structure functors] fix the named poset-to-underlying-set fibration and its `.CreatesLimits(Discrete)` declaration. |
+| `POL-FUN-028` | [Construction-named functors] and [Leaf structure functors] fix the faithful poset-to-underlying-set isofibration and its componentwise-order lifting data. |
 | `POL-FUN-029`, `POL-FUN-030`, `POL-FUN-037` | [Construction-named functors]. |
 | `POL-FUN-031` | [Comma categories and fibers]. |
 | `POL-FUN-032` | [Induced functors]. |

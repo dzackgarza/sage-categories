@@ -18,10 +18,10 @@ Functor: Incomplete
 
 class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
 
-    def __init__(self, ambient: FunctorsCategory, name: str, full_subcategory_of: tuple[Category, ...], shape: Category) -> None:
+    def __init__(self, ambient: FunctorsCategory, name: str, full_subcategory_of: tuple[Category, ...], shape: Category | Functor) -> None:
         ...
 
-    def shape(self) -> Category:
+    def shape(self) -> Category | Functor:
         ...
 
 class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):

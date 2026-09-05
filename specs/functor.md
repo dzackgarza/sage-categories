@@ -1173,10 +1173,23 @@ state that `F` preserves or creates `I`-limits. `CreatesLimits(I)` is a property
 
 A functor's theorem is the property subcategory it is constructed into (D158).
 A leaf states that a structure functor `U` creates `I`-limits by constructing `U` into `Fun(C, D).CreatesLimits(I)` at its declaration.
-`Fun.Fibrations()` is the property subcategory of fibrations, constructed and retained as a full subcategory of `Fun.Isofibrations()`: a fibration is an isofibration, since the cartesian lift of an isomorphism is an isomorphism ([nLab, "Grothendieck fibration"](https://ncatlab.org/nlab/show/Grothendieck+fibration), `POL-MATH-040`), and the containment is stated as that monomorphism, not induced (D83). A structure functor declared into `Fibrations()` therefore carries inheritance under D167. A structure functor is defined by the leaf with its two actions and constructed into the strongest property subcategory of `Fun(C, D)` that states what is known about it: the poset leaf defines `U: Posets() -> Sets()`, `(X, R) |-> X`, as `Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)(on_object, on_morphism)` (D08, D158, D161, D162, D163).
+`Fun.Fibrations()` is the property subcategory of fibrations, constructed and retained as a full subcategory of `Fun.Isofibrations()`: a fibration is an isofibration, since the cartesian lift of an isomorphism is an isomorphism ([nLab, "Grothendieck fibration"](https://ncatlab.org/nlab/show/Grothendieck+fibration), `POL-MATH-040`), and the containment is stated as that monomorphism, not induced (D83). A structure functor declared into `Fibrations()` therefore carries inheritance under D167. The poset forgetful functor is faithful and an isofibration; it preserves small limits. Its exact declaration and chosen lifts belong to [ordered sets](ordered-sets.md#products).
 A lifted construction can additionally require its chosen apex and defining morphisms to map exactly to the chosen ambient construction (D76).
 Preservation alone supplies an isomorphic comparison. The construction states which requirement it imposes.
-The general creates-limits construction supplies the lifted cone and its universal maps. The leaf does not implement a separate lift for each named limit ([poset-products template](poset-products-minimal-template.py)).
+For a faithful functor, executable lifting data is supplied once per shape or discrete shape family:
+
+```python
+U.with_limit_lifting(I, on_apex, on_morphism)
+```
+
+`on_apex(K, c)` receives `K: I -> C` and a retained limiting cone `c` over `U * K`. It returns an object `L` of `C` with `U(L) is c.apex()`.
+`on_morphism(X, Y, f)` returns a morphism `X -> Y` whose image under `U` equals `f`.
+It is required on the ambient projections and on the ambient mediators from every competing source cone. Existence on this domain is the supplied lifting theorem.
+The generic construction forms the lifted cone and obtains each mediator by mapping a competing cone through `U`, applying `c.lift`, and lifting that map.
+Faithfulness reflects the cone equations and proves uniqueness of the mediator. This is the constructive content of [Mathlib's `LiftsToLimit`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html#CategoryTheory.LiftsToLimit).
+The exact shape takes precedence over the `Discrete` family. Among selected structure functors, declaration order chooses the construction.
+`C.Limits(I)(K)` and its named product and equalizer forms use these retained data automatically. A category with another realization supplies its owned `limit_construction` or complete universal data.
+The [poset-products template](poset-products-minimal-template.py) supplies componentwise order and the existing monotone-map constructor. Limit creation additionally requires reflection of limits; the theorem declaration and chosen executable data have distinct roles.
 
 ## Comma categories, slices, coslices, and fibers
 

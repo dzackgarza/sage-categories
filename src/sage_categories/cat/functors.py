@@ -100,12 +100,12 @@ class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [A
         ambient: FunctorsCategory,
         name: str,
         full_subcategory_of: tuple[Category, ...],
-        shape: Category,
+        shape: Category | Functor,
     ) -> None:
         self._shape = shape
         super().__init__(ambient, name, full_subcategory_of)
 
-    def shape(self) -> Category:
+    def shape(self) -> Category | Functor:
         return self._shape
 
     def __repr__(self) -> str:

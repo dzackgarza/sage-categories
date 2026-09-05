@@ -25,7 +25,7 @@ It is sets with additional structure, a structure category: its leaf states the 
 `Posets()` is `Relations().PartialOrder()`, the axiom subcategory; the `PartialOrder` axiom and its proposition are declared on `Relations()` (D147), and `Posets()` inherits that functor along its inclusion.
 The poset class declares itself the implementation of `Relations().PartialOrder()` through the identity structure functor `End_Cat(Relations().PartialOrder()).one()` (D156).
 `cat_kernel` constructs the inclusion `Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()` (D146, D148, D175).
-`Posets()` is itself a structure category and defines its own functors to the categories it inherits methods from (D161): the poset leaf defines its structure functor `U: Posets() -> Sets()` by its two actions, constructed into `Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)` (D162; [Products](#products)).
+`Posets()` defines its faithful structure functor `U: Posets() -> Sets()` by its two actions. Transport of a partial order along a bijection makes `U` an isofibration. Its limit-preservation theorem and chosen lifts are stated under [Products](#products).
 
 The structure functors form this commutative graph:
 
@@ -43,10 +43,10 @@ Both paths from finite total orders to sets have the same intended underlying-se
 projection. This is coherence of the owned mathematical diamond, not a requirement for
 the compiler to compare constructor data or public functor images along the two paths.
 
-Let `U: Posets() -> Sets()` be the structure functor sending a poset to its underlying set `X`, never to its relation, `(X, R) |-> X` (D163); its declaration into the fibration subcategory is what makes it the functor that carries inheritance, while `(X, R) |-> R` supplies none (D164; [functor.md](functor.md#structure-functors-and-inherited-classes)):
+Let `U: Posets() -> Sets()` send a poset to its carrier `X` (D163). Its isofibration declaration supplies inheritance under [the structure-functor contract](functor.md#structure-functors-and-inherited-classes):
 
 ```python
-U = Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)(on_object, on_morphism)
+U = Fun(Posets(), Sets()).Faithful().Isofibrations().PreservesLimits(Discrete)(on_object, on_morphism)
 ```
 
 Then
@@ -205,16 +205,17 @@ Poset theory adds only the theorem-backed admission needed to preserve monotonic
 ## Products
 
 The generic product contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
-The projection `U: Posets() -> Sets()` creates small limits. It is therefore an object of each applicable `Fun(Posets(), Sets()).CreatesLimits(I)`.
+The projection `U: Posets() -> Sets()` preserves small limits and has chosen lifts of set limits. It is an object of each applicable `Fun(Posets(), Sets()).PreservesLimits(I)`.
 
-For a discrete shape, the generic creates-limits construction lifts the selected set-product cone. Its apex carries the componentwise order:
+For a discrete shape, the selected set-product apex carries the componentwise order:
 
 \[
 x\leq y\quad\Longleftrightarrow\quad
 \forall i,\ x_i\leq_i y_i.
 \]
 
-The poset leaf states this coordinatewise theorem once, by constructing `U` into `Fun(Posets(), Sets()).Fibrations().CreatesLimits(Discrete)`, the strongest property subcategory that states what is known about it; a functor's theorem is the property subcategory it is constructed into (D158, D162; [poset-products template](poset-products-minimal-template.py)). The generic lift supplies the monotone projections and universal morphism, and `Posets().Products()(P, Q)` is inherited from `Cat` (D149). Applying `U` to the lifted cone returns the selected set-product cone.
+The poset leaf supplies this order formula and its existing monotone-map constructor through `U.with_limit_lifting(Discrete, on_apex, on_morphism)` ([poset-products template](poset-products-minimal-template.py)). The [generic lifting construction](functor.md#diagram-shapes-and-universal-constructions) supplies the projections and universal morphism. Applying `U` returns the selected set apex and maps exactly. `Posets().Products()(P, Q)` uses this construction through the inherited public constructor.
+The same order formula on the compatible-family subset gives limits of other shapes. A mediator is monotone because each component is monotone; the underlying set limit makes it unique.
 
 The product of total orders need not be total.
 In a product of two nontrivial chains, the two crossed elements are incomparable.

@@ -3,6 +3,7 @@ from _typeshed import Incomplete
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from sage_categories.cat.canonical import FinitePresentedCategory
+from sage_categories.cat.constructions import LimitApexLift, LimitMorphismLift
 from sage_categories.cat.declarations import CategoryFamily
 from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
@@ -341,6 +342,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             ...
 
         def Fiber(self, member_object: CategoryOfCategories.ElementType) -> Category:
+            ...
+
+        def with_limit_lifting(self, shape: Category | Functor, on_apex: LimitApexLift, on_morphism: LimitMorphismLift) -> Functor:
+            ...
+
+        def limit_lifting(self, shape: Category) -> tuple[LimitApexLift, LimitMorphismLift] | None:
             ...
 
         def retain_terminal_comparison(self, comparison: MorphismCategory.ObjectType) -> None:

@@ -1214,3 +1214,16 @@ Behavioral mechanisms are inferences from inspected changes, not claims about an
 Evidence locators: `4fe67cf`, `5baf28a`, `460a281`, `df0e19c`, `6f32004`, `6660e9c`, `7f8bea5`, `3f8ee1d`,
 `94584a2`, `13bdb2a`, `270b9d5`, `af73c40`, `b7c4853`, `e8f54c0`, and `51c74ab`.
 The implementation details and causal comparison are recorded with this documentation change in Git.
+
+### D183
+
+Mathematical correction to the poset application of D158 and D162: the forgetful functor preserves and lifts limits and is a faithful isofibration.
+For two two-element chains, put the discrete order on their four-element set product.
+The coordinate maps form a cone with a limiting image in Sets, but the monotone diagonal from the two-element chain has no monotone mediator to that discrete apex.
+Thus the forgetful functor does not reflect limits, which is part of [limit creation](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html).
+It also fails the Grothendieck fibration condition: a cartesian lift of the unique map from a two-element set to a singleton would have to admit every set map from every poset into that set. The two orientations from a two-element chain force both comparisons, contradicting antisymmetry.
+Transport along bijections gives the required isofibration. Componentwise order on a set limit gives the chosen limit lift.
+The generic faithful lifting construction retains the mathematical apex and morphism rules on the functor, then supplies projections and mediators.
+Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions) and [ordered sets](ordered-sets.md#products).
+
+Source: derivation from the cone, faithfulness, and cartesian-arrow definitions during the 2026-09-05 limit-lifting repair. These are mathematical corrections, not attributed owner statements.

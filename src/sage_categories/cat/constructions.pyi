@@ -6,7 +6,7 @@ from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Proposition
 from sage_categories.cat.properties import PredicateSubcategory, PropertySubcategory
-__all__ = ['cocone', 'cocone_apex', 'cone', 'cone_apex', 'vertex_of', 'presenting_family', 'ApexCategory', 'LimitsCategory', 'ProductsCategory', 'ColimitsCategory', 'CoproductsCategory']
+__all__ = ['cocone', 'cocone_apex', 'cone', 'cone_apex', 'vertex_of', 'presenting_family', 'ApexCategory', 'LimitApexLift', 'LimitMorphismLift', 'lift_limit', 'LimitsCategory', 'ProductsCategory', 'ColimitsCategory', 'CoproductsCategory']
 type Mediator = Callable[[NaturalTransformation], MorphismCategory.ObjectType]
 type Construction = Callable[[Functor], 'CategoryOfCategories.ElementType']
 type UniversalPresentation = LimitConesCategory.ObjectType
@@ -54,6 +54,11 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
 
     def chosen(self, diagram: Functor, construction: Construction) -> CategoryOfCategories.ElementType:
         ...
+type LimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
+type LimitMorphismLift = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType], MorphismCategory.ObjectType]
+
+def lift_limit(functor: Functor, diagram: Functor, on_apex: LimitApexLift, on_morphism: LimitMorphismLift) -> CategoryOfCategories.ElementType:
+    ...
 
 class LimitsCategory(ApexCategory):
 

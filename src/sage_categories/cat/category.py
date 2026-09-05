@@ -19,6 +19,7 @@ from sage_categories.kernel.sage_runtime import Integer, MonoDict, TripleDict, c
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.constructions import UniversalPresentation
+    from sage_categories.cat.constructions import LimitApexLift, LimitMorphismLift
     from sage_categories.cat.declarations import CategoryFamily
     from sage_categories.cat.functors import Fun, Functor, FunctorsCategory, NaturalTransformation
     from sage_categories.cat.morphisms import MorphismCategory
@@ -825,9 +826,15 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         """The owned construction of ``I``-limits, when this category declares one."""
+        from sage_categories.cat.constructions import lift_limit
         from sage_categories.cat.functors import FunctorCategory
         from sage_categories.cat.opposites import OppositeCategory
 
+        for functor in self.selected_functors():
+            lifting = functor.limit_lifting(shape)
+            if lifting is not None:
+                apex_lift, morphism_lift = lifting
+                return lambda diagram: lift_limit(functor, diagram, apex_lift, morphism_lift)
         if isinstance(self, OppositeCategory):
             original = self.original()
             if original is Cat():
@@ -1258,6 +1265,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __init__(self, data: FunctorData) -> None:
             self._on_object = data.on_object
             self._on_morphism = data.on_morphism
+            self._limit_liftings: dict[Category | Functor, tuple[LimitApexLift, LimitMorphismLift]] = {}
             self._initialize_functor_image_cache()
 
         # The admission condition is the one the image construction needs.  A retained
@@ -1379,6 +1387,39 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             from sage_categories.cat.fibers import fiber
 
             return fiber(self, member_object)
+
+        def with_limit_lifting(
+            self,
+            shape: Category | Functor,
+            on_apex: LimitApexLift,
+            on_morphism: LimitMorphismLift,
+        ) -> Functor:
+            """Choose exact limit lifts along this faithful functor.
+
+            ``on_apex(K, c)`` adds source structure to the apex of the limiting
+            cone ``c`` over ``self * K``. ``on_morphism(X, Y, f)`` lifts the
+            resulting projections and mediators to the stated endpoints.
+            Existence of these lifts is the supplied mathematical theorem;
+            faithfulness makes their cone equations and uniqueness follow.
+            """
+            from sage_categories.cat.functors import Fun
+            from sage_categories.cat.shapes import Discrete
+
+            assert self in Fun.Faithful(), "limit reconstruction requires a faithful functor"
+            assert shape in Cat() or shape is Discrete, "supply a shape or the discrete shape family"
+            assert shape not in self._limit_liftings, "this shape already has chosen limit lifts"
+            self._limit_liftings[shape] = (on_apex, on_morphism)
+            return self
+
+        def limit_lifting(self, shape: Category) -> tuple[LimitApexLift, LimitMorphismLift] | None:
+            """Return the chosen lifts for this shape or the discrete shape family."""
+            from sage_categories.cat.shapes import Discrete
+
+            if shape in self._limit_liftings:
+                return self._limit_liftings[shape]
+            if Discrete in self._limit_liftings and shape.is_discrete():
+                return self._limit_liftings[Discrete]
+            return None
 
         # -- points (``specs/functor.md``, "Structural inheritance") --------------------
         #

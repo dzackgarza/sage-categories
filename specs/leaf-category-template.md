@@ -118,7 +118,7 @@ Their category and evaluation behavior comes from [property-refinement.md](prope
 
 ## Construction specimens
 
-See [pointed-sets-minimal-template.py](pointed-sets-minimal-template.py) for a chosen-datum fibration, the class implementing a coslice, and [poset-products-minimal-template.py](poset-products-minimal-template.py) for a universal-construction realization, a functor placed in `.CreatesLimits(I)`.
+See [pointed-sets-minimal-template.py](pointed-sets-minimal-template.py) for a chosen-datum fibration and [poset-products-minimal-template.py](poset-products-minimal-template.py) for limit lifting through a faithful structure functor. The latter supplies componentwise order and the existing morphism constructor to `with_limit_lifting`.
 
 ## Private computation specimen
 

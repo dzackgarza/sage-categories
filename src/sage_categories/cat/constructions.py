@@ -80,12 +80,15 @@ __all__ = [
     "ApexCategory",
     "ColimitsCategory",
     "CoproductsCategory",
+    "LimitApexLift",
+    "LimitMorphismLift",
     "LimitsCategory",
     "ProductsCategory",
     "cocone",
     "cocone_apex",
     "cone",
     "cone_apex",
+    "lift_limit",
     "presenting_family",
     "vertex_of",
 ]
@@ -309,6 +312,67 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
                 lambda transformation: induced_limit_morphism(self, transformation),
             )
         return self._image_factor
+
+
+type LimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
+type LimitMorphismLift = Callable[
+    [CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType],
+    MorphismCategory.ObjectType,
+]
+
+
+def lift_limit(
+    functor: Functor,
+    diagram: Functor,
+    on_apex: LimitApexLift,
+    on_morphism: LimitMorphismLift,
+) -> CategoryOfCategories.ElementType:
+    """Lift a chosen limit through a faithful functor using its structure data.
+
+    The construction follows Mathlib's ``LiftsToLimit``: choose a cone over
+    the source diagram mapping to the ambient limit, then lift its universal
+    arrows. Faithfulness reflects the cone equations and proves uniqueness.
+    https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html#CategoryTheory.LiftsToLimit
+    """
+    assert functor in Fun.Faithful(), "limit reconstruction requires a faithful functor"
+    source, target = functor.domain(), functor.codomain()
+    family = source.Limits(diagram.domain())
+    diagram = family.lowered(diagram)
+    image_diagram = functor * diagram
+    image_family = target.Limits(diagram.domain())
+    image_family(image_diagram)
+    presentation = image_family.universal_data(image_diagram)
+    apex = on_apex(diagram, presentation)
+    assert apex in source
+    assert functor.on_object(apex) is presentation.apex(), "the lifted apex must retain the ambient apex"
+
+    def lifted_arrow(
+        domain: CategoryOfCategories.ElementType,
+        codomain: CategoryOfCategories.ElementType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
+        result = on_morphism(domain, codomain, arrow)
+        assert result in source.morphism_category(1)(domain, codomain)
+        assert ask(functor.on_morphism(result) == arrow) is True, "the lifted arrow must map to the ambient arrow"
+        return result
+
+    limiting_cone = cone(
+        diagram,
+        apex,
+        lambda vertex: lifted_arrow(apex, diagram.on_object(vertex), presentation.leg(vertex)),
+    )
+
+    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+        candidate_apex = cone_apex(candidate)
+        image_cone = cone(
+            image_diagram,
+            functor.on_object(candidate_apex),
+            lambda vertex: functor.on_morphism(candidate.component(vertex)),
+        )
+        arrow = presentation.lift(cones(image_diagram)(image_cone))
+        return lifted_arrow(candidate_apex, apex, arrow)
+
+    return family.with_universal_data(diagram, apex, limiting_cone, mediator)
 
 
 class LimitsCategory(ApexCategory):

@@ -1,83 +1,31 @@
-"""Minimal leaf for the property category ``Sets().Finite()``.
+"""Finite-set design specimen for the axiom declaration contract.
 
-See ``specs/functor.md`` for structural-functor declarations.
-
-The leaf constructs the finiteness proposition. A private set backend decides only its
-supported semantic cases. The property category binds that backend after its declaration.
-The predicate kernel owns ``ask()``, ``assume()``, proposition ``.assume()``, and positive
-same-object refinement.
+This pseudocode shows only the declarations owned by ``Sets()`` for its ``Finite`` axiom.
+The private proposition deciding membership in ``Sets().Finite()`` uses methods that
+already exist on ``Sets()``; ``Sets().Finite()`` exists implicitly, and ``cat_kernel``
+constructs its structure functor to ``Sets()`` and generates ``X.is_finite()``.
+A class implementing an axiom subcategory appears in the poset and finite-poset templates.
 """
 
 from __future__ import annotations
 
+from sympy.logic.boolalg import Boolean
+
 
 class SetsCategory(Category):
-    class ObjectType(Implementation):
-        def is_finite(self) -> Proposition:
-            """Return the finite-set membership proposition."""
-            return Sets().Finite().membership_proposition(self)
+    """Implement sets, elements, and total set maps."""
 
-    class Finite(Category):
-        """The full property subcategory of finite sets."""
+    class ObjectType:
+        """Implement sets."""
 
-        def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-            """Select the inclusion that supplies the inherited set catalogue.
+    class ElementType:
+        """Implement elements of represented sets."""
 
-            This tuple is not a list of all functors from finite sets.
-            The full-subcategory construction supplies its maps and constructs it in
-            the fixed-endpoint functor category. Other functors remain in ``Fun``.
-            """
-            return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+    class MorphismType:
+        """Implement total set maps."""
 
-        def membership_proposition(
-            self,
-            X: SetsCategory.ObjectType,
-        ) -> Proposition:
-            """Return the proposition that ``X`` has finite cardinality."""
-            return self.applied_predicate(
-                X,
-                definition=X.cardinality() < ALEPH_ZERO,
-            )
+    def _finite(self, X: Sets().ObjectType) -> Boolean:
+        """State the proposition deciding membership in ``Sets().Finite()``."""
+        return X.cardinality() < aleph0
 
-        class ObjectType(Implementation):
-            """Implement only the operations introduced by known finiteness.
-
-            No initializer repeats set construction. The kernel-owned inclusion
-            supplies the canonical ``Sets().ObjectType`` image.
-            """
-
-            def cardinality_parity(self) -> Proposition:
-                """Return the proposition that the cardinality is even."""
-                return self.cardinality() % 2 == 0
-
-
-FiniteSets = SetsCategory.Finite
-
-
-def decide_finiteness(X: SetsCategory.ObjectType) -> Decision:
-    """Return an exact decision for the supported private-backend cases.
-
-    Put this entry point and its engine calls in a private set-computation module in the
-    implementation. Replace these pattern names with the owned semantic constructions.
-    """
-    match X:
-        case ExplicitFiniteSet():
-            return True
-        case ExplicitInfiniteSet():
-            return False
-        case _:
-            return Unknown
-
-
-Sets().Finite().register_exact_handler(
-    SetsCategory.ObjectType,
-    decide_finiteness,
-)
-
-
-# All public routes use the proposition returned by ``X.is_finite()``:
-#
-# proposition = X.is_finite()
-# ask(proposition)       # Decide from placement, assumptions, or exact handlers.
-# assume(proposition)    # Assert and refine in the active mathematical context.
-# proposition.assume()   # The equivalent proposition-owned assumption spelling.
+    Finite = Axiom(_finite)

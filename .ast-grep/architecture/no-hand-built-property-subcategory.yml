@@ -1,0 +1,11 @@
+id: no-hand-built-property-subcategory
+language: python
+severity: error
+files:
+  - tests/kernel/**/*.sage
+message: POL-LEAF-064, D89, D133
+rule:
+  any:
+    - pattern: PropertySubcategory($$$)
+    - pattern: FullSubcategory($$$)
+    - pattern: PredicateSubcategory($$$)

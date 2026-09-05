@@ -1,0 +1,4 @@
+=============================
+=== Running: Sage QC wiring preflight ===
+# Validates SAGE_BIN, pyproject.toml, and absence of committed preparse artifacts
+Sage QC wiring OK

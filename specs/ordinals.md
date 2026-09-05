@@ -2,87 +2,67 @@
 
 This document specifies the ordinal model used by the cardinality framework.
 
-Ordinal operations specified as predicates follow the proposition interface in
-[Property refinement](property-refinement.md). Applying one returns a proposition.
-`ask()` returns its decision.
+`Ordinals()` owns each ordinal predicate meaning.
+Its public representation and evaluation follow [Propositions and `ask()`](undecidable-properties.md).
+Applying a predicate returns a SymPy proposition.
+Only `ask()` returns `True`, `False`, or Sage `Unknown`.
 
-The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`,
-`POL-MATH-035`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-085`, `POL-CAT-087`,
-`POL-SET-025`, and `POL-SET-026`.
+The governing policies are `POL-MATH-022` through `POL-MATH-025`, `POL-MATH-034`, `POL-MATH-035`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-001`, `POL-CAT-054`, `POL-CAT-060`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`, `POL-SET-025`, `POL-SET-026`, `POL-SET-037`, `POL-SET-038`, and `POL-DOC-010` through `POL-DOC-013`.
 
 ## Ordinal model
 
-`Ordinals()` is one parent representing the commutative semiring of ordinals under Hessenberg operations.
-
-Ordinals are elements of that parent:
-
-```python
-Ordinal = OrdinalSemirings().ElementType
-```
-
-This differs from the cardinal model:
-
-- A cardinal is an object of `Cardinal()`.
-
-- An ordinal is an element of `Ordinals()`.
-
-An ordinal semiring is a semiring whose carrier consists of ordinals, whose addition is
-Hessenberg natural sum, and whose multiplication is Hessenberg natural product.
-Its multiplication is commutative.
-
-Let `P(S)` be this property of objects `S in Semirings()`. Then
-`OrdinalSemirings()` is the full subcategory defined by `P`. Its objects are the
-semiring objects satisfying `P`. Property refinement retains each same owned semiring.
-Its Hom categories are definitionally those of `Semirings()`:
-
-\[
-\operatorname{Hom}_{\mathbf{OrdinalSemirings}}(A,B)
-=
-\operatorname{Hom}_{\mathbf{Semirings}}(A,B).
-\]
-
-Thus the inclusion is fully faithful by construction. No fullness predicate or runtime
-check exists. This follows mathlib's
-[`CategoryTheory.ObjectProperty.FullSubcategory`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html)
-definition: objects carry an object property, while morphisms ignore that property.
-
-The ambient predicate application is:
+`Ordinals()` is the skeletal category of ordinals.
+An ordinal is an object of it, exactly as a cardinal is an object of `Cardinal()` ([cardinality.md](cardinality.md), "Cardinal model"):
 
 ```python
-S.is_ordinal_semiring()
+OrdinalObject = Ordinals().ObjectType
 ```
 
-It returns `P(S)`. `ask()` uses its computational routes.
+`Ordinals()` owns ordinal construction, both families of ordinal arithmetic, the order predicates, and expression normalization.
+Sage supplies private runtime support only.
 
-The complete immediate structural tuple is:
+Two families of operations act on these objects.
+Python `+` and `*` denote ordinary ordinal sum and product.
+The Hessenberg natural sum and natural product use explicit method names.
+Ordinal power uses an explicit method because `**` retains its categorical meaning.
+
+An expression that no normalization rule evaluates is retained exactly.
+
+### Arithmetic ownership
+
+`Ordinals().ObjectType` declares ordinary ordinal sum and product as its local `+` and `*` operations.
+This local declaration takes precedence over the generic categorical product and coproduct conveniences.
+The categorical constructions remain available as `Ordinals().Products()` and `Ordinals().Coproducts()`.
+
+Mathlib establishes the commutative semiring laws for the two Hessenberg operations.
+Its [`Mathlib/SetTheory/Ordinal/NaturalOps.lean`](https://github.com/leanprover-community/mathlib4/blob/v4.14.0/Mathlib/SetTheory/Ordinal/NaturalOps.lean) defines "natural addition and multiplication on ordinals, also known as the Hessenberg sum and product" and states that "they're commutative, associative, preserve order, have the usual `0` and `1` from ordinals, and distribute over one another".
+Its `OrderedCommSemiring NatOrdinal` instance supplies the two distributivity fields `left_distrib` and `right_distrib`, the two absorption fields `zero_mul` and `mul_zero`, and `mul_comm`.
 
 ```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (Fun(self, Semirings()).FullyFaithful().inclusion(),)
-```
+Ordinals().zero()
+Ordinals().one()
 
-The selected semiring functors supply both monoid structures and the set image fixed by
-the semiring presentation. Sage supplies private runtime support only.
+alpha + beta
+alpha * beta
+alpha.natural_sum(beta)
+alpha.natural_product(beta)
+```
 
 ### Public ordinal constructors
 
 ```python
-OrdinalSemirings()
 Ordinals()
 
-Ordinals()(value)
-Ordinals().omega(index)
+Ordinals()(n)
+InitialOrdinal.on_object(Aleph.on_object(index))
 
 omega0
 ```
 
-`Ordinals()(value)` accepts:
+`Ordinals()(n)` constructs the finite ordinal of a nonnegative Python `int` `n`.
+Each other presentation has its own named constructor (D52).
 
-- An existing `Ordinal`.
-
-- A nonnegative Python `int`.
-
-`Ordinals().omega(index)` constructs the initial ordinal \(\omega_{\text{index}}\).
+The composite `InitialOrdinal.on_object(Aleph.on_object(index))` constructs \(\omega_{\text{index}}\).
 
 Examples:
 
@@ -90,9 +70,9 @@ Examples:
 Ordinals()(0)
 Ordinals()(5)
 
-Ordinals().omega(0)       # omega0
-Ordinals().omega(1)
-Ordinals().omega(Ordinals().omega(1))
+InitialOrdinal.on_object(Aleph.on_object(Ordinals().zero()))       # omega0
+InitialOrdinal.on_object(Aleph.on_object(Ordinals().one()))
+InitialOrdinal.on_object(Aleph.on_object(InitialOrdinal.on_object(Aleph.on_object(Ordinals().one()))))
 ```
 
 Negative finite ordinals raise `ValueError`.
@@ -105,42 +85,71 @@ The private expression model supports:
 
 - Initial ordinals.
 
-- Hessenberg natural sums.
-
-- Hessenberg natural products.
-
 - Ordinary ordinal sums.
 
 - Ordinary ordinal products.
 
 - Ordinary ordinal powers.
 
+- Hessenberg natural sums.
+
+- Hessenberg natural products.
+
 ### `Ordinals()` API
 
-The parent supplies:
+`Ordinals().zero()` and `Ordinals().one()` are the finite ordinal constructors for `0` and `1`.
+Finite ordinary sums and products fold `+` and `*` from those units.
+Finite Hessenberg sums and products fold `natural_sum()` and `natural_product()`.
 
-```python
-O = Ordinals()
+`Ordinals()` is one cached category.
+Construction is cached by expression.
+Reconstructing an equal expression returns the same ordinal object.
 
-O.zero()
-O.one()
+### Ordinary ordinal arithmetic
 
-O.natural_sum(*ordinals)
-O.natural_product(*ordinals)
-```
+Python `+` and `*` are ordinary ordinal sum and ordinary ordinal product.
+Each operation is a morphism out of a product,
 
-`Ordinals()` is cached.
+\[
+\alpha,\mu:\operatorname{Ordinals}()\times\operatorname{Ordinals}()
+\longrightarrow\operatorname{Ordinals}(),
+\]
 
-### Natural arithmetic
+so applying one to a pair returns an ordinal.
+It presents no diagram and carries no cone.
 
-Python `+` and `*` mean Hessenberg natural operations:
+Ordinary ordinal arithmetic uses standard notation:
 
 ```python
 alpha + beta
 alpha * beta
+alpha.ordinal_power(beta)
+```
 
-n + alpha
-n * alpha
+These operations evaluate finite inputs exactly.
+They also simplify:
+
+```python
+alpha + 0 == alpha
+0 + alpha == alpha
+
+alpha * 0 == 0
+alpha * 1 == alpha
+
+alpha.ordinal_power(0) == 1
+0.ordinal_power(beta) == 0       # positive beta
+1.ordinal_power(beta) == 1
+```
+
+Other cases remain symbolic.
+
+### Hessenberg natural arithmetic
+
+The commutative operations have explicit names:
+
+```python
+alpha.natural_sum(beta)
+alpha.natural_product(beta)
 ```
 
 Natural sum:
@@ -148,8 +157,6 @@ Natural sum:
 - Flattens nested natural sums.
 
 - Combines all finite terms.
-
-- Sorts symbolic terms by representation.
 
 - Removes additive zero.
 
@@ -169,44 +176,19 @@ Natural product:
 
 - Sorts symbolic factors.
 
-The implementation does not define `**` as natural ordinal exponentiation.
-
-### Ordinary ordinal arithmetic
-
-Ordinary noncommutative operations have explicit names:
-
-```python
-alpha.ordinal_sum(beta)
-alpha.ordinal_product(beta)
-alpha.ordinal_power(beta)
-```
-
-These methods evaluate finite inputs exactly.
-
-They also simplify:
-
-```python
-alpha.ordinal_sum(0) == alpha
-0.ordinal_sum(alpha) == alpha
-
-alpha.ordinal_product(0) == 0
-alpha.ordinal_product(1) == alpha
-
-alpha.ordinal_power(0) == 1
-0.ordinal_power(beta) == 0       # positive beta
-1.ordinal_power(beta) == 1
-```
-
-Other cases remain symbolic.
-
 ### Ordinal object API
+
+`OrdinalOrder().EssentialImage(InitialOrdinal)` is the property subcategory of initial ordinals.
+Its retained equivalence has source `CardinalOrder()`.
+It owns the initiality containment predicate and the retained equivalence from `Cardinal()`.
+`cat_kernel` derives the standard `alpha.is_initial()` application (D175).
+Apply the inverse of that equivalence to obtain the cardinal index of an initial ordinal.
 
 Every ordinal supplies:
 
 ```python
-alpha.is_initial()
-alpha.initial_index()
 alpha.cardinality()
+alpha.cofinality()
 ```
 
 It supports structural hashing and proposition-valued comparisons:
@@ -234,8 +216,8 @@ The exact handler for `ask(alpha <= beta)` recognizes:
 
 When no exact handler decides a represented comparison, `ask()` returns `Unknown`.
 
-Thus ordinal comparison operators state order propositions. They do not replace an
-unresolved proposition with Boolean `False`.
+Thus ordinal comparison operators state order propositions.
+They do not replace an unresolved proposition with Boolean `False`.
 
 ### Ordinal representations
 
@@ -247,8 +229,8 @@ Representative output is:
 ω_1
 ω_0 # ω_1
 ω_0 ⊗ ω_1
-(ω_0 +o ω_1)
-(ω_0 *o ω_1)
+(ω_0 + ω_1)
+(ω_0 · ω_1)
 (ω_0 ^o ω_1)
 ```
 
@@ -258,7 +240,7 @@ Here:
 
 - `⊗` denotes natural product.
 
-- `+o`, `*o`, and `^o` denote ordinary ordinal operations.
+- `+`, `·`, and `^o` denote ordinary ordinal operations.
 
 ## Cardinality of ordinals
 
@@ -284,7 +266,8 @@ Both natural and ordinary ordinal products map to cardinal products:
 |\alpha\beta|=|\alpha||\beta|.
 \]
 
-Ordinary ordinal powers do not map to cardinal exponentiation in general. For example,
+Ordinary ordinal powers do not map to cardinal exponentiation in general.
+For example,
 
 \[
 2^\omega=\omega,
@@ -294,9 +277,35 @@ Ordinary ordinal powers do not map to cardinal exponentiation in general. For ex
 |2|^{|\omega|}=2^{\aleph_0}.
 \]
 
-This follows from the limit-power rule in Enderton,
-[Elements of Set Theory, Chapter 8, Theorem 8L](https://docs.ufpr.br/~hoefel/ensino/CM304_CompleMat_PE3/livros/Enderton_Elements%20of%20set%20theory_%281977%29.pdf).
+This follows from the limit-power rule in Enderton, [Elements of Set Theory, Chapter 8, Theorem 8L](https://docs.ufpr.br/~hoefel/ensino/CM304_CompleMat_PE3/livros/Enderton_Elements%20of%20set%20theory_%281977%29.pdf).
 
-`alpha.ordinal_power(beta).cardinality()` uses exact ordinal normalization rules. If no
-rule determines the value, it returns a symbolic cardinal expression for the ordinal
-power. It does not replace that expression with cardinal exponentiation.
+`alpha.ordinal_power(beta).cardinality()` is an applied query with result category `Cardinal()`.
+`ask()` uses exact ordinal normalization rules and returns an owned cardinal when determined, otherwise `Unknown`.
+The [typed-query contract](undecidable-properties.md#typed-queries) owns evaluation.
+
+## Cofinality
+
+`alpha.cofinality()` is an applied query with result category `Cardinal()`.
+`ask(alpha.cofinality())` evaluates \(\operatorname{cf}(\alpha)\), the cofinality of the ordinal.
+This result is a **cardinal**. Mathlib's [`Ordinal.cof`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Cardinal/Cofinality/Ordinal.html#Ordinal.cof) supplies the reference definition.
+
+The exact rules are:
+
+\[
+\operatorname{cf}(0)=0,
+\qquad
+\operatorname{cf}(\alpha+1)=1,
+\qquad
+\operatorname{cf}(\omega_0)=\aleph_0,
+\]
+
+\[
+\operatorname{cf}(\omega_{n})=\aleph_{n}\ (n\geq 1),
+\qquad
+\operatorname{cf}(\omega_\beta)=\operatorname{cf}(\beta)\ (\beta\text{ a limit ordinal}).
+\]
+
+The first two are `Ordinal.cof_zero` and `Ordinal.cof_add_one`; they cover zero and ordinary successor sums. The third is `Ordinal.cof_omega0`. The fourth holds because \(\aleph_n\) is regular for \(n\geq 1\) (`Cardinal.isRegular_aleph_add_one` with `Cardinal.isRegular_iff`). The fifth is `Ordinal.cof_omega`, whose limit hypothesis an initial ordinal satisfies by `Cardinal.isSuccLimit_ord`.
+
+For any other expression, `ask(alpha.cofinality())` returns `Unknown`: the shape that selects a rule is not established.
+Cofinality is what [the continuum hypothesis](cardinality.md#the-continuum-hypothesis) needs in order to decide a cardinal power.

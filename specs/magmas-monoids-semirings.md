@@ -1,284 +1,430 @@
 # Magmas, monoids, and semirings
 
-This specification fixes the first algebraic categories after `Sets()`. Standard
-universal algebra and category theory are assumed.
+This specification defines algebraic objects in a supplied ambient category.
+The current implementation milestone remains `Sets()` and its universal constructions.
+These algebraic categories are vertical acceptance targets for that foundation.
 
-The governing policies are `POL-MATH-034`, `POL-CAT-001`, `POL-CAT-033`,
-`POL-CAT-054`, `POL-CAT-060`, `POL-CAT-085`, and `POL-CAT-087`.
+The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`, `POL-GEN-001`, `POL-GEN-016`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-027`, `POL-CAT-030`, `POL-CAT-031`, and `POL-DOC-003` through `POL-DOC-009`.
 
 ## Contents
 
+- [Ambient categorical data](#ambient-categorical-data)
+
 - [Magmas](#magmas)
-- [Additive and multiplicative operation roles](#additive-and-multiplicative-operation-roles)
+
+- [Named operations](#named-operations)
+
 - [Monoids](#monoids)
+
+- [Groups](#groups)
+
 - [Semirings](#semirings)
-- [Structural functors](#structural-functors)
+
+- [Structure functors](#structure-functors)
+
 - [Owned operations](#owned-operations)
+
+- [Laws in the supplied ambient](#laws-in-the-supplied-ambient)
+
 - [Definition sources](#definition-sources)
+
 - [Acceptance conditions](#acceptance-conditions)
+
+## Ambient categorical data
+
+The ambient is a parameter of every definition below.
+`Magmas(V)`, `Monoids(V)`, `Groups(V)`, and `Semirings(C)` are the general notions.
+Fixing the parameter gives an instance.
+`Monoids(Sets())` gives ordinary monoids.
+`Monoids(Cat())` gives strict monoidal categories.
+Neither instance is the definition, and neither is a specialization of the other.
+
+Let `V` be a category `C` with a selected tensor bifunctor
+
+\[
+\mathbin{\otimes}:C\times C\longrightarrow C.
+\]
+
+`Magmas(V)` requires this bifunctor.
+`Monoids(V)` requires a selected monoidal extension
+
+\[
+(C,\mathbin{\otimes},I,a,\lambda,\rho).
+\]
+
+The structured argument `V` retains `C` and all selected ambient structure.
+Two tensor or monoidal structures on one underlying category give different values of `V` and therefore different magma and monoid categories.
+
+The internal semiring construction uses finite products.
+Write `C_x` for the specified cartesian monoidal category `(C, product, 1)`. Then `Semirings(C)` uses `Monoids(C_x)` for both of its monoid structures.
+It does not select another monoidal structure carried by the same underlying category.
+`Semirings(Sets())` gives ordinary semirings.
+
+The definitions use morphisms and commutative diagrams in `C`. They remain meaningful when `C` has no element-based description.
 
 ## Magmas
 
-An object of `Magmas()` is a set `X` with a binary operation
+An object of `Magmas(V)` is an object `X in C` with a chosen multiplication morphism
 
 \[
-\mu:X\times X\longrightarrow X.
+\mu_X:X\otimes X\longrightarrow X.
 \]
 
-An arrow `f : (X, mu_X) -> (Y, mu_Y)` is a set map satisfying
+A morphism from `(X, mu_X)` to `(Y, mu_Y)` is a morphism `f:X -> Y` in `C` such that
 
 \[
-f(\mu_X(x,y))=\mu_Y(f(x),f(y)).
+f\circ\mu_X=\mu_Y\circ(f\otimes f).
 \]
 
-The magma category is a subcategory of the product category with factors `Sets()` and
-`Ar(Sets())`. The defining equations identify the source and target of the second
-component with the required powers of the first component. Thus `Magmas()` is an object
-of `Cat().Products().Subobjects()`.
-
-`Magmas()` owns the operation-neutral structure:
+`Magmas(V)` is the category of these objects and morphisms.
+Its defining presentation retains `X`, `mu_X`, and their endpoint equation.
+`Magmas(V)` presents its objects as pairs, so the structure functor to `C` is the first product projection, whose index names it and whose codomain is fixed by the product:
 
 ```python
-M.operation()
-M.combine(x, y)
-f.is_magma_homomorphism()
-```
-
-`operation()` returns the owned set arrow `mu`. `combine(x, y)` evaluates that arrow.
-The homomorphism method returns the owned preservation predicate.
-
-The complete immediate structural tuple is:
-
-```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (self.product_projection(0),)
 ```
 
-The second product projection maps `(X, mu)` to `mu` in `Ar(Sets())`. It remains an
-ordinary functor. Only the first projection supplies inherited operations.
+The projection to the multiplication morphism remains an ordinary retained functor.
+It does not contribute the morphism category's public method surface.
 
-## Additive and multiplicative operation roles
+`mu_X` is a morphism out of a tensor product.
+It presents no diagram and carries no cone, injection, or projection.
+An object with a magma structure needs no product or coproduct construction of its own.
+Every multiplication morphism below has this form.
 
-`Magmas()` does not select a notation for its operation. The two axiomatic subcategories
-are:
-
-```python
-Magmas().Additive()
-Magmas().Multiplicative()
-```
-
-They retain the same carrier, operation arrow, elements, and homomorphisms. Each selects
-one algebraic role and its standard syntax:
-
-```python
-x + y  # Magmas().Additive()
-x * y  # Magmas().Multiplicative()
-```
-
-Each is the full subcategory defined by its operation-role property. Its Hom categories
-are definitionally the corresponding Hom categories of `Magmas()`.
-
-Their complete immediate structural tuples are:
-
-```python
-# Magmas().Additive()
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (Fun(self, Magmas()).FullyFaithful().inclusion(),)
-```
-
-```python
-# Magmas().Multiplicative()
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (Fun(self, Magmas()).FullyFaithful().inclusion(),)
-```
-
-The selected operation role is the only new mathematics in each refinement. A bare
-magma exposes neither `+` nor `*`.
-
-The generic property `Magmas().Commutative()` is defined by
+At `V = Sets()` with the cartesian product, an object is a set with a binary operation: an ordinary magma.
+At `V = Cat()` with the cartesian product, an object is a category `X` with a functor
 
 \[
-\forall x,y,\qquad \mu(x,y)=\mu(y,x).
+\mu_X:X\times X\longrightarrow X,
 \]
 
-It propagates to the additive and multiplicative refinements through the property
-inverse-image construction.
+and no law.
+
+The constructor receives or defines `mu_X`. The specification does not prescribe its private storage.
+The public surface names the operation once, `X.operation()`, and puts no operator on points.
+The fixed-endpoint magma-morphism category owns the operation-preservation containment predicate.
+`cat_kernel` derives its standard property application (D175).
+
+## Named operations
+
+Notation is not mathematics (D185). The symbols `+` and `*` are renamings of the one generator of the magma theory.
+A renaming of generators is an isomorphism of presented theories, so its models form a category isomorphic to `Magmas(V)` and distinct from it.
+That category is the product with the one-object category on the symbol:
+
+```python
+AdditiveMagmas(V)        # Magmas(V)  × 1_+
+MultiplicativeMagmas(V)  # Magmas(V)  × 1_*
+AdditiveMonoids(V)       # Monoids(V) × 1_+
+MultiplicativeMonoids(V) # Monoids(V) × 1_*
+```
+
+Here `1_s` is `Discrete({s})`, the discrete category on the one-point set of the symbol.
+Each product is retained in `Cat().Products()` with its two projections.
+An object is a pair `(X, s)` of a neutral object and the symbol; `AdditiveMonoids(V).renamed(M)` constructs it over a neutral monoid `M`, and `homomorphism(source, target, f)` constructs its morphism over a neutral morphism `f`. The first projection is the renaming isomorphism, restriction along `· ↦ s`; it is retained for access and carries no name.
+Names pass only along restriction functors induced by inclusions of presentations.
+The complete immediate structure-functor tuples are
+
+```python
+# AdditiveMagmas(V), MultiplicativeMagmas(V): restriction along the inclusion of the empty theory
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (
+        Fun(self, LimitCategory(diagram)).Monomorphisms().Isofibrations().Full()(),
+        self.to_carrier(),     # Fun(self, C).Faithful().Isofibrations()((X, μ, s) ↦ X)
+    )
+```
+
+```python
+# AdditiveMonoids(V), MultiplicativeMonoids(V): restriction along the inclusion {s} ⊂ {s, e}
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (
+        Fun(self, LimitCategory(diagram)).Monomorphisms().Isofibrations().Full()(),
+        self.to_named_magmas(),  # Fun(self, AdditiveMagmas(V)).Faithful().Isofibrations()((M, s) ↦ (magma of M, s))
+    )
+```
+
+The owned surface of each copy is its renamed generator:
+
+| Category | Owned surface |
+| --- | --- |
+| `AdditiveMagmas(V)` | `X.addition()`, `x + y` on points. |
+| `MultiplicativeMagmas(V)` | `X.multiplication()`, `x * y` on points. |
+| `AdditiveMonoids(V)` | `X.zero()` when the monoidal unit is terminal; `addition()` and `+` through `AdditiveMagmas(V)`. |
+| `MultiplicativeMonoids(V)` | `X.one()` when the monoidal unit is terminal; `multiplication()` and `*` through `MultiplicativeMagmas(V)`. |
+
+The renaming projection is the public access to the neutral object: `AdditiveMonoids(V).product_projection(0).on_object(X)` is the monoid `X` renames.
+A copy's initializer keeps that neutral object under its own attribute name, so a category built from several copies receives each copy's state along the leg that reaches it (D13, D56), and no inherited method reads the family of another level.
+No neutral name, `operation()` or `unit_morphism()`, reaches a named copy.
+
+For cartesian `V`, two generalized elements `x,y:T -> X` combine through
+
+\[
+T\xrightarrow{\Delta_T}T\times T
+ \xrightarrow{x\times y}X\times X
+ \xrightarrow{\mu_X}X.
+\]
+
+This diagram is the generalized-element meaning of the syntax.
+When `T` is terminal, `x` and `y` are points and the result is an actual element.
+The point operators evaluate it: the points are read in the carrier through the retained point comparison, `C.point_morphism(x)` and `C.point_morphism(y)` are their morphisms `1_C -> X`, `pair_maps` forms `x × y` on the diagonal, and the resulting point of `X` is re-owned by the structured object.
+For `C = Sets()`, this gives the usual binary operation on elements.
+
+When `V` is braided monoidal, `Magmas(V).Commutative()` is defined by equality of `mu_X` and its composite with the braiding on `X tensor X`. The axiom is declared once on the magma category; for the cartesian tensor the braiding is the swap `<pi_1, pi_0>` of the chosen product, and the ambient decides the equality.
+A tensor with no selected braiding leaves the proposition undecided.
+`AdditiveMagmas(V).Commutative()` is its inverse image along the renaming projection, which each copy selects as an access-only structure functor, and likewise for the other copies.
 
 ## Monoids
 
-An object of `Monoids()` is a magma with an associative operation and a neutral element
-`e`. Its defining equations are
+An object of `Monoids(V)` is an object `X in C` with morphisms
 
 \[
-\mu(\mu(x,y),z)=\mu(x,\mu(y,z)),
+\mu_X:X\otimes X\longrightarrow X,
+\qquad
+\eta_X:I\longrightarrow X.
 \]
 
-and
+The associativity diagram uses the associator `a` of `V`. The unit diagrams use `lambda` and `rho`. A monoid morphism preserves both `mu` and `eta`.
+
+This is the standard monoid-object construction in a monoidal category.
+
+At `V = Sets()` with the cartesian product, an object is an ordinary monoid.
+At `V = Cat()` with the cartesian product, the ambient associator and unitors are the canonical rebracketing and projection functors.
+The monoid laws are equalities of functors with those comparisons included.
+An object is then a strict monoidal category: a category `X` with a chosen object `I in X` and a functor `mu_X: X * X -> X` for which
 
 \[
-\mu(e,x)=x=\mu(x,e).
+(A\otimes B)\otimes C=A\otimes(B\otimes C),
+\qquad
+I\otimes A=A=A\otimes I,
 \]
 
-A monoid arrow preserves the operation and the neutral element. Thus `Monoids()` is a
-subcategory of `Magmas()`, but this inclusion is not full.
+and the matching three equations on morphisms of `X`.
 
-The complete immediate structural tuple is:
-
-```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (Fun(self, Magmas()).Faithful().inclusion(),)
-```
-
-A bare monoid remains notation-neutral. It owns:
+Its immediate structure functor forgets associativity and the unit:
 
 ```python
-M.operation()
-M.identity_element()
-M.combine(x, y)
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations()(),)
 ```
 
-It does not determine whether the operation is written additively or multiplicatively.
-The corresponding axiomatic subcategories are:
+The constructor receives or defines `mu_X` and `eta_X`. The notation-neutral category exposes the unit morphism:
 
 ```python
-Monoids().Additive()
-Monoids().Multiplicative()
+M.unit_morphism()
 ```
 
-They are the inverse images of `Magmas().Additive()` and
-`Magmas().Multiplicative()` along the monoid inclusion. Their complete immediate tuples
-preserve both category branches:
+`unit_morphism()` returns `eta_X:I -> X`. It is a point only when `I` is terminal.
+`M.operation()` reads the operation of the underlying magma.
+
+`Monoids(V).Commutative()` denotes commutative monoid objects.
+The named copies `AdditiveMonoids(V)` and `MultiplicativeMonoids(V)` are defined under [Named operations](#named-operations); `AdditiveMonoids(V).Commutative()` is the inverse image of `Monoids(V).Commutative()` along the renaming projection.
+
+## Groups
+
+When `V` is cartesian monoidal, `Groups(V)` is `Monoids(V).Group()`: the property subcategory of `Monoids(V)` on the monoid objects whose shear map
+
+\[
+\langle\pi_0,\mu_X\rangle:X\times X\longrightarrow X\times X,
+\qquad
+(x,y)\longmapsto(x,\,xy),
+\]
+
+is an isomorphism.
+This is the shear map of the left regular action of `X` on itself.
+The action is regular exactly when the shear map is an isomorphism ([nLab shear map](https://ncatlab.org/nlab/show/shear+map), section "Definition"), and a monoid whose left regular action is regular is a group: solving `x y = e` gives every element a left inverse, and a monoid with left inverses is a group.
+Segal's group-like condition on a commutative monoid, that `(x, y) -> (x + y, y)` is an equivalence, is the same map up to the symmetry (Segal, *Categories and cohomology theories*, Topology 13, 1974).
+
+The axiom is declared once on the monoid category:
 
 ```python
-# Monoids().Additive()
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (
-        Fun(self, Monoids()).FullyFaithful().inclusion(),
-        Fun(self, Magmas().Additive()).Faithful().inclusion(),
-    )
+class MonoidCategory(Category):
+    def _group(self, M: Monoids(V).ObjectType) -> Proposition:
+        return Mor(C).Isomorphisms().membership_proposition(shear(M))
+
+    Group = Axiom(_group)
 ```
 
-```python
-# Monoids().Multiplicative()
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (
-        Fun(self, Monoids()).FullyFaithful().inclusion(),
-        Fun(self, Magmas().Multiplicative()).Faithful().inclusion(),
-    )
-```
+`cat_kernel` builds the inclusion `Groups(V) -> Monoids(V)` and the generated `M.is_group()`. The ambient decides the proposition: `Sets()` decides it by finite bijectivity, and a non-cartesian `V` leaves it undecided because the shear map needs the diagonal.
+A monoid morphism between group objects preserves inversion, so the subcategory is full.
 
-Each refinement is full in `Monoids()`: its Hom categories are definitionally the
-monoid Hom categories between its objects. Its inclusion in the matching magma role is
-not full because a monoid arrow must preserve the neutral element.
+The inverse laws make the inversion morphism unique, and the shear isomorphism computes it.
+The implementation of the axiom exposes
 
-The additive refinement exposes `+` and `zero()`. The multiplicative refinement exposes
-`*` and `one()`. Each named unit is the monoid's neutral element in the selected
-notation.
+\[
+\iota_X=\pi_1\circ\langle\pi_0,\mu_X\rangle^{-1}\circ\langle 1_X,\ \eta_X\circ !_X\rangle:X\longrightarrow X
+\]
 
-`Monoids().Additive().Commutative()` denotes commutative additive monoids. The matching
-multiplicative expression denotes commutative multiplicative monoids.
+as `G.inversion()`: the ambient's inverse of the shear map, read at `(x, e)`, is `(x, x^{-1})`. No operator is put on points.
+`AdditiveGroups(V)` is the named copy `Groups(V) × 1_+` under [Named operations](#named-operations); it writes `negation()`, unary `-`, and subtraction `x - y := x + (-y)`, and reaches `AdditiveMonoids(V)` by restriction along the inclusion of presentations `{+, 0} ⊂ {+, 0, -}`. The commutative additive group category is `AdditiveGroups(V).Commutative()`, the inverse image of `Monoids(V).Commutative()` along the renaming projection and the inclusion.
+
+At `V = Sets()`, an object is an ordinary group.
+At `V = Cat()`, an object is a strict 2-group: a category `X` whose multiplication, unit, and inversion are functors and whose group laws are equalities of functors.
+The cartesian hypothesis is not cosmetic.
+The unit and inverse diagrams use the diagonal `Delta_X`, which a general monoidal ambient does not supply.
 
 ## Semirings
 
-An object of `Semirings()` consists of one carrier set with:
+Let `C` have finite products.
+A strict internal semiring object in `C` consists of one object `X in C` with:
 
-- a commutative additive monoid `(X, +, 0)`;
-- a multiplicative monoid `(X, *, 1)`;
-- left and right distributivity;
-- absorption of multiplication by zero.
+- a commutative additive monoid structure on `X`;
 
-The laws are
+- a multiplicative monoid structure on `X`;
+
+- left and right distributivity diagrams;
+
+- left and right zero-absorption diagrams.
+
+Both monoid structures use the cartesian product of `C`. Addition and multiplication are morphisms `X * X -> X`, in the sense stated under [Magmas](#magmas).
+A semiring morphism is a morphism in `C` that preserves both structures.
+
+At `C = Sets()`, an object is an ordinary semiring.
+At `C = Cat()`, an object is a category `X` with two functors
+
+\[
+\alpha,\mu:X\times X\longrightarrow X,
+\]
+
+two functors `1 -> X` that select the zero object and the one object, and every law an equality of functors.
+`Cardinal()` is the object of `Semirings(Cat())` that this package constructs; see [Cardinalities and ordinals](cardinality.md).
+
+The strict internal category is the pullback of `AdditiveMonoids(C_x).Commutative()` and `MultiplicativeMonoids(C_x)` over `C` along their carrier functors, cut down to the objects whose distributivity and absorption diagrams commute.
+Its defining presentation retains both component projections.
+
+The complete immediate structure-functor tuple is
+
+```python
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (self.to_additive(), self.to_multiplicative())
+```
+
+`to_additive()` and `to_multiplicative()` are the legs of the pullback, declared faithful isofibrations.
+`Semirings(C)(addition, zero, multiplication, one)` constructs the two named monoids, decides commutativity of the addition, forms the pair over the carrier, and asserts the distributivity and absorption equations through equifiers, as `Monoids(V)` asserts its laws.
+The two legs land in distinct categories, so a semiring inherits `zero()` and `+` along one and `one()` and `*` along the other; both composites to `C` are equal, and the carrier is inherited once.
+No neutral name, `operation()` or `unit_morphism()`, reaches a semiring (D185).
+
+`Semirings(C)` owns the compatibility laws and the combined additive and multiplicative surface.
+Its object interface exposes both unit points.
+Its point interface exposes `+` and `*` through the two retained monoid structures.
+
+```python
+X.zero()
+X.one()
+x + y
+x * y
+```
+
+Here `X in Semirings(C)`. The points `x` and `y` have a common domain on which the addition and multiplication morphisms can act.
+At `C = Cat()`, `X` is a category, `zero()` and `one()` return objects of `X`, and the two operators apply its addition and multiplication functors.
+
+For `C = Sets()`, the diagrams give the familiar formulas
 
 \[
 x(y+z)=xy+xz,
 \qquad
 (x+y)z=xz+yz,
-\]
-
-and
-
-\[
+\qquad
 0x=0=x0.
 \]
 
-A semiring arrow preserves both monoid structures. It therefore preserves `0`, `1`,
-addition, and multiplication.
+These formulas are consequences of the internal diagrams.
 
-The semiring category is a subcategory of the product of
-`Monoids().Additive().Commutative()` and `Monoids().Multiplicative()`. Its defining
-conditions identify their set images and impose distributivity and zero absorption.
+## Structure functors
 
-The complete immediate structural tuple is:
+Each structure functor acts on objects and morphisms.
+Point transport uses ordinary composition for a functor whose domain is the category that carries the point.
+Compiled element inheritance is a private compiler consequence of selecting the two functors.
 
-```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (
-        self.product_projection(0),
-        self.product_projection(1),
-    )
-```
-
-Both functors reach the same set image. The structural diamond must retain both operation
-catalogues and that canonical image.
-
-`Semirings()` fixes the roles of its two monoid structures. Its public object surface
-includes `zero()` and `one()`. Its public element surface includes `+` and `*`.
-
-## Structural functors
-
-Each listed functor acts on objects and arrows. It acts on elements when the corresponding
-change of structure has an element map.
-
-The additive and multiplicative refinements use inclusions because they retain the magma
-operation. The two semiring component functors come from the generic subobject-of-product
-construction. They are not category-only inheritance edges.
-
-Longer routes to `Sets()` arise only by composition. No algebraic category adds a direct
-set functor for convenience.
+The named copies are products with a one-object category; their renaming projections are retained for access, and their carrier and presentation-inclusion functors are declared faithful isofibrations.
+The semiring component functors come from the generic subobject-of-product construction.
+Longer routes to `C` arise through the projections of `C_x`.
 
 ## Owned operations
 
-Ownership follows this table:
-
 | Category | New public mathematics |
 | --- | --- |
-| `Magmas()` | Binary operation arrow and operation-preserving predicate. |
-| `Magmas().Additive()` | Additive notation. |
-| `Magmas().Multiplicative()` | Multiplicative notation. |
-| `Monoids()` | Associativity, neutral element, and unit-preserving arrows. |
-| `Monoids().Additive()` | `zero()` in additive notation. |
-| `Monoids().Multiplicative()` | `one()` in multiplicative notation. |
-| `Semirings()` | Distributivity, zero absorption, and the two selected monoid structures. |
+| `Magmas(V)` | `operation()`; operation-preservation predicate on morphisms. |
+| `AdditiveMagmas(V)` | `addition()`, `+` on points. |
+| `MultiplicativeMagmas(V)` | `multiplication()`, `*` on points. |
+| `Monoids(V)` | `unit_morphism()`; associativity, unit laws, and unit-preserving morphisms. |
+| `AdditiveMonoids(V)` | `zero()` when the monoidal unit is terminal. |
+| `MultiplicativeMonoids(V)` | `one()` when the monoidal unit is terminal. |
+| `Groups(V)` | `inversion()` and the inverse laws. |
+| `AdditiveGroups(V)` | `negation()`, unary `-`, and subtraction. |
+| `Semirings(C)` | Distributivity, absorption, and both selected monoid structures. |
 
-Predicates return applied propositions. Their exact handlers can use finite checks,
-construction theorems, or private computation engines. `ask()` returns their decisions.
+Inherited capabilities come from the listed structure functors.
+Each algebraic category owns its predicate meanings.
+Their public representations are SymPy propositions under [Propositions and `ask()`](undecidable-properties.md).
+
+## Laws in the supplied ambient
+
+Every law above is an equation between morphisms of the supplied ambient category.
+No instance weakens a law to an isomorphism, and no instance replaces a law by a coherence datum.
+
+At `C = Sets()` the morphisms are maps, so each law is an equality of maps.
+At `C = Cat()` the morphisms are functors, so each law is an equality of functors.
+This is why `Monoids(Cat())` gives strict monoidal categories and not monoidal categories.
+
+`Cardinal()` satisfies these equalities at `C = Cat()` because it is skeletal.
+Cardinal addition and multiplication each select one representative, so `(a + b) + c` and `a + (b + c)` name one object.
+
+`Rings(C)` uses the same rule; see [Ring objects](rings.md).
 
 ## Definition sources
 
-The algebraic laws use the Sage reference sections for
-[magmas](https://doc.sagemath.org/html/en/reference/categories/sage/categories/magmas.html),
-[additive monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/additive_monoids.html),
-[monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/monoids.html),
-and [semirings](https://doc.sagemath.org/html/en/reference/categories/sage/categories/semirings.html).
-These sections distinguish additive and multiplicative operation roles. This package
-puts their common structure in the notation-neutral `Magmas()` and `Monoids()` owners.
+The magma-object definition follows the [nLab magma](https://ncatlab.org/nlab/show/magma) entry, section "Definitions": "for M a monoidal category, a magma structure on X is a morphism m: X (x) X -> X". `Magmas(V)` requires only the selected bifunctor of `V`, which is what that morphism needs.
+
+The monoid-object definition and its associativity and unit diagrams follow the [nLab monoid in a monoidal category](https://ncatlab.org/nlab/show/monoid%2Bin%2Ba%2Bmonoidal%2Bcategory) entry, section "Definition": "a monoid in C is an object M equipped with a multiplication mu : M (x) M -> M and a unit eta : I -> M satisfying the associative law", together with the left and right unit laws stated there.
+The same entry's "Idea" section fixes the `Sets()` instance: "Classical monoids are of course just monoids in Set with the cartesian product."
+
+The `Cat()` instance follows the [nLab monoidal category](https://ncatlab.org/nlab/show/monoidal%2Bcategory) entry, section "Strict monoidal categories": "A strict monoidal category is equivalently a monoid in the cartesian monoidal 1-category Cat of categories and functors".
+The same section lists the six equations that this makes explicit.
+
+The commutativity condition follows the [nLab commutative monoid in a symmetric monoidal category](https://ncatlab.org/nlab/show/commutative%2Bmonoid%2Bin%2Ba%2Bsymmetric%2Bmonoidal%2Bcategory) entry, section "Definition": a monoid `(A, mu, e)` is commutative when `mu` composed with the braiding `tau_{A,A}` equals `mu`.
+
+The group-object definition follows the [nLab group object](https://ncatlab.org/nlab/show/group%2Bobject) entry, section "Definition / In a cartesian monoidal category": an object `G` with `m: G x G -> G`, `e: * -> G`, and inversion `G -> G` whose associativity, unitality, and inverse diagrams commute.
+Its "Examples" section fixes both instances: "A group object in Sets is a group" and "A group object in Cat is a strict 2-group".
+Its remark that the diagrams use the diagonal states why `Groups(V)` requires cartesian `V`.
+
+The strict internal semiring pattern uses the finite-product form of the [nLab ring object](https://ncatlab.org/nlab/show/ring%2Bobject) entry, section "Definition / Traditional definition": "a ring object consists of an object R in a cartesian monoidal category C together with morphisms a : R x R -> R (addition), m : R x R -> R (multiplication), 0 : 1 -> R (zero), e : 1 -> R (multiplicative identity), - : R -> R (additive inversion), subject to commutative diagrams in C that express the usual ring axioms".
+A semiring object drops the additive inversion and keeps the four conditions that the same entry lists in section "Definition / Via the microcosm principle": a commutative additive monoid, a multiplicative monoid, the distributivity diagrams, and the diagrams "corresponding to the rig axioms 0a = 0 and a0 = 0".
+
+That microcosm definition uses a bimonoidal ambient, where the two operations come from the ambient's own two monoidal structures.
+It is a different construction, and the same entry states its `Cat` case separately: "A rig in (Cats, ∐,×, ∅_(cat), pt) is a strict monoidal category".
+`Semirings(C)` instead takes both monoid structures over the finite products of `C`, as the traditional definition does, so both operations come from the underlying object.
+
+The notation subcategories use the Sage reference sections for [magmas](https://doc.sagemath.org/html/en/reference/categories/sage/categories/magmas.html) ("A magma is a set with a binary operation"), [additive monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/additive_monoids.html), [monoids](https://doc.sagemath.org/html/en/reference/categories/sage/categories/monoids.html), [groups](https://doc.sagemath.org/html/en/reference/categories/sage/categories/groups.html) ("The category of (multiplicative) groups, i.e. monoids with inverses"), and [semirings](https://doc.sagemath.org/html/en/reference/categories/sage/categories/semirings.html) ("it is a combination of a commutative additive monoid (S, +) and a multiplicative monoid (S, *), where * distributes over +").
 
 ## Acceptance conditions
 
-- A bare magma or monoid exposes no additive or multiplicative operator.
-- `Magmas().Additive()` and `Magmas().Multiplicative()` retain one operation-neutral
-  magma image.
-- `Monoids()` preserves the neutral element in every arrow.
-- Additive monoids expose `+` and `zero()`.
-- Multiplicative monoids expose `*` and `one()`.
-- A semiring has one carrier and two distinct monoid structures.
-- Semiring arrows preserve both structures.
-- The two semiring routes reach one canonical set image.
-- Every immediate structural edge is an owned functor.
+- `Magmas(V)` retains the selected tensor bifunctor of `V`.
+
+- `Monoids(V)` retains the selected monoidal structure of `V`.
+
+- `Groups(V)` uses the selected cartesian monoidal structure of `V`.
+
+- Their objects and morphisms live in the underlying category `C`.
+
+- Every algebraic law is a diagram in `C`.
+
+- `Semirings(C)` uses `C_x`, the specified cartesian monoidal structure on `C`.
+
+- Both semiring component routes reach one canonical object of `C`.
+
+- Every immediate structure-functor edge is an owned functor.
+
 - Deeper inherited operations arrive through functor composition.
 
-The governing policies are `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-022`,
-`POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`,
-`POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through
-`POL-CAT-086`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, and `POL-DOC-003`
-through `POL-DOC-009`.
+- Each multiplication morphism has domain a tensor or cartesian product.
+
+- Every law is an equation between morphisms of the supplied ambient.
+
+- `Monoids(Sets())` gives ordinary monoids; `Monoids(Cat())` gives strict monoidal categories.
+
+- `Groups(Sets())` gives ordinary groups; `Groups(Cat())` gives strict 2-groups.
+
+- `Semirings(Sets())` gives ordinary semirings; `Semirings(Cat())` states its laws as equalities of functors.
+
+The complete governing set also includes `POL-MATH-001` through `POL-MATH-013`, `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001` through `POL-CAT-020`, `POL-CAT-033`, `POL-CAT-043` through `POL-CAT-047`, `POL-CAT-054`, `POL-CAT-061` through `POL-CAT-087`, `POL-LEAF-061`, `POL-LEAF-062`, `POL-FUN-001` through `POL-FUN-006`, `POL-FUN-023`, `POL-FUN-035`, `POL-API-028`, and `POL-DOC-003` through `POL-DOC-009`.

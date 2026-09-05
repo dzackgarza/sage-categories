@@ -1,0 +1,18 @@
+id: no-manual-initializer-threading
+language: python
+severity: error
+files:
+  - src/sage_categories/**/*.py
+ignores:
+  - src/sage_categories/kernel/**
+message: POL-LEAF-063, D133, D13
+rule:
+  any:
+    - pattern: super().__init__($$$)
+    - pattern: $BASE.__init__(self, $$$)
+  inside:
+    kind: class_definition
+    stopBy: end
+    has:
+      field: name
+      regex: (ObjectType|ElementType|MorphismType|Declaration)$

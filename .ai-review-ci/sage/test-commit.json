@@ -1,0 +1,6 @@
+{
+  "check": "test-commit",
+  "diagnostics": ".ai-review-ci/sage/test-commit.diagnostics.log",
+  "log": ".ai-review-ci/sage/test-commit.log",
+  "status": 1
+}

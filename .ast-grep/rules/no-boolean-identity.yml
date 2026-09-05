@@ -1,0 +1,18 @@
+id: no-boolean-identity
+language: python
+severity: error
+message: >-
+  POL-ASSUME-012: never write `is True` or `is False`. On a proposition they
+  compare the object itself and never match, so the branch is dead; on a decision
+  they say nothing that using the decision does not. Branch on `ask(P)` directly --
+  `bool(Unknown)` raises, so an undecided answer stops there and announces itself.
+  Compose several answers by asking each: `all(map(ask, ...))`, `any(map(ask, ...))`
+  (POL-ASSUME-013). Where a decided answer is required, write `decision = ask(P)`
+  and `assert decision is not Unknown`, naming what could not be decided
+  (POL-ASSUME-014). Where the question is an implementation fact that is two-valued
+  by construction, use the value; where an exact rule fires only on a decided yes,
+  gate it with `established()` (POL-ASSUME-015).
+rule:
+  any:
+    - pattern: $ANSWER is True
+    - pattern: $ANSWER is False

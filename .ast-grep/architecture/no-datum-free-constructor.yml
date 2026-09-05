@@ -1,0 +1,20 @@
+id: no-datum-free-constructor
+language: python
+severity: error
+files:
+  - tests/kernel/**/*.sage
+ignores:
+  - src/sage_categories/**/_*_sage.py
+message: POL-LEAF-069, D128, D133
+rule:
+  kind: function_definition
+  all:
+    - has:
+        field: name
+        regex: ^__call__$
+    - has:
+        field: parameters
+        regex: ^\(self\)$
+  inside:
+    kind: class_definition
+    stopBy: end

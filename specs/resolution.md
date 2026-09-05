@@ -1,507 +1,249 @@
-# Resolution of structural-functor diamonds
+# Private Sage runtime
+
+This specification owns the private class compiler and runtime support.
+It implements D94, D109 through D114, D118, and D123.
+It also implements `POL-CAT-012`, `POL-KERNEL-017`, and `POL-KERNEL-028` through `POL-KERNEL-036`.
+
+The public category theory lives in [functor.md](functor.md).
+The leaf boundary lives in [leaves.md](leaves.md).
+Nothing in this file adds a public mathematical object or a leaf declaration.
+
+## The closed kernel surface
+
+Layer ownership and imports are defined in [system.md](system.md#system-shape).
+The three private role classes of `kernel/roles.py` exist so that Sage has a stable Python
+end for each compiled role.
+Their surface is closed, exactly as the leaf writer's contract is closed under D77, and for
+the same reason: a method outside it is mathematics that has lost its owner.
+
+A kernel role class declares only:
+
+- `__init_subclass__`, and the class-compilation entry points the compiler calls on a
+  declaration (`_compile_category`, `_recompile_category`, `local_role_class`, `role_class`,
+  `role_source`, `_object_role_source`);
+- the initializers the construction context calls (`_initialize_identity`,
+  `_initialize_placement`, `_initialize_functor_image_cache`);
+- the role test used by the compiler (`_is_object`, `_is_element`, `_is_morphism`);
+- the functor image cache reads (`_cached_object_image`, `_cached_morphism_image`);
+- `__hash__`, which is Python object identity.
+
+The kernel reads a construction context and hands the value to the compiled class.
+The generic mathematical operation remains with its owner in [functor.md](functor.md).
+
+`cat_kernel` installs callbacks for the layers that consume its interpretation. `sage_categories/__init__.py` installs it, before
+`Cat` is loaded: the kernel asks whether a functor carries placement while `Fun` is still
+building its own property categories, and `Cat()`'s own class declares axioms in its body.
+So `cat_kernel` reaches `Cat` when a reader is called, not when it is imported, and the
+slots are in the kernel, the one layer `Cat` and `cat_kernel` both import. The kernel
+holds the reference and states none of the work.
+
+`POL-KERNEL-038` carries this rule and a D132 check fails on a method outside the list.
+
+## Fixed private dependencies
+
+The project runs in the fixed Sage research environment on Python `>=3.14,<3.15`.
+Python packages use uv. GAP packages use PackageManager. Julia and its packages use JuliaPkg.
+The private runtime assigns these responsibilities:
+
+| Responsibility | Dependency | Verified scope |
+| --- | --- | --- |
+| Python implementation classes, controlled C3, dynamic refinement, identity caches, nested-class binding, introspection, indexed families, and `Unknown` | SageMath 10.10.beta8 | Private Python runtime support. The owned category graph remains authoritative. |
+| Categories, functors, natural transformations, opposites, category products, and installed universal operations | GAP `>=4.13`; CAP `2026.07-04`; ToolsForHomalg `2026.04-01`; ToolsForCategoricalTowers `2026.08-01`; CartesianCategories `2026.08-02`; MonoidalCategories `2026.08-02`; SubcategoriesForCAP `2026.07-01`; SliceCategories `2026.06-01`; FpCategories `2026.07-03`; FunctorCategories `2026.08-01` | CAP supplies operations installed on CAP categories. ToolsForCategoricalTowers supplies finite decorated-diagram limits and colimits. FunctorCategories requires an object-finite or finitely presented source. FpCategories supplies finite walking shapes and presentations. SliceCategories supplies slices. |
+| Pure-GAP categorical-tower compilation | CompilerForCAP `2026.07-01` | It compiles GAP CAP regions only. |
+| Finite diagram syntax and retained finite presentations | Julia 1.12.7; Catlab 0.17.6; GATlab 0.2.4; JuliaCall `>=0.9.35,<0.10` | Catlab free diagrams have finite object and morphism sets. Its limit and colimit wrappers retain finite diagrams, apexes, and legs. |
+| Public proposition classes, Boolean algebra, assumptions, proposition dispatch, and exact symbolic calculation | SymPy `>=1.14,<2` | Public proposition expressions can contain private identity atoms for owned values. |
+| Typed-query dispatch | plum-dispatch | Private exact dispatch without conversions or promotions. |
+| Residual wrapper and descriptor behavior | wrapt | Private Python call and descriptor behavior. |
+| Private slotted frozen records | attrs `>=26.1,<27` | Private execution records only. |
+
+`kernel/sage_runtime.py` is the one module through which the kernel and `Cat` import Sage's runtime facilities. A leaf's private engine module imports Sage directly and is named in the import contract. No other module imports `sage` (D40).
+
+Each category-specific computation adapter lowers owned inputs and reconstructs the exact owned result.
+SymPy proposition expressions are the sole public engine values.
+Their mathematical predicates remain category-owned.
+No dependency defines the category graph, category containment, or another semantic owner.
+
+The inspected dependencies evaluate only finite or presented functor-category cases.
+The owned theory can still construct an arbitrary symbolic `Fun(I, C)` and its universal presentations.
+Evaluation is available only when an exact engine adapter supports the supplied presentation.
+They also do not supply a strict pullback category of arbitrary functors or one Python--GAP--Julia bridge.
+CAP object-level pullbacks are not pullbacks in owned `Cat`.
+Mathlib and Agda Categories provide mature formal references for generic functor and comma categories, but no executable engine for this runtime.
+Repository-owned implementation of any uncovered generic construction requires owner approval before its phase starts.
+
+Development uses pytest `>=9.1,<10`, Hypothesis `>=6.165,<7`, Ruff `>=0.16.5,<1`, mypy `>=2`, and `dzackgarza/sagemath-mypy-plugin@main`.
+Migration uses LibCST `>=1.9,<2` until its codemods finish.
+D114 continues to assign `tree-sitter-sage` to Sage syntax and `makefun` to a later generated-signature need.
+
+The CAP runtime and the Catlab runtime remain separate private engines.
+Owned Python values cross them through separate private adapters.
+CompilerForCAP compiles only pure GAP CAP regions.
+
+## Inputs
+
+For each category `C`, the compiler receives:
+
+- the local `C.ObjectType`, `C.ElementType`, and `C.MorphismType` declarations;
+- the immediate named functors selected by `C.structure_functors()`;
+- the applicable target implementation class for each selected functor;
+- the exact property categories and construction categories already built in `Cat`.
+
+These inputs describe the repository's owned category graph. The kernel does not inspect
+or extend Sage's mathematical category graph. It builds a private Sage runtime mirror only
+to obtain Sage's class-building behavior. The implementation classes ultimately share the
+ordinary Sage/Python `Parent` ancestry propagated at the `Cat().ObjectType` root; that
+runtime ancestry is not a categorical relation in the owned graph.
+
+The compiler treats each functor action as opaque.
+It does not interpret its source code, fields, result data, or private helpers.
+The object and morphism actions remain the complete public functor declaration.
+
+## Sage class construction
+
+Each owned implementation class is the `parent_class` of a private Sage runtime category.
+The kernel gives that category the applicable immediate target categories and the local method provider.
+
+Use these Sage facilities:
+
+- `Category._all_super_categories`;
+- `Category._super_categories_for_classes`;
+- `Category._make_named_class`;
+- `C3_sorted_merge`;
+- `dynamic_class`.
+
+Sage owns graph traversal, controlled C3 linearization, dynamic class identity, and method resolution.
+The repository does not implement a second version of those operations.
+
+A shared target class occurs once in the method resolution order.
+Each local initializer runs once.
+Local declarations take precedence over inherited declarations.
 
-This specification records the architectural decision for diamonds in the selected
-structural-functor graph. It preserves the discussion that established the decision.
+## Direct inherited execution
+
+For an inheritance-carrying selected functor `F: C -> D`, the applicable `D` implementation class occurs in the compiled class of `C`.
+[functor.md](functor.md#structure-functors-and-inherited-classes) owns the inheritance condition.
+Methods declared by `D` run directly on the source value.
+Python special methods follow the same rule.
 
-This is a forward requirement. It does not claim that the current implementation
-satisfies the requirement.
+The two ordinary actions of `F` remain the sole public description of how target values are
+constructed (D123). The kernel runs `F.on_object` on the source value after the source's own
+local initializer has run, and initializes the `D` implementation on that same value from the
+datum the action feeds to `D`'s constructor (D13). During construction, the action reads the source's local state and state supplied by earlier-declared initialized targets.
+Public application receives a completed source and returns the separate image the action constructs.
 
-## Contents
-
-- [Question](#question)
-- [What Sage resolves](#what-sage-resolves)
-- [Why this framework has a stronger obligation](#why-this-framework-has-a-stronger-obligation)
-- [The first proposed resolution](#the-first-proposed-resolution)
-- [Preserve both branches](#preserve-both-branches)
-- [Rings as the basic diamond](#rings-as-the-basic-diamond)
-- [Products in modules](#products-in-modules)
-- [Finite-rank free modules over finite fields](#finite-rank-free-modules-over-finite-fields)
-- [The actual product and coproduct boundary](#the-actual-product-and-coproduct-boundary)
-- [Several presentations of one construction](#several-presentations-of-one-construction)
-- [Method-name collisions](#method-name-collisions)
-- [Strict equality and natural isomorphism](#strict-equality-and-natural-isomorphism)
-- [Final decision](#final-decision)
-- [Acceptance examples](#acceptance-examples)
-
-## Question
-
-The discussion began with this question:
-
-> We potentially have diamond issues. Sage supercategories presumably have them too.
-> How does this framework handle them, and how does Sage handle them? Does our use case
-> introduce problems that Sage does not have? Does implicit coherence matter? Can an
-> assumption of coherence be harmful or false?
-
-A structural diamond has the form
-
-\[
-D\longrightarrow B\longrightarrow A,
-\qquad
-D\longrightarrow C\longrightarrow A.
-\]
-
-An object of \(D\) has structure inherited through both \(B\) and \(C\). Both paths
-also reach \(A\).
-
-There are three separate questions:
-
-1. Which methods introduced by \(B\) and \(C\) reach the public object?
-2. Which route supplies a method owned by the common category \(A\)?
-3. Do both routes construct the same object, elements, arrows, and universal data in
-   \(A\)?
-
-These questions must not be combined into one method-resolution rule.
-
-## What Sage resolves
-
-Sage builds parent, element, and morphism method classes from its category graph. It
-uses a controlled C3 method-resolution order for diamonds.
-
-Sage requires two incomparable supercategories with the same method name to give that
-name the same mathematical meaning. Their order is then an implementation detail. A
-common subcategory can override the method when one implementation is preferable.
-
-Sage documents `FiniteCoxeterGroups.some_elements()` as such a choice. The finite
-Coxeter group category selects the Coxeter implementation instead of the generic
-finite-group implementation. This is an algorithm choice. It does not change the
-meaning of `some_elements()`.
-
-The relevant Sage documentation is:
-
-- [Category framework](https://doc.sagemath.org/html/en/reference/categories/sage/categories/category.html)
-- [Order of supercategories](https://doc.sagemath.org/html/en/reference/categories/sage/categories/primer.html#on-the-order-of-super-categories)
-- [Finite Coxeter groups](https://doc.sagemath.org/html/en/reference/categories/sage/categories/finite_coxeter_groups.html)
-
-Sage therefore resolves a Python method hierarchy. Its controlled order ensures that
-parents and elements use a consistent method-resolution order.
-
-## Why this framework has a stronger obligation
-
-This framework transports more than methods. A selected structural functor acts on:
-
-- objects;
-- elements;
-- arrows;
-- method receivers;
-- mathematical arguments;
-- mathematical results;
-- lazy mathematical collections;
-- the arrows in universal constructions.
-
-The compiler also keeps canonical images in reachable categories. Therefore, a route
-choice can affect exact parent identity, arrow domains and codomains, element ambient
-objects, projections, injections, and mediating arrows.
-
-Two implementations can be mathematically isomorphic without being the same chosen
-implementation. A tuple product and a vector-space product are a simple example. Their
-elements can use different parents. Their projections can have different exact domains.
-
-Thus, Python MRO alone is insufficient. A route resolution must select or identify the
-complete mathematical image, not only the method body.
-
-Implicit coherence is safe when both routes are strict in this framework. They must
-produce the same canonical object, element, and arrow images. It is unsafe to treat a
-nonidentity natural isomorphism as literal identity without applying its components.
-
-## The first proposed resolution
-
-The first proposed practical rule was:
-
-> Force a leaf to hand-pick a resolution through each diamond. The principal purpose is
-> to manage a catalogue of algorithms and methods by categorical placement. For a
-> product in `Modules(R)`, it is normally enough to select one implementation that has
-> the expected factors, projections or inclusions, mediating morphisms, and factoring
-> maps.
-
-This remains valid for a genuine choice of presentation or algorithm. It is not valid
-as a rule that discards an entire branch of the category graph.
-
-A category can make a small mathematical declaration that selects one coherent
-presentation. The kernel must execute that declaration. The leaf must not traverse
-routes, move values, manage caches, or install methods.
-
-General higher-coherence machinery is not required only because a diamond exists. It
-becomes necessary only if one public object must use several nonidentical presentations
-at the same time and transport inherited operations transparently between them.
-
-## Preserve both branches
-
-The discussion then added this important concern:
-
-> Diamonds could genuinely introduce more functionality on one route than another.
-
-That concern changes the rule. A leaf can select a route to a common ancestor. It must
-not select one whole branch and discard the other.
-
-For
-
-\[
-D\longrightarrow B\longrightarrow A,
-\qquad
-D\longrightarrow C\longrightarrow A,
-\]
-
-the compiler applies this ownership rule:
-
-| Method owner | Public resolution |
-| --- | --- |
-| \(D\) | Use the local declaration. |
-| \(B\) | Use the route \(D\to B\). |
-| \(C\) | Use the route \(D\to C\). |
-| \(A\) | Resolve the two routes to one canonical \(A\)-image. |
-| Both \(B\) and \(C\) under one name | Require a mathematical resolution or reject compilation. |
-
-The public surface is the union of both branches. Route resolution applies only to
-duplicate access to a common owner.
-
-This distinction separates two different facts:
-
-- a route can pass through an intermediate category that introduces new operations;
-- two routes can later reach the same category that owns one operation.
-
-The compiler preserves the intermediate operations. It deduplicates only the operation
-from the shared owner.
-
-## Rings as the basic diamond
-
-A ring gives the clearest mathematical example:
-
-\[
-\operatorname{Rings}\longrightarrow
-\begin{cases}
-\operatorname{AdditiveGroups},\\
-\operatorname{Monoids}
-\end{cases}
-\longrightarrow\operatorname{Sets}.
-\]
-
-The additive branch supplies addition, zero, and additive inverses. The multiplicative
-branch supplies multiplication, one, and powers. A ring must receive both catalogues.
-
-Both branches reach the same underlying set. Membership or another method owned by
-sets needs one canonical route to that set. Selecting that route must not remove either
-the additive or multiplicative branch.
-
-Sage's documented diamond uses sets, additive groups, multiplicative monoids, and rings
-as its model. The final category receives the methods introduced on every branch. C3
-only resolves a shared method name.
-
-This is the correct general model for structural inheritance in this framework:
-
-- take the union of branch-owned mathematics;
-- resolve duplicate routes to a shared owner;
-- reject an independent semantic collision.
-
-## Products in modules
-
-For a family \((M_i)_{i\in I}\) in \(\operatorname{Modules}(R)\), a chosen product
-contains:
-
-- the module apex \(P\);
-- linear projections \(\pi_i:P\to M_i\);
-- the linear mediating arrow;
-- componentwise addition and scalar multiplication;
-- its complete product universal property.
-
-Let the module presentation select a structural functor
-
-\[
-U:\operatorname{Modules}(R)\longrightarrow\operatorname{Sets}
-\]
-
-that preserves products. The set image of the module product is the product of the set
-images:
-
-\[
-U\!\left(\prod_i M_i\right)
-=
-\prod_i U(M_i),
-\]
-
-after the framework chooses compatible product presentations.
-
-The module branch supplies linear structure and linear universal arrows. The set branch
-supplies membership, elements, iteration when available, and cardinality. These are
-compatible capabilities. They are not competing product implementations.
-
-The module product must select one complete presentation. Its apex, projections,
-elements, mediating arrows, and set image must belong to that presentation. The
-implementation must not take the apex from one presentation and projections or elements
-from another merely isomorphic presentation.
-
-If a specialized vector realization and a tuple realization are both useful, one is the
-chosen public presentation. The other remains an explicit realization functor or an
-explicit isomorphic presentation. It does not become a second structural identity.
-
-## Finite-rank free modules over finite fields
-
-The discussion tested the rule on a finite-rank free module over a finite field:
-
-> Let the object be \(\mathbf F_p^n\). As a module, it reaches a product construction.
-> Each factor \(\mathbf F_p\) has underlying finite set
-> \(\{0,1,\ldots,p-1\}\). Products of finitely many finite sets are finite. A
-> correctly wired kernel should therefore resolve the object naturally into finite
-> sets. Is there a real conflict here?
-
-There is no genuine conflict in this example.
-
-One correction is required. As a module, \(\mathbf F_p^n\) is a product in
-\(\operatorname{Modules}(\mathbf F_p)\), not a product in rings. Componentwise
-multiplication gives \(\mathbf F_p^n\) an additional product-ring structure, but module
-structure alone does not include multiplication.
-
-For the explicitly chosen product module
-
-\[
-M=\prod_{i=1}^{n}\mathbf F_p,
-\]
-
-the selected structural functor gives
-
-\[
-U(M)=\prod_{i=1}^{n}U(\mathbf F_p).
-\]
-
-Each factor is finite. The index set is finite. Hence the resulting set is finite. The
-two relevant paths are
-
-\[
-M\longrightarrow\operatorname{Modules}(\mathbf F_p)
-\longrightarrow\operatorname{Sets},
-\]
-
-and
-
-\[
-M\longrightarrow\operatorname{FiniteSets}
-\longrightarrow\operatorname{Sets}.
-\]
-
-Both paths reach the same canonical underlying set. The module placement supplies
-linear operations. The finite-set placement supplies finite cardinality and finite
-enumeration. Neither path competes with the other.
-
-A correctly designed kernel derives this placement. The module leaf contains no route
-selection code. The kernel uses these mathematical facts:
-
-- the selected module-to-set structural functor preserves products;
-- a finite product of finite sets is finite;
-- both routes have one canonical set image;
-- methods from both category placements belong on the public object.
-
-There is a further distinction between a chosen product module and an abstract
-finite-dimensional vector space. A vector space without a chosen basis has no canonical
-isomorphism with \(\mathbf F_p^n\). It is still finite by the theorem
-
-\[
-\#M=p^{\dim_{\mathbf F_p}M}.
-\]
-
-The theorem establishes its placement in finite sets. The runtime does not need to
-choose a basis or enumerate its elements to establish finiteness.
-
-Likewise, the tuple realization does not create a ring structure on an abstract module.
-The ring placement is valid only when componentwise multiplication or another ring
-structure is part of the object's mathematical data.
-
-This example therefore supports automatic kernel resolution. It does not justify a
-leaf-level route choice.
-
-## The actual product and coproduct boundary
-
-Modules give a concrete case where an unjustified coherence assumption is false.
-
-Finite products and finite coproducts agree in modules. Their common object is a
-biproduct:
-
-\[
-M\oplus N.
-\]
-
-After applying the selected structural functor to sets,
-
-\[
-U(M\oplus N)=U(M)\times U(N).
-\]
-
-This set is not the set coproduct
-
-\[
-U(M)\sqcup U(N).
-\]
-
-The selected module-to-set structural functor preserves products. It does not preserve
-module coproducts as set coproducts.
-
-Therefore, the compiler must not assume that every structural functor preserves every
-universal construction. Construction preservation is separate mathematical data. A
-functor can preserve limits without preserving colimits.
-
-This is not a reason for leaf wiring. It is a reason to make preservation and lift
-declarations mathematically exact in the kernel interface.
-
-## Several presentations of one construction
-
-Suppose a product in modules has two available realizations:
-
-1. a tuple realization with componentwise operations;
-2. a specialized Sage vector or free-module realization.
-
-They can be canonically isomorphic without being identical Python parents. Either can
-implement the module product. The category selects one complete public presentation.
-
-The choice includes:
-
-- the apex;
-- its elements and their ambient object;
-- all projections;
-- all injections when the product is also used as a finite biproduct;
-- mediating and factoring arrows;
-- the image under every selected structural functor.
-
-This choice does not remove algorithms associated with another category branch. It only
-selects the representation of one mathematical construction.
-
-An alternate realization remains available through an ordinary functor or explicit
-isomorphism. It does not contribute methods through structural inheritance unless the
-category declares it as the selected structural realization.
-
-General non-strict coherence is needed only if the public object must accept methods and
-universal arrows from both nonidentical presentations transparently. The present goal of
-managing a mathematical algorithm catalogue does not require that behavior.
-
-## Method-name collisions
-
-The compiler distinguishes two kinds of duplicate names.
-
-### One declaration reached twice
-
-If a method is owned by \(A\) and both branches reach \(A\), there is one mathematical
-declaration. The compiler selects the canonical \(A\)-image and installs that method
-once.
-
-Membership on a ring is such a case. Both the additive and multiplicative branches reach
-sets. `Sets()` remains the sole owner of membership.
-
-### Independent declarations with one spelling
-
-If incomparable categories independently introduce the same spelling, route order is
-not a mathematical resolution. The leaf must either provide the exact common operation
-or the API must use distinct names.
-
-For example, `gens()` can mean group generators, module generators, or algebra
-generators. These are different mathematical sets. Use names such as
-`group_generators()`, `module_generators()`, and `algebra_generators()`.
-
-When both declarations have the same meaning but different algorithms, the common
-subcategory can select the preferred algorithm. Sage's
-`FiniteCoxeterGroups.some_elements()` is the grounding example.
-
-The compiler must not use arbitrary route order to decide a semantic collision.
-
-## Strict equality and natural isomorphism
-
-For each public value and each reachable category, the kernel keeps one canonical
-image. A diamond can satisfy this rule in either of two ways.
-
-### Strictly coherent routes
-
-Both routes construct the same selected image. The object image, element image, arrow
-image, ambient objects, domains, and codomains agree exactly. The compiler can
-deduplicate the routes.
-
-Routine structural diamonds should normally have this form. The two selected paths from
-a finite module to sets should reach the same set image.
-
-### Merely isomorphic routes
-
-The two routes construct different presentations connected by a natural isomorphism.
-The kernel cannot assert that the two images are identical. It must do one of these:
-
-- select one presentation as canonical and apply the comparison isomorphism to all
-  transported data;
-- retain the second presentation as an ordinary explicit realization;
-- support genuine non-strict coherence, if a future public requirement needs both.
-
-A natural-isomorphism declaration is not sufficient when the implementation only
-rewrites a route name and never applies the component isomorphism. Exact parent and
-arrow identities would still be wrong.
-
-The framework does not need general higher-coherence machinery for its current purpose.
-It does need honest treatment of any route pair that is only isomorphic.
-
-## Final decision
-
-The architecture uses the following rules.
-
-1. Selected structural functors form the complete inheritance graph.
-2. The compiler collects methods from every reachable branch.
-3. A branch-specific method remains available on every structural descendant.
-4. Two routes to the same declaring category resolve to one canonical image.
-5. Routine strictly coherent diamonds resolve automatically in the kernel.
-6. A leaf never traverses a route, normalizes to an ancestor, moves images, manages a
-   canonical-image cache, or installs forwarding methods.
-7. A genuine presentation or algorithm choice is a small mathematical declaration by
-   the category that owns the choice. The kernel executes it.
-8. A choice of presentation includes objects, elements, arrows, and universal data. It
-   cannot mix data from different presentations.
-9. Independent method declarations with different meanings require distinct names or an
-   explicit mathematical operation at the common descendant.
-10. Method-resolution order never decides mathematical meaning.
-11. Every functor states which universal constructions it preserves or lifts. Structural
-    placement alone implies no general preservation of limits or colimits.
-12. A route pair that is only naturally isomorphic is not treated as strictly equal.
-13. Alternate realizations remain ordinary functors or explicit isomorphisms unless the
-    public contract requires transparent multi-presentation transport.
-14. General non-strict or higher coherence remains outside the kernel until a concrete
-    mathematical capability requires it.
-
-The short form is:
-
-> Preserve every branch. Resolve only duplicate access to a common owner. Derive routine
-> coherence in the kernel. Ask a category for a choice only when the mathematics
-> contains a real choice.
-
-## Acceptance examples
-
-The resolution design must support these examples.
-
-### Ring inheritance
-
-A ring receives additive-group operations and multiplicative-monoid operations. Both
-routes reach one canonical underlying set. Set membership has one owner and one public
-implementation.
-
-### Finite vector spaces
-
-A finite-dimensional vector space over \(\mathbf F_p\) belongs to finite sets by its
-construction theorem. It receives both module operations and finite-set operations. It
-does not enumerate its \(p^n\) elements to establish finiteness.
-
-### Module products
-
-A product in \(\operatorname{Modules}(R)\) retains its module apex, projections, and
-mediating arrow. Its underlying set is the chosen set product. Product elements belong
-to that exact apex.
-
-### Module coproducts
-
-The underlying set of a module coproduct is not identified with the set coproduct. The
-compiler does not invent preservation of colimits by the selected structural functor.
-
-### Algorithm selection
-
-When two inherited methods have the same meaning but different algorithms, the common
-category can select one implementation. The selection does not remove other methods
-from either branch.
-
-### Semantic collision
-
-When two branches use one spelling for different mathematics, compilation rejects the
-ambiguity or the public API gives the operations distinct mathematical names.
-
-### Nonidentical presentations
-
-When two routes yield merely isomorphic product presentations, projections and elements
-from one presentation are not attached to the other apex. One complete presentation is
-canonical, or the kernel applies the explicit comparison isomorphism.
+Initializer threading follows the compiled implementation DAG. The kernel runs each reached
+implementation class's local initializer once, in controlled C3 order, with that class's own
+datum. No declaration calls a base-class initializer. If several structural paths reach one implementation
+owner, controlled C3 contributes one shared occurrence and the other paths do not cause
+second initialization or competing public image construction. Route preference, wherever
+needed, remains the declaration-order rule of D56 rather than a second C3-specific rule.
+Any private execution record or cached class data remains implementation-only and cannot
+become a second leaf-authored description of a functor action.
+
+## Diamond diagnostics and future coherence
+
+Every diamond in the owned structure-functor graph is accepted. Until the owned theory
+explicitly supplies coherence between the relevant composites, the kernel emits a
+`DEBUG`-level diagnostic identifying the unresolved diamond. If the diagnostic names a
+preferred path, it uses D56's declaration order. Debugging is opt-in: the same condition
+is never a warning or compilation failure.
+
+The core compiler requires only this diagnostic and the once-only C3 behavior. A later kernel extension
+can consume ordinary owned 2-morphism data between the composite functors and suppress the
+diagnostic for that diamond. That future mechanism must reuse the natural-transformation
+machinery of `Fun`; it must not add a coherence certificate, proof record, route registry,
+or second functor declaration. No public hook spelling or exact 2-cell property is fixed in
+the core compiler.
+
+## Runtime categories and caches
+
+Cache `_RuntimeImplementationCategory(C, kind)` by the identity of the owned category and exact implementation kind.
+Normalize categorical level identities before lookup.
+In particular, use `Mor(C).ObjectType = C.MorphismType`.
+
+Use Sage cache facilities according to key equality:
+
+- use `CachedRepresentation`, `UniqueRepresentation`, and `cached_method` for ordinary exact keys;
+- use `MonoDict` and `TripleDict` for identity tables, or Sage cached functions and methods with `kernel.retention.identity_key` for constructors whose arguments have proposition-valued equality;
+- use `dynamic_class(..., cache=True)` for a class built directly by the kernel.
+
+These caches preserve runtime identity only.
+They do not own mathematical equality or categorical structure.
+
+`kernel.retention` completes mutually identified constructions after registering their identities.
+A staged category first receives its local state, runtime roles, and placement.
+The kernel then reads all pending declarations and compiles their selected targets before their sources, using Python's `TopologicalSorter`.
+`Cat` supplies each construction and its required identity relations, including opposite involutions and intersection identifications.
+The kernel resolves chains of declared role identities through `role_source`; this includes shared objects and the morphism tower.
+
+The kernel also installs a category implementation on its retained declaration.
+It runs the implementing class's ordinary initializer before recompiling the roles and preserves the declared identity and ordinal.
+
+## Properties and constructions
+
+Use Sage `CategoryWithAxiom` and `_base_category_class_and_axiom` for private property-class binding.
+The public declaration this binding realizes is the identity structure functor the implementing class selects ([functor.md](functor.md#implementing-a-named-category); D156).
+Use Sage `uncamelcase(identifier, "_")` when an axiom identifier needs snake case.
+The owned predicate meaning stays with the property category that declares it (D142, `undecidable-properties.md` "each predicate meaning has one mathematical owner"); `Cat` owns the inverse images; the property category and its subcategory monomorphism are built by `cat_kernel` from the axiom declaration (D148, D175).
+Its public predicate class, applied proposition, assumptions, and exact proposition dispatch use SymPy.
+Private identity atoms recover owned values inside exact SymPy handlers.
+Typed-query dispatch remains separate and private.
+
+When a category `C` is placed as an object of a structured category `D` by a selected point functor, the runtime applies the categorical level shift from [functor.md](functor.md#the-categorical-level-shift).
+It refines `C` with the applicable `D.ObjectType` surface.
+It refines `C.ObjectType` with the applicable `D.ElementType` surface.
+The exact structured morphism category supplies any further surface.
+
+Reuse Sage functorial-construction category factories for private family binding and method-provider assembly.
+For example, Sage `CartesianProductsCategory` can supply private implementation classes.
+The owned limiting cone still retains the diagram, legs, apex, and universal map.
+
+Use Sage `Hom`, `Homset`, `Map`, `Morphism`, and `IdentityMorphism` when their endpoints are Sage parents.
+Keep generic `Mor` and `Fun` in the owned `Cat` layer.
+Do not force an abstract category object to become a Sage `Parent`.
+
+## Declarations and signatures
+
+Read ordinary Python declarations and generated stubs with Python 3.14 `ast`.
+Migration codemods use LibCST when they must preserve source formatting.
+Use ordinary declared functions for fixed wrappers.
+Use Sage introspection and wrapt for residual callable, descriptor, and signature behavior.
+
+The kernel can inspect exact method signatures and mathematical annotations.
+It does not require a leaf to describe call mechanics or compiler state.
+
+## Semantic collisions
+
+Sage resolves method order.
+It does not decide whether two unrelated mathematical owners can use one public spelling.
+
+Keep one semantic collision check.
+Reject a compiled class when unrelated declaring categories define different mathematical operations with the same public name.
+A declaration's instance-attribute names are its other spelling, so reject a constructed value when unrelated declaring categories write one attribute name on it (`POL-API-024`, D178).
+Do not use selection order to resolve that conflict.
+
+## Acceptance conditions
+
+The private runtime satisfies this specification when:
+
+- Sage constructs each owned implementation class from local methods and inheritance-carrying immediate targets;
+- the same mechanism handles objects, elements, and morphisms;
+- both branches of a class diamond contribute their local methods;
+- a shared target class occurs once and initializes once;
+- unresolved owned structural diamonds compile and appear only in opt-in `DEBUG` logs;
+- local declarations take precedence;
+- inherited methods run directly on the source value;
+- public functor application returns its separate owned image;
+- the kernel initializes each inherited implementation from its structure functor's object action, and no declaration calls a base-class initializer;
+- a selected point functor places its object and supplies the codomain's surfaces through the exact categorical level shift;
+- the private Sage implementation graph remains distinct from Sage's mathematical category graph;
+- temporary runtime data has no public mathematical effect;
+- unrelated mathematical declarations with one spelling, a public method name or an instance-attribute name, fail as a semantic collision;
+- theory modules import no private runtime type;
+- the kernel supplies inherited element construction and object retention, `Cat` supplies identity and composition, and `cat_kernel` supplies axiom-subcategory routing with the predicates it generates, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133, D173, D175);
+- every method a kernel module defines on a role class is on the closed surface below, and the kernel imports no module of `Cat` (D173);
+- public engine values are limited to authorized SymPy proposition expressions;
+- their nested identity atoms expose no independent public API;
+- every fixed dependency owns only its assigned private responsibility;
+- each category-specific computation adapter reconstructs the exact owned mathematical result;
+- proposition construction and evaluation return the authorized SymPy and Sage results.

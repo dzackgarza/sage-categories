@@ -1,95 +1,117 @@
 # Cardinalities and ordinals
 
 Cardinals are objects of a set-enriched skeletal category of cardinal representatives.
-Ordinals are elements of a commutative semiring. Both models retain symbolic
-expressions when their exact normalization is not available.
+`Cardinal()` is placed as an object of `Semirings(Cat())` by the structure functor `Semirings(Cat()).Point()` in its class (D128, D154).
+Cardinal addition and multiplication are its two internal semiring operations.
+Ordinals are objects of the skeletal category `Ordinals()`. Their Python addition and multiplication operators are ordinary ordinal arithmetic.
+Both models retain exact expressions when no normalization rule applies.
 
-Cardinal and ordinal operations specified as predicates follow the proposition interface
-in [Property refinement](property-refinement.md). Applying one returns a proposition.
+`Cardinal()` and `Ordinals()` own their predicate meanings.
+Their public representation and evaluation follow [Propositions and `ask()`](undecidable-properties.md).
+Applying a predicate returns a SymPy proposition.
 Only `ask()` decides it as `True`, `False`, or `Unknown`.
 
-The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`,
-`POL-CAT-021`, `POL-CAT-028`, `POL-CAT-086`, `POL-CAT-088`, `POL-SET-009`, `POL-SET-010`,
-`POL-SET-025`, `POL-SET-026`, `POL-SET-033` through `POL-SET-035`,
-`POL-API-002`, and `POL-API-016`.
+The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-021`, `POL-CAT-028`, `POL-CAT-071`, `POL-CAT-083`, `POL-CAT-085`, `POL-CAT-086`, `POL-CAT-088`, `POL-FUN-002`, `POL-FUN-003`, `POL-FUN-035`, `POL-SET-009`, `POL-SET-010`, `POL-SET-025`, `POL-SET-026`, `POL-SET-033` through `POL-SET-038`, `POL-API-002`, `POL-API-016`, and `POL-DOC-010` through `POL-DOC-013`.
 
 ## Implementation ownership
 
 [Category ownership](../CONTRIBUTING.md#category-ownership-and-inheritance), [leaf-category encapsulation](../CONTRIBUTING.md#leaf-category-encapsulation), and [functor policies](../CONTRIBUTING.md#functors-and-universal-constructions) govern the general inheritance rules.
 
-`Cardinal()` owns cardinal objects, maps between cardinal representatives, order
-predicates, universal arithmetic, and expression normalization.
+`Cardinal()` owns cardinal objects, maps between cardinal representatives, order predicates, universal arithmetic, and expression normalization.
 `Ordinals()` owns ordinal order and arithmetic.
 `Sets()` owns set cardinality.
 
 ## Cardinal model
 
-`Cardinal()` is a skeletal presentation of `Sets()` at cardinal numbers. Its
-construction selects one representative set \(R_\kappa\) for each cardinal \(\kappa\).
-Mathlib's
-[cardinal definitions](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Cardinal/Defs.html)
-define cardinals as types modulo bijection and define addition, multiplication, and
-exponentiation through sum, product, and function types. This category retains the same
-constructions and their universal arrows.
+`Cardinal()` is a skeletal presentation of `Sets()` at cardinal numbers.
+Its construction selects one representative set \(R_\kappa\) for each cardinal \(\kappa\). Mathlib's [cardinal definitions](https://leanprover-community.github.io/mathlib4_docs/Mathlib/SetTheory/Cardinal/Defs.html) define cardinals "as a quotient of types under the equivalence relation of equinumerosity (i.e., existence of a bijection)". Its section "Main definitions" fixes the arithmetic by three equations:
+
+\[
+\#\alpha+\#\beta=\#(\alpha\oplus\beta),
+\qquad
+\#\alpha\cdot\#\beta=\#(\alpha\times\beta),
+\qquad
+\#\alpha^{\#\beta}=\#(\beta\to\alpha).
+\]
+
+Addition, multiplication, and exponentiation act on cardinals.
+The sum, product, and function type on the right are constructions on types.
+`Sets()` constructions register the corresponding exact cardinality-query cases; see [Cardinal arithmetic](#cardinal-arithmetic).
 
 A cardinal is an object of this category:
 
 ```python
 CardinalObject = Cardinal().ObjectType
-CardinalityHomCategory = Cardinal().HomCatType
-CardinalityMorphism = Cardinal().ArrowType
+CardinalElement = Cardinal().ElementType
+CardinalityMorphism = Cardinal().MorphismType
 ```
 
-Its complete structural tuple selects the skeletal inclusion:
+Its complete structure-functor tuple selects the representative functor:
 
 ```python
-def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-    return (Fun(self, Sets()).FullyFaithful().inclusion(),)
+def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+    return (Fun(self, Sets()).FullyFaithful()(self.representative, lambda morphism: morphism.set_map()),)
 ```
 
-The inclusion sends each cardinal to its selected representative and acts identically
-on the corresponding function sets.
+It sends each cardinal to its selected representative, and a cardinal morphism to its retained set map.
+Thus a generalized element `t: T -> kappa` maps to the generalized set element `R(t): R_T -> R_kappa` through the same morphism action.
 
-For every pair of represented cardinals, the Hom category is the owned function set
-between their representatives:
+`Cardinal()` is a skeleton, so this functor is fully faithful and injective on objects, hence monic; it is not an isofibration, because a set isomorphic to a representative need not be one.
+Placement therefore does not follow it, and a cardinal is not a set (`specs/functor.md`, "Monomorphisms of `Cat()` and placement"). It is the representative transport from cardinal objects to sets.
+`Semirings(Cat())` is the general internal semiring category at ambient `Cat()`. Its objects, its addition and multiplication functors, its zero and one points, and its laws are defined in [Semirings](magmas-monoids-semirings.md#semirings).
+`Cardinal()` supplies cardinal addition with zero and cardinal multiplication with one.
+Its selected point functor regards `Cardinal()` with these operations as an object of that category and, through the categorical level shift, supplies the compiled classes, retained state, and public methods of `Semirings(Cat())` ([functor.md](functor.md#the-categorical-level-shift)).
+The law data is the equations between these functors ([functor.md](functor.md#ambient-algebraic-categories)). `Cardinal()` is skeletal, so each binary operation selects one representative and the laws hold as equalities ([Laws in the supplied ambient](magmas-monoids-semirings.md#laws-in-the-supplied-ambient)).
+
+For every pair of represented cardinals, `Mor(Cardinal())(kappa, lambda)` is the discrete category on the owned function set between their representatives:
 
 \[
-\operatorname{Hom}_{\mathbf{Cardinal}}(\kappa,\lambda)
+\operatorname{Mor}_{\mathbf{Cardinal}}(\kappa,\lambda)
 =
-\operatorname{Hom}_{\mathbf{Set}}
+\operatorname{Mor}_{\mathbf{Set}}
   (R_\kappa,R_\lambda).
 \]
 
-Its objects are functions. Cardinal order is the existence of an injective function:
+Its objects are functions.
+Cardinal order is the existence of an injective function:
 
 \[
 \kappa\leq\lambda
 \quad\Longleftrightarrow\quad
-\operatorname{Ar}(\mathbf{Cardinal}).\operatorname{Monomorphisms()}
+\operatorname{Mor}(\mathbf{Cardinal}).\operatorname{Monomorphisms()}
   (\kappa,\lambda)\text{ is inhabited}.
 \]
 
-Cardinal equality is represented by isomorphism of the selected representatives. Mere
-inhabitation of the unrestricted Hom category does not define cardinal order.
+Cardinal equality is represented by isomorphism of the selected representatives.
+Mere inhabitation of the unrestricted morphism category does not define cardinal order.
+
+### Cardinal and ordinal order categories
+
+`CardinalOrder()` and `OrdinalOrder()` are thin categories on the owned cardinal and ordinal objects.
+Each has one morphism `a -> b` exactly when `a <= b`.
+Their morphisms are order arrows, not functions between cardinal representatives.
+
+The named order functors are:
+
+```python
+Aleph: OrdinalOrder() -> CardinalOrder()
+InitialOrdinal: CardinalOrder() -> OrdinalOrder()
+```
+
+They act on the unique order arrows by monotonicity.
+Their object actions return the same `CardinalObject` and `OrdinalObject` values used by `Cardinal()` and `Ordinals()`.
 
 ### Public cardinal constructors
 
 ```python
-Cardinal()(value)
-Cardinal().aleph(index)
+Cardinal()(n)
+Aleph.on_object(index)
 aleph0
 continuum
 ```
 
-`Cardinal()(value)` is the category-owned constructor. It follows Sage's
-[`Parent.__call__()` dispatch model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html):
-the public call selects an exact private constructor route from the semantic input.
-
-Accepted inputs are:
-
-- An existing `CardinalObject`.
-
-- A nonnegative Python `int`.
+`Cardinal()(n)` is the category-owned constructor of the finite cardinal of a nonnegative Python `int` `n`.
+Each other presentation has its own named constructor (D52).
 
 Examples:
 
@@ -97,16 +119,18 @@ Examples:
 Cardinal()(0)
 Cardinal()(5)
 
-Cardinal().aleph(0)
-Cardinal().aleph(1)
-Cardinal().aleph(Ordinals().omega(1))
+Aleph.on_object(Ordinals().zero())
+Aleph.on_object(Ordinals().one())
+Aleph.on_object(InitialOrdinal.on_object(Aleph.on_object(Ordinals().one())))
 
 aleph0
 continuum           # Cardinal()(2) ** aleph0
 ```
 
-`aleph0` is `Cardinal().aleph(0)`. `continuum` is
-`Cardinal()(2) ** aleph0`.
+`Aleph: OrdinalOrder() -> CardinalOrder()` is the order functor from an ordinal index to its aleph cardinal.
+`InitialOrdinal: CardinalOrder() -> OrdinalOrder()` is the order functor from a cardinal to its initial ordinal representative.
+`aleph0` is `Aleph.on_object(Ordinals().zero())`.
+`continuum` is `Cardinal()(2) ** aleph0`.
 
 Negative integers are rejected.
 Use `aleph0` for countable infinity.
@@ -116,6 +140,8 @@ Reconstructing an equal expression returns the same cardinal object.
 
 ### Cardinal expression forms
 
+The private engine behind `Cardinal()` is two Sage semirings, declared into Sage's poset and semiring categories.
+They stay behind the computation-engine boundary of [leaves.md](leaves.md#computation-engine-boundary); the public category graph shares only the `Parent` root with Sage's (D01, D65, D153).
 The private expression model supports:
 
 - Finite cardinals.
@@ -136,7 +162,7 @@ Conceptually:
 
 ```python
 n
-Cardinal().aleph(alpha)
+Aleph.on_object(alpha)
 kappa ** lambda
 sup(kappa_1, ..., kappa_n)
 sum(i in I, kappa_i)
@@ -144,9 +170,10 @@ product(i in I, kappa_i)
 ```
 
 Finite suprema preserve unresolved relationships.
-For example, `Cardinal().aleph(2) + continuum` can remain a formal supremum.
+For example, `Aleph.on_object(Ordinals()(2)) + continuum` can remain a formal supremum.
 
-This avoids assuming the continuum hypothesis.
+These are the forms of the ZFC-only state, which [The continuum hypothesis](#the-continuum-hypothesis) describes.
+With the hypothesis assumed, exponentiation evaluates and these forms are reached only by an expression the hypothesis leaves open.
 
 ### `Cardinal()` API
 
@@ -157,18 +184,15 @@ C = Cardinal()
 
 C.zero()
 C.one()
-
-C.supremum(cardinals)
-
-C.Coproducts()(diagram)
-C.Products()(diagram)
 ```
 
-`supremum()` accepts a nonempty finite indexed family.
+Use the standard finite `sup(cardinals)` operation for a nonempty finite indexed family.
 
-The indexed coproduct and product constructors accept an owned diagram. A finite
-diagram can normalize by iteration. An infinite diagram produces a formal indexed
-expression when no stronger normalization is available.
+`Cardinal()` inherits the indexed product and coproduct constructions specified in [Diagram shapes and universal constructions](functor.md#diagram-shapes-and-universal-constructions).
+Its delta makes their apexes the indexed cardinal product and indexed cardinal sum.
+Mathlib defines these as the cardinalities of the corresponding pi type and sigma type.
+A finite diagram can normalize by iteration.
+An infinite diagram produces a formal indexed expression when no stronger normalization is available.
 
 ### Cardinal arithmetic
 
@@ -184,20 +208,32 @@ n * kappa
 n ** kappa
 ```
 
-These are the inherited categorical constructions:
+Addition and multiplication are the internal semiring operations ([Semirings](magmas-monoids-semirings.md#semirings)). Each is a morphism out of a product,
 
 \[
-\kappa+\lambda=\kappa\sqcup\lambda,
-\qquad
-\kappa\lambda=\kappa\times\lambda,
-\qquad
-\lambda^\kappa=
-\operatorname{Hom}_{\mathbf{Cardinal}}(\kappa,\lambda).
+\alpha,\mu:\operatorname{Cardinal}()\times\operatorname{Cardinal}()
+\longrightarrow\operatorname{Cardinal}(),
 \]
 
-The coproduct and product retain their injections, projections, and universal maps. The
-Hom category retains the representative functions. Their cardinal objects are exactly
-cardinal addition, multiplication, and exponentiation.
+so applying one to a pair returns a cardinal.
+It presents no diagram, retains no injection or projection, and carries no cone.
+The indexed constructions `Cardinal().Coproducts()` and `Cardinal().Products()` are separate operations with their own presentations; see [`Cardinal()` API](#cardinal-api).
+
+The `Sets()` implementations of these constructions register the corresponding exact cardinality-query cases.
+For `X, Y in Core(Sets())`,
+
+\[
+\#(X\sqcup Y)=\#X+\#Y,
+\qquad
+\#(X\times Y)=\#X\cdot\#Y,
+\qquad
+\#\!\left(Y^{X}\right)=(\#Y)^{\#X},
+\]
+
+and the exponential of cardinals is the cardinal of the function set between the chosen representatives, \(\lambda^{\kappa}=\#\!\left(R_\lambda^{\,R_\kappa}\right)\). The coproduct, product and function set on the left are constructions in `Sets()` and retain their injections, projections and universal maps there.
+The operations on the right are the semiring operations, and the equalities are the statement that `#` carries one to the other.
+
+`Cardinal()` is skeletal, so these operations collapse: `c_2 * c_3` is `c_6`, and so is `c_6 * c_1`. An expression that no normalization rule below evaluates is retained exactly.
 
 The implementation normalizes these cases:
 
@@ -231,10 +267,47 @@ The last rule uses:
 \kappa^\lambda=2^\lambda.
 \]
 
-### Finite cardinal modulus
+### The continuum hypothesis
 
-Modulus belongs to the finite-cardinal property category. For finite `kappa` and
-positive natural cardinal `n`, Python `%` returns the finite cardinal remainder:
+The generalized continuum hypothesis is an assumable proposition, not an axiom of the arithmetic:
+
+```python
+generalized_continuum_hypothesis()
+```
+
+It is a zero-argument SymPy proposition under [Propositions and `ask()`](undecidable-properties.md). SymPy `global_assumptions` records it and `ask()` reads it.
+`assume()` records it and `retract()` withdraws it.
+`Cardinal()` records it when the package loads, so the package's own default state assumes it.
+
+It states that \(2^{\aleph_\alpha}=\aleph_{\alpha+1}\) for every ordinal \(\alpha\), and it thereby decides every infinite power.
+For ordinals \(\alpha\) and \(\beta\):
+
+\[
+\aleph_\alpha^{\aleph_\beta}=
+\begin{cases}
+\aleph_{\beta+1} & \alpha\leq\beta+1,\\
+\aleph_\alpha & \beta+1<\alpha \text{ and } \aleph_\beta<\operatorname{cf}(\aleph_\alpha),\\
+\aleph_{\alpha+1} & \beta+1<\alpha \text{ and } \aleph_\beta\geq\operatorname{cf}(\aleph_\alpha).
+\end{cases}
+\]
+
+A finite base \(n\geq 2\) has the power of two, so \(n^{\aleph_\beta}=2^{\aleph_\beta}=\aleph_{\beta+1}\). The cofinality is `InitialOrdinal.on_object(Aleph.on_object(alpha)).cofinality()`; see [Cofinality](ordinals.md#cofinality).
+When the ordinal expression does not establish the cofinality, the power stays formal.
+
+Addition and multiplication are unchanged.
+They are already the maximum and do not depend on the hypothesis.
+
+Assumed, the normal form of an infinite cardinal is `Aleph.on_object(alpha)`, so the formal powers and formal suprema are reached only where the expression escapes these rules.
+Retracted, they return: `Cardinal()(2) ** aleph0` is a formal power, neither order between it and `Aleph.on_object(Ordinals()(2))` is decided, and their sum is a formal supremum.
+Both states are exact.
+The hypothesis is a hypothesis in either.
+
+The cardinals constructed under one state persist under the other.
+Retracting the hypothesis does not rewrite a cardinal that was normalized while it held.
+
+### Remainder for finite cardinals
+
+For finite `kappa` and positive natural cardinal `n`, Python `%` is the ordinary natural-number remainder, returned as a finite cardinal:
 
 ```python
 kappa % n
@@ -248,34 +321,23 @@ It satisfies the natural-number division theorem:
 0\leq r<n.
 \]
 
-This is the cardinal form of the division algorithm in Barrus and Clark,
-[Elementary Number Theory, Section 1.5, Theorem 1](https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_%28Barrus_and_Clark%29/01%3A_Chapters/1.05%3A_The_Division_Algorithm).
+This is the cardinal form of the division algorithm in Barrus and Clark, [Elementary Number Theory, Section 1.5, Theorem 1](https://math.libretexts.org/Bookshelves/Combinatorics_and_Discrete_Mathematics/Elementary_Number_Theory_%28Barrus_and_Clark%29/01%3A_Chapters/1.05%3A_The_Division_Algorithm).
 
-The result is the cardinal `r`. Thus a finite-cardinal predicate can state
-`kappa % 2 == 0` without extracting or coercing a stored integer.
+The result is the cardinal `r`. Thus a finite-cardinal predicate can state `kappa % 2 == 0` without extracting or coercing a stored integer.
 
 ### Cardinal object API
 
-Every cardinal supplies:
+`CardinalOrder().EssentialImage(Aleph)` is the property subcategory of aleph cardinals.
+The retained equivalence from `OrdinalOrder()` to this image supplies its inverse functor.
+Apply that inverse to obtain an aleph index.
+Apply `InitialOrdinal.on_object(kappa)` to obtain the initial ordinal representative of any cardinal.
 
-```python
-kappa.cardinality()
-
-kappa.is_finite()
-kappa.is_infinite()
-kappa.is_aleph()
-kappa.is_continuum()
-kappa.is_countable()
-kappa.is_uncountable()
-kappa.is_countably_infinite()
-kappa.is_uncountably_infinite()
-
-kappa.aleph_index()
-kappa.initial_ordinal()
-```
-
-Every `is_*()` call in this surface returns an applied proposition. Equality and order
-operations also return propositions. Use `ask()` when a decision is required.
+Unary cardinal properties use the property-subcategory contract in [Property refinement](property-refinement.md).
+The inverse images of the corresponding `Sets()` property subcategories along the representative functor own finiteness and countability.
+The property applications `cat_kernel` derives return those containment predicates (D175).
+Specific-cardinal queries use equality and order directly; countable infinity is `kappa == aleph0`, uncountability is `aleph0 < kappa`, and the continuum query is `kappa == continuum`.
+Equality and order operations also return propositions.
+Use `ask()` when a decision is required.
 
 It also supports:
 
@@ -286,12 +348,6 @@ kappa < lambda
 kappa <= lambda
 kappa > lambda
 kappa >= lambda
-```
-
-A cardinal has itself as its cardinality:
-
-```python
-kappa.cardinality() is kappa
 ```
 
 ### Cardinal representations
@@ -310,8 +366,9 @@ prod_{i in I} kappa_i
 
 ### Cardinal comparison predicates
 
-Equality and order use standard Python notation. Each expression returns an applied
-predicate. The exact handlers know:
+Equality and order use standard Python notation.
+Each expression returns a proposition.
+The exact handlers know:
 
 - Exact finite comparisons.
 
@@ -327,84 +384,58 @@ predicate. The exact handlers know:
 
 - Componentwise rules for finite formal suprema.
 
-If no handler decides a comparison, `ask()` returns `Unknown`. Mathematical
-incomparability requires its own exact proposition. Failure to decide either order does
-not establish incomparability.
+If no handler decides a comparison, `ask()` returns `Unknown`. Mathematical incomparability requires its own exact proposition.
+Failure to decide either order does not establish incomparability.
 
 ### Cardinal morphisms
 
 For all cardinals `kappa` and `lambda`:
 
 ```python
-H = Cardinal().HomCategory(kappa, lambda)
+H = Mor(Cardinal())(kappa, lambda)
 
 H.is_inhabited()
 H.is_empty()
 ```
 
-Objects of `H` are functions from the selected representative of `kappa` to the
-selected representative of `lambda`. Exact `True` for `ask(H.is_empty())` establishes
-that no such function exists. `Unknown` preserves `H` without either conclusion.
+These are the applications generated by `Cat().Inhabited()` and `Cat().Empty()`.
+Objects of `H` are functions from the selected representative of `kappa` to the selected representative of `lambda`. Exact `True` for `ask(H.is_empty())` establishes that no such function exists.
+`Unknown` preserves `H` without either conclusion.
 
 The order proposition uses the monomorphism endpoint category:
 
 ```python
-M = Ar(Cardinal()).Monomorphisms()(kappa, lambda)
+M = Mor(Cardinal()).Monomorphisms()(kappa, lambda)
 kappa <= lambda  # dispatches to M.is_inhabited()
 ```
 
-The base-category identity is an object of the endomorphism category:
-
-```python
-kappa.identity() in kappa.Hom(kappa)
-```
-
-Inherited base-category composition is ordinary function composition. Coproduct,
-product, and Hom functoriality act on these arrows through their universal
-constructions. These constructions supply the complete action on arrows.
-
+Cardinal morphisms compose by ordinary function composition.
+The coproduct, product, and function set of `Sets()` act on the representative functions through their universal constructions there.
+Addition, multiplication, and exponentiation act on cardinal morphisms through the universal constructions of `Cardinal()` itself.
 
 The ordinal model is specified in [`ordinals.md`](ordinals.md).
 
 ## Integration with `Sets()`
 
-The cardinality functor is:
+`X.cardinality()` returns an applied query with result category `Cardinal()`.
+`ask(X.cardinality())` returns an owned cardinal when an exact evaluation case applies and Sage `Unknown` otherwise.
+Calling `X.cardinality()` never invokes `ask()`.
 
-\[
-\#:\operatorname{core}(\mathbf{Sets})\longrightarrow\mathbf{Cardinal}.
-\]
+The category-owned `Sets()` implementation declares the query.
+Each set construction registers its exact cases from retained construction data.
+A structured object uses the same inherited query on the original object.
+A structure functor to `Sets()` constructs its actual set image through the public `Sets()` API.
+Selecting that functor gives the source object the inherited set implementation surface.
+It does not replace predicate evaluation with a separate image lookup.
 
-Its object map calls:
+The registered cases route on the index set, the selected presentation's diagram, its codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.
+For a finite chosen enumeration, they apply `p.diagram().on_object(i).cardinality()` to each index of the selected product presentation `p`.
+Each case cites the theorem that decides it.
+When no case applies, `ask()` returns `Unknown`. The cases are:
 
-```python
-X.cardinality()
-```
+- Products over a finite index with every factor exact use the exact product; a finite index with an empty factor gives \(0\); the constant diagram at \(X\) over \(S\) gives \(|X|^{|S|}\); an infinite index with codomain `Sets().Uncountable()` places the product in `Sets().Uncountable()`; a finite index with codomain `Sets().Countable()` places the product in `Sets().Countable()`.
 
-Its arrow map accepts a set isomorphism. The construction retains a selected bijection
-between each set and its cardinal representative. It conjugates the set isomorphism by
-these selected bijections to construct the corresponding cardinal isomorphism.
-
-Public access is category-owned:
-
-```python
-Sets().CardinalityFunctor()
-```
-
-For a category \(\mathbf C\) with selected set-valued structural functor
-\(U_{\mathbf C}:\mathbf C\to\mathbf{Sets}\), the composite
-
-\[
-\#\circ\operatorname{core}(U_{\mathbf C})
-\]
-
-supplies cardinality.
-A constructor can pass known cardinality data to its underlying-set constructor.
-
-Set constructions use cardinal expressions directly:
-
-- Products use indexed products.
-
-- Coproducts use indexed sums.
+- Coproducts use the dual sum cases.
 
 - Function sets use \(|Y|^{|X|}\).
 
@@ -427,15 +458,15 @@ The mathematical exports are:
 ```python
 Cardinal
 CardinalObject
-CardinalityHomCategory
 CardinalityMorphism
+CardinalOrder
 aleph0
 continuum
+generalized_continuum_hypothesis
 
-OrdinalSemirings
 Ordinals
-Ordinal
+OrdinalObject
+OrdinalOrder
 omega0
 
-CardinalityFunctor
 ```

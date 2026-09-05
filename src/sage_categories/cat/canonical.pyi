@@ -1,0 +1,110 @@
+import sage_categories
+from collections.abc import Hashable
+from dataclasses import dataclass
+from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.predicates import UnknownClass
+__all__ = ['FinitePresentedCategory', 'enumerated_datum', 'empty_category', 'simplex', 'boundary', 'horn', 'walking_isomorphism', 'walking_parallel_pair']
+type Word = tuple[str, ...]
+type Generator = tuple[str, Hashable, Hashable]
+type Relation = tuple[Word, Word]
+
+@dataclass(frozen=True, eq=False, slots=True)
+class VertexData:
+    label: Hashable
+
+@dataclass(frozen=True, eq=False, slots=True)
+class PathData:
+    word: Word
+
+class FinitePresentedCategory(Category[[Word], []]):
+
+    class ObjectType(sage_categories.kernel.roles.ObjectOfCategory):
+
+        def __init__(self, data: VertexData) -> None:
+            ...
+
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+
+        def __init__(self, data: PathData) -> None:
+            ...
+
+        def word(self) -> Word:
+            ...
+
+    class ElementType(sage_categories.kernel.roles.ElementOfObject):
+        ...
+
+    def __init__(self, name: str, labels: tuple[Hashable, ...], generators: tuple[Generator, ...], relations: tuple[Relation, ...]) -> None:
+        ...
+
+    def __call__(self, label: Hashable) -> FinitePresentedCategory.ObjectType:
+        ...
+
+    def label(self, vertex: FinitePresentedCategory.ObjectType) -> Hashable:
+        ...
+
+    def labels(self) -> tuple[Hashable, ...]:
+        ...
+
+    def generator_names(self) -> tuple[str, ...]:
+        ...
+
+    def is_discrete(self) -> bool:
+        ...
+
+    def generator(self, name: str) -> FinitePresentedCategory.MorphismType:
+        ...
+
+    def object_set(self) -> CategoryOfCategories.ElementType:
+        ...
+
+    def object_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.ObjectType:
+        ...
+
+    def object_point(self, vertex: FinitePresentedCategory.ObjectType) -> CategoryOfCategories.ElementType:
+        ...
+
+    def finite_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass:
+        ...
+
+    def morphism_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.MorphismType:
+        ...
+
+    def generating_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...]:
+        ...
+
+    def relations(self) -> tuple[Relation, ...]:
+        ...
+
+    def construct_morphism(self, domain: FinitePresentedCategory.ObjectType, codomain: FinitePresentedCategory.ObjectType, word: Word) -> FinitePresentedCategory.MorphismType:
+        ...
+
+    def construct_identity(self, vertex: FinitePresentedCategory.ObjectType) -> FinitePresentedCategory.MorphismType:
+        ...
+
+    def composite(self, second: FinitePresentedCategory.MorphismType, first: FinitePresentedCategory.MorphismType) -> FinitePresentedCategory.MorphismType:
+        ...
+
+    def inverse_morphism(self, morphism: FinitePresentedCategory.MorphismType) -> FinitePresentedCategory.MorphismType:
+        ...
+
+def enumerated_datum(finite_set: CategoryOfCategories.ElementType, point: CategoryOfCategories.ElementType) -> Hashable:
+    ...
+
+def empty_category() -> FinitePresentedCategory:
+    ...
+
+def simplex(dimension: int) -> FinitePresentedCategory:
+    ...
+
+def boundary(dimension: int) -> FinitePresentedCategory:
+    ...
+
+def horn(dimension: int, omitted_face: int) -> FinitePresentedCategory:
+    ...
+
+def walking_isomorphism() -> FinitePresentedCategory:
+    ...
+
+def walking_parallel_pair() -> FinitePresentedCategory:
+    ...

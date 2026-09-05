@@ -1,0 +1,115 @@
+=============================
+=== Running: structured text formatting ===
+# Formats Markdown (flowmark), JSON, and YAML (prettier) before agents spend time on whitespace
+=============================
+=== Running: semgrep auto-fix ===
+# Applies Semgrep autofixes; CI-tier Semgrep verification owns remaining findings
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 259 files tracked by git with 228 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  <multilang>       7     259          Community     160                                                                
+  python           36     119          Custom         68                                                                
+  yaml             11      27                                                                                           
+                                                                                                                        
+No files modified by autofix.
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 14 (14 blocking)
+ • Rules run: 54
+ • Targets scanned: 259
+ • Parsed lines: ~100.0%
+ • Scan skipped: 
+   ◦ Matching --exclude patterns: 2
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 54 rules on 259 files: 14 findings.
+                    
+                    
+┌──────────────────┐
+│ 14 Code Findings │
+└──────────────────┘
+                                         
+    src/sage_categories/cat/predicates.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          424┆ if getattr(type(category), self._name, None) is not self:
+            ⋮┆----------------------------------------
+          503┆ declared = getattr(type(category), name, None)
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          506┆ for functor in vars(category).get("_selected_functors", ()):
+                                          
+    src/sage_categories/kernel/compiler.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          352┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          352┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+            ⋮┆----------------------------------------
+          360┆ relations = result.setdefault(_projection_surface(role), {})
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          363┆ base = _installed_root_declarations.get(kernel_base(role),
+               category_universal_class().ElementType)                   
+            ⋮┆----------------------------------------
+          378┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          378┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+            ⋮┆----------------------------------------
+          487┆ recorded = vars(value).setdefault("_own_classes", (type(value),))
+                                       
+    src/sage_categories/kernel/roles.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          122┆ if written is None or getattr(written, "_runs_the_kernel_initializer", False):
+                                                
+    src/sage_categories/kernel/stub_generator.py
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          105┆ candidates.setdefault(name, []).append(module)
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          165┆ module = canonical_exports.get(alias.name, statement.module)
+   
+   ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
+          ❰❰ Blocking ❱❱
+          POLICY.RUNTIME_DEFAULT
+                                
+          166┆ grouped.setdefault(module, []).append(alias)
+
+Common normalization completed

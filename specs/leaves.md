@@ -1,479 +1,242 @@
 # Leaf category implementations
 
-This specification defines the implementation boundary for leaf categories. It records
-the discussion that separated structural inheritance from private computation.
+This specification owns the boundary between category theory, the kernel, and private computation engines.
+It implements D03, D08, D13, D118 through D123, D133, D135, and `POL-LEAF-053` through `POL-LEAF-079`.
+Its [Red flags](#red-flags) section is the one catalogue of banned leaf shapes; every other document refers to it by policy row.
 
-The central rule is:
-
-> `C.ObjectType`, `C.ElementType`, and `C.ArrowType` are the executable implementation
-> classes for `C`. The category declaration defines or links those exact classes.
-
-These classes are not interfaces for another implementation hierarchy. They are not
-method catalogues that a compiler matches against backend method names.
+See [functor.md](functor.md) for `Cat`, `Mor`, `Fun`, functor actions, and structure-functor selection.
+See [property-refinement.md](property-refinement.md) for property categories and same-object refinement.
+See [resolution.md](resolution.md) for the private Sage compiler.
 
 ## Contents
 
-- [Intended architecture](#intended-architecture)
-- [Standard mathematics determines the software roles](#standard-mathematics-determines-the-software-roles)
-- [Two different forms of reuse](#two-different-forms-of-reuse)
-- [The implementation classes](#the-implementation-classes)
-- [The leaf is the implementation firewall](#the-leaf-is-the-implementation-firewall)
-- [Category declarations define or link implementations](#category-declarations-define-or-link-implementations)
-- [Local methods are ordinary executable methods](#local-methods-are-ordinary-executable-methods)
-- [Inherited methods remain kernel-owned transport](#inherited-methods-remain-kernel-owned-transport)
-- [The policy conflict that exposed the gap](#the-policy-conflict-that-exposed-the-gap)
-- [Rejected operation decorators](#rejected-operation-decorators)
-- [Rejected mirrored backend surfaces](#rejected-mirrored-backend-surfaces)
-- [Private computation inside a leaf implementation](#private-computation-inside-a-leaf-implementation)
-- [Semantic lowering and reconstruction](#semantic-lowering-and-reconstruction)
-- [Realization functors and private representations](#realization-functors-and-private-representations)
-- [File placement](#file-placement)
-- [Private neighboring engine modules](#private-neighboring-engine-modules)
-- [One source of truth](#one-source-of-truth)
-- [Leaf, kernel, and backend responsibilities](#leaf-kernel-and-backend-responsibilities)
-- [The product algebra example](#the-product-algebra-example)
-- [Relation to structural diamonds](#relation-to-structural-diamonds)
-- [Method signatures remain mathematical](#method-signatures-remain-mathematical)
-- [Required policy interpretation](#required-policy-interpretation)
+- [Leaf contract](#leaf-contract)
+- [Owned implementation classes](#owned-implementation-classes)
+- [Constructors](#constructors)
+- [Structure functors](#structure-functors)
+- [Inherited constructions](#inherited-constructions)
+- [Property categories](#property-categories)
+- [Computation-engine boundary](#computation-engine-boundary)
+- [Exact types](#exact-types)
+- [Private helpers and files](#private-helpers-and-files)
 - [Acceptance conditions](#acceptance-conditions)
 
-## Intended architecture
+## Leaf contract
 
-A category owns its objects, elements, arrows, and operations. Its implementation types
-are part of that ownership:
+A leaf states only its new mathematics.
+It answers four questions:
 
-- `C.ObjectType` implements objects of `C`;
-- `C.ElementType` implements elements of those objects;
-- `C.ArrowType` implements arrows of `C`;
-- the category declaration identifies those implementation types;
-- selected structural functors supply inherited operations.
+1. What are its objects, elements, and morphisms?
+2. What data constructs one object or morphism?
+3. Which immediate named functors supply inherited structure?
+4. Which operations, predicates, algorithms, and theorems first belong here?
 
-A leaf category introduces only its new mathematics. However, introducing a new
-operation includes implementing that operation. The method body can use Sage or another
-mature dependency as a private computation engine.
+The category owns these answers.
+Generic categorical constructions retain their own functors and universal data.
+The kernel compiles inherited implementation.
+Private engines supply algorithms.
 
-The phrase “a leaf should read like mathematics” constrains semantic ownership and
-public data. It does not require the leaf to contain no computation code.
+[Minimal leaf scaffolding](leaf-scaffolding.md) specifies the public consumer required before API expansion.
+It also fixes the distinction between binary-relation structures and the generic relation bicategory.
 
-Leaf purity is semantic purity. It is not implementation abstinence.
+## Owned implementation classes
 
-## Standard mathematics determines the software roles
+For each category `C`:
 
-This repository uses the ordinary mathematical meanings of category, object, element,
-arrow, functor, construction, and theorem. The Python implementation does not define
-new meanings for these terms.
+- `C.ObjectType` implements objects of `C`.
+- `C.ElementType` implements elements of objects of `C`.
+- `C.MorphismType` implements morphisms of `C`.
 
-The standard definitions already determine the software roles:
+These classes contain the executable methods first owned by `C`.
+Each public operation has one method definition and one exact signature.
+The category declaration writes or links all three classes.
 
-- a category determines what its objects and arrows are;
-- `C.ObjectType` and `C.ArrowType` implement those roles;
-- `C.ElementType` implements the elements of represented objects when the theory has them;
-- an operation's mathematical signature determines its receiver, parameter, and result roles;
-- a selected functor determines structural transport through its declared maps;
-- an element's ambient mathematical object determines its element role;
-- a named construction owns the theorem used by that construction;
-- the result category states the conclusion established by that theorem.
+```python
+class LeafCategory(Category):
+    class ObjectType:
+        def leaf_operation(self, argument: LeafArgument) -> LeafResult:
+            ...
 
-None of these facts requires a second runtime declaration. An element does not carry a
-marker that declares it to be an element. A method does not carry metadata that repeats
-its mathematical domain. A functor does not become transport through a mutable object
-registry. A theorem does not become applicable through an authority token.
+    class ElementType:
+        pass
 
-Use the following meanings throughout this specification:
+    class MorphismType:
+        pass
+```
 
-- **explicit** means present in the semantic API as an exact type, category placement,
-  defining arrow, selected functor, named construction, predicate result, or hypothesis;
-- **owner** means the category, object, arrow, functor, or universal construction whose
-  mathematical definition states the operation or fact;
-- **declaration** means the ordinary typed category, class, method, functor, or
-  constructor definition at that owner;
-- **construction authority** means that the named construction establishes its typed
-  result by its defining theorem.
+An empty class body states that the leaf adds no local mathematics for that kind.
+Inherited methods still reach the compiled class through selected structure functors.
 
-These words never request another metadata carrier, decorator, annotation payload,
-registry, marker type, wrapper, or authority object.
+A leaf class extends one of the curated base classes `Category`, `CategoryOverRing`, and `CategoryOfXObjectsIn` ([functor.md](functor.md#category-classes-and-category-valued-families)).
+Writing the class populates its structure functor `LeafCategory: * -> Cat` automatically (D154).
+A leaf class that implements a category otherwise named, an axiom subcategory `C.P()` or a generic construction such as `Sets().CosliceUnder(Sets().Terminal())`, selects that category's identity functor as a structure functor, `x = C.P(); id_x = End_Cat(x).one()`, first among them, and writes `Cat().implement(LeafCategory)` beside the class ([functor.md](functor.md#implementing-a-named-category); D156).
+Its other structure functors are written against `self` like any leaf's: `Cat().implement` constructs the class to read the declaration, and that construction stops at the identity functor and strengthens `x` to the class instead of building a second category.
 
-A compiler error, import error, or type error can show that the current Python encoding
-is wrong. It cannot select a new mathematical model. When the code lacks an obvious
-encoding, derive the encoding from the standard mathematical definition. If the
-repository cannot state that definition, the missing category, functor, arrow,
-construction, or exact type is the foundational defect.
+## Constructors
 
-The governing policies are `POL-MATH-001`, `POL-MATH-031` through `POL-MATH-033`,
-`POL-CAT-075` through `POL-CAT-080`, `POL-LEAF-053` through `POL-LEAF-056`,
-`POL-KERNEL-021` through `POL-KERNEL-025`, `POL-FUN-023`, `POL-API-023`, and
-`POL-CODE-042` through `POL-CODE-043`.
+The default call `C(data)` constructs an object of `C` from its usual complete mathematical data.
+A named constructor accepts another complete mathematical presentation.
+Every constructor returns `C.ObjectType`.
 
-## Two different forms of reuse
+```python
+C(defining_data)
+C.from_presentation(presentation)
+C.from_sage(engine_value)
+```
 
-The architecture has two independent reuse mechanisms.
+The constructor asks for the smallest datum that determines the new structure.
+It obtains data already determined by that datum from its mathematical owner.
 
-### Structural inheritance
+A constructor takes construction data.
+A leaf writer defines the natural classcall and its `match`/`case` dispatch on that data.
+A property subcategory `C.P()` wires no constructor: `cat_kernel` gives it exactly the constructors of `C` through the functor `C.P() -> C`, which `cat_kernel` constructs (D175).
+A value already constructed is placed by assumption, `assume(X.is_P())`, the membership proposition of `X in C.P()` ([undecidable-properties.md](undecidable-properties.md#assumptions); D150).
 
-An operation already owned by a structural ancestor reaches the leaf through the
-selected structural functors. The kernel transports the receiver, arguments, and
-result.
+For a relation, the primary datum is a subobject
+
+\[
+R\hookrightarrow X\times X.
+\]
+
+The codomain and retained product projections determine `X`.
+The caller does not repeat `X`.
+`Relations()` owns this constructor, and `Posets() = Relations().PartialOrder()` has exactly the same constructors (D147, D150).
+
+The [poset template](poset-minimal-template.py) shows this constructor, the axiom, and the structure functor `(X, R) |-> X` to `Sets()`, constructed into `Fun(Relations(), Sets()).Fibrations()` (D162, D163).
+
+## Structure functors
+
+Each entry in `C.structure_functors()` is an ordinary object of `Fun(C, D)`.
+Selection follows the access and inheritance conditions in [functor.md](functor.md#structure-functors-and-inherited-classes).
+The functor retains its mathematical action.
+These declarations build the repository's new owned category graph. They do not import,
+reuse, or modify Sage's mathematical category graph; a migrated Sage category is a new
+owned leaf or construction in this graph.
+
+A leaf gets a selected functor in one of two ways:
+
+1. It returns the exact functor retained by its defining categorical construction.
+2. It constructs new leaf mathematics through `Fun(C, D)`.
+
+A new leaf functor that computes its images supplies complete executable actions:
+
+```python
+def target_functor(self) -> Cat().MorphismType:
+    D = TargetCategory()
+
+    def on_object(X: self.ObjectType) -> D.ObjectType:
+        return D(X._target_data())
+
+    def on_morphism(f: self.MorphismType) -> D.MorphismType:
+        source = on_object(f.domain())
+        target = on_object(f.codomain())
+        return Mor(D)(source, target)(f._target_action())
+
+    return Fun(self, D)(on_object, on_morphism)
+```
+
+`on_object(X)` constructs and returns the public image in `D`.
+`on_morphism(f)` constructs and returns the public image in the exact target hom category.
+These two actions are the sole leaf declaration of a functor that computes.
+An action applied publicly receives a fully initialized source value. It can call any
+method defined on `C.ObjectType` and the public methods of the values it reaches, and it
+returns a value built by a constructor of `D`. The kernel runs the object action during
+construction to initialize the inherited target implementation; a leaf writes no
+base-class initializer call.
+
+During that construction run the value is not finished, and it cannot be: the target's
+own state is initialized from the datum the action has not returned yet. What the kernel
+guarantees there is that every owner ahead of the action's target is already initialized,
+so an action reads the source's own accessors and everything it inherits through an
+earlier-declared structure functor. A lattice's projection to the form reads what its
+projection to the module supplies, which is what D166 requires and the order it requires
+it in.
+
+A subcategory inclusion computes nothing.
+The leaf declares it as `Fun(S, T).Monomorphisms().Isofibrations()()`, the zero-argument
+call on the property category of `Fun(S, T)`, and writes no action (D10, D11, D146;
+[functor.md](functor.md#declaring-one)).
+A point functor is `D.Point()`, an arrow `* -> D`: a named object `X` is a leaf class, a
+new category, which registers itself as a point in `D` by adding `D.Point()` to its
+structure functors; `X` then inherits `D.ObjectType` and `X.ObjectType` inherits
+`D.ElementType` (D154, D161; [functor.md](functor.md#point-categories-and-point-functors)).
+A structure category, sets with additional structure, defines its own functors to the categories it inherits methods from (D161).
+A structure functor such as `Posets() -> Sets()` is defined by the leaf with its two actions. The poset functor is faithful, an isofibration, and limit-preserving; [ordered sets](ordered-sets.md#products) owns its declaration and lifting data. Its object action returns the carrier `X` of `R -> X * X` (D08, D158, D162, D163).
+The leaf selects a projection retained by its defining construction (`POL-LEAF-071`), by the named method of that construction: `C.CosliceUnder(X).projection()`, `Fun(I, C).ev(i)`, `P.product_projection(i)`; a composite is `G * F` (D157; [functor.md](functor.md#selecting-a-retained-functor)).
+A leaf states a theorem about a functor by constructing that functor into the property subcategory of `Fun(C, D)` that names it, such as `Fun(C, D).CreatesLimits(I)` (D158; [functor.md](functor.md#diagram-shapes-and-universal-constructions)).
+
+A leaf can create a structural diamond simply by selecting functors whose transitive
+targets meet. This never requires route-resolution boilerplate. The kernel chooses the
+single shared implementation occurrence through controlled C3 and debug-logs the diamond
+while its coherence remains implicit. Future optional coherence is expressed, if needed,
+by ordinary owned 2-morphism data between the composite functors rather than by a
+leaf-specific compiler record.
+
+A helper used only by one action stays local to that action or private to the leaf.
+A datum with independent public mathematical meaning keeps its public mathematical name.
+
+## Inherited constructions
+
+The generic category theory owns its complete construction data.
+A leaf reuses that data and states only its added structure or theorem.
 
 Examples include:
 
-- membership inherited from `Sets()`;
-- addition inherited from additive groups;
-- composition inherited from the owning arrow category;
-- cardinality inherited through the route to `Sets()`.
+- a pullback-defined category selects the retained pullback projections ([finite-poset template](finite-poset-minimal-template.py));
+- a structure category defines its structure functor to `Sets()` by its two actions, constructed into the strongest property subcategory of `Fun(C, Sets())` that states what is known about it ([poset template](poset-minimal-template.py));
+- a chosen-datum fibration selects the retained coslice projection composed with evaluation ([pointed-sets template](pointed-sets-minimal-template.py));
+- a subcategory selects its retained monomorphism;
+- a lifted limit reuses the selected cone and universal morphism ([poset-products template](poset-products-minimal-template.py));
+- a restricted functor comes from `F.restrict(P, Q)`;
+- an inherited property category comes from `F.inverse_image(C.P())`.
 
-The leaf does not implement, forward, or dispatch these operations.
+For a universal construction, `Cat` owns the shape, diagram, cone or cocone, legs, apex, and universal map.
+The leaf supplies the additional structure on the ambient apex and its existing morphism constructor through `U.with_limit_lifting(I, on_apex, on_morphism)`. The [lifting contract](functor.md#diagram-shapes-and-universal-constructions) states the required existence theorem and faithfulness condition. The generic construction supplies projections and mediators. Proven functor properties remain declarations in their exact property subcategories (D158).
 
-### Private computation
+One apex can have many presentations.
+Operations that depend on one presentation remain on that presentation object.
 
-An operation introduced by the leaf has a local executable method body. That method can
-lower owned semantic data to a Sage representation, call a Sage algorithm, and
-reconstruct the owned result.
+## Property categories
 
-Examples for finite posets include:
-
-- lower and upper covers;
-- intervals;
-- order ideals and filters;
-- extrema;
-- ranks and level sets;
-- linear extensions.
-
-The kernel does not implement or dispatch these methods. Sage performs selected
-computations, but Sage does not own the public operation.
-
-Implementation compression applies to inherited boilerplate. It does not remove the
-executable bodies of mathematics newly introduced by a leaf.
-
-## The implementation classes
-
-`ObjectType`, `ElementType`, and `ArrowType` have one precise meaning. They are the
-classes whose instances implement the corresponding mathematical roles.
-
-They are not:
-
-- abstract declarations awaiting backend completion;
-- schemas for generated methods;
-- lists of operation names;
-- interfaces implemented by a second Sage class;
-- stubs whose bodies are replaced by descriptors;
-- containers for annotations used by runtime dispatch.
-
-Each public operation has one executable declaration on its mathematical owner. A local
-operation on objects has its body on `C.ObjectType`. The same rule applies to elements
-and arrows.
-
-The implementation class can call dependencies. Calling a dependency does not transfer
-ownership to that dependency.
-
-## The leaf is the implementation firewall
-
-The repository exists in part to repair a defect in the Sage implementation model.
-Mathematically, there is one notion of a free module over a ring and one expected
-operation surface for that notion. Sage has three different free-module
-implementations with different public operations. Even an inherited operation such as
-cardinality is not available consistently across them.
-
-This repository must not reproduce that split behind another abstraction. A category
-never offers a menu of competing object implementations. Its `ObjectType` is the one
-public class for objects of that category. The same rule applies to `ElementType` and
-`ArrowType`.
-
-The sole class is a firewall. It collects the complete owned public operation surface
-and hides all possible computation choices. A caller works with a free module, finite
-poset, or hyperbolic lattice. The caller never chooses a Sage parent class, engine
-adapter, storage variant, or algorithm provider.
-
-The firewall does not restrict private implementation technology. A method can use:
-
-- a Sage, SymPy, or NumPy value;
-- an imported domain package such as VinAL;
-- a bespoke class containing new research algorithms;
-- compiled Cython code;
-- a shell program;
-- Julia, GAP, Singular, or Macaulay2;
-- different exact algorithms selected from established mathematical hypotheses.
-
-These are internal computations, not alternative implementations of the mathematical
-object. They do not add public classes, backend selectors, realization variants, or
-automatic method routing. The category-owned method calls the selected private
-computation explicitly and reconstructs the owned result.
-
-The implementation class supplies constructor routes from the general semantic data
-that defines the category. Those constructors can choose any suitable private
-representation. Public code does not construct engine values to select an
-implementation.
-
-## Construct from the strongest defining data
-
-A leaf constructor accepts the smallest semantic datum that determines its new
-structure. It recovers immediate ancestor objects from that datum. It does not ask the
-caller to repeat them.
-
-For a poset, an owned relation subobject
-
-\[
-R\hookrightarrow X\times X
-\]
-
-already determines `X`. The constructor extracts the two factors, verifies that they
-are the same set, and stores the defining pair `(X, R)`. Its selected set projection maps
-that pair to `X`. The relation projection is not selected for inheritance.
-
-Present this category as a subobject of the product of the set category and the relation
-category. Then `product_projection(0)` is the set functor and
-`product_projection(1)` is the relation functor.
-
-The same rule applies downstream:
-
-- An algebra structure morphism `R -> End(X)` determines both `R` and `X`.
-- A bilinear form `b` in `Hom_R(TL[2], R)` determines its module `L` and base ring `R`.
-- A lattice constructor can accept `b`, or the explicit pair `(L, b)` when that pair is
-  the intended public presentation.
-
-A downstream leaf selects its immediate structural ancestor. It never reconstructs or
-requests an explicit underlying set. Some category on the inherited route already owns
-that construction and its selected route to `Sets()`.
-
-When added structure does not add element data, the leaf `ElementType` declares no
-constructor. The kernel constructs that exact category-owned element type with its
-ambient object. It also retains the canonical element image under each selected
-projection. The element remains a `C.ElementType`, not an ancestor element type.
-
-The category layer constructs and selects each immediate structural functor. A leaf that
-is a subobject of a product uses `product_projection(i)`. Otherwise, it reuses the exact
-functors retained by its defining category construction.
-
-A leaf selects the strongest established property subcategory. It does not repeat maps
-already retained by a product, pullback, comma, arrow, or similar construction. It never
-exposes a private engine conversion as a structural map.
-
-If this implementation becomes sufficiently large or dominated by Python, foreign
-interfaces, conversions, process calls, or caches, move that complexity into private
-helper modules. The category implementation class remains the sole public owner. The
-helpers remain computation details and never become another method surface.
-
-## Category declarations define or link implementations
-
-A category declaration can define its implementation class locally:
+A category declares each axiom it introduces once, in its class body, by the axiom name and the proposition that decides membership (D148):
 
 ```python
-class LeafCategory(Category):
-    class ObjectType(MathematicalObject):
-        def leaf_operation(self) -> LeafResult:
-            ...
+class SetsCategory(Category):
+    def _finite(self, X: Sets().ObjectType) -> Boolean:
+        return X.cardinality() < aleph0
+
+    Finite = Axiom(_finite)
 ```
 
-It can instead link one imported class:
+An axiom is a string, here `"Finite"`, the attribute name.
+The deciding proposition is a private method (D142), written by the leaf writer in terms of methods that already exist on the category.
+A proposition that no existing method supplies applies a predicate the leaf defines: a class statement on `Predicate`, the base `Cat` exports, carrying the predicate's `name` ([poset template](poset-minimal-template.py); D179).
+That base is a SymPy `Predicate`, and its application is the three-valued proposition whose Python truth value raises, so `if p:` on an undecided proposition fails loudly (`POL-MATH-035`, `POL-API-015`, D131).
+The leaf registers that predicate's exact handlers through SymPy.
+`Sets().Finite()` exists implicitly: its objects are the objects of `Sets()` that satisfy the proposition.
+`cat_kernel` constructs the minimal structure functor `Sets().Finite() -> Sets()`, so `ObjectType`, `ElementType`, and `MorphismType` inherit with no ceremony, and `cat_kernel` generates the public `X.is_finite()` on `Sets().ObjectType`, the one public spelling of the proposition.
+The kernel performs same-object refinement after an exact positive result.
 
-```python
-class LeafCategory(Category):
-    ObjectType = LeafObject
-    ElementType = LeafElement
-    ArrowType = LeafMorphism
-```
+For a structure functor `F: C -> D` and an axiom `P` declared on `D`, the pullback in `Cat` defines `C.P()` ([property-refinement.md](property-refinement.md#inverse-images)).
+Two structure functors whose targets both declare `P` define one `C.P()` (D159; [property-refinement.md](property-refinement.md#inverse-images)).
 
-Both forms have one implementation class for each mathematical role.
+A class that adds operations to `C.P()` declares itself its implementation by selecting the identity functor of `C.P()` as a structure functor, `x = C.P(); id_x = End_Cat(x).one()` ([functor.md](functor.md#implementing-a-named-category); D156), and writes no constructor (D150).
+Any Python declaration helper remains private and creates no second predicate model.
 
-When the category links an imported class, the category module contains no duplicate
-method declarations, abstract stubs, or backend method map. The linked class is the
-canonical implementation.
+The complete examples are [finite-set-minimal-template.py](finite-set-minimal-template.py), a proposition from existing methods; [poset-minimal-template.py](poset-minimal-template.py), a structure category with a new predicate and the implementation of its axiom subcategory; [finite-poset-minimal-template.py](finite-poset-minimal-template.py), an axiom reached by pullback along a structure functor; [pointed-sets-minimal-template.py](pointed-sets-minimal-template.py), the implementation of a coslice, a chosen-datum fibration; and [poset-products-minimal-template.py](poset-products-minimal-template.py), a universal-construction realization.
+The general contract exists in [property-refinement.md](property-refinement.md).
 
-The link from the category to its implementation type is part of the categorical
-declaration. It is not a runtime implementation-routing mechanism.
+## Computation-engine boundary
 
-## Local methods are ordinary executable methods
+A category-owned method can use Sage, SymPy, GAP, Singular, Macaulay2, Julia, Cython, shell programs, or imported research software.
+The method remains the public mathematical owner.
 
-A local leaf method is an ordinary method with an ordinary executable body.
-
-For example, a finite-poset rank operation can have this conceptual form:
-
-```python
-def rank(self) -> NonnegativeInteger:
-    engine_rank = self._sage_poset().rank()
-    return nonnegative_integer(engine_rank)
-```
-
-The method body states the implementation:
-
-1. obtain the private computation representation;
-2. run the selected exact algorithm;
-3. construct the owned mathematical result.
-
-An element-specific operation uses a separate total method:
-
-```python
-def rank_of_element(self, member: FinitePosetElement) -> NonnegativeInteger:
-    engine_member = self._sage_element(member)
-    engine_rank = self._sage_poset().rank(engine_member)
-    return nonnegative_integer(engine_rank)
-```
-
-It does not use an optional `member` parameter. The two mathematical operations have
-separate names and total signatures.
-
-A short method can still be the correct owner. A semantic method that invokes a mature
-algorithm is not a meaningless forwarding wrapper. It supplies the public mathematical
-contract and the private computation boundary.
-
-## Inherited methods remain kernel-owned transport
-
-The compiler acts only on inherited operations.
-
-For a method declared by a structural ancestor, the compiler:
-
-- selects the complete structural route to the declaring category;
-- transports the receiver and mathematical arguments;
-- invokes the ancestor's executable method;
-- transports the mathematical result back;
-- preserves exact ambient objects, domains, and codomains.
-
-For a method declared locally by the leaf, the compiler does none of these operations.
-It keeps the ordinary local method body.
-
-The compiler never interprets a local decorator as an instruction to find another
-method body. It never pairs a leaf method with an engine method by name.
-
-This is the decisive boundary:
-
-> The kernel transports inherited mathematics. The leaf implements new mathematics.
-
-## The policy conflict that exposed the gap
-
-The existing philosophy combined several correct goals:
-
-- theory code should remain mathematically auditable;
-- generic reflection and dispatch should remain in the kernel;
-- engine representations should remain private;
-- mature Sage algorithms should replace local reimplementations;
-- public results should be owned mathematical values;
-- leaves should contain no structural wiring.
-
-Without a sharper boundary, these goals suggested a false choice.
-
-One interpretation put direct Sage calls in the leaf and treated them as forbidden
-backend wiring. The other moved the method bodies into a second backend hierarchy and
-treated the leaf as a declaration surface.
-
-Both interpretations were wrong.
-
-The correct distinction is:
-
-- generic inheritance, route traversal, transport, and method installation are kernel
-  infrastructure;
-- a leaf-owned method's selected computation is part of that leaf's implementation;
-- lowering to Sage and reconstructing an owned result form a private computation
-  boundary;
-- a private computation boundary is not another implementation surface.
-
-“Keep backend dispatch out of leaves” means that a leaf does not select among engines at
-runtime or maintain a backend registry. It does not mean that a leaf cannot use Sage as
-its fixed implementation dependency.
-
-“Keep engine method names private” means that engine names do not become public API. It
-does not prohibit a private method body from calling a Sage method.
-
-## Rejected operation decorators
-
-One rejected experiment replaced ordinary finite-poset methods with this shape:
-
-```python
-@realized_operation
-def rank(self) -> NonnegativeInteger:
-    assert False
-```
-
-The compiler then inspected `RealizedOperation`, recovered a stored declaration, and
-installed a descriptor that dispatched the operation elsewhere.
-
-This design is invalid.
-
-`realized_operation` has no mathematical meaning. It is an engineering marker placed on
-every new leaf operation. The method body is not an implementation. The executable
-operation has moved into compiler dispatch.
-
-This design causes several defects:
-
-- `ObjectType` stops being the implementation class;
-- ordinary source navigation no longer finds the executable operation;
-- every new leaf method requires non-mathematical annotation;
-- the compiler learns category-specific computation dispatch;
-- method ownership becomes split between the leaf, descriptor, and backend;
-- `assert False` stubs make incomplete methods appear declared;
-- public operation signatures can drift from backend implementations.
-
-No replacement decorator, annotation, registration record, or marker type can repair
-this ownership error.
-
-## Rejected mirrored backend surfaces
-
-A second rejected proposal introduced two matching surfaces:
-
-```text
-FinitePosetObject
-SageFinitePosetObject
-```
-
-The category-owned class would declare operations. The Sage class would implement the
-same operations. A realization binding would connect the two surfaces, and the compiler
-would match their method names.
-
-This design is also invalid.
-
-There is no second “realization implementation surface.” `FinitePosetObject` is the
-implementation. Sage is a computation dependency used by that class.
-
-A mirrored backend surface would create:
-
-- two operation catalogues;
-- two sources of method signatures;
-- two places for operation documentation;
-- name-based implementation matching;
-- pressure for backend registries and abstract interfaces;
-- uncertainty about which class owns mathematical reconstruction;
-- a parallel hierarchy for objects, elements, and arrows.
-
-The backend does not implement the owned category. It supplies engine values,
-conversions, and algorithms to the owned implementation class.
-
-## Private computation inside a leaf implementation
-
-A leaf implementation can use a private Sage value directly. This is not a kernel
-defect.
-
-For example, a finite-poset object can retain or construct a private Sage poset. Its
-local methods can call exact Sage algorithms on that value.
-
-The following facts are not defects by themselves:
-
-- the leaf implementation imports a concrete Sage dependency;
-- several methods call `self._sage_poset()`;
-- a method calls a Sage operation with a similar name;
-- the leaf stores a private cached Sage representation;
-- a short method delegates the hard computation to Sage.
-
-They become defects when they cause:
-
-- engine values to cross the public boundary;
-- repeated incorrect conversion logic;
-- runtime selection among speculative backends;
-- a second public or semantic operation owner;
-- generic dispatch or route machinery inside the leaf;
-- results in primitive or engine-shaped collections instead of owned mathematical
-  collections.
-
-Repeated access to one private representation does not alone justify a decorator,
-descriptor, registry, or second class hierarchy.
-
-## Semantic lowering and reconstruction
-
-Every public leaf method accepts and returns owned mathematical values.
-
-A private computation boundary has this form:
+A private computation has this form:
 
 \[
 \text{owned input}
 \longrightarrow
-\text{engine representation}
+\text{engine input}
 \longrightarrow
 \text{engine result}
 \longrightarrow
@@ -481,62 +244,37 @@ A private computation boundary has this form:
 \]
 
 The leaf method owns the complete sequence.
+It selects the exact algorithm from established mathematical data.
+It returns an owned category, object, element, morphism, functor, typed-query result, or authorized SymPy proposition.
 
-For a finite-poset method, this can require:
+```python
+def rank(self) -> NonnegativeInteger:
+    engine_rank = self._sage_poset().rank()
+    return NonnegativeIntegers()(engine_rank)
+```
 
-- verifying membership through the owned public operation;
-- obtaining the corresponding engine element;
-- running a Sage finite-poset algorithm;
-- mapping engine elements back to canonical owned elements;
-- constructing an owned finite set, ordered set, subobject, or arrow;
-- preserving the original ambient poset.
+The public API names the mathematical operation.
+Private helpers can use engine names and engine types.
+The caller does not select an engine.
 
-A Sage iterator is not an owned mathematical collection. A Python `int` is not
-automatically the required owned nonnegative integer. A Sage subset is not an owned
-subobject.
+## Exact types
 
-The method reconstructs the semantic result before returning.
+Every public signature uses the exact mathematical input and result types.
+The authorized equality and containment input aliases are specified by `POL-TYPE-004` in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-The reconstruction remains explicit when different methods return different
-mathematical kinds. A generic backend dispatcher cannot infer these roles from method
-names.
+- Use `C.ObjectType`, `C.ElementType`, and `C.MorphismType` for category-owned values.
+- Use an owned set, ordered set, indexed family, or other named collection.
+- Use separate total methods for distinct mathematical operations.
+- Return a SymPy proposition for a truth question.
+- Return an applied query with an exact result category for a partial value question.
 
-## Realization functors and private representations
+For example, `rank()` and `rank_of_element(x)` are distinct operations.
+They do not share one optional parameter.
 
-The word “realization” must distinguish two different notions.
+## Private helpers and files
 
-### Mathematical realization functor
-
-A realization functor is appropriate when the project models an actual mathematical
-functor between categories. It has object and arrow maps and can be used explicitly.
-
-Such a functor does not contribute methods through structural inheritance unless the
-category deliberately selects it as a structural functor.
-
-### Private computation representation
-
-A private Sage parent, element, matrix, poset, or graph used inside one implementation
-is not automatically a functor. It is implementation state.
-
-It does not require:
-
-- a category of engine implementations;
-- an `ObjectType` parallel to the owned object type;
-- a compiler binding;
-- a method catalogue;
-- natural transformations between backend method surfaces;
-- a runtime engine registry.
-
-Do not elevate a private representation into categorical structure only to dispatch
-ordinary method calls.
-
-## File placement
-
-The default layout keeps the category declaration and its implementation classes
-together. This gives the shortest path from mathematical owner to executable method.
-
-When one implementation class becomes a substantial audit unit, split by mathematical
-role:
+Keep the category declaration and its implementation classes together by default.
+Split a substantial implementation by exact mathematical type:
 
 ```text
 finite_posets.py
@@ -545,302 +283,147 @@ finite_poset_elements.py
 finite_poset_morphisms.py
 ```
 
-The category declaration then links the sole implementation classes from those files.
-
-This split does not create another implementation surface. `FinitePosetObject` remains
-the only object implementation class.
-
-Do not create one file per type automatically. A separate file must contain a
-substantial coherent implementation unit.
-
-Do not name the sole implementation class `SageFinitePosetObject`. Its mathematical
-role is `FinitePosetObject`, even when Sage supplies every nontrivial algorithm.
-
-## Private neighboring engine modules
-
-A category can use a private neighboring engine module when the computation boundary
-has substantial shared content:
+A substantial private Sage boundary can use a neighboring module:
 
 ```text
 finite_posets.py
 _finite_poset_sage.py
 ```
 
-Prefer the concrete engine name. A generic name such as `finite_poset_engine.py`
-suggests interchangeable engines and invites speculative dispatch infrastructure.
-
-The private module can own:
+The private module can own engine conversion, engine-native computations, and private caches.
+The category-owned classes retain public signatures, semantic result construction, and operation documentation.
 
-- construction of the Sage representation;
-- conversion to and from Sage elements;
-- shared engine-native computation primitives;
-- private representation caches;
-- category-specific adaptation of a mature Sage algorithm.
-
-It cannot own:
+## Red flags
 
-- public mathematical signatures;
-- `ObjectType`, `ElementType`, or `ArrowType` alternatives;
-- category membership or refinement decisions;
-- public semantic result construction;
-- operation documentation;
-- compiler registration;
-- a method-name map;
-- runtime engine selection;
-- a mirror of most public leaf methods.
-
-The public leaf method calls the helper explicitly. It selects the algorithm and
-constructs the owned result.
-
-Category-independent Sage conversion primitives can live in the central Sage backend.
-Category-specific computation remains beside its mathematical owner when that placement
-improves local auditability.
-
-There is no mandatory engine module for each category. Create one only when a real
-shared computation boundary earns the file.
-
-## One source of truth
-
-File separation is valid only when it preserves one source of truth.
-
-For each public method, one location owns:
-
-- its mathematical name;
-- its public signature;
-- its hypotheses;
-- its result category;
-- its executable semantic sequence;
-- its documentation.
-
-That location is the category-owned implementation class.
-
-A private helper can own engine-specific conversion or raw computation. It does not
-repeat the public contract.
-
-The following shapes indicate a second source of truth:
-
-- matching public and backend method lists;
-- matching `ObjectType` and `SageObjectType` classes;
-- operation decorators that store another callable;
-- compiler tables from public names to engine names;
-- duplicate method documentation in backend modules;
-- public stubs paired with private executable methods;
-- separate result-role declarations for one method.
+These shapes expose behavior assigned to the wrong owner (`POL-LEAF-063` to `POL-LEAF-079`, `POL-KERNEL-037`).
+Repair the owner named in the row under the layer boundaries of [system.md](system.md#system-shape).
+`POL-LEAF-080` and `POL-LEAF-081` state the positive rules of D156 and D159.
 
-If changing one mathematical operation requires synchronized edits to two method
-catalogues, the architecture is wrong.
+This section is the catalogue.
+Each entry names the shape, the code that carries it, the owner that supplies it instead, and the gate that finds it.
+A gate is a rule in `.ast-grep/architecture/` or a contract in `[tool.importlinter]`; `just architecture` runs both over `src` and the witness categories in `tests/kernel` at the push tier and fails on a file and line (D132).
+"Review" marks a shape that D132 admits no mechanical check for; the gate agent finds it by reading.
+The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBUTING.md`; a plan card cites the row.
 
-## Leaf, kernel, and backend responsibilities
-
-| Concern | Owner |
-| --- | --- |
-| Category-local operation name and signature | `ObjectType`, `ElementType`, or `ArrowType` |
-| Category-local executable method body | The same implementation class |
-| Inherited method catalogue | Declaring structural ancestor |
-| Structural route discovery | Kernel |
-| Receiver and argument transport | Kernel |
-| Result and collection reverse transport | Kernel |
-| Canonical images and preimages | Kernel |
-| Dynamic descriptor installation for inherited methods | Kernel |
-| Choice of exact leaf algorithm | Leaf implementation method |
-| Private lowering to Sage | Leaf implementation or private helper |
-| Sage algorithm execution | Sage, called through the private boundary |
-| Reconstruction of the owned result | Leaf implementation method |
-| Generic Sage conversion shared by categories | Central Sage backend |
-| Runtime backend registry or method matching | No owner; this is outside the design |
+### `POL-LEAF-063` — base initializer, or inherited state installed by hand
 
-The kernel can contain complex Python machinery only for category-independent
-structural inheritance. It does not become a universal operation dispatcher.
+- In code: `super().__init__(...)` or `Base.__init__(self, ...)` in a category class or in `ObjectType`, `ElementType`, `MorphismType`; an `__init__` on a category class that builds subcategories, registers handlers, or constructs objects.
+- Owner: the kernel runs every reached initializer once with its owner's datum (D13). A category class has no initializer beyond storing its parameters.
+- Gate: `no-manual-initializer-threading`, `no-manual-initializer-threading-category`, `no-constructor-name-strings`.
 
-The backend can contain engine-specific machinery. It does not become a second
-mathematical implementation hierarchy.
+### `POL-LEAF-064` — property or construction subcategory built by hand
 
-## The product algebra example
+- In code: `PropertySubcategory(self, "Name", ())`, `FullSubcategory(self)`; `self._p.Q = lambda: ...`; a hand-written accessor `Finite()`, `Countable()`, `WithBottom()`; a subcategory constructed by hand and then registered as an inverse image.
+- Owner: `Finite = Axiom(_finite)` in the class body, `_finite` the private method returning the deciding proposition ([Property categories](#property-categories), D142, D148); the identity structure functor `End_Cat(C.P()).one()` on the implementing class (D156); the pullback along a structure functor for an inherited property (D83, D89).
+- Gate: `no-hand-built-property-subcategory`, `no-patched-accessor`, `no-constructor-name-strings`.
 
-The discussion also corrected the treatment of \(R^n\).
+### `POL-LEAF-065` — identity, composition, morphism or element construction, or element retention for inherited structure
 
-The canonical object
+- In code: `construct_identity`, `composite`, `inverse_morphism`, `element_from_defining_morphism`; a `construct_morphism` whose body forwards through a structure functor; `P.element(x)` building `* -> P` by hand; an equality handler that decides inherited equality through a functor.
+- Owner: `Cat` defines each once (D44, D85); the kernel constructs elements from functor images, a clause D133 marks under `POL-DOC-026`. `Sets()` is the base and is exempt (D132).
+- Gate: `no-inherited-operation-rewritten`; review for forwarding `construct_morphism` bodies and equality handlers.
 
-\[
-R^n=\prod_{i=1}^{n}R
-\]
+### `POL-LEAF-066` — kernel machinery in a leaf: branching, refinement after construction, own value store, kernel state in a constructor
 
-is constructed as a product of rings. Under the repository's commutative-base
-convention, it is an \(R\)-algebra with coordinatewise operations and diagonal structure
-map
+- In code: `role_of(x) is Role.X`, `is_placed(x, C)`, `is_subcategory`; `refine(x, C)`; `x = C(...)` then `D()(x)` or `C.P()(x)` as a statement; `self._store[key] = ...`, `_NAME_CATEGORIES: MonoDict = MonoDict()`, `x: dict[...] = {}`, `@cached_method`, `@cached_function`; `ObjectType(self, data)`, `ObjectType(category=self, ...)`, `MorphismType(self.morphism_category(1), ...)`.
+- Owner: a leaf imports no kernel module (D122); a value is constructed into the strongest property subcategory its writer knows, and that subcategory has exactly the constructors of its ambient category (D21, D150); an already constructed value is placed by `assume(X.is_P())` ([Constructors](#constructors)), and containment is otherwise computed by the predicate through `ask()`, after which the kernel refines the same value; retention by identity is the kernel's (D111).
+- Gate: import contract "A leaf imports no kernel internal"; `no-refinement-after-construction`; `no-hand-rolled-retention`; `no-leaf-value-store`; `no-compiler-state-in-constructor`; `no-compiler-state-in-constructor-positional`. Review for a refinement call whose category is bound to a local name.
 
-\[
-R\longrightarrow R^n,
-\qquad
-r\longmapsto(r,\ldots,r).
-\]
+### `POL-LEAF-067` — Sage machinery as the category's runtime
 
-It therefore has structural routes through both rings and modules:
+- In code: a subclass of `Parent`, `Element`, `ElementWrapper`, or `UniqueRepresentation` in a theory module; `from sage...` in a theory module; engine arithmetic or normalization on the category or object class.
+- Owner: an engine module named in the import contract, `_<leaf>_sage.py` (D40, `POL-LEAF-046`, `POL-LEAF-050`, `POL-SAGE-016`).
+- Gate: import contract "Only the kernel's Sage runtime module and the named engine modules import Sage".
 
-\[
-\operatorname{Algebras}(R)
-\longrightarrow
-\operatorname{Rings}
-\longrightarrow
-\operatorname{Sets},
-\]
+### `POL-LEAF-068` — hand-written property application or accessor
 
-and
+- In code: `def is_finite(self) -> AppliedPredicate`, `def has_bottom(self)`, `def is_total(self)`.
+- Owner: `cat_kernel` generates `is_p()` on `C.ObjectType` from the axiom identifier, and descendants inherit it (D89, D175).
+- Gate: `no-hand-written-property-application`.
 
-\[
-\operatorname{Algebras}(R)
-\longrightarrow
-\operatorname{Modules}(R)
-\longrightarrow
-\operatorname{Sets}.
-\]
+### `POL-LEAF-069` — datum-free constructor, or a one-object category built by hand
 
-Both routes reach the same underlying set:
+- In code: `def __call__(self) -> ObjectType: return self._x` with the object built in `__init__` and refined into `self`.
+- Owner: the leaf class of a named object `X` is a new category, a point in `Cat` automatically, and registers itself as a point in `D` by the structure functor `D.Point()`, which supplies the codomain's surfaces (D128, D154, D161). The leaf states the membership rule, the cardinal, and that one structure functor.
+- Gate: `no-datum-free-constructor`.
 
-\[
-U(R^n)=U(R)\times\cdots\times U(R).
-\]
+### `POL-LEAF-070` — actions written for a functor that computes nothing
 
-The construction must retain the strongest structure that it establishes:
+- In code: `Fun(PointedSets(), Sets()).Faithful()(on_object=..., on_morphism=...)` for the first projection `(X, x) |-> X`; an `on_object` or `on_morphism` body for a subcategory inclusion or a point functor.
+- Owner: a functor that computes its images is declared by its two actions, `Fun(C, D)(on_object, on_morphism)` (D08, D123); an inclusion is `Fun(S, T).Monomorphisms().Isofibrations()()` and a point functor is `D.Point()`, each with no action (D10, D11, D146, D154); a retained projection is selected, here `Fun([1], Sets()).ev(1) * Sets().CosliceUnder(Sets().Terminal()).projection()` (`POL-LEAF-071`, D157).
+- Gate: review.
 
-- product-ring operations;
-- \(R\)-algebra operations;
-- module operations;
-- set operations;
-- finite-set operations when \(R\) and the index set are finite.
+### `POL-LEAF-071` — a retained projection rewritten
 
-The algebra does not add a direct structural functor to sets for convenience. Its set
-surface arrives through the mathematically meaningful intermediate categories.
+- In code: `def product_projection(self, index)` with an index branch and `raise IndexError`; a pullback-defined category whose projections are hand-written functors.
+- Owner: the defining construction retains its projections and universal data; the leaf selects them (D09, D10, `POL-LEAF-049`, "Retained functor specimen" in [leaf-category-template.md](leaf-category-template.md)).
+- Gate: `no-retained-projection-rewritten`.
 
-For \(R=\mathbf F_p\), the finite product belongs to finite rings and hence finite sets.
-No exhaustive enumeration is required to establish finiteness.
+### `POL-LEAF-072` — placeholder datum
 
-An arbitrary module merely isomorphic to \(R^n\) needs a selected product presentation
-before this coordinatewise algebra structure transfers to it. The canonical constructed
-object \(R^n\) already has that presentation.
+- In code: `self(carrier, None, None, None)`; `ElementType(m, None)`; a "presentation" that stores generators and relations and reads neither; a carrier `sets(lambda x: True)`.
+- Owner: a witness uses an existing mathematical object (D129); no method only fails (D50).
+- Gate: `no-placeholder-datum`; review for unread construction data and total-membership carriers.
 
-This example reinforces the leaf rule. A construction retains its mathematical
-placement. A leaf does not flatten the result to a backend container or manually route
-it to sets.
+### `POL-LEAF-073` — union or optional parameter
 
-## Relation to structural diamonds
+- In code: `value: OrdinalObject | int`, `rule: Rule | SetMap`, `assumptions: Proposition | None = None`, `cardinality: CardinalObject | UnknownClass`, `*inverse_rule`.
+- Owner: one total method per operation and one named constructor per presentation (D52); a partial value is an applied query (D50).
+- Gate: `no-union-parameter`.
 
-Structural diamonds preserve every branch. They resolve only duplicate access to a
-common owner. See [resolution.md](resolution.md) for the complete decision.
+### `POL-LEAF-074` — a property on a datum record
 
-For \(R^n\), the algebra-to-rings and algebra-to-modules routes introduce different
-applicable operations. Both later reach `Sets()`. The kernel preserves both catalogues
-and chooses one canonical underlying set image.
+- In code: `@property def unit(self): return self.zero` on a `@dataclass` datum, present so that a target owner's initializer can read the source datum.
+- Owner: the kernel initializes each target from the datum the functor action feeds to the target constructor (D13); a datum record holds exactly the new state (`POL-LEAF-047`, D121).
+- Gate: `no-property-on-datum`.
 
-This structural transport does not dispatch the algebra's local methods to Sage. The
-two mechanisms remain separate:
+### `POL-LEAF-075` — generic parameters on a leaf declaration
 
-- category paths determine inherited operations;
-- local method bodies determine computations introduced by the category.
+- In code: `class PosetsCategory(Category[[Rule], []])`, `PropertySubcategory[[Rule], []]`.
+- Owner: the kernel derives call shape and compiler data from the ordinary method signature (`POL-LEAF-054`, `POL-LEAF-055`); the template writes `class LeafCategory(Category)`.
+- Gate: `no-generic-parameter-on-leaf-category`.
 
-A route diamond cannot justify a mirrored backend hierarchy. A backend representation
-is not another structural ancestor.
+### `POL-LEAF-076` — import-order wiring
 
-## Method signatures remain mathematical
+- In code: `global NAME` rebinding inside a function; a module-level `__getattr__`; `_other_module.Name = value`; handler registration deferred to the module bottom with a comment on import order.
+- Owner: each module binds the names it declares (`POL-SAGE-015`); layer dependencies are static (D122).
+- Gate: `no-import-order-wiring`; review for cross-module binding.
 
-The computation boundary does not weaken public method signatures.
+### `POL-LEAF-077` — declaration lookup by name string
 
-Do not write one method with an optional argument when the presence of that argument
-selects a different mathematical operation. Use total named methods such as `rank()` and
-`rank_of_element(member)`.
+- In code: `Cat().declarations()["Sets"]`; `_implements = "Sets"`; `predicate(f"ThinOrder({self!r})")`; string tags such as `"finite"` and `"initial"` as an object's kind.
+- Owner: the class declaration is the registration (`Axiom`, the identity structure functor of D156); an object's kind is its category placement (D89).
+- Gate: `no-declaration-lookup-by-name`; review for string tags.
 
-Do not accept `Iterable[PosetElement]` when the method requires a mathematical set,
-ordered set, chain, or subobject. Use the exact owned collection type.
+### `POL-LEAF-078` — an accessor standing in for a functor
 
-Do not return `Iterator[PosetElement]` when the result is a mathematical set of covers,
-a linear extension, or an ordered family of level sets. Construct the named owned
-mathematical collection. Private traversal inside the computation boundary can remain
-lazy.
+- In code: `carrier()`, `carrier_morphism()`, `underlying_set()`; a public method that returns what a selected functor's `on_object` returns.
+- Owner: apply the named functor (D73); a functor action may read private state (D39, D120).
+- Gate: review.
 
-Backend APIs do not determine public types. The public type states the mathematical
-input and result. The leaf method performs the required conversion privately.
+### `POL-LEAF-079` — two spellings of one fact
 
-## Required policy interpretation
-
-Apply the repository policies with these meanings.
-
-### “No engineering wiring in leaves”
-
-This bans:
-
-- route traversal;
-- descriptor installation;
-- canonical-image management;
-- compiler metadata;
-- method-name matching;
-- runtime backend registries;
-- generic refinement mechanics;
-- dynamic type reconstruction.
-
-It permits:
-
-- a fixed Sage dependency;
-- a private Sage representation;
-- direct exact Sage algorithm calls;
-- semantic lowering and reconstruction;
-- small private helpers for a real computation boundary.
-
-### “Keep backend details private”
-
-This means that no engine type, name, exception, or collection enters the public
-contract. It does not mean that an executable implementation cannot mention its private
-dependency.
-
-### “Categories own operations”
-
-Ownership includes the executable semantic method. It is not satisfied by a stub plus
-a backend implementation elsewhere.
-
-### “Kernel complexity removes leaf repetition”
-
-This applies to structural inheritance repeated across categories. It does not authorize
-a generic dispatcher for unrelated leaf algorithms.
-
-### “Use mature algorithms”
-
-The category-owned method calls the mature algorithm. It does not reimplement it. The
-dependency remains a computation engine rather than a mathematical owner.
-
-### “Realizations are functors”
-
-This applies when the realization is an actual modeled mathematical functor. It does
-not require every private engine value or algorithm call to enter the functor compiler.
+- In code: `covers()` returning a proposition on `Posets().ObjectType` and a `bool` on `FinitePosets().ObjectType`; `action()` beside `action_morphism()`; `binary_product()` and `__mul__` beside `Products()`; a docstring that names `+`, `zero()`, or `*` on a class that defines none of them.
+- Owner: one mathematical fact has one semantic owner and one method (D88, D121).
+- Gate: review.
 
 ## Acceptance conditions
 
-A leaf implementation satisfies this specification when all these facts hold:
+A leaf satisfies this specification when:
 
-- the category declaration defines or links one `ObjectType`, one `ElementType`, and one
-  `ArrowType`;
-- object, element, arrow, parameter, result, and transport roles follow from the
-  category, operation, and functor definitions without another runtime carrier;
-- a theorem-backed named construction states its conclusion through the exact result
-  category without an authority value, proof token, or metadata record;
-- those types contain the executable bodies of every locally owned public operation;
-- local methods are ordinary methods without computation-routing decorators;
-- no local method is an `assert False` declaration stub;
-- inherited methods arrive only through selected structural functors;
-- the compiler does not match local operation names to backend names;
-- no `SageXObject` or similar class mirrors the public method surface;
-- private engine helpers expose no public mathematical interface;
-- a fixed backend dependency can be used directly without a registry;
-- every engine input is lowered privately;
-- every engine result becomes an owned semantic result before return;
-- public signatures use total methods and exact mathematical collection types;
-- file splitting preserves one implementation class and one method source of truth;
-- an engine-specific neighboring module exists only for substantial shared computation;
-- construction results retain every mathematically established category placement;
-- structural diamonds preserve all branch-owned operations and one canonical common
-  image;
-- a mathematician can find the executable operation from its category-owned
-  implementation class without understanding compiler dispatch.
+- its source states only the category's new mathematics after inherited structure is removed;
+- it declares `ObjectType`, `ElementType`, and `MorphismType` under their exact names;
+- each locally owned public operation has one executable method body;
+- each new functor that computes its images has complete object and morphism actions;
+- `structure_functors()` returns immediate named functors, with inheritance governed by their declared properties;
+- the leaf reuses functors and universal data retained by its defining constructions;
+- every public signature uses exact mathematical types;
+- each category-specific computation adapter reconstructs an owned mathematical result;
+- proposition methods return the authorized SymPy expressions and `ask()` results;
+- property methods and typed queries follow their canonical specifications;
+- the leaf imports no kernel internal;
+- the caller selects no computation engine;
+- one mathematical fact has one semantic owner.
 
-The short form is:
-
-> The category-owned type is the implementation. The kernel supplies inheritance. Sage
-> supplies computation. No fourth surface connects them.
+The kernel consequence is direct inherited execution on the structured source value.
+The private mechanism is specified only in [resolution.md](resolution.md).

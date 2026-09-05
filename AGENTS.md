@@ -1,813 +1,457 @@
 # Agent instructions
 
-## Project purpose
-
-`sage-categories` is a foundational category framework for Sage-based mathematics.
-It is not an application repository or a domain-specific research corpus.
-
-These files govern substantive work. Read the relevant sections for the active task:
-
-- `README.md` defines the goal and mathematical philosophy.
-- `CONTRIBUTING.md` is the coding-policy index. Its `POL-*` identifiers are stable review references.
-
-## Policy and specification traceability
-
-Cross-reference every review and every work unit against the governing policies and
-specifications. This rule has no exceptions.
-
-Before any edit, implementation decision, diagnosis, or review verdict:
-
-- identify the exact applicable `POL-*` identifiers in `CONTRIBUTING.md`;
-- identify the exact applicable specification files and sections;
-- read those sources together before interpreting code, plans, reports, or runtime
-  behavior.
-
-During work, map every material design choice and implementation boundary to those
-references. During review, map every finding, acceptance statement, rejection, and
-trajectory judgment to them. An uncited architectural judgment is incomplete.
-
-Do not evaluate code from generic software practice, a commit subject, an agent report,
-a local test result, or one TODO item in isolation. These can supply evidence. They do
-not replace the governing policy and specification model.
-
-When a TODO, plan, report, or implementation appears to conflict with a policy or
-specification, resolve the meaning from the governing sources before acting. Preserve
-all stated distinctions, examples, exceptions, construction boundaries, and proof
-boundaries. Do not compress a specific rule into a nearby general slogan.
-
-If no policy or specification governs a material decision, surface that documentation
-gap. Do not invent a local convention and present it as repository architecture.
-
-The package owns its mathematical category graph and public API.
-Its category-owned implementation classes can combine Sage, SymPy, GAP, Julia packages,
-Singular, Macaulay2, Cython, shell programs, imported research software, and bespoke
-algorithms. These private engines supply computations. They do not own the mathematical
-API or category graph.
-
-## Repository state and task entry
-
-This repository is already initialized.
-The project vault is available through `.agents` and `.hermes`.
-Do not check initialization, rerun initialization, rebuild project records, or probe vault availability.
-Do not load or run `project-initialization` unless the task changes the repository's initialization state.
-
-Treat the current working tree as the source of truth.
-Inspect current files and current runtime behavior.
-Do not use Git history to decide what the repository contains or whether current code is correct.
-
-Read Git history only when the user or active plan asks about past work, past decisions, or provenance.
-Otherwise, do not inspect logs, blame, ancestry, old branches, commit messages, or prior revisions.
-
-Start repository inspection with `tree` at the smallest useful depth.
-Then read the exact target files and focused sections of their immediate owners.
-Use focused `rg` queries.
-Do not dump broad surveys, whole subtrees, generated sources, or large search results into context.
-
-When chat supplies a clear plan, directive, or task report, execute its first concrete task immediately.
-Inspect only the files and dependencies needed for that task.
-Do not re-plan, audit the repository, inspect history, or initialize tooling.
-
-For a clear plan, limit Git use to current-state safety and completed work.
-Check the target file, create a checkpoint when needed, stage exact files, and commit.
-Do not change branches, rebase, stash, cherry-pick, or otherwise manipulate Git unless the task requires it.
-
-## Current implementation scope
-
-Work in mathematical dependency order:
-
-1. `Cat`, functor categories, sequence products and coproducts, natural transformations,
-   and natural isomorphisms.
-2. The full arrow-category family, subobjects of products, and their component functors.
-3. The method compiler for `ObjectType`, `ElementType`, and `ArrowType` inheritance.
-4. The owned category `Sets()` and its universal constructions.
-
-The current implementation surface ends at `Sets()`.
-Complete this foundation before extending the theory graph.
-
-Use later structures only as vertical acceptance examples.
-An algebra's cardinality must eventually come from its structural path to `Sets()`.
-A lattice isometry must eventually pass through module homs to set homs.
-These examples test the foundation; they do not authorize implementation of algebras, modules, or lattices now.
-
-The arrow-category foundation includes:
-
-- arrow categories and commuting squares;
-- hom and endomorphism categories;
-- monomorphism, epimorphism, isomorphism, and automorphism categories;
-- cores and wide subcategories;
-- slices, coslices, subobjects, superobjects, covering objects, and covered objects.
-
-Build slices and coslices after sequence products, subobjects, and arrow source and target
-projections. Their structure functors are composites of these general constructions.
-
-## Mathematical structure as implementation compression
-
-A short mathematical correction can expose a missing foundation rather than a missing method.
-Unfold the structure that makes the correction true before adding a local operation.
-
-For example, a product of sets must receive `cardinality()` because its apex is an object of `Sets()`.
-The product construction supplies projections and a structural route to that apex.
-The method compiler then exposes the operation owned by the set implementation.
-
-Adding `cardinality()` directly to a product class would preserve the missing relation.
-It would also create another local task for coproducts, limits, subobjects, and every later construction.
-The categorical foundation makes those operations consequences of one structure.
-
-This is the main form of implementation compression in this repository:
-
-- one category owns a generic operation;
-- one functor states each change of structure;
-- one universal construction retains its defining arrows;
-- the compiler turns those declarations into a direct public surface.
-
-At every design, implementation, and review step, answer this question:
-
-> What generic categorical mechanism makes every leaf state only its new mathematics?
-
-Use the answer to determine code ownership, theorem ownership, call paths, and public methods.
-Do not derive the architecture from the nearest failing method or current Python layout.
-
-Trace the complete implementation path before editing any part of it.
-For a product, trace all of these parts:
-
-- the kernel definition of products and their universal data;
-- the construction and presentation categories;
-- the apex, projections, and universal maps;
-- propagation through structural functors;
-- method compilation and inherited public operations;
-- the leaf theorem or structure that adds the new mathematical delta.
-
-Perform the same trace for objects, elements, arrows, arguments, and results.
-The trace must explain the final public call without leaf-level engineering wiring.
-A missing step is a kernel, construction, functor, or compiler defect.
-Repair that owner instead of adding a leaf workaround.
-Use `POL-CAT-079` through `POL-CAT-080`, `POL-LEAF-056`, `POL-KERNEL-025`,
-`POL-FUN-023`, and `POL-API-023` as the stable review references.
-
-Prefer a foundational correction when it removes an entire family of apparent method tasks.
-Do not preserve a mistaken architecture with a cheaper local implementation.
-
-Kernel complexity is justified only when it removes repetition from theory code.
-The theory layer must read like the mathematics it implements.
-A new category should state its new data and immediate structural functors, then inherit the rest.
-
-A leaf category must state its mathematical data, operations, structural functors, constructors, and lifts.
-Stop local work when a leaf contains generic reflection, dispatch, route traversal, transport, cache ownership, wrappers, or public backend selection.
-Treat that wiring as a kernel or backend-boundary defect.
-Repair the owning foundation instead of polishing, moving, or preserving the wiring in a leaf workaround.
-
-The category-owned implementation class is a polyglot algorithm firewall.
-Its ordinary method can use one private engine, several engines, or an imported research
-program. It can select an exact algorithm from the semantic construction and combine
-engine results. This is leaf implementation, not categorical routing.
-
-Use a mature engine construction whenever it discharges logic that would otherwise be
-implemented locally. Do not require one engine to represent the whole object or compute
-every operation. Do not expose engine selection, engine objects, or engine method names
-through the public API.
-
-Foundational categories remain valuable before later theories use them.
-Their value is the mathematical structure they make expressible, not their current number of callers.
-
-## Mathematical judgment
-
-Treat a precise user description as a proposed mathematical model of the code.
-When the live implementation lacks the named category, functor, arrow, or universal property, surface that discrepancy.
-Do not substitute a nearby class, method, constructor, or data record.
-
-Category theory is not a metaphor in this package.
-A functor must map objects and arrows.
-A subobject must include its monomorphism.
-A universal construction must include its universal arrows.
-A computation-engine value must be used to construct an owned mathematical object.
-
-One false foundational assertion invalidates each downstream conclusion that uses it.
-When such an assertion appears, rederive the architecture from the mathematical definitions and the live code.
-Do not optimize a local patch, diagnostic count, or passing specimen built on the false premise.
-
-Implementation obstacles do not change mathematical ownership.
-A recursion, type error, slow path, or failing test is a fact about the implementation.
-Fix that implementation fact without moving an operation to the wrong object or weakening its type.
-
-Predicates follow their definitions and their available algorithms.
-Return `Unknown` when the implementation cannot determine a result.
-Do not replace missing knowledge with a fabricated Boolean answer.
-
-Refine a result into a property subcategory only when an exact computation or a cited theorem establishes the property.
-Otherwise, return it in the strongest category that the available mathematics establishes.
-Do not create certificate classes, proof records, or prose fields to simulate this refinement.
-
-Open and inspect a mathematical source before adding a definition or citation.
-Record the exact theorem, section, table, or page that supports the statement.
-Do not reconstruct a definition, citation, or expected value from memory.
-
-Prefer standard categorical constructions and established algorithms over local encodings.
-If the current vocabulary cannot state the general mathematical object, treat that absence as the finding.
-Extend the foundation instead of hiding the gap inside a special case.
-
-## Core categorical architecture
-
-A category owns its implementations and constructors.
-A functor constructs an implementation in another category.
-
-For each category `C`:
-
-- `C.ObjectType` implements objects of `C`.
-- `C.ElementType` implements elements when the theory uses them.
-- `C.ArrowType` implements arrows of `C`.
-- `C(...)` is the category-owned constructor.
-
-The kernel owns `Cat`. Every category in this repository uses `Cat().ObjectType`.
-Every functor uses `Cat().ArrowType` and is an object of `Ar(Cat())`.
-
-The same architecture applies to objects, elements, and arrows.
-Do not solve one surface with a mechanism that cannot support the other two.
-
-Never assume that an arbitrary mathematical entity is a set.
-Every represented entity is a category or an object in its stated category.
-Establish that `X in Sets()` or apply an explicit functor to `Sets()` before using elements, membership, cardinality, enumeration, subsets, or set equality.
-An unjustified reduction to `Sets()` is a foundational error.
-Rebuild every dependent definition, type, arrow, and conclusion in the correct category.
-
-A sheaf is an object of a sheaf category.
-An internal Hom of sheaves is again a sheaf.
-A functor is an object of `Ar(Cat())` and of `Fun(C, D) = Hom_Cat(C, D)` for its fixed
-domain and codomain.
-None is a set without a specified set-valued functor.
-
-The following are categories and therefore objects of `Cat`:
-
-- `Ar(C)`, `EndAr(C)`, and `AutAr(C)`;
-- `Ar(Cat())` and `Fun(C, D) = Hom_Cat(C, D)`;
-- `Hom_C(x, y)`.
-
-For `A, B in C`, these expressions are the same owned Hom category:
-
-```python
-Ar(C)(A, B)
-Hom(C)(A, B)
-C.HomCategory(A, B)
-A.Hom(B)
-B ** A
-```
-
-All spellings dispatch construction data through that one category.
-
-Define `Fun = Ar(Cat())`. Thus `Fun(C, D)` owns construction of functors from `C` to
-`D`. The endpoints select this Hom category. They do not select one of its objects.
-
-```python
-Fun(C, D)(on_object, on_morphism)
-Fun(S, T).FullyFaithful().inclusion()
-Fun(C, C).Equivalences().identity()
-```
-
-A mathematical construction creates each named functor through this category. It retains
-all defining projections, evaluations, and inclusions. A leaf selects the functors that
-supply its inherited public structure.
-
-The kernel does not inspect fields or tuple positions to choose a structure map. Product,
-pullback, comma, and arrow constructions retain their distinct projection functors.
-
-A leaf selects the strongest functor-property category established by its mathematics.
-The construction trusts that declaration. It does not compute the property.
-
-Use `HomCatType`, not `HomSetType`, at the `Cat` level.
-For example, a hom category between sheaves can have natural transformations as its objects.
-Only `Sets()` identifies its hom objects with sets of functions.
-
-The `Cat` level supplies the uniform category constructors:
-
-- `HomCategory()`, `EndCategory()`, and `AutCategory()`;
-- `ArrowCategory()`, `EndArrowCategory()`, and `AutArrowCategory()`;
-- `Products()`, `Coproducts()`, `Subobjects()`, and their standard dual constructions.
-
-Apply products and coproducts to `Cat()` itself. For a sequence of categories:
-
-```python
-P = Cat().Products()((C_0, ..., C_n))
-Q = Cat().Coproducts()((C_0, ..., C_n))
-P.product_projection(i)   # P -> C_i
-Q.coproduct_injection(i)  # C_i -> Q
-```
-
-Each returned arrow is a functor and therefore a `Cat().ArrowType` value.
-
-If `j: S -> P` presents a subcategory of a product category, then `S` belongs to
-`Cat().Products().Subobjects()`. Its `product_projection(i)` is the composite of `j`
-with the corresponding projection of `P`.
-
-Present `C.SliceOver(x)` and `C.CosliceUnder(x)` as subcategories of `C * Ar(C)`.
-Their first product projection selects the varying object. Their second selects the
-defining arrow. Compose it with `Ar(C).source_projection()` or `target_projection()`.
-
-The generic `ArrowType` stores its domain and codomain and exposes `domain()` and `codomain()`.
-If an arrow predicate names a subcategory, implement it as containment in that subcategory.
-For example, test `f in Ar(C).Monomorphisms()` instead of inspecting the Python class of `f`.
-Prefer an arrow or functor formulation when the mathematical definition names a relation or transport.
-
-For each functor `F: C -> D`:
-
-- `F.domain()` is `C`.
-- `F.codomain()` is `D`.
-- `F.on_object()` constructs the image of an object.
-- `F.on_morphism()` constructs the image of an arrow.
-
-An action on elements is additional mathematics of a concrete functor category. It is
-not part of every functor's defining data.
-
-Functor properties are ordinary property subcategories:
-
-- `Ar(Cat()).Full()`;
-- `Ar(Cat()).Faithful()`;
-- `Ar(Cat()).FullyFaithful()`;
-- `Ar(Cat()).EssentiallySurjective()`;
-- `Ar(Cat()).Equivalences()`.
-
-Their `is_*()` methods return applied predicates. Direct property construction and
-`assume()` refine the same owned functor. These properties currently have no
-computational handlers. `ask()` returns `Unknown` unless category placement, an active
-assumption, a cached exact decision, or a categorical implication decides the predicate.
-
-Every functor is explicit.
-Only selected structural functors contribute methods to the public object surface.
-Ordinary mathematical functors remain available without changing public inheritance.
-
-For an object `x`, cache one canonical `F(x)` in each reachable category.
-Two structural routes to the same category must produce the same implementation.
-Reject route incoherence during method compilation.
-
-Compile the public method surface from category declarations:
-
-- local declarations take precedence;
-- routes to the same declaring category share one method owner;
-- unrelated declarations with the same name are errors;
-- forwarding descriptors expose inherited methods directly on the public object;
-- descriptor installation must support Python special methods.
-
-Derive supercategory information from structural functors.
-Do not maintain a second inheritance or propagation registry.
-
-## Universal constructions
-
-A categorical construction acts on objects and arrows.
-A parent-only result does not implement a categorical construction.
-
-Retain the data that states the universal property:
-
-- a product retains its diagram, `product_projection(i)`, and mediating arrow;
-- a coproduct retains its diagram, `coproduct_injection(i)`, and mediating arrow;
-- a limit retains its cone and universal map;
-- a colimit retains its cocone and universal map.
-
-Let each apex inherit methods from the category in which it lives.
-Use functor composition and natural transformations to move structure.
-Do not create a separate method-propagation system for constructions.
-
-For a construction functor `F: Diag(C) -> C`, give `F(D)` the parent `Image(F)`.
-The immediate structural supercategory of `Image(F)` is `C`.
-Construct the corresponding object of `C` from the diagram `D`.
-This applies to products, coproducts, limits, and colimits.
-
-A covering object of `Y` is a pair `(X, p: X -> Y)` with `p` an epimorphism.
-It is not the arrow `p` alone.
-
-Implement constructions for arbitrary small diagrams.
-Finite diagrams are specimens, not the general interface.
-
-## The category of sets
-
-`Sets()` must replace Sage's Sets category for this package.
-It owns arbitrary sets and arbitrary functions.
-
-A set map requires a domain, codomain, and rule.
-It does not require a finite table, linearity, continuity, or an enumeration.
-The framework must represent maps such as:
-
-\[
-\mathbb{Q} \to \mathbb{N}, \qquad
-\mathbb{Q} \to \mathbb{Z}, \qquad
-\mathbb{R} \to \mathbb{R}^{2}.
-\]
-
-Here \(\mathbb{N}\) excludes zero.
-
-Membership predicates can return `bool | Unknown`.
-`Unknown` means that the available data and algorithms do not supply an answer.
-It is not `False`.
-
-For a predicate on a set `B`, construct the selected subset `A` together with its inclusion `A -> B`.
-The subset is an object of `Sets()`.
-The inclusion is an arrow in `Sets()`.
-This must support infinite subobjects such as the even integers and prime integers inside `ZZ`.
-
-`Sets()` owns:
-
-- membership and iteration when available;
-- cardinality, including finite, infinite, symbolic, and unknown results;
-- function sets and exponentials;
-- products and coproducts of arbitrary small families;
-- general limits and colimits;
-- predicate subobjects and their inclusion arrows.
-
-In `Sets()`, the hom object, function set, and exponential are one object:
-
-\[
-\operatorname{Hom}_{\mathbf{Set}}(X,Y)=Y^X.
-\]
-
-The power set is the corresponding exponential into the two-element set:
-
-\[
-\mathcal{P}(X)=2^X=\operatorname{Hom}_{\mathbf{Set}}(X,2).
-\]
-
-Construct set maps from a well-typed callable or explicit mapping data.
-Neither representation requires enumeration of the domain.
-In particular, a map `QQ -> ZZ` can use a callable rule even though no explicit table exists.
-
-The resulting set objects own their cardinality rules.
-They must satisfy, when the cardinal arithmetic is known,
-
-\[
-\#(X\times Y)=\#X\,\#Y,\qquad
-\#(X\sqcup Y)=\#X+\#Y,\qquad
-\#(Y^X)=(\#Y)^{\#X}.
-\]
-
-The cardinality functor transports those results; it does not contain construction-specific cases.
-Write `X.cardinality() == 3`.
-Do not write `X.cardinality().value == 3`.
-
-Cardinalities are elements of an ordered semiring, not integer wrappers.
-Their addition, multiplication, exponentiation, equality, and order can produce finite, infinite, symbolic, or unknown results.
-Preserve an unknown comparison as `Unknown`; do not throw an exception or select a Boolean value.
-
-Use `cardinality()` for a mathematical set, including a set of module elements or module generators.
-Use `len()` only for a finite ordered Python sequence whose sequence length is the stated concept.
-Methods such as `ngens()` and `rank()` return cardinalities when their definitions count mathematical sets.
-
-Every object whose parent is `Sets()` receives the complete `Sets.ObjectType` method surface.
-This includes ordinary sets, products, coproducts, subsets, `Y^X`, and `Hom_Set(X, Y)`.
-Products and subsets must delegate to the categorical constructions that create them.
-They must not define parallel set APIs.
-
-Propagate these operations along structural functors and universal constructions.
-Do not implement a second copy of a set operation in a higher category.
-
-## Mathematical ownership
-
-Start with the mathematical object, data, laws, hypotheses, and arrows.
-Choose a Python representation only after those facts are explicit.
-
-Use these ownership rules:
-
-- categories own generic operations;
-- objects own operations on themselves;
-- arrows own properties and operations whose definitions name the arrow;
-- functors own changes of structure;
-- universal constructions own their defining arrows;
-- computation engines return data used to construct owned mathematical objects.
-
-Keep these notions distinct:
-
-- an object and a presentation of it;
-- an element and its coordinates;
-- an arrow and a matrix representing it;
-- a subobject and its inclusion;
-- a theorem and a runtime algorithm;
-- a mathematical result and an implementation-engine value.
-
-Represent a chosen subobject of `B` by a monomorphism `f: A -> B`.
-Obtain `B` from `f.codomain()`.
-Do not duplicate the codomain or inclusion data in storage fields.
-
-Implement the general mathematical notion.
-Recover special cases through restriction, category refinement, or specialized functors.
-Do not patch only the example that exposed a missing general construction.
-
-Prefer categorical and homological definitions over element-wise tests:
-
-- use a kernel instead of testing that every output is zero;
-- use a cokernel instead of a quotient presentation;
-- use vanishing terms in an exact sequence instead of a presentation-specific isomorphism test;
-- use fibers, cofibers, pullbacks, limits, and colimits when they state the general definition.
-
-The public definition must remain meaningful in categories without elements.
-Element-wise formulas can implement or prove consequences of that definition.
-
-## Semantic representations and computation boundaries
-
-A matrix is a basis-dependent representation.
-A matrix is not a morphism, bilinear form, quadratic form, or tensor.
-Public APIs accept and return the semantic mathematical object.
-
-Use these boundaries:
-
-- compare elements through their parent and element interface, not their coordinates;
-- compare arrows as arrows, not by comparing representing matrices;
-- compute `f.kernel()`, `f.image()`, and `f.cokernel()` as semantic objects;
-- ask `f.is_surjective()` instead of comparing a presentation of `f.image()` with `f.codomain()`;
-- evaluate a form as a callable hom element;
-- retain a tensor as a tensor and derive a matrix only after a basis is chosen.
-
-Lower a semantic object to coordinates or a matrix in one private computation boundary.
-Use private implementation hooks such as `_kernel_matrix_` for matrix algorithms.
-Reconstruct the semantic result before returning through the public API.
-Tests and downstream code must not call those hooks or repeat the lowering.
-
-One owned object can retain several private computation representations.
-One method can combine algorithms from several engines when each computes part of the
-semantic result. Select those algorithms from the mathematical construction and exact
-input properties. Never create competing public implementation classes for the engines.
-
-The owning method remains the single source of API meaning. Engine adapters only prepare
-inputs, call mature algorithms, and return data for semantic reconstruction. They never
-install methods, select mathematical owners, or refine categories by themselves.
-
-A public constructor for a module or algebra element accepts semantic elements.
-It must not reinterpret a list, tuple, or numerical vector as such an element.
-To form a finite linear combination, obtain the module generators and write `sum(a_i * g_i)`.
-Do not add a differently named helper that accepts coefficient vectors.
-
-Implement scalar change and other functors on semantic objects and arrows.
-Apply the functor before choosing bases and deriving a matrix in the new realization.
-
-## Generality and hypotheses
-
-State the weakest algebraic hypotheses that make an operation valid.
-Parameterize the implementation by the base ring and its category.
-Do not hard-code `ZZ` when the definition or algorithm works over a PID, integral domain, or commutative ring.
-
-A lattice over `R` starts from a finitely generated projective `R`-module with the specified form.
-Free `ZZ`-modules are specimens of that notion, not its definition.
-Select algorithms by proved ring properties, not by identity checks against `ZZ` or `QQ`.
-
-A `W`-valued bilinear form is an arrow from `M tensor_R M` to `W`.
-Its Gram matrix is its representation in a chosen basis.
-Use “inner product” only for a positive-definite symmetric bilinear form.
-Do not assume that a lattice is positive definite, free, based, embedded, or unimodular.
-Distinguish left and right radicals when the form is not symmetric.
-State the symmetry and nondegeneracy hypotheses needed for orthogonal complements, norms, and reflections.
-Use exact coefficient rings and exact arithmetic for form and lattice predicates.
-Do not define definiteness through floating eigenvalues or numerical spectra.
-
-Do not import vector-space equivalences into modules over a general ring.
-A nonzero torsion module can have rank zero.
-A nonzero torsion kernel can have rank zero.
-Therefore, neither `M.rank() == 0` nor `matrix(f).right_kernel().rank() == 0` proves that a module or kernel is zero.
-Use the semantic zero-object or kernel predicate supported by the relevant category.
-
-The same Python realization can define different mathematical objects in different categories.
-For example, `QQ` in `Algebras(ZZ)` and `QQ` in `Algebras(QQ)` have different structure morphisms.
-A scalar-change functor relates them.
-Do not erase the base category from the type, parent, or arrow data.
-
-## Sage and external computation engines
-
-The owned framework defines the mathematical categories and their inclusions.
-Native Sage categories do not define this package's mathematical supercategory graph.
-
-Sage is one private computation engine and runtime substrate. It is not the required
-representation for every object and is not an intermediate through which every other
-engine must pass.
-
-A category-owned implementation can use any suitable combination of Sage, SymPy, GAP,
-Julia packages, Singular, Macaulay2, external programs, or local research algorithms.
-Choose each engine because its native mathematical construction supplies the needed
-exact computation. Different methods on the same object can use different engines.
-
-Use Sage for:
-
-- `Parent` and `Element` runtime support;
-- homsets and morphisms;
-- coercion;
-- dynamic classes and refinement;
-- category joins and construction classes;
-- established exact algorithms.
-
-Cross into Sage through an explicit realization functor or owned computation boundary.
-A Sage realization is not a structural functor.
-Its Python methods must not enter the public mathematical API by accident.
-
-Apply the same boundary to every external engine. Keep each engine value private.
-Reconstruct the owned mathematical object, element, arrow, cardinal, or decision before
-return. A method can combine several engine values before this reconstruction.
-
-Do not add a public backend selector, engine registry, competing `ObjectType`, automatic
-engine-method routing, or implementation-specific public operation. The sole
-category-owned implementation class hides the full polyglot computation catalogue.
-
-Do not modify Sage category classes.
-Do not add owned methods to Sage classes.
-Do not preserve a Sage method spelling as a second public owner.
-
-Use an established exact algorithm from a suitable engine before writing a local
-implementation. If no applicable theorem or mature exact algorithm determines the
-result, keep the operation at its owned interface and return the appropriate unknown
-value.
-
-## Public API and types
-
-Shape every API from the mathematics.
-Do not derive it from current class layouts, storage fields, or available method names.
-
-Use one owner, one public name, and one public export for each operation.
-Use established mathematical and Sage terminology.
-Name an accessor for the exact object or arrow that it returns.
-
-Use standard hom notation and dispatch.
-`X.Hom(Y)` takes `Y` as its codomain and delegates to `X._Hom_(Y)`.
-Callers use `X.Hom(Y)`.
-Only the owning public dispatch may call the private `_Hom_` method.
-
-Treat private fields and private methods as private to their owner or documented subclass contract.
-Ask another object through its public mathematical interface.
-Invoke Python protocols through public syntax such as `f(x)` and `iter(x)`.
-
-Give every value the type that names its mathematical role.
-Distinguish categories, objects, elements, arrows, functors, rings, sets, domains, and codomains.
-
-Never use `object` as a type.
-Use `Any` only for a parameter that genuinely accepts every input.
-The normal examples are the candidate parameters of `__eq__` and `__contains__`.
-Never return `Any`.
-
-Use `Self`, `None`, or a type for the returned mathematical object.
-For example, return the element type of `NN`, `ZZ`, or `RR` for a natural number, integer, or real number.
-Do not replace an exact mathematical result with `float` or a built-in container type.
-Use the mathematical collection type: set, ordered set, multiset, or another named structure.
-
-Primitive types can occur inside a private implementation boundary.
-No external consumer may depend on that private signature.
-
-Create a new type when it names a genuine mathematical object.
-Do not wrap a union of invalid constructor inputs in a new engineering type.
-Replace the invalid inputs with the mathematical object that the constructor requires.
-
-Treat a type error as evidence about the mathematical model or import boundary.
-Fix the owner, type hierarchy, return contract, import path, or missing declaration.
-Do not silence it with a cast, ignored diagnostic, deleted annotation, or wider type.
-
-Use category membership as type information.
-Do not inspect fields, `__dict__`, or method names to discover mathematical capabilities.
-
-## Implementation style
-
-Write each method in the order of the mathematical definition.
-A mathematician must be able to compare the method body with that definition.
-
-Keep code direct:
-
-- use short functions and early returns;
-- avoid helper chains that hide the mathematical steps;
-- add an abstraction only when a second real use requires it;
-- use existing dependencies and Sage capabilities before adding code;
-- prefer a maintained library or mature reference implementation;
-- cite the mature source of unavoidable local implementation code.
-
-Do not add compatibility layers, fallbacks, migrations, obsolete aliases, or parallel implementations.
-Fail loudly when required mathematical structure or a dependency is absent.
-
-Do not use `setattr` to assemble or modify the mathematical API.
-Do not use `hasattr` to guess which mathematical interface an object supports.
-Do not recover mathematical structure from storage fields.
-Fix a repeated defect at its category, functor, or construction owner.
-
-Do not use `getattr` for mathematical dispatch.
-Do not use `isinstance` for mathematical classification.
-Use the owned public interface and categorical containment.
-
-Use assertions for mathematical preconditions, functionality gates, and type narrowing.
-Write `assert x in C` when membership in `C` is the required fact.
-Do not replace it with `assert isinstance(x, C.ObjectType)`.
-The assertion must remain true when the Python implementation class changes.
-Do not add `try`/`except`, fallback values, or recovery branches for a violated mathematical precondition.
-
-Preserve exact arithmetic until an explicit numerical boundary.
-Keep precision parameters at that boundary.
-
-## Tests
-
-Read the test guidelines before editing a test file.
-
-Never run repository test, lint, type-check, format, or aggregate-check recipes manually.
-Commit and push hooks own these checks and run them automatically.
-Do the work, commit it, and repair a hook failure from its exact output.
-Retry the commit or push after that repair.
-Do not duplicate a hook check before the commit.
-
-A targeted Python test needed during implementation is the only routine manual exception.
-Read `justfile` before running it.
-Use the Sage-aware route defined there instead of guessing a plain Python command.
-
-Do not test or type-check an incomplete or known-broken architecture.
-This restriction includes targeted tests, lints, formatters, and diagnostic sweeps.
-These checks measure a transient local state and give false confidence in small patches.
-They encourage greedy local repairs that move the code away from the required architecture.
-Compare each issue directly with the governing specifications and inspect the code itself.
-First make ownership, category paths, dependency direction, and public semantics converge to those specifications.
-Run real tests and type checks only after the architecture is coherent and complete.
-Until then, checkpoint necessary intermediate states through the red-commit pathway.
-
-Every assertion must state a mathematical proposition or an essential type invariant.
-Test the real category compiler and public API.
-
-Every expected mathematical fact needs an independent oracle.
-Use a source that you inspected, with a theorem, section, table, or page citation when available.
-Sage behavior can guide a realization, but Sage parity is not an oracle for repository-owned mathematics.
-Never change an expected mathematical fact because the implementation returned another value.
-
-Use canonical mathematical objects when they exist.
-An explicit matrix is suitable only when the cited mathematical datum is that matrix or the test concerns its semantic realization.
-
-As applicable, assert:
-
-- category and parent;
-- domain and codomain;
-- images of elements;
-- identity and composition;
-- functor laws;
-- naturality;
-- universal arrows;
-- mathematical equality;
-- isomorphisms and classification results;
-- semantic kernels, images, cokernels, and induced maps.
-
-Rank, determinant, signature, parity, dimension, and nonemptiness can be setup guards.
-They do not by themselves prove a richer claim about isomorphism, genus, a discriminant form, a universal construction, or an arrow.
-State and test the stronger semantic claim.
-
-Tests must use semantic objects and public operations.
-Do not assert coordinate arrays, matrix ranks, Python classes, private fields, helper output, or source layout when those are not the public contract.
-Do not use `isinstance`, `hasattr`, `getattr`, or `setattr` in a mathematical test.
-
-Use exact arithmetic and exact equality.
-Do not replace a mathematical equality with a numerical tolerance.
-For an ambiguous computation, combine a cited fixture with an independent formula, construction, or representation.
-
-Use the smallest specimen that distinguishes correct behavior from a plausible failure.
-Use a real Sage process for Sage behavior.
-
-Do not test implementation layout, diagnostic totals, source text, caches, or correction history.
-Do not add a test whose only purpose is to assert the absence of a previous mistake.
-A passing test is evidence only for the proposition that it executes.
-Do not use mocks, simulations, skipped cases, or expected-failure markers as mathematical evidence.
-
-## Performance
-
-Measure wall time as a function of input size.
-Do not report call counts as efficiency evidence.
-Use call counts only to locate repeated work.
-
-Remove waste:
-
-- repeated derivation;
-- needless enumeration;
-- repeated verification;
-- a general algorithm where category placement provides a more specific one.
-
-Preserve code that displays the mathematical sequence when a faster form hides it.
-Use small mathematical specimens unless the claim concerns a large named object.
-
-## Work discipline
-
-Before editing, inspect a focused repository tree and the complete target artifact.
-Preserve existing and concurrent work.
-
-Work on the requested mathematical object, not a plan, count, checker result, or reviewer verdict.
-The first deliverable of a work unit is a falsifiable specimen.
-
-When a correction invalidates a foundational assumption, stop the local patch.
-Reconstruct the requested mathematical object and resume from the corrected model.
-
-If the category graph or method owner is wrong, stop runtime debugging.
-Fix `Cat`, the arrow categories, the method compiler, and `Sets()` in dependency order.
-During that migration, move each required behavior to its new owner before deleting its old implementation.
-
-For a sweeping architectural refactor, make the final ownership graph and dependency direction correct first.
-Do not chase type errors that exist only because the refactor is incomplete.
-Complete the category, functor, compiler, and constructor transition before resolving remaining diagnostics.
-
-If the incomplete architecture needs a checkpoint, use the sanctioned red-commit pathway:
+`sage-categories` builds a foundational category framework for Sage mathematics.
+The repository is initialized. Deliver each specified capability to its complete public consumer.
+
+These instructions constrain work at its existing boundary. Apply each rule when its stated condition occurs.
+They do not require a new checklist, report, agent, or gate for each action.
+Use the relevant section while working; keep the rest available by reference.
+An explanation of a failure does not establish that its remedy works.
+Preserve the original operation and acceptance claim until the delivered behavior establishes them.
+
+## Sources of truth
+
+Each fact has one authoritative home:
+
+| Fact | Owner |
+| --- | --- |
+| System layers, imports, and bootstrap order | [specs/system.md](specs/system.md) |
+| Mathematics and public contracts | Topic specifications linked from [specs/system.md](specs/system.md#ownership-map) |
+| Decision provenance and supersession | [specs/decisions.md](specs/decisions.md) |
+| Stable policy identifiers and technical constraints | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Execution, review, delegation, and documentation procedure | This file |
+| Work order and phase acceptance | Project vault plan and phase cards |
+| Current phase status and accepted revision | Phase metadata and its single `Accepted revision` entry |
+| Implemented behavior | Source and public execution at the stated Git revision |
+| Previous implementation and review history | Git history and archived vault records |
+
+Specifications define intended behavior. Source and execution establish whether it exists.
+A passing check, phase label, handoff, or reviewer verdict cannot establish architecture.
+The decision index records why a contract changed; the topic specification states the current contract.
+Apply a later controlling decision to a stale specification and correct that specification in the same work unit.
+Ask about a genuine unresolved choice before implementing dependent behavior. Continue independent authorized work.
+Keep current phase names, revisions, failure counts, and review histories out of this file and topic specifications.
+Read [specs/glossary.md](specs/glossary.md) when writing project terminology. Use standard mathematical language and exact public names.
+
+## Starting a work unit
+
+For implementation, retrieve the active plan, active phase, and direct prerequisite acceptances through the project vault:
 
 ```bash
-ai-review-ci red-commit --issue <owning-issue> -m "<message>"
+uvx --python 3.14 --from git+https://github.com/dzackgarza/agent-memory agent-memory <command>
 ```
 
-The red commit skips verification for the incomplete state.
-Never weaken the architecture or add temporary repairs merely to make an intermediate state pass.
+Use `plan show`, `phase show`, and `card dag` for their respective owners.
+The core plan is `PLAN-pr-8-kernel-cat-architecture-convergence`.
+The production plan is `PLAN-foundation-production-tower`.
+The static projection plan is `PLAN-mypy-static-projection-remediation`.
+Read phase bodies for contracts, not old review records.
 
-Continue while the next in-scope action is clear and safe.
-Do not stop at an administrative artifact when implementation remains.
+Start inspection with `tree` at the smallest useful depth.
+Read the complete target and immediate owners. Use focused `rg` queries.
+Expand inspection when a constructor, import, or call exposes another required owner.
+A status request needs native state evidence; it does not authorize whole-system certification.
 
-End each substantive work unit in a focused commit.
-Do not leave required work only in the working tree.
-Preserve unknown files until their ownership is known.
+Write this short frame once before implementation or delegation:
 
-For every docs-only edit, bypass all verification.
-Commit it with `git commit --no-verify`.
-Do not run tests, linters, formatters, or other checks for that edit.
+```text
+Assigned objective:
+Mathematical owner:
+Active phase and direct prerequisites:
+Complete consumer boundary:
+Acceptance at the exact revision:
+```
 
-Never use destructive Git operations without an explicit request.
-Never use `rm`; use recoverable system trash for disposable files.
+The consumer boundary names inputs, owning categories, constructors, functors, and public results.
+Resolve required public spellings, constructors, result categories, dependencies, fixed exclusions, and acceptance before implementation.
+Reuse the frame through retries. Change it only for an authorized change of objective.
+An ordinary read, small correction, or status answer needs no separate frame document.
+Load skills for the requested operation and observed problems only. A skill reference does not create another task.
+Do not reload unchanged contracts within a session. Retain paths and section names for targeted reads.
+
+### Context and attention
+
+Use a search to find the owning definition, then read the whole relevant definition and its immediate callers.
+A matching name, excerpt, summary, or commit title selects evidence to inspect; it does not establish the claim.
+When output is truncated, narrow the next read to the missing relevant section. Do not repeat the same oversized dump.
+Keep current contracts, the active failure, and its evidence in the working context.
+Retrieve old history for a disputed decision or repeated failure, rather than routinely replaying the project history.
+
+Separate the requested deliverable from incidental defects exposed while reaching it.
+Repair an incidental defect in this unit only when the deliverable depends on that repair.
+Record other concrete defects with their existing owners, then return to the assigned operation.
+Do not replace difficult implementation with easier policy, typing, environment, or documentation work.
+Documentation is the deliverable when the user requests documentation; that does not certify implementation.
+
+## Implementation and dependencies
+
+Follow [specs/system.md](specs/system.md#dependency-directions).
+Trace each object, point, and morphism through its constructor, named functors, inherited operations, and public result.
+Inherited methods must operate on correctly initialized source state.
+Acceptance examples must obtain generic operations from their real owner.
+
+Before adding a mechanism, inspect existing generic constructions and their first consumers.
+Check retained projections, selected functors, universal data, and predicate machinery before creating local infrastructure.
+Use current dependencies and maintained prior art first. Cite a reference for unavoidable local infrastructure.
+Propose a dependency when it gives the code clearer mathematical vocabulary.
+A new abstraction needs a second real consumer.
+
+Implement each capability with its smallest complete public consumer in the same work unit.
+Include all roles needed by the claim: objects, points, morphisms, and functor images.
+Exercise actual multiple-target declarations when multiple inheritance is introduced.
+Later integration phases compose accepted capabilities; they cannot own an earlier capability's first working example.
+
+If a phase requires unfinished prerequisite work, place that work with its prerequisite owner before proceeding.
+Record the corrected dependency once in the cards. Preserve the required behavior.
+Production starts after core acceptance and owner approval, in the bootstrap order from `specs/system.md`.
+Never implement a core phase and a production leaf in parallel.
+An executing leaf unit edits neither kernel source nor kernel-test subtrees; a generic repair is a separate owning unit.
+
+A generic defect belongs to its generic owner. A leaf defect belongs to that leaf.
+Repair the complete duplicated responsibility and affected sibling constructions within the authorized boundary.
+Preserve required behavior before deleting its former implementation.
+Never weaken a type, category declaration, or acceptance claim to pass a check.
+Keep engine values private under [specs/leaves.md](specs/leaves.md#computation-engine-boundary).
+
+### Mathematical meaning before implementation shape
+
+For a categorical operation, identify the input categories, result category, and maps that define the result.
+Track the distinction between a category, its objects, its points, and its morphisms through each expression.
+For a functor, identify both actions and their endpoints. For a universal construction, include its presentation and mediator.
+Resolve these from the topic contract before choosing Python classes, tuples, caches, or dispatch branches.
+Use ordinary mathematical notation in the task frame when it makes a level or variance distinction explicit.
+
+A representation does not determine its mathematical role.
+A tuple representing an element of a product category does not thereby become its image under a product functor.
+A Python callable does not establish a functor's morphism action or laws.
+A shared runtime base does not make values belong to the same semantic domain.
+When a repair relies on one of these identifications, establish the missing map or placement at its owner first.
+
+Check the direction, hypotheses, and scope of an implication before encoding it as category containment.
+A property required for one selected functor does not imply that property for every member of its ambient category.
+A consequence in one construction does not establish a global implication, its converse, or uniqueness of a choice.
+Preserve parameters, endpoint restrictions, and selected data when applying a theorem.
+An external theorem supplies mathematical support; the repository still needs the declared map and executable operation.
+
+When the public contract promises a category, functor, or universal presentation, construct that exact object.
+Returning its carrier, apex, engine value, or a record bearing its name leaves the missing structure unresolved.
+When a named object or operation is absent, keep that absence visible in the assigned claim.
+Do not invent a nearby meaning and report completion under the requested name.
+
+### Ownership and dependency reuse
+
+Separate mathematical meaning, runtime execution, and interpretation that needs both layers before moving code.
+Use the responsibilities in [specs/system.md](specs/system.md#system-shape), not the convenience of the current import graph.
+If a proposed move needs a forbidden dependency, split the responsibilities at the actual boundary.
+An import hidden inside a function or a renamed forwarding module does not change dependency direction.
+After an ownership repair, follow the original consumer through the new owner and inspect the affected sibling path.
+A file move or changed docstring establishes only location until that path works.
+
+Before implementing runtime infrastructure, identify the exact operation the existing dependency already owns.
+Exercise its required interlock through the smallest current consumer before building surrounding machinery.
+Use the dependency's class construction, ordering, identity, caching, or proposition operation directly where specified.
+Importing a library while keeping a second implementation of its job does not delegate that job.
+A reference comment does not justify maintaining a duplicate class graph, method graph, or state-transport system.
+Add repository code only for the semantic difference that the dependency does not supply.
+
+When two representations of the same relation need synchronization, identify which one derives from the other.
+Keep the defining declaration authoritative and derive the runtime or static view through its existing owner.
+Do not add another registry to reconcile registries introduced by the same unfinished implementation.
+Check whether a proposed cache retains an already-retained value before adding it.
+Caching, interning, mathematical equality, and category membership have distinct obligations; do not exchange their checks.
+
+### Construction, scope, and generality
+
+Follow initialization in dependency order: written source data, required functor images, then the inherited operation using that state.
+At an initialization failure, identify the exact value, state owner, and first read that occurs too early.
+Repair that ordering or ownership. Do not fill the field with a default, replay unrelated constructors, or copy target state in a leaf.
+Distinguish the constructing-time contract from the completed public action contract in `resolution.md`.
+
+When independent declarations interfere, inspect the scope of ranks, caches, retained identities, and mutable state first.
+Check whether the supposedly conflicting data belongs to the same category, declaration, or interned value.
+Do not introduce global precedence, a rejection rule, or a new mathematical constraint to accommodate accidental shared state.
+For a fix that depends on construction order, exercise the relevant declarations in both orders in fresh state.
+For retained values, check the promised repeated construction and a distinct parameter or owner that must remain distinct.
+Use these cases when the claim concerns scope or identity; do not impose a fresh-process matrix on unrelated work.
+
+Distinguish an implementation of a construction from an implementation of one evaluable case.
+An identity diagram, terminal apex, equal-leg span, or singleton domain proves only the case it exercises.
+Before claiming generality, use an admissible case where the shortcut cannot produce the answer.
+For transport, use an action that changes the datum; for composition, use the nonidentity maps required by the claim.
+Check a universal mediator with a competing cone or cocone, rather than only reading the stored apex.
+
+If successive examples require branches in the generic operation, re-read its defining construction before adding the next branch.
+Use the existing generic calculus or the specified engine domain to cover the required family.
+Keep legitimate finite or presented evaluation restrictions explicit at their owner.
+Do not expand those restrictions to excuse missing generic representation, retained maps, or declared categorical structure.
+A later integration phase composes working capabilities; it cannot retroactively justify accepting an unexercised primitive.
+
+## Review and acceptance
+
+A phase receives one independent review at a fixed committed revision.
+Use `r-gate`; use `r6-gate` for final core closure.
+Supply the unchanged acceptance contract, owner sections, revision, and complete consumer boundary.
+The reviewer reads that packet and relevant implementation. Expand it only for a concrete dependency.
+
+1. Confirm the revision and the phase's owned architecture rules.
+2. Run `just architecture` under **Verification** before grading owned criteria.
+3. Exercise every acceptance claim through the real public consumer at that revision.
+4. Examine relevant leaf rules, ownership, functorial reuse, and mathematical legibility within the boundary.
+5. Report each unmet claim with its owner, location, concrete failure, and required behavior.
+6. Accept only when every required claim holds. Record one accepted revision on the phase card.
+
+One public exercise can establish several related criteria. Reuse it and state those claims.
+Tests establish only what they execute and assert.
+A fixture that implements the generic operation under review cannot establish its availability to a leaf.
+A source citation establishes a contract; execution establishes behavior.
+
+After repair, review changed behavior and affected consumers. Reuse still-valid findings and prerequisite evidence.
+Reopen a passed claim only for a changed dependency, new counterexample, or corrected controlling contract.
+Name the affected claim and dependency before invalidating downstream acceptance.
+A documentation location error alone does not invalidate executable behavior.
+Record out-of-unit findings with their phase owner. They do not block an unrelated unit.
+Keep one current acceptance record and one unresolved-work section on each card.
+Archive detailed reviews once; do not paste them into subsequent cards or prompts.
+R6 checks integration and remaining required claims. It reuses valid prerequisite acceptance.
+
+### Review the claim independently
+
+Give the reviewer the original contract, observed failure, and relevant diff before the implementer's causal explanation.
+The reviewer must derive the disputed behavior from those sources before assessing the proposed remedy.
+Another agent repeating the same supplied explanation does not add independent evidence.
+
+Separate a finding from its proposed repair. A true finding can come with a wrong repair.
+Rejecting that repair leaves the original failed claim to solve.
+Accept a finding because its counterexample or contract argument holds, not because of the reviewer's model or confidence.
+Reject a finding with the exact defeating fact; a green scanner or another approving review is insufficient.
+
+Read changed assertions and constructors during review, including lines removed by a claimed strengthening or cleanup.
+A test rewrite that removes one target, action, parameter, or public call can reduce the claim while improving presentation.
+If evidence is weakened, retain the affected acceptance obligation until an equally strong public exercise replaces it.
+A larger unrelated test or a more elaborate report cannot replace that lost evidence.
+
+When an accepted claim fails at its public boundary, reopen that claim and conclusions using the same failed evidence.
+Identify the shared premise or mechanism. Recheck those consumers within the assigned boundary.
+Do not declare the latest symptom to be the whole defect before following its callers and sibling use.
+Retain unrelated acceptance; the scope of invalidation follows evidence, not a blanket restart or automatic exoneration.
+
+## Repeated failures
+
+Apply these actions to observed conditions, regardless of how productive the current work feels:
+
+| Condition | Required action |
+| --- | --- |
+| Two review rounds, or about an hour, without a landed falsifiable artifact | Stop adding review machinery. Report the mispriced unit, failed capability, and smallest complete repair boundary. |
+| A second review adds no new falsifiable finding | Return to the original acceptance claim instead of seeking another verdict. |
+| A correction changes only terminology, labels, or file placement | Trace the same public consumer. Correct the owning operation if its failure remains. |
+| An acceptance specimen supplies infrastructure a normal consumer must inherit | Remove that substitution from the proof; implement the capability at its owner. |
+| Two consecutive implementation turns produce only plans, audits, or status records | Resume the required implementation, or state the exact decision preventing it. |
+| A task grows through unrelated review findings | Keep the original unit fixed. Route findings to their owners. |
+| A diagnostic total is measured again as the reason for an edit | State the mathematical claim and verify it on a concrete specimen. |
+| A task is called difficult because it contains many similar items | Examine one operation and its dependencies; execute independent items as a batch. |
+| A known command fails again without new evidence | Read the owned command and first failure. Change the hypothesis before another run. |
+| A reviewer requests already-located provenance again | Open the retained locator. Search further only if it is incomplete or contradicted. |
+
+Keep a correction sequence anchored to the same public operation and expected result.
+Renaming the issue, changing files, switching agents, or proposing a new cause does not start a new sequence.
+Before another repair of that operation, compare the earlier predicted result with what actually happened.
+Identify the premise the observation disproved and the next observation that can distinguish the remaining causes.
+Use the existing task frame and unresolved-work entry for this reasoning; do not create another tracking system.
+
+An ordinary failing test during implementation needs diagnosis and repair, not an additional review ceremony.
+A failure of a previously claimed public result also invalidates the evidence used for that claim.
+An admission, confident new explanation, small diff, or passing private check does not restore that evidence.
+Re-establish it through the same public boundary under the unchanged requirement.
+
+When replacing a rejected technique, preserve the obligation that technique tried to meet.
+Replacing attribute inspection with exception catching still uses implementation accidents to choose the operation.
+Replacing a broad type with another broad alias still loses the mathematical domain.
+Replacing explicit leaf wiring with a helper that performs the same wiring leaves its owner unchanged.
+Trace the missing declaration, state, or generic operation and repair it there.
+Do not add fallback branches, defaults, successful no-ops, or broader exception catches to make execution continue.
+Use the specified typed outcome for a legitimately undecided computation; implementation failure must remain visible.
+
+Distinguish recording proven completion from changing a requirement before editing a goal source.
+Change a requirement only with user authorization or a controlling decision that already supplies it.
+An unanswered question does not create blocker evidence or revoke existing authority.
+
+## Delegation
+
+Delegate only when a bounded independent unit saves work after context and review costs.
+Use the existing task classes: `mechanical-unit`, `construction-unit`, and `kernel-core-unit`.
+Their files are role adapters; this file owns procedure.
+Select available capacity appropriate to the unit. Model names and quotas are not acceptance criteria.
+
+Give each writer disjoint files or an isolated worktree. State ownership before work starts.
+Shared dependencies, public exports, and witness files have one writer at a time.
+Do not review a boundary while another agent edits it. Review the committed revision after integration.
+A delegate receives the frame, owner sections, allowed files, and exact acceptance claims.
+It reports delivered behavior, revision or diff, and unresolved claims.
+The integrating agent checks the actual diff and consumer against the original frame, then commits the integrated unit.
+Delegates do not edit shared phase state. Avoid nested delegation and repeated reviewers for an unchanged question.
+
+A parallel split must have a stable shared interface before writers start.
+If both units require changing that interface, complete the prerequisite first or give the coherent change one writer.
+Do not split intertwined compiler and consumer changes merely to occupy available agents.
+When a delegate violates ownership, return the unchanged claim and concrete failure instead of composing another patch over it.
+Reassign an unresolved unit with its correction sequence intact when repeated results fail the same contract.
+Adding workers cannot resolve a missing mathematical definition or a contradictory input contract.
+
+## Verification
+
+This repository is before 1.0. Architectural agreement controls acceptance.
+Read test guidance before touching a test, and `justfile` before a targeted Sage run.
+Use real Sage for Sage behavior and exact arithmetic for exact mathematical claims.
+Choose the smallest source-defined specimen or an independent canonical oracle.
+Inspect its exact theorem, section, table, or page; independently check ambiguous expected facts.
+Sage parity is secondary evidence. Never change expected mathematics to match output.
+
+Exercise relevant public categories, parents, endpoints, images, composition, inheritance, and universal maps.
+Each assertion must distinguish a plausible mathematically wrong implementation.
+Private layout, class names, caches, call counts, and fixture correctness cannot prove a stronger public claim.
+Failures state the failed proposition and expected behavior. Use unique test basenames.
+Assertions establish repository behavior rather than re-proving a dependency or theorem alone.
+Do not use mocks, simulations, skips, xfails, or assertions about the absence of a former implementation.
+Keep explicit enumeration approximations outside foundational paths; warn before large enumeration where explicitly offered.
+Measure performance by wall time and input size. Call counts can locate repeated work.
+Preserve the legible mathematical sequence over a faster opaque form.
+
+### Preserve the strength of the example
+
+Write expected results from the contract before using execution to determine whether they hold.
+Read each assertion as a proposition: its inputs, quantifiers, expected result, and the wrong behavior it excludes.
+Changing the specimen to an easier case changes what it proves, even if its test name stays the same.
+
+For framework acceptance, a small local category may supply its mathematical data, operations, and permitted declarations.
+It must receive the framework capability under review exactly as an ordinary leaf receives it.
+If setup installs generic methods, registers retained projections, copies inherited state, or directly supplies Python inheritance, inspect its role.
+Setup cannot supply the very inheritance, placement, retention, or property propagation the test claims to establish.
+Use the closed declaration template and the genuine generic owner for that behavior.
+
+Preserve every material dimension when replacing a nonconforming specimen.
+A two-target inheritance claim still needs two actual selected targets and behavior from both after the rewrite.
+Repeated refinement of one property cannot substitute for propagation from two targets.
+An identity action cannot substitute for a claim about changed target data.
+A private helper call cannot substitute for the public constructor or inherited method that failed.
+If a lawful replacement exposes a missing capability, repair that capability in the assigned unit.
+Removing the unlawful setup does not discharge its intended proof burden.
+
+For a typed query, exercise a registered handler returning a known owned answer through public `ask()`.
+Check its semantic value and result category, plus a legitimately undecided case when the contract permits one.
+An always-Unknown implementation passes an Unknown-only test; that test cannot establish query dispatch.
+For dispatch over generated classes, distinguish semantic domains even when their values share a runtime role or Python base.
+Check the affected domain after refinement when refinement is part of the claimed behavior.
+
+Choose the relation the contract requires: Python identity for retained identity, `ask(a == b)` for decided equality.
+Constructing a proposition is not deciding it. Python truth conversion cannot replace `ask()`.
+Membership alone does not establish the strongest placement, inherited operation, or retained comparison promised by a claim.
+Read the result through that promised public operation, including its state and endpoints where relevant.
+Do not replace a semantic assertion with a class name, representation string, permissive Boolean, or alternative expected output.
+
+### Diagnostics and generated projections
+
+Treat a type error as evidence about an exact input, output, domain, or projection boundary.
+Determine which boundary is wrong before changing its annotation or constructor.
+An unavailable annotation during registration can be an initialization problem; widening the domain does not solve it.
+Do not move construction from a required property category to its ambient category to bypass a failure.
+Correct registration, dispatch, or construction while retaining the specified mathematical type and placement.
+
+Compare generated stubs against the changed declarations and the compiler's semantic projection.
+A generator completing successfully does not establish that its output retained inherited methods, bases, and exact domains.
+If generation changes unrelated interfaces or depends on prior construction history, identify the generator defect at its owner.
+Do not accept those changes as harmless churn, weaken the runtime contract, or maintain an unrecorded second API by hand.
+Use only the active plan's explicit checkpoint exception while that defect remains unresolved.
+
+A diagnostic baseline classifies already-established failures; it is not evidence that a new failure is pre-existing.
+Attribute a claimed baseline failure to its recorded owner and cause before using the exception.
+Read the first concrete failure and the relevant output once. Re-run after a change or new diagnostic question.
+Inspect the actual rule scope when a green check is used for acceptance; an empty or wrong scope proves nothing.
+Prefer a decisive public exercise to another aggregate diagnostic total.
+
+Commit and push hooks own test, lint, type-check, format, stub, and aggregate recipes. Do not run these suites manually.
+A targeted Sage-aware exercise is the routine manual exception.
+An R-gate also runs `just architecture` on its declared owned rule set.
+D132 admits exact architectural invariant checks with file-and-line failures at the architecture push tier.
+`scripts/rule_coverage.py` rejects a rule whose file glob matches nothing.
+Retain static projection. Add no automated convention enforcement before 1.0.
+
+`just plan-state` enforces one active phase, accepted revisions for complete phases, accepted prerequisites, and core-before-production order.
+Keep known red checks, owners, reasons, and permitted checkpoint commands in the active plan.
+For a documented red baseline, run required owned architecture and plan-state checks before a kernel checkpoint.
+Use `--no-verify` only under that recorded exception, naming the red gate in the commit message.
+A new failure needs diagnosis at its owner; it is not a baseline exception.
+
+A docs-only edit runs no repository verification. Commit it with `git commit --no-verify`.
+Compare transferred semantics and inspect the diff; do not invent tests for prose consolidation.
+
+## Documentation changes
+
+Edit the one owner. Replace duplicates with a link and the local consequence needed by their reader.
+Topic specifications state the full mathematical obligation and leaf input.
+Private initialization, caches, and compiler calls belong in resolution.md.
+Keep stable policy and decision identifiers while shortening explanations.
+Before retiring a source, compare each unique requirement, command, exception, and source locator with its destination.
+Preserve uncertainty and supersession. Never promote an inference to a user decision.
+
+Distinguish contradiction, specialization, override, and an undecided choice.
+Apply a controlling correction to the whole affected statement and its examples, including constructors and result categories.
+A new substantive choice needs user grounding in `specs/decisions.md`, with session and timestamp.
+Current explicit instructions establish provenance for the change they authorize.
+
+### Corrections, inference, and policy scope
+
+Translate a correction into the changed mathematical or behavioral claim before editing its wording.
+Check the entire affected definition, its examples, and its immediate consumers for the same assumption.
+A search-and-replace over verbs cannot resolve a responsibility split or a change of result category.
+Rewrite the complete owning statement once, then link to it from dependent guidance.
+
+Distinguish a source statement from the inference that applies it to this implementation.
+Record derived consequences as derivations, with the assumptions that make them valid.
+An agent-authored decision number, repeated citation, or newer timestamp does not turn an inference into a user instruction.
+When a source contradicts an inference, correct that inference and its dependent statements together.
+Keep unaffected decisions and their provenance intact.
+
+Before presenting an architectural conflict to the user, establish that both claims concern the same mathematical object and scope.
+Distinguish declaration-local from global state, mathematical equality from identity, and a construction from its presentation.
+Check whether one statement describes intended behavior and the other describes a current implementation defect.
+Those two statements do not create a product choice. Repair the defect within the existing contract.
+Ask only when the remaining alternatives change required mathematics or observable behavior and the sources do not decide them.
+
+Interpret a policy through its stated invariant and boundary.
+Do not extend a rule about leaf engineering to move generic mathematics into the private kernel.
+Do not extend a convention check into mathematical certification, or a missing citation into evidence that a contract is false.
+A rule violation requires repairing its substantive cause; renaming the construct to evade the rule leaves that cause intact.
+If literal wording conflicts with its controlling contract, correct the owning wording instead of building around the contradiction.
+
+For an old disputed decision, inspect its existing locator first.
+Search Claude sessions, Codex sessions, and ChatGPT recordings before claiming that no source exists.
+Use the `reading-transcripts` parser for CLI sessions, including queued user answers.
+Read ChatGPT recordings with `just -f /home/dzack/gitclones/chat-on-steroids/justfile transcript <id>`; that justfile also provides `sessions` and `search`.
+Report a miss as searched, found, inference, confidence, and gaps. A miss alone cannot strike a decision or invalidate acceptance.
+Check the cited content and its consequence for the leaf writer; a locator alone does not establish support.
+Inspect external definitions before citing them; retain exact definition or theorem locators.
+
+Write current contracts and remaining work. Keep incident narratives in history.
+When removing a requirement, remove its wording instead of adding a prohibition that repeats it.
+Update an existing rule before adding another. Each procedural rule needs an observable trigger and an action advancing the capability.
+Put incident details and the evidence behind a rule in its commit and decision locator, not in every future task packet.
+After a repeated failure, first check whether an existing rule was bypassed, mis-scoped, or incapable of distinguishing the bad result.
+Repair that rule at its owner. Do not append stronger adjectives or add a gate that checks only compliance with another gate.
+New automated architectural checks still require the D132 boundary; prose guidance does not authorize additional enforcement machinery.
+Judge this guidance by later action on the original capability, not by an agent restating or agreeing with it.
+
+## Session continuity
+
+Phase cards hold contracts, dependencies, remaining delta, acceptance, and the current accepted revision.
+Edit them through `agent-memory`. Keep detailed past runs in archived references outside the normal context packet.
+Update status once the delivered revision proves the transition.
+Historical accepted revisions remain evidence; a documentation edit does not certify new code.
+
+Inspect repository and vault state before edits. Preserve unknown files and concurrent work.
+Stage exact files and commit each substantive unit. Push authorized work so it can be recovered.
+Use system trash for deletions. Do not use destructive Git operations.
+Keep user messages private; public documents contain neutral technical decisions and source locators.
+
+On resume, read the current card and actual tree. Reuse valid prerequisite evidence.
+Report remaining capability gaps and necessary user decisions. Keep routine checks and administration brief.
+Continue safe authorized work until the requested result exists.

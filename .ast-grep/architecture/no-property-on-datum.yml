@@ -1,0 +1,19 @@
+id: no-property-on-datum
+language: python
+severity: error
+files:
+  - tests/kernel/**/*.sage
+ignores:
+  - src/sage_categories/**/_*_sage.py
+message: POL-LEAF-074, D121, D13, D133
+rule:
+  kind: decorated_definition
+  has:
+    kind: decorator
+    regex: ^@property$
+  inside:
+    kind: decorated_definition
+    stopBy: end
+    has:
+      kind: decorator
+      regex: ^@dataclass

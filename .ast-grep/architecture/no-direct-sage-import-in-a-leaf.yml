@@ -1,0 +1,16 @@
+# POL-LEAF-067, POL-SAGE-016, D40: every Sage import of a leaf goes through the kernel's
+# Sage runtime module. The import contract states the same rule for `src`, but it reads
+# importable modules and a leaf witness is a `.sage` file, so the contract cannot see one.
+# The R1 gate at `d9d2998` found four witnesses importing Sage directly, invisible to the
+# gate `leaves.md` assigns the row.
+id: no-direct-sage-import-in-a-leaf
+language: python
+severity: error
+files:
+  - tests/kernel/**/*.sage
+message: POL-LEAF-067, POL-SAGE-016, D40
+rule:
+  any:
+    - pattern: from sage.$$$MODULE import $$$NAMES
+    - pattern: import sage.$$$MODULE
+    - pattern: import sage

@@ -1,0 +1,8 @@
+id: no-hand-rolled-retention
+language: python
+severity: error
+files:
+  - tests/kernel/**/*.sage
+message: POL-LEAF-066, D111, D133
+rule:
+  pattern: self.$STORE[$KEY] = self.ObjectType($$$)

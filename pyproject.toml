@@ -2,11 +2,14 @@
 name = "sage-categories"
 version = "0.1.0"
 description = "Owned Sage categories."
-requires-python = ">=3.14"
+requires-python = ">=3.14,<3.15"
 dependencies = [
-    "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main",
-    "sympy",
-    "tree-sitter-sage @ git+https://github.com/dzackgarza/tree-sitter-sage",
+    "attrs>=26.1,<27",
+    "makefun>=1.16",
+    "multimethod>=2.1",
+    "plum-dispatch>=2.9,<3",
+    "sympy>=1.14,<2",
+    "wrapt",
 ]
 
 [build-system]
@@ -15,3 +18,69 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+sage_categories = ["juliapkg.json"]
+[dependency-groups]
+dev = [
+    "hypothesis>=6.165,<7",
+    "mypy>=2",
+    "pytest>=9.1,<10",
+    "ruff>=0.16.5,<1",
+    "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main",
+    "sage-stubs @ git+https://github.com/dzackgarza/sage-stubs.git@main",
+    "microsoft-python-type-stubs @ git+https://github.com/dzackgarza/python-type-stubs.git@main",
+]
+migration = [
+    "libcst>=1.9,<2",
+]
+platform = ["juliacall>=0.9.35,<0.10"]
+
+
+# D132: the source dependency directions of specs/system.md, as a hard stop at the push tier.
+# import-linter refuses a module that does not exist, so a contract names only packages
+# in the tree. P1 adds the two leaf contracts of specs/system.md "Dependency directions"
+# ("Cat and the kernel import no production leaf"; "A leaf imports no kernel internal")
+# with `sage_categories.sets`, and each later P-phase adds its package to both.
+[tool.importlinter]
+root_package = "sage_categories"
+include_external_packages = true
+# A `TYPE_CHECKING` import is an annotation, not a dependency, and D130 requires the exact
+# type. The contracts below read runtime imports only.
+exclude_type_checking_imports = true
+
+# D173: the kernel is engineering and `Cat` owns the mathematics every category shares, so
+# the direction is kernel to `Cat` to leaves. specs/system.md "Dependency directions".
+[[tool.importlinter.contracts]]
+name = "The kernel imports no module of Cat"
+type = "forbidden"
+source_modules = ["sage_categories.kernel"]
+forbidden_modules = ["sage_categories.cat"]
+
+# D175: `cat_kernel` is downstream of both the kernel and `Cat`, and upstream of every
+# leaf. It holds the work that needs both layers, so it imports them and neither imports
+# it. specs/resolution.md "The closed kernel surface".
+[[tool.importlinter.contracts]]
+name = "The kernel imports no module of cat_kernel"
+type = "forbidden"
+source_modules = ["sage_categories.kernel"]
+forbidden_modules = ["sage_categories.cat_kernel"]
+
+[[tool.importlinter.contracts]]
+name = "Cat imports no module of cat_kernel"
+type = "forbidden"
+source_modules = ["sage_categories.cat"]
+forbidden_modules = ["sage_categories.cat_kernel"]
+
+# The third D175 edge, "no leaf imports `cat_kernel`", enters with the first leaf
+# package at P1: the tree holds no leaf (D137), and a contract whose source module does
+# not exist reports green over nothing, which is the vacuous-green defect
+# `scripts/rule_coverage.py` exists to stop (D174). A leaf reaches `Cat`.
+
+[[tool.importlinter.contracts]]
+name = "Only the kernel's Sage runtime module and the named engine modules import Sage"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = ["sage_categories.kernel", "sage_categories.cat"]
+forbidden_modules = ["sage"]
+ignore_imports = ["sage_categories.kernel.sage_runtime -> sage"]

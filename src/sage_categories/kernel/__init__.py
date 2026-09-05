@@ -1,0 +1,1 @@
+"""Category-independent implementation kernel."""

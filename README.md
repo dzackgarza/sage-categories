@@ -1,329 +1,35 @@
 # sage-categories
 
-`sage-categories` is a categorical replacement universe for a significant subset of standard Sage mathematics.
-It shadows familiar Sage objects with package-owned versions whose categories own their objects, arrows, constructors, and methods.
+`sage-categories` is a package-owned categorical framework for Sage-based mathematics.
+It uses explicit categories, functors, and universal constructions as its reuse model.
+Sage and other computation systems remain private engines.
 
-The central rule is simple:
+The public API is not stable. [System architecture](specs/system.md) describes the mathematical foundation and production order.
 
-> A category owns implementations and constructors.
-> A functor constructs an implementation in another category.
-
-This rule replaces accidental inheritance with explicit mathematics.
-It also lets one public object receive operations from every category reached by the selected functors.
-
-The public API is not stable.
-The repository contains the categorical kernel, the arrow-category family, and an owned `Sets()` implementation.
-The complete acceptance design described below remains the current implementation target.
-
-## One import, one mathematical universe
-
-The required opt-in surface is a `sage_categories.all` module analogous to `sage.all`:
+## Public import
 
 ```python
 from sage_categories.all import *
 ```
 
-Python module names cannot contain hyphens, so the import uses `sage_categories`, not the distribution name `sage-categories`.
-
-This import shadows supported standard Sage names with package-owned objects.
-For example, an owned `ZZ` starts every later operation inside the package universe.
-Products, modules, morphisms, subobjects, scalar changes, and every other supported construction return package-owned results.
-Their public operations remain mediated by the package's categorical APIs.
-
-The closure requirement applies recursively: every public result produced from package-owned inputs remains package-owned.
-A private computation can use a Sage value or algorithm, but it reconstructs the owned mathematical result before returning.
-
-The package does not refine arbitrary Sage objects into its category hierarchy.
-It also does not promise that ordinary Sage code accepts package-owned objects or that package code accepts ordinary Sage objects.
-Any such interoperability is incidental Python compatibility, not part of the contract.
-
-A notebook that imports `sage_categories.all` commits to this package universe.
-If a Sage construction is not yet owned, its downstream Sage code has no compatibility guarantee, even when that code internally uses familiar objects such as `ZZ` or free modules.
-The intended remedy is to absorb the required construction, use Sage privately as its computation engine, and expose a new owned categorical API.
-
-## Why this project exists
-
-Sage implements many mathematical structures.
-Its category framework also binds mathematical structure to dynamic Python inheritance and implementation-specific parent classes.
-These mechanisms can obscure three different facts:
-
-- which category owns an operation;
-
-- which functor transports an object or arrow;
-
-- which implementation performs a computation.
-
-This project separates those facts.
-Theory code should state the mathematical definition and the immediate functors that connect it to existing theory.
-The kernel should compile that information into a direct method surface.
-
-The separation also preserves mathematical consequences that concrete Sage implementations can lose.
-For example, an integral-lattice presentation has a product projection to finite-rank `ZZ`-modules. The resulting structural path to `Sets()` determines cardinality and supports lazy enumeration.
-A concrete lattice implementation that does not retain those categorical relationships can fail to expose either operation.
-Long-running searches, including bounded enumeration in Vinberg-type algorithms, need those consequences without bespoke lattice-level implementations.
-
-A leaf category should define only its new structure.
-It should not copy methods from every category above it.
-For example, a finite mathematical object should receive `cardinality()` from its implementation in `Sets()`. The same rule must work through long chains of functors.
-
-## Mathematical auditability
-
-Sage already supplies most of the underlying computations.
-This project exists to make their interfaces uniform, their mathematical ownership explicit, and their composition categorical.
-Category theory supplies the reuse mechanism: actual functors replace copied methods and engineering inheritance throughout the theory layer.
-
-The kernel absorbs the Python machinery needed to compile that structure.
-Outside the kernel, category code should read as the mathematical definition it implements.
-A leaf-category contributor should mainly state new objects, arrows, functors, axioms, and construction rules.
-The inherited categorical machinery should supply the rest.
-
-The intended reviewer of a theory subtree is a mathematician with little programming experience.
-They should be able to compare a method with its definition without auditing dynamic inheritance, container plumbing, backend types, or dispatch machinery.
-Legibility and categorical uniformity are therefore primary requirements, not decoration around successful computation.
-
-## Leaf-category end state
-
-Once the kernel is established, a researcher adding a leaf category should not need to understand its implementation.
-They should begin from a shipped category template, declare the new mathematical structure, connect it to nearby familiar categories through selected functors, and implement only the new methods.
-They should need to read only the mathematically relevant neighboring subtrees and their functor contracts.
-
-The compiler then supplies the complete inherited object, element, arrow, and construction interfaces.
-A specialized algebra category connected to `Algebras(R)`, modules, and sets receives their applicable operations without forwarding methods.
-Cardinality and other distant capabilities arrive through functor composition rather than leaf-specific code.
-
-For example, a researcher can add `FiniteSubsetsOfNN()` after the complete theory of sets exists.
-They declare its constructors, its inclusion functor into `Sets()`, and only its new methods, such as `minimal_element()` or `gcd_of_elements()`. The kernel constructs `FiniteSubsetsOfNN.ElementType` and supplies the full `Sets.ElementType` interface without a leaf-specific element class.
-The inherited set interface also makes products, coproducts, filtered limits, and other set constructions available without new implementations in the leaf.
-Each result remains an object of the category that owns the construction and returns to `FiniteSubsetsOfNN()` whenever the construction is known to land there.
-
-The same goal applies to functorial constructions.
-A full replete subcategory receives the inherited categorical interface automatically.
-Limits, colimits, and similar constructions descend automatically when their results are established to remain in that subcategory.
-The leaf author supplies only the closure or lift that is mathematically specific to the new structure.
-
-## Core model
-
-The kernel owns `Cat`, the category of categories. Every category in this repository is
-an object of `Cat`. The public `Category` implementation is `Cat().ObjectType`.
-
-Each category `C` owns the implementation types relevant to its theory:
-
-- `C.ObjectType` for objects;
-
-- `C.ElementType` for elements, when the category uses elements;
-
-- `C.ArrowType` for arrows;
-
-- `C(...)` for category-owned construction.
-
-`C(...)` dispatches from semantic input to the exact private constructor route. This
-follows Sage's [`Parent.__call__()` constructor model](https://doc.sagemath.org/html/en/reference/structure/sage/structure/parent.html).
-
-For `A, B in C`, the following expressions return the same owned Hom category:
-
-```python
-Ar(C)(A, B)
-Hom(C)(A, B)
-C.HomCategory(A, B)
-A.Hom(B)
-B ** A
-```
-
-Each spelling sends construction data to that category's object constructor.
-
-Endpoint application `Ar(C)(A, B)` dispatches directly to `Hom_C(A, B)`. Separately,
-`Ar(C)` has the arrows of `C` as objects and commuting squares as arrows. For
-`C = Cat()`, the Hom-category arrows are natural transformations.
-
-Define `Fun = Ar(Cat())`. The endpoint Hom category `Fun(C, D)` owns construction of
-functors from `C` to `D`. The endpoints select the category, not a particular functor.
-
-```python
-Fun(C, D)(on_object, on_morphism)
-Fun(S, T).FullyFaithful().inclusion()
-Fun(C, C).Equivalences().identity()
-```
-
-A category construction creates its named functors there and retains them. Product and
-pullback presentations retain each projection separately. A leaf selects the functors
-that supply inherited operations.
-
-The selected property category records the theorem known by the leaf writer. The
-constructor does not compute that property. The kernel never selects a component by
-inspecting fields or tuple positions.
-
-The same construction system applies to `Cat()` itself:
-
-```python
-P = Cat().Products()((C_0, ..., C_n))
-Q = Cat().Coproducts()((C_0, ..., C_n))
-P.product_projection(i)   # P -> C_i
-Q.coproduct_injection(i)  # C_i -> Q
-```
-
-If `S` is a subcategory of `P`, then `S` is an object of
-`Cat().Products().Subobjects()`. Its `product_projection(i)` is the subcategory inclusion
-followed by the corresponding projection of `P`.
-
-A slice or coslice is a subcategory of `C * Ar(C)`. Its first projection selects the
-varying object. Its second selects the defining arrow.
-
-For `X, Y in C`, the categorical operators are:
-
-```python
-Y ** X  # Hom_C(X, Y)
-X * Y   # product
-X + Y   # coproduct
-X @ Y   # biproduct
-```
-
-The category foundation defines these operations once and retains their universal data.
-
-A functor `F: C -> D` is an arrow in `Cat` and an object of `Ar(Cat())`.
-It inherits its domain, codomain, object map, and arrow map from `Cat().ArrowType`.
-For fixed endpoints, `Fun(C, D)` is `Cat().HomCategory(C, D)`. Its arrows are natural
-transformations.
-
-Functor properties use property subcategories of `Ar(Cat())`:
-
-```python
-Ar(Cat()).Full()
-Ar(Cat()).Faithful()
-Ar(Cat()).FullyFaithful()
-```
-
-Their `is_full()`, `is_faithful()`, and `is_fully_faithful()` methods return applied
-predicates. Direct property construction and assumptions refine the same owned functor.
-These predicates have no computational routes.
-
-Every functor is an explicit mathematical object.
-Only selected structural functors contribute methods to the public surface.
-The selection is compiler input over an already established mathematical functor. It is
-not an additional kind of functor.
-
-For an object `x` in `C`, the kernel constructs and caches `F(x)` in `D`. It then exposes methods declared by `D.ObjectType` directly on `x`. The same process applies to elements and arrows.
-
-The method compiler records the category that declares each method.
-Local declarations take precedence.
-Two routes to the same declaration share one implementation.
-Incoherent routes and unrelated name collisions fail during compilation.
-
-This gives one public mathematical object instead of a chain of user-visible wrappers.
-The functor images remain available for inspection when their mathematical role matters.
-
-## Foundation first
-
-The implementation order follows the mathematical dependency order.
-
-The first layer is `Cat`, the category of categories. Its `ObjectType` implements every
-category, and its `ArrowType` implements every functor. The kernel constructs `Ar(C)` for
-all `C`, including `Ar(Cat())`. It also constructs functor categories, natural
-transformations, natural isomorphisms, and sequence products and coproducts from the same
-category and arrow mechanisms.
-
-The next layer is the complete family of arrow categories.
-This family includes:
-
-- arrow categories and commuting squares;
-
-- hom categories and endomorphism categories;
-
-- monomorphism, epimorphism, isomorphism, and automorphism categories;
-
-- cores and wide subcategories;
-
-- slices, coslices, subobjects, superobjects, covering objects, and covered objects.
-
-Subobjects of product categories receive component functors by composition. Slice and
-coslice projections use this rule with the source and target functors of `Ar(C)`.
-
-These constructions must use the same `ObjectType`, `ElementType`, and `ArrowType` inheritance mechanism.
-
-The next layer is an owned category `Sets()`. It must replace Sage's Sets category for this project.
-Its design includes:
-
-- arbitrary sets and arbitrary functions between them;
-
-- exact, symbolic, infinite, and unknown cardinalities;
-
-- function sets and exponentials;
-
-- predicate-defined subsets with inclusion arrows;
-
-- products, coproducts, limits, and colimits of arbitrary small diagrams;
-
-- inherited methods on the objects produced by these constructions.
-
-A function in `Sets()` needs only a domain, a codomain, and a rule.
-It does not need linearity, continuity, or a finite table.
-The framework must therefore represent maps such as
-
-\[
-\mathbb{Q} \to \mathbb{N}, \qquad
-\mathbb{Q} \to \mathbb{Z}, \qquad
-\mathbb{R} \to \mathbb{R}^{2}.
-\]
-
-Here \(\mathbb{N}\) excludes zero.
-The map rule can use any valid mathematical definition.
-
-For an owned predicate \(P\) on `B`, applying `P` to `x` constructs a proposition.
-The subset
-
-\[
-A = \{x \in B \mid P(x)\}
-\]
-
-is an object of `Sets()` together with an inclusion arrow \(A \hookrightarrow B\).
-Examples include the even integers and the prime integers as subobjects of
-\(\mathbb{Z}\). `ask(P(x))` returns `True`, `False`, or Sage's `Unknown`. Python
-containment converts that decision to a Boolean admission result.
-
-Finite products are only one specimen of the general product construction.
-The final interface must accept arbitrary small diagrams.
-The same requirement applies to coproducts, limits, colimits, and function sets.
-
-## Universal constructions
-
-Universal constructions are categorical data, not container factories.
-A product retains its `product_projection(i)` arrows and its mediating arrow.
-A coproduct retains its `coproduct_injection(i)` arrows and its mediating arrow.
-Limits and colimits retain the diagrams, cones, cocones, and universal maps that define them.
-
-These constructions act on objects and arrows through functors.
-Their results then receive methods from the categories in which they live.
-A product of sets is therefore still a set and receives set operations through the same structural route.
-
-This design removes the need for a separate method-propagation registry.
-Functor composition already records how structure moves.
-Natural transformations record comparisons between such constructions.
-
-## Sage as a computation engine
-
-Sage remains valuable for arithmetic, symbolic computation, and mature algorithms.
-A modeled mathematical realization is an explicit functor.
-
-A category-owned method can also use a private Sage value directly inside its
-computation boundary. It reconstructs the owned mathematical result before returning.
-A private computation representation supplies no public methods.
-
-This boundary keeps mathematical ownership in this framework.
-It also permits one owned implementation to use several private computation engines.
-
-## Design standard
-
-The kernel can be intricate when that complexity removes repetition from theory code.
-The theory layer must read like mathematics:
-
-- categories own operations at their natural level;
-
-- functors state every change of structure;
-
-- constructions preserve their defining arrows;
-
-- inherited methods follow structural functors;
-
-- implementations do not impose unjustified finiteness or countability assumptions.
-
-The framework succeeds when a new category states only its mathematical contribution.
-The existing category and functor structure should supply the rest.
+This import selects the package-owned mathematical universe.
+Public operations return owned mathematical values or authorized SymPy proposition expressions.
+
+## Documentation map
+
+| Subject | Owner |
+| --- | --- |
+| System layers and dependency order | [`specs/system.md`](specs/system.md) |
+| Mathematical decisions and supersession | [`specs/decisions.md`](specs/decisions.md) |
+| `Cat`, `Mor`, `Fun`, functor actions, and selected structure functors | [`specs/functor.md`](specs/functor.md) |
+| Private Sage compiler and runtime | [`specs/resolution.md`](specs/resolution.md) |
+| Leaf and computation-engine boundary | [`specs/leaves.md`](specs/leaves.md) |
+| Minimal executable leaf contracts and audit examples | [`specs/leaf-scaffolding.md`](specs/leaf-scaffolding.md) |
+| Bimodule actions and relative tensor products | [`specs/bimodules.md`](specs/bimodules.md) |
+| Schemes, affine presentations, and gluing | [`specs/schemes.md`](specs/schemes.md) |
+| Property categories, inverse images, and refinement | [`specs/property-refinement.md`](specs/property-refinement.md) |
+| Propositions, typed queries, and `ask()` | [`specs/undecidable-properties.md`](specs/undecidable-properties.md) |
+| Compact review policies | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| Agent workflow | [`AGENTS.md`](AGENTS.md) |
+
+Category specifications under [`specs/`](specs/) state their local mathematics and link to these owners.

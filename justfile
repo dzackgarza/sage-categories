@@ -18,8 +18,23 @@ default:
 test-commit:
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-commit
 
+# Architecture invariants from specs/system.md and specs/resolution.md (D132): a hard stop before push.
+#
+# The coverage check runs first (D174): a rule whose file glob matches nothing is green
+# because it read nothing, which is not a measurement. A rule names only packages in the
+# tree, so each P-phase adds its package back to the rules it owns, exactly as the
+# pyproject comment states for the import contracts.
+architecture:
+    uv run --no-project --python 3.14 --with pyyaml python scripts/rule_coverage.py
+    PYTHONPATH=src uvx --python 3.14 --from import-linter lint-imports --config pyproject.toml
+    uvx --from ast-grep-cli ast-grep scan --config .ast-grep/architecture.yml --error src tests/kernel
+
+# Phase-order invariants of the core plan's gate protocol (D136, POL-DOC-029), read from the vault cards.
+plan-state:
+    bash scripts/plan_state.sh
+
 # Run the full SageMath test suite before pushing.
-test-push:
+test-push: plan-state architecture
     @just -f ~/ai-review-ci/justfiles/sage.just -d . test-push
 
 # Run CI acceptance QC through the central implementation.
@@ -84,18 +99,19 @@ ci-provision-sage:
         | sudo tee "${sage_dir}/python" >/dev/null
     sudo chmod +x "${sage_dir}/python"
     sage_bin="${sage_dir}/sage"
-    # The checkout under test, not whatever version the image happened to carry.
-    # This Sage's CLI takes only -c and a file; the environment's pip is reached
-    # through its Python, which is the spelling the QC profile uses too.
+    # Install this checkout, its runtime dependencies, and its QC dependency group together.
     docker exec -i -w "${workspace}" sage-env /sage/.venv/bin/uv pip install \
         --python /sage/.venv/bin/python \
-        'sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main' \
-        sympy \
-        'tree-sitter-sage @ git+https://github.com/dzackgarza/tree-sitter-sage'
-    docker exec -i -w "${workspace}" sage-env /sage/.venv/bin/uv pip install \
-        --python /sage/.venv/bin/python --no-deps -e .
+        --project "${workspace}" \
+        --group dev \
+        --group platform \
+        --editable "${workspace}"
+    # GAP PackageManager resolves the exact native package releases into this checkout.
+    docker exec -i -w "${workspace}" sage-env gap -q -r --packagedirs "${workspace}/.gap/pkg" "${workspace}/.gap-packages.g"
+    # JuliaPkg reads the package-owned juliapkg.json and resolves Julia, Catlab, and GATlab.
+    docker exec -i -w "${workspace}" sage-env /sage/.venv/bin/python -m juliapkg resolve
     # The CI tier measures coverage with the Sage interpreter's own Python, so
     # the tool has to live in that environment rather than on the runner.
-    "${sage_dir}/python" -m pip install --quiet coverage
+    "${sage_dir}/python" -m uv pip install --quiet coverage
     echo "SAGE_BIN=$sage_bin" >> "${GITHUB_ENV:-/dev/stdout}"
     "$sage_bin" -c "import sage_categories; print('sage_categories', sage_categories.version())"

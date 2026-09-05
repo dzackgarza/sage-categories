@@ -9,12 +9,12 @@
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 262 files tracked by git with 228 Code rules:
+  Scanning 265 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     262          Community     160                                                                
-  python           36     120          Custom         68                                                                
+  <multilang>       7     265          Community     160                                                                
+  python           36     122          Custom         68                                                                
   yaml             11      27                                                                                           
                                                                                                                         
 No files modified by autofix.
@@ -26,13 +26,13 @@ No files modified by autofix.
 ✅ Scan completed successfully.
  • Findings: 15 (15 blocking)
  • Rules run: 54
- • Targets scanned: 262
+ • Targets scanned: 265
  • Parsed lines: ~100.0%
  • Scan skipped: 
    ◦ Matching --exclude patterns: 2
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 262 files: 15 findings.
+Ran 54 rules on 265 files: 15 findings.
                     
                     
 ┌──────────────────┐

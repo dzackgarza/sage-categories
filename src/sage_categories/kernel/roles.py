@@ -420,15 +420,10 @@ type RoleCandidate = CategoryPoint | int
 
 
 def role_of(candidate: RoleCandidate) -> Role | None:
-    """The implementation role of a candidate value, or ``None`` for an unowned candidate (POL-TYPE-004)."""
-    match candidate:
-        case MorphismOfCategory():
-            return Role.MORPHISM
-        case ObjectOfCategory():
-            return Role.OBJECT
-        case CategoryPoint():
-            return Role.ELEMENT
-    return None
+    """The constructor's role, or ``None`` for an unowned candidate (POL-TYPE-004)."""
+    from sage_categories.kernel.construction import construction_role
+
+    return construction_role(candidate) if isinstance(candidate, CategoryPoint) else None
 
 
 def category_of(value: CategoryPoint, role: Role) -> Category:

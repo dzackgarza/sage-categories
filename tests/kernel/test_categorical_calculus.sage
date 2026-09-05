@@ -28,6 +28,13 @@ def test_monoid_objects_receive_all_laws_from_equifiers():
     assert (
         hom.underlying_morphism().underlying_morphism()(carrier.point(1)).datum() == 2
     )
+    assert hom in Mor(Monoids(sets))(monoid, monoid)
+    assert ask(hom * hom == Mor(Monoids(sets))(monoid, monoid).one()) is True
+    from sage_categories.cat.monoidal import Cartesian, tensor_morphism
+
+    wrong_unit = Mor(sets)(sets.Terminal(), carrier)(lambda point: 1)
+    wrong_left_unit = multiplication * tensor_morphism(tensor, wrong_unit, Mor(sets)(carrier, carrier).one())
+    assert ask(wrong_left_unit == Cartesian(sets).left_unitor().component(carrier)) is False
 
 
 def test_cartesian_closure_transports_both_variables():
@@ -36,7 +43,7 @@ def test_cartesian_closure_transports_both_variables():
 
     def image(pair):
         return triangle(
-            interval.label(pair.component(0)) + interval.label(pair.component(1))
+            interval.label(pair.family_component(0)) + interval.label(pair.family_component(1))
         )
 
     def arrow_image(arrow):

@@ -40,8 +40,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
 from sage_categories.kernel.refinement import is_placed
-from sage_categories.kernel.sage_runtime import MonoDict
-from functools import cache
+from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -216,7 +215,7 @@ class DiscreteObjectCategory(DiscreteCategory):
         assert point.parent() is self
         return self._index_set.point(point.datum())
 
-    @cache
+    @cached_method
     def point_comparison(self) -> Functor:
         """The retained comparison with the discrete selected carrier."""
         target = Discrete(self._index_set)

@@ -116,16 +116,16 @@ def product_functor(base: Category) -> Functor:
     """The chosen binary-product functor ``C × C -> C``."""
     pairs = Cat().Products()((base, base))
     result = Fun(pairs, base)(
-        lambda pair: base.Products()((pair.component(0), pair.component(1))),
+        lambda pair: base.Products()((pair.family_component(0), pair.family_component(1))),
         lambda arrow: pair_maps(
             base,
-            arrow.component(0)
+            arrow.family_component(0)
             * binary_product_data(
-                base, arrow.domain().component(0), arrow.domain().component(1)
+                base, arrow.domain().family_component(0), arrow.domain().family_component(1)
             ).leg(0),
-            arrow.component(1)
+            arrow.family_component(1)
             * binary_product_data(
-                base, arrow.domain().component(0), arrow.domain().component(1)
+                base, arrow.domain().family_component(0), arrow.domain().family_component(1)
             ).leg(1),
         ),
     )
@@ -188,14 +188,14 @@ def uncurry(functor: Functor) -> Functor:
     pairs = Cat().Products()((first, second))
 
     def on_morphism(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        left, right = arrow.component(0), arrow.component(1)
+        left, right = arrow.family_component(0), arrow.family_component(1)
         return functor.on_morphism(left).component(right.codomain()) * functors.diagram(
             functor.on_object(left.domain())
         ).on_morphism(right)
 
     return Fun(pairs, target)(
-        lambda value: functors.diagram(functor.on_object(value.component(0))).on_object(
-            value.component(1)
+        lambda value: functors.diagram(functor.on_object(value.family_component(0))).on_object(
+            value.family_component(1)
         ),
         on_morphism,
     )
@@ -249,13 +249,16 @@ def currying(
             )(lambda other: transformation.component(pairs((value, other))))
         ),
     )
+    # An object of ``Fun([1], X)`` may be a morphism of ``X``, and one of ``Fun(*, X)``
+    # a point; ``destination.diagram`` reads either as the functor it denotes.
     inverse = Fun(destination, source)(
-        uncurry,
+        lambda value: uncurry(destination.diagram(value)),
         lambda transformation: Mor(source)(
-            uncurry(transformation.domain()), uncurry(transformation.codomain())
+            uncurry(destination.diagram(transformation.domain())),
+            uncurry(destination.diagram(transformation.codomain())),
         )(
-            lambda pair: transformation.component(pair.component(0)).component(
-                pair.component(1)
+            lambda pair: transformation.component(pair.family_component(0)).component(
+                pair.family_component(1)
             )
         ),
     )
@@ -269,21 +272,23 @@ def currying(
         return natural_isomorphism(functor, roundtrip, identity, identity)
 
     @cached_function(key=identity_key)
-    def counit_component(functor: Functor) -> NaturalTransformation:
+    def counit_component(value: CategoryOfCategories.ElementType) -> NaturalTransformation:
+        functor = destination.diagram(value)
         roundtrip = curry(uncurry(functor))
 
         @cached_function(key=identity_key)
-        def component(value: CategoryOfCategories.ElementType) -> NaturalTransformation:
-            original = functor.on_object(value)
-            identity = lambda other: Mor(target)(
-                original.on_object(other), original.on_object(other)
+        def component(other: CategoryOfCategories.ElementType) -> NaturalTransformation:
+            original = functor.on_object(other)
+            image = Fun(second, target).diagram(original)
+            identity = lambda third: Mor(target)(
+                image.on_object(third), image.on_object(third)
             ).one()
             return natural_isomorphism(
-                roundtrip.on_object(value), original, identity, identity
+                roundtrip.on_object(other), original, identity, identity
             )
 
         return natural_isomorphism(
-            roundtrip, functor, component, lambda value: component(value).inverse()
+            roundtrip, value, component, lambda other: component(other).inverse()
         )
 
     unit = natural_isomorphism(

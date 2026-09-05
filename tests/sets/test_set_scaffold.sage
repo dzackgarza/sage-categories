@@ -6,6 +6,7 @@ from sage_categories.all import Cat, Category, Fun, Sets, FiniteSets, Mor, ask, 
 from sage_categories.cat.constructions import constructed_data
 from sage_categories.cat.cones import cocone, cocones
 from sage_categories.cat.functors import Functor
+from sage_categories.cat.shapes import Discrete
 from sage_categories.sets.finite import SetsCategory
 
 
@@ -104,11 +105,24 @@ def test_selected_set_functor_supplies_point_and_map_behavior() -> None:
     point = source.point(2)
     assert point.parent() is source
     assert point.datum() == 2
+    defining = point.defining_morphism()
+    assert defining in Fun(Cat().Terminal(), source)
+    assert defining.on_object(Cat().Terminal()(0)) is point
+    assert point.defining_morphism() is defining
     image = arrow(point)
     assert image.parent() is target
     assert image.datum() == 0
     assert projection.on_object(source) is X
     assert projection.on_morphism(arrow)(X.point(2)).parent() is Y
+    comparison = source.point_comparison()
+    assert source.point_comparison() is comparison
+    assert comparison.domain() is source
+    assert comparison.codomain() is Discrete(X)
+    carrier_point = comparison.on_object(point)
+    assert carrier_point.point() is X.point(2)
+    carrier_image = Discrete(projection.on_morphism(arrow)).on_element(carrier_point)
+    assert carrier_image is target.point_comparison().on_object(image)
+    assert carrier_image.point() is Y.point(0)
 
 
 def test_rule_defined_infinite_set() -> None:

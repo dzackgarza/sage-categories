@@ -2,7 +2,23 @@
 
 from sage_categories.all import Cat, Fun, Mor, Sets, Cartesian, Composition, SelfAction, ask
 from sage_categories.cat.monoidal import TrivialAction
-from sage_categories.cat.structured_objects import Magmas, PointedMagmas, Monoids
+from sage_categories.cat.structured_objects import Magmas, Monoids
+
+
+def test_functor_and_transformation_equality() -> None:
+    source, target = Cat().Terminal(), Cat().WalkingParallelPair()
+    diagrams = Fun(source, target)
+    first = diagrams.constant(target(0))
+    same = diagrams(lambda vertex: target(0), lambda arrow: Mor(target)(target(0), target(0)).one())
+    second = diagrams.constant(target(1))
+    assert ask(first == same) is True
+    assert ask(first == second) is False
+    transformations = Mor(diagrams)(first, second)
+    alpha = transformations(lambda vertex: target.generator("f"))
+    beta = transformations(lambda vertex: target.generator("g"))
+    duplicate = transformations(lambda vertex: target.generator("f"))
+    assert ask(alpha == duplicate) is True
+    assert ask(alpha == beta) is False
 
 
 def test_cartesian_coherence() -> None:
@@ -62,6 +78,14 @@ def test_composition_tensor() -> None:
     multiplication = Mor(E)(closure * closure, closure)(lambda x: edge(max(1, C.label(x)), max(1, C.label(x))))
     unit = Mor(E)(identity, closure)(lambda x: edge(C.label(x), max(1, C.label(x))))
     magma = Magmas(structure).algebra(closure, multiplication)
+    assert magma.on_object(C(0)) is closure.on_object(C(0))
+    assert magma.domain() is C and magma.codomain() is C
+    assert ask(magma.on_morphism(edge(0, 2)) == edge(1, 2)) is True
+    top_multiplication = Mor(E)(top * top, top)(lambda x: edge(2, 2))
+    top_magma = Magmas(structure).algebra(top, top_multiplication)
+    comparison = Mor(E)(closure, top)(lambda x: edge(max(1, C.label(x)), 2))
+    magma_map = Magmas(structure).homomorphism(magma, top_magma, comparison)
+    assert ask(Magmas(structure).forgetful().on_morphism(magma_map).component(C(1)) == edge(1, 2)) is True
     monoid = Monoids(structure)(multiplication, unit)
     assert monoid in Monoids(structure)
     assert monoid.carrier().carrier() is closure
@@ -72,5 +96,30 @@ def test_composition_tensor() -> None:
     assert Monoids(structure).to_magmas().on_object(monoid) is magma
 
 
+def test_closure_monad_on_two_element_chain() -> None:
+    interval = Cat().Simplex(1)
+    endofunctors = Fun(interval, interval)
+    identity = endofunctors.one()
+    closure = endofunctors.constant(interval(1))
+    edge = interval.generator("0->1")
+    identity_at_top = Mor(interval)(interval(1), interval(1)).one()
+    unit = Mor(endofunctors)(identity, closure)(
+        lambda vertex: edge if interval.label(vertex) == 0 else identity_at_top
+    )
+    multiplication = Mor(endofunctors)(closure * closure, closure)(
+        lambda vertex: identity_at_top
+    )
+    structure = Composition(interval)
+    monad = Monoids(structure)(multiplication, unit)
+    assert monad in Monoids(structure)
+    assert structure.unit() is identity
+    assert ask(identity == endofunctors.Terminal()) is False
+    assert ask(monad.unit_morphism().component(interval(0)) == edge) is True
+    assert monad.multiplication().component(interval(0)).domain() is interval(1)
+    assert monad.multiplication().component(interval(0)).codomain() is interval(1)
+
+
+test_functor_and_transformation_equality()
 test_cartesian_coherence()
 test_composition_tensor()
+test_closure_monad_on_two_element_chain()

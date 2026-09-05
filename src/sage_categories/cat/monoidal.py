@@ -135,7 +135,7 @@ def Cartesian(base: Category) -> MonoidalStructuresCategory.ObjectType:
     left, right = tensor_parentheses(tensor)
 
     def rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
-        x, y, z = (triple.component(index) for index in range(3))
+        x, y, z = (triple.family_component(index) for index in range(3))
         xy, yz = binary_product_data(base, x, y), binary_product_data(base, y, z)
         if forward:
             source = binary_product_data(base, xy.apex(), z)
@@ -160,8 +160,8 @@ def Composition(base: Category) -> MonoidalStructuresCategory.ObjectType:
     endofunctors = Fun(base, base)
     pairs = Cat().Products()((endofunctors, endofunctors))
     tensor = Fun(pairs, endofunctors)(
-        lambda pair: pair.component(0) * pair.component(1),
-        lambda arrow: Cat().horizontal_composite(arrow.component(0), arrow.component(1)))
+        lambda pair: pair.family_component(0) * pair.family_component(1),
+        lambda arrow: Cat().horizontal_composite(arrow.family_component(0), arrow.family_component(1)))
     unit = endofunctors.one()
     left, right = tensor_parentheses(tensor)
     left_unit, right_unit = tensor_units(tensor, unit)
@@ -273,8 +273,8 @@ def TrivialAction(monoidal: MonoidalStructuresCategory.ObjectType, base: Categor
     constant = Fun(base, monoidal.underlying_category()).constant(monoidal.unit())
     unital = action * pair_maps(Cat(), constant, identity)
     associator = natural_isomorphism(left, right,
-        lambda triple: Mor(base)(triple.component(2), triple.component(2)).one(),
-        lambda triple: Mor(base)(triple.component(2), triple.component(2)).one())
+        lambda triple: Mor(base)(triple.family_component(2), triple.family_component(2)).one(),
+        lambda triple: Mor(base)(triple.family_component(2), triple.family_component(2)).one())
     unitor = natural_isomorphism(unital, identity,
         lambda value: Mor(base)(value, value).one(),
         lambda value: Mor(base)(value, value).one())

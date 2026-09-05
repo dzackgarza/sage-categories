@@ -46,28 +46,28 @@ def _integrand(
     tensor = product_functor(sets)
     pairs = tensor.domain()
     left, right = first.domain(), second.domain()
-    a, c = outer.component(0), outer.component(1)
+    a, c = outer.family_component(0), outer.family_component(1)
 
     def factors(
         value: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
         return pairs(
             (
-                first.on_object(left((a, value.component(1)))),
-                second.on_object(right((value.component(0), c))),
+                first.on_object(left((a, value.family_component(1)))),
+                second.on_object(right((value.family_component(0), c))),
             )
         )
 
     def on_morphism(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         p = left.construct_morphism(
-            left((a, arrow.domain().component(1))),
-            left((a, arrow.codomain().component(1))),
-            (Mor(left.factor(0))(a, a).one(), arrow.component(1)),
+            left((a, arrow.domain().family_component(1))),
+            left((a, arrow.codomain().family_component(1))),
+            (Mor(left.factor(0))(a, a).one(), arrow.family_component(1)),
         )
         q = right.construct_morphism(
-            right((arrow.domain().component(0), c)),
-            right((arrow.codomain().component(0), c)),
-            (arrow.component(0), Mor(right.factor(1))(c, c).one()),
+            right((arrow.domain().family_component(0), c)),
+            right((arrow.codomain().family_component(0), c)),
+            (arrow.family_component(0), Mor(right.factor(1))(c, c).one()),
         )
         return tensor.on_morphism(
             pairs.construct_morphism(
@@ -103,19 +103,19 @@ def compose_profunctors(first: Functor, second: Functor, hom: Functor) -> Functo
         ) -> MorphismCategory.ObjectType:
             left, right = first.domain(), second.domain()
             p = left.construct_morphism(
-                left((arrow.domain().component(0), value.component(1))),
-                left((arrow.codomain().component(0), value.component(1))),
+                left((arrow.domain().family_component(0), value.family_component(1))),
+                left((arrow.codomain().family_component(0), value.family_component(1))),
                 (
-                    arrow.component(0),
-                    Mor(middle)(value.component(1), value.component(1)).one(),
+                    arrow.family_component(0),
+                    Mor(middle)(value.family_component(1), value.family_component(1)).one(),
                 ),
             )
             q = right.construct_morphism(
-                right((value.component(0), arrow.domain().component(1))),
-                right((value.component(0), arrow.codomain().component(1))),
+                right((value.family_component(0), arrow.domain().family_component(1))),
+                right((value.family_component(0), arrow.codomain().family_component(1))),
                 (
-                    Mor(middle.op())(value.component(0), value.component(0)).one(),
-                    arrow.component(1),
+                    Mor(middle.op())(value.family_component(0), value.family_component(0)).one(),
+                    arrow.family_component(1),
                 ),
             )
             factors = tensor.domain()
@@ -157,10 +157,10 @@ def compose_profunctor_transformations(
 
         def at(value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             p = first.component(
-                first.domain().domain()((outer.component(0), value.component(1)))
+                first.domain().domain()((outer.family_component(0), value.family_component(1)))
             )
             q = second.component(
-                second.domain().domain()((value.component(0), outer.component(1)))
+                second.domain().domain()((value.family_component(0), outer.family_component(1)))
             )
             pairs = tensor.domain()
             return tensor.on_morphism(
@@ -194,14 +194,14 @@ def _unitor_components(
     diagram, weight = _integrand(first, second, outer), coend_weight(hom)
     sets = profunctor.codomain()
     target = profunctor.on_object(outer)
-    a, c = outer.component(0), outer.component(1)
+    a, c = outer.family_component(0), outer.family_component(1)
     middle = hom.domain().factor(1)
 
     def component(
         index: CategoryOfCategories.ElementType, point: CategoryOfCategories.ElementType
     ) -> MorphismCategory.ObjectType:
-        p = first.on_object(first.domain()((a, index.component(1))))
-        q = second.on_object(second.domain()((index.component(0), c)))
+        p = first.on_object(first.domain()((a, index.family_component(1))))
+        q = second.on_object(second.domain()((index.family_component(0), c)))
         product = binary_product_data(sets, p, q)
         connecting = point.datum()
 
@@ -212,14 +212,14 @@ def _unitor_components(
             if left:
                 arrow = connecting * x.datum()
                 transport = pairs.construct_morphism(
-                    pairs((index.component(0), c)),
+                    pairs((index.family_component(0), c)),
                     outer,
                     (opposite_morphism(arrow), Mor(pairs.factor(1))(c, c).one()),
                 )
                 return profunctor.on_morphism(transport)(y).datum()
             arrow = y.datum() * connecting
             transport = pairs.construct_morphism(
-                pairs((a, index.component(1))),
+                pairs((a, index.family_component(1))),
                 outer,
                 (Mor(pairs.factor(0))(a, a).one(), arrow),
             )
@@ -238,8 +238,13 @@ def _unitor_components(
     def inverse_action(datum: Hashable) -> Hashable:
         value = target.point(datum)
         p, q = (hom_point, value) if left else (value, hom_point)
+        terminal = sets.Terminal()
         paired = sets.element_from_defining_morphism(
-            pair_maps(sets, p.defining_morphism(), q.defining_morphism())
+            pair_maps(
+                sets,
+                Mor(sets)(terminal, p.parent())(lambda datum: p.datum()),
+                Mor(sets)(terminal, q.parent())(lambda datum: q.datum()),
+            )
         )
         return injection(paired).datum()
 

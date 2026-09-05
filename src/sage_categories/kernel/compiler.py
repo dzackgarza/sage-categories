@@ -33,6 +33,7 @@ from sage_categories.kernel.construction import (
     retain_object_by_datum,
     retain_object_input,
     retained_element_input,
+    retained_input,
     retained_morphism_input,
     retained_object_by_datum,
     retained_object_input,
@@ -100,12 +101,19 @@ class _KernelRoleRootCategory(SageCategory):
 
     @property
     def _cmp_key(self) -> tuple[int, int, int, int]:
-        return (0, _ROLE_POSITIONS[self._role], -1, len(self._root.__mro__))
+        return (0, self._depth, _ROLE_POSITIONS[self._role], len(self._root.__mro__))
+
+    @lazy_attribute
+    def _depth(self) -> int:
+        return 1 + max((target._cmp_key[1] for target in self.super_categories()), default=-1)
 
     def super_categories(self) -> list[SageCategory]:
         if self._root is CategoryPoint:
             return []
         base = self._root.__bases__[0]
+        current = _runtime_node(base)
+        if current is not None:
+            return [_runtime_category(current)]
         return [_cat_element_role_root() if base is CategoryPoint else _role_root(self._role, base)]
 
     @lazy_attribute
@@ -127,11 +135,11 @@ class _RuntimeImplementationCategory(SageCategory):
 
     @property
     def _cmp_key(self) -> tuple[int, int, int, int]:
-        return (0, _ROLE_POSITIONS[self._current.role], self._depth, self._ordinal)
+        return (0, self._depth, _ROLE_POSITIONS[self._current.role], self._ordinal)
 
     @lazy_attribute
     def _depth(self) -> int:
-        return 1 + max((target._cmp_key[2] for target in self._targets), default=-1)
+        return 1 + max((target._cmp_key[1] for target in self._targets), default=-1)
 
     def super_categories(self) -> list[SageCategory]:
         return list(self._targets)
@@ -161,6 +169,7 @@ _RUNTIME_CACHE_NAMES = (
 
 def _role_root(role: Role, root: type[CategoryPoint]) -> _KernelRoleRootCategory:
     """The Sage-canonical private category ending one role chain at ``root``."""
+    role = next((candidate for candidate in Role if kernel_base(candidate) is root), role)
     return _KernelRoleRootCategory(role, root)
 
 
@@ -532,22 +541,6 @@ def _linearized_nodes(current: Node) -> tuple[Node, ...]:
     )
 
 
-def _stable_role_class(runtime_class: type[CategoryPoint], role: Role) -> type[CategoryPoint]:
-    """The kernel role class ``runtime_class`` stands on, which is the role of its values.
-
-    A value's role is the one its compiled class carries, not the role of the node its
-    placement is compiled at.  ``Mor(C)(A, B)`` is the full subcategory of ``Mor(C)`` on
-    the morphisms ``A -> B``, so its objects are the morphisms of ``C`` and its object
-    node reaches ``C.MorphismType`` through that inclusion; a property subcategory of
-    ``Mor(C)`` reaches it the same way.  Both are object nodes, and a value of either is a
-    morphism (``specs/functor.md``, "The ``Mor(n, C)`` tower": one implementation type,
-    one value, two placements).  Reading the class is reading that level identity where
-    the structural graph already installed it.
-    """
-    kernel_roles = tuple(kernel_base(each) for each in Role)
-    return next((base for base in runtime_class.__mro__ if base in kernel_roles), kernel_base(role))
-
-
 def runtime_semantic_bases(
     runtime_class: type[CategoryPoint],
 ) -> tuple[type[CategoryPoint], ...] | None:
@@ -568,7 +561,7 @@ def runtime_semantic_bases(
         for role, table in _node_runtimes.items():
             for category, runtime in table.items():
                 if category.local_role_class(role) is runtime_class:
-                    installed = _installed_root_declarations.get(_stable_role_class(runtime.owner, role))
+                    installed = _installed_root_declarations.get(kernel_base(role))
                     if installed is not None and installed is not runtime_class:
                         return (installed,)
         role = declaration_role(runtime_class)
@@ -586,7 +579,7 @@ def runtime_semantic_bases(
         for position, declaration in enumerate(supplied)
         if not any(declaration is later for later in supplied[position + 1 :])
     ]
-    stable_role = _stable_role_class(runtime_class, current.role)
+    stable_role = kernel_base(current.role)
     if not issubclass(stable_role, runtime_class) and not any(
         issubclass(base, stable_role) for base in result
     ):
@@ -622,7 +615,7 @@ class _SelectedAction(NamedTuple):
 def _initialize_kernel_roots(instance: CategoryPoint, role: Role) -> None:
     """Install placement and identity from the active construction context, before any declaration runs."""
     if role is not Role.ELEMENT:
-        instance._initialize_placement()
+        kernel_base(role)._initialize_placement(instance)
     instance._initialize_identity()
 
 
@@ -811,6 +804,9 @@ def _initialize_graph(
         if isinstance(context, ObjectConstructionContext):
             context.initializing_image = representative
         with record_attribute_writes(instance) as written:
+            if isinstance(context, ObjectConstructionContext) and owner.role is Role.MORPHISM:
+                identity = retained_morphism_input(representative).identity
+                instance._domain, instance._codomain = identity.domain, identity.codomain
             context.run(owner, lambda runtime=runtime, datum=datum: runtime.initializer(instance, datum))
         _keep_first_state(instance, installed, kernel_state, owner, written)
         if owner.role is not current.role:
@@ -825,7 +821,7 @@ def _object_image_datum(functor: Functor, instance: CategoryPoint) -> tuple[Cate
     image = functor.on_object(instance)
     if image is instance:
         return image, Node(functor.codomain(), Role.OBJECT), None
-    retained = retained_object_input(image)
+    retained = retained_input(image)
     return image, node(retained.identity.category, Role.OBJECT), retained.datum
 
 
@@ -859,9 +855,6 @@ def _construct_object_root[Datum](
     retain_object_input(root)
     cat_element_identity = CategoryPointIdentity(identity.category)
     nodes = (current, *_linearized_nodes(current))
-    assert all(owner.role is not Role.MORPHISM for owner in nodes), (
-        f"the object graph of {current.category!r} reaches a morphism implementation"
-    )
     context = ObjectConstructionContext(instance, identity, cat_element_identity, nodes)
     token = activate_object_context(context)
     try:

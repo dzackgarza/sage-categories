@@ -768,8 +768,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
         def on_morphism(path: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             if path.domain() is path.codomain():
+                # The identity of the endpoint as an object of this category: for an
+                # endpoint that is itself a morphism, the identity square, not its 2-cell.
                 endpoint = on_object(path.domain())
-                return endpoint.category().morphism_category(1)(endpoint, endpoint).one()
+                return self.morphism_category(1)(endpoint, endpoint).one()
             return morphism
 
         self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
@@ -1027,22 +1029,25 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         base = self.narrowing_base()
         if base is not self:
             return base.intersection((*self.narrowing_roots(), *roots))
+        selected = self.closed_roots(roots)
+        if not selected:
+            return self
+        key = tuple(root.ordinal() for root in selected)
+        for root in selected:
+            if root.narrowing_base() is self and {member.ordinal() for member in root.narrowing_roots()} == set(key):
+                return root
+        if key not in self._narrowings:
+            self._narrowings[key] = self.narrowing_type()(self, selected)
+        return self._narrowings[key]
+
+    def closed_roots(self, roots: tuple[Category[MorphismData, TwoMorphismData], ...]) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
+        """The roots of the narrowing of this base by ``roots``: every root each one carries, in ordinal order, omitting those containing the base."""
         closed: dict[int, Category] = {}
         for root in roots:
             for member in root.narrowing_roots():
                 if not is_subcategory(self, member):
                     closed[member.ordinal()] = member
-        ordered = tuple(sorted(closed.items()))
-        if not ordered:
-            return self
-        selected = tuple(root for _, root in ordered)
-        for root in selected:
-            if root.narrowing_base() is self and {member.ordinal() for member in root.narrowing_roots()} == set(closed):
-                return root
-        key = tuple(ordinal for ordinal, _ in ordered)
-        if key not in self._narrowings:
-            self._narrowings[key] = self.narrowing_type()(self, selected)
-        return self._narrowings[key]
+        return tuple(root for _, root in sorted(closed.items()))
 
     def property_subcategory(self, property_category: Category[MorphismData, TwoMorphismData]) -> Category[MorphismData, TwoMorphismData]:
         """``self.P()``: the narrowing of this placement by the roots of ``P`` (POL-CAT-084)."""
@@ -1113,10 +1118,6 @@ def _shared_category(first: CategoryOfCategories.ElementType, second: CategoryOf
     )
     return shared.construction_owner()
 
-
-# The terminal comparisons ``1_D -> F(1_C)`` retained by the constructions that own a
-# selected functor exposing point methods (POL-LEAF-003), keyed by the functor.
-_terminal_comparisons: MonoDict = MonoDict()
 
 # The lifts a functor ``p: E -> B`` retains over a stated class of morphisms of ``B``
 # (POL-FUN-029, ``specs/functor.md``, "Slices and coslices"): the owner of the
@@ -1244,6 +1245,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             """The category that decides equality of this point: its placement, or its parent's category for an element."""
             if self._is_element():
                 return self.parent().category()
+            if self._is_morphism():
+                return self.base_category()
             return self._category
 
         def __eq__(self, candidate: CategoryOfCategories.ElementType | int) -> Predicate:
@@ -1358,29 +1361,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return image
 
         def on_element(self, element: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-            """The image of a point ``t: 1_C -> X``: the element ``q = F(t): F(1_C) -> F(X)`` (POL-FUN-002).
-
-            This action is derived, never stored: it applies ``on_morphism`` to the defining
-            morphism of ``t`` and composes with the declared ``c: 1_D -> F(1_C)``, so the
-            image is a point of ``F(X)`` (D100).  A functor retains no element callback and
-            no element capability; the element conversion a selected functor retains
-            supplies compiler input only and never answers this call.
-
-            A subcategory monomorphism is the identity on the objects and morphisms of its domain,
-            so it is the identity on ``t: 1_C -> X`` as well (``specs/functor.md``, "Inclusion
-            functors").  Its domain and defining morphism are those of the ambient, which no
-            selected route reaches from the subcategory.
-            """
-            assert element._is_element(), f"{element!r} is not a point of an object"
-            if _declares_subcategory(self):
-                parent = element.parent()
-                assert is_placed(parent, self.domain()) or parent in self.domain(), f"{element!r} is not a point of an object of {self.domain()!r}"
-                return element
+            """Transport ``t: T -> X`` along ``self: X -> Y`` by composition (D17)."""
             defining = element.defining_morphism()
-            image = self.after_terminal_comparison(self.on_morphism(defining), defining)
-            if image is defining:
-                return element
-            return self.codomain().element_from_defining_morphism(image)
+            assert defining.codomain() is self.domain()
+            return Cat().element_from_defining_morphism(self * defining)
 
         def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             """Apply the functor to an object or a morphism of its domain."""
@@ -1469,43 +1453,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             if Discrete in self._limit_liftings and shape.is_discrete():
                 return self._limit_liftings[Discrete]
             return None
-
-        # -- points (``specs/functor.md``, "Structural inheritance") --------------------
-        #
-        # A point of ``X in C`` is a morphism ``t: 1_C -> X``, so ``F(t): F(1_C) -> F(X)``
-        # is a point of ``F(X)`` only after the comparison ``c: 1_D -> F(1_C)``.  That
-        # morphism of ``D`` is the whole datum of the transport (D100); the construction
-        # that owns the functor states it, and no property of ``C`` is read to obtain it.
-
-        def retain_terminal_comparison(self, comparison: MorphismCategory.ObjectType) -> None:
-            """Retain ``c: 1_D -> F(1_C)`` as the defining datum of this functor's transport of points (POL-LEAF-003)."""
-            target = self.codomain().Terminal()
-            assert comparison in self.codomain().morphism_category(1)(target, self.on_object(self.domain().Terminal()))
-            _terminal_comparisons[self] = comparison
-
-        def terminal_comparison(self) -> MorphismCategory.ObjectType:
-            """``1_D -> F(1_C)``: the retained comparison, or the identity when ``F(1_C) is 1_D``."""
-            if self in _terminal_comparisons:
-                return _terminal_comparisons[self]
-            target = self.codomain().Terminal()
-            assert self.on_object(self.domain().Terminal()) is target, f"{self!r} retains no terminal comparison"
-            return target.category().morphism_category(1)(target, target).one()
-
-        def after_terminal_comparison(self, image: MorphismCategory.ObjectType, defining: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-            """``F(t) . c`` for a point ``t: 1_C -> X`` whose image ``F(t)`` is ``image``, with ``c: 1_D -> F(1_C)`` (D100).
-
-            A generalized element ``t: T -> X`` whose domain is not ``1_C`` maps to ``F(t)``
-            and stays a generalized element (AGENTS.md, "Core categorical architecture").
-            An identity comparison composes to ``F(t)`` itself, so the image then keeps one
-            identity and one cache entry (POL-CAT-066).
-            """
-            if defining.domain() is not self.domain().Terminal():
-                return image
-            comparison = self.terminal_comparison()
-            source = comparison.domain()
-            if comparison is source.category().morphism_category(1)(source, source).one():
-                return image
-            return image * comparison
 
         # A functor is a morphism of ``Cat()``, so ``retain_factors`` and ``factors``
         # arrive from ``Mor(C).ObjectType``, where every morphism's composite factors are
@@ -1975,6 +1922,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def element_from_defining_morphism(self, defining_functor: Functor) -> CategoryOfCategories.ElementType:
         """The point of a category with domain ``T``, given by a functor ``T -> C``."""
         assert defining_functor in self.morphism_category(1)
+        if defining_functor.domain() is self.Terminal():
+            return defining_functor.on_object(self.Terminal()(0))
         return self.ElementType(defining_functor)
 
     def __repr__(self) -> str:

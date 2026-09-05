@@ -198,7 +198,7 @@ def hom_functor(category: Category, sets: Category) -> Functor:
     pairs = Cat().Products()((category.op(), category))
 
     def at(pair: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        arrows = category.hom_morphisms(pair.component(0), pair.component(1))
+        arrows = category.hom_morphisms(pair.family_component(0), pair.family_component(1))
         assert arrows is not Unknown, "Hom evaluation requires an owned hom enumeration"
         return sets(arrows)
 
@@ -208,7 +208,7 @@ def hom_functor(category: Category, sets: Category) -> Functor:
             result.on_object(arrow.domain()), result.on_object(arrow.codomain())
         )(
             lambda value: (
-                arrow.component(1) * value * opposite_morphism(arrow.component(0))
+                arrow.family_component(1) * value * opposite_morphism(arrow.family_component(0))
             )
         ),
     )
@@ -245,7 +245,7 @@ def coend_weight(hom: Functor) -> Functor:
     def swapped(
         pair: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
-        return pairs((pair.component(1), pair.component(0)))
+        return pairs((pair.family_component(1), pair.family_component(0)))
 
     def on_morphism(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         original = opposite_morphism(arrow)
@@ -254,8 +254,8 @@ def coend_weight(hom: Functor) -> Functor:
                 swapped(arrow.domain()),
                 swapped(arrow.codomain()),
                 (
-                    opposite_morphism(original.component(1)),
-                    opposite_morphism(original.component(0)),
+                    opposite_morphism(original.family_component(1)),
+                    opposite_morphism(original.family_component(0)),
                 ),
             )
         )
@@ -287,24 +287,24 @@ def natural_transformation_diagram(
     target = hom.domain()
     images = Fun(source, target)(
         lambda pair: target(
-            (first.on_object(pair.component(0)), second.on_object(pair.component(1)))
+            (first.on_object(pair.family_component(0)), second.on_object(pair.family_component(1)))
         ),
         lambda arrow: target.construct_morphism(
             target(
                 (
-                    first.on_object(arrow.domain().component(0)),
-                    second.on_object(arrow.domain().component(1)),
+                    first.on_object(arrow.domain().family_component(0)),
+                    second.on_object(arrow.domain().family_component(1)),
                 )
             ),
             target(
                 (
-                    first.on_object(arrow.codomain().component(0)),
-                    second.on_object(arrow.codomain().component(1)),
+                    first.on_object(arrow.codomain().family_component(0)),
+                    second.on_object(arrow.codomain().family_component(1)),
                 )
             ),
             (
-                first.op().on_morphism(arrow.component(0)),
-                second.on_morphism(arrow.component(1)),
+                first.op().on_morphism(arrow.family_component(0)),
+                second.on_morphism(arrow.family_component(1)),
             ),
         ),
     )
@@ -326,7 +326,7 @@ def natural_transformation_to_end(
         lambda pair, point: Mor(sets)(terminal, diagram.on_object(pair))(
             lambda datum: (
                 second.on_morphism(point.datum())
-                * transformation.component(pair.component(0))
+                * transformation.component(pair.family_component(0))
             )
         ),
     )

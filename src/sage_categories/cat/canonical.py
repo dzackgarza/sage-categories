@@ -217,6 +217,28 @@ class FinitePresentedCategory(Category[[Word], []]):
             )
         return self._finite_arrows
 
+    def Terminal(self) -> FinitePresentedCategory.ObjectType:
+        """The terminal vertex: the one receiving exactly one morphism from every vertex.
+
+        A terminal object is the limit of the empty diagram; in a finite category it is the
+        object ``t`` with a single morphism ``v -> t`` from each object ``v`` (Mathlib
+        ``CategoryTheory.Limits.IsTerminal``).  The simplex ``[n]`` has terminal ``n``; the
+        walking parallel pair has none, and this raises as the generic declaration does.
+        """
+        arrows = self.finite_morphisms()
+        assert arrows is not Unknown, f"{self!r} has no finite morphism enumeration to decide a terminal object"
+        vertices = tuple(self(label) for label in self._labels)
+        candidates = tuple(
+            target
+            for target in vertices
+            if all(
+                sum(1 for arrow in arrows if arrow.domain() is source and arrow.codomain() is target) == 1
+                for source in vertices
+            )
+        )
+        assert len(candidates) == 1, f"{self!r} declares no terminal object"
+        return candidates[0]
+
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.MorphismType:
         source, word = enumerated_datum(ask(self.morphism_set()), point)
         target = source if not word else self._generator_endpoints[word[-1]][1]

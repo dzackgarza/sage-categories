@@ -39,17 +39,17 @@ from sage_categories.kernel.sage_runtime import cached_function, cached_method
 class InserterCategory(LimitSubcategory):
     class ObjectType:
         def carrier(self) -> CategoryOfCategories.ElementType:
-            return self.component(0)
+            return self.family_component(0)
 
         def structure(self) -> MorphismCategory.ObjectType:
-            return self.component(1).arrow()
+            return self.family_component(1).arrow()
 
     class ElementType:
         pass
 
     class MorphismType:
         def underlying_morphism(self) -> MorphismCategory.ObjectType:
-            return self.component(0)
+            return self.family_component(0)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (*super().structure_functors(), self.forgetful())
@@ -77,10 +77,10 @@ class InserterCategory(LimitSubcategory):
             (
                 arrow,
                 comma.morphism_from_pair(
-                    source.component(1), target.component(1), arrow, arrow
+                    source.family_component(1), target.family_component(1), arrow, arrow
                 ),
                 pairs.construct_morphism(
-                    source.component(2), target.component(2), (arrow, arrow)
+                    source.family_component(2), target.family_component(2), (arrow, arrow)
                 ),
             ),
         )

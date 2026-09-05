@@ -32,6 +32,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable
+from itertools import combinations
 from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar, Literal
 
@@ -682,10 +683,31 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         the base's first ambient does not carry has nowhere else to be read from.
         """
         targets: list[Category] = [self._ambient, *self._roots]
-        for omitted in self._roots:
-            kept = tuple(root for root in self._roots if root is not omitted)
-            if kept:
-                targets.append(self._ambient.intersection(kept))
+        # Intersection is monotone in each factor (Mathlib ``Set.inter_subset_inter``):
+        # for a subset ``S`` of the roots whose narrowing ``D ∩ S`` is declared inside
+        # ``T``, this category lies in ``D ∩ ((roots − S) ∪ {T})``.  ``T = D`` gives the
+        # narrowing by the remaining roots; ``T`` a root of ``S`` gives the smaller subsets.
+        own = {root.ordinal() for root in self._roots}
+
+        def narrowing_by(roots: tuple[Category, ...]) -> Category | None:
+            """The narrowing of the base by ``roots``, or ``None`` when that is this category."""
+            closed = self._ambient.closed_roots(roots)
+            if {root.ordinal() for root in closed} == own:
+                return None
+            return self._ambient.intersection(closed)
+
+        for size in range(1, len(self._roots)):
+            for selected in combinations(self._roots, size):
+                narrowing = selected[0] if size == 1 else narrowing_by(selected)
+                if narrowing is None:
+                    continue
+                kept = tuple(root for root in self._roots if not any(root is chosen for chosen in selected))
+                for inclusion in narrowing.selected_functors():
+                    if not _functors().declares_subcategory(inclusion):
+                        continue
+                    target = narrowing_by((*kept, inclusion.codomain()))
+                    if target is not None:
+                        targets.append(target)
         for functor in self._ambient.selected_functors():
             if _functors().declares_subcategory(functor):
                 targets.append(functor.codomain().intersection(self._roots))

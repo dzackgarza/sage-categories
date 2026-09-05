@@ -115,7 +115,7 @@ def _components_agree_along_diagram(
         return None
     if limit.shape().generating_morphisms() is Unknown:
         return None
-    return sympy_ask(limit._agrees(candidate.component), assumptions)
+    return sympy_ask(limit._agrees(candidate.family_component), assumptions)
 
 
 register_handler(components_agree, _components_agree_along_diagram)
@@ -131,7 +131,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
             self._rule = data.rule
             self._shape = self.category().shape()
 
-        def component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
+        def family_component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
             """The object at ``i``, for ``i`` an object of the shape or a datum of its object set."""
             vertex = vertex_of(self._shape, index)
             result = self._rule(vertex)
@@ -148,11 +148,11 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
             self._rule = data.rule
             self._shape = self.base_category().shape()
 
-        def component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
+        def family_component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
             vertex = vertex_of(self._shape, index)
             result = self._rule(vertex)
             expected = self.base_category().narrowing_base().factor(vertex).morphism_category(1)(
-                self.domain().component(vertex), self.codomain().component(vertex),
+                self.domain().family_component(vertex), self.codomain().family_component(vertex),
             )
             assert result in expected
             return result
@@ -348,7 +348,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
     def construct_identity(self, member_object: LimitCategory.ObjectType) -> LimitCategory.MorphismType:
         def component_identity(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-            component = member_object.component(vertex)
+            component = member_object.family_component(vertex)
             return self.factor(vertex).morphism_category(1)(component, component).one()
 
         return self.MorphismType(
@@ -362,7 +362,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         return self.MorphismType(
             domain=first.domain(),
             codomain=second.codomain(),
-            data=FamilyMorphismData(lambda vertex: second.component(vertex) * first.component(vertex)),
+            data=FamilyMorphismData(lambda vertex: second.family_component(vertex) * first.family_component(vertex)),
         )
 
     def _equal(
@@ -379,7 +379,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         if vertices is Unknown:
             return None
         return sympy_ask(
-            conjunction(first.component(vertex) == candidate.component(vertex) for vertex in vertices),
+            conjunction(first.family_component(vertex) == candidate.family_component(vertex) for vertex in vertices),
             assumptions,
         )
 
@@ -429,8 +429,8 @@ def limit_of_categories(
     def projection(vertex: CategoryOfCategories.ElementType) -> Functor:
         if vertex not in projections:
             projections[vertex] = Fun(limit, diagram.on_object(vertex))(
-                lambda member_object: member_object.component(vertex),
-                lambda morphism: morphism.component(vertex),
+                lambda member_object: member_object.family_component(vertex),
+                lambda morphism: morphism.family_component(vertex),
             )
         return projections[vertex]
 

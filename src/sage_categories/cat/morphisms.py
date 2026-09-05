@@ -276,10 +276,10 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             return shared.base_category().compose_morphisms(self, first)
 
         def __eq__(self, candidate: MorphismCategory.ObjectType | int) -> Predicate:
-            return self.base_category().equality()(self, candidate)
+            return self._deciding_category().equality()(self, candidate)
 
         def __ne__(self, candidate: MorphismCategory.ObjectType | int) -> Proposition:
-            return ~self.base_category().equality()(self, candidate)
+            return ~self._deciding_category().equality()(self, candidate)
 
         def __hash__(self) -> int:
             return object.__hash__(self)

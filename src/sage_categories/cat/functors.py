@@ -326,6 +326,15 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
 
         return constant(self, value)
 
+    def Terminal(self) -> Functor:
+        """The terminal functor ``C -> D``: the constant diagram at ``D``'s terminal object.
+
+        A limit in ``Fun(C, D)`` is computed pointwise (``limit_construction``), so the
+        terminal object is the pointwise terminal, the constant diagram at ``D.Terminal()``
+        (Mathlib ``CategoryTheory.Limits.functorCategoryHasLimitsOfShape``).
+        """
+        return self.constant(self.codomain().Terminal())
+
     def diagonal(self) -> Functor:
         """The diagonal functor from the codomain into this functor category."""
         from sage_categories.cat.diagrams import diagonal
@@ -664,8 +673,12 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
         Both conditions are read off the functor's own placement, which is what the leaf
         stated by constructing in ``Fun(S, T).Monomorphisms().Isofibrations()``.  Before
-        those property categories exist no functor is placed in them, so none is declared.
+        those property categories exist no functor is placed in them, so none is declared,
+        except the ones the queue holds: every queued functor is a shared-value
+        monomorphism awaiting exactly that placement (``declares_inheritance``).
         """
+        if any(declared is functor for declared, _ in self._pending):
+            return True
         if not self._bootstrapped:
             return False
         # The answer depends only on the placement, whose roots are fixed once the

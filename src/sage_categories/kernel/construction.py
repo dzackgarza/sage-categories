@@ -134,6 +134,17 @@ _element_inputs: MonoDict = MonoDict()
 _morphism_inputs: MonoDict = MonoDict()
 
 
+def construction_role(value: CategoryPoint) -> Role | None:
+    """The role of the retained constructor, independent of inherited implementation."""
+    if value in _object_inputs:
+        return Role.OBJECT
+    if value in _morphism_inputs:
+        return Role.MORPHISM
+    if value in _element_inputs:
+        return Role.ELEMENT
+    return None
+
+
 
 def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: ObjectConstructionInput[Value, Datum]) -> None:
     value = construction_input.canonical_image

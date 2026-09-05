@@ -352,10 +352,10 @@ def _construct_comma_category(
             components = pair.on_object(value)
             image = arrow.on_object(value)
             defining = arrow.codomain().diagram(image).on_morphism(_walking_arrow().generator("0->1"))
-            return result.from_arrow(components.component(0), components.component(1), defining)
+            return result.from_arrow(components.family_component(0), components.family_component(1), defining)
         return Fun(pair.domain(), result)(on_object, lambda morphism: result.morphism_from_pair(
             on_object(morphism.domain()), on_object(morphism.codomain()),
-            pair.on_morphism(morphism).component(0), pair.on_morphism(morphism).component(1)))
+            pair.on_morphism(morphism).family_component(0), pair.on_morphism(morphism).family_component(1)))
 
     return Cat().Pullbacks().with_universal_data(diagram, result, cone(diagram, result, lambda vertex: legs[diagram.domain().label(vertex)]), mediator)
 

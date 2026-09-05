@@ -10,11 +10,11 @@ No staged Markdown, JSON, or YAML files found
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 254 files tracked by git with 228 Code rules:
+  Scanning 255 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     254          Community     160                                                                
+  <multilang>       7     255          Community     160                                                                
   python           36     119          Custom         68                                                                
   yaml             11      27                                                                                           
                                                                                                                         
@@ -25,19 +25,19 @@ No files modified by autofix.
 │ Scan Summary │
 └──────────────┘
 ✅ Scan completed successfully.
- • Findings: 13 (13 blocking)
+ • Findings: 14 (14 blocking)
  • Rules run: 54
- • Targets scanned: 254
+ • Targets scanned: 255
  • Parsed lines: ~100.0%
  • Scan skipped: 
    ◦ Matching --exclude patterns: 2
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 254 files: 13 findings.
+Ran 54 rules on 255 files: 14 findings.
                     
                     
 ┌──────────────────┐
-│ 13 Code Findings │
+│ 14 Code Findings │
 └──────────────────┘
                                          
     src/sage_categories/cat/predicates.py
@@ -60,30 +60,32 @@ Ran 54 rules on 254 files: 13 findings.
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          351┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          352┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          351┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          352┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
             ⋮┆----------------------------------------
-          359┆ relations = result.setdefault(_projection_surface(role), {})
+          360┆ relations = result.setdefault(_projection_surface(role), {})
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          362┆ base = _installed_root_declarations.get(kernel_base(role),
+          363┆ base = _installed_root_declarations.get(kernel_base(role),
                category_universal_class().ElementType)                   
             ⋮┆----------------------------------------
-          377┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          378┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          377┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          378┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+            ⋮┆----------------------------------------
+          487┆ recorded = vars(value).setdefault("_own_classes", (type(value),))
                                        
     src/sage_categories/kernel/roles.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default

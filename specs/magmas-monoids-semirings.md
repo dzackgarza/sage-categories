@@ -12,7 +12,7 @@ The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`, `POL-
 
 - [Magmas](#magmas)
 
-- [Additive and multiplicative forms](#additive-and-multiplicative-forms)
+- [Named operations](#named-operations)
 
 - [Monoids](#monoids)
 
@@ -78,9 +78,7 @@ f\circ\mu_X=\mu_Y\circ(f\otimes f).
 
 `Magmas(V)` is the category of these objects and morphisms.
 Its defining presentation retains `X`, `mu_X`, and their endpoint equation.
-`Magmas(V)` presents its objects as pairs, so the structure functor to `C` is the
-first product projection, whose index names it and whose codomain is fixed by the
-product:
+`Magmas(V)` presents its objects as pairs, so the structure functor to `C` is the first product projection, whose index names it and whose codomain is fixed by the product:
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
@@ -104,16 +102,14 @@ At `V = Cat()` with the cartesian product, an object is a category `X` with a fu
 
 and no law.
 
-The constructor receives or defines `mu_X`.
-The specification does not prescribe its private storage.
+The constructor receives or defines `mu_X`. The specification does not prescribe its private storage.
 The public surface names the operation once, `X.operation()`, and puts no operator on points.
 The fixed-endpoint magma-morphism category owns the operation-preservation containment predicate.
 `cat_kernel` derives its standard property application (D175).
 
 ## Named operations
 
-Notation is not mathematics (D185).
-The symbols `+` and `*` are renamings of the one generator of the magma theory.
+Notation is not mathematics (D185). The symbols `+` and `*` are renamings of the one generator of the magma theory.
 A renaming of generators is an isomorphism of presented theories, so its models form a category isomorphic to `Magmas(V)` and distinct from it.
 That category is the product with the one-object category on the symbol:
 
@@ -126,8 +122,7 @@ MultiplicativeMonoids(V) # Monoids(V) × 1_*
 
 Here `1_s` is `Discrete({s})`, the discrete category on the one-point set of the symbol.
 Each product is retained in `Cat().Products()` with its two projections.
-An object is a pair `(X, s)` of a neutral object and the symbol; `AdditiveMonoids(V).renamed(M)` constructs it over a neutral monoid `M`, and `homomorphism(source, target, f)` constructs its morphism over a neutral morphism `f`.
-The first projection is the renaming isomorphism, restriction along `· ↦ s`; it is retained for access and carries no name.
+An object is a pair `(X, s)` of a neutral object and the symbol; `AdditiveMonoids(V).renamed(M)` constructs it over a neutral monoid `M`, and `homomorphism(source, target, f)` constructs its morphism over a neutral morphism `f`. The first projection is the renaming isomorphism, restriction along `· ↦ s`; it is retained for access and carries no name.
 Names pass only along restriction functors induced by inclusions of presentations.
 The complete immediate structure-functor tuples are
 
@@ -174,8 +169,7 @@ When `T` is terminal, `x` and `y` are points and the result is an actual element
 The point operators evaluate it: the points are read in the carrier through the retained point comparison, `C.point_morphism(x)` and `C.point_morphism(y)` are their morphisms `1_C -> X`, `pair_maps` forms `x × y` on the diagonal, and the resulting point of `X` is re-owned by the structured object.
 For `C = Sets()`, this gives the usual binary operation on elements.
 
-When `V` is braided monoidal, `Magmas(V).Commutative()` is defined by equality of `mu_X` and its composite with the braiding on `X tensor X`.
-`AdditiveMagmas(V).Commutative()` is its inverse image along the renaming projection, and likewise for the other copies.
+When `V` is braided monoidal, `Magmas(V).Commutative()` is defined by equality of `mu_X` and its composite with the braiding on `X tensor X`. `AdditiveMagmas(V).Commutative()` is its inverse image along the renaming projection, and likewise for the other copies.
 
 ## Monoids
 
@@ -211,15 +205,13 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
     return (Fun(self, Magmas(V)).Monomorphisms().Isofibrations()(),)
 ```
 
-The constructor receives or defines `mu_X` and `eta_X`.
-The notation-neutral category exposes the unit morphism:
+The constructor receives or defines `mu_X` and `eta_X`. The notation-neutral category exposes the unit morphism:
 
 ```python
 M.unit_morphism()
 ```
 
-`unit_morphism()` returns `eta_X:I -> X`.
-It is a point only when `I` is terminal.
+`unit_morphism()` returns `eta_X:I -> X`. It is a point only when `I` is terminal.
 `M.operation()` reads the operation of the underlying magma.
 
 `Monoids(V).Commutative()` denotes commutative monoid objects.

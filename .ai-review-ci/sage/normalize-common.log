@@ -1,7 +1,6 @@
 =============================
 === Running: structured text formatting ===
 # Formats Markdown (flowmark), JSON, and YAML (prettier) before agents spend time on whitespace
-No staged Markdown, JSON, or YAML files found
 =============================
 === Running: semgrep auto-fix ===
 # Applies Semgrep autofixes; CI-tier Semgrep verification owns remaining findings
@@ -10,11 +9,11 @@ No staged Markdown, JSON, or YAML files found
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 255 files tracked by git with 228 Code rules:
+  Scanning 256 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     255          Community     160                                                                
+  <multilang>       7     256          Community     160                                                                
   python           36     119          Custom         68                                                                
   yaml             11      27                                                                                           
                                                                                                                         
@@ -27,13 +26,13 @@ No files modified by autofix.
 ✅ Scan completed successfully.
  • Findings: 14 (14 blocking)
  • Rules run: 54
- • Targets scanned: 255
+ • Targets scanned: 256
  • Parsed lines: ~100.0%
  • Scan skipped: 
    ◦ Matching --exclude patterns: 2
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 255 files: 14 findings.
+Ran 54 rules on 256 files: 14 findings.
                     
                     
 ┌──────────────────┐

@@ -1,7 +1,8 @@
 import sage_categories
 from dataclasses import dataclass
-from sage_categories.cat.category import Category
+from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.kernel.sage_runtime import cached_method
 __all__ = ['AdjunctionsCategory', 'EquivalencesCategory', 'Adjunctions', 'Equivalences']
 
@@ -45,6 +46,12 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
             ...
 
         def counit(self) -> NaturalTransformation:
+            ...
+
+        def transpose(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            ...
+
+        def untranspose(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):

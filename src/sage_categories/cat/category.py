@@ -841,7 +841,21 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
                 return _limit_of_opposite_categories
             if isinstance(original, FunctorCategory):
                 return _pointwise_limit_in_opposite_functor_category
+            construction = original.colimit_construction(shape.op())
+            return lambda diagram: construction(diagram.op())
+        if not shape.is_discrete() and shape is not Cat().WalkingParallelPair() and shape.op() is not Cat().WalkingParallelPair():
+            from sage_categories.cat.limit_basis import limit_from_products_equalizers
+
+            return limit_from_products_equalizers
         raise AssertionError(f"{self!r} owns no {shape!r}-limit construction; supply universal data")
+
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+        """Derive general colimits from owned coproducts and coequalizers."""
+        if not shape.is_discrete() and shape is not Cat().WalkingParallelPair() and shape.op() is not Cat().WalkingParallelPair():
+            from sage_categories.cat.limit_basis import colimit_from_coproducts_coequalizers
+
+            return colimit_from_coproducts_coequalizers
+        raise AssertionError(f"{self!r} owns no {shape!r}-colimit construction; supply universal data")
 
     def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
         """The diagrams this category constructed ``constructed`` from; a category that constructs nothing retains none.
@@ -943,6 +957,23 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         if morphisms is Unknown:
             return Unknown
         return tuple(self.morphism_at(point) for point in morphisms)
+
+    def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
+        """An exact finite enumeration of a hom, when owned evaluation supplies it."""
+        from sage_categories.cat.finite_categories import finite_category
+
+        finite = finite_category(self)
+        if finite is Unknown:
+            return Unknown
+        return tuple(arrow for arrow in finite.morphisms if arrow.domain() is source and arrow.codomain() is target)
+
+    def image_factorization(self, arrow: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+        """The chosen regular epimorphism/monomorphism factorization, when supplied."""
+        raise AssertionError(f"{self!r} declares no regular image factorization")
+
+    def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False] | UnknownClass:
+        """Find the unique factor through a mono, decide nonexistence, or remain undecided."""
+        return Unknown
 
     def biproduct(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         """``X @ Y``, where the category declares biproducts; no owned category declares them."""
@@ -1720,7 +1751,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         return self.construct_two_morphism(
             first.domain(),
             second.codomain(),
-            lambda x: second.component(x) * first.component(x),
+            lambda x: first.source_functor().codomain().compose_morphisms(second.component(x), first.component(x)),
             first.source_functor(),
             second.target_functor(),
         )
@@ -1761,8 +1792,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         assert functor.codomain() is source.domain()
         images = self.exponential(functor.domain(), source.codomain())
         return images.morphism_category(1)(
-            self.composite(source, functor),
-            self.composite(target, functor),
+            self.compose_morphisms(source, functor),
+            self.compose_morphisms(target, functor),
         )(lambda member_object: transformation.component(functor.on_object(member_object)))
 
     def horizontal_composite(self, second: NaturalTransformation, first: NaturalTransformation) -> NaturalTransformation:
@@ -1819,7 +1850,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         ``Fun([1], F).on_object(f) is F.on_morphism(f)``.
         """
         if is_placed(diagram, self.morphism_category(1)):
-            return self.composite(functor, diagram)
+            return self.compose_morphisms(functor, diagram)
         return functor(diagram)
 
     def exponential_on_morphism(self, exponent: Category, functor: Functor) -> Functor:

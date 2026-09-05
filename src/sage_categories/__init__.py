@@ -22,7 +22,33 @@ from sage_categories import cat_kernel as _cat_kernel
 _cat_kernel.install()
 del _cat_kernel
 
+from sage_categories.cat.adjunctions import Adjunctions, Equivalences
+from sage_categories.cat.calculus import (
+    binary_product_data,
+    curry,
+    currying,
+    evaluation,
+    natural_isomorphism,
+    pair_maps,
+    power_functor,
+    precompose,
+    product_functor,
+    transpose,
+    uncurry,
+)
 from sage_categories.cat.category import Category
+from sage_categories.cat.cones import (
+    cocones as Cocones,
+)
+from sage_categories.cat.cones import (
+    colimit_cocones as ColimitCocones,
+)
+from sage_categories.cat.cones import (
+    cones as Cones,
+)
+from sage_categories.cat.cones import (
+    limit_cones as LimitCones,
+)
 from sage_categories.cat.declarations import (
     NN,
     ZZ,
@@ -36,16 +62,85 @@ from sage_categories.cat.declarations import (
     omega,
 )
 from sage_categories.cat.functors import Cat, Fun
-from sage_categories.cat.morphisms import Mor
-from sage_categories.cat.adjunctions import Adjunctions, Equivalences
-from sage_categories.cat.cones import cones as Cones, limit_cones as LimitCones, cocones as Cocones, colimit_cocones as ColimitCocones
 from sage_categories.cat.indexed import Grothendieck, IndexedCategories
-from sage_categories.cat.kan import left_kan_desc, left_kan_extension, left_kan_unit, right_kan_counit, right_kan_extension, right_kan_lift
+from sage_categories.cat.kan import (
+    left_kan_adjunction,
+    left_kan_desc,
+    left_kan_extension,
+    left_kan_unit,
+    right_kan_adjunction,
+    right_kan_counit,
+    right_kan_extension,
+    right_kan_lift,
+)
+from sage_categories.cat.limit_basis import (
+    DiagramPresentation,
+    colimit_from_coproducts_coequalizers,
+    diagram_presentation,
+    limit_from_products_equalizers,
+    parallel_pair,
+)
+from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.opposites import Op
-from sage_categories.cat.total_cones import total_cones as TotalCones
+from sage_categories.cat.predicates import (
+    Axiom,
+    Decision,
+    Predicate,
+    Query,
+    Unknown,
+    UnknownClass,
+    ask,
+    assume,
+    retract,
+)
+from sage_categories.cat.profunctors import (
+    Profunctors,
+    compose_profunctor_transformations,
+    compose_profunctors,
+    identity_profunctor,
+    profunctor_unitor,
+)
+from sage_categories.cat.relations import Relations
 from sage_categories.cat.shapes import Discrete, Thin
-from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import Axiom, Predicate, Query, ask, assume, retract
+from sage_categories.cat.structured_objects import (
+    Algebras,
+    EilenbergMoore,
+    Equifier,
+    Inserter,
+    Magmas,
+    Monoids,
+    PointedMagmas,
+)
+from sage_categories.cat.total_cones import total_cones as TotalCones
+from sage_categories.cat.universal_arrows import (
+    InitialObjects,
+    LeftUniversalArrows,
+    RightUniversalArrows,
+    TerminalObjects,
+    left_mate,
+    right_mate,
+)
+from sage_categories.cat.weighted import (
+    Elements,
+    coend,
+    coyoneda,
+    element,
+    element_projection,
+    end,
+    end_to_natural_transformation,
+    hom_functor,
+    natural_transformation_diagram,
+    natural_transformation_to_end,
+    weighted_colimit,
+    weighted_colimit_desc,
+    weighted_colimit_map,
+    weighted_injection,
+    weighted_limit,
+    weighted_limit_lift,
+    weighted_limit_map,
+    weighted_projection,
+    yoneda,
+)
 
 __all__ = [
     "Adjunctions",
@@ -91,6 +186,62 @@ __all__ = [
     "right_kan_counit",
     "right_kan_extension",
     "right_kan_lift",
+    "binary_product_data",
+    "curry",
+    "currying",
+    "evaluation",
+    "pair_maps",
+    "power_functor",
+    "precompose",
+    "product_functor",
+    "transpose",
+    "uncurry",
+    "Algebras",
+    "EilenbergMoore",
+    "Equifier",
+    "Inserter",
+    "Magmas",
+    "Monoids",
+    "PointedMagmas",
+    "InitialObjects",
+    "LeftUniversalArrows",
+    "RightUniversalArrows",
+    "TerminalObjects",
+    "left_mate",
+    "right_mate",
+    "DiagramPresentation",
+    "colimit_from_coproducts_coequalizers",
+    "diagram_presentation",
+    "limit_from_products_equalizers",
+    "parallel_pair",
+    "Elements",
+    "coend",
+    "end",
+    "element",
+    "element_projection",
+    "end_to_natural_transformation",
+    "hom_functor",
+    "natural_transformation_diagram",
+    "natural_transformation_to_end",
+    "weighted_colimit",
+    "weighted_colimit_desc",
+    "weighted_colimit_map",
+    "weighted_injection",
+    "weighted_limit",
+    "weighted_limit_lift",
+    "weighted_limit_map",
+    "weighted_projection",
+    "yoneda",
+    "Profunctors",
+    "compose_profunctors",
+    "compose_profunctor_transformations",
+    "identity_profunctor",
+    "profunctor_unitor",
+    "Relations",
+    "left_kan_adjunction",
+    "right_kan_adjunction",
+    "coyoneda",
+    "natural_isomorphism",
 ]
 
 # One source of truth. The version is declared once, in pyproject.toml, and

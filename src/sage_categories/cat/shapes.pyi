@@ -4,7 +4,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition
-__all__ = ['DiscreteCategory', 'Discrete', 'ThinCategory', 'Thin', 'omega']
+__all__ = ['DiscreteCategory', 'discrete_functor', 'Discrete', 'ThinCategory', 'Thin', 'omega']
 
 @dataclass(frozen=True, eq=False, slots=True)
 class DiscreteObjectData:
@@ -61,6 +61,9 @@ class DiscreteCategory(Category[[], []]):
 
     def composite(self, second: DiscreteCategory.MorphismType, first: DiscreteCategory.MorphismType) -> DiscreteCategory.MorphismType:
         ...
+
+def discrete_functor(sets: Category) -> Functor:
+    ...
 Discrete: Functor
 
 @dataclass(frozen=True, eq=False, slots=True)

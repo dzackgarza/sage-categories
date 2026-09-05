@@ -71,10 +71,12 @@ from sage_categories.cat.properties import PredicateSubcategory, PropertySubcate
 from sage_categories.cat.predicates import Unknown
 from sage_categories.cat.predicates import Proposition, ask
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine, traces_placement
-from sage_categories.kernel.sage_runtime import MonoDict, TripleDict
+from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_function
+from sage_categories.kernel.retention import identity_key
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
+    from sage_categories.cat.universal_arrows import RightUniversalArrows
 
 __all__ = [
     "ApexCategory",
@@ -309,7 +311,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
         if self._image_factor is None:
             self._image_factor = Fun(defining_functor.domain(), self)(
                 lambda diagram: self(diagram),
-                lambda transformation: induced_limit_morphism(self, transformation),
+                defining_functor.on_morphism,
             )
         return self._image_factor
 
@@ -438,7 +440,13 @@ class LimitsCategory(ApexCategory):
             limiting_cone,
             lambda candidate: mediator(candidate.transformation()),
         )
-        return self._retain(diagram, apex, presentation)
+        return self.with_presentation(presentation)
+
+    def with_presentation(self, presentation: LimitConesCategory.ObjectType) -> CategoryOfCategories.ElementType:
+        """Choose a limit from its complete terminal-cone presentation."""
+        diagram = presentation.diagram()
+        assert diagram in self.diagrams() and presentation in limit_cones(diagram)
+        return self._retain(diagram, presentation.apex(), presentation)
 
     def limit_functor(self) -> Functor:
         """``Lim_I: Fun(I, C) -> C``, retained once."""
@@ -980,59 +988,32 @@ def constructed_data(family: Category, diagram: Functor) -> UniversalPresentatio
     return family.universal_data(family.lowered(diagram))
 
 
-def induced_limit_morphism(family: Category, transformation: NaturalTransformation) -> MorphismCategory.ObjectType:
-    """``Lim(eta): L_D -> L_D'`` for ``eta: D => D'``: the mediator of the cone ``eta_i after pi_i``."""
-    source = constructed_data(family, transformation.domain())
-    diagram_identity = family.diagrams().morphism_category(1)(transformation.domain(), transformation.domain()).one()
-    if transformation is diagram_identity:
-        return family.ambient().morphism_category(1)(source.apex(), source.apex()).one()
-    target = constructed_data(family, transformation.codomain())
-
-    def induced_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        component = transformation.component(vertex)
-        identity = target.diagram().codomain().morphism_category(1)(component.domain(), component.domain()).one()
-        return source.leg(vertex) if component is identity else component * source.leg(vertex)
-
-    induced_cone = cone(
-        target.diagram(),
-        source.apex(),
-        induced_leg,
-    )
-    return target.lift(cones(target.diagram())(induced_cone))
-
-
 def limit_functor(family: Category) -> Functor:
-    """``Lim_I: Fun(I, C) -> C`` for a limit family: the chosen limit and the induced morphism between two of them."""
-    return Fun(family.diagrams(), family.diagrams().codomain())(
-        lambda diagram: family(diagram),
-        lambda transformation: induced_limit_morphism(family, transformation),
-    )
+    """The right adjoint to the diagonal, from terminal cone presentations."""
+    return _limit_universal_arrows(family).functor()
+
+
+
+
+@cached_function(key=identity_key)
+def _limit_universal_arrows(family: Category) -> RightUniversalArrows:
+    from sage_categories.cat.comma import comma_objects
+    from sage_categories.cat.universal_arrows import RightUniversalArrows, TerminalObjects
+
+    diagonal = family.diagrams().diagonal()
+
+    def choose(diagram: Functor) -> CategoryOfCategories.ElementType:
+        presentation = constructed_data(family, diagram)
+        comma = comma_objects(diagonal, family.diagrams().point_functor(diagram))
+        value = comma.from_arrow(presentation.apex(), Cat().Terminal()(0), presentation.transformation())
+        star = value.second()
+        star_identity = Cat().Terminal().morphism_category(1)(star, star).one()
+        return TerminalObjects(comma)(value, lambda candidate: comma.morphism_from_pair(candidate, value,
+            presentation.lift(cones(diagram)(candidate.arrow())), star_identity))
+
+    return RightUniversalArrows(diagonal, choose)
 
 
 def limit_adjunction(family: Category) -> CategoryOfCategories.ElementType:
-    """Select ``Delta_I |- Lim_I`` from the retained limiting cones."""
-    from sage_categories.cat.adjunctions import Adjunctions
-
-    diagrams = family.diagrams()
-    base = diagrams.codomain()
-    diagonal_functor = diagrams.diagonal()
-    limit = family.limit_functor()
-
-    def unit_component(member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        diagram = diagrams.constant(member_object)
-        presentation = constructed_data(family, diagram)
-        identity = base.morphism_category(1)(member_object, member_object).one()
-        candidate = cones(diagram)(cone(diagram, member_object, lambda vertex: identity))
-        return presentation.lift(candidate)
-
-    unit_endofunctors = Fun(base, base)
-    unit = unit_endofunctors.morphism_category(1)(
-        unit_endofunctors.one(),
-        limit * diagonal_functor,
-    )(unit_component)
-    counit_endofunctors = Fun(diagrams, diagrams)
-    counit = counit_endofunctors.morphism_category(1)(
-        diagonal_functor * limit,
-        counit_endofunctors.one(),
-    )(lambda diagram: constructed_data(family, diagram).transformation())
-    return Adjunctions(diagonal_functor, limit)(unit, counit)
+    """Select the adjunction from the same chosen universal arrows as the limit functor."""
+    return _limit_universal_arrows(family).adjunction()

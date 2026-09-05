@@ -389,6 +389,8 @@ def _install_written_body(compiled: type[CategoryPoint], local: type[CategoryPoi
         compiled.__class_getitem__ = classmethod(GenericAlias)
     for name, member in vars(local).items():
         if isinstance(member, classmethod | staticmethod | FunctionType):
+            if inspect.getattr_static(compiled, name, None) is member:
+                continue
             setattr(compiled, name, member)
 
 
@@ -1066,6 +1068,8 @@ def _debug_unresolved_diamonds(category: Category) -> None:
     that implementation class once; until owned 2-morphism data explicitly records the
     coherence, the only runtime effect is this opt-in diagnostic (D37).
     """
+    if not _LOGGER.isEnabledFor(logging.DEBUG):
+        return
     paths: MonoDict = MonoDict()
 
     def walk(source: Category, path: tuple[Category, ...]) -> None:

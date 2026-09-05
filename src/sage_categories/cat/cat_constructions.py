@@ -349,7 +349,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     def construct_identity(self, member_object: LimitCategory.ObjectType) -> LimitCategory.MorphismType:
         def component_identity(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             component = member_object.component(vertex)
-            return component.category().morphism_category(1)(component, component).one()
+            return self.factor(vertex).morphism_category(1)(component, component).one()
 
         return self.MorphismType(
             domain=member_object,

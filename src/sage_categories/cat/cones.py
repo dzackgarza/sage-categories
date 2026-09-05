@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Hashable
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category
+from sage_categories.cat.comma import CommaSpecialization
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Axiom
@@ -90,14 +90,7 @@ def vertex_of(
     return shape.object_at(shape.object_set().point(index))
 
 
-@dataclass(frozen=True, eq=False, slots=True)
-class ConeMorphismData:
-    """The apex morphism retained by one morphism of cones."""
-
-    apex_morphism: MorphismCategory.ObjectType
-
-
-class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
+class ConeCategory(CommaSpecialization):
     """``Cones(D)`` for one diagram ``D: I -> C``."""
 
     LimitCones = Axiom()
@@ -106,23 +99,20 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     class ObjectType:
         """A cone over the fixed diagram."""
 
-        def __init__(self, data: NaturalTransformation) -> None:
-            self._cone_transformation = data
-
         def diagram(self) -> Functor:
             return self.category().narrowing_base().diagram()
 
         def apex(self) -> CategoryOfCategories.ElementType:
-            return self.category().narrowing_base().apex_of(self._cone_transformation)
+            return self.category().narrowing_base().apex_of(self.arrow())
 
         def leg(
             self,
             index: CategoryOfCategories.ElementType | Hashable,
         ) -> MorphismCategory.ObjectType:
-            return self._cone_transformation.component(vertex_of(self.diagram().domain(), index))
+            return self.arrow().component(vertex_of(self.diagram().domain(), index))
 
         def transformation(self) -> NaturalTransformation:
-            return self._cone_transformation
+            return self.arrow()
 
         def __repr__(self) -> str:
             return f"Cone({self.apex()!r} -> {self.diagram()!r})"
@@ -133,16 +123,17 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
     class MorphismType:
         """A morphism of cones, retained through its map between apexes."""
 
-        def __init__(self, data: ConeMorphismData) -> None:
-            self._apex_morphism = data.apex_morphism
-
         def apex_morphism(self) -> MorphismCategory.ObjectType:
-            return self._apex_morphism
+            return self.second() if self.base_category().narrowing_base()._dual else self.first()
 
     def __init__(self, diagram: Functor, dual: bool = False) -> None:
         self._diagram = diagram
         self._dual = dual
-        super().__init__()
+
+        diagrams = Fun(diagram.domain(), diagram.codomain())
+        point = diagrams.point_functor(diagram)
+        diagonal = diagrams.diagonal()
+        super().__init__(point if dual else diagonal, diagonal if dual else point)
 
     def diagram(self) -> Functor:
         return self._diagram
@@ -161,7 +152,11 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
         expected = self._diagram.op() if self._dual else self._diagram
         assert defining.codomain() is expected
         assert Fun(expected.domain(), expected.codomain()).has_constant_value(defining.domain())
-        return self.ObjectType(data=transformation)
+        from sage_categories.cat.functors import Cat
+
+        apex = self.apex_of(transformation)
+        star = Cat().Terminal()(0)
+        return self.from_arrow(star if self._dual else apex, apex if self._dual else star, transformation)
 
     def construct_morphism(
         self,
@@ -169,32 +164,11 @@ class ConeCategory(Category[[MorphismCategory.ObjectType], []]):
         target: ConeCategory.ObjectType,
         apex_morphism: MorphismCategory.ObjectType,
     ) -> ConeCategory.MorphismType:
-        ambient_morphisms = self._diagram.codomain().morphism_category(1)
-        assert apex_morphism in ambient_morphisms(source.apex(), target.apex())
-        return self.MorphismType(
-            domain=source,
-            codomain=target,
-            data=ConeMorphismData(apex_morphism),
-        )
+        from sage_categories.cat.functors import Cat
 
-    def construct_identity(self, member_object: ConeCategory.ObjectType) -> ConeCategory.MorphismType:
-        identity = self._diagram.codomain().morphism_category(1)(
-            member_object.apex(),
-            member_object.apex(),
-        ).one()
-        return self.construct_morphism(member_object, member_object, identity)
-
-    def composite(
-        self,
-        second: ConeCategory.MorphismType,
-        first: ConeCategory.MorphismType,
-    ) -> ConeCategory.MorphismType:
-        assert first.codomain() is second.domain()
-        return self.construct_morphism(
-            first.domain(),
-            second.codomain(),
-            second.apex_morphism() * first.apex_morphism(),
-        )
+        star = Cat().Terminal()(0)
+        identity = Cat().Terminal().morphism_category(1)(star, star).one()
+        return self.morphism_from_pair(source, target, identity if self._dual else apex_morphism, apex_morphism if self._dual else identity)
 
     @cached_method
     def apex_functor(self) -> Functor:

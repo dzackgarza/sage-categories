@@ -86,6 +86,9 @@ class LimitsCategory(ApexCategory):
     def with_universal_data(self, diagram: Functor, apex: CategoryOfCategories.ElementType, limiting_cone: NaturalTransformation, mediator: Mediator) -> CategoryOfCategories.ElementType:
         ...
 
+    def with_presentation(self, presentation: LimitConesCategory.ObjectType) -> CategoryOfCategories.ElementType:
+        ...
+
     def limit_functor(self) -> Functor:
         ...
 

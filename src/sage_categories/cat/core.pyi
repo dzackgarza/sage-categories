@@ -1,3 +1,4 @@
+import sage_categories
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
@@ -6,13 +7,13 @@ __all__ = ['GroupoidsCategory', 'CoreCategory', 'CoreMorphismCategory', 'CoreFix
 
 class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -20,13 +21,13 @@ class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
 
 class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
@@ -61,13 +62,13 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
 
 class CoreMorphismCategory(MorphismCategory):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -81,13 +82,13 @@ class CoreMorphismCategory(MorphismCategory):
 
 class CoreFixedEndpointCategory(FixedEndpointCategory):
 
-    class ObjectType:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class ElementType:
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
-    class MorphismType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def structure_functors(self) -> tuple[Functor, ...]:

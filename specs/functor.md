@@ -1275,9 +1275,10 @@ y^\vee:C^{op}\longrightarrow\operatorname{Fun}(C,\mathbf{Set}).
 
 The Yoneda embedding is fully faithful. Its object action supplies the representable hom functors. See [Mathlib, Yoneda](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Yoneda.html).
 
-This section fixes the mathematical declaration before `Sets()` is executable.
-The executable object and morphism actions activate only after the production `Sets()` phase.
-Before that phase, the core retains only the generic signature and universal laws.
+Set-valued constructions take an explicit category of sets and total maps.
+`FiniteSets` supplies exact finite evaluation.
+`hom_functor(C, S)` uses `C.hom_morphisms(X, Y)` to construct its hom sets in `S`.
+This evaluation requires chosen finite hom enumerations; the weighted calculus also accepts a separately supplied Hom functor.
 
 For `F: C.op() -> Sets()`, `Representations(F)` has objects `(X, eta)` with `X in C` and a natural isomorphism `eta: y(X) -> F`. A morphism `(X, eta) -> (Y, theta)` is a morphism `u: X -> Y` such that `theta compose y(u) = eta`. Yoneda makes such a morphism invertible. The functor is representable exactly when this category is inhabited. Selecting an object supplies the representing object and isomorphism. This property-and-data distinction follows [Mathlib, represented functors](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/RepresentedBy.html).
 
@@ -1291,8 +1292,67 @@ N_j(X)(a)=\operatorname{Mor}(C)(j(a),X).
 
 A separating test category places this functor in `.Faithful()`. A dense test category places it in `.FullyFaithful()`. The canonical evaluation morphisms and presentations belong to this functorial construction, as specified in [Separating families and categorical generators](separating-families-and-categorical-generators.md).
 
-Monads, comonads, Eilenberg--Moore categories, mates, and reflective or coreflective subcategories extend this calculus after the categorical core.
-The retained adjunction data supports them without a new transport mechanism.
+## Universal calculus
+
+Comma objects and commuting pairs supply the common object and morphism calculus for slices, coslices, cones, and cocones.
+Their pullback presentations retain the universal maps separately from that primitive calculus.
+
+`Inserter(F, G)` takes parallel functors. Its objects are pairs `(X, a: F(X) -> G(X))`.
+Its morphisms are single arrows `f: X -> Y` satisfying `G(f) a = b F(f)`.
+It is the pullback of the comma category's pair projection along the diagonal on the common domain.
+`Equifier(alpha, beta)` is the full subcategory where the two components agree.
+Its constructor decides that equation before admitting a value.
+
+`Algebras(T)` is `Inserter(T, Id)`.
+`Magmas(tensor)` applies this construction to `X |-> X tensor X`.
+`PointedMagmas(tensor, I)` adds a map `I -> X` by another inserter.
+`Monoids(C)` imposes the unit and associativity equations for the chosen cartesian tensor by equifiers.
+`EilenbergMoore(T, eta, mu)` imposes both algebra laws on `Algebras(T)`.
+The supplied monad data must satisfy the monad laws.
+
+`RightUniversalArrows(F, choose)` retains chosen terminal objects of `(F down d)`.
+It derives the right adjoint's action on morphisms and its unit and counit from their unique factors.
+`LeftUniversalArrows` is the initial-object construction.
+Limits and the Kan adjunctions use these operations.
+An adjunction's `transpose(X, Y, f)` and `untranspose(X, Y, g)` implement its hom correspondence.
+For `L adjoint R` and `L' adjoint R'`, `right_mate` sends `L' H => K L` to `H R => R' K`.
+`left_mate` gives the inverse correspondence.
+
+`curry`, `uncurry`, `transpose`, and `evaluation` act on functors and their morphisms.
+`currying(A, B, C)` retains the equivalence between `Fun(A * B, C)` and `Fun(A, Fun(B, C))`, including both comparison inverses.
+Pointwise limits use variable transposition followed by the ordinary limit functor.
+
+General limits are derived from discrete limits and equalizers.
+`diagram_presentation(I)` supplies discrete vertex and arrow indices, incidence functors, and the defining transformation.
+A finite presentation uses its generating arrows. Other shapes use their owned finite evaluation or their sets of objects and arrows.
+The construction equalizes the two maps from the product over vertices to the product of arrow codomains.
+Its mediator first factors through the vertex product, then through the equalizer.
+Colimits use the dual construction with coproducts and coequalizers.
+Each presentation remains authoritative at its diagram, even when several diagrams have the same apex.
+
+For `W: J -> S`, `Elements(W)` is the category of elements and `element_projection(W)` is its projection to `J`.
+It uses the Grothendieck construction on discrete fibers and retains cocartesian lifts.
+`weighted_limit(W, D)` is the limit of `D` after this projection.
+For `W: J.op() -> S`, `weighted_colimit(W, D)` uses the opposite category of elements.
+The weighted projections, injections, mediators, and maps retain their weight parameters.
+
+`end(D, Hom_J)` and `coend(D, Hom_J)` take `D: J.op() * J -> C`.
+They use the Hom weight and its contravariant transpose, respectively.
+`natural_transformation_diagram(F, G, Hom_C)` has values `Hom_C(F(i), G(j))`.
+`natural_transformation_to_end` and `end_to_natural_transformation` give the correspondence with points of its end.
+
+`Profunctors(A, B, S)` is `Fun(A.op() * B, S)`.
+`compose_profunctors(P, Q, Hom_B)` has values `coend_b P(a, b) * Q(b, c)`.
+The composition acts on arrows and natural transformations through the weighted colimit maps.
+The Hom functor is the identity profunctor. `profunctor_unitor` supplies the two co-Yoneda isomorphisms with executable inverses.
+
+`Relations(C)` takes a regular category with chosen finite limits and regular image factorizations.
+Its objects carry objects of `C`; a relation from `X` to `Y` carries a subobject of `X * Y`.
+Composition takes the image of the pullback over the middle object.
+The graph operation is a functor from `C`, converse exchanges the factors, and meet intersects subobjects.
+Its 2-morphisms are subobject inclusions.
+`factor_through_monomorphism` returns the unique factor, `False` for decided nonexistence, or `Unknown` for an undecided computation.
+Reflexivity, transitivity, and antisymmetry ask `Delta <= R`, `R R <= R`, and `R meet R.converse() <= Delta`.
 
 ## Examples
 

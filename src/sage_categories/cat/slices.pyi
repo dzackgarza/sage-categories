@@ -1,40 +1,26 @@
 import sage_categories
 from collections.abc import Hashable
-from dataclasses import dataclass
-from sage_categories.cat.cat_constructions import LimitSubcategory
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.comma import CommaCategory as CommaCategory, CommaSpecialization
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.kernel.sage_runtime import cached_method
-__all__ = ['SliceLikeCategory', 'slice_over', 'coslice_under', 'CommaCategory', 'comma_category', 'SliceProperty', 'SubobjectsOfProduct']
-
-@dataclass(frozen=True, eq=False, slots=True)
-class SliceObjectData:
-    structure: MorphismCategory.ObjectType
-
-@dataclass(frozen=True, eq=False, slots=True)
-class SliceTriangleData:
-    varying: MorphismCategory.ObjectType
+__all__ = ['CommaCategory', 'SliceLikeCategory', 'slice_over', 'coslice_under', 'comma_category', 'SliceProperty', 'SubobjectsOfProduct']
 
 class _SliceMemberPredicate(Predicate):
     name: str
 
-class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
+class SliceLikeCategory(CommaSpecialization):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
-
-        def __init__(self, data: SliceObjectData) -> None:
-            ...
+        ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
-
-        def __init__(self, data: SliceTriangleData) -> None:
-            ...
+        ...
 
     def __init__(self, base: Category, fixed: CategoryOfCategories.ElementType, fixed_label: int) -> None:
         ...
@@ -90,12 +76,6 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
     def construct_morphism(self, domain: SliceLikeCategory.ObjectType, codomain: SliceLikeCategory.ObjectType, varying: MorphismCategory.ObjectType) -> SliceLikeCategory.MorphismType:
         ...
 
-    def construct_identity(self, member_object: SliceLikeCategory.ObjectType) -> SliceLikeCategory.MorphismType:
-        ...
-
-    def composite(self, second: SliceLikeCategory.MorphismType, first: SliceLikeCategory.MorphismType) -> SliceLikeCategory.MorphismType:
-        ...
-
     def varying_component(self, square: NaturalTransformation) -> MorphismCategory.ObjectType:
         ...
 
@@ -104,60 +84,6 @@ def slice_over(base: Category, fixed: CategoryOfCategories.ElementType) -> Slice
 
 def coslice_under(base: Category, fixed: CategoryOfCategories.ElementType) -> SliceLikeCategory:
     ...
-
-class CommaCategory(LimitSubcategory):
-
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
-
-        def first(self) -> CategoryOfCategories.ElementType:
-            ...
-
-        def second(self) -> CategoryOfCategories.ElementType:
-            ...
-
-        def arrow(self) -> MorphismCategory.ObjectType:
-            ...
-
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
-        ...
-
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
-
-        def first(self) -> MorphismCategory.ObjectType:
-            ...
-
-        def second(self) -> MorphismCategory.ObjectType:
-            ...
-
-    def __init__(self, diagram: Functor, first: Functor, second: Functor) -> None:
-        ...
-
-    def from_arrow(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> CommaCategory.ObjectType:
-        ...
-
-    def construct_morphism(self, source: CommaCategory.ObjectType, target: CommaCategory.ObjectType, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> CommaCategory.MorphismType:
-        ...
-
-    def pair_projection(self) -> Functor:
-        ...
-
-    def arrow_projection(self) -> Functor:
-        ...
-
-    @cached_method
-    def first_projection(self) -> Functor:
-        ...
-
-    @cached_method
-    def second_projection(self) -> Functor:
-        ...
-
-    @cached_method
-    def defining_transformation(self) -> NaturalTransformation:
-        ...
-
-    def comma_functors(self) -> tuple[Functor, Functor]:
-        ...
 
 def comma_category(first: Functor, second: Functor) -> CommaCategory:
     ...

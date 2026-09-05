@@ -45,7 +45,7 @@ from sage_categories.kernel.sage_runtime import MonoDict
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
 
-__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "omega"]
+__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "omega", "discrete_functor"]
 
 
 # -- Discrete(S) ---------------------------------------------------------------------
@@ -178,7 +178,12 @@ def _discrete_on_morphism(set_map: MorphismCategory.ObjectType) -> Functor:
 # The functor ``Discrete: Sets() -> Cat()``, retained once; ``Discrete(S)`` is its
 # object action and ``Discrete(f)`` its morphism action (Mathlib
 # ``CategoryTheory.Discrete.functor`` for the action on maps; inspected 2026-08-26).
-Discrete: Functor = Fun(Sets, Cat())(_discrete_on_object, _discrete_on_morphism)
+def discrete_functor(sets: Category) -> Functor:
+    """Discretization for a supplied category of sets and total functions."""
+    return Fun(sets, Cat())(_discrete_on_object, _discrete_on_morphism)
+
+
+Discrete: Functor = discrete_functor(Sets)
 
 
 # -- Thin(P, leq) --------------------------------------------------------------------

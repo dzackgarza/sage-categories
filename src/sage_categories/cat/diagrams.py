@@ -291,22 +291,20 @@ def _pointwise_limit_data(
     assert functors is not Fun, f"{diagram!r} is not a diagram in a fixed-endpoint functor category"
     target = functors.codomain()
     limits = target.Limits(shape)
+    from sage_categories.cat.calculus import transpose
+
+    transposed = transpose(diagram)
     composites: MonoDict = MonoDict()
 
     def at(vertex: CategoryOfCategories.ElementType) -> LimitConesCategory.ObjectType:
         """The limiting cone of the pointwise diagram at ``vertex``."""
         if vertex not in composites:
-            presentation = constructed_data(limits, functors.evaluation(vertex) * diagram)
+            presentation = constructed_data(limits, transposed.on_object(vertex))
             assert isinstance(presentation, LimitConesCategory.ObjectType)
             composites[vertex] = presentation
         return composites[vertex]
 
-    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        source, destination = at(morphism.domain()).diagram(), at(morphism.codomain()).diagram()
-        transformation = Fun(shape, target).morphism_category(1)(source, destination)(lambda vertex: functors.diagram(diagram.on_object(vertex)).on_morphism(morphism))
-        return limits.limit_functor().on_morphism(transformation)
-
-    apex = functors(lambda vertex: at(vertex).apex(), on_morphism)
+    apex = limits.limit_functor() * transposed
     projections: MonoDict = MonoDict()
 
     def projection(vertex: CategoryOfCategories.ElementType) -> NaturalTransformation:

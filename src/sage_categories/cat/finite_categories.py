@@ -14,6 +14,7 @@ from itertools import product
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.cat_constructions import LimitCategory
 from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.comma import CommaCategory
 from sage_categories.cat.functors import Cat, Fun, FunctorCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import OppositeCategory, opposite_morphism
@@ -52,6 +53,31 @@ def finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategor
 
 
 def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
+    from sage_categories.cat.shapes import DiscreteCategory
+    from sage_categories.cat.indexed import GrothendieckCategory
+
+    if isinstance(category, DiscreteCategory):
+        objects = tuple(category(point) for point in category.index_set())
+        return FiniteCategoryData(objects, tuple(Mor(category)(value, value).one() for value in objects))
+    if isinstance(category, GrothendieckCategory):
+        indexed = category.indexed_category()
+        base = finite_category(indexed.domain().op())
+        if base is Unknown:
+            return Unknown
+        fibers = {id(value): finite_category(indexed.on_object(value)) for value in base.objects}
+        if any(fiber is Unknown for fiber in fibers.values()):
+            return Unknown
+        objects = tuple(category(value, point) for value in base.objects for point in fibers[id(value)].objects)
+        arrows = []
+        for arrow in base.morphisms:
+            for source, target in product(objects, repeat=2):
+                if source.base_object() is not arrow.domain() or target.base_object() is not arrow.codomain():
+                    continue
+                image = indexed.reindex(arrow).on_object(target.fiber_object())
+                for fiber_arrow in fibers[id(arrow.domain())].morphisms:
+                    if equal(fiber_arrow.domain(), source.fiber_object()) and equal(fiber_arrow.codomain(), image):
+                        arrows.append(category.construct_morphism(source, target, arrow, fiber_arrow))
+        return FiniteCategoryData(objects, tuple(arrows))
     if isinstance(category, FinitePresentedCategory):
         arrows = category.finite_morphisms()
         if arrows is Unknown:
@@ -64,6 +90,8 @@ def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData 
         return FiniteCategoryData(original.objects, tuple(opposite_morphism(arrow) for arrow in original.morphisms))
     if isinstance(category, FunctorCategory) and category.domain() is Cat().Simplex(1):
         return _arrows(category)
+    if isinstance(category, CommaCategory):
+        return _comma(category)
     if isinstance(category, LimitCategory):
         return _limit(category)
     return Unknown
@@ -123,4 +151,19 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
         )
         for components in product(*(factor.morphisms for factor in factors)) if agrees(components, True)
     )
+    return FiniteCategoryData(objects, arrows)
+
+
+def _comma(category: CommaCategory) -> FiniteCategoryData | UnknownClass:
+    forward, backward = category.comma_functors()
+    first, second, target = (finite_category(owner) for owner in (forward.domain(), backward.domain(), forward.codomain()))
+    if first is Unknown or second is Unknown or target is Unknown:
+        return Unknown
+    objects = tuple(category.from_arrow(a, b, arrow) for a, b, arrow in product(first.objects, second.objects, target.morphisms)
+        if equal(arrow.domain(), forward.on_object(a)) and equal(arrow.codomain(), backward.on_object(b)))
+    arrows = tuple(category.morphism_from_pair(source, destination, a, b)
+        for source, destination in product(objects, repeat=2) for a, b in product(first.morphisms, second.morphisms)
+        if equal(a.domain(), source.first()) and equal(a.codomain(), destination.first())
+        and equal(b.domain(), source.second()) and equal(b.codomain(), destination.second())
+        and equal(backward.on_morphism(b) * source.arrow(), destination.arrow() * forward.on_morphism(a)))
     return FiniteCategoryData(objects, arrows)

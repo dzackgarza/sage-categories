@@ -9,7 +9,7 @@ from sage_categories.cat.functors import Functor, FunctorsCategory, NaturalTrans
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import AppliedQuery, Predicate, Proposition, UnknownClass
-from sage_categories.cat.slices import CommaCategory
+from sage_categories.cat.comma import CommaCategory
 from sage_categories.kernel.sage_runtime import Integer
 from typing import Literal, overload
 __all__ = ['OnObject', 'OnMorphism', 'Assignment', 'member', 'Category', 'CategoryOfCategories', 'Cat']
@@ -188,6 +188,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         ...
 
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+        ...
+
     def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
         ...
 
@@ -228,6 +231,15 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
         ...
 
     def generating_morphisms(self) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
+        ...
+
+    def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
+        ...
+
+    def image_factorization(self, arrow: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+        ...
+
+    def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False] | UnknownClass:
         ...
 
     def biproduct(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:

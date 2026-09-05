@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Proposition
+from sage_categories.cat.predicates import Proposition, UnknownClass
 from sage_categories.kernel.retention import retained_involution
 from sage_categories.kernel.roles import Role
 __all__ = ['OppositeCategory', 'opposite_category', 'opposite_morphism', 'Op', 'opposite_functor', 'opposite_transformation', 'op_squared_isomorphism']
@@ -63,6 +63,9 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCate
         ...
 
     def object_point(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        ...
+
+    def generating_morphisms(self) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
         ...
 
     def construct_morphism(self, domain: CategoryOfCategories.ElementType, codomain: CategoryOfCategories.ElementType, original: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:

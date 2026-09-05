@@ -8,6 +8,7 @@ never reads a tracked ``.pyi`` file as input (`POL-TYPE-025`, `POL-TYPE-026`).
 from __future__ import annotations
 
 import ast
+from importlib import import_module
 import subprocess
 import sys
 from collections.abc import Iterator
@@ -40,6 +41,8 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     from mypy.stubgen import main as stubgen_main
 
     sources = tuple(sorted(output_directory.rglob("*.py")))
+    for source in sources:
+        import_module(_module_name(package, output_directory, source))
     canonical_exports = _canonical_exports(package, output_directory, sources)
     stubgen_main(
         [

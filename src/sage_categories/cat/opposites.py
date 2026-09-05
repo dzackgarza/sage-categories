@@ -16,9 +16,10 @@ from typing import TYPE_CHECKING
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Proposition
-from sage_categories.kernel.refinement import is_placed
-from sage_categories.kernel.retention import deferred_category, retained_involution
+from sage_categories.cat.predicates import Proposition, UnknownClass
+from sage_categories.kernel.refinement import is_placed, refine
+from sage_categories.kernel.retention import deferred_category, identity_key, retained_involution
+from sage_categories.kernel.sage_runtime import cached_function
 from sage_categories.kernel.roles import Role
 
 if TYPE_CHECKING:
@@ -108,6 +109,12 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
     def object_point(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return self._original.object_point(member_object)
 
+    def generating_morphisms(self) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
+        from sage_categories.cat.predicates import Unknown
+
+        arrows = self._original.generating_morphisms()
+        return Unknown if arrows is Unknown else tuple(opposite_morphism(arrow) for arrow in arrows)
+
     def construct_morphism(
         self,
         domain: CategoryOfCategories.ElementType,
@@ -127,7 +134,7 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](
         member_object: CategoryOfCategories.ElementType,
     ) -> MorphismCategory.ObjectType:
         identity = self._original.morphism_category(1)(member_object, member_object).one()
-        return self.construct_morphism(member_object, member_object, identity)
+        return opposite_morphism(identity)
 
     def composite(
         self,
@@ -165,6 +172,7 @@ def _opposite_category(category: Category) -> Category:
     return deferred_category(OppositeCategory, category)
 
 
+@cached_function(key=identity_key)
 def _opposite_morphism(
     category: Category,
     morphism: MorphismCategory.ObjectType,
@@ -187,6 +195,9 @@ def _construct_opposite_functor(functor: Functor) -> Functor:
     """Dualize both actions, preserving a declared subcategory inclusion."""
     source = opposite_category(functor.domain())
     target = opposite_category(functor.codomain())
+    diagrams = Fun(functor.domain(), functor.codomain())
+    if diagrams.has_constant_value(functor):
+        return Fun(source, target).constant(diagrams.constant_value(functor))
     if Fun.declares_subcategory(functor):
         if is_placed(functor, Fun.Full()):
             return Fun.full_subcategory_monomorphism(source, target)
@@ -201,7 +212,24 @@ def _construct_opposite_functor(functor: Functor) -> Functor:
         original = _opposite_morphism(source, morphism)
         return _opposite_morphism(functor.codomain(), functor.on_morphism(original))
 
-    return Fun(source, target)(on_object, on_morphism)
+    opposite = Fun(source, target)(on_object, on_morphism)
+    if is_placed(functor, Fun.Fibrations()):
+        refine(opposite, Fun(source, target).Opfibrations())
+        opposite.retain_cocartesian_lifts(
+            lambda arrow, value: _opposite_morphism(
+                functor.domain(),
+                functor.cartesian_lift(_opposite_morphism(target, arrow), value),
+            )
+        )
+    if is_placed(functor, Fun.Opfibrations()):
+        refine(opposite, Fun(source, target).Fibrations())
+        opposite.retain_cartesian_lifts(
+            lambda arrow, value: _opposite_morphism(
+                functor.domain(),
+                functor.cocartesian_lift(_opposite_morphism(target, arrow), value),
+            )
+        )
+    return opposite
 
 
 Op: Functor = Fun(Cat(), Cat())(opposite_category, _construct_opposite_functor)

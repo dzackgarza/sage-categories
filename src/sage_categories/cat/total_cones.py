@@ -10,6 +10,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Axiom
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.slices import CommaCategory, _construct_comma_category
+from sage_categories.cat.comma import CommaSpecialization
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 __all__ = ["TotalConesCategory", "TotalLimitConesCategory", "total_cones"]
 
 
-class TotalConesCategory(CommaCategory):
+class TotalConesCategory(CommaSpecialization):
     """The comma category ``(Delta_I downarrow Id)`` for ``Fun(I, C)``."""
 
     LimitCones = Axiom()
@@ -42,10 +43,6 @@ class TotalConesCategory(CommaCategory):
 
         def diagram_transformation(self) -> NaturalTransformation:
             return self.second()
-
-    def family_category(self, diagram: Functor) -> CommaCategory:
-        """Cones are objects of the comma category of the diagonal and identity."""
-        return Cat().Comma(*self.comma_functors())
 
     def diagrams(self) -> FunctorCategory:
         """Return ``Fun(I, C)``."""

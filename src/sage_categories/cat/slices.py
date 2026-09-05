@@ -19,23 +19,20 @@ pullback of ``(ev_0, ev_1): Fun([1], C) -> C * C`` along ``F * G``.
 from __future__ import annotations
 
 from collections.abc import Hashable
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, member
-from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
+from sage_categories.cat.comma import CommaCategory, CommaSpecialization, comma_objects
 from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import FullSubcategory
-from sage_categories.cat.predicates import Decision, Unknown
 from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
 from sage_categories.kernel.refinement import is_placed, refine
-from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
+from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -72,28 +69,12 @@ def _denoted_morphism(candidate: CategoryOfCategories.ElementType) -> CategoryOf
     return candidate
 
 
-@dataclass(frozen=True, eq=False, slots=True)
-class SliceObjectData:
-    """The local state introduced by an object of a slice or coslice: the morphism of ``C`` whose fixed end is ``x``."""
-
-    structure: MorphismCategory.ObjectType
-
-
-@dataclass(frozen=True, eq=False, slots=True)
-class SliceTriangleData:
-    """The local state introduced by a morphism of a slice or coslice: the morphism of ``C`` between the varying objects."""
-
-    varying: MorphismCategory.ObjectType
-
-
 def _structure_of(member_object: SliceLikeCategory.ObjectType) -> MorphismCategory.ObjectType:
-    """The defining arrow of an object of a slice or coslice: the state its declaration below introduces."""
-    return member_object._structure
+    return member_object.arrow()
 
 
 def _varying_of(triangle: SliceLikeCategory.MorphismType) -> MorphismCategory.ObjectType:
-    """The morphism of ``C`` a triangle is: the state its declaration below introduces."""
-    return triangle._varying
+    return triangle.first() if triangle.base_category().narrowing_base()._fixed_label == 1 else triangle.second()
 
 
 # ``slice_member(t, C/x)``: ``t`` is an object of the slice or coslice: a morphism of
@@ -123,17 +104,14 @@ def _slice_member_by_fixed_end(
 register_handler(slice_member, _slice_member_by_fixed_end)
 
 
-class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
+class SliceLikeCategory(CommaSpecialization):
     """The pullback of ``ev_k: Fun([1], C) -> C`` along ``x: * -> C``; ``k = 1`` is the slice and ``k = 0`` the coslice."""
 
     class ObjectType:
         """A morphism of ``C`` with one endpoint pinned at ``x``: the arrow is its whole content."""
 
-        def __init__(self, data: SliceObjectData) -> None:
-            self._structure = data.structure
-
         def __repr__(self) -> str:
-            return f"{self._structure!r} in {self.category()!r}"
+            return f"{self.arrow()!r} in {self.category()!r}"
 
     class ElementType:
         """A generalized element of such an object."""
@@ -141,17 +119,13 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
     class MorphismType:
         """A triangle: the morphism of ``C`` between the varying objects, commuting with the two pinned arrows."""
 
-        def __init__(self, data: SliceTriangleData) -> None:
-            self._varying = data.varying
-
         def __repr__(self) -> str:
-            return f"{self._varying!r} in {self.category()!r}"
+            return f"{_varying_of(self)!r} in {self.category()!r}"
 
     def __init__(self, base: Category, fixed: CategoryOfCategories.ElementType, fixed_label: int) -> None:
         self._base_of_slice = base
         self._fixed = fixed
         self._fixed_label = fixed_label
-        self._objects: MonoDict = MonoDict()
         self._properties: MonoDict = MonoDict()
         # A functor out of this category exists only once this category does, and
         # ``structure_functors`` runs inside that construction, so both projections are
@@ -159,8 +133,8 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
         # point).
         self._arrow_projection: Functor | None = None
         self._varying_projection: Functor | None = None
-        super().__init__()
-        register_handler(self._equality, self._equal)
+        point, identity = base.point_functor(fixed), Fun(base, base).one()
+        super().__init__(identity if fixed_label == 1 else point, point if fixed_label == 1 else identity)
         self.retain_lifts()
 
     # -- the two retained projections (POL-FUN-031) ------------------------------------
@@ -192,7 +166,7 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The fixed projection: a slice inherits the methods of the category its objects sit over (POL-CAT-047, POL-FUN-031)."""
-        return (self.fixed_projection(),)
+        return (*super().structure_functors(), self.fixed_projection())
 
     def retain_lifts(self) -> None:
         """Retain on the fixed projection the lifts that make it a discrete fibration over ``x`` and a discrete opfibration under it (POL-FUN-031)."""
@@ -265,23 +239,6 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return slice_member(candidate, self)
 
-    def _equal(
-        self,
-        first: CategoryOfCategories.ElementType,
-        candidate: CategoryOfCategories.ElementType,
-        assumptions: Proposition,
-    ) -> bool | None:
-        """Two objects are equal when their defining arrows are, two triangles when their varying morphisms are."""
-        if first in self and candidate in self:
-            return sympy_ask(
-                self.defining_arrow_of(first) == self.defining_arrow_of(candidate),
-                assumptions,
-            )
-        triangles = self.morphism_category(1)
-        if first in triangles and candidate in triangles:
-            return sympy_ask(_varying_of(first) == _varying_of(candidate), assumptions)
-        return None
-
     # -- construction ------------------------------------------------------------------
 
     def __call__(self, value: CategoryOfCategories.ElementType) -> SliceLikeCategory.ObjectType:
@@ -293,54 +250,14 @@ class SliceLikeCategory(Category[[MorphismCategory.ObjectType], []]):
             morphism = self.arrows().diagram(value).on_morphism(_walking_arrow().generator("0->1"))
         assert morphism in self._base_of_slice.morphism_category(1), f"{value!r} denotes no morphism of {self._base_of_slice!r}"
         assert ask(self.fixed_end(morphism) == self._fixed) is not False, f"{morphism!r} does not end at {self._fixed!r}"
-        if morphism not in self._objects:
-            self._objects[morphism] = self.ObjectType(SliceObjectData(morphism))
-        return self._objects[morphism]
+        varying = self.varying_end(morphism)
+        return self.from_arrow(varying if self._fixed_label == 1 else _star(), _star() if self._fixed_label == 1 else varying, morphism)
 
-    def construct_morphism(
-        self,
-        domain: SliceLikeCategory.ObjectType,
-        codomain: SliceLikeCategory.ObjectType,
-        varying: MorphismCategory.ObjectType,
-    ) -> SliceLikeCategory.MorphismType:
-        """The triangle whose varying morphism is ``varying``, which must commute with the two defining arrows."""
-        source, target = self.defining_arrow_of(domain), self.defining_arrow_of(codomain)
-        assert varying in self._base_of_slice.morphism_category(1)(self.varying_end(source), self.varying_end(target))
-        assert ask(self._commutes(source, target, varying)) is not False, f"{varying!r} does not commute with {source!r} and {target!r}"
-        return self.MorphismType(
-            domain=domain,
-            codomain=codomain,
-            data=SliceTriangleData(varying),
-        )
-
-    def _commutes(
-        self,
-        source: MorphismCategory.ObjectType,
-        target: MorphismCategory.ObjectType,
-        varying: MorphismCategory.ObjectType,
-    ) -> Proposition:
-        """The commuting condition of a triangle: ``target . varying == source`` over ``x``, ``varying . source == target`` under it."""
-        if self._fixed_label == 1:
-            return target * varying == source
-        return varying * source == target
-
-    def construct_identity(self, member_object: SliceLikeCategory.ObjectType) -> SliceLikeCategory.MorphismType:
-        varying = self.varying_end(self.defining_arrow_of(member_object))
-        return self.construct_morphism(member_object, member_object, varying.category().morphism_category(1)(varying, varying).one())
-
-    def composite(self, second: SliceLikeCategory.MorphismType, first: SliceLikeCategory.MorphismType) -> SliceLikeCategory.MorphismType:
-        assert first.codomain() is second.domain()
-        return self.construct_morphism(first.domain(), second.codomain(), _varying_of(second) * _varying_of(first))
+    def construct_morphism(self, domain: SliceLikeCategory.ObjectType, codomain: SliceLikeCategory.ObjectType, varying: MorphismCategory.ObjectType) -> SliceLikeCategory.MorphismType:
+        return self.morphism_from_pair(domain, codomain, varying if self._fixed_label == 1 else _star_identity(), _star_identity() if self._fixed_label == 1 else varying)
 
     def _square(self, triangle: SliceLikeCategory.MorphismType) -> NaturalTransformation:
-        """The commuting square in ``Fun([1], C)`` of a triangle: the varying morphism, with the identity of ``x`` at the fixed end."""
-        fixed = self._fixed
-        components = {
-            self._fixed_label: fixed.category().morphism_category(1)(fixed, fixed).one(),
-            1 - self._fixed_label: _varying_of(triangle),
-        }
-        source, target = self.defining_arrow_of(triangle.domain()), self.defining_arrow_of(triangle.codomain())
-        return self.arrows().morphism_category(1)(source, target)(lambda vertex: components[_walking_arrow().label(vertex)])
+        return self.arrow_projection().on_morphism(triangle)
 
     def varying_component(self, square: NaturalTransformation) -> MorphismCategory.ObjectType:
         """The component of a commuting square of ``Fun([1], C)`` at the varying end: the triangle it is."""
@@ -393,122 +310,6 @@ def coslice_under(base: Category, fixed: CategoryOfCategories.ElementType) -> Sl
 # -- comma categories ------------------------------------------------------------------------
 
 
-class CommaCategory(LimitSubcategory):
-    """``Comma(F, G)`` with its two projections and defining natural transformation."""
-
-    class ObjectType:
-        """A triple ``(a, b, f)`` with ``f: F(a) -> G(b)``."""
-
-        def first(self) -> CategoryOfCategories.ElementType:
-            return self.category().narrowing_base().first_projection().on_object(self)
-
-        def second(self) -> CategoryOfCategories.ElementType:
-            return self.category().narrowing_base().second_projection().on_object(self)
-
-        def arrow(self) -> MorphismCategory.ObjectType:
-            category = self.category().narrowing_base()
-            projection = category.arrow_projection()
-            return projection.codomain().diagram(projection.on_object(self)).on_morphism(_walking_arrow().generator("0->1"))
-
-    class ElementType:
-        """A generalized element of a comma object."""
-
-    class MorphismType:
-        """A pair of morphisms that commutes with the two defining arrows."""
-
-        def first(self) -> MorphismCategory.ObjectType:
-            return self.base_category().narrowing_base().first_projection().on_morphism(self)
-
-        def second(self) -> MorphismCategory.ObjectType:
-            return self.base_category().narrowing_base().second_projection().on_morphism(self)
-
-    def __init__(self, diagram: Functor, first: Functor, second: Functor) -> None:
-        self._comma_functors = (first, second)
-        super().__init__(diagram)
-
-    @cached_method(key=identity_key)
-    def from_arrow(
-        self,
-        first: CategoryOfCategories.ElementType,
-        second: CategoryOfCategories.ElementType,
-        arrow: MorphismCategory.ObjectType,
-    ) -> CommaCategory.ObjectType:
-        """Construct ``(a, b, f)`` for ``f: F(a) -> G(b)``."""
-        forward, backward = self.comma_functors()
-        assert first in forward.domain() and second in backward.domain()
-        first_image, second_image = forward.on_object(first), backward.on_object(second)
-        assert arrow in forward.codomain().morphism_category(1)(first_image, second_image)
-        components = (
-            self.factor(0)((first, second)),
-            arrow,
-            self.factor(2)((first_image, second_image)),
-        )
-        return self.from_components(lambda vertex: components[self.shape().label(vertex)])
-
-    def construct_morphism(
-        self,
-        source: CommaCategory.ObjectType,
-        target: CommaCategory.ObjectType,
-        first: MorphismCategory.ObjectType,
-        second: MorphismCategory.ObjectType,
-    ) -> CommaCategory.MorphismType:
-        """Construct ``(u, v)`` with ``G(v) f = f' F(u)``."""
-        assert source in self and target in self
-        forward, backward = self.comma_functors()
-        assert first in forward.domain().morphism_category(1)(source.first(), target.first())
-        assert second in backward.domain().morphism_category(1)(source.second(), target.second())
-        first_image, second_image = forward.on_morphism(first), backward.on_morphism(second)
-        assert ask(second_image * source.arrow() == target.arrow() * first_image) is not False
-        pair, arrows, endpoints = self.factor(0), self.factor(1), self.factor(2)
-        square = (first_image, second_image)
-        components = (
-            pair.construct_morphism(source.component(0), target.component(0), (first, second)),
-            arrows.morphism_category(1)(source.component(1), target.component(1))(
-                lambda vertex: square[arrows.domain().label(vertex)]
-            ),
-            endpoints.construct_morphism(source.component(2), target.component(2), square),
-        )
-        return self.morphism_from_components(source, target, lambda vertex: components[self.shape().label(vertex)])
-
-    def pair_projection(self) -> Functor:
-        """The retained pullback projection to ``A * B``."""
-        presentation = Cat().Pullbacks().presentation(self)
-        return presentation.transformation().component(presentation.diagram().domain()(0))
-
-    def arrow_projection(self) -> Functor:
-        """The retained pullback projection to ``Fun([1], C)``."""
-        presentation = Cat().Pullbacks().presentation(self)
-        return presentation.transformation().component(presentation.diagram().domain()(1))
-
-    @cached_method
-    def first_projection(self) -> Functor:
-        """The retained projection ``Comma(F, G) -> A``."""
-        pair = self.pair_projection()
-        return pair.codomain().product_projection(0) * pair
-
-    @cached_method
-    def second_projection(self) -> Functor:
-        """The retained projection ``Comma(F, G) -> B``."""
-        pair = self.pair_projection()
-        return pair.codomain().product_projection(1) * pair
-
-    @cached_method
-    def defining_transformation(self) -> NaturalTransformation:
-        """The retained transformation ``F pi_A => G pi_B``."""
-        first, second = self.comma_functors()
-        source = first * self.first_projection()
-        target = second * self.second_projection()
-        return Fun(self, first.codomain()).morphism_category(1)(source, target)(lambda member_object: member_object.arrow())
-
-    def comma_functors(self) -> tuple[Functor, Functor]:
-        """The defining ordered pair ``(F, G)``."""
-        return self._comma_functors
-
-    def __repr__(self) -> str:
-        first, second = self.comma_functors()
-        return f"Comma({first!r}, {second!r})"
-
-
 def _pair_functor(first: Functor, second: Functor) -> Functor:
     """``F * G: A * B -> C * D``: the mediator of the cone ``(F * pi_A, G * pi_B)`` over the product ``C * D``."""
     source = Cat().Products()((first.domain(), second.domain()))
@@ -535,11 +336,23 @@ def _construct_comma_category(
     second: Functor,
     category_type: type[CommaCategory] = CommaCategory,
 ) -> CommaCategory:
+    result = comma_objects(first, second) if category_type is CommaCategory else category_type(first, second)
     diagram = cospan_diagram(Cat(), _pair_functor(first, second), _endpoint_functor(first.codomain()))
-    result = limit_of_categories(diagram, Cat().Pullbacks(), lambda defining_diagram: category_type(defining_diagram, first, second))
-    assert result in Cat().Pullbacks()
-    result.defining_transformation()
-    return result
+    pairs, arrows = result.pair_projection(), result.arrow_projection()
+    legs = (pairs, arrows, diagram.on_morphism(diagram.domain().generator("0->2")) * pairs)
+
+    def mediator(candidate: NaturalTransformation) -> Functor:
+        pair, arrow = candidate.component(diagram.domain()(0)), candidate.component(diagram.domain()(1))
+        def on_object(value: CategoryOfCategories.ElementType) -> CommaCategory.ObjectType:
+            components = pair.on_object(value)
+            image = arrow.on_object(value)
+            defining = arrow.codomain().diagram(image).on_morphism(_walking_arrow().generator("0->1"))
+            return result.from_arrow(components.component(0), components.component(1), defining)
+        return Fun(pair.domain(), result)(on_object, lambda morphism: result.morphism_from_pair(
+            on_object(morphism.domain()), on_object(morphism.codomain()),
+            pair.on_morphism(morphism).component(0), pair.on_morphism(morphism).component(1)))
+
+    return Cat().Pullbacks().with_universal_data(diagram, result, cone(diagram, result, lambda vertex: legs[diagram.domain().label(vertex)]), mediator)
 
 
 # -- the fixed-object construction categories (POL-CAT-092/094, POL-CAT-026, POL-FUN-013) ----
@@ -622,7 +435,7 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
     def __call__(self, value: CategoryOfCategories.ElementType) -> SliceLikeCategory.ObjectType:
         """The object of a morphism with the property: the trusted constructor of the property on it (POL-MATH-037), rejected only when decided false."""
         assert ask(has_morphism_property(value, self)) is not False, f"{value!r} is not in {self._property_category!r}"
-        self._property_category(self.defining_arrow_of(value))
+        refine(self.defining_arrow_of(value), self._property_category)
         member_object = self._ambient(value)
         refine(member_object, self)
         return member_object

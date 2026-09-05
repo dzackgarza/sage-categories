@@ -1,14 +1,14 @@
 import sage_categories
 from _typeshed import Incomplete
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.comma import CommaSpecialization
 from sage_categories.cat.cones import ConeCategory
 from sage_categories.cat.functors import Functor, FunctorCategory, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.cat.slices import CommaCategory
 __all__ = ['TotalConesCategory', 'TotalLimitConesCategory', 'total_cones']
 
-class TotalConesCategory(CommaCategory):
+class TotalConesCategory(CommaSpecialization):
     LimitCones: Incomplete
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
@@ -26,9 +26,6 @@ class TotalConesCategory(CommaCategory):
 
         def diagram_transformation(self) -> NaturalTransformation:
             ...
-
-    def family_category(self, diagram: Functor) -> CommaCategory:
-        ...
 
     def diagrams(self) -> FunctorCategory:
         ...

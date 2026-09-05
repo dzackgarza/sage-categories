@@ -1,0 +1,66 @@
+from collections.abc import Callable
+from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.functors import Functor, NaturalTransformation
+from sage_categories.cat.morphisms import MorphismCategory
+__all__ = ['element_projection', 'Elements', 'element', 'weighted_limit', 'weighted_colimit', 'weighted_projection', 'weighted_injection', 'weighted_limit_lift', 'weighted_colimit_desc', 'weighted_limit_map', 'weighted_colimit_map', 'hom_functor', 'yoneda', 'coyoneda', 'coend_weight', 'end', 'coend', 'natural_transformation_diagram', 'natural_transformation_to_end', 'end_to_natural_transformation']
+type WeightedComponents = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
+
+def element_projection(weight: Functor) -> Functor:
+    ...
+
+def Elements(weight: Functor) -> Category:
+    ...
+
+def element(weight: Functor, vertex: CategoryOfCategories.ElementType, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+    ...
+
+def weighted_limit(weight: Functor, diagram: Functor) -> CategoryOfCategories.ElementType:
+    ...
+
+def weighted_colimit(weight: Functor, diagram: Functor) -> CategoryOfCategories.ElementType:
+    ...
+
+def weighted_projection(weight: Functor, diagram: Functor, vertex: CategoryOfCategories.ElementType, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+    ...
+
+def weighted_injection(weight: Functor, diagram: Functor, vertex: CategoryOfCategories.ElementType, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+    ...
+
+def weighted_limit_lift(weight: Functor, diagram: Functor, apex: CategoryOfCategories.ElementType, components: WeightedComponents) -> MorphismCategory.ObjectType:
+    ...
+
+def weighted_colimit_desc(weight: Functor, diagram: Functor, apex: CategoryOfCategories.ElementType, components: WeightedComponents) -> MorphismCategory.ObjectType:
+    ...
+
+def weighted_limit_map(weight: Functor, transformation: NaturalTransformation) -> MorphismCategory.ObjectType:
+    ...
+
+def weighted_colimit_map(weight: Functor, transformation: NaturalTransformation) -> MorphismCategory.ObjectType:
+    ...
+
+def hom_functor(category: Category, sets: Category) -> Functor:
+    ...
+
+def yoneda(category: Category, sets: Category) -> Functor:
+    ...
+
+def coyoneda(category: Category, sets: Category) -> Functor:
+    ...
+
+def coend_weight(hom: Functor) -> Functor:
+    ...
+
+def end(diagram: Functor, hom: Functor) -> CategoryOfCategories.ElementType:
+    ...
+
+def coend(diagram: Functor, hom: Functor) -> CategoryOfCategories.ElementType:
+    ...
+
+def natural_transformation_diagram(first: Functor, second: Functor, hom: Functor) -> Functor:
+    ...
+
+def natural_transformation_to_end(transformation: NaturalTransformation, source_hom: Functor, target_hom: Functor) -> CategoryOfCategories.ElementType:
+    ...
+
+def end_to_natural_transformation(point: CategoryOfCategories.ElementType, first: Functor, second: Functor, source_hom: Functor, target_hom: Functor) -> NaturalTransformation:
+    ...

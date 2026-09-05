@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from sage_categories.cat.canonical import FinitePresentedCategory as FinitePresentedCategory
 from sage_categories.cat.cat_constructions import LimitCategory as LimitCategory
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.comma import CommaCategory as CommaCategory
 from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun, FunctorCategory as FunctorCategory
 from sage_categories.cat.morphisms import Mor as Mor, MorphismCategory as MorphismCategory

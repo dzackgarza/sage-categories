@@ -24,8 +24,7 @@ The governing policies are `POL-MATH-034`, `POL-MATH-035`, `POL-CAT-001`, `POL-C
 
 - `Sets().MorphismType` implements total functions with a domain and codomain.
 
-An owned element is a point `t: * -> X`, and its parent is `X`.
-A generalized element `T -> X` with nonterminal domain is an ordinary morphism in `Sets()`, not a `Sets().ElementType` value.
+An owned element is a point `t: * -> X`, and its parent is `X`. A generalized element `T -> X` with nonterminal domain is an ordinary morphism in `Sets()`, not a `Sets().ElementType` value.
 The same point datum can produce distinct owned elements in distinct sets.
 
 Private representations can include Sage parents, predicates, symbolic expressions, finite collections, indexed families, tagged pairs, or universal-construction data.
@@ -57,12 +56,10 @@ X.cardinality()
 Sets().Subobjects(X).from_predicate(predicate)
 ```
 
-Morphism categories, fixed-object methods, universal-construction methods, and operators are inherited from `Cat().ObjectType`.
-Their contract is in [Functors, `Cat`, and structural inheritance](functor.md).
+Morphism categories, fixed-object methods, universal-construction methods, and operators are inherited from `Cat().ObjectType`. Their contract is in [Functors, `Cat`, and structural inheritance](functor.md).
 `Sets()` supplies only their set-specific realizations and algorithms.
 
-`X.cardinality()` returns an applied query with result category `Cardinal()`.
-`ask(X.cardinality())` returns an owned cardinal or Sage `Unknown`.
+`X.cardinality()` returns an applied query with result category `Cardinal()`. `ask(X.cardinality())` returns an owned cardinal or Sage `Unknown`.
 
 ## Canonical objects and the terminal object
 
@@ -80,14 +77,12 @@ A point of `X` is a morphism `* -> X`, that is, a morphism `1 -> X` from `Sets()
 
 `Mor(Sets())(X, Y)` is the discrete category on the total set maps from `X` to `Y`. It exists for every pair `X, Y in Sets()`. Its inhabitation and emptiness use category-owned SymPy predicates.
 
-The generic exponential construction comes from `Cat`.
-Its realization in `Sets()` is the function set from `X` to `Y`.
-It is a distinct owned object, and `Mor(Sets())(X, Y)` is the discrete category on its elements.
+The generic exponential construction comes from `Cat`. Its realization in `Sets()` is the function set from `X` to `Y`. It is a distinct owned object, and `Mor(Sets())(X, Y)` is the discrete category on its elements.
 
 `Mor(Sets())(X, Y)(rule)` constructs a set map.
 The rule can be a callable, an explicit mapping, a SymPy `Lambda`, or a Sage callable symbolic expression; the constructor dispatches on that representation.
-Every form is stored as a raw rule on data, which is what evaluation uses. A symbolic form is retained beside it and propagates through identities, constants, composition, and the projections and pairings of rule-defined products, so that equality and the morphism properties can be decided symbolically where a raw rule alone would leave them `Unknown`.
-The constructor must establish that the rule is total and lands in `Y`.
+Every form is stored as a raw rule on data, which is what evaluation uses.
+A symbolic form is retained beside it and propagates through identities, constants, composition, and the projections and pairings of rule-defined products, so that equality and the morphism properties can be decided symbolically where a raw rule alone would leave them `Unknown`. The constructor must establish that the rule is total and lands in `Y`.
 
 A raw rule determines propositions stating totality and codomain closure.
 `ask()` can evaluate those propositions.
@@ -107,8 +102,7 @@ f.image()
 ```
 
 Evaluation requires `x in f.domain()` and evaluates the retained rule on the point datum.
-For a generalized element `t: T -> X`, morphism composition gives `f * t: T -> Y`.
-Identity and composition arrive through inherited morphism operations.
+For a generalized element `t: T -> X`, morphism composition gives `f * t: T -> Y`. Identity and composition arrive through inherited morphism operations.
 
 The realized exponential retains the evaluation morphism.
 Its currying operation returns the unique morphism required by the exponential universal property.
@@ -133,10 +127,12 @@ A morphism-property predicate returns its applied proposition.
 `ask()` evaluates it.
 The kernel refines a morphism only after an exact result, scoped hypothesis, or named theorem establishes the property.
 Over an enumerated domain the three properties are read off the table.
-Over a rule-defined domain they are decided from the retained symbolic form: solving `f(x) = a` for the domain symbols with exactly one solution that the domain rule admits under the codomain rule establishes a bijection and yields the inverse rule; solving `f(x) = f(y)` with the sole solution `y = x` establishes injectivity, and two admitted samples with one image refute it; a codomain sample whose only preimage the domain rule rejects refutes surjectivity. Anything else stays `Unknown`.
+Over a rule-defined domain they are decided from the retained symbolic form: solving `f(x) = a` for the domain symbols with exactly one solution that the domain rule admits under the codomain rule establishes a bijection and yields the inverse rule; solving `f(x) = f(y)` with the sole solution `y = x` establishes injectivity, and two admitted samples with one image refute it; a codomain sample whose only preimage the domain rule rejects refutes surjectivity.
+Anything else stays `Unknown`.
 
 An inverse of an isomorphism is an owned set morphism.
-It satisfies both inverse equations. For a bijection between enumerated sets it reads the table backwards; for a symbolic bijection it is the solved inverse rule.
+It satisfies both inverse equations.
+For a bijection between enumerated sets it reads the table backwards; for a symbolic bijection it is the solved inverse rule.
 
 ## Products
 
@@ -163,8 +159,7 @@ For a diagram `i |-> X_i` on `S`, `Sets()` constructs an owned set `Q` whose inh
 \iota_i:X_i\longrightarrow Q
 \]
 
-are injective, have pairwise disjoint images, and have images whose union is `Q`.
-Membership and equality are category-owned predicate meanings represented by SymPy propositions.
+are injective, have pairwise disjoint images, and have images whose union is `Q`. Membership and equality are category-owned predicate meanings represented by SymPy propositions.
 The set implementation selects a private exact representation from the retained diagram.
 The cardinality query uses the computational cases in [Cardinality and enumeration](#cardinality-and-enumeration).
 
@@ -173,19 +168,17 @@ The cardinality query uses the computational cases in [Cardinality and enumerati
 `Sets()` inherits `Limits(I)` and `Colimits(I)` with the complete retained-data contract in [Diagram shapes and universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 The specialization supplies the following set-valued realizations.
 
-The limit of `D: I -> Sets()` is the predicate subset of the product `prod_{i in Ob(I)} D(i)` cut out by compatibility. A family's membership proposition is the conjunction of `D(u)(x_i) == x_j` over every generating morphism `u: i -> j` of `I`. `ask()` decides this proposition when `I` is finitely presented and every generating equality decides; otherwise it returns `Unknown`.
+The limit of `D: I -> Sets()` is the predicate subset of the product `prod_{i in Ob(I)} D(i)` cut out by compatibility.
+A family's membership proposition is the conjunction of `D(u)(x_i) == x_j` over every generating morphism `u: i -> j` of `I`. `ask()` decides this proposition when `I` is finitely presented and every generating equality decides; otherwise it returns `Unknown`.
 
-The colimit of `D` is the quotient of the coproduct `coprod_i D(i)` by the equivalence relation generated by `(i, x) ~ (j, D(u)(x))`.
-Its element equality uses the exact category-owned SymPy predicate.
+The colimit of `D` is the quotient of the coproduct `coprod_i D(i)` by the equivalence relation generated by `(i, x) ~ (j, D(u)(x))`. Its element equality uses the exact category-owned SymPy predicate.
 For `I = omega`, the exact handler decides `True` when two representatives agree at the larger of their two indices under the transition maps and returns `Unknown` otherwise; for every other infinite shape it returns `Unknown`.
 
 ## Subobjects, images, and power objects
 
 The inherited fixed-object method is specified in [Fixed-object construction categories](functor.md#fixed-object-construction-categories).
 Its specialization to `Sets()` identifies subobjects with subsets of `X` together with their inclusion monomorphisms.
-`Sets().Subobjects(X).from_predicate(predicate)` constructs the selected subset and its monomorphism into `X`.
-It lifts no additional structure: when a poset is presented as `(X, R)`, this construction returns a set subobject (`POL-LEAF-060`).
-The predicate returns the membership proposition for a candidate element.
+`Sets().Subobjects(X).from_predicate(predicate)` constructs the selected subset and its monomorphism into `X`. It lifts no additional structure: when a poset is presented as `(X, R)`, this construction returns a set subobject (`POL-LEAF-060`). The predicate returns the membership proposition for a candidate element.
 `ask()` can evaluate that proposition as `True`, `False`, or `Unknown`.
 
 The inherited subobject retains its monomorphism.
@@ -196,22 +189,18 @@ The set-specific characteristic morphism maps the selected subset to `1 in 2` an
 `f.image()` constructs an owned subobject of `f.codomain()`. It does not require source enumeration.
 Image membership remains a proposition when no handler can decide it.
 
-`2 ** X`, with `2 = 1 + 1`, constructs the power object of `X`. It is the function set from `X` to `2`.
-Its points are characteristic morphisms and therefore correspond to the objects of `Sets().Subobjects(X)`.
-Set inclusion is an applied proposition.
+`2 ** X`, with `2 = 1 + 1`, constructs the power object of `X`. It is the function set from `X` to `2`. Its points are characteristic morphisms and therefore correspond to the objects of `Sets().Subobjects(X)`. Set inclusion is an applied proposition.
 The set operations on these subobjects construct owned set subobjects.
 
 ## Finite and fixed-cardinality subsets
 
-Let `U_X: Sets().Subobjects(X) -> Sets()` be the inherited varying-object functor, `Fun([1], Sets()).ev(0) * Sets().SliceOver(X).projection()` composed with the inclusion of `Sets().Subobjects(X)` into `Sets().SliceOver(X)` (D157).
-The inverse image of `Sets().Finite()` along `U_X` is:
+Let `U_X: Sets().Subobjects(X) -> Sets()` be the inherited varying-object functor, `Fun([1], Sets()).ev(0) * Sets().SliceOver(X).projection()` composed with the inclusion of `Sets().Subobjects(X)` into `Sets().SliceOver(X)` (D157). The inverse image of `Sets().Finite()` along `U_X` is:
 
 ```python
 Sets().Subobjects(X).Finite()
 ```
 
-Its objects are the finite subobjects of `X`.
-The parameterized property category `Sets().OfCardinality(k)` has containment predicate `A.cardinality() == k`, a proposition that `ask()` evaluates.
+Its objects are the finite subobjects of `X`. The parameterized property category `Sets().OfCardinality(k)` has containment predicate `A.cardinality() == k`, a proposition that `ask()` evaluates.
 The inherited narrowing `Sets().Subobjects(X).OfCardinality(k)` contains the subobjects of cardinality `k`.
 
 If `X` has a chosen enumeration, these constructions can retain a derived enumeration isomorphism.
@@ -237,8 +226,7 @@ The set axioms generate these public applications on `Sets().ObjectType`:
 
 Each method returns its property subcategory's containment proposition.
 Every category whose compiled object class inherits `Sets().ObjectType` receives these methods.
-`Cat` implements `__contains__()` by calling `ask()` on that proposition; it is not on the closed kernel surface (`resolution.md`, D173).
-An `Unknown` decision fails loudly there, since a bool cannot carry it; ask the proposition when the undecided case must be handled.
+`Cat` implements `__contains__()` by calling `ask()` on that proposition; it is not on the closed kernel surface (`resolution.md`, D173). An `Unknown` decision fails loudly there, since a bool cannot carry it; ask the proposition when the undecided case must be handled.
 A trusted category constructor or named mathematical construction places a set directly in the property category.
 
 ### Cardinality query
@@ -251,9 +239,7 @@ X.cardinality()  # applied query with result category Cardinal()
 
 `ask(X.cardinality())` returns an object of `Cardinal()` or the Sage `Unknown` singleton.
 Calling `X.cardinality()` itself never attempts this evaluation.
-The twin-prime set in [Undecidable properties](undecidable-properties.md#twin-prime-set)
-is the standard acceptance example: its membership rule is decidable, while its
-finiteness proposition and cardinality query are unresolved.
+The twin-prime set in [Undecidable properties](undecidable-properties.md#twin-prime-set) is the standard acceptance example: its membership rule is decidable, while its finiteness proposition and cardinality query are unresolved.
 
 A cardinal is an exact value: a finite cardinal, `Aleph.on_object(alpha)`, `2 ** Aleph.on_object(Ordinals().zero())`, or another value formed by exact cardinal arithmetic.
 There is no placeholder cardinal, no unknown cardinal kind, and no symbolic "cardinality of X" value.
@@ -263,8 +249,7 @@ Cardinals implement no `Unknown` handling.
 
 A set construction registers exact evaluation cases for the category-owned cardinality query.
 Each case uses the index set, the selected presentation's diagram, its codomain placement (`Sets().Finite()`, `Sets().Countable()`, `Sets().Uncountable()`), and any retained constant diagram.
-For a finite chosen enumeration, it obtains each factor query from the selected product cone `p` by applying `p.diagram().on_object(i).cardinality()`.
-Each case cites the theorem that decides it.
+For a finite chosen enumeration, it obtains each factor query from the selected product cone `p` by applying `p.diagram().on_object(i).cardinality()`. Each case cites the theorem that decides it.
 The product cases are: a finite index with every factor exact gives the exact product; a finite index with an empty factor gives `0`; the constant diagram at `X` over `S` gives `(#X) ** (#S)`; an infinite index with codomain `Sets().Uncountable()` places the product in `Sets().Uncountable()`; a finite index with codomain `Sets().Countable()` places the product in `Sets().Countable()`. When no case applies, `ask()` returns `Unknown`. Coproducts use the dual sum cases.
 
 If SymPy normalizes a subset to `FiniteSet(1, 2, 3)`, its cardinality is `3`.
@@ -278,13 +263,11 @@ If the image morphism is monic, the construction theorem gives
 If neither route applies, `ask(X.cardinality())` returns `Unknown`.
 
 Each cardinal property subcategory owns one containment predicate.
-The `X.is_finite()`, `X.is_countable()`, and related property applications `cat_kernel` derives return those propositions (D175).
-`ask()` decides them from category placement, active assumptions, and the routes the owning implementation registers: a known cardinality decides finiteness and countability, and a `Sets()` construction registers the case routes that external mathematics supplies for it.
+The `X.is_finite()`, `X.is_countable()`, and related property applications `cat_kernel` derives return those propositions (D175). `ask()` decides them from category placement, active assumptions, and the routes the owning implementation registers: a known cardinality decides finiteness and countability, and a `Sets()` construction registers the case routes that external mathematics supplies for it.
 `assume(X.is_finite())` and the property subcategory constructors `Sets().Finite()`, `Sets().Countable()`, and `Sets().Uncountable()` are the positive routes.
 
 Countability does not select an enumeration.
-A chosen enumeration retains an owned index subobject `I -> NN` and an isomorphism `e: I -> X`.
-The isomorphism is the defining structure.
+A chosen enumeration retains an owned index subobject `I -> NN` and an isomorphism `e: I -> X`. The isomorphism is the defining structure.
 Use `e(n)` for the element at `n` and `e.inverse()(x)` for the index of `x`.
 
 ## Ordered sets
@@ -298,8 +281,7 @@ Cardinality and enumeration remain independent structures.
 
 ## Finitely supported function sets
 
-For a pointed set `(X, x0)` and index set `S`, construct (X^{(S)}) as the predicate subobject of `X ** S` whose functions have finite support relative to `x0`.
-The generic subobject retains its monomorphism into the function set.
+For a pointed set `(X, x0)` and index set `S`, construct (X^{(S)}) as the predicate subobject of `X ** S` whose functions have finite support relative to `x0`. The generic subobject retains its monomorphism into the function set.
 Its placement in `Sets()` supplies cardinality and the complete set surface.
 The category-owned implementation registers applicable cardinal formulas from the retained construction data.
 
@@ -311,10 +293,9 @@ The element record retains its selected point datum.
 The morphism record retains its domain, codomain, and rule.
 
 Direct `Sets()` construction initializes this state on the new set value.
-A functor into `Sets()` has an ordinary object action that calls a public `Sets()` constructor
-and returns the resulting set.
-When that functor is selected, the kernel makes the applicable set state available on the
-source value. Thus an inherited set method reads set state directly on the value to which it applies.
+A functor into `Sets()` has an ordinary object action that calls a public `Sets()` constructor and returns the resulting set.
+When that functor is selected, the kernel makes the applicable set state available on the source value.
+Thus an inherited set method reads set state directly on the value to which it applies.
 Public `F(x)` remains a separate set image owned by the named functor.
 
 `Sets().ObjectType` is the sole public implementation of a set.
@@ -464,8 +445,7 @@ Every owned category owns an equality predicate for its objects, for its morphis
 Identity is the first exact positive handler of every equality predicate.
 
 The proposition defines `__bool__` to raise.
-The mature reference is SymPy `Relational.__bool__`.
-Therefore `if a == b:` fails loudly.
+The mature reference is SymPy `Relational.__bool__`. Therefore `if a == b:` fails loudly.
 Repository code asks the proposition, requires a decided result where necessary, and then branches on that decision.
 Containment (`in`) remains the one Python Boolean boundary.
 

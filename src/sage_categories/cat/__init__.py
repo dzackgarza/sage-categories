@@ -57,6 +57,7 @@ from sage_categories.cat.structured_objects import (
     MultiplicativeMagmas,
     MultiplicativeMonoids,
     PointedMagmas,
+    Rings,
     Semirings,
 )
 from sage_categories.cat.universal_arrows import (
@@ -123,6 +124,7 @@ __all__ = [
     "MultiplicativeMagmas",
     "MultiplicativeMonoids",
     "PointedMagmas",
+    "Rings",
     "Semirings",
     "InitialObjects",
     "LeftUniversalArrows",

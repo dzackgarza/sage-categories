@@ -888,6 +888,8 @@ F^{-1}(P)=D\times_C P.
 The public construction is `F.inverse_image(P)`. It retains both pullback projections.
 The projection `F.inverse_image(P) -> D` is its subcategory monomorphism.
 When `i` is full, or an isofibration, that projection has the same property.
+Two cases are exact identities and retain no new category: `F^{-1}(C) = D`, the whole codomain pulls back to the whole domain, and `i^{-1}(P) = P` along the inclusion of `P` itself.
+A route whose target is its whole codomain therefore contributes nothing to `D.P()`, which is the intersection of the remaining inverse images.
 
 For a property subcategory `C.P()`, a category declares `D.P()` as `F.inverse_image(C.P())` when the named functor `F` defines that inherited property.
 The pullback owns the resulting category and both structure functors.

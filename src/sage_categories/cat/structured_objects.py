@@ -33,6 +33,8 @@ __all__ = [
     "MonoidPairsCategory",
     "SemiringCategory",
     "Semirings",
+    "RingCategory",
+    "Rings",
     "EilenbergMoore",
 ]
 
@@ -45,7 +47,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import comma_objects
 from sage_categories.cat.cones import cone
 from sage_categories.cat.declarations import Sets
-from sage_categories.cat.diagrams import cospan_diagram, from_sequence
+from sage_categories.cat.diagrams import cospan_diagram, from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.morphisms import Mor, MorphismCategory
@@ -807,6 +809,32 @@ class MonoidPairsCategory(LimitSubcategory):
             lambda value: value.family_component(1), lambda arrow: arrow.family_component(1)
         )
 
+    def homomorphism(
+        self,
+        source: MonoidPairsCategory.ObjectType,
+        target: MonoidPairsCategory.ObjectType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> MonoidPairsCategory.MorphismType:
+        """The pair morphism over a carrier map ``f: X -> Y`` preserving both monoid structures."""
+        additive, multiplicative = self.factor(0).ambient(), self.factor(1)
+        monoidal = multiplicative.neutral_category().monoidal_structure()
+        additive_renaming, multiplicative_renaming = additive.product_projection(0), multiplicative.product_projection(0)
+        additive_source, additive_target = source.family_component(0), target.family_component(0)
+        multiplicative_source, multiplicative_target = source.family_component(1), target.family_component(1)
+        additive_map = additive.homomorphism(
+            additive_source,
+            additive_target,
+            _monoid_homomorphism(monoidal, additive_renaming.on_object(additive_source), additive_renaming.on_object(additive_target), arrow),
+        )
+        multiplicative_map = multiplicative.homomorphism(
+            multiplicative_source,
+            multiplicative_target,
+            _monoid_homomorphism(
+                monoidal, multiplicative_renaming.on_object(multiplicative_source), multiplicative_renaming.on_object(multiplicative_target), arrow
+            ),
+        )
+        return self.construct_morphism(source, target, (additive_map, multiplicative_map, arrow))
+
     def structure_functors(self) -> tuple[Functor, ...]:
         return (*super().structure_functors(), self.to_additive(), self.to_multiplicative())
 
@@ -845,6 +873,15 @@ class SemiringCategory(EquifierCategory):
     def to_multiplicative(self) -> Functor:
         """The retained leg to ``MultiplicativeMonoids(C_x)``."""
         return self._pairs.to_multiplicative() * Fun.full_subcategory_monomorphism(self, self._pairs)
+
+    def homomorphism(
+        self,
+        source: SemiringCategory.ObjectType,
+        target: SemiringCategory.ObjectType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> SemiringCategory.MorphismType:
+        """The semiring morphism over a carrier map preserving both structures: the pair morphism, which fullness makes a morphism here."""
+        return self._pairs.homomorphism(source, target, arrow)
 
     def __call__(
         self,
@@ -934,6 +971,122 @@ def Semirings(base: Category) -> SemiringCategory:
     inclusion = Fun.full_subcategory_monomorphism(result, pairs)
     first, second = equations[-1]
     return SemiringCategory(first.whisker_right(inclusion), second.whisker_right(inclusion), monoidal, pairs)
+
+
+# -- ring objects: a semiring whose additive monoid is a group --------------------------------
+
+
+def _monoid_homomorphism(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    source: MonoidCategory.ObjectType,
+    target: MonoidCategory.ObjectType,
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """The monoid morphism over a carrier map, through the magma and pointed-magma constructors."""
+    to_magmas = Monoids(monoidal).to_magmas()
+    magma_map = Magmas(monoidal).homomorphism(to_magmas.on_object(source), to_magmas.on_object(target), arrow)
+    return PointedMagmas(monoidal.tensor(), monoidal.unit()).homomorphism(source, target, magma_map)
+
+
+class RingCategory(LimitSubcategory):
+    """``Semirings(C) ×_A AdditiveGroups(C_x).Commutative()``: a semiring whose additive monoid is a group.
+
+    The pullback is over ``A = AdditiveMonoids(C_x)``, which both legs reach, so a ring has
+    one addition and one zero.  Both legs are declared faithful isofibrations: the semiring
+    leg supplies ``zero()``, ``one()``, ``+``, and ``*``; the additive-group leg supplies
+    ``negation()``, ``-x``, and ``x - y`` (``specs/rings.md``, "Structure functors").
+    """
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __init__(self, diagram: Functor, monoidal: MonoidalStructuresCategory.ObjectType) -> None:
+        self._monoidal = monoidal
+        super().__init__(diagram)
+
+    def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
+        return self._monoidal
+
+    @cached_method
+    def to_semiring(self) -> Functor:
+        return Fun(self, self.factor(0)).Faithful().Isofibrations()(
+            lambda value: value.family_component(0), lambda arrow: arrow.family_component(0)
+        )
+
+    @cached_method
+    def to_additive_group(self) -> Functor:
+        return Fun(self, self.factor(1)).Faithful().Isofibrations()(
+            lambda value: value.family_component(1), lambda arrow: arrow.family_component(1)
+        )
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (*super().structure_functors(), self.to_semiring(), self.to_additive_group())
+
+    def __call__(
+        self,
+        addition: MorphismCategory.ObjectType,
+        zero: MorphismCategory.ObjectType,
+        multiplication: MorphismCategory.ObjectType,
+        one: MorphismCategory.ObjectType,
+    ) -> RingCategory.ObjectType:
+        """The ring with these structure morphisms; the additive inversion is the one the shear isomorphism determines."""
+        monoidal = self.monoidal_structure()
+        semirings, groups = self.factor(0), self.factor(1)
+        semiring = semirings(addition, zero, multiplication, one)
+        additive = semirings.to_additive().on_object(semiring)
+        monoid = AdditiveMonoids(monoidal).product_projection(0).on_object(additive)
+        assert monoid in Groups(monoidal), f"the additive monoid of {addition!r} is not a group"
+        group = AdditiveGroups(monoidal).renamed(monoid)
+        assert group in groups
+        return self._ring(semiring, group, additive)
+
+    @cached_method(key=identity_key)
+    def _ring(
+        self,
+        semiring: CategoryOfCategories.ElementType,
+        group: CategoryOfCategories.ElementType,
+        additive: CategoryOfCategories.ElementType,
+    ) -> RingCategory.ObjectType:
+        """The retained family ``(semiring, group, additive monoid)`` over the walking cospan; the constructor above owns ``__call__``."""
+        family = (semiring, group, additive)
+        for position, member in enumerate(family):
+            assert member in self.factor(position), f"{member!r} is not an object of {self.factor(position)!r}"
+        return self.from_components(lambda vertex: family[sequence_position(vertex)])
+
+    def homomorphism(
+        self,
+        source: RingCategory.ObjectType,
+        target: RingCategory.ObjectType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> RingCategory.MorphismType:
+        """The ring morphism over a carrier map ``f: R -> S`` preserving addition, zero, multiplication, and one."""
+        monoidal = self.monoidal_structure()
+        semirings, additive_groups = self.factor(0), AdditiveGroups(monoidal)
+        semiring_map = semirings.homomorphism(source.family_component(0), target.family_component(0), arrow)
+        renaming = additive_groups.product_projection(0)
+        group_source, group_target = source.family_component(1), target.family_component(1)
+        group_map = additive_groups.homomorphism(
+            group_source,
+            group_target,
+            _monoid_homomorphism(monoidal, renaming.on_object(group_source), renaming.on_object(group_target), arrow),
+        )
+        return self.construct_morphism(source, target, (semiring_map, group_map, semirings.to_additive().on_morphism(semiring_map)))
+
+
+@cached_function(key=identity_key)
+def Rings(base: Category) -> RingCategory:
+    """Ring objects of a category with finite products: the pullback of its semirings and its commutative additive groups over its additive monoids."""
+    monoidal = Cartesian(base)
+    semirings, groups = Semirings(base), AdditiveGroups(monoidal).Commutative()
+    semiring_leg = AdditiveMonoids(monoidal).Commutative().subcategory_monomorphism() * semirings.to_additive()
+    group_leg = AdditiveGroups(monoidal).to_named_monoids() * groups.subcategory_monomorphism()
+    return limit_of_categories(cospan_diagram(Cat(), semiring_leg, group_leg), Cat().Pullbacks(), partial(RingCategory, monoidal=monoidal))
 
 
 @cached_function(key=identity_key)

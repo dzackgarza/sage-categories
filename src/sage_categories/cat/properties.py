@@ -295,6 +295,12 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
     key = (functor, target_subcategory, Cat())
     if key in _inverse_images:
         return _inverse_images[key]
+    if target_subcategory is functor.codomain():
+        # ``F⁻¹(C) = D``: the whole codomain pulls back to the whole domain.
+        return functor.domain()
+    if functor.domain() is target_subcategory and _functors().declares_subcategory(functor):
+        # ``ι⁻¹(P) = P`` along the inclusion ``ι: P -> C`` of ``P`` itself.
+        return target_subcategory
 
     if _functors().declares_subcategory(functor):
         narrowing = functor.domain().property_subcategory(target_subcategory)

@@ -86,12 +86,12 @@ The complete immediate structure-functor tuple is
 
 ```python
 def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (
-        self.product_projection(0),
-        self.product_projection(1),
-    )
+    return (self.to_semiring(), self.to_additive_group())
 ```
 
+`to_semiring()` and `to_additive_group()` are the legs of the pullback, declared faithful isofibrations.
+`Rings(C)(addition, zero, multiplication, one)` constructs the semiring, decides through the shear map that its additive monoid is a group, renames that group additively, and forms the pullback family over the shared additive monoid.
+`homomorphism(source, target, f)` lifts a carrier map that preserves addition, zero, multiplication, and one.
 The semiring projection supplies `zero()`, `one()`, `+`, and `*`. The additive-group projection supplies `negation()`, unary `-`, and subtraction.
 The two composites to \(\mathcal A\) are equal, so a ring inherits its additive monoid and its carrier once; no neutral name reaches it (D185). The compatibility of the two branches is the retained pullback mathematics above.
 

@@ -426,19 +426,24 @@ class Axiom:
             from sage_categories.cat.properties import retain_inverse_image
 
             routes = tuple(
-                functor for functor in category.selected_functors()
+                (functor, self._declared_on(functor.codomain(), *parameters))
+                for functor in category.selected_functors()
                 if declared_axiom(functor.codomain(), self._name) is self
             )
             assert routes, f"{category!r} has no selected route to {self!r}"
-            first = routes[0]
-            result = first.inverse_image(self._declared_on(first.codomain(), *parameters))
+            # A route whose target is its whole codomain pulls back to the whole category
+            # (``F⁻¹(C) = D``) and constrains nothing; the property is the intersection of the rest.
+            routes = tuple((functor, target) for functor, target in routes if target is not functor.codomain())
+            if not routes:
+                return category
+            first, first_target = routes[0]
+            result = first.inverse_image(first_target)
             # Each further route pulls the same subcategory back along its own functor,
             # whose domain is ``category``; the source leg of that square is the
             # monomorphism of the result into ``category``, which for a narrowing is not
             # its monomorphism into the base.
             source_projection = Fun.full_subcategory_monomorphism(result, category)
-            for functor in routes[1:]:
-                target = self._declared_on(functor.codomain(), *parameters)
+            for functor, target in routes[1:]:
                 projection = functor.restrict(result, target)
                 result._retain_structure_functor(projection)
                 retain_inverse_image(functor, target, result, source_projection, projection)

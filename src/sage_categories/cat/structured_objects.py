@@ -316,6 +316,15 @@ class MonoidCategory(EquifierCategory):
 
     Group = Axiom(_group)
 
+    def homomorphism(
+        self,
+        source: MonoidCategory.ObjectType,
+        target: MonoidCategory.ObjectType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
+        """The monoid morphism over a morphism of the ambient preserving operation and unit."""
+        return _monoid_homomorphism(self.monoidal_structure(), source, target, arrow)
+
     def __call__(self, operation: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType) -> MonoidCategory.ObjectType:
         monoidal = self.monoidal_structure()
         magma = Magmas(monoidal).algebra(operation.codomain(), operation)

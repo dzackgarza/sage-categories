@@ -5,6 +5,7 @@ Categories with a structure functor to `Sets()` inherit this API.
 
 Standard set theory and category theory are assumed.
 This specification fixes API ownership, constructors, algorithms, result categories, and exact failure states.
+The first implementation boundary is [minimal leaf scaffolding](leaf-scaffolding.md).
 
 Every set property defines its predicate meaning at the owning set category.
 Its public representation follows [Propositions and `ask()`](undecidable-properties.md).

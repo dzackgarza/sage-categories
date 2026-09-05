@@ -121,39 +121,20 @@ U_A:\operatorname{Modules}(A,C)\longrightarrow C.
 
 It sends `(X, rho_X)` to `X` and sends each module morphism to its morphism in `C`.
 
-The leaf builds `U_A` with both endpoints and both complete actions, retains it, and
-returns it as the complete immediate structure-functor tuple:
-
-```python
-def on_object(M):
-    return M.action_morphism().codomain()
-
-def on_morphism(f):
-    source = on_object(f.domain())
-    target = on_object(f.codomain())
-    return Mor(C)(source, target)(f._ambient_morphism_data())
-
-U_A = Fun(Modules(A, C), C).Isofibrations()(on_object, on_morphism)
-
-def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-    return (self._U_A,)
-```
+The module construction specializes the endofunctor-algebra inserter for `A bullet -`
+and imposes the unit and associativity equations with equifiers.
+It retains the resulting projection to `C`, with its object and morphism actions.
+The module leaf supplies the action data and equations; Cat supplies the projection and its construction machinery.
 
 The object action returns the codomain `X` of the module action.
-The morphism action constructs the corresponding morphism of `C` through its target hom category.
-`_ambient_morphism_data()` is private because this example uses it only inside the functor action.
-If a later definition of `Modules(A, C)` uses a generic pullback or comma construction
-that already retains this exact projection, the leaf reuses that retained functor.
-
-There is no accessor standing in for `U_A`, and no method named for a direction
-rather than a codomain (`POL-FUN-037`). A module's object in `C` could equally be
-asked for as a set, an abelian group, or a ring when it happens to be one, so any
-name that does not say which category is making the choice silently. Code that
-wants an object of `C` applies `U_A`; code that wants a set constructs and applies
-the functor into `Sets()`.
+The morphism action returns the ambient map in `Mor(C)(X, Y)`.
+Code that requires an object of `C` applies `U_A`.
+Code that requires a set constructs and applies the selected functor into `Sets()` (`POL-FUN-037`).
 
 `U_A` carries the inheritance declared by [functor.md](functor.md#structure-functors-and-inherited-classes).
 The isomorphism lift transports the module action along an isomorphism in `C`.
+
+[Minimal leaf scaffolding](leaf-scaffolding.md) specifies the first executable module consumer and the shared monoidal prerequisites.
 
 ## Owned operations
 

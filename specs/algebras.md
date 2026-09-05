@@ -1,8 +1,7 @@
 # Algebra objects
 
 This specification defines algebras over a supplied base object and ambient category.
-The current implementation milestone remains `Sets()` and its universal constructions.
-Algebra objects are a later vertical acceptance target for that foundation.
+The initial executable boundary is [minimal leaf scaffolding](leaf-scaffolding.md).
 
 The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`,
 `POL-GEN-001`, `POL-GEN-019`, `POL-GEN-020`, `POL-CAT-027`, `POL-CAT-030`,
@@ -51,6 +50,8 @@ product supplies the monoidal structure on left `R`-module objects.
 The constructor applies only when this monoidal structure is supplied.
 A noncommutative base instead requires the monoid-object construction in a supplied
 monoidal category of `R`-bimodule objects under relative tensor product.
+That ambient and its balancing maps are specified in [Bimodule objects](bimodules.md).
+The public-name distinction from endofunctor algebras is fixed by the [scaffolding boundary](leaf-scaffolding.md#public-names-and-implementation-boundary).
 
 ## Objects
 

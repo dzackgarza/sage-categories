@@ -1,8 +1,7 @@
 # Ring objects
 
 This specification defines `Rings(C)` in a supplied ambient category.
-The current implementation milestone remains `Sets()` and its universal constructions.
-Ring objects are a later vertical acceptance target for that foundation.
+The initial executable boundary is [minimal leaf scaffolding](leaf-scaffolding.md).
 
 The governing policies are `POL-MATH-019`, `POL-MATH-022`, `POL-MATH-023`,
 `POL-GEN-001`, `POL-GEN-017`, `POL-GEN-020`, `POL-GEN-021`, `POL-CAT-027`,

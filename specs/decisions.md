@@ -1227,3 +1227,19 @@ The generic faithful lifting construction retains the mathematical apex and morp
 Owner: [Universal constructions](functor.md#diagram-shapes-and-universal-constructions) and [ordered sets](ordered-sets.md#products).
 
 Source: derivation from the cone, faithfulness, and cartesian-arrow definitions during the 2026-09-05 limit-lifting repair. These are mathematical corrections, not attributed owner statements.
+
+### D184
+
+The next production boundary consists of executable category scaffolds and their source audits.
+Each category supplies defining structure, owned morphisms, immediate functors, and a small distinguishing public consumer.
+The audit determines whether shared runtime and categorical operations have their proper owners before broader API development.
+The common contract is [minimal leaf scaffolding](leaf-scaffolding.md); topic specifications retain the full mathematical scope.
+The project vault owns implementation closure and the new delivery graph.
+
+Derived prerequisites include supplied monoidal actions, groups and abelian groups, and the geometric foundations needed for schemes.
+The scheme consumer includes a nonaffine gluing construction with its structure sheaf and induced morphism.
+Public naming distinctions between binary-relation structures and relation arrows, and between endofunctor and base-relative algebras,
+follow from the different input categories in their definitions.
+
+Source: documentation and leaf-planning instruction in Codex session `01a06edc-363e-79e0-ba48-f0553c7e3039`, 2026-09-05.
+The prerequisite graph, example choices, and public-name reconciliation are derived implementation decisions.

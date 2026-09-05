@@ -10,6 +10,9 @@ Only `ask()` returns `True`, `False`, or Sage `Unknown`.
 
 ## Category and public surface
 
+Here `Relations()` denotes sets equipped with an endorelation.
+The scaffold publishes this leaf as `BinaryRelations()`; [the name boundary](leaf-scaffolding.md#public-names-and-implementation-boundary) distinguishes it from `Relations(C)`.
+
 The owned category constructors are:
 
 ```sage

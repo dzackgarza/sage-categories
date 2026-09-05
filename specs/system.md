@@ -32,10 +32,12 @@ The kernel executes class refinement; the property category owns what that refin
 | Public predicates, equality, assumptions, typed queries, and `ask()` | [undecidable-properties.md](undecidable-properties.md) |
 | Private compiler, controlled C3, caches, and dependency versions | [resolution.md](resolution.md) |
 | Leaf declarations, exact types, templates, and engine boundary | [leaves.md](leaves.md) |
+| Minimal leaf consumer and audit boundary | [leaf-scaffolding.md](leaf-scaffolding.md) |
 | Sets, maps, elements, and set constructions | [sets.md](sets.md) |
 | Cardinals, ordinals, and ordered sets | [cardinality.md](cardinality.md), [ordinals.md](ordinals.md), [ordered-sets.md](ordered-sets.md) |
 | Internal magmas, monoids, groups, semirings, and rings | [magmas-monoids-semirings.md](magmas-monoids-semirings.md), [rings.md](rings.md) |
-| Modules and algebras in supplied ambient categories | [modules.md](modules.md), [algebras.md](algebras.md) |
+| Modules, bimodules, and algebras in supplied ambient categories | [modules.md](modules.md), [bimodules.md](bimodules.md), [algebras.md](algebras.md) |
+| Schemes, affine presentations, and geometric prerequisites | [schemes.md](schemes.md) |
 | Restricted Yoneda, evaluation epimorphisms, generators, and presentations | [separating-families-and-categorical-generators.md](separating-families-and-categorical-generators.md) |
 | Generated static projection | [functor.md — Static semantic projection](functor.md#static-semantic-projection) |
 
@@ -60,16 +62,22 @@ Every public computation returns an owned value or the authorized public SymPy e
 
 ## Foundation bootstrap
 
-`Semirings(Cat())`, `Cardinal()`, and `Sets()` have a dependency cycle when cardinality is included in the first set implementation.
-The implementation cuts it in this order:
+Minimal leaf scaffolding follows mathematical prerequisites:
 
 1. Complete `Cat`, `Mor`, `Fun`, properties, and generic constructions.
-2. Define minimal `Sets()` without cardinality integration.
-3. Define the internal algebraic-object schema with `Cardinal()` as its first consumer.
-4. Define `Ordinals()`, `Cardinal()`, and their order categories.
-5. Attach cardinality queries and cardinal property categories to `Sets()`.
-6. Complete the specified set construction surface.
-7. Add ordered sets, then general algebraic families, modules, and algebras.
+2. Implement the declared `Sets()` and integrate the finite-set consumer through its finite property category.
+3. Build relation structures and posets, then total orders. Independently, build magmas and monoids from the supplied tensor structure.
+4. Build additive groups, semirings, and rings. Supply abelian-group tensor products and monoidal actions at their owners.
+5. Build modules, commuting bimodule actions, and relative tensor products, then algebra objects in those monoidal categories.
+6. Supply the commutative-ring presentations, spaces, sheaves, and locally ringed spaces needed for affine schemes.
+7. Build schemes with affine charts and executable gluing.
+
+The [scaffolding contract](leaf-scaffolding.md) bounds the first consumer of each layer.
+General API expansion follows those consumers.
+
+Cardinality integration is a separate extension.
+Its cycle is cut by implementing sets first, then internal algebraic objects, then ordinals and cardinals, and finally the set cardinality queries.
+Order and algebraic scaffolds require none of the cardinality extension's algorithms.
 
 The vault DAG holds work boundaries and current acceptance.
 Generic pullbacks needed by property intersections and inverse images enter with those first consumers.

@@ -168,7 +168,8 @@ The associativity diagram uses the associator `a` of `V`. The unit diagrams use 
 This is the standard monoid-object construction in a monoidal category.
 
 At `V = Sets()` with the cartesian product, an object is an ordinary monoid.
-At `V = Cat()` with the cartesian product, the associator and the unitors are identities, so the associativity and unit diagrams become equalities of functors.
+At `V = Cat()` with the cartesian product, the ambient associator and unitors are the canonical rebracketing and projection functors.
+The monoid laws are equalities of functors with those comparisons included.
 An object is then a strict monoidal category: a category `X` with a chosen object `I in X` and a functor `mu_X: X * X -> X` for which
 
 \[

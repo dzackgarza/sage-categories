@@ -36,6 +36,9 @@ Generic categorical constructions retain their own functors and universal data.
 The kernel compiles inherited implementation.
 Private engines supply algorithms.
 
+[Minimal leaf scaffolding](leaf-scaffolding.md) specifies the public consumer required before API expansion.
+It also fixes the distinction between binary-relation structures and the generic relation bicategory.
+
 ## Owned implementation classes
 
 For each category `C`:

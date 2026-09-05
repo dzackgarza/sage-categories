@@ -1310,6 +1310,9 @@ Its constructor decides that equation before admitting a value.
 `EilenbergMoore(T, eta, mu)` imposes both algebra laws on `Algebras(T)`.
 The supplied monad data must satisfy the monad laws.
 
+The [leaf scaffold contracts](leaf-scaffolding.md#public-names-and-implementation-boundary)
+specify the extension to supplied monoidal structures and distinguish endofunctor algebras from base-relative algebras.
+
 `RightUniversalArrows(F, choose)` retains chosen terminal objects of `(F down d)`.
 It derives the right adjoint's action on morphisms and its unit and counit from their unique factors.
 `LeftUniversalArrows` is the initial-object construction.

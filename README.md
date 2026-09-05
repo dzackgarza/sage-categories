@@ -24,6 +24,9 @@ Public operations return owned mathematical values or authorized SymPy propositi
 | `Cat`, `Mor`, `Fun`, functor actions, and selected structure functors | [`specs/functor.md`](specs/functor.md) |
 | Private Sage compiler and runtime | [`specs/resolution.md`](specs/resolution.md) |
 | Leaf and computation-engine boundary | [`specs/leaves.md`](specs/leaves.md) |
+| Minimal executable leaf contracts and audit examples | [`specs/leaf-scaffolding.md`](specs/leaf-scaffolding.md) |
+| Bimodule actions and relative tensor products | [`specs/bimodules.md`](specs/bimodules.md) |
+| Schemes, affine presentations, and gluing | [`specs/schemes.md`](specs/schemes.md) |
 | Property categories, inverse images, and refinement | [`specs/property-refinement.md`](specs/property-refinement.md) |
 | Propositions, typed queries, and `ask()` | [`specs/undecidable-properties.md`](specs/undecidable-properties.md) |
 | Compact review policies | [`CONTRIBUTING.md`](CONTRIBUTING.md) |

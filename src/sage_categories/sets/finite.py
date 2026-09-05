@@ -13,14 +13,14 @@ from collections.abc import Callable, Hashable, Iterable, Iterator
 from functools import cache
 from typing import Literal, overload
 
-from sympy import true
+from sympy import false, true
 
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.cones import cone, cocone, cone_apex, cocone_apex
-from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, register_handler
+from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, conjunction, register_handler
 from sage_categories.cat.slices import SliceProperty, SliceLikeCategory
 from sage_categories.cat.shapes import realize_discrete_object
 from sage_categories.sets._finite import cartesian, quotient
@@ -56,6 +56,13 @@ def _equal_datum(first: Hashable, second: Hashable) -> bool:
             and all(_equal_datum(a, b) for a, b in zip(first, second))
         )
     return first == second
+
+
+def _datum_membership(value: SetsCategory.ObjectType, datum: Hashable) -> Proposition:
+    """The proposition that ``datum`` is a point of ``value``: its rule, or the exact match against its enumeration."""
+    if isinstance(value._presentation, tuple):
+        return true if any(_equal_datum(candidate, datum) for candidate in value._presentation) else false
+    return value._presentation(datum)
 
 
 def _representative(values: tuple[Hashable, ...], datum: Hashable) -> Hashable:
@@ -252,6 +259,9 @@ class SetsCategory(Category[[Map], []]):
         target: CategoryOfCategories.ElementType,
         action: Map,
     ) -> MorphismCategory.ObjectType:
+        if not isinstance(source._presentation, tuple):
+            # A rule needs no enumeration (``specs/sets.md``, "Morphisms"): the map evaluates its rule on each datum.
+            return self.MorphismType(domain=source, codomain=target, data=lambda datum: target.representative(action(datum)))
         pairs = tuple(
             (value, target.representative(action(value))) for value in source._values
         )
@@ -293,15 +303,21 @@ class SetsCategory(Category[[Map], []]):
             return self._primitive_colimit
         return Category.colimit_construction(self, shape)
 
+    def _product_object(self, factors: tuple[SetsCategory.ObjectType, ...]) -> SetsCategory.ObjectType:
+        """``prod_i X_i``: the enumerated tuples when every factor has an enumeration, else the set of tuples whose components are members (``specs/sets.md``, "Products")."""
+        if all(isinstance(factor._presentation, tuple) for factor in factors):
+            return self(cartesian(factor._values for factor in factors))
+        return self.from_membership(
+            lambda datum: conjunction(_datum_membership(factor, component) for factor, component in zip(factors, datum, strict=True))
+        )
+
     def _primitive_limit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         from sage_categories.cat.finite_categories import finite_category
 
         shape = diagram.domain()
         vertices = finite_category(shape).objects
         if shape.is_discrete():
-            apex = self(
-                cartesian(diagram.on_object(vertex)._values for vertex in vertices)
-            )
+            apex = self._product_object(tuple(diagram.on_object(vertex) for vertex in vertices))
             position = {id(vertex): index for index, vertex in enumerate(vertices)}
             legs = lambda vertex: Mor(self)(apex, diagram.on_object(vertex))(
                 lambda value: value[position[id(vertex)]]

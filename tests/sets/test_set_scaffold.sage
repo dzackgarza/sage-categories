@@ -135,6 +135,14 @@ def test_rule_defined_infinite_set() -> None:
     assert (constant * constant)(point).datum() == 2
     assert Mor(Sets)(integers, integers).one()(point).datum() == 7
     assert ask(integers.is_finite()) is Unknown
+    # The product of two rule-defined sets and a rule-defined map out of it, without enumerating either.
+    square = Sets.Products()((integers, integers))
+    pair = square.point((3, 4))
+    assert ask(square.membership_proposition(pair)) is True
+    addition = Mor(Sets)(square, integers)(lambda components: components[0] + components[1])
+    assert addition(pair).datum() == 7
+    assert addition(pair).parent() is integers
+    assert square.product_projection(1)(pair).datum() == 4
 
 
 test_finite_set_universal_maps()

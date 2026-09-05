@@ -1,26 +1,29 @@
 tests/order/test_poset_scaffold.sage
-tests/test_version.sage
-tests/sets/test_set_scaffold.sage
 tests/kernel/test_core_public_consumers.sage
-tests/kernel/test_categorical_calculus.sage
-tests/kernel/test_m1_sage_runtime.sage
+tests/kernel/test_profunctor_composition.sage
+tests/sets/test_set_scaffold.sage
+tests/kernel/test_owned_point_categories.sage
+tests/kernel/test_weighted_universal_maps.sage
+tests/test_version.sage
+tests/kernel/test_monoidal_structure.sage
+tests/kernel/test_m5_vertical_witnesses.sage
+tests/algebra/test_magma_scaffold.sage
+tests/kernel/test_universal_arrow_calculus.sage
+tests/kernel/test_lifted_limits.sage
 tests/kernel/test_regular_relations.sage
 tests/kernel/test_cat_construction_consumers.sage
-tests/kernel/test_owned_point_categories.sage
-tests/kernel/test_lifted_limits.sage
-tests/kernel/test_weighted_universal_maps.sage
-tests/kernel/test_universal_arrow_calculus.sage
-tests/kernel/test_profunctor_composition.sage
-tests/kernel/test_m2_cat_core.sage
+tests/kernel/test_m1_sage_runtime.sage
+tests/kernel/test_categorical_calculus.sage
+tests/algebra/test_monoid_scaffold.sage
+tests/kernel/test_universal_constructions.sage
 tests/kernel/test_indexed_constructions.sage
 tests/kernel/test_m3_properties_queries_refinement.sage
-tests/kernel/test_monoidal_structure.sage
-tests/kernel/test_universal_constructions.sage
-tests/kernel/test_m5_vertical_witnesses.sage
+tests/kernel/test_m2_cat_core.sage
 =============================
 === Running: mypy static type analysis (Sage-aware) ===
 # Type checks Python and preparsed Sage files
-# Preparsing 19 Sage file(s) for mypy
+# Preparsing 21 Sage file(s) for mypy
+src/sage_categories/cat/points.pyi:27: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/comma.pyi:20: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/comma.pyi:62: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/comma.pyi:62: note:      Superclass:
@@ -34,28 +37,7 @@ src/sage_categories/cat/comma.pyi:68: error: Argument 1 of "composite" is incomp
 src/sage_categories/cat/comma.pyi:68: note: This violates the Liskov substitution principle
 src/sage_categories/cat/comma.pyi:68: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/comma.pyi:68: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/cat/points.pyi:27: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/cat/constructions.pyi:83: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/cat/constructions.pyi:83: note:      Superclass:
-src/sage_categories/cat/constructions.pyi:83: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType | CategoryDeclaration[Any, Any]
-src/sage_categories/cat/constructions.pyi:83: note:      Subclass:
-src/sage_categories/cat/constructions.pyi:83: note:          def __call__(self, diagram: Any) -> ElementType
-src/sage_categories/cat/constructions.pyi:138: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/cat/constructions.pyi:138: note:      Superclass:
-src/sage_categories/cat/constructions.pyi:138: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType | CategoryDeclaration[[ObjectType], []]
-src/sage_categories/cat/constructions.pyi:138: note:      Subclass:
-src/sage_categories/cat/constructions.pyi:138: note:          def __call__(self, family: ElementType | tuple[ElementType, ...], *factors: ElementType) -> ElementType
-src/sage_categories/cat/constructions.pyi:196: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/cat/constructions.pyi:196: note:      Superclass:
-src/sage_categories/cat/constructions.pyi:196: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType | CategoryDeclaration[[ObjectType], []]
-src/sage_categories/cat/constructions.pyi:196: note:      Subclass:
-src/sage_categories/cat/constructions.pyi:196: note:          def __call__(self, diagram: Any) -> ElementType
-src/sage_categories/cat/constructions.pyi:239: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
-src/sage_categories/cat/constructions.pyi:239: note:      Superclass:
-src/sage_categories/cat/constructions.pyi:239: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType | CategoryDeclaration[[ObjectType], []]
-src/sage_categories/cat/constructions.pyi:239: note:      Subclass:
-src/sage_categories/cat/constructions.pyi:239: note:          def __call__(self, family: ElementType | tuple[ElementType, ...], *summands: ElementType) -> ElementType
-src/sage_categories/kernel/roles.pyi:24: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
+src/sage_categories/cat/declarations.pyi:7: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/canonical.pyi:19: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/canonical.pyi:19: note: Did you mean "List[...]"?
 src/sage_categories/cat/canonical.pyi:31: error: Return type "tuple[str, ...]" of "word" incompatible with return type "tuple[ObjectType, ...]" in supertype "sage_categories.cat.morphisms.MorphismCategory.ObjectType"  [override]
@@ -77,54 +59,7 @@ src/sage_categories/cat/canonical.pyi:85: error: Argument 2 of "composite" is in
 src/sage_categories/cat/canonical.pyi:88: error: Argument 1 of "inverse_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
 src/sage_categories/cat/canonical.pyi:88: note: This violates the Liskov substitution principle
 src/sage_categories/cat/canonical.pyi:88: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/cat/cones.pyi:67: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.comma.CommaCategory"  [override]
-src/sage_categories/cat/cones.pyi:67: note:      Superclass:
-src/sage_categories/cat/cones.pyi:67: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, first: ObjectType, second: ObjectType) -> MorphismType
-src/sage_categories/cat/cones.pyi:67: note:      Subclass:
-src/sage_categories/cat/cones.pyi:67: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex_morphism: ObjectType) -> MorphismType
-src/sage_categories/cat/cones.pyi:67: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/cones.pyi:67: note:      Superclass:
-src/sage_categories/cat/cones.pyi:67: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/cat/cones.pyi:67: note:      Subclass:
-src/sage_categories/cat/cones.pyi:67: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex_morphism: ObjectType) -> MorphismType
-src/sage_categories/cat/properties.pyi:91: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
-src/sage_categories/cat/properties.pyi:91: error: Sage category provider projection for 'sage_categories.cat.properties.PropertySubcategory.ObjectType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType  [misc]
-src/sage_categories/cat/properties.pyi:91: error: Cannot resolve name "sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType" (possible cyclic definition)  [misc]
-src/sage_categories/cat/properties.pyi:94: error: Cannot determine consistent method resolution order (MRO) for "ElementType"  [misc]
-src/sage_categories/cat/properties.pyi:94: error: Sage category provider projection for 'sage_categories.cat.properties.PropertySubcategory.ElementType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.morphisms.IsomorphismsCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType  [misc]
-src/sage_categories/cat/properties.pyi:94: error: Cannot resolve name "sage_categories.cat.morphisms.IsomorphismsCategory.ElementType" (possible cyclic definition)  [misc]
-src/sage_categories/cat/properties.pyi:97: error: Cannot determine consistent method resolution order (MRO) for "MorphismType"  [misc]
-src/sage_categories/cat/properties.pyi:97: error: Sage category provider projection for 'sage_categories.cat.properties.PropertySubcategory.MorphismType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType  [misc]
-src/sage_categories/cat/properties.pyi:97: error: Cannot resolve name "sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType" (possible cyclic definition)  [misc]
-src/sage_categories/cat/properties.pyi:143: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
-src/sage_categories/cat/properties.pyi:143: error: Sage category provider projection for 'sage_categories.cat.properties.NarrowedProperty.ObjectType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType  [misc]
-src/sage_categories/cat/properties.pyi:143: error: Cannot resolve name "sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType" (possible cyclic definition)  [misc]
-src/sage_categories/cat/properties.pyi:146: error: Cannot determine consistent method resolution order (MRO) for "ElementType"  [misc]
-src/sage_categories/cat/properties.pyi:146: error: Sage category provider projection for 'sage_categories.cat.properties.NarrowedProperty.ElementType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.morphisms.IsomorphismsCategory.ElementType  [misc]
-src/sage_categories/cat/properties.pyi:146: error: Cannot resolve name "sage_categories.cat.morphisms.IsomorphismsCategory.ElementType" (possible cyclic definition)  [misc]
-src/sage_categories/cat/properties.pyi:149: error: Cannot determine consistent method resolution order (MRO) for "MorphismType"  [misc]
-src/sage_categories/cat/properties.pyi:149: error: Sage category provider projection for 'sage_categories.cat.properties.NarrowedProperty.MorphismType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType  [misc]
-src/sage_categories/cat/properties.pyi:149: error: Cannot resolve name "sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType" (possible cyclic definition)  [misc]
-src/sage_categories/cat/properties.pyi:172: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
-src/sage_categories/cat/properties.pyi:172: error: Sage category provider projection for 'sage_categories.cat.properties.FixedEndpointProperty.ObjectType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType  [misc]
-src/sage_categories/cat/properties.pyi:172: error: Cannot resolve name "sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType" (possible cyclic definition)  [misc]
-src/sage_categories/cat/properties.pyi:175: error: Sage category provider projection for 'sage_categories.cat.properties.FixedEndpointProperty.ElementType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.morphisms.IsomorphismsCategory.ElementType  [misc]
-src/sage_categories/cat/properties.pyi:175: error: Cannot resolve name "sage_categories.cat.morphisms.IsomorphismsCategory.ElementType" (possible cyclic definition)  [misc]
-src/sage_categories/cat/properties.pyi:178: error: Sage category provider projection for 'sage_categories.cat.properties.FixedEndpointProperty.MorphismType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType  [misc]
-src/sage_categories/cat/properties.pyi:178: error: Cannot resolve name "sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType" (possible cyclic definition)  [misc]
-src/sage_categories/cat/predicates.pyi:58: error: Return type "Boolean" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
-src/sage_categories/cat/predicates.pyi:58: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
-src/sage_categories/cat/predicates.pyi:58: note: This violates the Liskov substitution principle
-src/sage_categories/cat/predicates.pyi:58: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/cat/predicates.pyi:58: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
-src/sage_categories/cat/predicates.pyi:58: note:     def __eq__(self, other: object) -> bool:
-src/sage_categories/cat/predicates.pyi:58: note:         if not isinstance(other, AppliedQuery):
-src/sage_categories/cat/predicates.pyi:58: note:             return NotImplemented
-src/sage_categories/cat/predicates.pyi:58: note:         return <logic to compare two AppliedQuery instances>
-src/sage_categories/cat/predicates.pyi:61: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
-src/sage_categories/cat/predicates.pyi:61: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
-src/sage_categories/cat/predicates.pyi:61: note: This violates the Liskov substitution principle
-src/sage_categories/cat/predicates.pyi:61: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/kernel/roles.pyi:24: error: Function is missing a type annotation for one or more parameters  [no-untyped-def]
 src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" has no attribute "Decision"  [attr-defined]
 src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
 src/sage_categories/cat/morphisms.pyi:3: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
@@ -154,42 +89,43 @@ src/sage_categories/cat/morphisms.pyi:134: error: Argument 1 of "construct_morph
 src/sage_categories/cat/morphisms.pyi:134: note: This violates the Liskov substitution principle
 src/sage_categories/cat/morphisms.pyi:134: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/morphisms.pyi:134: error: Argument 2 of "construct_morphism" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/morphisms.pyi:147: error: Sage category provider projection for 'sage_categories.cat.morphisms.IsomorphismsCategory.ElementType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ElementType  [misc]
+src/sage_categories/cat/morphisms.pyi:147: error: Sage category provider projection for 'sage_categories.cat.morphisms.IsomorphismsCategory.ElementType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.properties.PropertySubcategory.ElementType  [misc]
+src/sage_categories/cat/morphisms.pyi:147: error: Cannot resolve name "sage_categories.cat.properties.PropertySubcategory.ElementType" (possible cyclic definition)  [misc]
 src/sage_categories/cat/morphisms.pyi:150: error: Cannot determine consistent method resolution order (MRO) for "MorphismType"  [misc]
-src/sage_categories/cat/morphisms.pyi:150: error: Sage category provider projection for 'sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.MorphismType  [misc]
+src/sage_categories/cat/morphisms.pyi:150: error: Sage category provider projection for 'sage_categories.cat.morphisms.IsomorphismsCategory.MorphismType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.properties.PropertySubcategory.MorphismType  [misc]
+src/sage_categories/cat/morphisms.pyi:150: error: Cannot resolve name "sage_categories.cat.properties.PropertySubcategory.MorphismType" (possible cyclic definition)  [misc]
 src/sage_categories/cat/morphisms.pyi:153: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
-src/sage_categories/cat/morphisms.pyi:153: error: Sage category provider projection for 'sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ObjectType  [misc]
-src/sage_categories/cat/functors.pyi:6: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
-src/sage_categories/cat/functors.pyi:6: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
-src/sage_categories/cat/functors.pyi:29: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
-src/sage_categories/cat/functors.pyi:29: error: Sage category provider projection for 'sage_categories.cat.functors.FunctorProperty.ObjectType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ObjectType  [misc]
-src/sage_categories/cat/functors.pyi:32: error: Sage category provider projection for 'sage_categories.cat.functors.FunctorProperty.ElementType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ElementType  [misc]
-src/sage_categories/cat/functors.pyi:35: error: Sage category provider projection for 'sage_categories.cat.functors.FunctorProperty.MorphismType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.MorphismType  [misc]
-src/sage_categories/cat/functors.pyi:38: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.NarrowedProperty"  [override]
-src/sage_categories/cat/functors.pyi:38: note:      Superclass:
-src/sage_categories/cat/functors.pyi:38: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType
-src/sage_categories/cat/functors.pyi:38: note:      Subclass:
-src/sage_categories/cat/functors.pyi:38: note:          def __call__(self, *args: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType], **kwargs: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType]) -> Any
-src/sage_categories/cat/functors.pyi:64: error: Signature of "diagram" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/functors.pyi:64: note:      Superclass:
-src/sage_categories/cat/functors.pyi:64: note:          def diagram(self) -> Any
-src/sage_categories/cat/functors.pyi:64: note:      Subclass:
-src/sage_categories/cat/functors.pyi:64: note:          def diagram(self, value: ElementType) -> Any
-src/sage_categories/cat/functors.pyi:110: error: Incompatible types in assignment (expression has type "type[MorphismType]", base class "MorphismCategory" defined the type as "type[ObjectType]")  [assignment]
-src/sage_categories/cat/functors.pyi:147: error: Argument 1 of "__call__" is incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/cat/functors.pyi:147: note: This violates the Liskov substitution principle
-src/sage_categories/cat/functors.pyi:147: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/cat/functors.pyi:176: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"  [override]
-src/sage_categories/cat/functors.pyi:176: note:      Superclass:
-src/sage_categories/cat/functors.pyi:176: note:          def subcategory_monomorphism(self) -> Any
-src/sage_categories/cat/functors.pyi:176: note:      Subclass:
-src/sage_categories/cat/functors.pyi:176: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
-src/sage_categories/cat/functors.pyi:176: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/cat/functors.pyi:176: note:      Superclass:
-src/sage_categories/cat/functors.pyi:176: note:          def subcategory_monomorphism(self) -> Any
-src/sage_categories/cat/functors.pyi:176: note:      Subclass:
-src/sage_categories/cat/functors.pyi:176: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
-src/sage_categories/cat/declarations.pyi:7: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/cat/morphisms.pyi:153: error: Sage category provider projection for 'sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType' cannot be applied because provider_bases references missing symbols: sage_categories.cat.properties.PropertySubcategory.ObjectType  [misc]
+src/sage_categories/cat/morphisms.pyi:153: error: Cannot resolve name "sage_categories.cat.properties.PropertySubcategory.ObjectType" (possible cyclic definition)  [misc]
+src/sage_categories/cat/properties.pyi:91: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
+src/sage_categories/cat/properties.pyi:91: error: Sage category provider projection for 'sage_categories.cat.properties.PropertySubcategory.ObjectType' cannot be applied because provider_bases references missing symbols: sage_categories.sets.finite.SetsCategory.ObjectType  [misc]
+src/sage_categories/cat/properties.pyi:94: error: Cannot determine consistent method resolution order (MRO) for "ElementType"  [misc]
+src/sage_categories/cat/properties.pyi:94: error: Sage category provider projection for 'sage_categories.cat.properties.PropertySubcategory.ElementType' cannot be applied because provider_bases references missing symbols: sage_categories.sets.finite.SetsCategory.ElementType  [misc]
+src/sage_categories/cat/properties.pyi:97: error: Cannot determine consistent method resolution order (MRO) for "MorphismType"  [misc]
+src/sage_categories/cat/properties.pyi:97: error: Sage category provider projection for 'sage_categories.cat.properties.PropertySubcategory.MorphismType' cannot be applied because provider_bases references missing symbols: sage_categories.sets.finite.SetsCategory.MorphismType  [misc]
+src/sage_categories/cat/properties.pyi:143: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
+src/sage_categories/cat/properties.pyi:143: error: Sage category provider projection for 'sage_categories.cat.properties.NarrowedProperty.ObjectType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ObjectType  [misc]
+src/sage_categories/cat/properties.pyi:146: error: Cannot determine consistent method resolution order (MRO) for "ElementType"  [misc]
+src/sage_categories/cat/properties.pyi:146: error: Sage category provider projection for 'sage_categories.cat.properties.NarrowedProperty.ElementType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ElementType  [misc]
+src/sage_categories/cat/properties.pyi:149: error: Cannot determine consistent method resolution order (MRO) for "MorphismType"  [misc]
+src/sage_categories/cat/properties.pyi:149: error: Sage category provider projection for 'sage_categories.cat.properties.NarrowedProperty.MorphismType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.MorphismType  [misc]
+src/sage_categories/cat/properties.pyi:172: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
+src/sage_categories/cat/properties.pyi:172: error: Sage category provider projection for 'sage_categories.cat.properties.FixedEndpointProperty.ObjectType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ObjectType  [misc]
+src/sage_categories/cat/properties.pyi:175: error: Sage category provider projection for 'sage_categories.cat.properties.FixedEndpointProperty.ElementType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ElementType  [misc]
+src/sage_categories/cat/properties.pyi:178: error: Sage category provider projection for 'sage_categories.cat.properties.FixedEndpointProperty.MorphismType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.MorphismType  [misc]
+src/sage_categories/cat/predicates.pyi:58: error: Return type "Boolean" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/cat/predicates.pyi:58: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/cat/predicates.pyi:58: note: This violates the Liskov substitution principle
+src/sage_categories/cat/predicates.pyi:58: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/predicates.pyi:58: note: It is recommended for "__eq__" to work with arbitrary objects, for example:
+src/sage_categories/cat/predicates.pyi:58: note:     def __eq__(self, other: object) -> bool:
+src/sage_categories/cat/predicates.pyi:58: note:         if not isinstance(other, AppliedQuery):
+src/sage_categories/cat/predicates.pyi:58: note:             return NotImplemented
+src/sage_categories/cat/predicates.pyi:58: note:         return <logic to compare two AppliedQuery instances>
+src/sage_categories/cat/predicates.pyi:61: error: Return type "Boolean" of "__ne__" incompatible with return type "bool" in supertype "builtins.object"  [override]
+src/sage_categories/cat/predicates.pyi:61: error: Argument 1 of "__ne__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
+src/sage_categories/cat/predicates.pyi:61: note: This violates the Liskov substitution principle
+src/sage_categories/cat/predicates.pyi:61: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/category.pyi:71: error: A function returning TypeVar should receive at least one argument containing the same TypeVar  [type-var]
 src/sage_categories/cat/category.pyi:298: error: Return type "OwnedPredicate" of "__eq__" incompatible with return type "bool" in supertype "builtins.object"  [override]
 src/sage_categories/cat/category.pyi:298: error: Argument 1 of "__eq__" is incompatible with supertype "builtins.object"; supertype defines the argument type as "object"  [override]
@@ -220,6 +156,66 @@ src/sage_categories/cat/category.pyi:465: note:      Superclass:
 src/sage_categories/cat/category.pyi:465: note:          def Point(self) -> Any
 src/sage_categories/cat/category.pyi:465: note:      Subclass:
 src/sage_categories/cat/category.pyi:465: note:          def Point(self, member: ElementType) -> PointCategory
+src/sage_categories/cat/functors.pyi:6: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
+src/sage_categories/cat/functors.pyi:6: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
+src/sage_categories/cat/functors.pyi:29: error: Cannot determine consistent method resolution order (MRO) for "ObjectType"  [misc]
+src/sage_categories/cat/functors.pyi:29: error: Sage category provider projection for 'sage_categories.cat.functors.FunctorProperty.ObjectType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ObjectType  [misc]
+src/sage_categories/cat/functors.pyi:32: error: Sage category provider projection for 'sage_categories.cat.functors.FunctorProperty.ElementType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.ElementType  [misc]
+src/sage_categories/cat/functors.pyi:35: error: Sage category provider projection for 'sage_categories.cat.functors.FunctorProperty.MorphismType' cannot be applied because provider_mro references missing symbols: sage_categories.sets.finite.SetsCategory.MorphismType  [misc]
+src/sage_categories/cat/functors.pyi:38: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.NarrowedProperty"  [override]
+src/sage_categories/cat/functors.pyi:38: note:      Superclass:
+src/sage_categories/cat/functors.pyi:38: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType
+src/sage_categories/cat/functors.pyi:38: note:      Subclass:
+src/sage_categories/cat/functors.pyi:38: note:          def __call__(self, *args: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType], **kwargs: Callable[[ElementType], ElementType] | Callable[[ObjectType], ObjectType]) -> Any
+src/sage_categories/cat/functors.pyi:64: error: Signature of "diagram" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/functors.pyi:64: note:      Superclass:
+src/sage_categories/cat/functors.pyi:64: note:          def diagram(self) -> Any
+src/sage_categories/cat/functors.pyi:64: note:      Subclass:
+src/sage_categories/cat/functors.pyi:64: note:          def diagram(self, value: ElementType) -> Any
+src/sage_categories/cat/functors.pyi:110: error: Incompatible types in assignment (expression has type "type[MorphismType]", base class "MorphismCategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/cat/functors.pyi:147: error: Argument 1 of "__call__" is incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/cat/functors.pyi:147: note: This violates the Liskov substitution principle
+src/sage_categories/cat/functors.pyi:147: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/cat/functors.pyi:176: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.morphisms.MorphismCategory"  [override]
+src/sage_categories/cat/functors.pyi:176: note:      Superclass:
+src/sage_categories/cat/functors.pyi:176: note:          def subcategory_monomorphism(self) -> Any
+src/sage_categories/cat/functors.pyi:176: note:      Subclass:
+src/sage_categories/cat/functors.pyi:176: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
+src/sage_categories/cat/functors.pyi:176: error: Signature of "subcategory_monomorphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/functors.pyi:176: note:      Superclass:
+src/sage_categories/cat/functors.pyi:176: note:          def subcategory_monomorphism(self) -> Any
+src/sage_categories/cat/functors.pyi:176: note:      Subclass:
+src/sage_categories/cat/functors.pyi:176: note:          def subcategory_monomorphism(self, source: CategoryDeclaration[Any, Any], target: CategoryDeclaration[Any, Any]) -> Any
+src/sage_categories/cat/cones.pyi:67: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.comma.CommaCategory"  [override]
+src/sage_categories/cat/cones.pyi:67: note:      Superclass:
+src/sage_categories/cat/cones.pyi:67: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, first: ObjectType, second: ObjectType) -> MorphismType
+src/sage_categories/cat/cones.pyi:67: note:      Subclass:
+src/sage_categories/cat/cones.pyi:67: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex_morphism: ObjectType) -> MorphismType
+src/sage_categories/cat/cones.pyi:67: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/cat/cones.pyi:67: note:      Superclass:
+src/sage_categories/cat/cones.pyi:67: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/cat/cones.pyi:67: note:      Subclass:
+src/sage_categories/cat/cones.pyi:67: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, apex_morphism: ObjectType) -> MorphismType
+src/sage_categories/cat/constructions.pyi:83: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/constructions.pyi:83: note:      Superclass:
+src/sage_categories/cat/constructions.pyi:83: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType | CategoryDeclaration[Any, Any]
+src/sage_categories/cat/constructions.pyi:83: note:      Subclass:
+src/sage_categories/cat/constructions.pyi:83: note:          def __call__(self, diagram: Any) -> ElementType
+src/sage_categories/cat/constructions.pyi:138: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/constructions.pyi:138: note:      Superclass:
+src/sage_categories/cat/constructions.pyi:138: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType | CategoryDeclaration[[ObjectType], []]
+src/sage_categories/cat/constructions.pyi:138: note:      Subclass:
+src/sage_categories/cat/constructions.pyi:138: note:          def __call__(self, family: ElementType | tuple[ElementType, ...], *factors: ElementType) -> ElementType
+src/sage_categories/cat/constructions.pyi:196: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/constructions.pyi:196: note:      Superclass:
+src/sage_categories/cat/constructions.pyi:196: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType | CategoryDeclaration[[ObjectType], []]
+src/sage_categories/cat/constructions.pyi:196: note:      Subclass:
+src/sage_categories/cat/constructions.pyi:196: note:          def __call__(self, diagram: Any) -> ElementType
+src/sage_categories/cat/constructions.pyi:239: error: Signature of "__call__" incompatible with supertype "sage_categories.cat.properties.PropertySubcategory"  [override]
+src/sage_categories/cat/constructions.pyi:239: note:      Superclass:
+src/sage_categories/cat/constructions.pyi:239: note:          def [Datum] __call__(self, *construction_data: Datum, **keywords: Datum) -> ElementType | CategoryDeclaration[[ObjectType], []]
+src/sage_categories/cat/constructions.pyi:239: note:      Subclass:
+src/sage_categories/cat/constructions.pyi:239: note:          def __call__(self, family: ElementType | tuple[ElementType, ...], *summands: ElementType) -> ElementType
 src/sage_categories/cat/cat_constructions.pyi:23: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/cat_constructions.pyi:23: note: Did you mean "List[...]"?
 src/sage_categories/cat/cat_constructions.pyi:71: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
@@ -248,8 +244,6 @@ src/sage_categories/cat/cat_constructions.pyi:163: error: Argument 1 of "composi
 src/sage_categories/cat/cat_constructions.pyi:163: note: This violates the Liskov substitution principle
 src/sage_categories/cat/cat_constructions.pyi:163: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
 src/sage_categories/cat/cat_constructions.pyi:163: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/sets/finite.pyi:11: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/sets/finite.pyi:11: note: Did you mean "List[...]"?
 src/sage_categories/cat/adjunctions.pyi:32: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/adjunctions.pyi:89: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 src/sage_categories/cat/adjunctions.pyi:89: note:      Superclass:
@@ -280,6 +274,8 @@ src/sage_categories/cat/adjunctions.pyi:149: error: Argument 2 of "composite" is
 src/sage_categories/cat/relations.pyi:13: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/relations.pyi:13: note: Did you mean "List[...]"?
 src/sage_categories/cat/relations.pyi:108: error: Incompatible types in assignment (expression has type "type[MorphismType]", base class "MorphismCategory" defined the type as "type[ObjectType]")  [assignment]
+src/sage_categories/sets/finite.pyi:11: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/sets/finite.pyi:11: note: Did you mean "List[...]"?
 src/sage_categories/cat/shapes.pyi:13: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
 src/sage_categories/cat/shapes.pyi:44: error: Argument 1 of "object_point" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
 src/sage_categories/cat/shapes.pyi:44: note: This violates the Liskov substitution principle
@@ -378,6 +374,51 @@ src/sage_categories/cat/monoidal.py:250: error: Unexpected keyword argument "dom
 src/sage_categories/cat/monoidal.py:250: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
 src/sage_categories/cat/monoidal.py:276: error: "ElementType" has no attribute "family_component"  [attr-defined]
 src/sage_categories/cat/monoidal.py:277: error: "ElementType" has no attribute "family_component"  [attr-defined]
+src/sage_categories/order/posets.py:48: error: "ElementType" has no attribute "arrow"  [attr-defined]
+src/sage_categories/order/posets.py:57: error: "ElementType" has no attribute "datum"  [attr-defined]
+src/sage_categories/order/posets.py:57: error: Argument 1 to "_related_pairs" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+src/sage_categories/order/posets.py:66: error: "ElementType" has no attribute "__iter__" (not iterable)  [attr-defined]
+src/sage_categories/order/posets.py:85: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+src/sage_categories/order/posets.py:85: note: Did you mean "List[...]"?
+src/sage_categories/order/posets.py:91: error: "ElementType" has no attribute "arrow"  [attr-defined]
+src/sage_categories/order/posets.py:97: error: Returning Any from function declared to return "ElementType"  [no-any-return]
+src/sage_categories/order/posets.py:118: error: Argument 1 to "__call__" of "OwnedPredicate" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
+src/sage_categories/order/posets.py:120: error: Argument 1 to "Axiom" has incompatible type "Callable[[BinaryRelationsCategory, ObjectType], Boolean]"; expected "Callable[[CategoryDeclaration[Any, Any], ElementType], Boolean] | None"  [arg-type]
+src/sage_categories/order/posets.py:137: error: "ElementType" has no attribute "datum"  [attr-defined]
+src/sage_categories/order/posets.py:138: error: "ElementType" has no attribute "point"  [attr-defined]
+src/sage_categories/order/posets.py:153: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/order/posets.py:153: note:      Superclass:
+src/sage_categories/order/posets.py:153: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+src/sage_categories/order/posets.py:153: note:      Subclass:
+src/sage_categories/order/posets.py:153: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, underlying: ObjectType) -> MorphismType
+src/sage_categories/order/posets.py:160: error: "ObjectType" has no attribute "_action"  [attr-defined]
+src/sage_categories/order/posets.py:160: error: "ElementType" has no attribute "__iter__" (not iterable)  [attr-defined]
+src/sage_categories/order/posets.py:165: error: Unexpected keyword argument "domain" for "MorphismType"  [call-arg]
+src/sage_categories/order/posets.py:165: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
+src/sage_categories/order/posets.py:165: error: Unexpected keyword argument "data" for "MorphismType"  [call-arg]
+src/sage_categories/order/posets.py:167: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/order/posets.py:167: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
+src/sage_categories/order/posets.py:167: note: This violates the Liskov substitution principle
+src/sage_categories/order/posets.py:167: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/order/posets.py:168: error: Unexpected keyword argument "domain" for "MorphismType"  [call-arg]
+src/sage_categories/order/posets.py:168: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
+src/sage_categories/order/posets.py:168: error: Unexpected keyword argument "data" for "MorphismType"  [call-arg]
+src/sage_categories/order/posets.py:174: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+src/sage_categories/order/posets.py:176: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/order/posets.py:176: note: This violates the Liskov substitution principle
+src/sage_categories/order/posets.py:176: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/order/posets.py:177: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
+src/sage_categories/order/posets.py:177: note: This violates the Liskov substitution principle
+src/sage_categories/order/posets.py:177: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+src/sage_categories/order/posets.py:179: error: Unexpected keyword argument "domain" for "MorphismType"  [call-arg]
+src/sage_categories/order/posets.py:179: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
+src/sage_categories/order/posets.py:179: error: Unexpected keyword argument "data" for "MorphismType"  [call-arg]
+src/sage_categories/order/posets.py:180: error: "MorphismType" has no attribute "domain"  [attr-defined]
+src/sage_categories/order/posets.py:181: error: "MorphismType" has no attribute "codomain"  [attr-defined]
+src/sage_categories/order/posets.py:198: error: Returning Any from function declared to return "Boolean"  [no-any-return]
+src/sage_categories/order/posets.py:198: error: "ElementType" has no attribute "parent"  [attr-defined]
+src/sage_categories/order/posets.py:217: error: "Axiom" not callable  [operator]
+src/sage_categories/order/posets.py:230: error: "ElementType" has no attribute "__iter__" (not iterable)  [attr-defined]
 tests/kernel/test_m3_properties_queries_refinement.py:14: error: Module "sage_categories.cat.category" has no attribute "Axiom"  [attr-defined]
 tests/kernel/test_m3_properties_queries_refinement.py:14: error: Module "sage_categories.cat.category" does not explicitly export attribute "Predicate"  [attr-defined]
 tests/kernel/test_m3_properties_queries_refinement.py:14: error: Module "sage_categories.cat.category" does not explicitly export attribute "Proposition"  [attr-defined]
@@ -425,53 +466,14 @@ tests/kernel/test_m3_properties_queries_refinement.py:255: error: "bool" has no 
 tests/kernel/test_m3_properties_queries_refinement.py:335: error: "ObjectType" has no attribute "is_fully_faithful"  [attr-defined]
 tests/kernel/test_m3_properties_queries_refinement.py:362: error: "ObjectType" has no attribute "is_creates_limits"  [attr-defined]
 tests/kernel/test_m3_properties_queries_refinement.py:363: error: "ObjectType" has no attribute "is_creates_limits"  [attr-defined]
-src/sage_categories/order/posets.py:48: error: "ElementType" has no attribute "arrow"  [attr-defined]
-src/sage_categories/order/posets.py:57: error: "ElementType" has no attribute "datum"  [attr-defined]
-src/sage_categories/order/posets.py:57: error: Argument 1 to "_related_pairs" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-src/sage_categories/order/posets.py:66: error: "ElementType" has no attribute "__iter__" (not iterable)  [attr-defined]
-src/sage_categories/order/posets.py:85: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-src/sage_categories/order/posets.py:85: note: Did you mean "List[...]"?
-src/sage_categories/order/posets.py:91: error: "ElementType" has no attribute "arrow"  [attr-defined]
-src/sage_categories/order/posets.py:97: error: Returning Any from function declared to return "ElementType"  [no-any-return]
-src/sage_categories/order/posets.py:118: error: Argument 1 to "__call__" of "OwnedPredicate" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
-src/sage_categories/order/posets.py:120: error: Argument 1 to "Axiom" has incompatible type "Callable[[BinaryRelationsCategory, ObjectType], Boolean]"; expected "Callable[[CategoryDeclaration[Any, Any], ElementType], Boolean] | None"  [arg-type]
-src/sage_categories/order/posets.py:137: error: "ElementType" has no attribute "datum"  [attr-defined]
-src/sage_categories/order/posets.py:138: error: "ElementType" has no attribute "point"  [attr-defined]
-src/sage_categories/order/posets.py:153: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/order/posets.py:153: note:      Superclass:
-src/sage_categories/order/posets.py:153: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-src/sage_categories/order/posets.py:153: note:      Subclass:
-src/sage_categories/order/posets.py:153: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, underlying: ObjectType) -> MorphismType
-src/sage_categories/order/posets.py:160: error: "ObjectType" has no attribute "_action"  [attr-defined]
-src/sage_categories/order/posets.py:160: error: "ElementType" has no attribute "__iter__" (not iterable)  [attr-defined]
-src/sage_categories/order/posets.py:165: error: Unexpected keyword argument "domain" for "MorphismType"  [call-arg]
-src/sage_categories/order/posets.py:165: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
-src/sage_categories/order/posets.py:165: error: Unexpected keyword argument "data" for "MorphismType"  [call-arg]
-src/sage_categories/order/posets.py:167: error: Return type "MorphismType" of "construct_identity" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/order/posets.py:167: error: Argument 1 of "construct_identity" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ElementType"  [override]
-src/sage_categories/order/posets.py:167: note: This violates the Liskov substitution principle
-src/sage_categories/order/posets.py:167: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/order/posets.py:168: error: Unexpected keyword argument "domain" for "MorphismType"  [call-arg]
-src/sage_categories/order/posets.py:168: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
-src/sage_categories/order/posets.py:168: error: Unexpected keyword argument "data" for "MorphismType"  [call-arg]
-src/sage_categories/order/posets.py:174: error: Return type "MorphismType" of "composite" incompatible with return type "ObjectType" in supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-src/sage_categories/order/posets.py:176: error: Argument 1 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/order/posets.py:176: note: This violates the Liskov substitution principle
-src/sage_categories/order/posets.py:176: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/order/posets.py:177: error: Argument 2 of "composite" is incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"; supertype defines the argument type as "ObjectType"  [override]
-src/sage_categories/order/posets.py:177: note: This violates the Liskov substitution principle
-src/sage_categories/order/posets.py:177: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
-src/sage_categories/order/posets.py:179: error: Unexpected keyword argument "domain" for "MorphismType"  [call-arg]
-src/sage_categories/order/posets.py:179: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
-src/sage_categories/order/posets.py:179: error: Unexpected keyword argument "data" for "MorphismType"  [call-arg]
-src/sage_categories/order/posets.py:180: error: "MorphismType" has no attribute "domain"  [attr-defined]
-src/sage_categories/order/posets.py:181: error: "MorphismType" has no attribute "codomain"  [attr-defined]
-src/sage_categories/order/posets.py:198: error: Returning Any from function declared to return "Boolean"  [no-any-return]
-src/sage_categories/order/posets.py:198: error: "ElementType" has no attribute "parent"  [attr-defined]
-src/sage_categories/order/posets.py:217: error: "Axiom" not callable  [operator]
-src/sage_categories/order/posets.py:230: error: "ElementType" has no attribute "__iter__" (not iterable)  [attr-defined]
 src/sage_categories/kernel/construction.pyi:76: error: Type argument "Value" of "ObjectConstructionInput" must be a subtype of "ObjectOfCategory"  [type-var]
 src/sage_categories/kernel/construction.pyi:76: error: Type argument "Value" of "MorphismConstructionInput" must be a subtype of "MorphismOfCategory"  [type-var]
+tests/kernel/test_m5_vertical_witnesses.py:11: error: Module "sage_categories.cat.category" has no attribute "ask"  [attr-defined]
+tests/kernel/test_m5_vertical_witnesses.py:13: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
+tests/kernel/test_m5_vertical_witnesses.py:32: error: Item "ObjectType" of "ObjectType | Any" has no attribute "is_fully_faithful"  [union-attr]
+tests/kernel/test_m5_vertical_witnesses.py:87: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m5_vertical_witnesses.py:97: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
+tests/kernel/test_m5_vertical_witnesses.py:125: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
 tests/kernel/test_m2_cat_core.py:9: error: Module "sage_categories.cat.category" has no attribute "Axiom"  [attr-defined]
 tests/kernel/test_m2_cat_core.py:9: error: Module "sage_categories.cat.category" has no attribute "ask"  [attr-defined]
 tests/kernel/test_m2_cat_core.py:9: error: Module "sage_categories.cat.category" has no attribute "is_placed"  [attr-defined]
@@ -547,243 +549,181 @@ tests/kernel/test_m2_cat_core.py:957: error: "ObjectType" has no attribute "inve
 tests/kernel/test_m2_cat_core.py:958: error: "ObjectType" has no attribute "inverse"  [attr-defined]
 tests/kernel/test_m2_cat_core.py:959: error: "ObjectType" has no attribute "inverse"  [attr-defined]
 tests/kernel/test_m2_cat_core.py:964: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_object"  [union-attr]
-tests/kernel/test_m5_vertical_witnesses.py:11: error: Module "sage_categories.cat.category" has no attribute "ask"  [attr-defined]
-tests/kernel/test_m5_vertical_witnesses.py:13: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
-tests/kernel/test_m5_vertical_witnesses.py:32: error: Item "ObjectType" of "ObjectType | Any" has no attribute "is_fully_faithful"  [union-attr]
-tests/kernel/test_m5_vertical_witnesses.py:87: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
-tests/kernel/test_m5_vertical_witnesses.py:97: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
-tests/kernel/test_m5_vertical_witnesses.py:125: error: Item "ObjectType" of "ObjectType | Any" has no attribute "inverse_image"  [union-attr]
-tests/sets/test_set_scaffold.py:9: error: Module "sage_categories.all" has no attribute "Sets"  [attr-defined]
-tests/sets/test_set_scaffold.py:10: error: Module "sage_categories.cat.constructions" has no attribute "constructed_data"  [attr-defined]
-tests/sets/test_set_scaffold.py:14: error: Module "sage_categories.sets.finite" has no attribute "SetsCategory"; maybe "Category" or "FiniteSetsCategory"?  [attr-defined]
-tests/sets/test_set_scaffold.py:19: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/sets/test_set_scaffold.py:23: error: "ObjectType" not callable  [operator]
-tests/sets/test_set_scaffold.py:24: error: "ObjectType" not callable  [operator]
-tests/sets/test_set_scaffold.py:28: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], int]"; expected "Never"  [arg-type]
-tests/sets/test_set_scaffold.py:31: error: "ElementType" has no attribute "product_projection"  [attr-defined]
-tests/sets/test_set_scaffold.py:32: error: "ElementType" has no attribute "product_projection"  [attr-defined]
-tests/sets/test_set_scaffold.py:33: error: "ObjectType" not callable  [operator]
-tests/sets/test_set_scaffold.py:34: error: "ObjectType" not callable  [operator]
-tests/sets/test_set_scaffold.py:42: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/sets/test_set_scaffold.py:43: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/sets/test_set_scaffold.py:49: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], int]"; expected "Never"  [arg-type]
-tests/sets/test_set_scaffold.py:67: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-tests/sets/test_set_scaffold.py:67: note: Did you mean "List[...]"?
-tests/sets/test_set_scaffold.py:93: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
-tests/sets/test_set_scaffold.py:93: note:      Superclass:
-tests/sets/test_set_scaffold.py:93: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
-tests/sets/test_set_scaffold.py:93: note:      Subclass:
-tests/sets/test_set_scaffold.py:93: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, arrow: Any) -> MorphismType
-tests/sets/test_set_scaffold.py:100: error: Unexpected keyword argument "domain" for "MorphismType"  [call-arg]
-tests/sets/test_set_scaffold.py:100: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
-tests/sets/test_set_scaffold.py:100: error: Unexpected keyword argument "data" for "MorphismType"  [call-arg]
-tests/sets/test_set_scaffold.py:108: error: Argument 1 to "__call__" of "MorphismCategory" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
-tests/sets/test_set_scaffold.py:108: error: Argument 2 to "__call__" of "MorphismCategory" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
-tests/sets/test_set_scaffold.py:108: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
-tests/sets/test_set_scaffold.py:108: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/sets/test_set_scaffold.py:109: error: "ObjectType" has no attribute "point"  [attr-defined]
-tests/sets/test_set_scaffold.py:116: error: "ObjectType" not callable  [operator]
-tests/sets/test_set_scaffold.py:140: error: "ObjectType" not callable  [operator]
-tests/kernel/test_owned_point_categories.py:7: error: Module "sage_categories.all" has no attribute "Sets"  [attr-defined]
-tests/kernel/test_owned_point_categories.py:45: error: Too many arguments for "ObjectType"  [call-arg]
-tests/kernel/test_owned_point_categories.py:46: error: "ObjectType" has no attribute "defining_morphism"  [attr-defined]
-tests/kernel/test_owned_point_categories.py:47: error: "ObjectType" has no attribute "parent"  [attr-defined]
-tests/kernel/test_owned_point_categories.py:48: error: "ObjectType" has no attribute "coordinate"  [attr-defined]
-tests/kernel/test_owned_point_categories.py:61: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_owned_point_categories.py:62: error: "ObjectType" not callable  [operator]
-tests/kernel/test_owned_point_categories.py:71: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[str, ...]"; expected "Never"  [arg-type]
-tests/kernel/test_owned_point_categories.py:74: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
-tests/kernel/test_owned_point_categories.py:74: note: Possible overload variants:
-tests/kernel/test_owned_point_categories.py:74: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_owned_point_categories.py:74: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_owned_point_categories.py:74: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_owned_point_categories.py:74: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_owned_point_categories.py:74: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
-tests/kernel/test_owned_point_categories.py:74: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
-tests/kernel/test_owned_point_categories.py:74: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_owned_point_categories.py:76: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
-tests/kernel/test_owned_point_categories.py:76: note: Possible overload variants:
-tests/kernel/test_owned_point_categories.py:76: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_owned_point_categories.py:76: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_owned_point_categories.py:76: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_owned_point_categories.py:76: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_owned_point_categories.py:76: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
-tests/kernel/test_owned_point_categories.py:76: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
-tests/kernel/test_owned_point_categories.py:76: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_owned_point_categories.py:79: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_element"  [union-attr]
-tests/kernel/test_owned_point_categories.py:81: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_element"  [union-attr]
-tests/kernel/test_owned_point_categories.py:87: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
-tests/kernel/test_owned_point_categories.py:87: note: Did you mean "List[...]"?
-tests/kernel/test_owned_point_categories.py:119: error: "ObjectType" has no attribute "parent"  [attr-defined]
-tests/kernel/test_owned_point_categories.py:120: error: "ObjectType" has no attribute "domain"  [attr-defined]
-tests/kernel/test_owned_point_categories.py:120: error: "ObjectType" has no attribute "codomain"  [attr-defined]
-tests/kernel/test_owned_point_categories.py:121: error: "ObjectType" has no attribute "on_object"  [attr-defined]
-tests/kernel/test_owned_point_categories.py:122: error: "ObjectType" has no attribute "on_morphism"  [attr-defined]
-tests/kernel/test_categorical_calculus.py:9: error: Module "sage_categories.cat.structured_objects" has no attribute "EndofunctorAlgebras"  [attr-defined]
-tests/kernel/test_categorical_calculus.py:13: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:21: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_categorical_calculus.py:23: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
-tests/kernel/test_categorical_calculus.py:25: error: Too many arguments for "__call__" of "EquifierCategory"  [call-arg]
-tests/kernel/test_categorical_calculus.py:27: error: "ElementType" has no attribute "carrier"  [attr-defined]
-tests/kernel/test_categorical_calculus.py:27: error: "ElementType" has no attribute "point"  [attr-defined]
-tests/kernel/test_categorical_calculus.py:29: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_categorical_calculus.py:33: error: "ObjectType" has no attribute "underlying_morphism"  [attr-defined]
-tests/kernel/test_categorical_calculus.py:39: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
-tests/kernel/test_categorical_calculus.py:44: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:48: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:50: error: Unsupported left operand type for + ("Hashable")  [operator]
-tests/kernel/test_categorical_calculus.py:53: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:60: error: No overload variant of "range" matches argument types "Hashable", "Hashable"  [call-overload]
-tests/kernel/test_categorical_calculus.py:60: note: Possible overload variants:
-tests/kernel/test_categorical_calculus.py:60: note:     def range(SupportsIndex, /) -> range
-tests/kernel/test_categorical_calculus.py:60: note:     def range(SupportsIndex, SupportsIndex, SupportsIndex = ..., /) -> range
-tests/kernel/test_categorical_calculus.py:99: error: "ElementType" has no attribute "unit"  [attr-defined]
-tests/kernel/test_categorical_calculus.py:107: error: "ElementType" has no attribute "unit"  [attr-defined]
-tests/kernel/test_categorical_calculus.py:117: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:117: note: Use "-> None" if function does not return a value
-tests/kernel/test_categorical_calculus.py:132: error: "ElementType" has no attribute "carrier"  [attr-defined]
-tests/kernel/test_categorical_calculus.py:135: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:150: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:153: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:156: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:158: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], tuple[Integer, tuple[()]] | tuple[Integer, Any]]"; expected "Never"  [arg-type]
-tests/kernel/test_categorical_calculus.py:167: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], tuple[Integer, Any]]"; expected "Never"  [arg-type]
-tests/kernel/test_categorical_calculus.py:171: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], tuple[Integer, tuple[()]] | Any]"; expected "Never"  [arg-type]
-tests/kernel/test_categorical_calculus.py:176: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_categorical_calculus.py:178: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer | Any]"; expected "Never"  [arg-type]
-tests/kernel/test_categorical_calculus.py:183: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:17: error: Incompatible return value type (got "ObjectType", expected "MorphismType")  [return-value]
-tests/kernel/test_cat_construction_consumers.py:18: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[str, ...]"; expected "Never"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:28: error: "ObjectType" has no attribute "category"  [attr-defined]
-tests/kernel/test_cat_construction_consumers.py:31: error: Returning Any from function declared to return "int"  [no-any-return]
-tests/kernel/test_cat_construction_consumers.py:43: error: Incompatible return value type (got "Integer", expected "int")  [return-value]
-tests/kernel/test_cat_construction_consumers.py:45: error: Invalid type comment or annotation  [valid-type]
-tests/kernel/test_cat_construction_consumers.py:60: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:61: error: Argument 2 to "interval_arrow" has incompatible type "Hashable"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:61: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:61: error: Argument 3 to "interval_arrow" has incompatible type "Hashable"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:64: error: Unsupported operand types for + (likely involving Union)  [operator]
-tests/kernel/test_cat_construction_consumers.py:64: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:65: error: Unsupported operand types for + (likely involving Union)  [operator]
-tests/kernel/test_cat_construction_consumers.py:65: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:65: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:65: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:68: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:77: error: "ObjectType" has no attribute "first"  [attr-defined]
-tests/kernel/test_cat_construction_consumers.py:77: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:77: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:78: error: "ObjectType" has no attribute "second"  [attr-defined]
-tests/kernel/test_cat_construction_consumers.py:78: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:78: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:79: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_morphism"  [union-attr]
-tests/kernel/test_cat_construction_consumers.py:79: error: "ObjectType" has no attribute "second"  [attr-defined]
-tests/kernel/test_cat_construction_consumers.py:79: error: "ObjectType" has no attribute "first"  [attr-defined]
-tests/kernel/test_cat_construction_consumers.py:83: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
-tests/kernel/test_cat_construction_consumers.py:83: note: Possible overload variants:
-tests/kernel/test_cat_construction_consumers.py:83: note:     def __getitem__(self, SupportsIndex, /) -> ObjectType
-tests/kernel/test_cat_construction_consumers.py:83: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[ObjectType, ...]
-tests/kernel/test_cat_construction_consumers.py:83: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:84: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
-tests/kernel/test_cat_construction_consumers.py:84: note: Possible overload variants:
-tests/kernel/test_cat_construction_consumers.py:84: note:     def __getitem__(self, SupportsIndex, /) -> ObjectType
-tests/kernel/test_cat_construction_consumers.py:84: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[ObjectType, ...]
-tests/kernel/test_cat_construction_consumers.py:84: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:84: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:84: error: Argument 2 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:89: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:89: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:98: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:98: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
-tests/kernel/test_cat_construction_consumers.py:98: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:98: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:99: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:99: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
-tests/kernel/test_cat_construction_consumers.py:99: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:99: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:101: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
-tests/kernel/test_cat_construction_consumers.py:101: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:101: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:101: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:102: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
-tests/kernel/test_cat_construction_consumers.py:102: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:102: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:102: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:105: error: Argument 2 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:106: error: Argument 2 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:111: error: "ObjectType" has no attribute "apex_morphism"  [attr-defined]
-tests/kernel/test_cat_construction_consumers.py:111: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:111: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:112: error: "ObjectType" has no attribute "diagram_transformation"  [attr-defined]
-tests/kernel/test_cat_construction_consumers.py:112: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:112: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:113: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:113: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:119: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
-tests/kernel/test_cat_construction_consumers.py:119: note: Possible overload variants:
-tests/kernel/test_cat_construction_consumers.py:119: note:     def __getitem__(self, SupportsIndex, /) -> Any
-tests/kernel/test_cat_construction_consumers.py:119: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[Any, ...]
-tests/kernel/test_cat_construction_consumers.py:119: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:120: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
-tests/kernel/test_cat_construction_consumers.py:120: note: Possible overload variants:
-tests/kernel/test_cat_construction_consumers.py:120: note:     def __getitem__(self, SupportsIndex, /) -> Any
-tests/kernel/test_cat_construction_consumers.py:120: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[Any, ...]
-tests/kernel/test_cat_construction_consumers.py:120: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:126: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:126: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:134: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
-tests/kernel/test_cat_construction_consumers.py:134: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:134: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_cat_construction_consumers.py:134: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_core_public_consumers.py:12: error: Module "sage_categories.cat.category" has no attribute "Axiom"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:16: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:42: error: Argument 1 to "__call__" of "OwnedPredicate" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
-tests/kernel/test_core_public_consumers.py:87: error: Invalid type comment or annotation  [valid-type]
-tests/kernel/test_core_public_consumers.py:88: error: Invalid type comment or annotation  [valid-type]
-tests/kernel/test_core_public_consumers.py:91: error: Argument 1 to "__call__" of "MorphismCategory" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
-tests/kernel/test_core_public_consumers.py:91: error: Argument 2 to "__call__" of "MorphismCategory" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
-tests/kernel/test_core_public_consumers.py:114: error: Invalid type comment or annotation  [valid-type]
-tests/kernel/test_core_public_consumers.py:133: error: "ObjectType" has no attribute "scalar"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:133: error: Argument 1 to "__call__" of "ScalarPair" has incompatible type "tuple[Integer, Integer]"; expected "tuple[int, int]"  [arg-type]
-tests/kernel/test_core_public_consumers.py:135: error: "ObjectType" has no attribute "scalar"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:135: error: Argument 1 to "__call__" of "ScalarPair" has incompatible type "tuple[Integer, Integer]"; expected "tuple[int, int]"  [arg-type]
-tests/kernel/test_core_public_consumers.py:148: error: Argument 2 to "Query" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_core_public_consumers.py:150: error: Invalid type comment or annotation  [valid-type]
-tests/kernel/test_core_public_consumers.py:154: error: Argument 1 to "__call__" of "Scalars" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_core_public_consumers.py:155: error: Argument 1 to "__call__" of "Query" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
-tests/kernel/test_core_public_consumers.py:156: error: Argument 1 to "__call__" of "Query" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
-tests/kernel/test_core_public_consumers.py:157: error: Argument 1 to "__call__" of "Query" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
-tests/kernel/test_core_public_consumers.py:188: error: Invalid type comment or annotation  [valid-type]
-tests/kernel/test_core_public_consumers.py:198: error: Too many arguments for "ObjectType"  [call-arg]
-tests/kernel/test_core_public_consumers.py:221: error: Argument 1 to "__call__" of "Decorated" has incompatible type "Integer"; expected "int"  [arg-type]
-tests/kernel/test_core_public_consumers.py:222: error: "ObjectType" has no attribute "parent"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:222: error: "ObjectType" has no attribute "defining_morphism"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:224: error: "ObjectType" has no attribute "is_positive"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:225: error: "ObjectType" has no attribute "category"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:226: error: "ObjectType" has no attribute "parent"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:227: error: "ObjectType" has no attribute "defining_morphism"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:242: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_core_public_consumers.py:243: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_core_public_consumers.py:243: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[ObjectType, ...]"; expected "Never"  [arg-type]
-tests/kernel/test_core_public_consumers.py:252: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_morphism"  [union-attr]
-tests/kernel/test_core_public_consumers.py:278: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_object"  [union-attr]
-tests/kernel/test_core_public_consumers.py:279: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_morphism"  [union-attr]
-tests/kernel/test_core_public_consumers.py:283: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_object"  [union-attr]
-tests/kernel/test_core_public_consumers.py:284: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_morphism"  [union-attr]
-tests/kernel/test_core_public_consumers.py:290: error: "ObjectType" has no attribute "source_functor"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:291: error: "ObjectType" has no attribute "target_functor"  [attr-defined]
-tests/kernel/test_core_public_consumers.py:292: error: "ObjectType" has no attribute "component"  [attr-defined]
-tests/kernel/test_regular_relations.py:12: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_regular_relations.py:21: error: "ObjectType" has no attribute "monomorphism"  [attr-defined]
-tests/kernel/test_regular_relations.py:22: error: "ObjectType" has no attribute "monomorphism"  [attr-defined]
-tests/kernel/test_regular_relations.py:38: error: "ObjectType" has no attribute "factor"; maybe "factors"?  [attr-defined]
-tests/kernel/test_regular_relations.py:44: error: "ElementType" has no attribute "monomorphism"  [attr-defined]
-tests/kernel/test_regular_relations.py:44: error: "ObjectType" has no attribute "factor"; maybe "factors"?  [attr-defined]
-tests/kernel/test_regular_relations.py:45: error: "ElementType" has no attribute "monomorphism"  [attr-defined]
-tests/kernel/test_regular_relations.py:52: error: "ObjectType" has no attribute "inverse"  [attr-defined]
-tests/kernel/test_regular_relations.py:52: error: "ObjectType" has no attribute "factor"; maybe "factors"?  [attr-defined]
-tests/kernel/test_regular_relations.py:54: error: "ElementType" has no attribute "monomorphism"  [attr-defined]
-tests/kernel/test_regular_relations.py:55: error: "ElementType" has no attribute "monomorphism"  [attr-defined]
-tests/kernel/test_regular_relations.py:60: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/algebra/test_monoid_scaffold.py:7: error: Module "sage_categories.all" has no attribute "Sets"  [attr-defined]
+tests/algebra/test_monoid_scaffold.py:7: error: Module "sage_categories.all" has no attribute "Cartesian"  [attr-defined]
+tests/algebra/test_monoid_scaffold.py:16: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/algebra/test_monoid_scaffold.py:17: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
+tests/algebra/test_monoid_scaffold.py:19: error: Too many arguments for "__call__" of "EquifierCategory"  [call-arg]
+tests/algebra/test_monoid_scaffold.py:21: error: "ElementType" has no attribute "carrier"  [attr-defined]
+tests/algebra/test_monoid_scaffold.py:22: error: "ObjectType" not callable  [operator]
+tests/algebra/test_monoid_scaffold.py:22: error: "ElementType" has no attribute "point"  [attr-defined]
+tests/algebra/test_monoid_scaffold.py:26: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/algebra/test_monoid_scaffold.py:30: error: "ObjectType" not callable  [operator]
+tests/algebra/test_monoid_scaffold.py:37: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/algebra/test_monoid_scaffold.py:38: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
+tests/algebra/test_monoid_scaffold.py:41: error: Too many arguments for "__call__" of "EquifierCategory"  [call-arg]
+tests/algebra/test_magma_scaffold.py:7: error: Module "sage_categories.all" has no attribute "Sets"  [attr-defined]
+tests/algebra/test_magma_scaffold.py:7: error: Module "sage_categories.all" has no attribute "Cartesian"  [attr-defined]
+tests/algebra/test_magma_scaffold.py:17: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/algebra/test_magma_scaffold.py:18: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/algebra/test_magma_scaffold.py:19: error: "ObjectType" not callable  [operator]
+tests/algebra/test_magma_scaffold.py:19: error: "ElementType" has no attribute "point"  [attr-defined]
+tests/algebra/test_magma_scaffold.py:20: error: "ObjectType" not callable  [operator]
+tests/algebra/test_magma_scaffold.py:20: error: "ElementType" has no attribute "point"  [attr-defined]
+tests/algebra/test_magma_scaffold.py:26: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
+tests/kernel/test_universal_constructions.py:11: error: Module "sage_categories.cat.diagrams" has no attribute "span_diagram"  [attr-defined]
+tests/kernel/test_universal_constructions.py:27: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_constructions.py:28: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_constructions.py:28: error: Argument 3 to "construct_morphism" of "FinitePresentedCategory" has incompatible type "tuple[ObjectType, ...]"; expected "tuple[str, ...]"  [arg-type]
+tests/kernel/test_universal_constructions.py:29: error: Unsupported operand types for + (likely involving Union)  [operator]
+tests/kernel/test_universal_constructions.py:29: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_constructions.py:30: error: Unsupported operand types for + (likely involving Union)  [operator]
+tests/kernel/test_universal_constructions.py:30: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_constructions.py:47: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
+tests/kernel/test_universal_constructions.py:47: note: Possible overload variants:
+tests/kernel/test_universal_constructions.py:47: note:     def __getitem__(self, SupportsIndex, /) -> Any
+tests/kernel/test_universal_constructions.py:47: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[Any, ...]
+tests/kernel/test_universal_constructions.py:47: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_constructions.py:53: error: "ObjectType" has no attribute "component"  [attr-defined]
+tests/kernel/test_universal_constructions.py:57: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_constructions.py:58: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_constructions.py:58: error: Argument 3 to "construct_morphism" of "FinitePresentedCategory" has incompatible type "tuple[ObjectType, ...]"; expected "tuple[str, ...]"  [arg-type]
+tests/kernel/test_universal_constructions.py:60: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
+tests/kernel/test_universal_constructions.py:60: note: Possible overload variants:
+tests/kernel/test_universal_constructions.py:60: note:     def __getitem__(self, SupportsIndex, /) -> Any | ObjectType
+tests/kernel/test_universal_constructions.py:60: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[Any | ObjectType, ...]
+tests/kernel/test_universal_constructions.py:60: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_constructions.py:66: error: "ObjectType" has no attribute "component"  [attr-defined]
+tests/kernel/test_universal_constructions.py:84: error: Invalid index type "ObjectType" for "dict[str, Any]"; expected type "str"  [index]
+tests/kernel/test_monoidal_structure.py:7: error: Module "sage_categories.all" has no attribute "Sets"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:7: error: Module "sage_categories.all" has no attribute "Cartesian"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:7: error: Module "sage_categories.all" has no attribute "Composition"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:7: error: Module "sage_categories.all" has no attribute "SelfAction"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:46: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_monoidal_structure.py:47: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_monoidal_structure.py:49: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[ObjectType, ObjectType]"; expected "Never"  [arg-type]
+tests/kernel/test_monoidal_structure.py:57: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[ObjectType, ObjectType]"; expected "Never"  [arg-type]
+tests/kernel/test_monoidal_structure.py:65: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[str, ...]"; expected "Never"  [arg-type]
+tests/kernel/test_monoidal_structure.py:66: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_monoidal_structure.py:67: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_monoidal_structure.py:70: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[ObjectType, ObjectType]"; expected "Never"  [arg-type]
+tests/kernel/test_monoidal_structure.py:80: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
+tests/kernel/test_monoidal_structure.py:80: note: Possible overload variants:
+tests/kernel/test_monoidal_structure.py:80: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_monoidal_structure.py:80: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_monoidal_structure.py:80: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_monoidal_structure.py:80: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_monoidal_structure.py:80: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
+tests/kernel/test_monoidal_structure.py:80: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
+tests/kernel/test_monoidal_structure.py:80: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_monoidal_structure.py:81: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
+tests/kernel/test_monoidal_structure.py:81: note: Possible overload variants:
+tests/kernel/test_monoidal_structure.py:81: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_monoidal_structure.py:81: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_monoidal_structure.py:81: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_monoidal_structure.py:81: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_monoidal_structure.py:81: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
+tests/kernel/test_monoidal_structure.py:81: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
+tests/kernel/test_monoidal_structure.py:81: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_monoidal_structure.py:82: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
+tests/kernel/test_monoidal_structure.py:82: note: Possible overload variants:
+tests/kernel/test_monoidal_structure.py:82: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_monoidal_structure.py:82: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_monoidal_structure.py:82: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_monoidal_structure.py:82: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_monoidal_structure.py:82: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
+tests/kernel/test_monoidal_structure.py:82: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
+tests/kernel/test_monoidal_structure.py:82: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_monoidal_structure.py:83: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_monoidal_structure.py:83: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
+tests/kernel/test_monoidal_structure.py:83: note: Possible overload variants:
+tests/kernel/test_monoidal_structure.py:83: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_monoidal_structure.py:83: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_monoidal_structure.py:83: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_monoidal_structure.py:83: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_monoidal_structure.py:83: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
+tests/kernel/test_monoidal_structure.py:83: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
+tests/kernel/test_monoidal_structure.py:85: error: "ObjectType" has no attribute "on_object"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:85: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_object"  [union-attr]
+tests/kernel/test_monoidal_structure.py:86: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:86: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:87: error: "ObjectType" has no attribute "on_morphism"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:93: error: Too many arguments for "__call__" of "EquifierCategory"  [call-arg]
+tests/kernel/test_monoidal_structure.py:95: error: "ElementType" has no attribute "carrier"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:96: error: "ElementType" has no attribute "unit_morphism"; maybe "universal_morphism"?  [attr-defined]
+tests/kernel/test_monoidal_structure.py:97: error: "ElementType" has no attribute "unit_morphism"; maybe "universal_morphism"?  [attr-defined]
+tests/kernel/test_monoidal_structure.py:98: error: "ElementType" has no attribute "unit_morphism"; maybe "universal_morphism"?  [attr-defined]
+tests/kernel/test_monoidal_structure.py:99: error: "ElementType" has no attribute "multiplication"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:111: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_monoidal_structure.py:117: error: Too many arguments for "__call__" of "EquifierCategory"  [call-arg]
+tests/kernel/test_monoidal_structure.py:121: error: "ElementType" has no attribute "unit_morphism"; maybe "universal_morphism"?  [attr-defined]
+tests/kernel/test_monoidal_structure.py:122: error: "ElementType" has no attribute "multiplication"  [attr-defined]
+tests/kernel/test_monoidal_structure.py:123: error: "ElementType" has no attribute "multiplication"  [attr-defined]
+tests/kernel/test_indexed_constructions.py:41: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_indexed_constructions.py:48: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_indexed_constructions.py:48: error: Argument 2 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_indexed_constructions.py:49: error: "ObjectType" has no attribute "induced_functor"  [attr-defined]
+tests/kernel/test_indexed_constructions.py:64: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_indexed_constructions.py:74: error: "ObjectType" has no attribute "fiber_morphism"  [attr-defined]
+tests/kernel/test_profunctor_composition.py:18: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_profunctor_composition.py:27: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_profunctor_composition.py:28: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], ObjectType]"; expected "Never"  [arg-type]
+tests/kernel/test_universal_arrow_calculus.py:16: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_universal_arrow_calculus.py:17: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_universal_arrow_calculus.py:20: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_universal_arrow_calculus.py:33: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_universal_arrow_calculus.py:43: error: Argument 2 to "construct_morphism" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_arrow_calculus.py:46: error: No overload variant of "range" matches argument types "Hashable", "Hashable"  [call-overload]
+tests/kernel/test_universal_arrow_calculus.py:46: note: Possible overload variants:
+tests/kernel/test_universal_arrow_calculus.py:46: note:     def range(SupportsIndex, /) -> range
+tests/kernel/test_universal_arrow_calculus.py:46: note:     def range(SupportsIndex, SupportsIndex, SupportsIndex = ..., /) -> range
+tests/kernel/test_universal_arrow_calculus.py:47: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_arrow_calculus.py:58: error: No overload variant of "range" matches argument type "Hashable"  [call-overload]
+tests/kernel/test_universal_arrow_calculus.py:58: note: Possible overload variants:
+tests/kernel/test_universal_arrow_calculus.py:58: note:     def range(SupportsIndex, /) -> range
+tests/kernel/test_universal_arrow_calculus.py:58: note:     def range(SupportsIndex, SupportsIndex, SupportsIndex = ..., /) -> range
+tests/kernel/test_universal_arrow_calculus.py:73: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_universal_arrow_calculus.py:84: error: "ElementType" has no attribute "inverse"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:85: error: "ElementType" has no attribute "counit"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:86: error: "ElementType" has no attribute "inverse"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:92: error: "ElementType" has no attribute "forward"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:93: error: "ElementType" has no attribute "unit"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:95: error: "ElementType" has no attribute "forward"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:100: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_universal_arrow_calculus.py:106: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
+tests/kernel/test_universal_arrow_calculus.py:108: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_universal_arrow_calculus.py:119: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_universal_arrow_calculus.py:122: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_universal_arrow_calculus.py:126: error: "ElementType" has no attribute "inverse"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:127: error: "ElementType" has no attribute "counit"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:128: error: "ElementType" has no attribute "inverse"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:132: error: "ElementType" has no attribute "forward"  [attr-defined]
+tests/kernel/test_universal_arrow_calculus.py:134: error: "ElementType" has no attribute "unit"  [attr-defined]
+tests/kernel/test_weighted_universal_maps.py:27: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_weighted_universal_maps.py:30: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:32: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:37: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:38: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:52: error: Argument 1 to "tuple" has incompatible type "ElementType"; expected "Iterable[Never]"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:57: error: "ObjectType" not callable  [operator]
+tests/kernel/test_weighted_universal_maps.py:58: error: "ObjectType" not callable  [operator]
+tests/kernel/test_weighted_universal_maps.py:65: error: Argument 1 to "tuple" has incompatible type "ElementType"; expected "Iterable[Never]"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:69: error: "ObjectType" not callable  [operator]
+tests/kernel/test_weighted_universal_maps.py:70: error: "ObjectType" not callable  [operator]
+tests/kernel/test_weighted_universal_maps.py:78: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_weighted_universal_maps.py:78: note: Use "-> None" if function does not return a value
+tests/kernel/test_weighted_universal_maps.py:83: error: Argument 1 to "tuple" has incompatible type "ElementType"; expected "Iterable[Never]"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:84: error: Argument 1 to "tuple" has incompatible type "ElementType"; expected "Iterable[Never]"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:90: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_weighted_universal_maps.py:93: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:98: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:103: error: Unsupported operand types for + (likely involving Union)  [operator]
+tests/kernel/test_weighted_universal_maps.py:103: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:108: error: Unsupported operand types for + (likely involving Union)  [operator]
+tests/kernel/test_weighted_universal_maps.py:108: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:109: error: Unsupported operand types for + (likely involving Union)  [operator]
+tests/kernel/test_weighted_universal_maps.py:109: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_weighted_universal_maps.py:114: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
 tests/kernel/test_lifted_limits.py:42: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
 tests/kernel/test_lifted_limits.py:42: note:      Superclass:
 tests/kernel/test_lifted_limits.py:42: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
@@ -922,159 +862,237 @@ tests/kernel/test_lifted_limits.py:273: error: Argument 1 to "__call__" of "Fixe
 tests/kernel/test_lifted_limits.py:274: error: Argument 2 to "cone" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
 tests/kernel/test_lifted_limits.py:280: error: "ObjectType" has no attribute "apply"  [attr-defined]
 tests/kernel/test_lifted_limits.py:280: error: "ObjectType" has no attribute "values"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:16: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_universal_arrow_calculus.py:17: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_universal_arrow_calculus.py:20: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_universal_arrow_calculus.py:33: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_universal_arrow_calculus.py:43: error: Argument 2 to "construct_morphism" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_arrow_calculus.py:46: error: No overload variant of "range" matches argument types "Hashable", "Hashable"  [call-overload]
-tests/kernel/test_universal_arrow_calculus.py:46: note: Possible overload variants:
-tests/kernel/test_universal_arrow_calculus.py:46: note:     def range(SupportsIndex, /) -> range
-tests/kernel/test_universal_arrow_calculus.py:46: note:     def range(SupportsIndex, SupportsIndex, SupportsIndex = ..., /) -> range
-tests/kernel/test_universal_arrow_calculus.py:47: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_arrow_calculus.py:58: error: No overload variant of "range" matches argument type "Hashable"  [call-overload]
-tests/kernel/test_universal_arrow_calculus.py:58: note: Possible overload variants:
-tests/kernel/test_universal_arrow_calculus.py:58: note:     def range(SupportsIndex, /) -> range
-tests/kernel/test_universal_arrow_calculus.py:58: note:     def range(SupportsIndex, SupportsIndex, SupportsIndex = ..., /) -> range
-tests/kernel/test_universal_arrow_calculus.py:73: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_universal_arrow_calculus.py:84: error: "ElementType" has no attribute "inverse"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:85: error: "ElementType" has no attribute "counit"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:86: error: "ElementType" has no attribute "inverse"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:92: error: "ElementType" has no attribute "forward"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:93: error: "ElementType" has no attribute "unit"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:95: error: "ElementType" has no attribute "forward"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:100: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_universal_arrow_calculus.py:106: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
-tests/kernel/test_universal_arrow_calculus.py:108: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_universal_arrow_calculus.py:119: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_universal_arrow_calculus.py:122: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_arrow_calculus.py:126: error: "ElementType" has no attribute "inverse"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:127: error: "ElementType" has no attribute "counit"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:128: error: "ElementType" has no attribute "inverse"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:132: error: "ElementType" has no attribute "forward"  [attr-defined]
-tests/kernel/test_universal_arrow_calculus.py:134: error: "ElementType" has no attribute "unit"  [attr-defined]
-tests/kernel/test_weighted_universal_maps.py:27: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_weighted_universal_maps.py:30: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:32: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:37: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:38: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:52: error: Argument 1 to "tuple" has incompatible type "ElementType"; expected "Iterable[Never]"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:57: error: "ObjectType" not callable  [operator]
-tests/kernel/test_weighted_universal_maps.py:58: error: "ObjectType" not callable  [operator]
-tests/kernel/test_weighted_universal_maps.py:65: error: Argument 1 to "tuple" has incompatible type "ElementType"; expected "Iterable[Never]"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:69: error: "ObjectType" not callable  [operator]
-tests/kernel/test_weighted_universal_maps.py:70: error: "ObjectType" not callable  [operator]
-tests/kernel/test_weighted_universal_maps.py:78: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_weighted_universal_maps.py:78: note: Use "-> None" if function does not return a value
-tests/kernel/test_weighted_universal_maps.py:83: error: Argument 1 to "tuple" has incompatible type "ElementType"; expected "Iterable[Never]"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:84: error: Argument 1 to "tuple" has incompatible type "ElementType"; expected "Iterable[Never]"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:90: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_weighted_universal_maps.py:93: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:98: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:103: error: Unsupported operand types for + (likely involving Union)  [operator]
-tests/kernel/test_weighted_universal_maps.py:103: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:108: error: Unsupported operand types for + (likely involving Union)  [operator]
-tests/kernel/test_weighted_universal_maps.py:108: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:109: error: Unsupported operand types for + (likely involving Union)  [operator]
-tests/kernel/test_weighted_universal_maps.py:109: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_weighted_universal_maps.py:114: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_indexed_constructions.py:41: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_indexed_constructions.py:48: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_indexed_constructions.py:48: error: Argument 2 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_indexed_constructions.py:49: error: "ObjectType" has no attribute "induced_functor"  [attr-defined]
-tests/kernel/test_indexed_constructions.py:64: error: Function is missing a type annotation  [no-untyped-def]
-tests/kernel/test_indexed_constructions.py:74: error: "ObjectType" has no attribute "fiber_morphism"  [attr-defined]
-tests/kernel/test_profunctor_composition.py:18: error: Function is missing a return type annotation  [no-untyped-def]
-tests/kernel/test_profunctor_composition.py:27: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_profunctor_composition.py:28: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], ObjectType]"; expected "Never"  [arg-type]
-tests/kernel/test_monoidal_structure.py:7: error: Module "sage_categories.all" has no attribute "Sets"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:7: error: Module "sage_categories.all" has no attribute "Cartesian"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:7: error: Module "sage_categories.all" has no attribute "Composition"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:7: error: Module "sage_categories.all" has no attribute "SelfAction"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:46: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_monoidal_structure.py:47: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
-tests/kernel/test_monoidal_structure.py:49: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[ObjectType, ObjectType]"; expected "Never"  [arg-type]
-tests/kernel/test_monoidal_structure.py:57: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[ObjectType, ObjectType]"; expected "Never"  [arg-type]
-tests/kernel/test_monoidal_structure.py:65: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[str, ...]"; expected "Never"  [arg-type]
-tests/kernel/test_monoidal_structure.py:66: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_monoidal_structure.py:67: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_monoidal_structure.py:70: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[ObjectType, ObjectType]"; expected "Never"  [arg-type]
-tests/kernel/test_monoidal_structure.py:80: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
-tests/kernel/test_monoidal_structure.py:80: note: Possible overload variants:
-tests/kernel/test_monoidal_structure.py:80: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_monoidal_structure.py:80: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_monoidal_structure.py:80: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_monoidal_structure.py:80: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_monoidal_structure.py:80: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
-tests/kernel/test_monoidal_structure.py:80: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
-tests/kernel/test_monoidal_structure.py:80: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_monoidal_structure.py:81: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
-tests/kernel/test_monoidal_structure.py:81: note: Possible overload variants:
-tests/kernel/test_monoidal_structure.py:81: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_monoidal_structure.py:81: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_monoidal_structure.py:81: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_monoidal_structure.py:81: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_monoidal_structure.py:81: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
-tests/kernel/test_monoidal_structure.py:81: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
-tests/kernel/test_monoidal_structure.py:81: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_monoidal_structure.py:82: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
-tests/kernel/test_monoidal_structure.py:82: note: Possible overload variants:
-tests/kernel/test_monoidal_structure.py:82: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_monoidal_structure.py:82: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_monoidal_structure.py:82: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_monoidal_structure.py:82: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_monoidal_structure.py:82: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
-tests/kernel/test_monoidal_structure.py:82: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
-tests/kernel/test_monoidal_structure.py:82: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_monoidal_structure.py:83: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_monoidal_structure.py:83: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
-tests/kernel/test_monoidal_structure.py:83: note: Possible overload variants:
-tests/kernel/test_monoidal_structure.py:83: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_monoidal_structure.py:83: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_monoidal_structure.py:83: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
-tests/kernel/test_monoidal_structure.py:83: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
-tests/kernel/test_monoidal_structure.py:83: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
-tests/kernel/test_monoidal_structure.py:83: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
-tests/kernel/test_monoidal_structure.py:85: error: "ObjectType" has no attribute "on_object"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:85: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_object"  [union-attr]
-tests/kernel/test_monoidal_structure.py:86: error: "ObjectType" has no attribute "domain"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:86: error: "ObjectType" has no attribute "codomain"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:87: error: "ObjectType" has no attribute "on_morphism"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:93: error: Too many arguments for "__call__" of "EquifierCategory"  [call-arg]
-tests/kernel/test_monoidal_structure.py:95: error: "ElementType" has no attribute "carrier"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:96: error: "ElementType" has no attribute "unit_morphism"; maybe "universal_morphism"?  [attr-defined]
-tests/kernel/test_monoidal_structure.py:97: error: "ElementType" has no attribute "unit_morphism"; maybe "universal_morphism"?  [attr-defined]
-tests/kernel/test_monoidal_structure.py:98: error: "ElementType" has no attribute "unit_morphism"; maybe "universal_morphism"?  [attr-defined]
-tests/kernel/test_monoidal_structure.py:99: error: "ElementType" has no attribute "multiplication"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:111: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_monoidal_structure.py:117: error: Too many arguments for "__call__" of "EquifierCategory"  [call-arg]
-tests/kernel/test_monoidal_structure.py:121: error: "ElementType" has no attribute "unit_morphism"; maybe "universal_morphism"?  [attr-defined]
-tests/kernel/test_monoidal_structure.py:122: error: "ElementType" has no attribute "multiplication"  [attr-defined]
-tests/kernel/test_monoidal_structure.py:123: error: "ElementType" has no attribute "multiplication"  [attr-defined]
-tests/kernel/test_universal_constructions.py:11: error: Module "sage_categories.cat.diagrams" has no attribute "span_diagram"  [attr-defined]
-tests/kernel/test_universal_constructions.py:27: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_constructions.py:28: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_constructions.py:28: error: Argument 3 to "construct_morphism" of "FinitePresentedCategory" has incompatible type "tuple[ObjectType, ...]"; expected "tuple[str, ...]"  [arg-type]
-tests/kernel/test_universal_constructions.py:29: error: Unsupported operand types for + (likely involving Union)  [operator]
-tests/kernel/test_universal_constructions.py:29: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_constructions.py:30: error: Unsupported operand types for + (likely involving Union)  [operator]
-tests/kernel/test_universal_constructions.py:30: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_constructions.py:47: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
-tests/kernel/test_universal_constructions.py:47: note: Possible overload variants:
-tests/kernel/test_universal_constructions.py:47: note:     def __getitem__(self, SupportsIndex, /) -> Any
-tests/kernel/test_universal_constructions.py:47: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[Any, ...]
-tests/kernel/test_universal_constructions.py:47: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_constructions.py:53: error: "ObjectType" has no attribute "component"  [attr-defined]
-tests/kernel/test_universal_constructions.py:57: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_constructions.py:58: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_constructions.py:58: error: Argument 3 to "construct_morphism" of "FinitePresentedCategory" has incompatible type "tuple[ObjectType, ...]"; expected "tuple[str, ...]"  [arg-type]
-tests/kernel/test_universal_constructions.py:60: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
-tests/kernel/test_universal_constructions.py:60: note: Possible overload variants:
-tests/kernel/test_universal_constructions.py:60: note:     def __getitem__(self, SupportsIndex, /) -> Any | ObjectType
-tests/kernel/test_universal_constructions.py:60: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[Any | ObjectType, ...]
-tests/kernel/test_universal_constructions.py:60: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
-tests/kernel/test_universal_constructions.py:66: error: "ObjectType" has no attribute "component"  [attr-defined]
-tests/kernel/test_universal_constructions.py:84: error: Invalid index type "ObjectType" for "dict[str, Any]"; expected type "str"  [index]
+tests/kernel/test_owned_point_categories.py:7: error: Module "sage_categories.all" has no attribute "Sets"  [attr-defined]
+tests/kernel/test_owned_point_categories.py:45: error: Too many arguments for "ObjectType"  [call-arg]
+tests/kernel/test_owned_point_categories.py:46: error: "ObjectType" has no attribute "defining_morphism"  [attr-defined]
+tests/kernel/test_owned_point_categories.py:47: error: "ObjectType" has no attribute "parent"  [attr-defined]
+tests/kernel/test_owned_point_categories.py:48: error: "ObjectType" has no attribute "coordinate"  [attr-defined]
+tests/kernel/test_owned_point_categories.py:61: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_owned_point_categories.py:62: error: "ObjectType" not callable  [operator]
+tests/kernel/test_owned_point_categories.py:71: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[str, ...]"; expected "Never"  [arg-type]
+tests/kernel/test_owned_point_categories.py:74: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
+tests/kernel/test_owned_point_categories.py:74: note: Possible overload variants:
+tests/kernel/test_owned_point_categories.py:74: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_owned_point_categories.py:74: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_owned_point_categories.py:74: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_owned_point_categories.py:74: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_owned_point_categories.py:74: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
+tests/kernel/test_owned_point_categories.py:74: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
+tests/kernel/test_owned_point_categories.py:74: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_owned_point_categories.py:76: error: No overload variant of "max" matches argument types "Integer", "Hashable"  [call-overload]
+tests/kernel/test_owned_point_categories.py:76: note: Possible overload variants:
+tests/kernel/test_owned_point_categories.py:76: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(SupportsRichComparisonT, SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_owned_point_categories.py:76: note:     def [_T] max(_T, _T, /, *_args: _T, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_owned_point_categories.py:76: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any]] max(Iterable[SupportsRichComparisonT], /, *, key: None = ...) -> SupportsRichComparisonT
+tests/kernel/test_owned_point_categories.py:76: note:     def [_T] max(Iterable[_T], /, *, key: Callable[[_T], SupportsDunderLT[Any] | SupportsDunderGT[Any]]) -> _T
+tests/kernel/test_owned_point_categories.py:76: note:     def [SupportsRichComparisonT: SupportsDunderLT[Any] | SupportsDunderGT[Any], _T] max(Iterable[SupportsRichComparisonT], /, *, key: None = ..., default: _T) -> SupportsRichComparisonT | _T
+tests/kernel/test_owned_point_categories.py:76: note:     def [_T1, _T2] max(Iterable[_T1], /, *, key: Callable[[_T1], SupportsDunderLT[Any] | SupportsDunderGT[Any]], default: _T2) -> _T1 | _T2
+tests/kernel/test_owned_point_categories.py:76: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_owned_point_categories.py:79: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_element"  [union-attr]
+tests/kernel/test_owned_point_categories.py:81: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_element"  [union-attr]
+tests/kernel/test_owned_point_categories.py:87: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/kernel/test_owned_point_categories.py:87: note: Did you mean "List[...]"?
+tests/kernel/test_owned_point_categories.py:119: error: "ObjectType" has no attribute "parent"  [attr-defined]
+tests/kernel/test_owned_point_categories.py:120: error: "ObjectType" has no attribute "domain"  [attr-defined]
+tests/kernel/test_owned_point_categories.py:120: error: "ObjectType" has no attribute "codomain"  [attr-defined]
+tests/kernel/test_owned_point_categories.py:121: error: "ObjectType" has no attribute "on_object"  [attr-defined]
+tests/kernel/test_owned_point_categories.py:122: error: "ObjectType" has no attribute "on_morphism"  [attr-defined]
+tests/kernel/test_cat_construction_consumers.py:17: error: Incompatible return value type (got "ObjectType", expected "MorphismType")  [return-value]
+tests/kernel/test_cat_construction_consumers.py:18: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[str, ...]"; expected "Never"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:28: error: "ObjectType" has no attribute "category"  [attr-defined]
+tests/kernel/test_cat_construction_consumers.py:31: error: Returning Any from function declared to return "int"  [no-any-return]
+tests/kernel/test_cat_construction_consumers.py:43: error: Incompatible return value type (got "Integer", expected "int")  [return-value]
+tests/kernel/test_cat_construction_consumers.py:45: error: Invalid type comment or annotation  [valid-type]
+tests/kernel/test_cat_construction_consumers.py:60: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:61: error: Argument 2 to "interval_arrow" has incompatible type "Hashable"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:61: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:61: error: Argument 3 to "interval_arrow" has incompatible type "Hashable"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:64: error: Unsupported operand types for + (likely involving Union)  [operator]
+tests/kernel/test_cat_construction_consumers.py:64: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:65: error: Unsupported operand types for + (likely involving Union)  [operator]
+tests/kernel/test_cat_construction_consumers.py:65: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:65: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:65: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:68: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:77: error: "ObjectType" has no attribute "first"  [attr-defined]
+tests/kernel/test_cat_construction_consumers.py:77: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:77: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:78: error: "ObjectType" has no attribute "second"  [attr-defined]
+tests/kernel/test_cat_construction_consumers.py:78: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:78: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:79: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_morphism"  [union-attr]
+tests/kernel/test_cat_construction_consumers.py:79: error: "ObjectType" has no attribute "second"  [attr-defined]
+tests/kernel/test_cat_construction_consumers.py:79: error: "ObjectType" has no attribute "first"  [attr-defined]
+tests/kernel/test_cat_construction_consumers.py:83: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
+tests/kernel/test_cat_construction_consumers.py:83: note: Possible overload variants:
+tests/kernel/test_cat_construction_consumers.py:83: note:     def __getitem__(self, SupportsIndex, /) -> ObjectType
+tests/kernel/test_cat_construction_consumers.py:83: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[ObjectType, ...]
+tests/kernel/test_cat_construction_consumers.py:83: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:84: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
+tests/kernel/test_cat_construction_consumers.py:84: note: Possible overload variants:
+tests/kernel/test_cat_construction_consumers.py:84: note:     def __getitem__(self, SupportsIndex, /) -> ObjectType
+tests/kernel/test_cat_construction_consumers.py:84: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[ObjectType, ...]
+tests/kernel/test_cat_construction_consumers.py:84: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:84: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:84: error: Argument 2 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:89: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:89: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:98: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:98: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
+tests/kernel/test_cat_construction_consumers.py:98: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:98: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:99: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:99: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
+tests/kernel/test_cat_construction_consumers.py:99: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:99: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:101: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
+tests/kernel/test_cat_construction_consumers.py:101: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:101: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:101: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:102: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
+tests/kernel/test_cat_construction_consumers.py:102: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:102: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:102: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:105: error: Argument 2 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:106: error: Argument 2 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:111: error: "ObjectType" has no attribute "apex_morphism"  [attr-defined]
+tests/kernel/test_cat_construction_consumers.py:111: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:111: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:112: error: "ObjectType" has no attribute "diagram_transformation"  [attr-defined]
+tests/kernel/test_cat_construction_consumers.py:112: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:112: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:113: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:113: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:119: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
+tests/kernel/test_cat_construction_consumers.py:119: note: Possible overload variants:
+tests/kernel/test_cat_construction_consumers.py:119: note:     def __getitem__(self, SupportsIndex, /) -> Any
+tests/kernel/test_cat_construction_consumers.py:119: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[Any, ...]
+tests/kernel/test_cat_construction_consumers.py:119: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:120: error: No overload variant of "__getitem__" of "tuple" matches argument type "Hashable"  [call-overload]
+tests/kernel/test_cat_construction_consumers.py:120: note: Possible overload variants:
+tests/kernel/test_cat_construction_consumers.py:120: note:     def __getitem__(self, SupportsIndex, /) -> Any
+tests/kernel/test_cat_construction_consumers.py:120: note:     def __getitem__(self, slice[SupportsIndex | None, SupportsIndex | None, SupportsIndex | None], /) -> tuple[Any, ...]
+tests/kernel/test_cat_construction_consumers.py:120: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:126: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:126: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:134: error: Unsupported operand types for + ("Hashable" and "Integer")  [operator]
+tests/kernel/test_cat_construction_consumers.py:134: error: Argument 2 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:134: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_cat_construction_consumers.py:134: error: Argument 3 to "interval_arrow" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_regular_relations.py:12: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_regular_relations.py:21: error: "ObjectType" has no attribute "monomorphism"  [attr-defined]
+tests/kernel/test_regular_relations.py:22: error: "ObjectType" has no attribute "monomorphism"  [attr-defined]
+tests/kernel/test_regular_relations.py:38: error: "ObjectType" has no attribute "factor"; maybe "factors"?  [attr-defined]
+tests/kernel/test_regular_relations.py:44: error: "ElementType" has no attribute "monomorphism"  [attr-defined]
+tests/kernel/test_regular_relations.py:44: error: "ObjectType" has no attribute "factor"; maybe "factors"?  [attr-defined]
+tests/kernel/test_regular_relations.py:45: error: "ElementType" has no attribute "monomorphism"  [attr-defined]
+tests/kernel/test_regular_relations.py:52: error: "ObjectType" has no attribute "inverse"  [attr-defined]
+tests/kernel/test_regular_relations.py:52: error: "ObjectType" has no attribute "factor"; maybe "factors"?  [attr-defined]
+tests/kernel/test_regular_relations.py:54: error: "ElementType" has no attribute "monomorphism"  [attr-defined]
+tests/kernel/test_regular_relations.py:55: error: "ElementType" has no attribute "monomorphism"  [attr-defined]
+tests/kernel/test_regular_relations.py:60: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_categorical_calculus.py:9: error: Module "sage_categories.cat.structured_objects" has no attribute "EndofunctorAlgebras"  [attr-defined]
+tests/kernel/test_categorical_calculus.py:13: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:21: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_categorical_calculus.py:23: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
+tests/kernel/test_categorical_calculus.py:25: error: Too many arguments for "__call__" of "EquifierCategory"  [call-arg]
+tests/kernel/test_categorical_calculus.py:27: error: "ElementType" has no attribute "carrier"  [attr-defined]
+tests/kernel/test_categorical_calculus.py:27: error: "ElementType" has no attribute "point"  [attr-defined]
+tests/kernel/test_categorical_calculus.py:29: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_categorical_calculus.py:33: error: "ObjectType" has no attribute "underlying_morphism"  [attr-defined]
+tests/kernel/test_categorical_calculus.py:39: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer]"; expected "Never"  [arg-type]
+tests/kernel/test_categorical_calculus.py:44: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:48: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:50: error: Unsupported left operand type for + ("Hashable")  [operator]
+tests/kernel/test_categorical_calculus.py:53: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:60: error: No overload variant of "range" matches argument types "Hashable", "Hashable"  [call-overload]
+tests/kernel/test_categorical_calculus.py:60: note: Possible overload variants:
+tests/kernel/test_categorical_calculus.py:60: note:     def range(SupportsIndex, /) -> range
+tests/kernel/test_categorical_calculus.py:60: note:     def range(SupportsIndex, SupportsIndex, SupportsIndex = ..., /) -> range
+tests/kernel/test_categorical_calculus.py:99: error: "ElementType" has no attribute "unit"  [attr-defined]
+tests/kernel/test_categorical_calculus.py:107: error: "ElementType" has no attribute "unit"  [attr-defined]
+tests/kernel/test_categorical_calculus.py:117: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:117: note: Use "-> None" if function does not return a value
+tests/kernel/test_categorical_calculus.py:132: error: "ElementType" has no attribute "carrier"  [attr-defined]
+tests/kernel/test_categorical_calculus.py:135: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:150: error: Function is missing a return type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:153: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:156: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:158: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], tuple[Integer, tuple[()]] | tuple[Integer, Any]]"; expected "Never"  [arg-type]
+tests/kernel/test_categorical_calculus.py:167: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], tuple[Integer, Any]]"; expected "Never"  [arg-type]
+tests/kernel/test_categorical_calculus.py:171: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], tuple[Integer, tuple[()]] | Any]"; expected "Never"  [arg-type]
+tests/kernel/test_categorical_calculus.py:176: error: Function is missing a type annotation  [no-untyped-def]
+tests/kernel/test_categorical_calculus.py:178: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Integer | Any]"; expected "Never"  [arg-type]
+tests/kernel/test_categorical_calculus.py:183: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/kernel/test_core_public_consumers.py:12: error: Module "sage_categories.cat.category" has no attribute "Axiom"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:16: error: Module "sage_categories.cat.diagrams" has no attribute "cospan_diagram"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:42: error: Argument 1 to "__call__" of "OwnedPredicate" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
+tests/kernel/test_core_public_consumers.py:87: error: Invalid type comment or annotation  [valid-type]
+tests/kernel/test_core_public_consumers.py:88: error: Invalid type comment or annotation  [valid-type]
+tests/kernel/test_core_public_consumers.py:91: error: Argument 1 to "__call__" of "MorphismCategory" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+tests/kernel/test_core_public_consumers.py:91: error: Argument 2 to "__call__" of "MorphismCategory" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+tests/kernel/test_core_public_consumers.py:114: error: Invalid type comment or annotation  [valid-type]
+tests/kernel/test_core_public_consumers.py:133: error: "ObjectType" has no attribute "scalar"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:133: error: Argument 1 to "__call__" of "ScalarPair" has incompatible type "tuple[Integer, Integer]"; expected "tuple[int, int]"  [arg-type]
+tests/kernel/test_core_public_consumers.py:135: error: "ObjectType" has no attribute "scalar"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:135: error: Argument 1 to "__call__" of "ScalarPair" has incompatible type "tuple[Integer, Integer]"; expected "tuple[int, int]"  [arg-type]
+tests/kernel/test_core_public_consumers.py:148: error: Argument 2 to "Query" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_core_public_consumers.py:150: error: Invalid type comment or annotation  [valid-type]
+tests/kernel/test_core_public_consumers.py:154: error: Argument 1 to "__call__" of "Scalars" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_core_public_consumers.py:155: error: Argument 1 to "__call__" of "Query" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
+tests/kernel/test_core_public_consumers.py:156: error: Argument 1 to "__call__" of "Query" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
+tests/kernel/test_core_public_consumers.py:157: error: Argument 1 to "__call__" of "Query" has incompatible type "ObjectType"; expected "ElementType | AppliedQuery | int"  [arg-type]
+tests/kernel/test_core_public_consumers.py:188: error: Invalid type comment or annotation  [valid-type]
+tests/kernel/test_core_public_consumers.py:198: error: Too many arguments for "ObjectType"  [call-arg]
+tests/kernel/test_core_public_consumers.py:221: error: Argument 1 to "__call__" of "Decorated" has incompatible type "Integer"; expected "int"  [arg-type]
+tests/kernel/test_core_public_consumers.py:222: error: "ObjectType" has no attribute "parent"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:222: error: "ObjectType" has no attribute "defining_morphism"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:224: error: "ObjectType" has no attribute "is_positive"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:225: error: "ObjectType" has no attribute "category"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:226: error: "ObjectType" has no attribute "parent"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:227: error: "ObjectType" has no attribute "defining_morphism"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:242: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_core_public_consumers.py:243: error: Argument 1 to "label" of "FinitePresentedCategory" has incompatible type "ElementType"; expected "ObjectType"  [arg-type]
+tests/kernel/test_core_public_consumers.py:243: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "tuple[ObjectType, ...]"; expected "Never"  [arg-type]
+tests/kernel/test_core_public_consumers.py:252: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_morphism"  [union-attr]
+tests/kernel/test_core_public_consumers.py:278: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_object"  [union-attr]
+tests/kernel/test_core_public_consumers.py:279: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_morphism"  [union-attr]
+tests/kernel/test_core_public_consumers.py:283: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_object"  [union-attr]
+tests/kernel/test_core_public_consumers.py:284: error: Item "ObjectType" of "ObjectType | Any" has no attribute "on_morphism"  [union-attr]
+tests/kernel/test_core_public_consumers.py:290: error: "ObjectType" has no attribute "source_functor"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:291: error: "ObjectType" has no attribute "target_functor"  [attr-defined]
+tests/kernel/test_core_public_consumers.py:292: error: "ObjectType" has no attribute "component"  [attr-defined]
+tests/sets/test_set_scaffold.py:9: error: Module "sage_categories.all" has no attribute "Sets"  [attr-defined]
+tests/sets/test_set_scaffold.py:10: error: Module "sage_categories.cat.constructions" has no attribute "constructed_data"  [attr-defined]
+tests/sets/test_set_scaffold.py:14: error: Module "sage_categories.sets.finite" has no attribute "SetsCategory"; maybe "Category" or "FiniteSetsCategory"?  [attr-defined]
+tests/sets/test_set_scaffold.py:19: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/sets/test_set_scaffold.py:23: error: "ObjectType" not callable  [operator]
+tests/sets/test_set_scaffold.py:24: error: "ObjectType" not callable  [operator]
+tests/sets/test_set_scaffold.py:28: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], int]"; expected "Never"  [arg-type]
+tests/sets/test_set_scaffold.py:31: error: "ElementType" has no attribute "product_projection"  [attr-defined]
+tests/sets/test_set_scaffold.py:32: error: "ElementType" has no attribute "product_projection"  [attr-defined]
+tests/sets/test_set_scaffold.py:33: error: "ObjectType" not callable  [operator]
+tests/sets/test_set_scaffold.py:34: error: "ObjectType" not callable  [operator]
+tests/sets/test_set_scaffold.py:42: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/sets/test_set_scaffold.py:43: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/sets/test_set_scaffold.py:49: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], int]"; expected "Never"  [arg-type]
+tests/sets/test_set_scaffold.py:67: error: Bracketed expression "[...]" is not valid as a type  [valid-type]
+tests/sets/test_set_scaffold.py:67: note: Did you mean "List[...]"?
+tests/sets/test_set_scaffold.py:93: error: Signature of "construct_morphism" incompatible with supertype "sage_categories.cat.category.CategoryDeclaration"  [override]
+tests/sets/test_set_scaffold.py:93: note:      Superclass:
+tests/sets/test_set_scaffold.py:93: note:          def construct_morphism(self, domain: ElementType, codomain: ElementType, *args: Any, **kwargs: Any) -> ObjectType
+tests/sets/test_set_scaffold.py:93: note:      Subclass:
+tests/sets/test_set_scaffold.py:93: note:          def construct_morphism(self, source: ObjectType, target: ObjectType, arrow: Any) -> MorphismType
+tests/sets/test_set_scaffold.py:100: error: Unexpected keyword argument "domain" for "MorphismType"  [call-arg]
+tests/sets/test_set_scaffold.py:100: error: Unexpected keyword argument "codomain" for "MorphismType"  [call-arg]
+tests/sets/test_set_scaffold.py:100: error: Unexpected keyword argument "data" for "MorphismType"  [call-arg]
+tests/sets/test_set_scaffold.py:108: error: Argument 1 to "__call__" of "MorphismCategory" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+tests/sets/test_set_scaffold.py:108: error: Argument 2 to "__call__" of "MorphismCategory" has incompatible type "ObjectType"; expected "ElementType"  [arg-type]
+tests/sets/test_set_scaffold.py:108: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "ObjectType"; expected "Never"  [arg-type]
+tests/sets/test_set_scaffold.py:108: error: Argument 1 to "__call__" of "FixedEndpointCategory" has incompatible type "Callable[[Any], Any]"; expected "Never"  [arg-type]
+tests/sets/test_set_scaffold.py:109: error: "ObjectType" has no attribute "point"  [attr-defined]
+tests/sets/test_set_scaffold.py:116: error: "ObjectType" not callable  [operator]
+tests/sets/test_set_scaffold.py:140: error: "ObjectType" not callable  [operator]
 tests/order/test_poset_scaffold.py:9: error: Module "sage_categories.all" has no attribute "Sets"  [attr-defined]
 tests/order/test_poset_scaffold.py:13: error: Function is missing a type annotation  [no-untyped-def]
 tests/order/test_poset_scaffold.py:16: error: Argument 2 to "from_predicate" of "BinaryRelationsCategory" has incompatible type "Callable[[ElementType, ElementType], EllipsisType]"; expected "Callable[[ElementType, ElementType], Boolean]"  [arg-type]
@@ -1171,7 +1189,7 @@ tests/kernel/test_m1_sage_runtime.py:1041: error: Incompatible return value type
 tests/kernel/test_m1_sage_runtime.py:1048: error: "ObjectType" has no attribute "is_identity"  [attr-defined]
 tests/kernel/test_m1_sage_runtime.py:1053: error: "ObjectType" has no attribute "is_identity"  [attr-defined]
 /home/dzack/ai-review-ci/justfiles/../tool-configs/mypy-sage.ini: note: unused section(s): [mypy-slop_detector.*], [mypy-fpylll.*], [mypy-tree_sitter_sage.*], [mypy-setuptools.*], [mypy-wheel.*], [mypy-networkx.*], [mypy-tqdm.*], [mypy-flowmark.formats.flowmark_markdown]
-Found 838 errors in 41 files (checked 21 source files)
+Found 854 errors in 43 files (checked 21 source files)
 ERROR: mypy found type errors in project code.
 
 ================================================================================

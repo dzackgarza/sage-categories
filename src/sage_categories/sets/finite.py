@@ -9,11 +9,19 @@ from __future__ import annotations
 
 __all__ = ["SetsCategory", "Sets", "FiniteSets"]
 
-from collections.abc import Callable, Hashable, Iterable, Iterator
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
+from dataclasses import dataclass
 from functools import cache
+from itertools import islice
+from itertools import product as cartesian_product
 from typing import Literal, overload
 
-from sympy import false, true
+from sage.rings.integer import Integer as SageInteger
+from sage.symbolic.expression import Expression as SageExpression
+from sympy import Dummy, Eq, Lambda, Tuple, expand, false, simplify, solve, sympify, true
+from sympy import Integer as SympyInteger
+from sympy import ask as sympy_ask
+from sympy.core.basic import Basic
 
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.declarations import Sets
@@ -27,6 +35,9 @@ from sage_categories.sets._finite import cartesian, quotient
 
 type Map = Callable[[Hashable], Hashable]
 type MembershipRule = Callable[[Hashable], Proposition]
+# What a set map can be constructed from: a rule on data, a SymPy ``Lambda`` or Sage callable
+# symbolic expression, or a table (``specs/sets.md``, "Morphisms").
+type MapData = Map | Lambda | SageExpression | Mapping[Hashable, Hashable]
 
 
 class FinitePredicate(Predicate):
@@ -63,6 +74,132 @@ def _datum_membership(value: SetsCategory.ObjectType, datum: Hashable) -> Propos
     if isinstance(value._presentation, tuple):
         return true if any(_equal_datum(candidate, datum) for candidate in value._presentation) else false
     return value._presentation(datum)
+
+
+class _ProductRule:
+    """Membership in ``prod_i X_i`` as the conjunction of component memberships; the factors stay readable for symbolic legs."""
+
+    def __init__(self, factors: tuple[SetsCategory.ObjectType, ...]) -> None:
+        self.factors = factors
+
+    def __call__(self, datum: Hashable) -> Proposition:
+        return conjunction(_datum_membership(factor, component) for factor, component in zip(self.factors, datum, strict=True))
+
+
+# -- symbolic set maps ------------------------------------------------------------------------
+#
+# A set map always evaluates through a rule on data.  When it was constructed from a SymPy
+# ``Lambda`` or a Sage callable symbolic expression, or composed, paired, or projected from
+# such maps, it also retains a symbolic form: one SymPy ``Lambda`` in a single argument shaped
+# like the domain's data (a symbol, or a ``Tuple`` of factor shapes for a rule-defined
+# product).  Equality of two maps on a rule-defined domain is then exact where the retained
+# form decides it: a symbolic difference that simplifies to zero, or a witness datum that
+# separates them; otherwise it stays undecided (``specs/sets.md``, "Equality").
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _SetMap:
+    """The evaluation rule of a set map and its symbolic form, when it has one."""
+
+    action: Map
+    rule: Lambda | None
+
+
+def _structure(value: SetsCategory.ObjectType) -> Basic:
+    """A fresh symbolic datum of ``value``: a symbol, or the tuple of factor structures of a rule-defined product."""
+    if isinstance(value._presentation, _ProductRule):
+        return Tuple(*(_structure(factor) for factor in value._presentation.factors))
+    return Dummy("x")
+
+
+def _flatten(structure: Basic) -> tuple[Basic, ...]:
+    if isinstance(structure, Tuple):
+        return tuple(component for part in structure for component in _flatten(part))
+    return (structure,)
+
+
+def _plain(value: Basic) -> Hashable:
+    """A SymPy value as a datum: tuples for ``Tuple``, Python integers for SymPy integers, other expressions as they are."""
+    if isinstance(value, Tuple):
+        return tuple(_plain(component) for component in value)
+    if isinstance(value, SympyInteger):
+        return int(value)
+    return value
+
+
+def _sympifiable(datum: Hashable) -> bool:
+    if isinstance(datum, tuple):
+        return all(_sympifiable(component) for component in datum)
+    return isinstance(datum, (int, SageInteger, Basic))
+
+
+def _symbolic_rule(action: MapData | _SetMap) -> Lambda | None:
+    """The symbolic form of a construction input, normalized to one structured argument."""
+    if isinstance(action, _SetMap):
+        return action.rule
+    if isinstance(action, SageExpression):
+        if not action.arguments():
+            return None
+        action = action._sympy_()
+    if not isinstance(action, Lambda):
+        return None
+    if len(action.signature) == 1:
+        return action
+    return Lambda((Tuple(*action.signature),), action.expr)
+
+
+def _evaluation(action: MapData | _SetMap, rule: Lambda | None) -> Map:
+    """The rule on data a construction input evaluates by: its symbolic form when it has one, its table, or itself."""
+    if isinstance(action, _SetMap):
+        return action.action
+    if rule is not None:
+        return lambda datum: _plain(rule(datum))
+    if isinstance(action, Mapping):
+        return action.__getitem__
+    return action
+
+
+def _constant_rule(source: SetsCategory.ObjectType, datum: Hashable) -> Lambda | None:
+    return Lambda((_structure(source),), sympify(datum)) if _sympifiable(datum) else None
+
+
+def _composed_rule(second: SetsCategory.MorphismType, first: SetsCategory.MorphismType) -> Lambda | None:
+    """``g ∘ f`` symbolically: ``g``'s form applied to ``f``'s expression, or a constant when ``g`` leaves a one-point set."""
+    if first._symbolic is None:
+        return None
+    if second._symbolic is not None:
+        return Lambda(first._symbolic.signature, second._symbolic(first._symbolic.expr))
+    source = second.domain()
+    if isinstance(source._presentation, tuple) and len(source._presentation) == 1:
+        value = second._action(source._presentation[0])
+        return Lambda(first._symbolic.signature, sympify(value)) if _sympifiable(value) else None
+    return None
+
+
+def _identically_zero(first: Basic, second: Basic) -> bool:
+    """Whether two symbolic values agree as expressions, componentwise on tuples."""
+    if isinstance(first, Tuple) or isinstance(second, Tuple):
+        return (
+            isinstance(first, Tuple)
+            and isinstance(second, Tuple)
+            and len(first) == len(second)
+            and all(_identically_zero(a, b) for a, b in zip(first, second))
+        )
+    return simplify(expand(first - second)) == 0
+
+
+def _samples(value: SetsCategory.ObjectType) -> Iterator[Hashable]:
+    """A few data of ``value`` to separate maps on: its enumeration, small integers its rule admits, or tuples of factor samples."""
+    if isinstance(value._presentation, tuple):
+        return iter(value._presentation)
+    if isinstance(value._presentation, _ProductRule):
+        return islice(cartesian_product(*(tuple(_samples(factor)) for factor in value._presentation.factors)), 64)
+    return (candidate for candidate in range(-2, 3) if ask(value._presentation(candidate)) is True)
+
+
+def _separated(domain: SetsCategory.ObjectType, first: SetsCategory.MorphismType, second: SetsCategory.MorphismType) -> bool:
+    """Whether some sample datum of the domain has different images under the two maps."""
+    return any(not _equal_datum(first._action(sample), second._action(sample)) for sample in _samples(domain))
 
 
 def _representative(values: tuple[Hashable, ...], datum: Hashable) -> Hashable:
@@ -132,8 +269,11 @@ class SetsCategory(Category[[Map], []]):
             return self._datum
 
     class MorphismType:
-        def __init__(self, action: Map) -> None:
-            self._action = action
+        def __init__(self, data: Map | _SetMap) -> None:
+            if isinstance(data, _SetMap):
+                self._action, self._symbolic = data.action, data.rule
+            else:
+                self._action, self._symbolic = data, None
 
         @property
         def _table(self) -> dict[Hashable, Hashable]:
@@ -163,16 +303,16 @@ class SetsCategory(Category[[Map], []]):
         second: SetsCategory.MorphismType,
         assumptions: Proposition,
     ) -> bool | None:
-        if not isinstance(first.domain()._presentation, tuple):
-            return None
-        return (
-            first.domain() is second.domain()
-            and first.codomain() is second.codomain()
-            and all(
-                _equal_datum(first._action(value), second._action(value))
-                for value in first.domain()._values
-            )
-        )
+        if first.domain() is not second.domain() or first.codomain() is not second.codomain():
+            return False
+        domain = first.domain()
+        if isinstance(domain._presentation, tuple):
+            return all(_equal_datum(first._action(value), second._action(value)) for value in domain._values)
+        if first._symbolic is not None and second._symbolic is not None:
+            argument = _structure(domain)
+            if _identically_zero(first._symbolic(argument), second._symbolic(argument)):
+                return True
+        return False if _separated(domain, first, second) else None
 
     def _equal_points(
         self,
@@ -187,32 +327,99 @@ class SetsCategory(Category[[Map], []]):
     # -- monomorphisms, epimorphisms, isomorphisms (``specs/sets.md``, "Morphisms") ------------
 
     def _injective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
-        """A map with an enumerated domain is monic exactly when it identifies no two points."""
-        if not isinstance(arrow.domain()._presentation, tuple):
-            return None
-        images = tuple(arrow._action(value) for value in arrow.domain()._values)
-        return all(not _equal_datum(images[i], images[j]) for i in range(len(images)) for j in range(i))
+        """Monic: no two points identified, read off the table, a separating pair of samples, or the solved inverse."""
+        if isinstance(arrow.domain()._presentation, tuple):
+            images = tuple(arrow._action(value) for value in arrow.domain()._values)
+            return all(not _equal_datum(images[i], images[j]) for i in range(len(images)) for j in range(i))
+        samples = tuple(islice(_samples(arrow.domain()), 16))
+        images = tuple(arrow._action(sample) for sample in samples)
+        if any(_equal_datum(images[i], images[j]) for i in range(len(images)) for j in range(i)):
+            return False
+        return self._symbolic_injective(arrow)
 
     def _surjective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
-        """A map between enumerated sets is epic exactly when every point of the codomain is a value."""
-        if not isinstance(arrow.domain()._presentation, tuple) or not isinstance(arrow.codomain()._presentation, tuple):
-            return None
-        images = tuple(arrow._action(value) for value in arrow.domain()._values)
-        return all(any(_equal_datum(target, image) for image in images) for target in arrow.codomain()._values)
+        """Epic: every codomain point is a value, read off the tables or from the solved inverse."""
+        if isinstance(arrow.domain()._presentation, tuple) and isinstance(arrow.codomain()._presentation, tuple):
+            images = tuple(arrow._action(value) for value in arrow.domain()._values)
+            return all(any(_equal_datum(target, image) for image in images) for target in arrow.codomain()._values)
+        return self._symbolic_surjective(arrow)
 
     def _bijective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
         injective, surjective = self._injective(arrow, assumptions), self._surjective(arrow, assumptions)
         return None if injective is None or surjective is None else injective and surjective
 
+    def _symbolic_injective(self, arrow: SetsCategory.MorphismType) -> bool | None:
+        """``f(x) = f(y)`` has only the solution ``y = x``: solved symbolically for a map out of a rule-defined set."""
+        if arrow._symbolic is None or isinstance(arrow.domain()._presentation, tuple):
+            return None
+        first, second = _structure(arrow.domain()), _structure(arrow.domain())
+        unknowns = _flatten(second)
+        equations = [Eq(left, right) for left, right in zip(_flatten(arrow._symbolic(first)), _flatten(arrow._symbolic(second)))]
+        solutions = solve(equations, list(unknowns), dict=True)
+        if len(solutions) != 1 or set(solutions[0]) != set(unknowns):
+            return None
+        return True if all(solutions[0][symbol] == original for symbol, original in zip(unknowns, _flatten(first))) else None
+
+    def _symbolic_surjective(self, arrow: SetsCategory.MorphismType) -> bool | None:
+        """A solved inverse makes the map epic; a codomain sample whose only preimage the domain rule rejects makes it not epic."""
+        if self._solved_inverse(arrow) is not None:
+            return True
+        preimage = self._generic_preimage(arrow)
+        if preimage is None:
+            return None
+        target, formula = preimage
+        for sample in islice(_samples(arrow.codomain()), 16):
+            candidate = formula.xreplace(dict(zip(_flatten(target), _flatten(sympify(sample)))))
+            if sympy_ask(arrow.domain()._presentation(candidate)) is False:
+                return False
+        return None
+
+    @cache
+    def _generic_preimage(self, arrow: SetsCategory.MorphismType) -> tuple[Basic, Basic] | None:
+        """The codomain structure ``a`` and the one symbolic preimage of ``a`` under a symbolic map, when solving gives exactly one."""
+        domain, codomain = arrow.domain(), arrow.codomain()
+        if arrow._symbolic is None or isinstance(domain._presentation, tuple) or isinstance(codomain._presentation, tuple):
+            return None
+        source, target = _structure(domain), _structure(codomain)
+        image, unknowns, targets = _flatten(arrow._symbolic(source)), _flatten(source), _flatten(target)
+        if len(image) != len(targets):
+            return None
+        solutions = solve([Eq(left, right) for left, right in zip(image, targets)], list(unknowns), dict=True)
+        if len(solutions) != 1 or set(solutions[0]) != set(unknowns):
+            return None
+        return target, source.xreplace(solutions[0])
+
+    @cache
+    def _solved_inverse(self, arrow: SetsCategory.MorphismType) -> Lambda | None:
+        """The inverse rule of a symbolic map between rule-defined sets, when solving its equations gives one preimage that the domain rule admits.
+
+        ``f(x) = a`` is solved for the domain symbols ``x`` in terms of codomain symbols
+        ``a``.  One solution covering every domain symbol, whose membership in the domain
+        follows from the codomain membership of ``a``, is a two-sided inverse.  Anything
+        else, several solutions, none, or an undecided membership, leaves the question open.
+        """
+        preimage = self._generic_preimage(arrow)
+        if preimage is None:
+            return None
+        target, formula = preimage
+        admitted = sympy_ask(arrow.domain()._presentation(formula), arrow.codomain()._presentation(target))
+        return Lambda((target,), formula) if admitted is True else None
+
     def inverse_morphism(self, morphism: SetsCategory.MorphismType) -> SetsCategory.MorphismType:
-        """The inverse of a bijection between enumerated sets is the owned map reading its table backwards."""
-        if self.retained_inverse(morphism) is None and self._bijective(morphism, true) is True:
+        """The inverse of a bijection: the table read backwards, or the solved inverse rule of a symbolic map."""
+        if self.retained_inverse(morphism) is None:
             domain, codomain = morphism.domain(), morphism.codomain()
-            table = {codomain.representative(morphism._action(value)): value for value in domain._values}
-            self.retain_inverses(
-                morphism,
-                self.MorphismType(domain=codomain, codomain=domain, data=lambda datum: table[codomain.representative(datum)]),
-            )
+            if isinstance(domain._presentation, tuple) and self._bijective(morphism, true) is True:
+                table = {codomain.representative(morphism._action(value)): value for value in domain._values}
+                self.retain_inverses(
+                    morphism,
+                    self.MorphismType(domain=codomain, codomain=domain, data=lambda datum: table[codomain.representative(datum)]),
+                )
+            elif (rule := self._solved_inverse(morphism)) is not None:
+                self.retain_inverses(
+                    morphism,
+                    self.MorphismType(domain=codomain, codomain=domain, data=_SetMap(lambda datum: _plain(rule(datum)), rule)),
+                )
         return super().inverse_morphism(morphism)
 
     @overload
@@ -232,7 +439,9 @@ class SetsCategory(Category[[Map], []]):
 
     def constant(self, source: SetsCategory.ObjectType, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
         """The total constant map with the supplied value."""
-        return self.MorphismType(domain=source, codomain=point.parent(), data=lambda datum: point.datum())
+        return self.MorphismType(
+            domain=source, codomain=point.parent(), data=_SetMap(lambda datum: point.datum(), _constant_rule(source, point.datum()))
+        )
 
     def Initial(self) -> SetsCategory.ObjectType:
         return self(())
@@ -257,20 +466,24 @@ class SetsCategory(Category[[Map], []]):
         self,
         source: CategoryOfCategories.ElementType,
         target: CategoryOfCategories.ElementType,
-        action: Map,
+        action: MapData | _SetMap,
     ) -> MorphismCategory.ObjectType:
+        """The map with this rule: tabulated over an enumerated domain, evaluated by its rule otherwise, with its symbolic form retained."""
+        rule = _symbolic_rule(action)
+        evaluate = _evaluation(action, rule)
         if not isinstance(source._presentation, tuple):
-            # A rule needs no enumeration (``specs/sets.md``, "Morphisms"): the map evaluates its rule on each datum.
-            return self.MorphismType(domain=source, codomain=target, data=lambda datum: target.representative(action(datum)))
-        pairs = tuple(
-            (value, target.representative(action(value))) for value in source._values
-        )
-        return self.MorphismType(domain=source, codomain=target, data=dict(pairs).__getitem__)
+            # A rule needs no enumeration (``specs/sets.md``, "Morphisms").
+            return self.MorphismType(domain=source, codomain=target, data=_SetMap(lambda datum: target.representative(evaluate(datum)), rule))
+        table = {value: target.representative(evaluate(value)) for value in source._values}
+        if rule is None and len(table) == 1:
+            rule = _constant_rule(source, next(iter(table.values())))
+        return self.MorphismType(domain=source, codomain=target, data=_SetMap(table.__getitem__, rule))
 
     def construct_identity(
         self, value: CategoryOfCategories.ElementType
     ) -> MorphismCategory.ObjectType:
-        return self.MorphismType(domain=value, codomain=value, data=lambda datum: datum)
+        structure = _structure(value)
+        return self.MorphismType(domain=value, codomain=value, data=_SetMap(lambda datum: datum, Lambda((structure,), structure)))
 
     def composite(
         self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType
@@ -278,7 +491,7 @@ class SetsCategory(Category[[Map], []]):
         return self.MorphismType(
             domain=first.domain(),
             codomain=second.codomain(),
-            data=lambda value: second._action(first._action(value)),
+            data=_SetMap(lambda value: second._action(first._action(value)), _composed_rule(second, first)),
         )
 
     def limit_construction(
@@ -307,9 +520,7 @@ class SetsCategory(Category[[Map], []]):
         """``prod_i X_i``: the enumerated tuples when every factor has an enumeration, else the set of tuples whose components are members (``specs/sets.md``, "Products")."""
         if all(isinstance(factor._presentation, tuple) for factor in factors):
             return self(cartesian(factor._values for factor in factors))
-        return self.from_membership(
-            lambda datum: conjunction(_datum_membership(factor, component) for factor, component in zip(factors, datum, strict=True))
-        )
+        return self.from_membership(_ProductRule(factors))
 
     def _primitive_limit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         from sage_categories.cat.finite_categories import finite_category
@@ -319,12 +530,27 @@ class SetsCategory(Category[[Map], []]):
         if shape.is_discrete():
             apex = self._product_object(tuple(diagram.on_object(vertex) for vertex in vertices))
             position = {id(vertex): index for index, vertex in enumerate(vertices)}
+
+            def leg_rule(index: int) -> Lambda | None:
+                if not isinstance(apex._presentation, _ProductRule):
+                    return None
+                structure = _structure(apex)
+                return Lambda((structure,), structure[index])
+
+            def lift_rule(candidate: CategoryOfCategories.ElementType) -> Lambda | None:
+                components = tuple(candidate.component(vertex) for vertex in vertices)
+                if any(component._symbolic is None for component in components):
+                    return None
+                structure = _structure(cone_apex(candidate))
+                return Lambda((structure,), Tuple(*(component._symbolic(structure) for component in components)))
+
             legs = lambda vertex: Mor(self)(apex, diagram.on_object(vertex))(
-                lambda value: value[position[id(vertex)]]
+                _SetMap(lambda value: value[position[id(vertex)]], leg_rule(position[id(vertex)]))
             )
             lift = lambda candidate: Mor(self)(cone_apex(candidate), apex)(
-                lambda value: tuple(
-                    candidate.component(vertex)._action(value) for vertex in vertices
+                _SetMap(
+                    lambda value: tuple(candidate.component(vertex)._action(value) for vertex in vertices),
+                    lift_rule(candidate),
                 )
             )
         else:

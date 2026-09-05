@@ -85,7 +85,8 @@ Its realization in `Sets()` is the function set from `X` to `Y`.
 It is a distinct owned object, and `Mor(Sets())(X, Y)` is the discrete category on its elements.
 
 `Mor(Sets())(X, Y)(rule)` constructs a set map.
-The rule can be a callable or explicit mapping as its private rule.
+The rule can be a callable, an explicit mapping, a SymPy `Lambda`, or a Sage callable symbolic expression; the constructor dispatches on that representation.
+Every form is stored as a raw rule on data, which is what evaluation uses. A symbolic form is retained beside it and propagates through identities, constants, composition, and the projections and pairings of rule-defined products, so that equality and the morphism properties can be decided symbolically where a raw rule alone would leave them `Unknown`.
 The constructor must establish that the rule is total and lands in `Y`.
 
 A raw rule determines propositions stating totality and codomain closure.
@@ -131,9 +132,11 @@ In `Sets()`:
 A morphism-property predicate returns its applied proposition.
 `ask()` evaluates it.
 The kernel refines a morphism only after an exact result, scoped hypothesis, or named theorem establishes the property.
+Over an enumerated domain the three properties are read off the table.
+Over a rule-defined domain they are decided from the retained symbolic form: solving `f(x) = a` for the domain symbols with exactly one solution that the domain rule admits under the codomain rule establishes a bijection and yields the inverse rule; solving `f(x) = f(y)` with the sole solution `y = x` establishes injectivity, and two admitted samples with one image refute it; a codomain sample whose only preimage the domain rule rejects refutes surjectivity. Anything else stays `Unknown`.
 
 An inverse of an isomorphism is an owned set morphism.
-It satisfies both inverse equations.
+It satisfies both inverse equations. For a bijection between enumerated sets it reads the table backwards; for a symbolic bijection it is the solved inverse rule.
 
 ## Products
 
@@ -473,7 +476,8 @@ A point hashes by its chosen datum, so two points whose equality is `True` hash 
 For two points of one set, the exact handler compares their chosen data through the private computation boundary.
 Two generalized elements with nonterminal domains compare by identity unless an exact handler for their defining maps decides equality.
 For two rule-defined sets, equality is `Unknown` unless identity or a cited exact handler decides it; no handler inspects contents.
-For two set maps with one finite enumerable domain, the exact handler compares images pointwise over that domain's enumeration; two maps with a rule-defined infinite domain compare by identity only and are otherwise `Unknown`.
+For two set maps with one finite enumerable domain, the exact handler compares images pointwise over that domain's enumeration.
+Two maps with a rule-defined domain compare by identity; by their retained symbolic forms, equal when the difference of the two expressions simplifies to zero; or by a sample datum the domain rule admits on which their values differ, which decides `False`. Otherwise the proposition is `Unknown`.
 
 ## Acceptance conditions
 

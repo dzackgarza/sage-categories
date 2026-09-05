@@ -737,7 +737,7 @@ def _initialize_graph(
     The root runs with the constructor's datum.  A selected target runs with the datum
     its structure functor feeds to the target constructor: the kernel runs the ordinary
     action on the value under construction and reads the datum its image was
-    constructed from.  A point node of the category runs with none.  The first
+    constructed from.  A point node receives the point's constructor datum.  The first
     structural path to reach an owner supplies its datum (D56).  No declaration calls a
     base-class initializer.
 
@@ -802,12 +802,14 @@ def _initialize_graph(
         is_point_node = _is_cat_element_root(owner) or (owner.role is Role.ELEMENT and current.role is not Role.ELEMENT)
         while not is_point_node and resolution(owner) is None and run_next_action():
             pass
-        found = (None, instance) if is_point_node else resolution(owner)
+        found = (data, instance) if is_point_node else resolution(owner)
         assert found is not None, (
             f"no selected functor reaches {owner.category!r}.{owner.role.value} from {current.category!r}"
         )
         datum, representative = found
         runtime = _runtime(owner)
+        if isinstance(context, ObjectConstructionContext):
+            context.initializing_image = representative
         with record_attribute_writes(instance) as written:
             context.run(owner, lambda runtime=runtime, datum=datum: runtime.initializer(instance, datum))
         _keep_first_state(instance, installed, kernel_state, owner, written)
@@ -1269,7 +1271,7 @@ def _initialize_added_object_nodes(value: ObjectOfCategory, added: tuple[Node, .
     try:
         for current in added:
             runtime = _runtime(current)
-            context.run(current, lambda runtime=runtime: runtime.initializer(value, None))
+            context.run(current, lambda runtime=runtime: runtime.initializer(value, root.datum))
         context.assert_complete()
     finally:
         deactivate_object_context(token)

@@ -32,6 +32,7 @@ from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
 
+@cached_function(key=identity_key)
 def pair_maps(
     base: Category,
     first: MorphismCategory.ObjectType,

@@ -2,7 +2,7 @@
 
 from sage_categories.all import Cat, Fun, Mor, ask
 from sage_categories.cat.calculus import curry, uncurry, evaluation, currying, transpose
-from sage_categories.cat.structured_objects import Inserter, Algebras, EilenbergMoore
+from sage_categories.cat.structured_objects import Inserter, EndofunctorAlgebras, EilenbergMoore
 from sage_categories.cat.cones import cone, cones
 
 
@@ -18,8 +18,7 @@ def test_monoid_objects_receive_all_laws_from_equifiers():
     )
     unit = Mor(sets)(sets.Terminal(), carrier)(lambda point: 0)
     magma = Magmas(tensor).algebra(carrier, multiplication)
-    pointed = PointedMagmas(tensor, sets.Terminal()).algebra(magma, unit)
-    monoid = Monoids(sets)(pointed)
+    monoid = Monoids(sets)(multiplication, unit)
     assert (
         monoid.carrier().structure()(multiplication.domain().point((2, 2))).datum() == 1
     )
@@ -115,7 +114,7 @@ def test_inserter_homomorphisms_and_monad_algebra_laws():
     assert category.forgetful().on_morphism(arrow) is base.generator("1->2")
     assert category.defining_transformation().component(second) is second.structure()
     unit = Mor(Fun(base, base))(identity, identity).one()
-    algebras = Algebras(identity)
+    algebras = EndofunctorAlgebras(identity)
     em = EilenbergMoore(identity, unit, unit)
     value = algebras.algebra(base(2), Mor(base)(base(2), base(2)).one())
     em.ambient()(value)
@@ -161,7 +160,7 @@ def test_pointing_monad_algebras_and_nonidentity_homomorphism():
             lambda value: (0, ()) if value[0] == 0 else value[1]
         )
     )
-    algebras, em = Algebras(monad), EilenbergMoore(monad, unit, multiplication)
+    algebras, em = EndofunctorAlgebras(monad), EilenbergMoore(monad, unit, multiplication)
 
     def algebra(carrier):
         action = Mor(sets)(pointed(carrier), carrier)(

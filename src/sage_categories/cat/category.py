@@ -233,6 +233,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return opposite_category(self)
 
     def _initialize(self, universe: Category[[OnObject, OnMorphism], [Assignment]]) -> None:
+        from sage_categories.kernel.construction import retain_category_universe
+
+        retain_category_universe(self, universe)
         self._morphism_categories: dict[int, MorphismCategory[MorphismData, TwoMorphismData]] = {}
         self._narrowings: dict[tuple[int, ...], Category[MorphismData, TwoMorphismData]] = {}
         self._identities: MonoDict = MonoDict()
@@ -1330,7 +1333,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def on_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             """The image of a morphism of the domain, one value per morphism."""
-            return self._cached_morphism_image(morphism, self.on_object, self._construct_morphism_image)
+            image = self._cached_morphism_image(morphism, self.on_object, self._construct_morphism_image)
+            source, target = self.domain(), self.codomain()
+            if is_placed(morphism, source.morphism_category(1).Isomorphisms()):
+                refine(image, target.morphism_category(1).Isomorphisms())
+                inverse = source.retained_inverse(morphism)
+                if inverse is not None and target.retained_inverse(image) is None:
+                    inverse_image = self._cached_morphism_image(inverse, self.on_object, self._construct_morphism_image)
+                    target.retain_inverses(image, inverse_image)
+            return image
 
         def _construct_morphism_image(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             morphisms = self.domain().morphism_category(1)

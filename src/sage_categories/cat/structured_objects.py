@@ -12,10 +12,11 @@ __all__ = [
     "Inserter",
     "EquifierCategory",
     "Equifier",
-    "Algebras",
+    "EndofunctorAlgebras",
     "Magmas",
     "PointedMagmas",
     "Monoids",
+    "MonoidCategory",
     "EilenbergMoore",
 ]
 
@@ -26,6 +27,8 @@ from sage_categories.cat.cones import cone
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
+from sage_categories.cat.calculus import pair_maps
+from sage_categories.cat.monoidal import Cartesian, MonoidalStructuresCategory, tensor_morphism, tensor_parentheses, tensor_units
 from sage_categories.cat.predicates import ask
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.refinement import refine
@@ -47,6 +50,9 @@ class InserterCategory(LimitSubcategory):
     class MorphismType:
         def underlying_morphism(self) -> MorphismCategory.ObjectType:
             return self.component(0)
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (*super().structure_functors(), self.forgetful())
 
     @cached_method(key=identity_key)
     def algebra(
@@ -81,7 +87,7 @@ class InserterCategory(LimitSubcategory):
 
     @cached_method
     def forgetful(self) -> Functor:
-        return Fun(self, self.factor(0))(
+        return Fun(self, self.factor(0)).Faithful().Isofibrations()(
             lambda value: value.carrier(), lambda arrow: arrow.underlying_morphism()
         )
 
@@ -146,25 +152,26 @@ def Equifier(
 
 
 @cached_function(key=identity_key)
-def Algebras(endofunctor: Functor) -> InserterCategory:
+def EndofunctorAlgebras(endofunctor: Functor) -> InserterCategory:
     """Algebras of an endofunctor, without imposed unit or multiplication laws."""
     assert endofunctor.domain() is endofunctor.codomain()
     return Inserter(endofunctor, Fun(endofunctor.domain(), endofunctor.domain()).one())
 
 
 @cached_function(key=identity_key)
-def Magmas(tensor: Functor) -> InserterCategory:
+def Magmas(structure: Functor | MonoidalStructuresCategory.ObjectType) -> InserterCategory:
     """Multiplications ``X ⊗ X -> X`` for a specified tensor bifunctor."""
+    if not isinstance(structure, Functor):
+        return Magmas(structure.tensor())
+    tensor = structure
     source = tensor.codomain()
     pairs = tensor.domain()
     assert (
         pairs.product_projection(0).codomain() is source
         and pairs.product_projection(1).codomain() is source
     )
-    diagonal = pairs.universal_morphism(
-        cone(pairs.product_factors(), source, lambda vertex: Fun(source, source).one())
-    )
-    return Algebras(tensor * diagonal)
+    diagonal = pair_maps(Cat(), Fun(source, source).one(), Fun(source, source).one())
+    return EndofunctorAlgebras(tensor * diagonal)
 
 
 @cached_function(key=identity_key)
@@ -176,19 +183,49 @@ def PointedMagmas(
     return Inserter(Fun(magmas, tensor.codomain()).constant(unit), magmas.forgetful())
 
 
-@cached_function(key=identity_key)
-def Monoids(base: Category) -> EquifierCategory:
-    """Monoid objects in a category with chosen finite cartesian products."""
-    from sage_categories.cat.calculus import (
-        pair_maps,
-        product_functor,
-        terminal_map,
-        power_functor,
-        power_data,
-    )
+class MonoidCategory(EquifierCategory):
+    """Monoid objects with multiplication and unit in their supplied ambient."""
 
-    tensor = product_functor(base)
-    pointed = PointedMagmas(tensor, base.Terminal())
+    class ObjectType:
+        def multiplication(self) -> MorphismCategory.ObjectType:
+            return self.carrier().structure()
+
+        def unit_morphism(self) -> MorphismCategory.ObjectType:
+            return self.structure()
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __init__(self, first: NaturalTransformation, second: NaturalTransformation, monoidal: MonoidalStructuresCategory.ObjectType) -> None:
+        self._monoidal = monoidal
+        super().__init__(first, second)
+
+    def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
+        return self._monoidal
+
+    def __call__(self, multiplication: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType) -> MonoidCategory.ObjectType:
+        monoidal = self.monoidal_structure()
+        magma = Magmas(monoidal).algebra(multiplication.codomain(), multiplication)
+        pointed = PointedMagmas(monoidal.tensor(), monoidal.unit()).algebra(magma, unit)
+        return super().__call__(pointed)
+
+    @cached_method
+    def to_magmas(self) -> Functor:
+        monoidal = self.monoidal_structure()
+        pointed = PointedMagmas(monoidal.tensor(), monoidal.unit())
+        return pointed.forgetful() * Fun.full_subcategory_monomorphism(self, pointed)
+
+
+@cached_function(key=identity_key)
+def Monoids(structure: Category | MonoidalStructuresCategory.ObjectType) -> MonoidCategory:
+    """Monoid objects for the supplied tensor, unit, associator, and unitors."""
+    if isinstance(structure, Category):
+        return Monoids(Cartesian(structure))
+    base, tensor = structure.underlying_category(), structure.tensor()
+    pointed = PointedMagmas(tensor, structure.unit())
     forget = Magmas(tensor).forgetful() * pointed.forgetful()
 
     def unital(
@@ -196,37 +233,38 @@ def Monoids(base: Category) -> EquifierCategory:
     ) -> MorphismCategory.ObjectType:
         carrier = value.carrier().carrier()
         multiplication, unit = value.carrier().structure(), value.structure()
-        constant = unit * terminal_map(base, carrier)
         identity = Mor(base)(carrier, carrier).one()
-        return multiplication * pair_maps(
-            base, constant if left else identity, identity if left else constant
+        return multiplication * tensor_morphism(
+            tensor, unit if left else identity, identity if left else unit
         )
 
     def associative(
         value: CategoryOfCategories.ElementType, left: bool
     ) -> MorphismCategory.ObjectType:
         carrier, multiplication = value.carrier().carrier(), value.carrier().structure()
-        data = power_data(base, carrier, 3)
-        a, b, c = (data.leg(index) for index in range(3))
-        return multiplication * (
-            pair_maps(base, multiplication * pair_maps(base, a, b), c)
-            if left
-            else pair_maps(base, a, multiplication * pair_maps(base, b, c))
-        )
+        identity = Mor(base)(carrier, carrier).one()
+        if left:
+            return multiplication * tensor_morphism(tensor, multiplication, identity)
+        associator = structure.associator().component(
+            structure.associator().domain().domain()((carrier, carrier, carrier)))
+        return multiplication * tensor_morphism(tensor, identity, multiplication) * associator
 
     transformations = Mor(Fun(pointed, base))
-    identity = transformations(forget, forget).one()
-    cube = power_functor(base, 3) * forget
+    left_unit, right_unit = tensor_units(tensor, structure.unit())
+    triples = structure.associator().domain().domain()
+    diagonal = triples.universal_morphism(cone(
+        triples.product_factors(), base, lambda vertex: Fun(base, base).one()))
+    cube = tensor_parentheses(tensor)[0] * diagonal * forget
     equations = (
-        (transformations(forget, forget)(lambda value: unital(value, True)), identity),
-        (transformations(forget, forget)(lambda value: unital(value, False)), identity),
+        (transformations(left_unit * forget, forget)(lambda value: unital(value, True)), structure.left_unitor().whisker_right(forget)),
+        (transformations(right_unit * forget, forget)(lambda value: unital(value, False)), structure.right_unitor().whisker_right(forget)),
         (
             transformations(cube, forget)(lambda value: associative(value, True)),
             transformations(cube, forget)(lambda value: associative(value, False)),
         ),
     )
     result = pointed
-    for first, second in equations:
+    for first, second in equations[:-1]:
         inclusion = (
             Fun.full_subcategory_monomorphism(result, pointed)
             if result is not pointed
@@ -235,7 +273,9 @@ def Monoids(base: Category) -> EquifierCategory:
         result = Equifier(
             first.whisker_right(inclusion), second.whisker_right(inclusion)
         )
-    return result
+    inclusion = Fun.full_subcategory_monomorphism(result, pointed)
+    first, second = equations[-1]
+    return MonoidCategory(first.whisker_right(inclusion), second.whisker_right(inclusion), structure)
 
 
 @cached_function(key=identity_key)
@@ -256,7 +296,7 @@ def EilenbergMoore(
         multiplication.domain() is endofunctor * endofunctor
         and multiplication.codomain() is endofunctor
     )
-    algebras = Algebras(endofunctor)
+    algebras = EndofunctorAlgebras(endofunctor)
     forget = algebras.forgetful()
     action = algebras.defining_transformation()
     unital = Equifier(

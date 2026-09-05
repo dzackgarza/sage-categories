@@ -125,7 +125,18 @@ def is_placed(candidate: RoleCandidate, category: Category) -> bool:
         return False
     assert isinstance(candidate, CategoryPoint)
     target = compiler.node(category, Role.OBJECT)
-    return any(compiler.same_node(target, found) for found in _reached_placements(_placement_node(candidate)))
+    placements = [_placement_node(candidate)]
+    if role_of(candidate) is Role.OBJECT:
+        from sage_categories.kernel.construction import retained_object_input
+
+        identity = retained_object_input(candidate).identity
+        if identity.universe is not None:
+            placements.append(compiler.node(identity.universe, Role.OBJECT))
+    return any(
+        compiler.same_node(target, found)
+        for placement in placements
+        for found in _reached_placements(placement)
+    )
 
 
 def is_subcategory(inner: Category, outer: Category) -> bool:

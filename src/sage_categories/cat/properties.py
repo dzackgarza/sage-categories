@@ -367,7 +367,7 @@ def retain_inverse_image(
     _inverse_images[key] = realization
     diagram = cospan_diagram(Cat(), functor, _declared_inclusion(target_subcategory, functor.codomain()))
     shape = diagram.domain()
-    projections = {0: source_projection, 1: target_projection}
+    projections = {0: source_projection, 1: target_projection, 2: functor * source_projection}
     limiting_cone = cone(diagram, realization, lambda vertex: projections[shape.label(vertex)])
 
     def mediator(candidate_cone):

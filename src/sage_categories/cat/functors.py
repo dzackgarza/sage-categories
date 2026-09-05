@@ -25,7 +25,7 @@ from sage_categories.cat.category import (
     refine,
 )
 from sage_categories.cat.properties import Axiom
-from sage_categories.cat.predicates import register_handler
+from sage_categories.cat.predicates import conjunction, register_handler
 from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict
 
 __all__ = [
@@ -444,7 +444,8 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             assert member_object in self.source_functor().domain(), (
                 f"{member_object!r} is not an object of {self.source_functor().domain()!r}"
             )
-            return self._component_family[member_object]
+            functors = Fun(self.source_functor().domain(), self.source_functor().codomain())
+            return functors.evaluation(member_object).on_morphism(self)
 
         def op(self) -> NaturalTransformation:
             """Return the retained reversed transformation between opposite functors."""
@@ -735,9 +736,50 @@ class CreatesLimitsCategory(ShapeIndexedFunctorProperty):
 Fun: FunctorsCategory = Cat().morphism_category(1)
 NaturalTransformation = Fun.MorphismType
 Fun._bootstrap()
+
+
+def _finite_functor_equal(first: CategoryOfCategories.MorphismType, second: CategoryOfCategories.MorphismType, assumptions: Proposition) -> bool | None:
+    """Extensional equality on a finite category, on objects and morphisms.
+
+    Reference: Mathlib CategoryTheory.Functor.ext.
+    """
+    from sage_categories.cat.finite_categories import finite_category
+
+    if first.domain() is not second.domain() or first.codomain() is not second.codomain():
+        return None
+    data = finite_category(first.domain())
+    if data is Unknown:
+        return None
+    return sympy_ask(conjunction((
+        *(first.on_object(x) == second.on_object(x) for x in data.objects),
+        *(first.on_morphism(f) == second.on_morphism(f) for f in data.morphisms),
+    )), assumptions)
+
+
+def _finite_transformation_equal(first: FunctorsCategory.MorphismType, second: FunctorsCategory.MorphismType, assumptions: Proposition) -> bool | None:
+    """Natural transformations are equal exactly when all components agree.
+
+    Reference: Mathlib CategoryTheory.NatTrans.ext.
+    """
+    from sage_categories.cat.finite_categories import finite_category
+
+    source = first.source_functor().domain()
+    if source is not second.source_functor().domain():
+        return None
+    data = finite_category(source)
+    if data is Unknown:
+        return None
+    return sympy_ask(conjunction((
+        first.domain() == second.domain(), first.codomain() == second.codomain(),
+        *(first.component(x) == second.component(x) for x in data.objects),
+    )), assumptions)
+
+
 register_handler(denotes_diagram, _denotes_diagram_by_domain)
 register_handler(denotes_functor, _denotes_functor_by_domain)
 register_handler(Cat().equality(), _defining_functor_equal)
+register_handler(Cat().equality(), _finite_functor_equal)
+register_handler(Cat().equality(), _finite_transformation_equal)
 # The two property subcategories of ``Cat()`` are constructed here, after ``Fun`` exists to
 # supply their subcategory monomorphisms.  ``Inhabited`` reads the exact case a category
 # owns, in the shape ``morphism_set()`` uses; ``Empty`` is its negation, the one route

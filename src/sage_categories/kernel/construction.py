@@ -14,6 +14,22 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.kernel.compiler import Node
 
+
+type ObjectRealization = Callable[[ObjectOfCategory, type[ObjectOfCategory]], None]
+_object_realization: ObjectRealization | None = None
+
+
+def install_object_realization(realization: ObjectRealization) -> None:
+    """Install the interpretation of a category structure on a retained object."""
+    global _object_realization
+    _object_realization = realization
+
+
+def realize_object(value: ObjectOfCategory, category_type: type[ObjectOfCategory]) -> None:
+    """Give the retained object the supplied mathematical category structure."""
+    assert _object_realization is not None
+    _object_realization(value, category_type)
+
 __all__ = [
     "CatElementRoleIdentity",
     "CategoryPointIdentity",
@@ -50,11 +66,12 @@ __all__ = [
 ]
 
 
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class ObjectRoleIdentity:
     """The kernel identity of an object in one category."""
 
     category: Category
+    universe: Category | None = None
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -161,6 +178,13 @@ def retained_object_input[Value: ObjectOfCategory, Datum](value: Value) -> Objec
     return _object_inputs[value]
 
 
+def retain_category_universe(value: ObjectOfCategory, universe: Category) -> None:
+    """Retain the universe in which this object's category structure was constructed."""
+    identity = retained_object_input(value).identity
+    assert identity.universe is None or identity.universe is universe
+    identity.universe = universe
+
+
 def retained_element_input[Value: CategoryPoint, Datum](value: Value) -> ElementConstructionInput[Value, Datum]:
     assert value in _element_inputs, f"{value!r} retains no element construction input"
     return _element_inputs[value]
@@ -234,6 +258,7 @@ class ObjectConstructionContext:
     cat_element_identity: CategoryPointIdentity
     nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
+    initializing_image: ObjectOfCategory | None = None
 
     def run(self, node: Node, initialize: Callable[[], None]) -> None:
         assert not any(owner.category is node.category and owner.role is node.role for owner in self.initialized), (

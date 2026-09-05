@@ -102,8 +102,9 @@ from sage_categories.cat.profunctors import (
 )
 from sage_categories.cat.relations import Relations
 from sage_categories.cat.shapes import Discrete, Thin
+from sage_categories.cat.monoidal import Actions, Cartesian, Composition, MonoidalStructures, SelfAction, TrivialAction
 from sage_categories.cat.structured_objects import (
-    Algebras,
+    EndofunctorAlgebras,
     EilenbergMoore,
     Equifier,
     Inserter,
@@ -143,6 +144,7 @@ from sage_categories.cat.weighted import (
 )
 
 __all__ = [
+    "Actions", "Cartesian", "Composition", "MonoidalStructures", "SelfAction", "TrivialAction",
     "Adjunctions",
     "Axiom",
     "NN",
@@ -196,7 +198,7 @@ __all__ = [
     "product_functor",
     "transpose",
     "uncurry",
-    "Algebras",
+    "EndofunctorAlgebras",
     "EilenbergMoore",
     "Equifier",
     "Inserter",

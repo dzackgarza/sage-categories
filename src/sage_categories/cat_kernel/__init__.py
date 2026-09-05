@@ -12,6 +12,7 @@ calls ``install`` once ``Cat`` is loaded and before any category is declared.
 
 from sage_categories.cat_kernel import axioms as _axioms
 from sage_categories.cat_kernel import functor_declarations as _functor_declarations
+from sage_categories.cat_kernel import realizations as _realizations
 
 __all__ = ["install"]
 
@@ -20,3 +21,4 @@ def install() -> None:
     """Install this layer into the two layers below."""
     _functor_declarations.install()
     _axioms.install()
+    _realizations.install()

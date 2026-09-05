@@ -41,6 +41,7 @@ from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.sage_runtime import MonoDict
+from functools import cache
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -110,7 +111,7 @@ class DiscreteCategory(Category[[], []]):
         return self._index_set
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.MorphismType:
-        vertex = self(point)
+        vertex = self.object_at(point)
         return self.morphism_category(1)(vertex, vertex).one()
 
     def generating_morphisms(self) -> tuple[DiscreteCategory.MorphismType, ...]:
@@ -184,6 +185,52 @@ def discrete_functor(sets: Category) -> Functor:
 
 
 Discrete: Functor = discrete_functor(Sets)
+
+
+class DiscreteObjectCategory(DiscreteCategory):
+    """A set-valued object with its own discrete category of points.
+
+    The discrete realization and its comparison follow the category-of-elements
+    fiber of a set-valued functor (Mathlib CategoryTheory.Elements).
+    """
+
+    class ObjectType:
+        def _deciding_category(self) -> Category:
+            return self.parent().category()
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __call__(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        assert point.parent() is self
+        return point
+
+    def object_at(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        assert point.parent() is self._index_set
+        return self.point(point.datum())
+
+    def object_point(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        assert point.parent() is self
+        return self._index_set.point(point.datum())
+
+    @cache
+    def point_comparison(self) -> Functor:
+        """The retained comparison with the discrete selected carrier."""
+        target = Discrete(self._index_set)
+        return Fun(self, target)(
+            lambda point: target(self.object_point(point)),
+            lambda identity: target.morphism_at(self.object_point(identity.domain())),
+        )
+
+
+def realize_discrete_object(value: CategoryOfCategories.ElementType) -> None:
+    """Construct a discrete category on the same retained set-valued object."""
+    from sage_categories.kernel.construction import realize_object
+
+    realize_object(value, DiscreteObjectCategory)
 
 
 # -- Thin(P, leq) --------------------------------------------------------------------

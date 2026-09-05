@@ -82,7 +82,7 @@ __all__ = [
     "product_functor",
     "transpose",
     "uncurry",
-    "Algebras",
+    "EndofunctorAlgebras",
     "EilenbergMoore",
     "Equifier",
     "Inserter",
@@ -128,12 +128,20 @@ __all__ = [
     "right_kan_adjunction",
     "FiniteSets",
     "Sets",
+    "MonoidalStructures",
+    "Cartesian",
+    "Composition",
+    "Actions",
+    "SelfAction",
+    "TrivialAction",
     "coyoneda",
     "natural_isomorphism",
 ]
 
+from sage_categories.cat.monoidal import Actions, Cartesian, Composition, MonoidalStructures, SelfAction, TrivialAction
+
 from sage_categories import (
-    Algebras,
+    EndofunctorAlgebras,
     DiagramPresentation,
     EilenbergMoore,
     Elements,

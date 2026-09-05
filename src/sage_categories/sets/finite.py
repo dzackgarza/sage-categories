@@ -20,6 +20,7 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.cones import cone, cocone, cone_apex, cocone_apex
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, register_handler
 from sage_categories.cat.slices import SliceProperty, SliceLikeCategory
+from sage_categories.cat.shapes import realize_discrete_object
 from sage_categories.sets._finite import cartesian, quotient
 
 type Map = Callable[[Hashable], Hashable]
@@ -79,6 +80,7 @@ class SetsCategory(Category[[Map], []]):
             self._presentation = presentation
             if isinstance(presentation, tuple):
                 self._lookup = {value: value for value in presentation}
+            realize_discrete_object(self)
 
         @property
         def _values(self) -> tuple[Hashable, ...]:
@@ -96,8 +98,7 @@ class SetsCategory(Category[[Map], []]):
         @cache
         def point(self, datum: Hashable) -> SetsCategory.ElementType:
             datum = self.representative(datum)
-            defining = Mor(Sets)(Sets.Terminal(), self)(lambda value: datum)
-            return Sets.ElementType(defining, data=datum)
+            return self.ObjectType(datum)
 
         def __iter__(self) -> Iterator[SetsCategory.ElementType]:
             return (self.point(value) for value in self._values)

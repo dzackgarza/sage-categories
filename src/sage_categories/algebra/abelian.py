@@ -30,6 +30,8 @@ __all__ = [
     "Presentation",
     "abelian_homomorphism",
     "bilinear_map",
+    "coequalizer_mediator",
+    "coequalizer_projection",
     "integer_group",
     "presented_abelian_group",
     "simple_tensor",
@@ -195,6 +197,8 @@ class _TensorData:
 
 _presentations: MonoDict = MonoDict()
 _tensor_data: MonoDict = MonoDict()
+_forms: MonoDict = MonoDict()
+_quotient_covers: MonoDict = MonoDict()
 
 _terminal_presentation = Presentation((), lambda datum: (), lambda coords: ())
 Sets.retain_form(Sets.Terminal(), _terminal_presentation)
@@ -291,7 +295,15 @@ def _linear_homomorphism(
     renaming = AdditiveGroups(structure).product_projection(0)
     carrier_map = Mor(Sets)(_points(source), _points(target))(form)
     monoid_map = Monoids(structure).homomorphism(renaming.on_object(source), renaming.on_object(target), carrier_map)
-    return AdditiveGroups(structure).homomorphism(source, target, monoid_map)
+    result = AdditiveGroups(structure).homomorphism(source, target, monoid_map)
+    _forms[result] = form
+    return result
+
+
+def linear_form(arrow: MorphismCategory.ObjectType) -> LinearForm:
+    """The integer matrix on Smith generators of a homomorphism this leaf built."""
+    assert arrow in _forms, f"{arrow!r} was not built by this leaf, so it carries no matrix"
+    return _forms[arrow]
 
 
 def _generators(form: Presentation) -> tuple[Hashable, ...]:
@@ -320,6 +332,60 @@ def abelian_homomorphism(
     samples = (left.zero_datum(), *generators, *(first + second for first in generators for second in generators))
     assert all(rule(sample) == form.evaluate(sample) for sample in samples), f"{rule!r} differs from its linear extension on {source!r}"
     return _linear_homomorphism(source, target, form)
+
+
+@cached_function(key=identity_key)
+def coequalizer_projection(
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """The universal map ``q: B -> B / im(f - g)`` coequalizing two homomorphisms ``f, g: A -> B`` of ``Ab``.
+
+    Two parallel homomorphisms of abelian groups are coequalized by the quotient of their
+    common target by the subgroup their difference generates.  In Smith generators that
+    adjoins the rows of ``M_f - M_g`` to the relations of the target, so the quotient is
+    again a presented group and needs no enumeration.
+
+    The coequalizer object is the codomain of this map, and ``coequalizer_mediator``
+    factors a coequalizing homomorphism through it.
+    """
+    source, target = first.domain(), first.codomain()
+    assert second.domain() is source and second.codomain() is target, f"{first!r} and {second!r} are not parallel"
+    into = presentation(target)
+    difference = linear_form(first).matrix - linear_form(second).matrix
+    free = FreeModule(ZZ, into.rank())
+    relations = [free.gen(j) * order for j, order in enumerate(into.orders) if order]
+    relations += [free(vector(ZZ, difference.row(i))) for i in range(difference.nrows())]
+    engine = free / free.span(relations)
+    apex = _group_from_engine(engine)
+    _quotient_covers[apex] = (free, engine)
+    apex_form = presentation(apex)
+    rows = [vector(ZZ, apex_form.coordinates(engine(free.gen(j)))) for j in range(into.rank())]
+    return _linear_homomorphism(target, apex, LinearForm(into, apex_form, _matrix_of_rows(rows, apex_form.rank())))
+
+
+def coequalizer_mediator(
+    projection: MorphismCategory.ObjectType,
+    coequalizing: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """The one homomorphism ``h`` out of a quotient with ``h ∘ q = k``, for a ``k`` that kills the same subgroup.
+
+    A Smith generator of the quotient goes along its lift to the free cover and then
+    through ``k``, which is well defined exactly because ``k`` vanishes on the relations
+    the quotient adjoined.
+    """
+    apex = projection.codomain()
+    assert apex in _quotient_covers, f"{apex!r} is not a quotient this leaf constructed"
+    assert coequalizing.domain() is projection.domain(), f"{coequalizing!r} does not start at {projection.domain()!r}"
+    free, engine = _quotient_covers[apex]
+    target = coequalizing.codomain()
+    matrix, into = linear_form(coequalizing).matrix, presentation(target)
+    rows = [vector(ZZ, generator.lift()) * matrix for generator in engine.smith_form_gens()]
+    assert all(
+        into.element(tuple(int(c) for c in vector(ZZ, relation) * matrix)) == into.zero_datum()
+        for relation in engine.W().gens()
+    ), f"{coequalizing!r} does not vanish on the relations of {apex!r}, so it does not factor through it"
+    return _linear_homomorphism(apex, target, LinearForm(presentation(apex), into, _matrix_of_rows(rows, into.rank())))
 
 
 def _pair_generators(first: Presentation, second: Presentation) -> FGP_Module_class:

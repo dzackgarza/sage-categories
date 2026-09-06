@@ -43,8 +43,7 @@ That owner defines a SymPy predicate and its exact handlers.
 
 A category of structured objects decides equality of two points of one of its objects by pulling the carrier's equality back along its carrier functor.
 That functor is a declared faithful isofibration, so it is injective on hom sets and two points `x, y: 1 -> X` are equal exactly when their carrier points are.
-The retained point comparison of a realized set-valued object supplies those carrier points ([functor.md](functor.md#structure-functors-and-inherited-classes)).
-The pulled-back proposition is the carrier's own, so the carrier decides it: a quotient or presented carrier normalizes its data before answering, and no comparison of raw data happens along the way.
+The retained point comparison of a realized set-valued object supplies those carrier points ([functor.md](functor.md#structure-functors-and-inherited-classes)). The pulled-back proposition is the carrier's own, so the carrier decides it: a quotient or presented carrier normalizes its data before answering, and no comparison of raw data happens along the way.
 Points of two different objects are two values, and their comparison is decided false.
 
 ```python

@@ -1,7 +1,7 @@
-35:/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage-stubs/matrix/matrix_integer_dense.pyi:174: error: Invalid syntax  [syntax]
-36:Found 1 error in 1 file (errors prevented further checking)
-37:ERROR: mypy found type errors in project code.
-40:  LOCAL QC FAILURE — DIRECT REPAIR REQUIRED
-43:  Fix the reported compiler, formatter, type, or test failure in the object
-47:  Do not weaken the checker, suppress the diagnostic, golf the error count, or
-51:error: recipe `_sage-mypy` failed with exit code 2
+38:/home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage-stubs/matrix/matrix_integer_dense.pyi:174: error: Invalid syntax  [syntax]
+39:Found 1 error in 1 file (errors prevented further checking)
+40:ERROR: mypy found type errors in project code.
+43:  LOCAL QC FAILURE — DIRECT REPAIR REQUIRED
+46:  Fix the reported compiler, formatter, type, or test failure in the object
+50:  Do not weaken the checker, suppress the diagnostic, golf the error count, or
+54:error: recipe `_sage-mypy` failed with exit code 2

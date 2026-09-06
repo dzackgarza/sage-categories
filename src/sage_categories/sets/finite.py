@@ -517,6 +517,15 @@ class SetsCategory(Category[[Map], []]):
     def form_of(self, value: SetsCategory.ObjectType) -> ObjectForm | None:
         return _form_of(value)
 
+    def map_form(self, arrow: SetsCategory.MorphismType) -> MapForm | None:
+        """The form a map carries, which composition, pairing, and projection propagate.
+
+        A leaf that supplies forms reads its own back here rather than keeping a second
+        record of them: the form of a composite is the composite of the forms, which this
+        category already computed.
+        """
+        return arrow._form
+
     def Initial(self) -> SetsCategory.ObjectType:
         return self(())
 

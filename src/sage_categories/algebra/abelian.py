@@ -29,11 +29,17 @@ __all__ = [
     "LinearForm",
     "Presentation",
     "abelian_homomorphism",
+    "balanced_tensor",
     "bilinear_map",
+    "coequalizer_lift",
     "coequalizer_mediator",
     "coequalizer_projection",
+    "induced_left_action",
+    "induced_right_action",
     "integer_group",
     "presented_abelian_group",
+    "relative_tensor",
+    "relative_tensor_mediator",
     "simple_tensor",
     "tensor_mediator",
 ]
@@ -55,7 +61,7 @@ from sympy import Q, false, true
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun
-from sage_categories.cat.monoidal import Cartesian, MonoidalStructures, MonoidalStructuresCategory, tensor_parentheses, tensor_units
+from sage_categories.cat.monoidal import Cartesian, MonoidalStructures, MonoidalStructuresCategory, tensor_morphism, tensor_parentheses, tensor_units
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Proposition
 from sage_categories.cat.structured_objects import AdditiveGroups, Groups, Monoids
@@ -197,7 +203,6 @@ class _TensorData:
 
 _presentations: MonoDict = MonoDict()
 _tensor_data: MonoDict = MonoDict()
-_forms: MonoDict = MonoDict()
 _quotient_covers: MonoDict = MonoDict()
 
 _terminal_presentation = Presentation((), lambda datum: (), lambda coords: ())
@@ -219,6 +224,13 @@ def _points(group: CategoryOfCategories.ElementType) -> CategoryOfCategories.Ele
     groups = AdditiveGroups(_structure())
     monoids, magmas = groups.named_monoids(), groups.named_monoids().named_magmas()
     return magmas.to_carrier().on_object(monoids.to_named_magmas().on_object(groups.to_named_monoids().on_object(group)))
+
+
+def _point_map(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+    """The set map carrying a homomorphism: its image under the carrier functors of the named copies."""
+    groups = AdditiveGroups(_structure())
+    monoids, magmas = groups.named_monoids(), groups.named_monoids().named_magmas()
+    return magmas.to_carrier().on_morphism(monoids.to_named_magmas().on_morphism(groups.to_named_monoids().on_morphism(arrow)))
 
 
 def presentation(group: CategoryOfCategories.ElementType) -> Presentation:
@@ -295,15 +307,18 @@ def _linear_homomorphism(
     renaming = AdditiveGroups(structure).product_projection(0)
     carrier_map = Mor(Sets)(_points(source), _points(target))(form)
     monoid_map = Monoids(structure).homomorphism(renaming.on_object(source), renaming.on_object(target), carrier_map)
-    result = AdditiveGroups(structure).homomorphism(source, target, monoid_map)
-    _forms[result] = form
-    return result
+    return AdditiveGroups(structure).homomorphism(source, target, monoid_map)
 
 
 def linear_form(arrow: MorphismCategory.ObjectType) -> LinearForm:
-    """The integer matrix on Smith generators of a homomorphism this leaf built."""
-    assert arrow in _forms, f"{arrow!r} was not built by this leaf, so it carries no matrix"
-    return _forms[arrow]
+    """The integer matrix on Smith generators of a homomorphism of ``Ab``, read off its carrier map.
+
+    ``Sets`` composes, pairs, and projects these matrices itself, so a composite of maps
+    this leaf built carries the composite matrix and needs no separate record here.
+    """
+    form = Sets.map_form(_point_map(arrow))
+    assert isinstance(form, LinearForm), f"{arrow!r} carries no matrix on Smith generators"
+    return form
 
 
 def _generators(form: Presentation) -> tuple[Hashable, ...]:
@@ -545,3 +560,118 @@ def AbelianTensor() -> MonoidalStructuresCategory.ObjectType:
         lambda group: abelian_homomorphism(group, _tensor_object(group, unit), lambda a: _pair_vector(_tensor_data[_tensor_object(group, unit)], a, 1)),
     )
     return MonoidalStructures(base)(tensor, unit, associator, left_unitor, right_unitor)
+
+
+def relative_tensor(
+    right_action: MorphismCategory.ObjectType,
+    left_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """``q: X (x) Y -> X (x)_S Y``: the balanced map onto the tensor product over the middle monoid.
+
+    For a right action ``X (x) S -> X`` and a left action ``S (x) Y -> Y`` on one monoid
+    object, the tensor product over ``S`` is the coequalizer of
+
+        ``(X (x) S) (x) Y  ==>  X (x) Y``
+
+    whose two maps use one action each, bracketed by the associator
+    (``specs/bimodules.md``, "Relative tensor product"; Stacks, tag 0FQM).  Both maps and
+    the projection are homomorphisms of ``Ab`` carrying matrices on Smith generators, so
+    the quotient is presented and needs no enumeration.
+    """
+    monoidal = AbelianTensor()
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    first, second = right_action.codomain(), left_action.codomain()
+    scalars = _tensor_data[left_action.domain()].first
+    triples = monoidal.associator().domain().domain()
+    rebracket = monoidal.associator().component(triples((first, scalars, second)))
+    through_the_right = tensor_morphism(tensor, right_action, Mor(base)(second, second).one())
+    through_the_left = tensor_morphism(tensor, Mor(base)(first, first).one(), left_action)
+    return coequalizer_projection(through_the_right, through_the_left * rebracket)
+
+
+def balanced_tensor(
+    projection: MorphismCategory.ObjectType,
+    left: Hashable,
+    right: Hashable,
+) -> CategoryOfCategories.ElementType:
+    """``x (x)_S y``: the point of the relative tensor that the balanced map sends ``(x, y)`` to."""
+    factors = _tensor_data[projection.domain()]
+    return projection(simple_tensor(factors.first, factors.second, left, right))
+
+
+def relative_tensor_mediator(
+    projection: MorphismCategory.ObjectType,
+    target: CategoryOfCategories.ElementType,
+    balanced: Callable[[Hashable, Hashable], Hashable],
+) -> MorphismCategory.ObjectType:
+    """The morphism ``X (x)_S Y -> C`` through which a biadditive rule that is ``S``-balanced factors.
+
+    ``balanced(x, y)`` must satisfy ``balanced(x s, y) = balanced(x, s y)``; that is what
+    makes its mediator out of ``X (x) Y`` coequalize the two maps this quotient identifies.
+    """
+    factors = _tensor_data[projection.domain()]
+    return coequalizer_mediator(projection, tensor_mediator(factors.first, factors.second, target, balanced))
+
+
+def coequalizer_lift(
+    projection: MorphismCategory.ObjectType,
+    datum: Hashable,
+) -> Hashable:
+    """A preimage in ``B`` of a datum of ``B / im(f - g)``, read through the retained cover.
+
+    The choice is not natural: it sends each Smith generator of the quotient to the lift
+    the engine records for it and extends by the coordinates.  A rule written through it
+    defines a homomorphism exactly when the rule kills the subgroup the quotient adjoins,
+    which the constructed morphism checks.
+    """
+    apex = projection.codomain()
+    assert apex in _quotient_covers, f"{apex!r} is not a quotient this leaf constructed"
+    free, engine = _quotient_covers[apex]
+    total = free.zero()
+    for coefficient, generator in zip(presentation(apex).coordinates(datum), engine.smith_form_gens(), strict=True):
+        total += int(coefficient) * generator.lift()
+    return presentation(projection.domain()).element(tuple(int(c) for c in total))
+
+
+def induced_left_action(
+    projection: MorphismCategory.ObjectType,
+    left_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """``R (x) (X (x)_S Y) -> X (x)_S Y`` from a left ``R``-action on ``X``: ``r`` carries ``x (x)_S y`` to ``(r x) (x)_S y``.
+
+    Acting on the left factor commutes with the identification the middle monoid makes, so
+    it descends to the relative tensor product (``specs/bimodules.md``).
+    """
+    monoidal = AbelianTensor()
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    scalars, first = _tensor_data[left_action.domain()].first, left_action.codomain()
+    product, quotient = projection.domain(), projection.codomain()
+    second = _tensor_data[product].second
+    assert _tensor_data[product].first is first, f"{left_action!r} does not act on the left factor of {product!r}"
+    triples = monoidal.associator().domain().domain()
+    rebracket = monoidal.associator().inverse().component(triples((scalars, first, second)))
+    acting = projection * tensor_morphism(tensor, left_action, Mor(base)(second, second).one()) * rebracket
+    return tensor_mediator(
+        scalars, quotient, quotient,
+        lambda scalar, value: acting(simple_tensor(scalars, product, scalar, coequalizer_lift(projection, value))).datum(),
+    )
+
+
+def induced_right_action(
+    projection: MorphismCategory.ObjectType,
+    right_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """``(X (x)_S Y) (x) T -> X (x)_S Y`` from a right ``T``-action on ``Y``: ``x (x)_S y`` times ``t`` goes to ``x (x)_S (y t)``."""
+    monoidal = AbelianTensor()
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    scalars, second = _tensor_data[right_action.domain()].second, right_action.codomain()
+    product, quotient = projection.domain(), projection.codomain()
+    first = _tensor_data[product].first
+    assert _tensor_data[product].second is second, f"{right_action!r} does not act on the right factor of {product!r}"
+    triples = monoidal.associator().domain().domain()
+    rebracket = monoidal.associator().component(triples((first, second, scalars)))
+    acting = projection * tensor_morphism(tensor, Mor(base)(first, first).one(), right_action) * rebracket
+    return tensor_mediator(
+        quotient, scalars, quotient,
+        lambda value, scalar: acting(simple_tensor(product, scalars, coequalizer_lift(projection, value), scalar)).datum(),
+    )

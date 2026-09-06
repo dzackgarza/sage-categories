@@ -19,7 +19,8 @@ A right `S`-action `X tensor S -> X` is a left action of `S` in `V^rev`, because
 `S tensor^rev S` is `S tensor S`, so the multiplication and unit of `S` present a monoid object of `V^rev` without further data; that monoid object is the opposite monoid.
 Right `S`-modules are therefore `Modules(S_opposite, SelfAction(Reversed(V)))`, and the module construction in [modules.md](modules.md) covers both sides.
 
-`Bimodules(R, S, V)` is the pullback of the left and right module categories over their forgetful functors to `V`, cut by the equifier of
+`Bimodules(R, S, V)` takes `R` and `S` as monoid objects of `V` and reads `S` in `V^rev` itself, so a caller writes no opposite by hand.
+It is the pullback of the left and right module categories over their forgetful functors to `V`, cut by the equifier of
 
 \[
 \lambda\circ(R\bullet\rho)
@@ -57,6 +58,8 @@ For `V = Ab` the abelian leaf supplies the coequalizer.
 In Smith generators the quotient adjoins the rows of the difference matrix to the relations of the target, so it stays presented.
 `relative_tensor(right_action, left_action)` is the balanced map `X tensor Y -> X tensor_S Y`, whose codomain is the relative tensor product.
 `balanced_tensor(q, x, y)` is the point `x tensor_S y`, and `relative_tensor_mediator(q, C, h)` is the map out of the relative tensor through which a biadditive `S`-balanced rule factors.
+`induced_left_action(q, lambda_X)` and `induced_right_action(q, rho_Y)` are the outer actions: acting on the outer factor commutes with the identification the middle monoid makes, so each action descends to the quotient.
+`coequalizer_lift(q, t)` chooses a preimage through the retained cover; a rule written through it defines a homomorphism exactly when it kills the subgroup the quotient adjoins, which the constructed morphism checks.
 
 The tensor product acts on pairs of compatible bimodule morphisms.
 For `R=S=T`, the regular bimodule is the unit, with comparison isomorphisms induced by its actions.

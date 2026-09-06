@@ -23,7 +23,6 @@ def test_tensor_of_cyclic_groups() -> None:
 
     product = tensor_object(tensor, groups[4], groups[6])
     assert product in AbelianGroups()
-    assert len(product) == 2
     e4, e6, e2 = (engines[n].gen(0) for n in (4, 6, 2))
     bilinear = bilinear_map(groups[4], groups[6])
     pairs = bilinear.domain()
@@ -37,6 +36,12 @@ def test_tensor_of_cyclic_groups() -> None:
     assert mediator in Mor(AbelianGroups())(product, groups[2])
     assert mediator(product.point(generator)).datum() == e2
     assert mediator(product.zero()).datum() == groups[2].zero().datum()
+
+    # That mediator and the map carrying e2 back to the generator are mutually inverse,
+    # so the tensor is Z/2 and not merely mapped onto it.
+    section = abelian_homomorphism(groups[2], product, lambda c: int(c.vector()[0]) * generator)
+    assert ask(mediator * section == Mor(AbelianGroups())(groups[2], groups[2]).one()) is True
+    assert ask(section * mediator == Mor(AbelianGroups())(product, product).one()) is True
 
     # Tensoring the doubling of Z/4 with the identity of Z/6 kills the generator.
     doubling = abelian_homomorphism(groups[4], groups[4], lambda a: 2 * a)

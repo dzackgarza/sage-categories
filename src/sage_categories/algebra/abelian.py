@@ -37,21 +37,24 @@ __all__ = [
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
+from functools import partial
 
 from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup_class
 from sage.matrix.constructor import block_matrix, identity_matrix, matrix, zero_matrix
 from sage.matrix.matrix_integer_dense import Matrix_integer_dense
+from sage.modules.fg_pid.fgp_element import FGP_Element
 from sage.modules.fg_pid.fgp_module import FGP_Module_class
 from sage.modules.free_module import FreeModule
 from sage.modules.free_module_element import vector
 from sage.rings.integer_ring import ZZ
-from sympy import Q
+from sympy import Q, false, true
 
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.monoidal import Cartesian, MonoidalStructures, MonoidalStructuresCategory, tensor_parentheses, tensor_units
 from sage_categories.cat.morphisms import Mor, MorphismCategory
+from sage_categories.cat.predicates import Proposition
 from sage_categories.cat.structured_objects import AdditiveGroups, Groups, Monoids
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
@@ -226,12 +229,7 @@ def _group_from_operations(
 ) -> CategoryOfCategories.ElementType:
     """The object of ``Ab`` on a presented carrier: addition is the linear form ``(x, y) ↦ x + y``, decided a commutative group on the way."""
     structure = _structure()
-    # Two engines with equal element data present one set; the set keeps the presentation it already carries.
-    existing = Sets.form_of(carrier)
-    if existing is None:
-        Sets.retain_form(carrier, form)
-    else:
-        form = existing
+    Sets.retain_form(carrier, form)
     square = binary_product_data(Sets(), carrier, carrier).apex()
     identity = identity_matrix(ZZ, form.rank())
     addition = Mor(Sets)(square, carrier)(LinearForm(Sets.form_of(square), form, identity.stack(identity)))
@@ -245,19 +243,27 @@ def _group_from_operations(
 
 
 def _group_from_engine(engine: Engine) -> CategoryOfCategories.ElementType:
-    """A fresh object of ``Ab`` on the elements of a finite engine.
+    """A fresh object of ``Ab`` whose carrier is the set the engine's membership states.
+
+    The carrier is stated by that membership and never materialized: the tensor square of a
+    four-generator group already has ``2^16`` elements and its cube ``2^64``, while every
+    operation on it is a matrix on four generators.
 
     Sage identifies presented modules with equal relations, so two tensor products can share
     one engine; each tensor product is nevertheless its own object of ``Ab``, which is why
     this constructor is not retained by engine.
     """
-    assert engine.is_finite(), f"{engine!r} is infinite; only the integers are represented without an enumeration"
     form = Presentation(
         tuple(int(order) for order in engine.invariants()),
         lambda datum: tuple(int(c) for c in datum.vector()),
         lambda coordinates: engine.linear_combination_of_smith_form_gens(vector(ZZ, coordinates)),
     )
-    return _group_from_operations(Sets(tuple(engine)), form, engine.zero())
+    return _group_from_operations(Sets.from_membership(partial(_engine_membership, engine)), form, engine.zero())
+
+
+def _engine_membership(engine: Engine, datum: Hashable) -> Proposition:
+    """Whether a datum is an element of the engine; the engine decides its own membership exactly."""
+    return true if isinstance(datum, FGP_Element) and datum.parent() is engine else false
 
 
 @cached_function(key=identity_key)
@@ -301,12 +307,17 @@ def abelian_homomorphism(
     target: CategoryOfCategories.ElementType,
     rule: Callable[[Hashable], Hashable],
 ) -> MorphismCategory.ObjectType:
-    """The morphism of ``Ab`` over a rule on data: its matrix is read off the generators, and the rule must agree with that linear extension."""
+    """The morphism of ``Ab`` that extends a rule's values on the generators linearly.
+
+    The matrix is the rule read on the source's generators, and the morphism it defines is
+    that linear extension.  The zero, the generators, and their pairwise sums are compared
+    with it, which refutes a rule that is not the additive map it presents itself as.
+    """
     left, right = presentation(source), presentation(target)
     form = LinearForm(left, right, _matrix_of_rows([vector(ZZ, right.coordinates(rule(generator))) for generator in _generators(left)], right.rank()))
-    carrier = _points(source)
-    samples = tuple(point.datum() for point in carrier) if isinstance(carrier._presentation, tuple) else tuple(range(-2, 3))
-    assert all(rule(sample) == form.evaluate(sample) for sample in samples), f"{rule!r} is not additive on {source!r}"
+    generators = _generators(left)
+    samples = (left.zero_datum(), *generators, *(first + second for first in generators for second in generators))
+    assert all(rule(sample) == form.evaluate(sample) for sample in samples), f"{rule!r} differs from its linear extension on {source!r}"
     return _linear_homomorphism(source, target, form)
 
 

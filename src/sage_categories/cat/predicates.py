@@ -8,7 +8,7 @@ import operator
 from typing import TYPE_CHECKING
 
 from sympy import And, Implies, Not, Or, ask as sympy_ask
-from sympy.logic.boolalg import Boolean
+from sympy.logic.boolalg import Boolean, BooleanAtom
 
 from sage_categories.kernel.predicates import (
     AppliedPredicate,
@@ -47,6 +47,7 @@ __all__ = [
     "ask",
     "assume",
     "conjunction",
+    "decide",
     "declared_axiom",
     "disjunction",
     "established",
@@ -216,11 +217,54 @@ def implication(antecedent: bool | Proposition, consequent: bool | Proposition) 
     return Implies(antecedent, consequent)
 
 
+def decide(proposition: Decision | Proposition, assumptions: Proposition = True) -> bool | None:
+    """Decide a proposition three-valued, evaluating a conjunction from its conjuncts first.
+
+    A conjunction of owned facts is decided by its parts: one false conjunct decides it
+    false, and all true conjuncts decide it true.  Both readings are exact, and taking
+    them here keeps the common case from building the conjunctive normal form of the
+    whole conjunction, which costs the number of atoms it contains and is rebuilt at every
+    evaluation.  A conjunction its parts leave undecided still goes to SymPy, whose
+    reasoning across conjuncts is what can settle it.
+    """
+    if isinstance(proposition, BooleanAtom | bool):
+        return bool(proposition)
+    if isinstance(proposition, And):
+        undecided = False
+        for part in proposition.args:
+            decision = decide(part, assumptions)
+            if decision is False:
+                return False
+            undecided = undecided or decision is None
+        if not undecided:
+            return True
+    elif _owned_application(proposition) and _no_assumptions(assumptions):
+        # An owned predicate occurs in none of SymPy's known facts, so with nothing
+        # assumed its satisfiability layer can only repeat what this predicate's own
+        # handler says.  SymPy reaches that handler only after encoding its whole fact
+        # base, which it rebuilds on every call, so read the handler directly.
+        decision = proposition._eval_ask(assumptions)
+        return None if decision is None else bool(decision)
+    return sympy_ask(proposition, assumptions)
+
+
+def _owned_application(proposition: Proposition) -> bool:
+    """Whether this is an application of a predicate this repository owns."""
+    return isinstance(proposition, AppliedPredicate) and isinstance(proposition.function, Predicate)
+
+
+def _no_assumptions(assumptions: Proposition) -> bool:
+    """Whether nothing is assumed, locally or in the global context."""
+    from sympy.assumptions import global_assumptions
+
+    return isinstance(assumptions, BooleanAtom | bool) and bool(assumptions) and not global_assumptions
+
+
 def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
     """Evaluate a proposition or typed query."""
     if isinstance(application, AppliedQuery):
         return ask_query(application)
-    decision = sympy_ask(application)
+    decision = decide(application)
     return Unknown if decision is None else decision
 
 
@@ -468,12 +512,12 @@ class Axiom:
         assert owner is not None, f"{self!r} decides membership of the objects of a category that declares none"
         deciding = self._deciding.__get__(category)
 
-        def decide(candidate: CategoryOfCategories.ElementType, assumptions: Proposition) -> PredicateDecision:
+        def decide_membership(candidate: CategoryOfCategories.ElementType, assumptions: Proposition) -> PredicateDecision:
             decision = ask(deciding(candidate))
             return None if decision is Unknown else decision
 
-        decide.__name__ = self._deciding.__name__
-        register_declared_case(subcategory.predicate(), owner, decide)
+        decide_membership.__name__ = self._deciding.__name__
+        register_declared_case(subcategory.predicate(), owner, decide_membership)
 
     def _declared_on(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
         """``category.P(*parameters)``, through the accessor that category declares for this axiom.

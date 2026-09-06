@@ -25,7 +25,7 @@ from sage_categories.cat.category import (
     refine,
 )
 from sage_categories.cat.properties import Axiom
-from sage_categories.cat.predicates import conjunction, register_handler
+from sage_categories.cat.predicates import conjunction, decide, register_handler
 from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict
 
 __all__ = [
@@ -763,7 +763,7 @@ def _finite_functor_equal(first: CategoryOfCategories.MorphismType, second: Cate
     data = finite_category(first.domain())
     if data is Unknown:
         return None
-    return sympy_ask(conjunction((
+    return decide(conjunction((
         *(first.on_object(x) == second.on_object(x) for x in data.objects),
         *(first.on_morphism(f) == second.on_morphism(f) for f in data.morphisms),
     )), assumptions)
@@ -782,7 +782,7 @@ def _finite_transformation_equal(first: FunctorsCategory.MorphismType, second: F
     data = finite_category(source)
     if data is Unknown:
         return None
-    return sympy_ask(conjunction((
+    return decide(conjunction((
         first.domain() == second.domain(), first.codomain() == second.codomain(),
         *(first.component(x) == second.component(x) for x in data.objects),
     )), assumptions)

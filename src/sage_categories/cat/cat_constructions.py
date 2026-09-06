@@ -56,7 +56,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.shapes import Discrete, DiscreteCategory
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, register_handler
+from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, decide, register_handler
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
 
@@ -115,7 +115,7 @@ def _components_agree_along_diagram(
         return None
     if limit.shape().generating_morphisms() is Unknown:
         return None
-    return sympy_ask(limit._agrees(candidate.family_component), assumptions)
+    return decide(limit._agrees(candidate.family_component), assumptions)
 
 
 register_handler(components_agree, _components_agree_along_diagram)
@@ -389,7 +389,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         vertices = self._vertices()
         if vertices is Unknown:
             return None
-        return sympy_ask(
+        return decide(
             conjunction(first.family_component(vertex) == candidate.family_component(vertex) for vertex in vertices),
             assumptions,
         )

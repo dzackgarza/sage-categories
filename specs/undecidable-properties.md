@@ -76,9 +76,16 @@ A comparison of a typed query with an object of its result category, such as `X.
 
 Public `ask()` has two branches.
 
-For a SymPy proposition, it calls `sympy.ask()`.
-It returns the resulting `True` or `False`.
-It maps SymPy `None` to Sage `Unknown`.
+For a SymPy proposition, it returns the decision that proposition has, mapping SymPy `None` to Sage `Unknown`.
+Three readings give that decision, and all three give the same answer:
+
+- A conjunction is decided by its conjuncts. One false conjunct decides it false and all true conjuncts decide it true. A conjunct the parts leave undecided sends the whole conjunction to `sympy.ask()`, whose reasoning across conjuncts is what can settle it.
+
+- An application of a predicate this repository owns, with nothing assumed, is decided by that predicate's own handler. An owned predicate occurs in none of SymPy's known facts, so with an empty assumption context its satisfiability layer can only repeat what the handler says, and it reaches the handler only after encoding that fact base, which it rebuilds on every call.
+
+- Every other proposition, and every proposition under an assumption, calls `sympy.ask()`.
+
+The readings are an evaluation order, not a second evaluator: each defers to the predicate handlers and to SymPy exactly as the single call would.
 
 For a typed query, it calls the exact evaluator owned by that query.
 It returns an object of the declared result category or Sage `Unknown`.

@@ -54,7 +54,7 @@ from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
-from sage_categories.cat.shapes import Discrete, DiscreteCategory
+from sage_categories.cat.shapes import Discrete, DiscreteCategory, DiscreteObjectCategory, carrier_comparison
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, decide, register_handler
 from sage_categories.kernel.refinement import is_placed
@@ -169,12 +169,25 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         super().__init__()
         register_handler(self._equality, self._equal_objects)
         register_handler(self._equality, self._equal_morphisms)
+        register_handler(self._equality, self._equal_points)
 
     def _equal_objects(self, first: LimitCategory.ObjectType, second: LimitCategory.ObjectType, assumptions: Proposition) -> bool | None:
         return self._equal(first, second, assumptions)
 
     def _equal_morphisms(self, first: LimitCategory.MorphismType, second: LimitCategory.MorphismType, assumptions: Proposition) -> bool | None:
         return self._equal(first, second, assumptions)
+
+    def _equal_points(self, first: DiscreteObjectCategory.ObjectType, second: DiscreteObjectCategory.ObjectType, assumptions: Proposition) -> bool | None:
+        """Two points of an object of this category are equal when their carrier points are.
+
+        An object built as a compatible family is concrete: the carrier functor is a
+        declared faithful isofibration, so equality of its points is the pullback of the
+        carrier's equality along it (``cat/shapes.py``, ``carrier_comparison``).  Without
+        this case a category of structured objects has handlers for its objects and its
+        morphisms and none for their points.
+        """
+        carrier = carrier_comparison(first, second)
+        return None if carrier is None else decide(carrier, assumptions)
 
     def shape(self) -> Category:
         return self._diagram.domain()

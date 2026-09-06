@@ -31,7 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from sympy import ask as sympy_ask
+from sympy import ask as sympy_ask, false
 
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.declarations import Sets
@@ -45,7 +45,7 @@ from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
 
-__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "omega", "discrete_functor"]
+__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "carrier_comparison", "omega", "discrete_functor"]
 
 
 # -- Discrete(S) ---------------------------------------------------------------------
@@ -230,6 +230,34 @@ def realize_discrete_object(value: CategoryOfCategories.ElementType) -> None:
     from sage_categories.kernel.construction import realize_object
 
     realize_object(value, DiscreteObjectCategory)
+
+
+def carrier_comparison(
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+) -> Proposition | None:
+    """``U(x) == U(y)``: equality of two points of one object, read in its carrier.
+
+    A category of structured objects is concrete: its forgetful functor ``U`` to the
+    carrier is faithful, hence injective on hom sets, so two points ``x, y: 1 -> X`` are
+    equal exactly when ``U(x)`` and ``U(y)`` are.  The equality predicate of ``X`` is
+    therefore the pullback of the carrier's along ``U``, and this states that pullback
+    once for every concrete category rather than in each of them.
+
+    The proposition is the carrier's own, so the carrier decides it: a quotient or
+    presented carrier normalizes its data before answering, and no comparison of raw data
+    happens here.  ``None`` where there is no reading to take: values that are not both
+    points of one realized object, and an object that is its own carrier, whose transport
+    is the identity and states nothing new.  Points of two different objects are two
+    values, so their comparison is decided false.
+    """
+    owner, other = first.category(), second.category()
+    if not (isinstance(owner, DiscreteObjectCategory) and isinstance(other, DiscreteObjectCategory)):
+        return None
+    if owner is not other:
+        return false
+    transported = owner.object_point(first)
+    return None if transported is first else transported == owner.object_point(second)
 
 
 # -- Thin(P, leq) --------------------------------------------------------------------

@@ -42,7 +42,10 @@ def test_matrix_ring_is_a_noncommutative_monoid_object() -> None:
     # E12 E21 = E11 and E21 E12 = E22, so the multiplication is not commutative.
     assert multiply_points(e12, e21) == element([1, 0, 0, 0])
     assert multiply_points(e21, e12) == element([0, 0, 0, 1])
-    assert multiply_points(e12, e21) != multiply_points(e21, e12)
+    # Two matrix units are distinct points of the ring, and the two products they form are
+    # distinct points, which is noncommutativity decided through the ring's own equality.
+    assert ask(group.point(e12) == group.point(e21)) is False
+    assert ask(group.point(multiply_points(e12, e21)) == group.point(multiply_points(e21, e12))) is False
     # The unit is the identity matrix, and E12 is nilpotent.
     assert multiply_points(element([1, 0, 0, 1]), e12) == e12
     assert multiply_points(e12, e12) == group.zero().datum()

@@ -80,7 +80,9 @@ A point of `X` is a morphism `* -> X`, that is, a morphism `1 -> X` from `Sets()
 The generic exponential construction comes from `Cat`. Its realization in `Sets()` is the function set from `X` to `Y`. It is a distinct owned object, and `Mor(Sets())(X, Y)` is the discrete category on its elements.
 
 `Mor(Sets())(X, Y)(rule)` constructs a set map.
-The rule can be a callable, an explicit mapping, a SymPy `Lambda`, or a Sage callable symbolic expression; the constructor dispatches on that representation.
+The rule can be a callable, an explicit mapping, a SymPy `Lambda`, a Sage callable symbolic expression, or a map form a leaf supplies; the constructor dispatches on that representation.
+A map form is a retained representation that an engine decides: it evaluates a datum, composes with another form, compares with another form, and may invert. A leaf supplies one for the maps its engine understands, such as the integer matrix of a homomorphism between presented abelian groups. A leaf also retains an object form for a set its engine presents, from which `Sets()` derives the forms of the maps it constructs itself: identities, the zero constant, composites, and the projections and pairings of products.
+`Sets()` consults a retained form before any enumeration or symbolic reasoning, so a map whose engine decides equality or invertibility is decided by that engine.
 Every form is stored as a raw rule on data, which is what evaluation uses.
 A symbolic form is retained beside it and propagates through identities, constants, composition, and the projections and pairings of rule-defined products, so that equality and the morphism properties can be decided symbolically where a raw rule alone would leave them `Unknown`. The constructor must establish that the rule is total and lands in `Y`.
 
@@ -145,6 +147,7 @@ For a diagram `i |-> X_i` on `S`, `Sets()` constructs the owned set
 
 Membership is the conjunction of the component membership propositions.
 Equality is the conjunction of the component equality propositions.
+A product of factors that retain object forms states its membership by those propositions and materializes no tuples, because its size is the product of theirs and its maps are decided by the factors' forms. A product of enumerated factors that retain no form is enumerated.
 `ask()` evaluates either proposition when the retained diagram and the selected set engines supply an exact algorithm.
 The set implementation selects a private exact representation from the retained diagram.
 The membership and equality predicates use the components obtained through the inherited projections.

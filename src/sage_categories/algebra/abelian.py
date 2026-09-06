@@ -8,55 +8,181 @@ the engine's addition; ``integer_group()`` is the integers on their rule-defined
 tensor product is the selected monoidal structure ``AbelianTensor()`` on ``AbelianGroups()``
 with unit the integers (``specs/modules.md``, "Instances").
 
-The private engine is Smith coordinates.  A presented group ``A = Z^n / R_A`` in Smith
-generators of orders ``(d_1, ..., d_n)`` has ``A ⊗ B = Z^{nm} / (R_A ⊗ 1 + 1 ⊗ R_B)``, the
-quotient of the free module on the pairs of generators by ``d_i e_{ij}`` and ``d'_j e_{ij}``
-(Stacks, tag 00CV, tensor products of modules; the presentation is the standard one from
-right exactness of ``⊗``).  The biadditive map sends ``(a, b)`` to ``Σ a_i b_j e_{ij}``, and
-a biadditive ``f: A × B -> C`` factors through the mediator that sends the class of ``e_{ij}``
-to ``f(e_i, e_j)`` and extends additively along a lift of each element.
+The private engine is Smith coordinates.  Every presented carrier registers its
+``Presentation`` with ``Sets`` as the object form, and every homomorphism between presented
+carriers is constructed from its ``LinearForm``, the integer matrix of its action on Smith
+generators; ``Sets`` composes, pairs, and projects these forms itself and decides the
+equality of two such maps by comparing matrices modulo the target orders, so no law is
+decided by enumeration.  A presented group ``A = Z^n / R_A`` in Smith generators of orders
+``(d_1, ..., d_n)`` has ``A ⊗ B = Z^{nm} / (R_A ⊗ 1 + 1 ⊗ R_B)``, the quotient of the free
+module on the pairs of generators by ``d_i e_{ij}`` and ``d'_j e_{ij}`` (Stacks, tag 00CV,
+tensor products; the presentation is the standard one from right exactness of ``⊗``).  The
+biadditive map sends ``(a, b)`` to ``Σ a_i b_j e_{ij}``, and a biadditive ``f: A × B -> C``
+factors through the mediator that sends the class of ``e_{ij}`` to ``f(e_i, e_j)``.
 """
 
 from __future__ import annotations
 
-__all__ = ["AbelianGroups", "AbelianTensor", "abelian_homomorphism", "bilinear_map", "integer_group", "presented_abelian_group", "tensor_mediator"]
+__all__ = [
+    "AbelianGroups",
+    "AbelianTensor",
+    "LinearForm",
+    "Presentation",
+    "abelian_homomorphism",
+    "bilinear_map",
+    "integer_group",
+    "presented_abelian_group",
+    "tensor_mediator",
+]
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 
 from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup_class
+from sage.matrix.constructor import block_matrix, identity_matrix, matrix, zero_matrix
+from sage.matrix.matrix_integer_dense import Matrix_integer_dense
 from sage.modules.fg_pid.fgp_module import FGP_Module_class
 from sage.modules.free_module import FreeModule
 from sage.modules.free_module_element import vector
 from sage.rings.integer_ring import ZZ
-from sage.structure.coerce_dict import MonoDict
-from sympy import Lambda, Q, symbols
+from sympy import Q
 
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.monoidal import Cartesian, MonoidalStructures, MonoidalStructuresCategory, tensor_parentheses, tensor_units
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.structured_objects import AdditiveGroups, Groups, Monoids
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_function
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function
+from sage_categories.sets.finite import Sets
 
 type Engine = AdditiveAbelianGroup_class | FGP_Module_class
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class _Presentation:
-    """Smith coordinates of a presented abelian group: generator orders, and the two coordinate maps on data."""
+class Presentation:
+    """Smith coordinates of a presented carrier: generator orders and the two coordinate maps on data.
+
+    A direct sum of presented carriers, the ``Sets`` product of their carriers, records its
+    factors so that projections and pairings have matrices.  This is the object form
+    ``Sets`` reads (``sets.finite.ObjectForm``).
+    """
 
     orders: tuple[int, ...]
     coordinates: Callable[[Hashable], tuple[int, ...]]
     element: Callable[[tuple[int, ...]], Hashable]
+    factors: tuple[Presentation, ...] = ()
+
+    def rank(self) -> int:
+        return len(self.orders)
+
+    def identity(self) -> LinearForm:
+        return LinearForm(self, self, identity_matrix(ZZ, self.rank()))
+
+    def direct_sum(self, factors: tuple[Presentation, ...]) -> Presentation:
+        sizes = tuple(factor.rank() for factor in factors)
+
+        def coordinates(datum: Hashable) -> tuple[int, ...]:
+            return tuple(c for factor, component in zip(factors, datum, strict=True) for c in factor.coordinates(component))
+
+        def element(coords: tuple[int, ...]) -> Hashable:
+            parts, start = [], 0
+            for factor, size in zip(factors, sizes):
+                parts.append(factor.element(tuple(coords[start : start + size])))
+                start += size
+            return tuple(parts)
+
+        return Presentation(tuple(order for factor in factors for order in factor.orders), coordinates, element, factors)
+
+    def projection(self, index: int) -> LinearForm:
+        offset = sum(factor.rank() for factor in self.factors[:index])
+        factor = self.factors[index]
+        matrix = zero_matrix(ZZ, self.rank(), factor.rank())
+        for k in range(factor.rank()):
+            matrix[offset + k, k] = 1
+        return LinearForm(self, factor, matrix)
+
+    def pair(self, components: tuple[LinearForm, ...], target: Presentation) -> LinearForm:
+        assert all(component.source is self for component in components)
+        if not components:
+            return LinearForm(self, target, zero_matrix(ZZ, self.rank(), target.rank()))
+        return LinearForm(self, target, block_matrix(ZZ, 1, len(components), [component.matrix for component in components], subdivide=False))
+
+    def zero_datum(self) -> Hashable:
+        return self.element((0,) * self.rank())
+
+    def zero_map(self, source: Presentation) -> LinearForm:
+        return LinearForm(source, self, zero_matrix(ZZ, source.rank(), self.rank()))
+
+
+def _descends(matrix: Matrix_integer_dense, source_orders: tuple[int, ...], target_orders: tuple[int, ...]) -> bool:
+    """Whether an integer matrix on generators defines a map of the quotients: ``d_i M_{ij} ≡ 0 (mod e_j)``."""
+    return all(
+        (source * matrix[i, j]) % target == 0 if target else source * matrix[i, j] == 0
+        for i, source in enumerate(source_orders)
+        if source
+        for j, target in enumerate(target_orders)
+    )
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class LinearForm:
+    """A homomorphism between presented carriers as its integer matrix on Smith generators, ``x ↦ x · M`` on coordinate rows.
+
+    This is the map form ``Sets`` reads (``sets.finite.MapForm``): composition is the
+    matrix product, equality is equality of matrices reduced modulo the target orders,
+    and a unimodular matrix between free presentations inverts.
+    """
+
+    source: Presentation
+    target: Presentation
+    matrix: Matrix_integer_dense
+
+    def evaluate(self, datum: Hashable) -> Hashable:
+        image = vector(ZZ, self.source.coordinates(datum)) * self.matrix
+        return self.target.element(tuple(int(c) for c in image))
+
+    def compose(self, first: LinearForm) -> LinearForm | None:
+        if not isinstance(first, LinearForm) or first.target is not self.source:
+            return None
+        return LinearForm(first.source, self.target, first.matrix * self.matrix)
+
+    def equals(self, other: LinearForm) -> bool | None:
+        if not isinstance(other, LinearForm) or other.source is not self.source or other.target is not self.target:
+            return None
+        return self.reduced() == other.reduced()
+
+    def reduced(self) -> Matrix_integer_dense:
+        """The matrix with each column reduced modulo the order of its target generator."""
+        matrix = self.matrix.__copy__()
+        for column, order in enumerate(self.target.orders):
+            if order:
+                for row in range(matrix.nrows()):
+                    matrix[row, column] = matrix[row, column] % order
+        matrix.set_immutable()
+        return matrix
+
+    def inverse(self) -> LinearForm | None:
+        """The two-sided inverse when the matrix is unimodular and both it and its integer inverse respect the relations.
+
+        A square integer matrix of determinant ``±1`` has an integer inverse, and each of
+        the two descends to the quotients exactly when ``d_i M_{ij} ≡ 0 (mod e_j)`` for the
+        source orders ``d`` and target orders ``e``.  Both conditions checked, the two maps
+        compose to the identity on coordinates and so on the groups.  Anything else leaves
+        invertibility to another route rather than asserting it.
+        """
+        if self.matrix.nrows() != self.matrix.ncols() or abs(self.matrix.det()) != 1:
+            return None
+        candidate = self.matrix.inverse().change_ring(ZZ)
+        if not _descends(candidate, self.target.orders, self.source.orders):
+            return None
+        return LinearForm(self.target, self.source, candidate)
 
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _TensorData:
-    """The factors of a tensor product object and the free module on pairs of their generators."""
+    """The factors of a tensor product object and the presented module on the pairs of their generators."""
 
     first: CategoryOfCategories.ElementType
     second: CategoryOfCategories.ElementType
@@ -65,6 +191,9 @@ class _TensorData:
 
 _presentations: MonoDict = MonoDict()
 _tensor_data: MonoDict = MonoDict()
+
+_terminal_presentation = Presentation((), lambda datum: (), lambda coords: ())
+Sets.retain_form(Sets.Terminal(), _terminal_presentation)
 
 
 def _structure() -> MonoidalStructuresCategory.ObjectType:
@@ -84,7 +213,7 @@ def _points(group: CategoryOfCategories.ElementType) -> CategoryOfCategories.Ele
     return magmas.to_carrier().on_object(monoids.to_named_magmas().on_object(groups.to_named_monoids().on_object(group)))
 
 
-def presentation(group: CategoryOfCategories.ElementType) -> _Presentation:
+def presentation(group: CategoryOfCategories.ElementType) -> Presentation:
     """The Smith presentation this leaf retained for a group object; a group built elsewhere has none."""
     assert group in _presentations, f"{group!r} was not constructed from a presented engine, so it has no Smith coordinates"
     return _presentations[group]
@@ -92,46 +221,79 @@ def presentation(group: CategoryOfCategories.ElementType) -> _Presentation:
 
 def _group_from_operations(
     carrier: CategoryOfCategories.ElementType,
-    addition: MorphismCategory.ObjectType,
-    zero: MorphismCategory.ObjectType,
+    form: Presentation,
+    zero: Hashable,
 ) -> CategoryOfCategories.ElementType:
-    """The object of ``Ab`` with these operations: the monoid is decided a group and commutative on the way."""
+    """The object of ``Ab`` on a presented carrier: addition is the linear form ``(x, y) ↦ x + y``, decided a commutative group on the way."""
     structure = _structure()
-    monoid = Monoids(structure)(addition, zero)
+    # Two engines with equal element data present one set; the set keeps the presentation it already carries.
+    existing = Sets.form_of(carrier)
+    if existing is None:
+        Sets.retain_form(carrier, form)
+    else:
+        form = existing
+    square = binary_product_data(Sets(), carrier, carrier).apex()
+    identity = identity_matrix(ZZ, form.rank())
+    addition = Mor(Sets)(square, carrier)(LinearForm(Sets.form_of(square), form, identity.stack(identity)))
+    unit = Mor(Sets)(structure.unit(), carrier)(lambda _: zero)
+    monoid = Monoids(structure)(addition, unit)
     assert monoid in Groups(structure), f"{addition!r} is not a group operation"
     group = AdditiveGroups(structure).renamed(monoid)
     assert group in AbelianGroups(), f"{addition!r} is not commutative"
+    _presentations[group] = form
     return group
 
 
-@cached_function(key=identity_key)
-def presented_abelian_group(engine: Engine) -> CategoryOfCategories.ElementType:
-    """The object of ``Ab`` whose points are the elements of a finite presented Sage abelian group, with its addition."""
+def _group_from_engine(engine: Engine) -> CategoryOfCategories.ElementType:
+    """A fresh object of ``Ab`` on the elements of a finite engine.
+
+    Sage identifies presented modules with equal relations, so two tensor products can share
+    one engine; each tensor product is nevertheless its own object of ``Ab``, which is why
+    this constructor is not retained by engine.
+    """
     assert engine.is_finite(), f"{engine!r} is infinite; only the integers are represented without an enumeration"
-    carrier = Sets(tuple(engine))
-    square = binary_product_data(Sets(), carrier, carrier).apex()
-    addition = Mor(Sets)(square, carrier)(lambda pair: pair[0] + pair[1])
-    zero = Mor(Sets)(_structure().unit(), carrier)(lambda _: engine.zero())
-    group = _group_from_operations(carrier, addition, zero)
-    _presentations[group] = _Presentation(
+    form = Presentation(
         tuple(int(order) for order in engine.invariants()),
         lambda datum: tuple(int(c) for c in datum.vector()),
         lambda coordinates: engine.linear_combination_of_smith_form_gens(vector(ZZ, coordinates)),
     )
-    return group
+    return _group_from_operations(Sets(tuple(engine)), form, engine.zero())
+
+
+@cached_function(key=identity_key)
+def presented_abelian_group(engine: Engine) -> CategoryOfCategories.ElementType:
+    """The object of ``Ab`` whose points are the elements of a finite presented Sage abelian group, with its addition; one object per engine."""
+    return _group_from_engine(engine)
 
 
 @cached_function(key=lambda: 0)
 def integer_group() -> CategoryOfCategories.ElementType:
-    """``Z`` as an object of ``Ab``: the rule-defined integers with symbolic addition, the free group on one generator."""
+    """``Z`` as an object of ``Ab``: the rule-defined integers, the free group on one generator."""
     integers = Sets.from_membership(lambda n: Q.integer(n))
-    square = binary_product_data(Sets(), integers, integers).apex()
-    a, b = symbols("a b")
-    addition = Mor(Sets)(square, integers)(Lambda((a, b), a + b))
-    zero = Mor(Sets)(_structure().unit(), integers)(lambda _: 0)
-    group = _group_from_operations(integers, addition, zero)
-    _presentations[group] = _Presentation((0,), lambda datum: (int(datum),), lambda coordinates: int(coordinates[0]))
-    return group
+    form = Presentation((0,), lambda datum: (int(datum),), lambda coordinates: int(coordinates[0]))
+    return _group_from_operations(integers, form, 0)
+
+
+def _linear_homomorphism(
+    source: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    form: LinearForm,
+) -> MorphismCategory.ObjectType:
+    """The morphism of ``Ab`` with this linear form; the monoid constructor checks additivity and the unit through the forms."""
+    structure = _structure()
+    renaming = AdditiveGroups(structure).product_projection(0)
+    carrier_map = Mor(Sets)(_points(source), _points(target))(form)
+    monoid_map = Monoids(structure).homomorphism(renaming.on_object(source), renaming.on_object(target), carrier_map)
+    return AdditiveGroups(structure).homomorphism(source, target, monoid_map)
+
+
+def _generators(form: Presentation) -> tuple[Hashable, ...]:
+    return tuple(form.element(tuple(int(i == k) for k in range(form.rank()))) for i in range(form.rank()))
+
+
+def _matrix_of_rows(rows: list, width: int) -> Matrix_integer_dense:
+    """The integer matrix with these coordinate rows; a vector is a row here, not a column."""
+    return matrix(ZZ, len(rows), width, [entry for row in rows for entry in row])
 
 
 def abelian_homomorphism(
@@ -139,17 +301,18 @@ def abelian_homomorphism(
     target: CategoryOfCategories.ElementType,
     rule: Callable[[Hashable], Hashable],
 ) -> MorphismCategory.ObjectType:
-    """The morphism of ``Ab`` over a rule on data; additivity and the unit are checked by the monoid constructor."""
-    structure = _structure()
-    renaming = AdditiveGroups(structure).product_projection(0)
-    carrier_map = Mor(Sets)(_points(source), _points(target))(rule)
-    monoid_map = Monoids(structure).homomorphism(renaming.on_object(source), renaming.on_object(target), carrier_map)
-    return AdditiveGroups(structure).homomorphism(source, target, monoid_map)
+    """The morphism of ``Ab`` over a rule on data: its matrix is read off the generators, and the rule must agree with that linear extension."""
+    left, right = presentation(source), presentation(target)
+    form = LinearForm(left, right, _matrix_of_rows([vector(ZZ, right.coordinates(rule(generator))) for generator in _generators(left)], right.rank()))
+    carrier = _points(source)
+    samples = tuple(point.datum() for point in carrier) if isinstance(carrier._presentation, tuple) else tuple(range(-2, 3))
+    assert all(rule(sample) == form.evaluate(sample) for sample in samples), f"{rule!r} is not additive on {source!r}"
+    return _linear_homomorphism(source, target, form)
 
 
-def _pair_generators(first: _Presentation, second: _Presentation) -> FGP_Module_class:
+def _pair_generators(first: Presentation, second: Presentation) -> FGP_Module_class:
     """``Z^{nm} / (d_i e_{ij}, d'_j e_{ij})``: the presented tensor product in the pair generators."""
-    n, m = len(first.orders), len(second.orders)
+    n, m = first.rank(), second.rank()
     free = FreeModule(ZZ, n * m)
     relations = [free.gen(i * m + j) * order for i, order in enumerate(first.orders) for j in range(m)]
     relations += [free.gen(i * m + j) * order for j, order in enumerate(second.orders) for i in range(n)]
@@ -158,8 +321,7 @@ def _pair_generators(first: _Presentation, second: _Presentation) -> FGP_Module_
 
 def _pair_vector(data: _TensorData, a: Hashable, b: Hashable) -> Hashable:
     """``Σ a_i b_j e_{ij}`` as an element of the tensor engine: the image of ``(a, b)`` under the biadditive map."""
-    first, second = presentation(data.first), presentation(data.second)
-    left, right = first.coordinates(a), second.coordinates(b)
+    left, right = presentation(data.first).coordinates(a), presentation(data.second).coordinates(b)
     m = len(right)
     return data.quotient(vector(ZZ, [left[i] * right[j] for i in range(len(left)) for j in range(m)]))
 
@@ -168,7 +330,7 @@ def _pair_vector(data: _TensorData, a: Hashable, b: Hashable) -> Hashable:
 def _tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     quotient = _pair_generators(presentation(first), presentation(second))
     assert quotient.is_finite(), f"the tensor of {first!r} and {second!r} is infinite; only finite tensor products are enumerated"
-    result = presented_abelian_group(quotient)
+    result = _group_from_engine(quotient)
     _tensor_data[result] = _TensorData(first, second, quotient)
     return result
 
@@ -189,27 +351,23 @@ def tensor_mediator(
 ) -> MorphismCategory.ObjectType:
     """The morphism ``A ⊗ B -> C`` of ``Ab`` through which a biadditive rule ``(a, b) ↦ f(a, b)`` on data factors.
 
-    The class of ``e_{ij}`` goes to ``f(e_i, e_j)``; an element is sent along any lift to the
-    free module on the pairs, which is well defined because ``f`` respects the relations.
+    The class of ``e_{ij}`` goes to ``f(e_i, e_j)``; a Smith generator of the tensor is sent
+    along its lift to the free module on the pairs, which is well defined because ``f``
+    respects the relations.
     """
     result = _tensor_object(first, second)
     data = _tensor_data[result]
-    left, right, into = presentation(first), presentation(second), presentation(target)
-    n, m = len(left.orders), len(right.orders)
-    generators = [
-        [biadditive(left.element(tuple(int(i == k) for k in range(n))), right.element(tuple(int(j == k) for k in range(m)))) for j in range(m)]
-        for i in range(n)
-    ]
-    zero = into.element(tuple(0 for _ in into.orders))
-
-    def rule(datum: Hashable) -> Hashable:
-        total = zero
-        for position, coefficient in enumerate(datum.lift()):
+    left, right, into, form = presentation(first), presentation(second), presentation(target), presentation(result)
+    m = right.rank()
+    images = [[vector(ZZ, into.coordinates(biadditive(a, b))) for b in _generators(right)] for a in _generators(left)]
+    rows = []
+    for generator in data.quotient.smith_form_gens():
+        row = vector(ZZ, [0] * into.rank())
+        for position, coefficient in enumerate(generator.lift()):
             if coefficient:
-                total = total + int(coefficient) * generators[position // m][position % m]
-        return total
-
-    return abelian_homomorphism(result, target, rule)
+                row += int(coefficient) * images[position // m][position % m]
+        rows.append(row)
+    return _linear_homomorphism(result, target, LinearForm(form, into, _matrix_of_rows(rows, into.rank())))
 
 
 def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
@@ -229,30 +387,27 @@ def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> Morph
     a, b, c = (triple.family_component(index) for index in range(3))
     ab, bc = _tensor_object(a, b), _tensor_object(b, c)
     ab_data, bc_data = _tensor_data[ab], _tensor_data[bc]
+    generators_a, generators_b, generators_c = _generators(presentation(a)), _generators(presentation(b)), _generators(presentation(c))
     if forward:
         target = _tensor_object(a, bc)
-        target_data, m = _tensor_data[target], len(presentation(b).orders)
+        target_data, m = _tensor_data[target], presentation(b).rank()
 
         def rule(t: Hashable, x: Hashable) -> Hashable:
             total = target_data.quotient.zero()
             for position, coefficient in enumerate(t.lift()):
                 if coefficient:
-                    e_i = presentation(a).element(tuple(int(position // m == k) for k in range(len(presentation(a).orders))))
-                    e_j = presentation(b).element(tuple(int(position % m == k) for k in range(m)))
-                    total = total + int(coefficient) * _pair_vector(target_data, e_i, _pair_vector(bc_data, e_j, x))
+                    total = total + int(coefficient) * _pair_vector(target_data, generators_a[position // m], _pair_vector(bc_data, generators_b[position % m], x))
             return total
 
         return tensor_mediator(ab, c, target, rule)
     target = _tensor_object(ab, c)
-    target_data, p = _tensor_data[target], len(presentation(c).orders)
+    target_data, p = _tensor_data[target], presentation(c).rank()
 
     def rule_back(x: Hashable, t: Hashable) -> Hashable:
         total = target_data.quotient.zero()
         for position, coefficient in enumerate(t.lift()):
             if coefficient:
-                e_j = presentation(b).element(tuple(int(position // p == k) for k in range(len(presentation(b).orders))))
-                e_k = presentation(c).element(tuple(int(position % p == k) for k in range(p)))
-                total = total + int(coefficient) * _pair_vector(target_data, _pair_vector(ab_data, x, e_j), e_k)
+                total = total + int(coefficient) * _pair_vector(target_data, _pair_vector(ab_data, x, generators_b[position // p]), generators_c[position % p])
         return total
 
     return tensor_mediator(a, bc, target, rule_back)

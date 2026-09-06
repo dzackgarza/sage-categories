@@ -3,6 +3,8 @@
 from sage_categories.algebra.abelian import (
     AbelianGroups,
     AbelianTensor,
+    LinearForm,
+    Presentation,
     abelian_homomorphism,
     bilinear_map,
     integer_group,
@@ -10,4 +12,14 @@ from sage_categories.algebra.abelian import (
     tensor_mediator,
 )
 
-__all__ = ["AbelianGroups", "AbelianTensor", "abelian_homomorphism", "bilinear_map", "integer_group", "presented_abelian_group", "tensor_mediator"]
+__all__ = [
+    "AbelianGroups",
+    "AbelianTensor",
+    "LinearForm",
+    "Presentation",
+    "abelian_homomorphism",
+    "bilinear_map",
+    "integer_group",
+    "presented_abelian_group",
+    "tensor_mediator",
+]

@@ -7,14 +7,14 @@ are inherited from the product/equalizer calculus in Cat.
 
 from __future__ import annotations
 
-__all__ = ["SetsCategory", "Sets", "FiniteSets"]
+__all__ = ["SetsCategory", "Sets", "FiniteSets", "MapForm", "ObjectForm"]
 
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from functools import cache
 from itertools import islice
 from itertools import product as cartesian_product
-from typing import Literal, overload
+from typing import Literal, Protocol, overload, runtime_checkable
 
 from sage.rings.integer import Integer as SageInteger
 from sage.symbolic.expression import Expression as SageExpression
@@ -31,6 +31,7 @@ from sage_categories.cat.cones import cone, cocone, cone_apex, cocone_apex
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, conjunction, register_handler
 from sage_categories.cat.slices import SliceProperty, SliceLikeCategory
 from sage_categories.cat.shapes import realize_discrete_object
+from sage_categories.kernel.sage_runtime import MonoDict
 from sage_categories.sets._finite import cartesian, quotient
 
 type Map = Callable[[Hashable], Hashable]
@@ -97,12 +98,60 @@ class _ProductRule:
 # separates them; otherwise it stays undecided (``specs/sets.md``, "Equality").
 
 
+@runtime_checkable
+class MapForm(Protocol):
+    """A retained representation of a set map that an engine decides: it evaluates, composes, compares, and may invert.
+
+    A leaf supplies these for the maps its engine understands, such as the integer
+    matrices of homomorphisms between presented abelian groups.  ``Sets`` keeps the form
+    beside the raw rule and consults it before any enumeration or symbolic reasoning.
+    """
+
+    def evaluate(self, datum: Hashable) -> Hashable: ...
+
+    def compose(self, first: MapForm) -> MapForm | None: ...
+
+    def equals(self, other: MapForm) -> bool | None: ...
+
+    def inverse(self) -> MapForm | None: ...
+
+
+class ObjectForm(Protocol):
+    """A retained presentation of a set object, from which ``Sets`` derives the forms of the maps it constructs itself."""
+
+    def identity(self) -> MapForm: ...
+
+    def direct_sum(self, factors: tuple[ObjectForm, ...]) -> ObjectForm: ...
+
+    def projection(self, index: int) -> MapForm: ...
+
+    def pair(self, components: tuple[MapForm, ...], target: ObjectForm) -> MapForm: ...
+
+    def zero_datum(self) -> Hashable: ...
+
+    def zero_map(self, source: ObjectForm) -> MapForm: ...
+
+
+_object_forms: MonoDict = MonoDict()
+
+
 @dataclass(frozen=True, eq=False, slots=True)
 class _SetMap:
-    """The evaluation rule of a set map and its symbolic form, when it has one."""
+    """The evaluation rule of a set map, its symbolic form, and its engine form, each when it has one."""
 
     action: Map
     rule: Lambda | None
+    form: MapForm | None = None
+
+
+def _form_of(value: SetsCategory.ObjectType) -> ObjectForm | None:
+    return _object_forms[value] if value in _object_forms else None
+
+
+def _composed_form(second: SetsCategory.MorphismType, first: SetsCategory.MorphismType) -> MapForm | None:
+    if second._form is None or first._form is None:
+        return None
+    return second._form.compose(first._form)
 
 
 def _structure(value: SetsCategory.ObjectType) -> Basic:
@@ -271,9 +320,9 @@ class SetsCategory(Category[[Map], []]):
     class MorphismType:
         def __init__(self, data: Map | _SetMap) -> None:
             if isinstance(data, _SetMap):
-                self._action, self._symbolic = data.action, data.rule
+                self._action, self._symbolic, self._form = data.action, data.rule, data.form
             else:
-                self._action, self._symbolic = data, None
+                self._action, self._symbolic, self._form = data, None, None
 
         @property
         def _table(self) -> dict[Hashable, Hashable]:
@@ -306,6 +355,10 @@ class SetsCategory(Category[[Map], []]):
         if first.domain() is not second.domain() or first.codomain() is not second.codomain():
             return False
         domain = first.domain()
+        if first._form is not None and second._form is not None:
+            decision = first._form.equals(second._form)
+            if decision is not None:
+                return decision
         if isinstance(domain._presentation, tuple):
             return all(_equal_datum(first._action(value), second._action(value)) for value in domain._values)
         if first._symbolic is not None and second._symbolic is not None:
@@ -329,8 +382,9 @@ class SetsCategory(Category[[Map], []]):
     def _injective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
         """Monic: no two points identified, read off the table, a separating pair of samples, or the solved inverse."""
         if isinstance(arrow.domain()._presentation, tuple):
-            images = tuple(arrow._action(value) for value in arrow.domain()._values)
-            return all(not _equal_datum(images[i], images[j]) for i in range(len(images)) for j in range(i))
+            # Points hash by their data, so distinct images are distinct data.
+            images = tuple(arrow.codomain().representative(arrow._action(value)) for value in arrow.domain()._values)
+            return len(set(images)) == len(images)
         samples = tuple(islice(_samples(arrow.domain()), 16))
         images = tuple(arrow._action(sample) for sample in samples)
         if any(_equal_datum(images[i], images[j]) for i in range(len(images)) for j in range(i)):
@@ -340,11 +394,13 @@ class SetsCategory(Category[[Map], []]):
     def _surjective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
         """Epic: every codomain point is a value, read off the tables or from the solved inverse."""
         if isinstance(arrow.domain()._presentation, tuple) and isinstance(arrow.codomain()._presentation, tuple):
-            images = tuple(arrow._action(value) for value in arrow.domain()._values)
-            return all(any(_equal_datum(target, image) for image in images) for target in arrow.codomain()._values)
+            images = {arrow.codomain().representative(arrow._action(value)) for value in arrow.domain()._values}
+            return all(target in images for target in arrow.codomain()._values)
         return self._symbolic_surjective(arrow)
 
     def _bijective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
+        if arrow._form is not None and arrow._form.inverse() is not None:
+            return True
         injective, surjective = self._injective(arrow, assumptions), self._surjective(arrow, assumptions)
         return None if injective is None or surjective is None else injective and surjective
 
@@ -409,7 +465,13 @@ class SetsCategory(Category[[Map], []]):
         """The inverse of a bijection: the table read backwards, or the solved inverse rule of a symbolic map."""
         if self.retained_inverse(morphism) is None:
             domain, codomain = morphism.domain(), morphism.codomain()
-            if isinstance(domain._presentation, tuple) and self._bijective(morphism, true) is True:
+            inverse_form = None if morphism._form is None else morphism._form.inverse()
+            if inverse_form is not None:
+                self.retain_inverses(
+                    morphism,
+                    self.MorphismType(domain=codomain, codomain=domain, data=_SetMap(inverse_form.evaluate, None, inverse_form)),
+                )
+            elif isinstance(domain._presentation, tuple) and self._bijective(morphism, true) is True:
                 table = {codomain.representative(morphism._action(value)): value for value in domain._values}
                 self.retain_inverses(
                     morphism,
@@ -438,10 +500,22 @@ class SetsCategory(Category[[Map], []]):
         return self.ObjectType(rule)
 
     def constant(self, source: SetsCategory.ObjectType, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
-        """The total constant map with the supplied value."""
+        """The total constant map with the supplied value; at a presented target's zero it is the zero map."""
+        source_form, target_form = _form_of(source), _form_of(point.parent())
+        form = None
+        if source_form is not None and target_form is not None and _equal_datum(point.datum(), target_form.zero_datum()):
+            form = target_form.zero_map(source_form)
         return self.MorphismType(
-            domain=source, codomain=point.parent(), data=_SetMap(lambda datum: point.datum(), _constant_rule(source, point.datum()))
+            domain=source, codomain=point.parent(), data=_SetMap(lambda datum: point.datum(), _constant_rule(source, point.datum()), form)
         )
+
+    def retain_form(self, value: SetsCategory.ObjectType, form: ObjectForm) -> None:
+        """Retain the presentation a leaf supplies for one of this category's objects; its products and their legs then carry forms."""
+        assert value not in _object_forms, f"{value!r} already carries a presentation"
+        _object_forms[value] = form
+
+    def form_of(self, value: SetsCategory.ObjectType) -> ObjectForm | None:
+        return _form_of(value)
 
     def Initial(self) -> SetsCategory.ObjectType:
         return self(())
@@ -468,22 +542,28 @@ class SetsCategory(Category[[Map], []]):
         target: CategoryOfCategories.ElementType,
         action: MapData | _SetMap,
     ) -> MorphismCategory.ObjectType:
-        """The map with this rule: tabulated over an enumerated domain, evaluated by its rule otherwise, with its symbolic form retained."""
+        """The map with this rule: tabulated over an enumerated domain, evaluated by its rule otherwise, with its symbolic or engine form retained."""
+        form = action.form if isinstance(action, _SetMap) else action if isinstance(action, MapForm) else None
         rule = _symbolic_rule(action)
-        evaluate = _evaluation(action, rule)
+        evaluate = form.evaluate if form is not None and not isinstance(action, _SetMap) else _evaluation(action, rule)
         if not isinstance(source._presentation, tuple):
             # A rule needs no enumeration (``specs/sets.md``, "Morphisms").
-            return self.MorphismType(domain=source, codomain=target, data=_SetMap(lambda datum: target.representative(evaluate(datum)), rule))
+            return self.MorphismType(domain=source, codomain=target, data=_SetMap(lambda datum: target.representative(evaluate(datum)), rule, form))
         table = {value: target.representative(evaluate(value)) for value in source._values}
-        if rule is None and len(table) == 1:
-            rule = _constant_rule(source, next(iter(table.values())))
-        return self.MorphismType(domain=source, codomain=target, data=_SetMap(table.__getitem__, rule))
+        if len(table) == 1:
+            value = next(iter(table.values()))
+            rule = rule if rule is not None else _constant_rule(source, value)
+            source_form, target_form = _form_of(source), _form_of(target)
+            if form is None and source_form is not None and target_form is not None and _equal_datum(value, target_form.zero_datum()):
+                form = target_form.zero_map(source_form)
+        return self.MorphismType(domain=source, codomain=target, data=_SetMap(table.__getitem__, rule, form))
 
     def construct_identity(
         self, value: CategoryOfCategories.ElementType
     ) -> MorphismCategory.ObjectType:
-        structure = _structure(value)
-        return self.MorphismType(domain=value, codomain=value, data=_SetMap(lambda datum: datum, Lambda((structure,), structure)))
+        structure, object_form = _structure(value), _form_of(value)
+        form = None if object_form is None else object_form.identity()
+        return self.MorphismType(domain=value, codomain=value, data=_SetMap(lambda datum: datum, Lambda((structure,), structure), form))
 
     def composite(
         self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType
@@ -491,7 +571,7 @@ class SetsCategory(Category[[Map], []]):
         return self.MorphismType(
             domain=first.domain(),
             codomain=second.codomain(),
-            data=_SetMap(lambda value: second._action(first._action(value)), _composed_rule(second, first)),
+            data=_SetMap(lambda value: second._action(first._action(value)), _composed_rule(second, first), _composed_form(second, first)),
         )
 
     def limit_construction(
@@ -518,9 +598,18 @@ class SetsCategory(Category[[Map], []]):
 
     def _product_object(self, factors: tuple[SetsCategory.ObjectType, ...]) -> SetsCategory.ObjectType:
         """``prod_i X_i``: the enumerated tuples when every factor has an enumeration, else the set of tuples whose components are members (``specs/sets.md``, "Products")."""
-        if all(isinstance(factor._presentation, tuple) for factor in factors):
-            return self(cartesian(factor._values for factor in factors))
-        return self.from_membership(_ProductRule(factors))
+        forms = tuple(_form_of(factor) for factor in factors)
+        presented = bool(factors) and all(form is not None for form in forms)
+        if presented or not all(isinstance(factor._presentation, tuple) for factor in factors):
+            # A presented product states its membership by its factors' rules.  Materializing
+            # its tuples would cost the product of their sizes, and its maps are decided by
+            # the factors' forms rather than by a table.
+            apex = self.from_membership(_ProductRule(factors))
+        else:
+            apex = self(cartesian(factor._values for factor in factors))
+        if presented and apex not in _object_forms:
+            _object_forms[apex] = forms[0].direct_sum(forms)
+        return apex
 
     def _primitive_limit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         from sage_categories.cat.finite_categories import finite_category
@@ -530,6 +619,7 @@ class SetsCategory(Category[[Map], []]):
         if shape.is_discrete():
             apex = self._product_object(tuple(diagram.on_object(vertex) for vertex in vertices))
             position = {id(vertex): index for index, vertex in enumerate(vertices)}
+            apex_form = _form_of(apex)
 
             def leg_rule(index: int) -> Lambda | None:
                 if not isinstance(apex._presentation, _ProductRule):
@@ -544,13 +634,25 @@ class SetsCategory(Category[[Map], []]):
                 structure = _structure(cone_apex(candidate))
                 return Lambda((structure,), Tuple(*(component._symbolic(structure) for component in components)))
 
+            def lift_form(candidate: CategoryOfCategories.ElementType) -> MapForm | None:
+                source_form = _form_of(cone_apex(candidate))
+                components = tuple(candidate.component(vertex)._form for vertex in vertices)
+                if apex_form is None or source_form is None or any(component is None for component in components):
+                    return None
+                return source_form.pair(components, apex_form)
+
             legs = lambda vertex: Mor(self)(apex, diagram.on_object(vertex))(
-                _SetMap(lambda value: value[position[id(vertex)]], leg_rule(position[id(vertex)]))
+                _SetMap(
+                    lambda value: value[position[id(vertex)]],
+                    leg_rule(position[id(vertex)]),
+                    None if apex_form is None else apex_form.projection(position[id(vertex)]),
+                )
             )
             lift = lambda candidate: Mor(self)(cone_apex(candidate), apex)(
                 _SetMap(
                     lambda value: tuple(candidate.component(vertex)._action(value) for vertex in vertices),
                     lift_rule(candidate),
+                    lift_form(candidate),
                 )
             )
         else:

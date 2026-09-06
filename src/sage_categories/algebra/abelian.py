@@ -32,6 +32,7 @@ __all__ = [
     "bilinear_map",
     "integer_group",
     "presented_abelian_group",
+    "simple_tensor",
     "tensor_mediator",
 ]
 
@@ -347,11 +348,34 @@ def _tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCa
 
 
 def bilinear_map(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-    """The universal biadditive map ``A × B -> A ⊗ B`` as a set map on the product of the carriers."""
+    """The universal biadditive map ``U(A) × U(B) -> U(A ⊗ B)``, a morphism of ``Sets()``.
+
+    It is a morphism of ``Sets()`` and not of ``Ab``: a biadditive map is not additive, and
+    were this one a morphism of ``Ab`` the tensor product would be a coproduct.  Its
+    universal property is what ``tensor_mediator`` factors through.
+    """
     result = _tensor_object(first, second)
     data = _tensor_data[result]
     product = binary_product_data(Sets(), _points(first), _points(second)).apex()
     return Mor(Sets)(product, _points(result))(lambda pair: _pair_vector(data, pair[0], pair[1]))
+
+
+def simple_tensor(
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    left: Hashable,
+    right: Hashable,
+) -> CategoryOfCategories.ElementType:
+    """``a ⊗ b``: the point of ``A ⊗ B`` that the universal biadditive map sends ``(a, b)`` to.
+
+    That map lands in the carrier ``U(A ⊗ B)``, since it is a morphism of ``Sets()``, and a
+    morphism out of ``A ⊗ B`` takes points of ``A ⊗ B``.  This crosses between the two
+    through the object's own realization, so a consumer writes ``μ(a ⊗ b)`` rather than
+    unwrapping the carrier point and rewrapping it in the tensor.
+    """
+    result = _tensor_object(first, second)
+    universal = bilinear_map(first, second)
+    return result.object_at(universal(universal.domain().point((left, right))))
 
 
 def tensor_mediator(

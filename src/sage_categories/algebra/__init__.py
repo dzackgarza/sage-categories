@@ -9,6 +9,7 @@ from sage_categories.algebra.abelian import (
     bilinear_map,
     integer_group,
     presented_abelian_group,
+    simple_tensor,
     tensor_mediator,
 )
 
@@ -21,5 +22,6 @@ __all__ = [
     "bilinear_map",
     "integer_group",
     "presented_abelian_group",
+    "simple_tensor",
     "tensor_mediator",
 ]

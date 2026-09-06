@@ -17,7 +17,7 @@ from sage_categories.cat.predicates import Proposition
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
-__all__ = ["MonoidalStructures", "MonoidalStructuresCategory", "Cartesian", "Composition", "Actions", "ActionsCategory", "SelfAction", "TrivialAction"]
+__all__ = ["MonoidalStructures", "MonoidalStructuresCategory", "Cartesian", "Composition", "Reversed", "Actions", "ActionsCategory", "SelfAction", "TrivialAction"]
 
 
 def tensor_object(tensor: Functor, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
@@ -153,6 +153,44 @@ def Cartesian(base: Category) -> MonoidalStructuresCategory.ObjectType:
         lambda x: binary_product_data(base, x, unit).leg(0),
         lambda x: pair_maps(base, Mor(base)(x, x).one(), terminal_map(base, x)))
     return MonoidalStructures(base)(tensor, unit, associator, left_unitor, right_unitor)
+
+
+@cached_function(key=identity_key)
+def Reversed(monoidal: MonoidalStructuresCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType:
+    """``V^rev``: the same category and unit with ``x (x)^rev y = y (x) x``.
+
+    Reversing a monoidal category needs no braiding: it exchanges the arguments of the
+    tensor and reads each coherence isomorphism at the reversed triple.  The associator
+    is ``a^rev_{x,y,z} = a_{z,y,x}^{-1}`` and the two unitors trade places.
+    (Mathlib ``CategoryTheory.Monoidal.Braided`` builds the same reversal as
+    ``MonoidalCategory.reverse``; nLab, monoidal category, "Opposite and reverse".)
+
+    Its use here is that a right action is a left action of the reverse.  A monoid object
+    of ``V`` is a monoid object of ``V^rev`` on the same multiplication and unit, because
+    ``S (x)^rev S`` is ``S (x) S``; that monoid is the opposite monoid, and its left
+    modules in ``V^rev`` are the right ``S``-modules of ``V`` (``specs/bimodules.md``).
+    """
+    base, unit = monoidal.underlying_category(), monoidal.unit()
+    pairs = monoidal.tensor().domain()
+    swap = pair_maps(Cat(), pairs.product_projection(1), pairs.product_projection(0))
+    tensor = monoidal.tensor() * swap
+    left, right = tensor_parentheses(tensor)
+    triples = left.domain()
+    original, opposed = monoidal.associator(), monoidal.associator().inverse()
+    reverse = lambda triple: triples(tuple(triple.family_component(index) for index in (2, 1, 0)))
+    associator = natural_isomorphism(
+        left, right,
+        lambda triple: opposed.component(reverse(triple)),
+        lambda triple: original.component(reverse(triple)),
+    )
+    left_unit, right_unit = tensor_units(tensor, unit)
+    identity = Fun(base, base).one()
+    right_first, left_second = monoidal.right_unitor(), monoidal.left_unitor()
+    return MonoidalStructures(base)(
+        tensor, unit, associator,
+        natural_isomorphism(left_unit, identity, right_first.component, right_first.inverse().component),
+        natural_isomorphism(right_unit, identity, left_second.component, left_second.inverse().component),
+    )
 
 
 @cached_function(key=identity_key)

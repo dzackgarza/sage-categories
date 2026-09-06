@@ -81,6 +81,14 @@ class ModuleCategory(EquifierCategory):
     def underlying_category(self) -> Category:
         return self._actegory.underlying_category()
 
+    def scalar_endofunctor(self) -> Functor:
+        """``A • -: C -> C``, the endofunctor whose algebras this category cuts by the module laws."""
+        return _scalar_endofunctor(self._actegory, _underlying_object(self._scalars))
+
+    def carrier(self) -> CategoryOfCategories.ElementType:
+        """``A``, the object of ``M`` carrying the acting monoid."""
+        return _underlying_object(self._scalars)
+
     @cached_method
     def forgetful(self) -> Functor:
         """``U_A: Modules(A, C) -> C``, ``(X, ρ_X) ↦ X`` and ``f ↦ f``."""

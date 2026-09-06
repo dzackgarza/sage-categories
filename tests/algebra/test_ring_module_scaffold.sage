@@ -1,6 +1,6 @@
 """Ordinary modules: rings as monoid objects in (Ab, tensor), and two module structures on F_2 over F_2 x F_2 through the two projections."""
 
-from sage_categories.all import Mor, SelfAction, ask
+from sage_categories.all import Mor, Sets, SelfAction, ask
 from sage_categories.algebra import AbelianGroups, AbelianTensor, abelian_homomorphism, bilinear_map, integer_group, presented_abelian_group, tensor_mediator
 from sage_categories.cat.modules import Modules
 from sage_categories.cat.structured_objects import Monoids
@@ -40,6 +40,17 @@ def test_two_projection_actions_of_the_product_ring_on_the_field() -> None:
     assert ask(by_first == by_second) is False
     assert modules.forgetful().on_object(by_first) is field
     assert modules.forgetful().on_object(by_second) is field
+
+    # The module category declares one faithful functor, to Ab, and never names Sets.  The
+    # composite that carries its objects to sets is built from that declaration and the one
+    # Ab makes for itself.
+    assert modules.forgetful().codomain() is AbelianGroups()
+    assert ask(modules.is_concrete()) is True
+    assert modules.functor_to_sets().codomain() is Sets
+    assert modules.underlying_set(by_first) is by_first.index_set()
+    # Ab is concrete, and the carrier of a module is the carrier of its underlying group.
+    assert ask(AbelianGroups().is_concrete()) is True
+    assert modules.underlying_set(by_first) is AbelianGroups().underlying_set(field)
 
     # The idempotent (1, 0) acts as the identity through the first projection and as zero through the second.
     idempotent = pairs.linear_combination_of_smith_form_gens(vector(ZZ, [1, 0]))

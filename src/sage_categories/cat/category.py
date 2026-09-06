@@ -51,6 +51,15 @@ class _MemberPredicate(Predicate):
 member: Predicate = _MemberPredicate()
 
 
+# ``concrete_category(C)``: a faithful functor ``C -> Sets()`` composes from the structure
+# functors ``C`` declares.  ``cat/concrete.py`` decides it and implements the subcategory.
+class _ConcretePredicate(Predicate):
+    name = "concrete_category"
+
+
+concrete_category: Predicate = _ConcretePredicate()
+
+
 def _pointwise_limit_in_opposite_functor_category(
     diagram: Functor,
 ) -> CategoryOfCategories.ElementType:
@@ -1214,6 +1223,18 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     # object ``Cat().Initial()`` (``specs/functor.md``, "Canonical objects of Cat").
     Inhabited = Axiom()
     Empty = Axiom()
+
+    # ``Cat().Concrete()``: the categories a faithful functor carries to ``Sets()``.
+    # ``Sets()`` is concrete by its identity, and a category with a faithful selected
+    # functor to a concrete one is concrete along it, because faithful functors compose.
+    # So a leaf declares only its immediate structure functor and never names ``Sets()``:
+    # a lattice declares its functor to the modules over its base, that category declares
+    # its functor to the abelian groups, and the composite is what this axiom's
+    # implementation builds (``cat/concrete.py``, ``functor_to_sets``).
+    def _concrete(self, category: CategoryOfCategories.ElementType) -> Proposition:
+        return concrete_category(category)
+
+    Concrete = Axiom(_concrete)
 
     class ElementType:
         """A point ``* -> C`` of a category, whose value is an object of ``C`` (POL-CAT-058).

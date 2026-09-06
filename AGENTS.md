@@ -245,6 +245,7 @@ Apply these actions to observed conditions, regardless of how productive the cur
 | A second review adds no new falsifiable finding | Return to the original acceptance claim instead of seeking another verdict. |
 | A correction changes only terminology, labels, or file placement | Trace the same public consumer. Correct the owning operation if its failure remains. |
 | An acceptance specimen supplies infrastructure a normal consumer must inherit | Remove that substitution from the proof; implement the capability at its owner. |
+| An assertion of a true fact the language can express is about to be deleted, weakened, or made conditional because it fails | Keep the assertion. Record the defect with its owner and commit the test red under that issue. |
 | Two consecutive implementation turns produce only plans, audits, or status records | Resume the required implementation, or state the exact decision preventing it. |
 | A task grows through unrelated review findings | Keep the original unit fixed. Route findings to their owners. |
 | A diagnostic total is measured again as the reason for an edit | State the mathematical claim and verify it on a concrete specimen. |
@@ -319,6 +320,10 @@ Preserve the legible mathematical sequence over a faster opaque form.
 ### Preserve the strength of the example
 
 Write expected results from the contract before using execution to determine whether they hold.
+The suite states every fact the repository's language can express and the mathematics makes true, not the subset the current implementation satisfies.
+Execution never edits an expectation. A contract-derived assertion that fails is a defect in the implementation, and that assertion is the regression test for it.
+Deleting or weakening such an assertion leaves the suite asserting what the code already does, which is the one thing it cannot check, and it removes the facts nearest the implementation's edge, where its errors are.
+Keep the assertion, record the defect with its owner, and commit the test red under that issue.
 Read each assertion as a proposition: its inputs, quantifiers, expected result, and the wrong behavior it excludes.
 Changing the specimen to an easier case changes what it proves, even if its test name stays the same.
 

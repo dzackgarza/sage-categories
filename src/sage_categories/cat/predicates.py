@@ -56,6 +56,7 @@ __all__ = [
     "property_predicate",
     "register_handler",
     "retract",
+    "unconditional",
 ]
 
 # What a predicate is applied to: owned values, and the integer convenience of the
@@ -238,7 +239,7 @@ def decide(proposition: Decision | Proposition, assumptions: Proposition = True)
             undecided = undecided or decision is None
         if not undecided:
             return True
-    elif _owned_application(proposition) and _no_assumptions(assumptions):
+    elif _owned_application(proposition) and unconditional(assumptions):
         # An owned predicate occurs in none of SymPy's known facts, so with nothing
         # assumed its satisfiability layer can only repeat what this predicate's own
         # handler says.  SymPy reaches that handler only after encoding its whole fact
@@ -253,7 +254,7 @@ def _owned_application(proposition: Proposition) -> bool:
     return isinstance(proposition, AppliedPredicate) and isinstance(proposition.function, Predicate)
 
 
-def _no_assumptions(assumptions: Proposition) -> bool:
+def unconditional(assumptions: Proposition) -> bool:
     """Whether nothing is assumed, locally or in the global context."""
     from sympy.assumptions import global_assumptions
 

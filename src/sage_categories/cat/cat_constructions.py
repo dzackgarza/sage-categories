@@ -56,7 +56,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.shapes import Discrete, DiscreteCategory, DiscreteObjectCategory, carrier_comparison
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, decide, register_handler
+from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, decide, register_handler, unconditional
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
 
@@ -115,7 +115,16 @@ def _components_agree_along_diagram(
         return None
     if limit.shape().generating_morphisms() is Unknown:
         return None
-    return decide(limit._agrees(candidate.family_component), assumptions)
+    if candidate in limit._agreement:
+        # The constructor decided this family's compatibility and the components it read
+        # are fixed, so the decision is the retained one; deriving it again walks every
+        # generating morphism of the shape and every equation under it, which is what
+        # makes a containment test cost a traversal.
+        return limit._agreement[candidate]
+    decision = decide(limit._agrees(candidate.family_component), assumptions)
+    if unconditional(assumptions):
+        limit._agreement[candidate] = decision
+    return decision
 
 
 register_handler(components_agree, _components_agree_along_diagram)
@@ -166,6 +175,10 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
         self._finite_data: MonoDict = MonoDict()
+        # The compatibility decision of each family this category has been asked about
+        # (``_components_agree_along_diagram``): an undecided family keeps ``None`` here
+        # and stays undecided, so retention changes speed and not the answer.
+        self._agreement: MonoDict = MonoDict()
         super().__init__()
         register_handler(self._equality, self._equal_objects)
         register_handler(self._equality, self._equal_morphisms)

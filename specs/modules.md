@@ -145,6 +145,7 @@ X.action()
 `action()` returns `rho_X` in `Mor(C)(A bullet X, X)`. At compatible point domains, scalar action evaluates this morphism through the selected actegory action.
 `Modules(A, C).homomorphism(source, target, f)` constructs the module morphism over `f`, and the algebra square `f rho_X = rho_Y (A bullet f)` must commute.
 `transport(module, phi)` moves an action along an isomorphism `phi` of `C` by the conjugation `phi rho_X (A bullet phi^{-1})`. `restriction(f)` is the restriction-of-scalars functor along a monoid morphism `f: B -> A`, sending `(X, rho)` to `(X, rho (f bullet X))`.
+`carrier()` is the object of `M` carrying `A`, and `scalar_endofunctor()` is `A bullet -`, the endofunctor whose algebras the module laws cut; [bimodules.md](bimodules.md) writes the commuting law of two actions on it.
 
 All other capabilities come through the structure functor to `C` or through later property subcategories of `Modules(A, C)`.
 

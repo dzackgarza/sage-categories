@@ -3,12 +3,11 @@
 from sage_categories.all import ask
 from sage_categories.algebra import AbelianTensor, abelian_homomorphism, integer_group, presented_abelian_group, simple_tensor, tensor_mediator
 from sage_categories.cat.bimodules import Bimodules
-from sage_categories.cat.monoidal import Reversed
 from sage_categories.cat.structured_objects import Monoids
 
 
 def matrix_ring():
-    """``M_2(F_2)`` on ``(Z/2)^4`` in the entry order ``(a11, a12, a21, a22)``, with its two monoid readings."""
+    """``M_2(F_2)`` on ``(Z/2)^4`` in the entry order ``(a11, a12, a21, a22)``, as a monoid object of ``(Ab, tensor)``."""
     engine = AdditiveAbelianGroup([2, 2, 2, 2])
     entries = lambda datum: [int(c) for c in datum.vector()]
     element = lambda values: engine.linear_combination_of_smith_form_gens(vector(ZZ, values))
@@ -23,13 +22,12 @@ def matrix_ring():
     group = presented_abelian_group(engine)
     operation = tensor_mediator(group, group, group, multiply)
     unit = abelian_homomorphism(integer_group(), group, lambda k: k * element([1, 0, 0, 1]))
-    # The same multiplication and unit present S in V and the opposite monoid in V^rev.
-    return element, group, operation, Monoids(AbelianTensor())(operation, unit), Monoids(Reversed(AbelianTensor()))(operation, unit)
+    return element, group, operation, Monoids(AbelianTensor())(operation, unit)
 
 
 def test_the_regular_bimodule_of_a_noncommutative_ring_keeps_its_two_actions_apart() -> None:
-    element, group, operation, ring, opposite = matrix_ring()
-    bimodules = Bimodules(ring, opposite, AbelianTensor())
+    element, group, operation, ring = matrix_ring()
+    bimodules = Bimodules(ring, ring, AbelianTensor())
     regular = bimodules(operation, operation)
     assert regular in bimodules
     assert bimodules.forgetful().on_object(regular) is group
@@ -53,8 +51,8 @@ def test_the_regular_bimodule_of_a_noncommutative_ring_keeps_its_two_actions_apa
 
 
 def test_a_two_sided_map_of_bimodules_is_a_morphism_and_a_one_sided_map_is_not() -> None:
-    element, group, operation, ring, opposite = matrix_ring()
-    bimodules = Bimodules(ring, opposite, AbelianTensor())
+    element, group, operation, ring = matrix_ring()
+    bimodules = Bimodules(ring, ring, AbelianTensor())
     regular = bimodules(operation, operation)
 
     # Left multiplication by the identity is two-sided; the two structures make it a morphism.

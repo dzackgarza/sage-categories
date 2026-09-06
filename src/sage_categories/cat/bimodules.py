@@ -170,13 +170,16 @@ def Bimodules(
 ) -> BimoduleCategory:
     """``Bimodules(R, S, V)``: objects of ``V`` carrying a left ``R``-action and a commuting right ``S``-action.
 
-    ``right_scalars`` is the monoid object of ``V^rev`` on the same multiplication and unit
-    as ``S``, which is the opposite monoid; ``Monoids(Reversed(V))(mu, eta)`` constructs it.
+    Both scalars are monoid objects of ``V``.  The right half reads ``S`` in ``V^rev``,
+    where its own multiplication and unit present the opposite monoid, so a caller writes
+    no opposite by hand.
     """
     reverse = Reversed(monoidal)
-    assert left_scalars in Monoids(monoidal), f"{left_scalars!r} is not a monoid object of {monoidal.underlying_category()!r}"
-    assert right_scalars in Monoids(reverse), f"{right_scalars!r} is not a monoid object of the reverse of {monoidal.underlying_category()!r}"
-    left, right = Modules(left_scalars, SelfAction(monoidal)), Modules(right_scalars, SelfAction(reverse))
+    monoids = Monoids(monoidal)
+    for scalars in (left_scalars, right_scalars):
+        assert scalars in monoids, f"{scalars!r} is not a monoid object of {monoidal.underlying_category()!r}"
+    opposite = Monoids(reverse)(right_scalars.operation(), right_scalars.unit_morphism())
+    left, right = Modules(left_scalars, SelfAction(monoidal)), Modules(opposite, SelfAction(reverse))
     pairs = limit_of_categories(
         cospan_diagram(Cat(), left.forgetful(), right.forgetful()), Cat().Pullbacks(), ActionPairsCategory
     )

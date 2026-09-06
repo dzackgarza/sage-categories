@@ -188,3 +188,4 @@ test_rows_tensor_columns_over_the_matrix_ring_is_the_field()
 test_the_dot_product_factors_through_the_balanced_map()
 test_the_outer_actions_survive_the_balancing()
 test_the_induced_right_action_is_the_right_action_of_the_first_factor()
+

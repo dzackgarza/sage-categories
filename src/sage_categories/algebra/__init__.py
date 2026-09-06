@@ -15,8 +15,11 @@ from sage_categories.algebra.abelian import (
     induced_right_action,
     integer_group,
     presented_abelian_group,
+    relative_left_unitor,
+    relative_right_unitor,
     relative_tensor,
     relative_tensor_mediator,
+    relative_tensor_morphism,
     simple_tensor,
     tensor_mediator,
 )
@@ -36,8 +39,11 @@ __all__ = [
     "induced_right_action",
     "integer_group",
     "presented_abelian_group",
+    "relative_left_unitor",
+    "relative_right_unitor",
     "relative_tensor",
     "relative_tensor_mediator",
+    "relative_tensor_morphism",
     "simple_tensor",
     "tensor_mediator",
 ]

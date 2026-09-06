@@ -38,8 +38,11 @@ __all__ = [
     "induced_right_action",
     "integer_group",
     "presented_abelian_group",
+    "relative_left_unitor",
+    "relative_right_unitor",
     "relative_tensor",
     "relative_tensor_mediator",
+    "relative_tensor_morphism",
     "simple_tensor",
     "tensor_mediator",
 ]
@@ -63,7 +66,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.monoidal import Cartesian, MonoidalStructures, MonoidalStructuresCategory, tensor_morphism, tensor_parentheses, tensor_units
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Proposition
+from sage_categories.cat.predicates import Proposition, ask
 from sage_categories.cat.structured_objects import AdditiveGroups, Groups, Monoids
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
@@ -675,3 +678,67 @@ def induced_right_action(
         quotient, scalars, quotient,
         lambda value, scalar: acting(simple_tensor(product, scalars, coequalizer_lift(projection, value), scalar)).datum(),
     )
+
+
+def relative_tensor_morphism(
+    source: MorphismCategory.ObjectType,
+    target: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """``f (x)_S g``: the map of relative tensors a map of each factor induces.
+
+    ``f`` must preserve the right action the source quotient balances and ``g`` the left
+    one, which is what makes ``(x, y) -> f(x) (x)_S g(y)`` balanced and so factor through
+    the source quotient (``specs/bimodules.md``).
+    """
+    apply = lambda arrow, datum: arrow(arrow.domain().point(datum)).datum()
+    return relative_tensor_mediator(
+        source,
+        target.codomain(),
+        lambda left, right: balanced_tensor(target, apply(first, left), apply(second, right)).datum(),
+    )
+
+
+def _monoid_one(unit_morphism: MorphismCategory.ObjectType) -> Hashable:
+    """``eta(1)``: the unit element of a monoid object of ``(Ab, tensor, Z)``."""
+    return unit_morphism(integer_group().point(1)).datum()
+
+
+def _unitor(
+    projection: MorphismCategory.ObjectType,
+    action: MorphismCategory.ObjectType,
+    into_the_tensor: Callable[[Hashable], CategoryOfCategories.ElementType],
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The comparison out of a relative tensor with the acting monoid as one factor, and its inverse.
+
+    Acting is itself a balanced map, so it factors through the quotient; the section sends
+    a point to its tensor with the unit.  Both composites are checked here, so the pair is
+    an isomorphism of ``Ab`` by what it does rather than by a declaration.
+    """
+    forward = coequalizer_mediator(projection, action)
+    quotient, carrier = projection.codomain(), action.codomain()
+    backward = abelian_homomorphism(carrier, quotient, lambda datum: into_the_tensor(datum).datum())
+    assert ask(forward * backward == Mor(AbelianGroups())(carrier, carrier).one()) is True
+    assert ask(backward * forward == Mor(AbelianGroups())(quotient, quotient).one()) is True
+    return forward, backward
+
+
+def relative_left_unitor(
+    projection: MorphismCategory.ObjectType,
+    left_action: MorphismCategory.ObjectType,
+    unit_morphism: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """``S (x)_S Y -> Y``, ``s (x)_S y`` to ``s y``, with its inverse ``y -> 1 (x)_S y``."""
+    one = _monoid_one(unit_morphism)
+    return _unitor(projection, left_action, lambda datum: balanced_tensor(projection, one, datum))
+
+
+def relative_right_unitor(
+    projection: MorphismCategory.ObjectType,
+    right_action: MorphismCategory.ObjectType,
+    unit_morphism: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """``X (x)_S S -> X``, ``x (x)_S s`` to ``x s``, with its inverse ``x -> x (x)_S 1``."""
+    one = _monoid_one(unit_morphism)
+    return _unitor(projection, right_action, lambda datum: balanced_tensor(projection, datum, one))

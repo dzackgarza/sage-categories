@@ -59,6 +59,8 @@ In Smith generators the quotient adjoins the rows of the difference matrix to th
 `relative_tensor(right_action, left_action)` is the balanced map `X tensor Y -> X tensor_S Y`, whose codomain is the relative tensor product.
 `balanced_tensor(q, x, y)` is the point `x tensor_S y`, and `relative_tensor_mediator(q, C, h)` is the map out of the relative tensor through which a biadditive `S`-balanced rule factors.
 `induced_left_action(q, lambda_X)` and `induced_right_action(q, rho_Y)` are the outer actions: acting on the outer factor commutes with the identification the middle monoid makes, so each action descends to the quotient.
+`relative_tensor_morphism(q, q', f, g)` is `f tensor_S g`, the map a map of each factor induces.
+`relative_left_unitor(q, lambda_Y, eta)` gives `S tensor_S Y -> Y` and `relative_right_unitor(q, rho_X, eta)` gives `X tensor_S S -> X`, each with its inverse. Acting is itself balanced, so the comparison is the action read on the quotient, and the inverse tensors with the unit; both composites are checked on construction.
 `coequalizer_lift(q, t)` chooses a preimage through the retained cover; a rule written through it defines a homomorphism exactly when it kills the subgroup the quotient adjoins, which the constructed morphism checks.
 
 The tensor product acts on pairs of compatible bimodule morphisms.

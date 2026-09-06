@@ -533,8 +533,7 @@ There is no parallel `Cat`, kernel, or helper constructor for the same functor (
 `Cat().Concrete()` is the property subcategory of the categories a faithful functor carries to `Sets()`, and `cat_kernel` generates `C.is_concrete()` from that axiom.
 
 `Sets()` is concrete by its identity.
-Any other category is concrete along a selected structure functor that carries inheritance and is placed in `Fun.Faithful()`, whose codomain is concrete; a composite of faithful functors is faithful, so the composite is again a faithful functor to `Sets()`.
-Deciding it places every category on the route, since each tail of a faithful route is one.
+Any other category is concrete along a selected structure functor that carries inheritance and is placed in `Fun.Faithful()`, whose codomain is concrete; a composite of faithful functors is faithful, so the composite is again a faithful functor to `Sets()`. Deciding it places every category on the route, since each tail of a faithful route is one.
 No route through the declared structure functors is not a proof that no faithful functor exists, so the negative case stays undecided.
 
 The implementation of the subcategory owns the composite and its two applications:
@@ -546,8 +545,7 @@ C.underlying_map(f)          # U_C(f)
 ```
 
 This is what keeps `Sets()` out of the leaves.
-A lattice `(L, b)` declares one faithful structure functor, to the modules over its base; that category declares one to the abelian groups; that one declares one to `Sets()`.
-No leaf names `Sets()`, and the composite is built from the declarations that already exist rather than from a second functor beside them.
+A lattice `(L, b)` declares one faithful structure functor, to the modules over its base; that category declares one to the abelian groups; that one declares one to `Sets()`. No leaf names `Sets()`, and the composite is built from the declarations that already exist rather than from a second functor beside them.
 
 A category selects an immediate structure functor for its named structure; the condition above governs inherited operations.
 The complete finite-set declaration appears once in [finite-set-minimal-template.py](finite-set-minimal-template.py).

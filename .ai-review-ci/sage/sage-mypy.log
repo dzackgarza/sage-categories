@@ -1,6 +1,23 @@
 tests/order/test_poset_scaffold.sage
 tests/test_version.sage
 tests/sets/test_set_scaffold.sage
+tests/kernel/test_core_public_consumers.sage
+tests/kernel/test_categorical_calculus.sage
+tests/kernel/test_m1_sage_runtime.sage
+tests/kernel/test_regular_relations.sage
+tests/kernel/test_cat_construction_consumers.sage
+tests/kernel/test_owned_point_categories.sage
+tests/kernel/test_lifted_limits.sage
+tests/kernel/test_weighted_universal_maps.sage
+tests/kernel/test_universal_arrow_calculus.sage
+tests/kernel/test_concrete_categories.sage
+tests/kernel/test_profunctor_composition.sage
+tests/kernel/test_m2_cat_core.sage
+tests/kernel/test_indexed_constructions.sage
+tests/kernel/test_m3_properties_queries_refinement.sage
+tests/kernel/test_monoidal_structure.sage
+tests/kernel/test_universal_constructions.sage
+tests/kernel/test_m5_vertical_witnesses.sage
 tests/algebra/test_semiring_scaffold.sage
 tests/algebra/test_abelian_tensor_scaffold.sage
 tests/algebra/test_matrix_ring_scaffold.sage
@@ -8,31 +25,15 @@ tests/algebra/test_integer_ring_scaffold.sage
 tests/algebra/test_ring_scaffold.sage
 tests/algebra/test_ring_module_scaffold.sage
 tests/algebra/test_group_scaffold.sage
-tests/algebra/test_named_operations_scaffold.sage
-tests/algebra/test_monoid_scaffold.sage
 tests/algebra/test_magma_scaffold.sage
 tests/algebra/test_module_scaffold.sage
-tests/kernel/test_indexed_constructions.sage
-tests/kernel/test_m3_properties_queries_refinement.sage
-tests/kernel/test_monoidal_structure.sage
-tests/kernel/test_universal_constructions.sage
-tests/kernel/test_m5_vertical_witnesses.sage
-tests/kernel/test_universal_arrow_calculus.sage
-tests/kernel/test_profunctor_composition.sage
-tests/kernel/test_m2_cat_core.sage
-tests/kernel/test_weighted_universal_maps.sage
-tests/kernel/test_lifted_limits.sage
-tests/kernel/test_core_public_consumers.sage
-tests/kernel/test_categorical_calculus.sage
-tests/kernel/test_m1_sage_runtime.sage
-tests/kernel/test_regular_relations.sage
-tests/kernel/test_cat_construction_consumers.sage
-tests/kernel/test_owned_point_categories.sage
+tests/algebra/test_named_operations_scaffold.sage
+tests/algebra/test_monoid_scaffold.sage
 =============================
 === Running: mypy static type analysis (Sage-aware) ===
 # Type checks Python and preparsed Sage files
-# Preparsing 30 Sage file(s) for mypy
-[sage-mypy-plugin] stale manifest /home/dzack/ai-review-ci/justfiles/../tool-configs/.mypy_cache/sage-category-plugin/projection-manifest.json: Stale Sage category source module metadata for sage_categories.cat.shapes: mtime_ns mismatch (1788598001242559477 → 1788686476536832865) — regenerating
+# Preparsing 31 Sage file(s) for mypy
+[sage-mypy-plugin] stale manifest /home/dzack/ai-review-ci/justfiles/../tool-configs/.mypy_cache/sage-category-plugin/projection-manifest.json: Stale Sage category source module metadata for sage_categories.cat.category: mtime_ns mismatch (1788624439665501726 → 1788688418708383953) — regenerating
 /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage/categories/category.py:1612: UserWarning: _RuntimeImplementationCategory.ParentMethods should not have a super class
   warn("%s.%s should not have a super class" % (cls.__name__, method_provider))
 /home/dzack/gitclones/sage-dev-allopts/.venv/lib/python3.14/site-packages/sage-stubs/matrix/matrix_integer_dense.pyi:174: error: Invalid syntax  [syntax]

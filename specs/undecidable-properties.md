@@ -20,9 +20,7 @@ Only `ask()` evaluates it.
 ## Public propositions
 
 A proposition is a SymPy Boolean expression.
-A predicate that no existing method supplies is a class statement its owner writes on `Predicate`, the one base `Cat` exports, which is a SymPy `Predicate` (D179).
-Applying it returns a SymPy `AppliedPredicate` whose Python truth value raises, so only `ask()` reads it (`POL-MATH-035`, D131).
-Compound propositions use SymPy `And`, `Or`, `Not`, and `Implies`.
+A predicate that no existing method supplies is a class statement its owner writes on `Predicate`, the one base `Cat` exports, which is a SymPy `Predicate` (D179). Applying it returns a SymPy `AppliedPredicate` whose Python truth value raises, so only `ask()` reads it (`POL-MATH-035`, D131). Compound propositions use SymPy `And`, `Or`, `Not`, and `Implies`.
 
 For a property category `C.P()`, the deciding proposition is a private method of the declaring category (D142), and `cat_kernel` generates its one public spelling:
 
@@ -49,8 +47,7 @@ decision = ask(p)
 ```
 
 `a == b` returns the applied category-owned predicate.
-It does not return a Python Boolean or a SymPy `Eq`.
-`a != b` returns `Not(a == b)`.
+It does not return a Python Boolean or a SymPy `Eq`. `a != b` returns `Not(a == b)`.
 
 Equality decisions do not cause property refinement.
 A Python protocol that requires a Boolean must call `ask()` and reject `Unknown`.
@@ -65,9 +62,7 @@ q = X.cardinality()
 value = ask(q)
 ```
 
-Here the result category is `Cardinal()`.
-Evaluation returns an owned cardinal or Sage `Unknown`.
-`Unknown` is not an object of `Cardinal()`.
+Here the result category is `Cardinal()`. Evaluation returns an owned cardinal or Sage `Unknown`. `Unknown` is not an object of `Cardinal()`.
 
 Cardinality, cofinality, rank, suprema, infima, maxima, minima, and extrema use typed queries when their result can be undecided or undefined.
 A comparison of a typed query with an object of its result category, such as `X.cardinality() < aleph0`, is a proposition that `ask()` evaluates (D18).
@@ -76,12 +71,14 @@ A comparison of a typed query with an object of its result category, such as `X.
 
 Public `ask()` has two branches.
 
-For a SymPy proposition, it returns the decision that proposition has, mapping SymPy `None` to Sage `Unknown`.
-Three readings give that decision, and all three give the same answer:
+For a SymPy proposition, it returns the decision that proposition has, mapping SymPy `None` to Sage `Unknown`. Three readings give that decision, and all three give the same answer:
 
-- A conjunction is decided by its conjuncts. One false conjunct decides it false and all true conjuncts decide it true. A conjunct the parts leave undecided sends the whole conjunction to `sympy.ask()`, whose reasoning across conjuncts is what can settle it.
+- A conjunction is decided by its conjuncts.
+  One false conjunct decides it false and all true conjuncts decide it true.
+  A conjunct the parts leave undecided sends the whole conjunction to `sympy.ask()`, whose reasoning across conjuncts is what can settle it.
 
-- An application of a predicate this repository owns, with nothing assumed, is decided by that predicate's own handler. An owned predicate occurs in none of SymPy's known facts, so with an empty assumption context its satisfiability layer can only repeat what the handler says, and it reaches the handler only after encoding that fact base, which it rebuilds on every call.
+- An application of a predicate this repository owns, with nothing assumed, is decided by that predicate's own handler.
+  An owned predicate occurs in none of SymPy's known facts, so with an empty assumption context its satisfiability layer can only repeat what the handler says, and it reaches the handler only after encoding that fact base, which it rebuilds on every call.
 
 - Every other proposition, and every proposition under an assumption, calls `sympy.ask()`.
 
@@ -98,8 +95,7 @@ The repository has no second proposition evaluator, proposition cache, connectiv
 ## Proposition handlers
 
 Each mathematical predicate registers exact handlers through SymPy.
-A handler receives the arguments of the applied predicate, here the private identity atom of the owned value, and the active SymPy assumptions; SymPy 1.14.0 `Predicate.eval` calls `self.handler(*args, assumptions=assumptions)` (`sympy/assumptions/assume.py`, inspected 2026-09-03).
-It returns `True`, `False`, or `None`.
+A handler receives the arguments of the applied predicate, here the private identity atom of the owned value, and the active SymPy assumptions; SymPy 1.14.0 `Predicate.eval` calls `self.handler(*args, assumptions=assumptions)` (`sympy/assumptions/assume.py`, inspected 2026-09-03). It returns `True`, `False`, or `None`.
 
 A handler matches positively, with `match` and `case`, on the cases it can decide and returns `None` for every other case.
 The leaf writer extends coverage by adding cases.
@@ -120,8 +116,7 @@ Public `assume(p)` adds the SymPy proposition `p` to that context.
 Public `retract(p)` removes it from that context.
 
 A positive property assumption also refines the same owned value.
-This assumption, `assume(X.is_P())`, is the placement route for a value already constructed; a constructor takes construction data (D150).
-Removing the assumption does not reverse established category placement.
+This assumption, `assume(X.is_P())`, is the placement route for a value already constructed; a constructor takes construction data (D150). Removing the assumption does not reverse established category placement.
 
 An ambient hypothesis is a zero-argument SymPy predicate application.
 It uses the same assumption context and refines no value.
@@ -135,8 +130,7 @@ Every category owns a membership proposition for a supplied value.
 For a property category `C.P()` that proposition is `X.is_P()`.
 
 The Python expression `X in C` is a forced two-valued protocol boundary.
-It calls `ask()` on that proposition (`POL-ONT-003`).
-It converts only a decided result to `bool`.
+It calls `ask()` on that proposition (`POL-ONT-003`). It converts only a decided result to `bool`.
 
 Placement in `C` is an exact positive result.
 Placement is not the definition of membership.
@@ -179,15 +173,27 @@ See MathWorld's [Twin Primes](https://mathworld.wolfram.com/TwinPrimes.html).
 The architecture satisfies this specification when:
 
 - each truth-valued method returns a SymPy proposition;
+
 - each predicate meaning has one mathematical owner;
+
 - every leaf-defined predicate is a class statement on the one exported `Predicate`, so one application class carries every proposition and its truth value raises;
+
 - SymPy owns proposition application, composition, assumptions, dispatch, and evaluation;
+
 - private identity atoms expose no independent public value;
+
 - `ask()` maps only undecided SymPy results to Sage `Unknown`;
+
 - each partial value-valued method has one exact result category;
+
 - a comparison of a typed query with an object of its result category is a proposition;
+
 - every equality operation uses its exact category-owned predicate;
+
 - positive property results refine the same value;
+
 - property containment uses declared monomorphisms;
+
 - category containment asks the same membership proposition;
+
 - no unavailable result becomes an object of its result category.

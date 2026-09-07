@@ -112,7 +112,8 @@ class ModuleCategory(EquifierCategory):
         base = self.underlying_category()
         assert isomorphism.domain() is self.forgetful().on_object(module)
         assert isomorphism in base.morphism_category(1).Isomorphisms(), f"{isomorphism!r} is not an isomorphism of {base!r}"
-        identity = base.morphism_category(1)(_underlying_object(self._scalars), _underlying_object(self._scalars)).one()
+        acting_category = self.actegory().monoidal_structure().underlying_category()
+        identity = acting_category.morphism_category(1)(self.carrier(), self.carrier()).one()
         return self(isomorphism * module.action() * tensor_morphism(self._actegory.action(), identity, isomorphism.inverse()))
 
     @cached_method(key=identity_key)

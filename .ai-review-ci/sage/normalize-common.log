@@ -10,11 +10,11 @@ No staged Markdown, JSON, or YAML files found
 ┌─────────────┐
 │ Scan Status │
 └─────────────┘
-  Scanning 285 files tracked by git with 228 Code rules:
+  Scanning 287 files tracked by git with 228 Code rules:
                                                                                                                         
   Language      Rules   Files          Origin      Rules                                                                
  ─────────────────────────────        ───────────────────                                                               
-  <multilang>       7     285          Community     160                                                                
+  <multilang>       7     287          Community     160                                                                
   python           36     126          Custom         68                                                                
   yaml             11      27                                                                                           
                                                                                                                         
@@ -27,13 +27,13 @@ No files modified by autofix.
 ✅ Scan completed successfully.
  • Findings: 15 (15 blocking)
  • Rules run: 54
- • Targets scanned: 285
+ • Targets scanned: 287
  • Parsed lines: ~100.0%
  • Scan skipped: 
    ◦ Matching --exclude patterns: 2
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
-Ran 54 rules on 285 files: 15 findings.
+Ran 54 rules on 287 files: 15 findings.
                     
                     
 ┌──────────────────┐
@@ -60,32 +60,32 @@ Ran 54 rules on 285 files: 15 findings.
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          352┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          354┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          352┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          354┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
             ⋮┆----------------------------------------
-          360┆ relations = result.setdefault(_projection_surface(role), {})
+          362┆ relations = result.setdefault(_projection_surface(role), {})
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          363┆ base = _installed_root_declarations.get(kernel_base(role),
+          365┆ base = _installed_root_declarations.get(kernel_base(role),
                category_universal_class().ElementType)                   
             ⋮┆----------------------------------------
-          378┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          380┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          378┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
+          380┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
             ⋮┆----------------------------------------
-          487┆ recorded = vars(value).setdefault("_own_classes", (type(value),))
+          489┆ recorded = vars(value).setdefault("_own_classes", (type(value),))
                                        
     src/sage_categories/kernel/roles.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default
@@ -99,25 +99,25 @@ Ran 54 rules on 285 files: 15 findings.
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          105┆ candidates.setdefault(name, []).append(module)
+          104┆ candidates.setdefault(name, []).append(module)
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-dict-get-default
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          165┆ module = canonical_exports.get(alias.name, statement.module)
+          164┆ module = canonical_exports.get(alias.name, statement.module)
    
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-setdefault-consumed
           ❰❰ Blocking ❱❱
           POLICY.RUNTIME_DEFAULT
                                 
-          166┆ grouped.setdefault(module, []).append(alias)
+          165┆ grouped.setdefault(module, []).append(alias)
                                       
     src/sage_categories/sets/finite.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-optional-type
           ❰❰ Blocking ❱❱
           POLICY.TOTAL_CORE_STATE
                                  
-          172┆ rule: Lambda | None
+          173┆ rule: Lambda | None
 
 Common normalization completed

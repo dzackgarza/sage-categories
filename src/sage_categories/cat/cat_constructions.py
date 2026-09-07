@@ -43,6 +43,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING
 
 from sympy import ask as sympy_ask
@@ -445,7 +446,7 @@ class LimitSubcategory(LimitCategory):
 def limit_of_categories(
     diagram: Functor,
     family: Category,
-    category_type: Callable[[Functor], LimitCategory] = LimitCategory,
+    category_type: type[LimitCategory] | partial[LimitCategory] = LimitCategory,
 ) -> CategoryOfCategories.ElementType:
     """The strict limit of ``diagram``, retained in ``family`` with its cone of projections and its mediator.
 

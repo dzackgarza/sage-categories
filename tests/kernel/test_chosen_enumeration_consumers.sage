@@ -104,6 +104,26 @@ def test_enumeration_of_a_product_with_a_predicate_subset() -> None:
     assert ask(enumeration * enumeration.inverse() == Mor(Sets)(product, product).one()) is True
 
 
+def test_supplied_finite_enumeration_of_a_subset_of_positive_integers() -> None:
+    subobjects = Sets.Subobjects(NN)
+    subobject = subobjects.from_predicate(lambda point: Q.nonpositive(point.datum() - 2))
+    subset = subobjects.defining_arrow().on_object(subobject).domain()
+    indices = Sets((7, 9))
+    enumeration = Mor(Sets)(indices, subset).Isomorphisms()({7: 1, 9: 2})
+    inverse = Mor(Sets)(subset, indices)({1: 7, 2: 9})
+    Sets.retain_inverses(enumeration, inverse)
+    index_inclusion = Mor(Sets)(indices, NN).Monomorphisms()(lambda index: index)
+    Sets.retain_enumeration(enumeration, index_inclusion)
+
+    assert Sets.chosen_enumeration(subset) is enumeration
+    assert enumeration(indices.point(9)) is subset.point(2)
+    assert enumeration.inverse()(subset.point(1)) is indices.point(7)
+    assert ask(enumeration.inverse() * enumeration == Mor(Sets)(indices, indices).one()) is True
+    assert ask(enumeration * enumeration.inverse() == Mor(Sets)(subset, subset).one()) is True
+    assert ask(subset.is_finite()) is True
+
+
 test_discrete_owned_set_indexes_a_product_with_its_mediator()
 test_product_enumeration_composes_the_chosen_factor_enumerations()
 test_enumeration_of_a_product_with_a_predicate_subset()
+test_supplied_finite_enumeration_of_a_subset_of_positive_integers()

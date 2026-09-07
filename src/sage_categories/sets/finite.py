@@ -901,8 +901,17 @@ class SetsCategory(Category[[Map], []]):
 
 
 def _finite_presentation(value: SetsCategory.ObjectType, assumptions: Proposition) -> bool | None:
-    if _finite_data(value) is not Unknown:
+    presentation = value.set_presentation()
+    if isinstance(presentation, tuple):
         return True
+    if isinstance(presentation, _PredicateRule):
+        return True if sympy_ask(finite_set(presentation.ambient), assumptions) is True else None
+    if value in _enumerations:
+        index_presentation = _enumerations[value].domain().set_presentation()
+        while isinstance(index_presentation, _PredicateRule):
+            index_presentation = index_presentation.ambient.set_presentation()
+        if isinstance(index_presentation, tuple):
+            return True
     return None
 
 

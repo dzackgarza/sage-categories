@@ -216,6 +216,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         reached through a base hook.
         """
         prepare_category_subclass(cls)
+        _axiom_layer().install_subclass_applications(cls)
         if cls.__dict__.get("ObjectType") is CategoryDeclaration:
             # ``Cat()``'s declaration: its points are the objects of every category
             # (POL-CAT-058), the owner of the applications of the base-class axioms.

@@ -54,6 +54,8 @@ class AxiomLayer:
 
     generate_application: Callable[[Axiom], None]
     install_base_applications: Callable[[type[CategoryOfCategories.ElementType]], None]
+    install_subclass_applications: Callable[[type[Category]], None]
+    application_axiom: Callable[[type[CategoryOfCategories.ElementType], str], Axiom | None]
     subcategory_inclusions: Callable[[PropertySubcategory], tuple[MorphismCategory.ObjectType, ...]]
 
 

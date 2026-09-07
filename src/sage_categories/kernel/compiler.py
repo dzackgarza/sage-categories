@@ -448,6 +448,8 @@ def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
     written once and compiled for each ``C.op()`` -- is one mathematical operation,
     not a collision.
     """
+    from sage_categories.kernel.predicates import axiom_layer
+
     runtime_by_class = {
         runtime.__dict__["parent_class"]: runtime
         for table in _runtime_categories.values()
@@ -468,6 +470,9 @@ def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
                     continue
                 previous_node, previous_class, previous_declaration = previous
                 if declaration is previous_declaration:
+                    continue
+                axiom = axiom_layer().application_axiom(declaration, name)
+                if axiom is not None and axiom is axiom_layer().application_axiom(previous_declaration, name):
                     continue
                 if issubclass(implementation, previous_class) or issubclass(previous_class, implementation):
                     continue

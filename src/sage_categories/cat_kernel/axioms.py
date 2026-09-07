@@ -12,6 +12,7 @@ while ``Cat`` is still loading.
 
 from __future__ import annotations
 
+from collections import ChainMap
 from typing import TYPE_CHECKING
 
 from sage_categories.kernel.compiler import install_on_declaration
@@ -19,12 +20,12 @@ from sage_categories.kernel.predicates import AxiomLayer, install_axiom_layer
 from sage_categories.kernel.roles import Role, category_of, role_of
 
 if TYPE_CHECKING:
-    from sage_categories.cat.category import CategoryOfCategories
+    from sage_categories.cat.category import Category, CategoryOfCategories
     from sage_categories.cat.morphisms import MorphismCategory
     from sage_categories.cat.predicates import Axiom, Proposition
     from sage_categories.cat.properties import PropertySubcategory
 
-__all__ = ["generate_application", "install", "install_base_applications", "subcategory_inclusions"]
+__all__ = ["application_axiom", "generate_application", "install", "install_base_applications", "install_subclass_applications", "subcategory_inclusions"]
 
 # The axioms declared on the base category class, held until the declaration that owns
 # their applications exists (``install_base_applications``).
@@ -32,6 +33,11 @@ _base_axioms: list[Axiom] = []
 
 # The axiom each generated application came from, by the declaration it landed on.
 _derived_applications: dict[tuple[type[CategoryOfCategories.ElementType], str], Axiom] = {}
+
+
+def application_axiom(owner: type[CategoryOfCategories.ElementType], name: str) -> Axiom | None:
+    """The exact axiom that declares a generated application on this object role."""
+    return _derived_applications.get((owner, name))
 
 
 def generate_application(axiom: Axiom) -> None:
@@ -50,8 +56,26 @@ def install_base_applications(owner: type[CategoryOfCategories.ElementType]) -> 
     _base_axioms.clear()
 
 
+def install_subclass_applications(declaring_class: type[Category]) -> None:
+    """Bind the class's inherited axiom declarations to its own object declaration."""
+    from sage_categories.cat.predicates import Axiom
+
+    if not all(role.value in vars(declaring_class) for role in Role):
+        return
+    owner = vars(declaring_class)["ObjectType"]
+    declarations = ChainMap(*(vars(base) for base in declaring_class.__mro__))
+    for declared in declarations.values():
+        if isinstance(declared, Axiom) and declared.application_owner() is not None:
+            _install_application(declared, owner)
+
+
 def _install_application(axiom: Axiom, owner: type[CategoryOfCategories.ElementType]) -> None:
     name = axiom.application_name()
+    known = _derived_applications.get((owner, name))
+    assert known is None or known is axiom
+    if known is axiom:
+        return
+    assert name not in vars(owner)
 
     def application(
         value: CategoryOfCategories.ElementType,
@@ -70,9 +94,6 @@ def _install_application(axiom: Axiom, owner: type[CategoryOfCategories.ElementT
 
     application.__name__ = name
     application.__qualname__ = f"{owner.__name__}.{name}"
-    known = _derived_applications.get((owner, name))
-    assert known is None or known is axiom
-    assert known is not None or name not in vars(owner)
     _derived_applications[(owner, name)] = axiom
     install_on_declaration(owner, name, application)
 
@@ -93,6 +114,8 @@ def install() -> None:
         AxiomLayer(
             generate_application=generate_application,
             install_base_applications=install_base_applications,
+            install_subclass_applications=install_subclass_applications,
+            application_axiom=application_axiom,
             subcategory_inclusions=subcategory_inclusions,
         )
     )

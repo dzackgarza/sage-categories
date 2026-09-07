@@ -223,28 +223,24 @@ capabilities that already work.
 
 ## Remote recovery
 
-The ordinary push of source checkpoint `856a3dc` is blocked by
-[#51](https://github.com/dzackgarza/sage-categories/issues/51). The push stops at
-`plan-state`: it requires one active vault phase, while current execution uses
-the issue DAG and the earlier core phases are archived. The later architecture
-and source push checks were not reached.
+The source checkpoint and handoff are published on
+`origin/codex/functorial-core-kernel` as a red checkpoint. Resume from that branch.
+The unresolved source consumers and acceptance obligations remain as stated above.
 
-The remote branch still points to
-`a0350a123e9e574166751ea070c37ccfbbbd1b05`. The source checkpoint and the committed
-handoff therefore require this local checkout for recovery. The local push log
-is `/tmp/sage-categories-cutoff-push.log`.
+Ordinary push validation still requires the repair in
+[#51](https://github.com/dzackgarza/sage-categories/issues/51). Its `plan-state`
+step requires one active vault phase, while current execution uses the issue DAG
+and the earlier core phases are archived. The cutoff's ordinary push stopped
+there, before architecture and source push checks. Its local log is
+`/tmp/sage-categories-cutoff-push.log`.
 
-Resolve #51 against the actual execution owner, then use the ordinary push:
+Resolve #51 against the actual execution owner before the next ordinary push:
 
 ```bash
 git push origin codex/functorial-core-kernel
 ```
 
-Inspect the next real gate result. The source also has the explicit red consumers
-under #40 and #45 described above. Their sanctioned red commits authorize those
-individual checkpoints; they do not certify the source or grant a general push
-exception. Preserve the full acceptance claims while completing the repairs.
-
-GitHub cutoff snapshots linked from #36, #40, and #45 preserve the continuation
-text independently of this blocked source push. The repository files own the
-editable handoff; the issue contracts own required behavior.
+Inspect the next real gate result. The source has explicit red consumers under
+#40 and #45. Preserve their full acceptance claims while completing the repairs.
+The repository files own the editable handoff; the issue contracts own required
+behavior.

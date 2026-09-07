@@ -1,5 +1,10 @@
 # Mathematical audit of leaf boundaries
 
+Historical source review, not the current remediation plan. Its implementation
+recommendations and work order are superseded by `PLAN-native-engine-remediation`;
+see [the governing-plan locator](remediation-handoff.md). The recorded source
+findings and examples remain evidence at the revisions named below.
+
 Reviewed on 2026-09-07 at `097b4c4`. The reviewed source is unchanged from `7b712e2488af1794c2815be658fb893f178d46c8`.
 
 **The strongest departures are state transport for named structures, representation-dependent algebra interfaces, and order operations that bypass their mathematical maps.** Explicit products, projections, functor images, and coherence maps are useful mathematical content. Their length is not a defect.

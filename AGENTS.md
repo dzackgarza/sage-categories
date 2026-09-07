@@ -42,8 +42,8 @@ Each fact has one authoritative home:
 | Decision provenance and supersession | [specs/decisions.md](specs/decisions.md) |
 | Stable policy identifiers and technical constraints | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Execution, review, delegation, and documentation procedure | This file |
-| Work order and phase acceptance | Project vault plan and phase cards |
-| Current phase status and accepted revision | Phase metadata and its single `Accepted revision` entry |
+| Remediation scope, implementation allocation, and work order | Project vault `PLAN-native-engine-remediation` |
+| Current execution and acceptance evidence | The governing plan's retained issue dependencies and exact-revision public consumers; retired planning records are historical evidence only |
 | Implemented behavior | Source and public execution at the stated Git revision |
 | Previous implementation and review history | Git history and archived vault records |
 
@@ -57,17 +57,27 @@ Read [specs/glossary.md](specs/glossary.md) when writing project terminology. Us
 
 ## Starting a work unit
 
-For implementation, retrieve the active plan, active phase, and direct prerequisite acceptances through the project vault:
+For implementation, retrieve the governing plan through agent-memory:
 
 ```bash
-uvx --python 3.14 --from git+https://github.com/dzackgarza/agent-memory agent-memory <command>
+agent-memory plan show PLAN-native-engine-remediation
 ```
 
-Use `plan show`, `phase show`, and `card dag` for their respective owners.
-The core plan is `PLAN-pr-8-kernel-cat-architecture-convergence`.
-The production plan is `PLAN-foundation-production-tower`.
-The static projection plan is `PLAN-mypy-static-projection-remediation`.
-Read phase bodies for contracts, not old review records.
+When the installed command is unavailable, use the same command through
+`uvx --python 3.14 --from git+https://github.com/dzackgarza/agent-memory agent-memory`.
+
+`PLAN-native-engine-remediation` contains the approved detailed plan verbatim and
+supersedes every earlier project plan, including their core, production, scaffold,
+static-projection, and remediation execution orders. Sections 19 and 20 own the
+integration order and complete consumer requirements. Retain the issue dependencies
+and mathematical contracts incorporated there, not an independent older plan.
+
+Use `card dag` for current routing. Superseded plans and phases have been removed
+from the execution graph. Their historical records remain retrievable through
+[the continuation locator](docs/remediation-handoff.md).
+Their statuses and acceptance records do not certify the replacement or impose an
+additional active-phase prerequisite. Static projection accompanies the same
+native-backed operations under section 18.
 
 Start inspection with `tree` at the smallest useful depth.
 Read the complete target and immediate owners. Use focused `rg` queries.
@@ -79,7 +89,7 @@ Write this short frame once before implementation or delegation:
 ```text
 Assigned objective:
 Mathematical owner:
-Active phase and direct prerequisites:
+Governing plan section, issue owner, and direct prerequisites:
 Complete consumer boundary:
 Acceptance at the exact revision:
 ```
@@ -123,11 +133,11 @@ Include all roles needed by the claim: objects, points, morphisms, and functor i
 Exercise actual multiple-target declarations when multiple inheritance is introduced.
 Later integration phases compose accepted capabilities; they cannot own an earlier capability's first working example.
 
-If a phase requires unfinished prerequisite work, place that work with its prerequisite owner before proceeding.
-Record the corrected dependency once in the cards. Preserve the required behavior.
-Production starts after core acceptance and owner approval, in the bootstrap order from `specs/system.md`.
-Never implement a core phase and a production leaf in parallel.
-An executing leaf unit edits neither kernel source nor kernel-test subtrees; a generic repair is a separate owning unit.
+If an integration requires unfinished prerequisite work, complete it at its prerequisite owner before proceeding.
+Follow the governing plan's section 19 and the retained issue dependencies; preserve the required behavior.
+The archived core-closure and scaffold sequences are not additional execution prerequisites.
+Respect the dependency directions in `specs/system.md` and keep shared-interface edits serialized.
+A generic repair stays at its generic owner and includes the complete public consumer required by the governing plan.
 
 A generic defect belongs to its generic owner. A leaf defect belongs to that leaf.
 Repair the complete duplicated responsibility and affected sibling constructions within the authorized boundary.
@@ -215,17 +225,19 @@ A later integration phase composes working capabilities; it cannot retroactively
 
 ## Review and acceptance
 
-A phase receives one independent review at a fixed committed revision.
-Use `r-gate`; use `r6-gate` for final core closure.
+A complete implementation unit receives independent review at a fixed committed revision.
+Use `r-gate` for the owned acceptance boundary. Archived R0–R6 and P1–P7 phase
+procedures preserve historical evidence; they do not reinstate the superseded
+execution order or require recreating those phases for the governing plan.
 Supply the unchanged acceptance contract, owner sections, revision, and complete consumer boundary.
 The reviewer reads that packet and relevant implementation. Expand it only for a concrete dependency.
 
-1. Confirm the revision and the phase's owned architecture rules.
+1. Confirm the revision and the implementation unit's owned architecture rules.
 2. Run `just architecture` under **Verification** before grading owned criteria.
 3. Exercise every acceptance claim through the real public consumer at that revision.
 4. Examine relevant leaf rules, ownership, functorial reuse, and mathematical legibility within the boundary.
 5. Report each unmet claim with its owner, location, concrete failure, and required behavior.
-6. Accept only when every required claim holds. Record one accepted revision on the phase card.
+6. Accept only when every required claim holds. Record the accepted revision with the unit's existing execution owner.
 
 One public exercise can establish several related criteria. Reuse it and state those claims.
 Tests establish only what they execute and assert.
@@ -236,10 +248,10 @@ After repair, review changed behavior and affected consumers. Reuse still-valid 
 Reopen a passed claim only for a changed dependency, new counterexample, or corrected controlling contract.
 Name the affected claim and dependency before invalidating downstream acceptance.
 A documentation location error alone does not invalidate executable behavior.
-Record out-of-unit findings with their phase owner. They do not block an unrelated unit.
+Record out-of-unit findings with their issue or mathematical owner. They do not block an unrelated unit.
 Keep one current acceptance record and one unresolved-work section on each card.
 Archive detailed reviews once; do not paste them into subsequent cards or prompts.
-R6 checks integration and remaining required claims. It reuses valid prerequisite acceptance.
+The governing plan's complete integration consumers determine closure; historical R6 status does not substitute for them.
 
 ### Review the claim independently
 
@@ -407,7 +419,10 @@ D132 admits exact architectural invariant checks with file-and-line failures at 
 `scripts/rule_coverage.py` rejects a rule whose file glob matches nothing.
 Retain static projection. Add no automated convention enforcement before 1.0.
 
-`just plan-state` enforces one active phase, accepted revisions for complete phases, accepted prerequisites, and core-before-production order.
+`just plan-state` still implements the superseded phase-model check. The execution-owner
+mismatch is the existing #51 repair in governing-plan section 19.6. Do not mark an
+archived phase active or revive an old completion claim to satisfy that check;
+repair its actual owner without bypassing the gate.
 Keep known red checks, owners, reasons, and permitted checkpoint commands in the active plan.
 For a documented red baseline, run required owned architecture and plan-state checks before a kernel checkpoint.
 Use `--no-verify` only under that recorded exception, naming the red gate in the commit message.

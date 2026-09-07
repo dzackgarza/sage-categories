@@ -1,5 +1,10 @@
 # Mathematical remediation assessment
 
+Historical source review, not the current remediation plan. Its implementation
+recommendations and work order are superseded by `PLAN-native-engine-remediation`;
+see [the governing-plan locator](remediation-handoff.md). The recorded source
+findings and examples remain evidence at the revisions named below.
+
 Assessment date: 2026-09-07. Source revision: `7b712e2488af1794c2815be658fb893f178d46c8`.
 
 **Recommendation:** repair the common categorical operations through their existing leaf consumers before extending the algebra and geometry interfaces. The main boundary is between a mathematical property, the data selecting a construction, and the runtime that executes it. Several current mechanisms exchange these roles.

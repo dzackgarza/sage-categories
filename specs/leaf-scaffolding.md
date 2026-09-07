@@ -1,8 +1,9 @@
-# Minimal leaf scaffolding
+# Leaf consumer contracts
 
-A leaf scaffold is an executable mathematical category with a small public consumer.
-Its purpose is to expose whether the category definition, inherited structure, and computation boundary are suitable for further API work.
-The project vault's `PLAN-foundation-production-tower` owns the delivery graph and individual leaf plans.
+This document retains the leaf consumer and public-name contracts from the former scaffold programme.
+The project vault's `PLAN-native-engine-remediation` supersedes that programme and all individual leaf plans.
+Its native implementation allocation, integration order, and complete consumers govern remediation.
+The examples below remain required where applicable; they do not narrow the full replacement to a scaffold.
 Topic specifications retain the broader mathematical contracts.
 
 ## Common consumer boundary
@@ -18,15 +19,15 @@ For a universal construction, a competing cone, cocone, or balanced map determin
 The defining equations and uniqueness statement belong to that construction's mathematical owner.
 
 The audit reads the complete leaf and the immediate owners used by its example.
-It asks whether the remaining leaf code consists of defining data, structure maps, laws, and local evaluation.
+It asks whether the remaining leaf code consists of defining data, structure maps, laws, native integration, and exact owned-result reconstruction.
 Imports alone cannot answer this question: a helper that assembles classes or copies inherited state still performs runtime work.
-The kernel owns that work; Cat owns generic categorical mathematics.
+The kernel owns runtime assembly; Cat exposes generic categorical constructions whose allocated native dependencies own mathematical execution.
 The source-level audit therefore follows the constructor, selected functors, inherited operation, and public result.
 Source length is supporting information, not an acceptance criterion.
 
 Each scaffold has an exact public type example for its constructor, morphism endpoints, and inherited result.
 Generated declarations must express those same domains.
-The static-projection plan owns general compiler and projector repairs exposed by that example.
+Section 18 of the governing plan owns the compiler and projector repairs, accompanying those same public operations.
 
 ## Mathematical minimum
 
@@ -44,8 +45,10 @@ The static-projection plan owns general compiler and projector repairs exposed b
 | Algebras | A monoid in a supplied monoidal module or bimodule category | Multiplication in the exact module hom category and a scalar-preserving morphism |
 | Schemes | A locally ringed space with an affine open cover | An affine spectrum, a contravariant ring-map image, and a scheme glued from two charts |
 
-Only the operations needed to construct and examine these consumers enter the scaffold.
-Further algorithms remain with their topic specifications until separate API work is assigned.
+These examples are not a scope ceiling. Complete the full native operation families,
+selected universal maps, downstream constructions, and runtime/static consumers
+specified in `PLAN-native-engine-remediation`; do not postpone them as separate
+API work under the superseded scaffold limitation.
 
 ## Reuse from Cat
 
@@ -76,13 +79,13 @@ The following distinctions must remain explicit when the scaffold APIs are imple
 | `Algebras(R, C)` in the algebra specification | Base-relative monoid objects in the selected module category |
 | `Magmas(tensor)` and cartesian `Monoids(C)` | Current cases of the supplied tensor/monoidal-structure contracts `Magmas(V)` and `Monoids(V)` |
 
-This table records the implementation transition required by the leaf plans.
+This table retains public-name distinctions within the governing remediation plan.
 It does not claim the planned entrypoints already execute.
 The categories' mathematical meanings stay distinct through the public import surface and generated signatures.
 
 ## Audit result
 
-A scaffold is ready for API expansion when its public consumer exhibits the stated mathematics and its local source contains only the leaf's responsibility.
+A leaf replacement is complete only when the governing plan's full consumers pass and its displaced operational representation and algorithms are removed. The examples here do not establish that completion alone.
 If the consumer needs generic class assembly, state transport, property construction, or universal-map implementation in the leaf, repair the corresponding shared owner first.
 An audit records the exact remaining mathematical or runtime responsibility and its caller.
 It does not replace that responsibility with a leaf-specific workaround.

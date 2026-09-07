@@ -1594,3 +1594,26 @@ It rejected, in order: notation as a property subcategory; two functors from one
 It established that a semiring inherits the unit under one neutral name in two inequivalent ways unless the neutral name never reaches it, that `(X, R) ↦ X` is the restriction induced by the inclusion of the empty theory rather than an inclusion of categories, and that the tagged product is the mathematically principled form of the upstream `AdditiveMagmas`/`MultiplicativeMagmas` split.
 Precedents inspected: nLab magma and monoid objects and magmoidal categories, Mathlib `Mon_ C`, `FirstOrder.Language` with `LHom.reduct` and `Language.ring`, 1lab displayed categories, the HoTT structure identity principle.
 The user decided the construction and the neutral `operation()`; the choice of `Discrete({s})` for `1_s` and the `point_morphism` primitive are derived implementation decisions.
+
+### D186
+
+`PLAN-native-engine-remediation` is the sole governing remediation and integration
+plan. Its body is the supplied detailed plan verbatim. It supersedes all earlier
+project plans and their work orders, including the core-convergence, minimal
+scaffold, categorical-ownership DAG, and separate static-projection programmes.
+
+The existing mathematical contracts, complete public consumers, and valid
+exact-revision evidence are retained. Historical planning references describe prior work; their
+completion labels and phase order do not establish acceptance of the native
+replacement. In particular, D184's scaffold-only delivery restriction no longer
+limits remediation. The governing plan retains its complete native integration,
+operation-family, deletion, geometry, and static-projection obligations.
+
+Owner: the project-vault plan, retrieved with
+`agent-memory plan show PLAN-native-engine-remediation`. Repository continuation
+entrypoints link to that owner rather than duplicate its body.
+
+Source: explicit plan-adoption and supersession instruction in the SageCategories
+remediation-consolidation conversation, 2026-09-07. The supplied artifact is
+`SageCategories-Detailed-Remediation-Plan.md`, SHA-256
+`525cb453efb5712897be5faf409b3b3c09a5cb402f3e4d7a759a450ba527cf63`.

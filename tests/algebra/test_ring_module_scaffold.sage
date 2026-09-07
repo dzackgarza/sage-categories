@@ -49,8 +49,17 @@ def test_two_projection_actions_of_the_product_ring_on_the_field() -> None:
     assert ask(scale(by_second, idempotent, two.gen(0)) == field.zero()) is True
     # Scalar, vector, and result keep their distinct parents.
     assert product_ring_group.point(idempotent).parent() is product_ring_group
-    assert by_first.point(two.gen(0)).parent() is by_first
+    first_point = by_first.point(two.gen(0))
+    second_point = by_second.point(two.gen(0))
+    assert first_point.parent() is by_first
+    assert second_point.parent() is by_second
     assert scale(by_first, idempotent, two.gen(0)).parent() is field
+    first_action, second_action = by_first.action(), by_second.action()
+    argument = simple_tensor(product_ring_group, field, idempotent, two.gen(0))
+    assert first_action.domain() is argument.parent()
+    assert first_action.codomain() is field
+    assert ask(first_point + first_point == by_first.zero()) is True
+    assert ask(second_point + second_point == by_second.zero()) is True
 
     # The module category declares one faithful functor, to Ab, and never names Sets.  The
     # composite that carries its objects to sets is built from that declaration and the one
@@ -64,9 +73,21 @@ def test_two_projection_actions_of_the_product_ring_on_the_field() -> None:
     assert ask(AbelianGroups().is_concrete()) is True
     assert modules.underlying_set(by_first) is AbelianGroups().underlying_set(field)
 
-    # The idempotent still acts as the identity: deciding a property of Ab is a statement
-    # about Ab and changes nothing about a module over the product ring.  Red until #31.
+    # The two actions, their existing tensor argument, and the module points retain their
+    # defining owners and operations when the underlying category gains concreteness.
     assert ask(scale(by_first, idempotent, two.gen(0)) == field.point(two.gen(0))) is True
+    assert ask(scale(by_second, idempotent, two.gen(0)) == field.zero()) is True
+    assert by_first.action() is first_action
+    assert by_second.action() is second_action
+    assert first_action.domain() is argument.parent()
+    assert first_action.codomain() is field
+    assert ask(first_action(argument) == field.point(two.gen(0))) is True
+    assert ask(second_action(argument) == field.zero()) is True
+    assert first_point.parent() is by_first
+    assert second_point.parent() is by_second
+    assert ask(first_point + first_point == by_first.zero()) is True
+    assert ask(second_point + second_point == by_second.zero()) is True
+    assert first_action.base_category() is AbelianGroups()
 
 
 test_residue_ring_as_monoid_object_and_its_regular_module()

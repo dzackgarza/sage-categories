@@ -1305,6 +1305,7 @@ def _replace_runtime_classes(
         return dynamic_class(
             candidate.__name__,
             bases,
+            cls=candidate,
             doccls=candidate,
             prepend_cls_bases=False,
             cache=True,

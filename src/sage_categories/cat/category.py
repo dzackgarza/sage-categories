@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal, overload
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import AppliedQuery, Axiom, Predicate, Proposition, Query, ask, assume, register_handler
+from sage_categories.cat.predicates import AppliedQuery, Axiom, ConstructionFamily, Predicate, Proposition, Query, ask, assume, register_handler
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.retention import category_construction_functors, identity_key
@@ -807,10 +807,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     # (``cat/constructions.py``).  Each family exists for every supplied shape without
     # asserting that the category has those limits (POL-CAT-051): constructing an
     # object needs an owned construction or supplied universal data.
-    Products = Axiom()
-    Coproducts = Axiom()
-    Limits = Axiom()
-    Colimits = Axiom()
+    Products = ConstructionFamily()
+    Coproducts = ConstructionFamily()
+    Limits = ConstructionFamily()
+    Colimits = ConstructionFamily()
 
     # ``D.EssentialImage(F)``, the objects of ``D`` isomorphic to some ``F(X)``, is the
     # axiom the row above is the special case of: being a product is membership in the
@@ -1056,8 +1056,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         if not selected:
             return self
         key = tuple(root.ordinal() for root in selected)
-        for root in selected:
-            if root.narrowing_base() is self and {member.ordinal() for member in root.narrowing_roots()} == set(key):
+        for root in (*roots, *selected):
+            belongs = root.narrowing_base() is self or is_subcategory(root, self)
+            if belongs and tuple(member.ordinal() for member in self.closed_roots((root,))) == key:
                 return root
         if key not in self._narrowings:
             self._narrowings[key] = self.narrowing_type()(self, selected)
@@ -1067,7 +1068,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """The roots of the narrowing of this base by ``roots``: every root each one carries, in ordinal order, omitting those containing the base."""
         closed: dict[int, Category] = {}
         for root in roots:
-            for member in root.narrowing_roots():
+            for member in root.narrowing_roots() or (root,):
                 if not is_subcategory(self, member):
                     closed[member.ordinal()] = member
         return tuple(root for _, root in sorted(closed.items()))
@@ -1696,13 +1697,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         # Full, faithful, fully faithful, essentially surjective, and equivalence
         # functors compose (Mathlib ``Functor.FullyFaithful.comp``, ``Full.comp``,
         # ``Faithful.comp``, ``EssSurj.comp``, and ``Functor.IsEquivalence.comp``;
-        # inspected 2026-08-26).
+        # inspected 2026-08-26). Isofibrations compose by successive lifting of
+        # isomorphisms (Kerodon 4.4.1.10, https://kerodon.net/tag/01ER).
         for property_category in (
             Fun.FullyFaithful(),
             Fun.Full(),
             Fun.Faithful(),
             Fun.EssentiallySurjective(),
             Fun.Equivalences(),
+            Fun.Isofibrations(),
         ):
             if is_placed(first, property_category) and is_placed(second, property_category):
                 refine(composite, property_category)

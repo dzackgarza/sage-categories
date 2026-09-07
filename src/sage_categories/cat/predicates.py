@@ -34,6 +34,7 @@ __all__ = [
     "AppliedPredicate",
     "AppliedQuery",
     "Argument",
+    "ConstructionFamily",
     "Decision",
     "DecidingProposition",
     "Predicate",
@@ -328,13 +329,11 @@ class Axiom:
     subcategory of ``C`` is not a value of that class, so ``CategoryDeclaration`` resolves
     the declaration along the ambient chain (``declared_axiom``, D77 item 4).
 
-    A regressive functorial construction is an axiom too: ``X`` is a chosen product
-    exactly when it lies in the image of the nontrivial product functor, so ``Products``,
-    ``Coproducts``, ``Limits``, and ``Colimits`` are declared once on the base category
-    class and every category receives them (D31, D89; Sage
-    ``RegressiveCovariantConstructionCategory``, ``sage/categories/covariant_functorial_construction.py``,
-    inspected 2026-09-02).  An axiom may take parameters, and its subcategory is retained
-    once per category and parameter values.
+    ``ConstructionFamily`` uses the same declaration and membership machinery for
+    intrinsic universal constructions. Its ambient category remains a parameter of
+    the universal property. Ordinary axioms instead restrict an ambient predicate
+    along the declared inclusion. Both retain one subcategory per category and
+    parameter values.
 
     A parameter is a value of ``Cat()``, an object or a morphism of it.  ``C.Limits(J)``
     supplies the shape, an object; ``D.EssentialImage(F)`` supplies the functor whose
@@ -493,6 +492,10 @@ class Axiom:
                 result._retain_structure_functor(projection)
                 retain_inverse_image(functor, target, result, source_projection, projection)
             return result
+        return self._construct_declared(category, *parameters)
+
+    def _construct_declared(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
+        """Construct the declared implementation at its mathematical ambient category."""
         containing = tuple(axiom._declared_on(category) for axiom in self._full_subcategory_of)
         constructed = (self._implementation or _property_subcategory())(category, self._name, containing, *parameters)
         if self._deciding is not None:
@@ -533,6 +536,23 @@ class Axiom:
 
     def __repr__(self) -> str:
         return f"{self._declaring_class.__name__}.{self._name}"
+
+
+class ConstructionFamily(Axiom):
+    """A subcategory defined by universal constructions intrinsic to its parameter.
+
+    ``C.Limits(J)`` quantifies over cones in ``C``; restricting ``C`` changes that
+    quantifier. A full-subcategory inclusion transports a limiting presentation
+    only with the corresponding preservation theorem. The descriptor retains the
+    family and its generated membership operation, while its implementation owns
+    presentations independently of a total choice of limits.
+
+    Reference: Mathlib ``CategoryTheory.Limits.IsLimit`` quantifies over
+    ``Cone F`` for the fixed codomain of ``F``.
+    """
+
+    def _construct(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
+        return self._construct_declared(category, *parameters)
 
 
 def declared_axiom(category: Category, name: str) -> Axiom | None:

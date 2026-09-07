@@ -39,10 +39,12 @@ construction; ``with_universal_data`` places a supplied object from supplied dat
 trusted by the writer (POL-MATH-037).  The construction category exists for every
 supplied shape without asserting completeness (POL-CAT-051).
 
-Each family retains its construction functor ``Lim_I: Fun(I, C) -> C``, acting on
-a morphism of diagrams by the induced morphism of the constructed objects: the
-mediator of the cone whose components are ``eta_i`` after the projections (Mathlib
-``CategoryTheory.Limits.limMap``; inspected 2026-08-26).
+When ``C`` supplies chosen ``I``-limits, the family retains the construction
+functor ``Lim_I: Fun(I, C) -> C``. Its action on a diagram morphism is the
+mediator of the cone whose components are ``eta_i`` after the projections
+(Mathlib ``CategoryTheory.Limits.limMap``; inspected 2026-08-26).
+Individual universal presentations remain available independently of this
+all-diagram choice.
 """
 
 from __future__ import annotations
@@ -157,26 +159,26 @@ def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category
     raise AssertionError(f"{constructed!r} is in no construction family of {placement!r}")
 
 
-def family_owner(category: Category) -> Category:
-    """The category whose construction families retain universal data: the root of the declared-subcategory chain.
-
-    A declared subcategory's family is the narrowing of the root's family (D31, D83), so
-    the universal data of every apex lives at the root.
-    """
-    owner = category.narrowing_base()
-    while owner.has_ambient():
-        owner = owner.ambient()
-    return owner
-
-
 def product_presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:
     """The shape-specific limit family that presents one product apex."""
-    return family_owner(constructed.category()).Products().presenting_family(constructed)
+    families = tuple(
+        family for family in constructed.category().narrowing_roots()
+        if family.presenting_diagrams(constructed)
+        and any(family is selected for selected in family.ambient().Products().full_images())
+    )
+    assert len(families) == 1, f"{constructed!r} has {len(families)} product-family presentations"
+    return families[0]
 
 
 def coproduct_presenting_family(constructed: CategoryOfCategories.ElementType) -> Category:
     """The shape-specific colimit family that presents one coproduct apex."""
-    return family_owner(constructed.category()).Coproducts().presenting_family(constructed)
+    families = tuple(
+        family for family in constructed.category().narrowing_roots()
+        if family.presenting_diagrams(constructed)
+        and any(family is selected for selected in family.ambient().Coproducts().full_images())
+    )
+    assert len(families) == 1, f"{constructed!r} has {len(families)} coproduct-family presentations"
+    return families[0]
 
 
 # -- construction families --------------------------------------------------------------------
@@ -427,7 +429,8 @@ class LimitsCategory(ApexCategory):
         self._pullback_transformations: TripleDict = TripleDict(weak_values=False)
         self._limit_adjunction: CategoryOfCategories.ElementType | None = None
         super().__init__(ambient, name, (*full_subcategory_of, *_union_containment(ambient.Products(), shape)))
-        self.limit_functor()
+        if shape.is_discrete():
+            ambient.Products().retain_full_image(self)
 
     def shape(self) -> Category:
         return self._shape
@@ -470,7 +473,7 @@ class LimitsCategory(ApexCategory):
         return self._retain(diagram, presentation.apex(), presentation)
 
     def limit_functor(self) -> Functor:
-        """``Lim_I: Fun(I, C) -> C``, retained once."""
+        """The total chosen limit functor, when ``C`` declares an ``I``-limit construction."""
         if self not in self._limit_functor:
             self._limit_functor[self] = limit_functor(self)
             from sage_categories.cat.images import register_full_image
@@ -733,7 +736,8 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         self._presentations: MonoDict = MonoDict()
         self._colimit_functor: Functor | None = None
         super().__init__(ambient, name, (*full_subcategory_of, *_union_containment(ambient.Coproducts(), shape)))
-        self.colimit_functor()
+        if shape.is_discrete():
+            ambient.Coproducts().retain_full_image(self)
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in a construction family is established placement, two-valued (POL-CAT-068)."""
@@ -1027,10 +1031,12 @@ def _limit_universal_arrows(family: Category) -> RightUniversalArrows:
     from sage_categories.cat.comma import comma_objects
     from sage_categories.cat.universal_arrows import RightUniversalArrows, TerminalObjects
 
+    construction = family.ambient().limit_construction(family.shape())
     diagonal = family.diagrams().diagonal()
 
     def choose(diagram: Functor) -> CategoryOfCategories.ElementType:
-        presentation = constructed_data(family, diagram)
+        family.chosen(diagram, construction)
+        presentation = family.universal_data(diagram)
         comma = comma_objects(diagonal, family.diagrams().point_functor(diagram))
         value = comma.from_arrow(presentation.apex(), Cat().Terminal()(0), presentation.transformation())
         star = value.second()

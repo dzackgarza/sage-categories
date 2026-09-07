@@ -217,3 +217,19 @@ Ideas, to be weighed, not obligations.*
 
 - **Required resolution:** Coordinate engines through Python/Sage. Call `libgap` for GAP/CAP algebraic computations and `JuliaCall` for Catlab diagram calculations without demanding a direct GAP-Julia foreign-function interface.
 
+## Hand-rolling morphism rewriting logic instead of delegating to Maude
+
+- **Area:** Morphism composition, path reduction, and rewriting engines.
+
+- **Contract:** Categories, finitely presented quivers, and 2-categories are order-sorted equational and rewriting theories. Morphism composition is an associative binary operator with left and right identities; path equivalence under generating relations is term rewriting modulo associativity and identity. The repository must delegate algebraic rewriting to mature rewriting engines.
+
+- **Defect:** The codebase hand-rolls path logic in Python tuples and string operations ([src/sage_categories/cat/canonical.py](src/sage_categories/cat/canonical.py), [src/sage_categories/cat/presented_colimits.py](src/sage_categories/cat/presented_colimits.py)). It uses a low-level wrapper around GAP's monoid tool `kbmag` ([src/sage_categories/kernel/word_rewriting.py](src/sage_categories/kernel/word_rewriting.py)), which lacks sorted object types and requires Python code to track vertex compatibility manually.
+
+- **Target engine:** Maude (or `python-maude`). Maude provides:
+  1. Order-sorted equational logic for typed objects and morphisms.
+  2. Native term rewriting modulo associativity and identity ($A, U$).
+  3. Automated Knuth-Bendix completion and Church-Rosser confluence checking.
+  4. Native support for 2-cell composition, whiskering, and the interchange law.
+
+- **Required resolution:** Replace bespoke Python string/tuple path concatenation and the monoid `kbmag` wrapper with a rewriting engine (such as Maude or GAP's sorted `FpCategories`) that models morphism sorts and relations directly.
+

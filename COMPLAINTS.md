@@ -253,3 +253,22 @@ Ideas, to be weighed, not obligations.*
 
 - **Required resolution:** Delegate monoidal category constructions, coherence tracking, and tensor composition to DisCoPy rather than maintaining bespoke rebracketing and diagram checks in pure Python.
 
+## Hand-rolling higher-morphism towers instead of delegating to homotopy-rs
+
+- **Area:** Globular $n$-morphism towers, 2-cell composition, and higher coherence.
+
+- **Contract:** Higher categories, globular morphism towers ($\mathrm{Mor}(n, C)$), and $k$-cell compositions along $j$-cells ($j < k$) are solved by specialized higher-category engines. Higher interchange laws and coherence equations should be evaluated by engines designed for associative $n$-categories rather than hand-rolled Python callbacks.
+
+- **Defect:** The codebase hand-rolls the $\mathrm{Mor}(n, C)$ tower and 2-cell operations in pure Python:
+  1. Truncates higher dimensions in [src/sage_categories/cat/morphisms.py](src/sage_categories/cat/morphisms.py) by making $\mathrm{Mor}(n, C)$ discrete for $n \ge 2$.
+  2. Hand-rolls 2-cell horizontal composition, vertical composition, and whiskering as custom Python functions in [src/sage_categories/cat/category.py](src/sage_categories/cat/category.py) and [src/sage_categories/cat/functors.py](src/sage_categories/cat/functors.py).
+  3. Hand-rolls boundary matching and endpoint checks via ad-hoc SymPy queries.
+
+- **Target engine:** [homotopy-rs](https://github.com/homotopy-io/homotopy-rs) (`homotopy-core`). The Rust core provides:
+  1. Finitely-presented associative $n$-categories in arbitrary dimensions.
+  2. Exact boundary computations (source and target) for $k$-cells.
+  3. Compositions of $k$-cells along bounding $j$-cells with automatic interchange preservation.
+  4. Homotopy moves, diagrammatic rewriting, and equivalence verification for higher morphisms.
+
+- **Required resolution:** Delegate higher-dimensional morphism towers, 2-cell compositions, and interchange handling to `homotopy-core` (via Rust/PyO3 bindings) instead of maintaining a truncated, hand-rolled Python implementation.
+

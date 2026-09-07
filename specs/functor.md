@@ -1111,10 +1111,12 @@ This follows the standard cone-category description in [Mathlib, cone categories
 Cocones and colimit cocones derive through `Op`.
 
 For fixed `I`, the total category of limiting cones has a diagram projection to `Fun(I, C)` and an apex functor to `C`. A chosen limit functor is a section of the diagram projection followed by the apex functor.
+Such a section requires a chosen limiting presentation for every diagram in `Fun(I, C)`.
+The category of presentations exists independently of that choice.
 Thus the diagram, universal presentation, and apex are three distinct objects.
 The fiber of the apex functor over `X` is the category of limiting presentations with apex `X`.
 
-For each nontrivial discrete shape `J`, the selected limiting cones give a product functor
+For each nontrivial discrete shape `J` with chosen limits for every `J`-diagram, those choices give a product functor
 
 \[
 \operatorname{Prod}_J:C^J\longrightarrow C.
@@ -1139,7 +1141,11 @@ Code that must select among presentations uses `p.leg(i)`. A category-owned stan
 
 For a point `x: * -> p.apex()`, its component at `i` is the composite `p.leg(i) after x`. This construction belongs to the selected product presentation.
 
-`C.Limits(I)` and `C.Colimits(I)` are the general families for one supplied shape `I`. The named conveniences are instances:
+`C.Limits(I)` and `C.Colimits(I)` are intrinsic families for the supplied category `C` and shape `I`.
+Their universal properties quantify over cones and cocones in `C`.
+For a full subcategory `D` of `C`, `D.Limits(I)` and `D.Colimits(I)` retain `D` as their ambient category.
+Transporting a presentation along the inclusion requires the corresponding preservation or creation data.
+The named conveniences are instances:
 
 ```python
 C.Pullbacks()    is C.Limits(Cat().WalkingCospan())
@@ -1150,6 +1156,14 @@ C.Coequalizers() is C.Colimits(WalkingParallelPair)
 
 `C.Limits(I)` exists as a construction category for every supplied shape `I` without asserting that `C` has `I`-limits.
 Constructing an object of it requires an owned limit construction of `C` for that shape, supplied universal data (an apex with its cone and mediator rule), or an exact engine construction on a declared semantic domain.
+`C.Limits(I).limit_functor()` uses the declared `C.limit_construction(I)` choice on all `I`-diagrams.
+Its induced morphisms come from the retained universal mediators.
+The colimit functor uses the dual construction.
+Supplying individual presentations retains their diagrams and maps independently of this total choice.
+
+Membership in an intrinsic family names its category explicitly: `C.Coproducts().membership_proposition(X)`.
+A shared object can have different universal properties in different full subcategories.
+The generic `X.is_coproducts()` query uses its declared base category, as described in [property refinement](property-refinement.md#property-category).
 
 For `F: C -> D`, the shape-indexed property categories
 

@@ -197,6 +197,10 @@ The exact structured morphism category supplies any further surface.
 Reuse Sage functorial-construction category factories for private family binding and method-provider assembly.
 For example, Sage `CartesianProductsCategory` can supply private implementation classes.
 The owned limiting cone still retains the diagram, legs, apex, and universal map.
+`ConstructionFamily` reuses `Axiom` declaration binding, parameter retention, and generated membership applications.
+It constructs the family at the supplied category, whose objects and morphisms define the universal property.
+`Axiom` retains inverse-image formation for an ambient predicate.
+The mathematical distinction and total-choice requirements belong to [universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 
 Use Sage `Hom`, `Homset`, `Map`, `Morphism`, and `IdentityMorphism` when their endpoints are Sage parents.
 Keep generic `Mor` and `Fun` in the owned `Cat` layer.

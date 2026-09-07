@@ -24,6 +24,8 @@ A proposition that no existing method supplies applies a subclass of the `Predic
 The registered axiom identifier determines the public `is_P()` spelling.
 `cat_kernel` generates that method once on the ambient implementation class (D175).
 It returns the declared proposition, the value of the private deciding method (D142).
+For an axiom declared on the value's narrowing base, the generated query uses that base.
+A query in a particular category uses that category's membership proposition.
 
 For a morphism property, the construction starts from `Mor(C)`.
 For a functor property, it starts from `Fun(C, D)`.
@@ -60,6 +62,9 @@ For a structure functor `F: D -> C` and an axiom `P` declared on `C`, this pullb
 When two structure functors of `D` have targets that both declare `P`, their pullbacks define one `D.P()`: the pullbacks are equivalent by composition, Sage's C3 linearization determines their order, and coherence is assumed with the first one chosen (D37, D159).
 `Modules(R).Finite()` means one thing, whether `Finite` reaches `Modules(R)` through a direct functor to `Sets()` or through one that passes through `Groups().Commutative()`.
 The axiom registration exposes its predicate and implementation classes.
+
+Intrinsic universal-construction families use their supplied category as a parameter of the universal property.
+Their construction and transport rules belong to [universal constructions](functor.md#diagram-shapes-and-universal-constructions).
 
 See Mathlib's [`ObjectProperty.inverseImage`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/Basic.html) and [full subcategories](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/ObjectProperty/FullSubcategory.html).
 

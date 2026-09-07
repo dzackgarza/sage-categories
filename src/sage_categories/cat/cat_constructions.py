@@ -58,6 +58,7 @@ from sage_categories.cat.shapes import Discrete, DiscreteCategory, DiscreteObjec
 from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
 from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, decide, register_handler, unconditional
 from sage_categories.kernel.refinement import is_placed
+from sage_categories.kernel.retention import complete_constructions, deferred_category
 from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
 
 if TYPE_CHECKING:
@@ -87,14 +88,28 @@ def _sequence_rule[Value](sequence: tuple[Value, ...]) -> Callable[[DiscreteCate
 class FamilyObjectData:
     """The local state introduced by an object of a strict limit."""
 
+    diagram: Functor
     rule: ObjectRule
+
+    def component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
+        vertex = vertex_of(self.diagram.domain(), index)
+        result = self.rule(vertex)
+        assert result in self.diagram.on_object(vertex)
+        return result
 
 
 @dataclass(frozen=True, eq=False, slots=True)
 class FamilyMorphismData:
     """The local state introduced by a morphism of a strict limit."""
 
+    diagram: Functor
     rule: MorphismRule
+
+    def component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
+        vertex = vertex_of(self.diagram.domain(), index)
+        result = self.rule(vertex)
+        assert result in self.diagram.on_object(vertex).morphism_category(1)
+        return result
 
 
 # ``components_agree(family, L)``: the diagram carries the components of the family to
@@ -137,15 +152,11 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         """An object of a strict limit: a family of objects by rule, one in each factor."""
 
         def __init__(self, data: FamilyObjectData) -> None:
-            self._rule = data.rule
-            self._shape = self.category().shape()
+            self._family_data = data
 
         def family_component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
             """The object at ``i``, for ``i`` an object of the shape or a datum of its object set."""
-            vertex = vertex_of(self._shape, index)
-            result = self._rule(vertex)
-            assert result in self.category().narrowing_base().factor(vertex)
-            return result
+            return self._family_data.component(index)
 
         def __repr__(self) -> str:
             return f"family in {self.category()!r}"
@@ -154,13 +165,12 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         """A morphism of a strict limit: a componentwise family of morphisms."""
 
         def __init__(self, data: FamilyMorphismData) -> None:
-            self._rule = data.rule
-            self._shape = self.base_category().shape()
+            self._family_data = data
 
         def family_component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
-            vertex = vertex_of(self._shape, index)
-            result = self._rule(vertex)
-            expected = self.base_category().narrowing_base().factor(vertex).morphism_category(1)(
+            vertex = vertex_of(self._family_data.diagram.domain(), index)
+            result = self._family_data.component(vertex)
+            expected = self._family_data.diagram.on_object(vertex).morphism_category(1)(
                 self.domain().family_component(vertex), self.codomain().family_component(vertex),
             )
             assert result in expected
@@ -309,26 +319,9 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
     def _vertices(self) -> tuple[CategoryOfCategories.ElementType, ...] | UnknownClass:
         """The objects of the shape in its chosen enumeration, or ``Unknown`` when it chooses none."""
-        from sage_categories.cat.canonical import FinitePresentedCategory
-        from sage_categories.cat.opposites import OppositeCategory
+        from sage_categories.cat.finite_categories import finite_objects
 
-        shape = self.shape()
-        original = shape.original() if isinstance(shape, OppositeCategory) else shape
-        if isinstance(original, FinitePresentedCategory):
-            return tuple(original(label) for label in original.labels())
-        if shape.generating_morphisms() is Unknown:
-            return Unknown
-        if not shape.is_discrete():
-            # A comma category or an arrow category declares no set of objects; its
-            # exact finite evaluation enumerates them (``cat/finite_categories.py``).
-            from sage_categories.cat.finite_categories import finite_category
-
-            data = finite_category(shape)
-            return Unknown if data is Unknown else data.objects
-        objects, finite = shape.object_set(), Sets.Finite()
-        if not finite.has_chosen_enumeration(objects):
-            return Unknown
-        return tuple(shape.object_at(objects.point(datum)) for datum in finite.chosen_enumeration(objects))
+        return finite_objects(self.shape())
 
     # -- construction ------------------------------------------------------------------
 
@@ -346,7 +339,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
     def from_components(self, rule: ObjectRule) -> LimitCategory.ObjectType:
         """Construct the compatible family specified at every vertex of the diagram."""
-        result = self.ObjectType(FamilyObjectData(rule))
+        result = self.ObjectType(FamilyObjectData(self.defining_diagram(), rule))
         assert ask(components_agree(result, self)) is not False, f"{rule!r} is no compatible family over {self._diagram!r}"
         return result
 
@@ -378,7 +371,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         result = self.MorphismType(
             domain=domain,
             codomain=codomain,
-            data=FamilyMorphismData(rule),
+            data=FamilyMorphismData(self.defining_diagram(), rule),
         )
         assert ask(components_agree(result, self)) is not False, f"{rule!r} is no compatible morphism family over {self._diagram!r}"
         return result
@@ -391,7 +384,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         return self.MorphismType(
             domain=member_object,
             codomain=member_object,
-            data=FamilyMorphismData(component_identity),
+            data=FamilyMorphismData(self.defining_diagram(), component_identity),
         )
 
     def composite(self, second: LimitCategory.MorphismType, first: LimitCategory.MorphismType) -> LimitCategory.MorphismType:
@@ -399,7 +392,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         return self.MorphismType(
             domain=first.domain(),
             codomain=second.codomain(),
-            data=FamilyMorphismData(lambda vertex: second.family_component(vertex) * first.family_component(vertex)),
+            data=FamilyMorphismData(self.defining_diagram(), lambda vertex: second.family_component(vertex) * first.family_component(vertex)),
         )
 
     def _equal(
@@ -448,6 +441,7 @@ class LimitSubcategory(LimitCategory):
         return (Fun.full_subcategory_monomorphism(self, self._family_category),)
 
 
+@complete_constructions()
 def limit_of_categories(
     diagram: Functor,
     family: Category,
@@ -460,7 +454,7 @@ def limit_of_categories(
     components.  Both are indexed by the shape, so a product and a fibre product are the
     same construction at two shapes (POL-CAT-092).
     """
-    limit = category_type(diagram)
+    limit = deferred_category(category_type, diagram)
     projections: MonoDict = MonoDict()
 
     def projection(vertex: CategoryOfCategories.ElementType) -> Functor:

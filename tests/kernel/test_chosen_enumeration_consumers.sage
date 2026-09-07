@@ -90,6 +90,10 @@ def test_enumeration_of_a_product_with_a_predicate_subset() -> None:
     subobjects = Sets.Subobjects(ambient)
     subset = subobjects.from_predicate(lambda point: Q.even(point.datum()))
     evens = subobjects.defining_arrow().on_object(subset).domain()
+    defining_membership = evens.set_presentation()
+    assert Sets.from_membership(defining_membership) is evens
+    assert ask(evens.is_finite()) is True
+    assert Sets.from_membership(defining_membership) is evens
     product = Sets.Products()((evens, Sets((10, 20))))
     enumeration = Sets.chosen_enumeration(product)
     indices = enumeration.domain()

@@ -10,7 +10,7 @@ from collections import deque
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from functools import wraps
+from functools import partial, wraps
 from graphlib import TopologicalSorter
 from typing import TYPE_CHECKING
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.cat.functors import Functor
 
-__all__ = ["category_construction_functors", "deferred_category", "identity_key", "retained_involution"]
+__all__ = ["category_construction_functors", "complete_constructions", "deferred_category", "identity_key", "retained_involution"]
 
 
 def identity_key[Value](*values: Value) -> tuple[tuple[int, Value], ...]:
@@ -33,7 +33,8 @@ _completions: ContextVar[deque[Category] | None] = ContextVar("category completi
 
 
 @contextmanager
-def _complete_constructions() -> Iterator[None]:
+def complete_constructions() -> Iterator[None]:
+    """Complete dependent declarations after their defining constructions are retained."""
     if _completions.get() is not None:
         yield
         return
@@ -67,14 +68,19 @@ def category_construction_functors(category: Category) -> tuple[Functor, ...]:
     return category._select_functors()
 
 
-def deferred_category[Value: Category, Parameter](constructor: type[Value], parameter: Parameter) -> Value:
+def deferred_category[Value: Category, Parameter](constructor: type[Value] | partial[Value], parameter: Parameter) -> Value:
     """Initialize one category now and complete its declarations after retention."""
     pending = _completions.get()
     assert pending is not None, "staged category construction requires a retained construction"
-    category = constructor.__new__(constructor)
+    category_type = constructor.func if isinstance(constructor, partial) else constructor
+    assert isinstance(category_type, type), "a staged category requires a category class"
+    category = category_type.__new__(category_type)
     token = _deferred_category.set(category)
     try:
-        constructor.__init__(category, parameter)
+        if isinstance(constructor, partial):
+            category_type.__init__(category, *constructor.args, parameter, **constructor.keywords)
+        else:
+            category_type.__init__(category, parameter)
     finally:
         _deferred_category.reset(token)
     pending.append(category)
@@ -89,7 +95,7 @@ def retained_involution[Value](construct: Callable[[Value], Value]) -> Callable[
     def apply(value: Value) -> Value:
         if retained.is_in_cache(value):
             return retained(value)
-        with _complete_constructions():
+        with complete_constructions():
             result = retained(value)
             if retained.is_in_cache(result):
                 assert retained(result) is value, "the retained correspondence must be involutive"

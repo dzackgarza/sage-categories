@@ -605,6 +605,10 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             refine(functor, self._declared_subcategory(full))
         self._pending.clear()
         self._bootstrapping = False
+        # A strict inverse supplies full faithfulness and lifts every isomorphism.
+        isomorphisms = self.Isomorphisms()
+        for containing in (self.Equivalences(), self.Isofibrations()):
+            isomorphisms._retain_structure_functor(self.full_subcategory_monomorphism(isomorphisms, containing))
 
     # -- subcategory monomorphisms (POL-FUN-027, POL-FUN-036) -----------------------------
     #
@@ -665,7 +669,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return False
         placement = functor.category()
         if placement not in self._inheriting:
-            self._inheriting[placement] = any(root is self.Isofibrations() for root in placement.narrowing_roots())
+            self._inheriting[placement] = is_subcategory(placement, self.Isofibrations())
         return self._inheriting[placement]
 
     def declares_subcategory(self, functor: Functor) -> bool:

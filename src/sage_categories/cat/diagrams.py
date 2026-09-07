@@ -44,7 +44,7 @@ from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformatio
 from sage_categories.cat.morphisms import endpoints
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.shapes import Discrete, DiscreteCategory
-from sage_categories.cat.predicates import Decision
+from sage_categories.cat.predicates import Decision, Unknown
 from sage_categories.cat.predicates import ask
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
@@ -134,14 +134,12 @@ def _discrete_diagram(functors: FunctorCategory, rule: Callable[[DiscreteCategor
 
 def sequence_position(vertex: DiscreteCategory.ObjectType) -> int:
     """The position ``k`` of an object of ``Discrete([n])`` at the point ``k`` of ``[n]``."""
-    from sage_categories.cat.canonical import FinitePresentedCategory
+    from sage_categories.cat.finite_categories import finite_objects, position
 
     shape = vertex.category().narrowing_base()
-    if isinstance(shape, FinitePresentedCategory):
-        return int(shape.label(vertex))
-    simplex = vertex.category().index_set()
-    enumeration = Sets.Finite().chosen_enumeration(simplex)
-    return next(position for position, datum in enumerate(enumeration) if ask(vertex.point() == simplex.point(datum)))
+    vertices = finite_objects(shape)
+    assert vertices is not Unknown, "a sequence requires a chosen finite enumeration of its shape"
+    return position(vertices, vertex)
 
 
 @cached_function(

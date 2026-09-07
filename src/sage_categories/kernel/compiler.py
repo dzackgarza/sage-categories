@@ -260,10 +260,12 @@ def inheriting_functors(category: Category) -> tuple[Functor, ...]:
 
 
 def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
-    """The inheriting functors out of ``current``; each keeps the role it starts in."""
+    """The distinct implementation owners reached from ``current`` in the same role."""
     return tuple(
-        (functor, node(functor.codomain(), current.role))
+        (functor, target)
         for functor in inheriting_functors(current.category)
+        for target in (node(functor.codomain(), current.role),)
+        if not same_node(current, target)
     )
 
 
@@ -1135,6 +1137,8 @@ def _debug_unresolved_diamonds(category: Category) -> None:
     def walk(source: Category, path: tuple[Category, ...]) -> None:
         for functor in inheriting_functors(source):
             target = functor.codomain()
+            if target is source:
+                continue
             next_path = (*path, target)
             if target not in paths:
                 paths[target] = []
@@ -1162,7 +1166,7 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     from sage_categories.kernel.refinement import declares_point, is_placed
 
     for functor in functors:
-        functor_category = category.category().morphism_category(1)
+        functor_category = category.universe().morphism_category(1)
         assert is_placed(functor, functor_category), f"{functor!r} is not an object of {functor_category!r}"
         if declares_point(functor):
             # A selected point functor is the arrow ``* -> D`` that places this category

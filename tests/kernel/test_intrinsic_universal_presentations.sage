@@ -2,13 +2,14 @@
 
 from pytest import raises
 
-from sage_categories.all import Cat, Fun, Mor, Sets, ask
+from sage_categories.all import Cat, Discrete, Fun, Mor, Sets, ask
 from sage_categories.algebra.abelian import AbelianGroups
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.cones import cocone, cocones, cocone_apex, cone, cones, limit_cones
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.properties import PredicateSubcategory
 from sage_categories.cat.predicates import Proposition
+from sage_categories.cat.opposites import opposite_morphism
 
 
 class IntrinsicUpperBounds(PredicateSubcategory):
@@ -111,6 +112,52 @@ def test_limiting_presentations_of_one_apex_retain_their_legs() -> None:
     assert ask(first.leg(1)(comparison(point)) == factor.point(0)) is True
 
 
+def test_dual_indexed_coproduct_retains_its_universal_map() -> None:
+    indices = Sets((0, 1))
+    shape = Discrete(indices)
+    vertices = tuple(shape(indices.point(index)) for index in (0, 1))
+    first, second = Sets((2, 3)), Sets((4, 5))
+    diagram = Fun(shape, Sets).from_object_rule(
+        lambda vertex: first if vertex is vertices[0] else second
+    )
+    family = Sets.Colimits(shape)
+    coproduct = family(diagram)
+    presentation = family.universal_data(diagram)
+    dual_family = Sets.op().Limits(shape.op())
+    dual = dual_family.universal_data(diagram.op())
+    assert presentation.diagram() is diagram
+    assert presentation.diagram().domain() is shape
+    assert dual.diagram() is diagram.op()
+    assert dual.diagram().domain() is shape.op()
+    assert family.ambient() is Sets
+    assert dual_family.ambient() is Sets.op()
+    assert ask(Sets.op().Products().membership_proposition(coproduct)) is True
+    for vertex, factor in zip(vertices, (first, second)):
+        injection, projection = presentation.leg(vertex), dual.leg(vertex)
+        assert injection.domain() is factor and injection.codomain() is coproduct
+        assert projection.domain() is coproduct and projection.codomain() is factor
+        assert opposite_morphism(projection) is injection
+
+    target = Sets((20, 30, 41, 51))
+    maps = (Mor(Sets)(first, target)(lambda value: 10 * value),
+            Mor(Sets)(second, target)(lambda value: 10 * value + 1))
+    candidate = cocones(diagram)(cocone(
+        diagram, target, lambda vertex: maps[0] if vertex is vertices[0] else maps[1],
+    ))
+    mediator = presentation.lift(candidate)
+    assert mediator.domain() is coproduct and mediator.codomain() is target
+    for vertex, mapping, factor in zip(vertices, maps, (first, second)):
+        assert ask(mediator * presentation.leg(vertex) == mapping) is True
+        for point in factor:
+            assert ask(mediator(presentation.leg(vertex)(point)) == mapping(point)) is True
+    dual_candidate = cones(diagram.op())(cone(
+        diagram.op(), target, lambda vertex: opposite_morphism(candidate.leg(vertex)),
+    ))
+    dual_mediator = dual.lift(dual_candidate)
+    assert ask(opposite_morphism(dual_mediator) == mediator) is True
+
+
 test_abelian_colimit_family_has_its_intrinsic_owner()
 test_intrinsic_coproduct_retains_distinct_presentations()
 test_limiting_presentations_of_one_apex_retain_their_legs()
+test_dual_indexed_coproduct_retains_its_universal_map()

@@ -1,8 +1,8 @@
 """Named operation categories retain renaming isomorphisms and their composites."""
 
-from sage_categories.all import Cat, Cartesian, Fun, Mor, Sets, ask
+from sage_categories.all import Cartesian, Fun, Mor, Sets, ask
 from sage_categories.cat.calculus import binary_product_data
-from sage_categories.cat.structured_objects import AdditiveMagmas, AdditiveMonoids, Monoids, Semirings
+from sage_categories.cat.structured_objects import AdditiveGroups, AdditiveMagmas, AdditiveMonoids, Groups, Monoids, Semirings
 
 
 def test_named_restriction_retains_renaming_and_both_actions() -> None:
@@ -22,6 +22,7 @@ def test_named_restriction_retains_renaming_and_both_actions() -> None:
     assert restriction is magma_projection.inverse() * neutral_restriction * projection
     assert named_magmas.to_carrier() is named_magmas.neutral_category().forgetful() * magma_projection
     assert named_monoids.Commutative() is projection.inverse_image(Monoids(structure).Commutative())
+    assert named_monoids.Group() is projection.inverse_image(Monoids(structure).Group())
 
     carrier = Sets((0, 1, 2))
     square = binary_product_data(Sets(), carrier, carrier).apex()
@@ -33,6 +34,7 @@ def test_named_restriction_retains_renaming_and_both_actions() -> None:
     assert projection.on_object(named) is neutral
     assert restriction.on_object(named) is named_magmas.renamed(neutral_restriction.on_object(neutral))
     assert ask(named.is_commutative()) is True
+    assert ask(named.is_group()) is True
 
     doubling = Mor(Sets)(carrier, carrier)(lambda value: (2 * value) % 3)
     neutral_map = Monoids(structure).homomorphism(neutral, neutral, doubling)
@@ -44,6 +46,15 @@ def test_named_restriction_retains_renaming_and_both_actions() -> None:
     assert image(image.domain().point(1)).datum() == 2
     composed = restriction.on_morphism(named_map * named_map)
     assert ask(composed == image * image) is True
+
+    groups = AdditiveGroups(structure)
+    named_group = groups.renamed(neutral)
+    to_monoids = groups.to_named_monoids()
+    assert to_monoids is projection.inverse() * Groups(structure).subcategory_monomorphism() * groups.product_projection(0)
+    assert to_monoids.on_object(named_group) is named
+    group_map = groups.homomorphism(named_group, named_group, neutral_map)
+    assert to_monoids.on_morphism(group_map) is named_map
+    assert (-named_group.point(1)).datum() == 2
 
 
 def test_named_operations_keep_their_images_after_refinement() -> None:

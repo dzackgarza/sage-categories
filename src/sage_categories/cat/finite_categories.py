@@ -13,7 +13,8 @@ from itertools import product
 
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.cat_constructions import LimitCategory
-from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.declarations import Sets
 from sage_categories.cat.comma import CommaCategory
 from sage_categories.cat.functors import Cat, Fun, FunctorCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
@@ -47,9 +48,29 @@ _retained: MonoDict = MonoDict()
 
 
 def finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
-    if category not in _retained:
-        _retained[category] = _evaluate(category)
-    return _retained[category]
+    if category in _retained:
+        return _retained[category]
+    result = _evaluate(category)
+    if result is not Unknown:
+        _retained[category] = result
+    return result
+
+
+def finite_objects(category: Category) -> tuple[CategoryOfCategories.ElementType, ...] | UnknownClass:
+    """The exact finite object family supplied by a presentation or a chosen enumeration."""
+    from sage_categories.cat.shapes import DiscreteCategory
+
+    if isinstance(category, FinitePresentedCategory):
+        return tuple(category(label) for label in category.labels())
+    if isinstance(category, DiscreteCategory):
+        points = Sets.finite_points(category.object_set())
+        if points is Unknown:
+            return Unknown
+        return tuple(category.object_at(point) for point in points)
+    if isinstance(category, OppositeCategory):
+        return finite_objects(category.original())
+    data = finite_category(category)
+    return Unknown if data is Unknown else data.objects
 
 
 def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
@@ -57,7 +78,9 @@ def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData 
     from sage_categories.cat.indexed import GrothendieckCategory
 
     if isinstance(category, DiscreteCategory):
-        objects = tuple(category(point) for point in category.index_set())
+        objects = finite_objects(category)
+        if objects is Unknown:
+            return Unknown
         return FiniteCategoryData(objects, tuple(Mor(category)(value, value).one() for value in objects))
     if isinstance(category, GrothendieckCategory):
         indexed = category.indexed_category()

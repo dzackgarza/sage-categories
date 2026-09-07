@@ -39,13 +39,12 @@ __all__ = [
 ]
 
 from collections.abc import Callable
-from dataclasses import dataclass
 from functools import cache, partial
 
-from sage_categories.cat.cat_constructions import FamilyObjectData, LimitSubcategory, components_agree, limit_of_categories
+from sage_categories.cat.cat_constructions import FamilyObjectData, LimitSubcategory, limit_of_categories
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import comma_objects
-from sage_categories.cat.cones import cone
+from sage_categories.cat.cones import cone, cones
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.diagrams import cospan_diagram, from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
@@ -56,7 +55,7 @@ from sage_categories.cat.monoidal import Cartesian, MonoidalStructuresCategory, 
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask
 from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.retention import complete_constructions, identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 
@@ -462,16 +461,20 @@ def _symbol_category(symbol: str) -> Category:
     return Discrete(Sets((symbol,)))
 
 
+@complete_constructions()
 def _named_copy(neutral: Category, symbol: str, category_type: type[NamedOperationCategory]) -> NamedOperationCategory:
     """``neutral × 1_s`` in ``Cat``, retained as ``category_type`` with its projections.
 
-    The retained first projection is also selected on the copy as a plain functor: it
-    supplies access, so the axioms of the neutral category reach the copy as inverse
-    images along it, and carries no inheritance (D167, D185).
+    Its first projection and the section defined by the product's universal property
+    are mutually inverse functors.
     """
     diagram = from_sequence(Cat(), (neutral, _symbol_category(symbol)))
-    copy = limit_of_categories(diagram, Cat().Limits(diagram.domain()), category_type)
-    copy._retain_structure_functor(copy.product_projection(0))
+    family = Cat().Limits(diagram.domain())
+    copy = limit_of_categories(diagram, family, category_type)
+    legs = (Fun(neutral, neutral).one(), Fun(neutral, copy.symbol_category()).constant(copy.symbol()))
+    section_cone = cone(diagram, neutral, lambda vertex: legs[sequence_position(vertex)])
+    section = family.universal_data(diagram).lift(cones(diagram)(section_cone))
+    Cat().retain_inverses(copy.product_projection(0), section)
     return copy
 
 
@@ -513,26 +516,12 @@ def _unit_point(owner: CategoryOfCategories.ElementType, unit: MorphismCategory.
     return owner.object_at(unit.codomain().category().element_from_defining_morphism(unit))
 
 
-@dataclass(frozen=True, eq=False, slots=True)
-class NamedFamilyData(FamilyObjectData):
-    """The local state of an object of a named copy: its family and the neutral object it renames.
-
-    A copy's declaration reads ``neutral`` in its own initializer and keeps what it needs
-    under its own attribute name, so a category built from several copies (a semiring, a
-    ring) receives each copy's state along the leg that reaches it (D13, D56), and no
-    inherited method reads the family of a different level.
-    """
-
-    neutral: CategoryOfCategories.ElementType
-
-
 class NamedOperationCategory(LimitSubcategory):
     """``N × 1_s``: the neutral structure category ``N`` tagged by the one-object category of a symbol.
 
     An object is the pair of a neutral object and the symbol; ``renamed`` constructs it
     over a neutral object.  ``product_projection(0)`` is the renaming isomorphism onto
-    ``N``, a retained leg selected for access only: it carries no inheritance, and it is
-    the public way to the neutral object.  Each concrete copy writes its own role
+    ``N``, the public way to the neutral object. Each concrete copy writes its own role
     declarations (POL-CAT-057): its initializer keeps the renamed generator's owner under
     its own name, the renamed generator is its surface, and its structure functor
     carries the carrier.
@@ -547,10 +536,7 @@ class NamedOperationCategory(LimitSubcategory):
     class MorphismType:
         pass
 
-    def from_components(self, rule: Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]) -> NamedOperationCategory.ObjectType:
-        result = self.ObjectType(NamedFamilyData(rule, rule(self.shape()(0))))
-        assert ask(components_agree(result, self)) is not False, f"{rule!r} is no compatible family over {self.defining_diagram()!r}"
-        return result
+    Commutative = MagmaCategory.Commutative.inverse_image(lambda category: category.product_projection(0))
 
     def neutral_category(self) -> Category:
         return self.factor(0)
@@ -565,7 +551,7 @@ class NamedOperationCategory(LimitSubcategory):
 
     def renamed(self, neutral_object: CategoryOfCategories.ElementType) -> NamedOperationCategory.ObjectType:
         """The object of this category over an object of the neutral one."""
-        return self((neutral_object, self.symbol()))
+        return self.product_projection(0).inverse().on_object(neutral_object)
 
     def homomorphism(
         self,
@@ -574,35 +560,20 @@ class NamedOperationCategory(LimitSubcategory):
         arrow: MorphismCategory.ObjectType,
     ) -> NamedOperationCategory.MorphismType:
         """The morphism over a morphism of the neutral category."""
-        tag = self.symbol_category()
-        return self.construct_morphism(
-            source, target, (arrow, Mor(tag)(source.family_component(1), target.family_component(1)).one())
-        )
+        result = self.product_projection(0).inverse().on_morphism(arrow)
+        assert result.domain() is source and result.codomain() is target
+        return result
 
     @cached_method
     def to_carrier(self) -> Functor:
         """``(X, μ, s) ↦ X``: restriction along the inclusion of the empty theory, declared to carry inheritance."""
         carrier = self.neutral_category().forgetful()
-        return Fun(self, carrier.codomain()).Faithful().Isofibrations()(
-            lambda value: carrier.on_object(value.family_component(0)),
-            lambda arrow: carrier.on_morphism(arrow.family_component(0)),
-        )
+        return carrier * self.product_projection(0)
 
     @cached_method
     def to_named_magmas(self) -> Functor:
         """``(M, s) ↦ (M's magma, s)``: restriction along the inclusion of presentations ``{s} ⊂ {s, e}``."""
-        neutral = self.neutral_category()
-        magmas, to_magmas = self.named_magmas(), neutral.to_magmas()
-
-        def on_object(value: NamedOperationCategory.ObjectType) -> NamedOperationCategory.ObjectType:
-            return magmas.renamed(to_magmas.on_object(value.family_component(0)))
-
-        def on_morphism(arrow: NamedOperationCategory.MorphismType) -> NamedOperationCategory.MorphismType:
-            return magmas.homomorphism(
-                on_object(arrow.domain()), on_object(arrow.codomain()), to_magmas.on_morphism(arrow.family_component(0))
-            )
-
-        return Fun(self, magmas).Faithful().Isofibrations()(on_object, on_morphism)
+        return self.named_magmas().product_projection(0).inverse() * self.neutral_category().to_magmas() * self.product_projection(0)
 
     def named_magmas(self) -> NamedOperationCategory:
         """The magma copy under the same symbol this category restricts to."""
@@ -611,15 +582,7 @@ class NamedOperationCategory(LimitSubcategory):
     @cached_method
     def to_named_monoids(self) -> Functor:
         """``(G, s) ↦ (G, s)``: restriction along the inclusion of presentations ``{s, e} ⊂ {s, e, ι}``; a group object is its monoid object."""
-        monoids = self.named_monoids()
-
-        def on_object(value: NamedOperationCategory.ObjectType) -> NamedOperationCategory.ObjectType:
-            return monoids.renamed(value.family_component(0))
-
-        def on_morphism(arrow: NamedOperationCategory.MorphismType) -> NamedOperationCategory.MorphismType:
-            return monoids.homomorphism(on_object(arrow.domain()), on_object(arrow.codomain()), arrow.family_component(0))
-
-        return Fun(self, monoids).Faithful().Isofibrations()(on_object, on_morphism)
+        return self.named_monoids().product_projection(0).inverse() * self.neutral_category().subcategory_monomorphism() * self.product_projection(0)
 
     def named_monoids(self) -> NamedOperationCategory:
         """The monoid copy under the same symbol this category restricts to."""
@@ -630,8 +593,8 @@ class AdditiveMagmasCategory(NamedOperationCategory):
     """``Magmas(V) × 1_+``: the operation is written ``addition()`` and ``+`` on points."""
 
     class ObjectType:
-        def __init__(self, data: NamedFamilyData) -> None:
-            self._additive_magma = data.neutral
+        def __init__(self, data: FamilyObjectData) -> None:
+            self._additive_magma = data.component(0)
 
         def addition(self) -> MorphismCategory.ObjectType:
             return self._additive_magma.operation()
@@ -651,8 +614,8 @@ class MultiplicativeMagmasCategory(NamedOperationCategory):
     """``Magmas(V) × 1_*``: the operation is written ``multiplication()`` and ``*`` on points."""
 
     class ObjectType:
-        def __init__(self, data: NamedFamilyData) -> None:
-            self._multiplicative_magma = data.neutral
+        def __init__(self, data: FamilyObjectData) -> None:
+            self._multiplicative_magma = data.component(0)
 
         def multiplication(self) -> MorphismCategory.ObjectType:
             return self._multiplicative_magma.operation()
@@ -668,12 +631,27 @@ class MultiplicativeMagmasCategory(NamedOperationCategory):
         return (*super().structure_functors(), self.to_carrier())
 
 
-class AdditiveMonoidsCategory(NamedOperationCategory):
+class NamedMonoidsCategory(NamedOperationCategory):
+    """The named monoid copies share the group property of their neutral monoids."""
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    Group = MonoidCategory.Group.inverse_image(lambda category: category.product_projection(0))
+
+
+class AdditiveMonoidsCategory(NamedMonoidsCategory):
     """``Monoids(V) × 1_+``: the unit is written ``zero()``; ``addition()`` and ``+`` arrive from ``AdditiveMagmas(V)``."""
 
     class ObjectType:
-        def __init__(self, data: NamedFamilyData) -> None:
-            self._additive_monoid = data.neutral
+        def __init__(self, data: FamilyObjectData) -> None:
+            self._additive_monoid = data.component(0)
 
         def zero(self) -> CategoryOfCategories.ElementType:
             """The point the unit selects, when the monoidal unit is terminal."""
@@ -692,12 +670,12 @@ class AdditiveMonoidsCategory(NamedOperationCategory):
         return (*super().structure_functors(), self.to_named_magmas())
 
 
-class MultiplicativeMonoidsCategory(NamedOperationCategory):
+class MultiplicativeMonoidsCategory(NamedMonoidsCategory):
     """``Monoids(V) × 1_*``: the unit is written ``one()``; ``multiplication()`` and ``*`` arrive from ``MultiplicativeMagmas(V)``."""
 
     class ObjectType:
-        def __init__(self, data: NamedFamilyData) -> None:
-            self._multiplicative_monoid = data.neutral
+        def __init__(self, data: FamilyObjectData) -> None:
+            self._multiplicative_monoid = data.component(0)
 
         def one(self) -> CategoryOfCategories.ElementType:
             """The point the unit selects, when the monoidal unit is terminal."""
@@ -720,8 +698,8 @@ class AdditiveGroupsCategory(NamedOperationCategory):
     """``Groups(V) × 1_+``: the inversion is written ``negation()``, ``-x``, and ``x - y := x + (-y)``; ``zero()``, ``addition()``, and ``+`` arrive from ``AdditiveMonoids(V)``."""
 
     class ObjectType:
-        def __init__(self, data: NamedFamilyData) -> None:
-            self._additive_group = data.neutral
+        def __init__(self, data: FamilyObjectData) -> None:
+            self._additive_group = data.component(0)
 
         def negation(self) -> MorphismCategory.ObjectType:
             """``ι_X: X -> X``, the inversion of the group object."""

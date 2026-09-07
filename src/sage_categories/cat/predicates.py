@@ -26,6 +26,7 @@ from sage_categories.kernel.sage_runtime import MonoDict, Unknown, UnknownClass,
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category, CategoryOfCategories
+    from sage_categories.cat.functors import Functor
     from sage_categories.cat.properties import PropertySubcategory
 
 __all__ = [
@@ -451,6 +452,10 @@ class Axiom:
         """
         return _retention_key(category, *parameters) in self._constructed
 
+    def inverse_image(self, along: Callable[[Category], Functor]) -> Axiom:
+        """Transport this axiom along the functor defining each source category."""
+        return InverseImageAxiom(self, along)
+
     def _construct(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
         """The inverse image along a declared subcategory's monomorphism, else the implementation of this axiom.
 
@@ -536,6 +541,20 @@ class Axiom:
 
     def __repr__(self) -> str:
         return f"{self._declaring_class.__name__}.{self._name}"
+
+
+class InverseImageAxiom(Axiom):
+    """A property defined by inverse image along a specified functor."""
+
+    def __init__(self, target: Axiom, along: Callable[[Category], Functor]) -> None:
+        super().__init__()
+        self._target = target
+        self._along = along
+
+    def _construct_declared(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
+        functor = self._along(category)
+        assert functor.domain() is category
+        return functor.inverse_image(self._target._declared_on(functor.codomain(), *parameters))
 
 
 class ConstructionFamily(Axiom):

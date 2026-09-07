@@ -37,5 +37,12 @@ def test_predicate_subobject_of_an_infinite_set() -> None:
     assert ask(nested_subset.membership_proposition(integers.point(4))) is Unknown
     assert ask(nested_subset.set_presentation()(4)) is Unknown
 
+    finite_ambient = Sets((1, 2, 3))
+    finite_subobjects = Sets.Subobjects(finite_ambient)
+    finite_subobject = finite_subobjects.from_predicate(lambda point: Q.even(point.datum()) & Q.positive(bound))
+    finite_subset = finite_subobjects.defining_arrow().on_object(finite_subobject).domain()
+    assert ask(finite_subset.is_finite()) is True
+    assert Sets.chosen_enumeration(finite_subset) is Unknown
+
 
 test_predicate_subobject_of_an_infinite_set()

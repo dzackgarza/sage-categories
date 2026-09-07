@@ -109,19 +109,12 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
     """Return whether the owned object-set cardinality proves a nontrivial discrete shape; ``None`` while undecided."""
     if not shape.is_discrete():
         return False
-    from sage_categories.cat.canonical import FinitePresentedCategory
-    from sage_categories.cat.opposites import OppositeCategory
+    from sage_categories.cat.finite_categories import finite_objects
 
-    if isinstance(shape, OppositeCategory):
-        return _nontrivial_discrete(shape.original())
-    # A finite presented shape decides by its label count without touching the owned
-    # object set, so the categorical core stays executable before the production Sets
-    # leaf (D126, D129).
-    if isinstance(shape, FinitePresentedCategory):
-        return len(shape.labels()) >= 2
+    objects = finite_objects(shape)
+    if objects is not Unknown:
+        return len(objects) >= 2
     object_set = shape.object_set()
-    if Sets.Finite().has_chosen_enumeration(object_set):
-        return len(Sets.Finite().chosen_enumeration(object_set)) >= 2
     cardinal = ask(object_set.cardinality())
     if cardinal is Unknown:
         return None

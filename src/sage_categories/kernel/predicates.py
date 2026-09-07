@@ -15,6 +15,7 @@ from sympy.assumptions.assume import AppliedPredicate as _SymPyAppliedPredicate
 from sympy.core.basic import Basic
 from sympy.core.expr import AtomicExpr
 from sympy.core.sympify import converter
+from sympy.multipledispatch.dispatcher import MDNotImplementedError
 
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.roles import CategoryPoint, category_universal_class
@@ -302,9 +303,14 @@ def _register_exact_case(owner: OwnedPredicate, domains: tuple[type, ...], handl
         if owner in _identity_predicates and len(arguments) == 2 and arguments[0] is arguments[1]:
             return True
         result = handler(*arguments, assumptions=assumptions)
+        if result is None or result is Unknown:
+            # SymPy's Dispatcher.__call__ tries the next applicable exact case
+            # on MDNotImplementedError; Predicate.eval returns undecided when
+            # all applicable cases are undecided (SymPy 1.14, inspected source).
+            raise MDNotImplementedError
         if result is True and property_category is not None:
             refine(arguments[0], property_category)
-        return None if result is Unknown else result
+        return result
 
     evaluate.__name__ = handler.__name__
     owner.register(*domains)(evaluate)

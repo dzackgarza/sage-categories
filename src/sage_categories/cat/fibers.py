@@ -11,6 +11,7 @@ https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Fibe
 
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING
 
 from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
@@ -71,11 +72,7 @@ def fiber(
         result = limit_of_categories(
             diagram,
             Cat().Pullbacks(),
-            lambda defining_diagram: FiberCategory(
-                defining_diagram,
-                defining_functor,
-                base_object,
-            ),
+            partial(FiberCategory, defining_functor=defining_functor, base_object=base_object),
         )
         assert isinstance(result, FiberCategory)
         result.inclusion()

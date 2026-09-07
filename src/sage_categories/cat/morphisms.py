@@ -32,7 +32,7 @@ from sage_categories.cat.category import (
     refine,
     retain_composite_factors,
 )
-from sage_categories.cat.predicates import register_handler
+from sage_categories.cat.predicates import decide, property_predicate, register_handler
 from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
 from sage_categories.kernel.refinement import common_ancestor, is_placed
 from sage_categories.kernel.roles import Role
@@ -301,6 +301,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
     def __init__(self, base: Category[MorphismData, TwoMorphismData]) -> None:
         self._base = base
+        self._membership_predicate = property_predicate("morphism_member", self)
         self._fixed_endpoints: TripleDict = TripleDict(weak_values=False)
         if base.has_ambient():
             # ``Mor(D)`` for a declared subcategory ``D`` of ``C`` is a subcategory of
@@ -310,6 +311,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             # selects a functor into is older than it (``Category._initialize``).
             base.ambient().morphism_category(1)
         super().__init__()
+        register_handler(self._membership_predicate, self._decide_membership)
         # The one exact case beyond identity that every category's morphisms have.  It is
         # registered here because ``Mor(C)`` is where the morphisms of ``C`` are, and by
         # the category that owns the predicate, because a subcategory shares its ambient's.
@@ -361,9 +363,16 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         return self._base.equality()
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
-        if self._base.has_ambient():
-            return self._base.ambient().morphism_category(1).membership_proposition(candidate) & endpoints_in(candidate, self._base)
-        return member(candidate, self)
+        return self._membership_predicate(candidate)
+
+    def _decide_membership(self, candidate: CategoryOfCategories.ElementType, assumptions: Proposition) -> bool | None:
+        if is_placed(candidate, self):
+            return True
+        if self._base.has_full_ambient():
+            return decide(
+                self.ambient().membership_proposition(candidate) & endpoints_in(candidate, self._base), assumptions
+            )
+        return False
 
     # -- fixed endpoints ---------------------------------------------------------
 

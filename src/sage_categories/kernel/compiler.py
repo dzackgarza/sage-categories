@@ -1249,7 +1249,13 @@ def implement_category(category: Category, implementation: type[Category]) -> No
     object.__setattr__(category, "__class__", implementation)
     vars(category)["_own_classes"] = (implementation,)
     implementation.__init__(category)
-    category.recompile()
+    root = retained_object_input(category)
+    context = ObjectConstructionContext(category, root.identity, CategoryPointIdentity(root.identity.category), ())
+    token = activate_object_context(context)
+    try:
+        category.recompile()
+    finally:
+        deactivate_object_context(token)
 
 
 def apply_level_shift(member: Category, placement: Category) -> None:

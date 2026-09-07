@@ -271,6 +271,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             return
         self._ordinal = next(_category_ordinals)
         self._compile_category(functors)
+        self._place_selected_point(functors)
+
+    def _place_selected_point(self, functors: tuple[Functor, ...]) -> None:
+        """Place this category at the object selected by its defining point functor."""
         from sage_categories.kernel.refinement import place
 
         # A selected point functor ``* -> D`` places this category as an object of ``D``
@@ -286,7 +290,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             "Several is the shape D161 describes for NN lifting its point to magmas in two ways, a kernel capability that does not exist yet"
         )
         inclusions = tuple(functor.codomain().EssentialImage(functor).inclusion_functor() for functor in points)
-        place(self, inclusions[0].codomain() if inclusions else universe)
+        place(self, inclusions[0].codomain() if inclusions else self.category())
 
     def _select_functors(self) -> tuple[Functor, ...]:
         """Read the declaration ``structure_functors()`` once and retain what it selected.
@@ -325,7 +329,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         its nested classes and structure functors are read again here. Its ordinal
         continues to identify it in retained intersections.
         """
-        self._recompile_category(self._complete_declarations())
+        functors = self._complete_declarations()
+        self._recompile_category(functors)
+        self._place_selected_point(functors)
 
     def _complete_declarations(self) -> tuple[Functor, ...]:
         """Identify this category's intersection and select its defining functors."""
@@ -493,7 +499,11 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             return source
         assert self.has_ambient(), f"{self!r} is not a category of morphisms"
         morphism_roots = tuple(root.base_category() for root in self.narrowing_roots() if root._object_role_source()[1])
-        return self.ambient().base_category().intersection(morphism_roots)
+        ambient = self.ambient().base_category()
+        bases = tuple(root.narrowing_base() for root in morphism_roots)
+        common = tuple(base for base in bases if all(is_subcategory(root, base) for root in morphism_roots))
+        owner = next((base for base in common if all(is_subcategory(base, other) for other in common)), ambient)
+        return owner.intersection(morphism_roots)
 
     # -- identities and composition -------------------------------------------
     #

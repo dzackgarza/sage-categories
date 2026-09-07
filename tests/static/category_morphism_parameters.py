@@ -26,3 +26,7 @@ def constructor_parameters(
 def nullary_categories(member: CategoryOfCategories.ElementType) -> None:
     assert_type(Mor(PointCategory(member)), MorphismCategory[[], []])
     assert_type(Mor(DeclaredCategory("C")), MorphismCategory[[], []])
+
+
+def category_object_parameters(category: CategoryOfCategories.ObjectType[[str], [int]]) -> None:
+    assert_type(Mor(category), MorphismCategory[[str], [int]])

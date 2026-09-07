@@ -31,6 +31,7 @@ No files modified by autofix.
  • Parsed lines: ~100.0%
  • Scan skipped: 
    ◦ Matching --exclude patterns: 2
+   ◦ Files larger than  files 1.0 MB: 1
  • Scan was limited to files tracked by git
  • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
 Ran 54 rules on 287 files: 15 findings.
@@ -85,7 +86,7 @@ Ran 54 rules on 287 files: 15 findings.
                                 
           380┆ existing = result.setdefault(surface_name, {}).get(provider_name, ())
             ⋮┆----------------------------------------
-          489┆ recorded = vars(value).setdefault("_own_classes", (type(value),))
+          494┆ recorded = vars(value).setdefault("_own_classes", (type(value),))
                                        
     src/sage_categories/kernel/roles.py
    ❯❯❱ home.dzack.ai-review-ci.justfiles....tool-configs.py-no-getattr-default

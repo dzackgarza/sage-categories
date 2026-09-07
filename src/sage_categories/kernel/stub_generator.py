@@ -56,14 +56,13 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
         providers = _providers_in_module(inheritance, module)
-        if not providers:
-            tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
-            _canonicalize_imports(tree, package, canonical_exports)
-            stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
-            continue
+        source_path = stub_path.with_suffix(".py")
+        source = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
         _canonicalize_imports(tree, package, canonical_exports)
-        _project_provider_bases(tree, module, providers)
+        _project_paramspec_class_aliases(tree, source)
+        if providers:
+            _project_provider_bases(tree, module, providers)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
     return tuple(sorted(output_directory.rglob("*.pyi")))
 
@@ -168,6 +167,65 @@ def _canonicalize_imports(
             ast.ImportFrom(module=module, names=aliases, level=statement.level)
             for module, aliases in grouped.items()
         )
+    tree.body[:] = statements
+
+
+def _project_paramspec_class_aliases(tree: ast.Module, source: ast.Module) -> None:
+    """Bind the source class's parameter lists explicitly in its class aliases.
+
+    Generic legacy aliases bind free variables on their right-hand side and remain
+    usable as classes: https://mypy.readthedocs.io/en/stable/generics.html#generic-type-aliases
+    """
+    declarations = {
+        declaration.name: tuple(
+            parameter for parameter in declaration.type_params if isinstance(parameter, ast.ParamSpec)
+        )
+        for declaration in source.body
+        if isinstance(declaration, ast.ClassDef)
+        and declaration.type_params
+        and all(isinstance(parameter, ast.ParamSpec) for parameter in declaration.type_params)
+    }
+    used: set[str] = set()
+    for statement in ast.walk(tree):
+        if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Name):
+            continue
+        name = statement.value.id
+        parameters = declarations.get(name)
+        if parameters is None:
+            continue
+        used.add(name)
+        statement.value = ast.Subscript(
+            value=statement.value,
+            slice=ast.Tuple(
+                elts=[ast.Name(id=f"_{name}_{parameter.name}", ctx=ast.Load()) for parameter in parameters],
+                ctx=ast.Load(),
+            ),
+            ctx=ast.Load(),
+        )
+    if not used:
+        return
+    statements: list[ast.stmt] = [ast.Import(names=[ast.alias(name="typing", asname="_typing")])]
+    for statement in tree.body:
+        statements.append(statement)
+        if not isinstance(statement, ast.ClassDef) or statement.name not in used:
+            continue
+        for parameter in declarations[statement.name]:
+            name = f"_{statement.name}_{parameter.name}"
+            keywords = (
+                [ast.keyword(arg="default", value=parameter.default_value)]
+                if parameter.default_value is not None
+                else []
+            )
+            statements.append(
+                ast.Assign(
+                    targets=[ast.Name(id=name, ctx=ast.Store())],
+                    value=ast.Call(
+                        func=ast.Attribute(value=ast.Name(id="_typing", ctx=ast.Load()), attr="ParamSpec", ctx=ast.Load()),
+                        args=[ast.Constant(value=name)],
+                        keywords=keywords,
+                    ),
+                )
+            )
     tree.body[:] = statements
 
 

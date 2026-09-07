@@ -904,8 +904,8 @@ def _finite_presentation(value: SetsCategory.ObjectType, assumptions: Propositio
     presentation = value.set_presentation()
     if isinstance(presentation, tuple):
         return True
-    if isinstance(presentation, _PredicateRule):
-        return True if sympy_ask(finite_set(presentation.ambient), assumptions) is True else None
+    if isinstance(presentation, _PredicateRule) and sympy_ask(finite_set(presentation.ambient), assumptions) is True:
+        return True
     if value in _enumerations:
         index_presentation = _enumerations[value].domain().set_presentation()
         while isinstance(index_presentation, _PredicateRule):

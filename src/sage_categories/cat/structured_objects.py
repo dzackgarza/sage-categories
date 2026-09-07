@@ -126,7 +126,7 @@ class InserterCategory(LimitSubcategory):
 def Inserter(
     first: Functor,
     second: Functor,
-    category_type: Callable[[Functor], InserterCategory] = InserterCategory,
+    category_type: type[InserterCategory] | partial[InserterCategory] = InserterCategory,
 ) -> InserterCategory:
     """The inserter of ``first`` and ``second``, retained as the named construction ``category_type``."""
     assert first.domain() is second.domain() and first.codomain() is second.codomain()

@@ -1,6 +1,6 @@
 """Predicate subobjects retain membership and inclusion on infinite sets."""
 
-from sympy import Q, Symbol
+from sympy import Q, Rational, Symbol
 
 from sage_categories.all import Mor, Sets, Unknown, ask
 
@@ -24,6 +24,18 @@ def test_predicate_subobject_of_an_infinite_set() -> None:
     assert ask(evens.membership_proposition(integers.point(4))) is True
     assert ask(evens.membership_proposition(integers.point(3))) is False
     assert even_inclusion(evens.point(4)) is integers.point(4)
+
+    doubling = Mor(Sets)(integers, integers)(lambda value: 2 * value)
+    image_predicate = subobjects.from_predicate(lambda point: Q.even(doubling(point).datum()))
+    image_subset = subobjects.defining_arrow().on_object(image_predicate).domain()
+    outside = Sets((Rational(1, 2),)).point(Rational(1, 2))
+    assert ask(image_subset.membership_proposition(outside)) is False
+
+    nested_subobjects = Sets.Subobjects(selected)
+    nested = nested_subobjects.from_predicate(lambda point: Q.even(inclusion(point).datum()))
+    nested_subset = nested_subobjects.defining_arrow().on_object(nested).domain()
+    assert ask(nested_subset.membership_proposition(integers.point(4))) is Unknown
+    assert ask(nested_subset.set_presentation()(4)) is Unknown
 
 
 test_predicate_subobject_of_an_infinite_set()

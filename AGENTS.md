@@ -9,6 +9,28 @@ Use the relevant section while working; keep the rest available by reference.
 An explanation of a failure does not establish that its remedy works.
 Preserve the original operation and acceptance claim until the delivered behavior establishes them.
 
+## Repository role: integration framework and engine delegation
+
+`sage-categories` is a stitching framework.
+It does not own computational algorithms.
+It does not establish new mathematical knowledge.
+It defers to mature external dependencies as computation engines.
+
+The repository owns three responsibilities only:
+1. Present a uniform public API on categories, functors, and morphisms.
+2. Weave and coordinate backend engines.
+3. Supply kernel and `Cat` machinery to organize, structure, and inherit categories ergonomically for mathematicians.
+
+### Leaf categories and hand-rolled mathematics
+
+Leaf categories must not introduce new bespoke code.
+Leaf categories register discovered functionality from external packages and expose it in a unified category form.
+Leaves manage backend engines; `Cat` threads operations across engines.
+
+Hand-rolling mathematical algorithms outside `Cat` is prohibited.
+Hand-rolled implementations inside `Cat` are equally prohibited when external packages handle the required categorical computations.
+Write new mathematical implementations only when verified evidence proves that no external dependency satisfies the requirement.
+
 ## Sources of truth
 
 Each fact has one authoritative home:
@@ -159,6 +181,11 @@ Keep the defining declaration authoritative and derive the runtime or static vie
 Do not add another registry to reconcile registries introduced by the same unfinished implementation.
 Check whether a proposed cache retains an already-retained value before adding it.
 Caching, interning, mathematical equality, and category membership have distinct obligations; do not exchange their checks.
+
+Do not hand-roll algorithms that external engines already provide.
+Leaf categories delegate computation to backend engines (such as GAP, Julia/Catlab, SageMath, SymPy, Singular, or Macaulay2).
+`Cat` coordinates these engines through category structure.
+Every mathematical algorithm must cite its external engine owner unless proven that no dependency supplies it.
 
 ### Construction, scope, and generality
 

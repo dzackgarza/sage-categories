@@ -17,10 +17,8 @@ class IntegerValues(Category):
         pass
 
     class MorphismType:
-        pass
-
-    def is_discrete(self) -> bool:
-        return True
+        def __init__(self, data: None) -> None:
+            assert self.domain() is self.codomain()
 
     def __call__(self, value: Integer) -> IntegerValues.ObjectType:
         return self.ObjectType(value)
@@ -38,10 +36,8 @@ class IntermediateIntegers(Category):
         pass
 
     class MorphismType:
-        pass
-
-    def is_discrete(self) -> bool:
-        return True
+        def __init__(self, data: None) -> None:
+            assert self.domain() is self.codomain()
 
     def __call__(self, value: Integer) -> IntermediateIntegers.ObjectType:
         return self.ObjectType(value)
@@ -59,14 +55,12 @@ class TranslatedIntegers(Category):
         pass
 
     class MorphismType:
-        pass
+        def __init__(self, data: None) -> None:
+            assert self.domain() is self.codomain()
 
     def __init__(self, intermediate: IntermediateIntegers, doubling: Cat().MorphismType) -> None:
         self._intermediate = intermediate
         self._doubling = doubling
-
-    def is_discrete(self) -> bool:
-        return True
 
     def __call__(self, value: Integer) -> TranslatedIntegers.ObjectType:
         return self.ObjectType(value)

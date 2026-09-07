@@ -233,3 +233,23 @@ Ideas, to be weighed, not obligations.*
 
 - **Required resolution:** Replace bespoke Python string/tuple path concatenation and the monoid `kbmag` wrapper with a rewriting engine (such as Maude or GAP's sorted `FpCategories`) that models morphism sorts and relations directly.
 
+## Hand-rolling monoidal coherence logic instead of delegating to DisCoPy
+
+- **Area:** Monoidal categories, strictification, and coherence.
+
+- **Contract:** Monoidal categories, symmetric/braided structures, and string diagrams have mature reference implementations in Python. By Mac Lane's coherence theorem, monoidal categories are monoidally equivalent to strict monoidal categories where associators and unitors are identities up to coherence. The repository must delegate monoidal calculus to existing libraries rather than hand-rolling coherence checks.
+
+- **Defect:** The codebase implements monoidal categories from scratch ([src/sage_categories/cat/monoidal.py](src/sage_categories/cat/monoidal.py), [src/sage_categories/cat/structured_objects.py](src/sage_categories/cat/structured_objects.py)):
+  1. Hand-rolls rebracketing functors (`tensor_parentheses`), unit functors (`tensor_units`), and manual associator/unitor natural isomorphisms via product projections.
+  2. Implements manual verification of Mac Lane's pentagon and triangle equations across explicit quadruple and triple objects.
+  3. Hand-rolls monoidal reversal ($V^{\mathrm{rev}}$) by reversing object tuples and component reindexing.
+  4. Manually constructs internal magma and monoid objects via categorical inserter limits.
+
+- **Target engine:** DisCoPy (`discopy`). DisCoPy provides:
+  1. Strict monoidal categories with automatic adherence to the interchange law.
+  2. Planar string diagrams and graphical calculus.
+  3. Native symmetric, braided, rigid (cups/caps), and compact closed category operations.
+  4. Direct functorial evaluation into semantic domains (such as matrices, relations, and circuits).
+
+- **Required resolution:** Delegate monoidal category constructions, coherence tracking, and tensor composition to DisCoPy rather than maintaining bespoke rebracketing and diagram checks in pure Python.
+

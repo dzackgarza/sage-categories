@@ -1,6 +1,7 @@
-"""Algebraic leaves over the set category: finitely generated abelian groups and their tensor product."""
+"""Presented abelian groups, tensor product, and relative tensor product of bimodules."""
 
 from sage_categories.algebra.abelian import (
+    AbelianBimoduleTensor,
     AbelianGroups,
     AbelianTensor,
     LinearForm,
@@ -25,6 +26,7 @@ from sage_categories.algebra.abelian import (
 )
 
 __all__ = [
+    "AbelianBimoduleTensor",
     "AbelianGroups",
     "AbelianTensor",
     "LinearForm",

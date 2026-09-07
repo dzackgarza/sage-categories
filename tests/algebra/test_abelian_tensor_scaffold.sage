@@ -1,4 +1,4 @@
-"""The tensor product of finite abelian groups: Z/4 (x) Z/6 = Z/2 through its bilinear presentation, the mediator, tensoring maps, and the unit comparison."""
+"""Tensor products of presented abelian groups through their bilinear presentations and universal mediators."""
 
 from sage_categories.all import Mor, ask
 from sage_categories.algebra import (
@@ -69,5 +69,91 @@ def test_unit_comparison_acts_by_scalar_multiplication() -> None:
     assert ask(right(simple_tensor(Z6, Z, six.gen(0), 4)) == Z6.point(4 * six.gen(0))) is True
 
 
+def test_tensor_of_integers_is_the_integers() -> None:
+    integers = integer_group()
+    structure = AbelianTensor()
+    tensor = structure.tensor()
+    product = tensor_object(tensor, integers, integers)
+    one_tensor_one = simple_tensor(integers, integers, 1, 1)
+
+    multiplication = tensor_mediator(integers, integers, integers, lambda left, right: left * right)
+    section = abelian_homomorphism(integers, product, lambda value: value * one_tensor_one.datum())
+    assert ask(multiplication * section == Mor(AbelianGroups())(integers, integers).one()) is True
+    assert ask(section * multiplication == Mor(AbelianGroups())(product, product).one()) is True
+
+    triples = structure.associator().domain().domain()
+    associator = structure.associator().component(triples((integers, integers, integers)))
+    left = simple_tensor(
+        product,
+        integers,
+        simple_tensor(integers, integers, 2, 3).datum(),
+        5,
+    )
+    right = simple_tensor(
+        integers,
+        product,
+        2,
+        simple_tensor(integers, integers, 3, 5).datum(),
+    )
+    assert ask(associator(left) == right) is True
+
+
+def test_tensor_keeps_free_and_torsion_summands() -> None:
+    free = FreeModule(ZZ, 2)
+    mixed_engine = free / free.span([2 * free.gen(0)])
+    mixed = presented_abelian_group(mixed_engine)
+    mixed_orders = tuple(int(order) for order in mixed_engine.invariants())
+    mixed_basis = mixed_engine.smith_form_gens()
+    torsion_position = mixed_orders.index(2)
+    free_position = mixed_orders.index(0)
+    torsion = mixed_basis[torsion_position]
+    free_value = mixed_basis[free_position]
+
+    model_free = FreeModule(ZZ, 4)
+    model_engine = model_free / model_free.span([2 * model_free.gen(index) for index in range(3)])
+    model = presented_abelian_group(model_engine)
+    model_orders = tuple(int(order) for order in model_engine.invariants())
+    model_positions = (
+        *(index for index, order in enumerate(model_orders) if order == 2),
+        model_orders.index(0),
+    )
+
+    product = tensor_object(AbelianTensor().tensor(), mixed, mixed)
+    tensor_basis = (
+        simple_tensor(mixed, mixed, torsion, torsion).datum(),
+        simple_tensor(mixed, mixed, free_value, torsion).datum(),
+        simple_tensor(mixed, mixed, torsion, free_value).datum(),
+        simple_tensor(mixed, mixed, free_value, free_value).datum(),
+    )
+
+    def into_model(left, right):
+        left_coordinates = tuple(int(entry) for entry in left.vector())
+        right_coordinates = tuple(int(entry) for entry in right.vector())
+        coefficients = (
+            left_coordinates[torsion_position] * right_coordinates[torsion_position],
+            left_coordinates[free_position] * right_coordinates[torsion_position],
+            left_coordinates[torsion_position] * right_coordinates[free_position],
+            left_coordinates[free_position] * right_coordinates[free_position],
+        )
+        coordinates = [0] * len(model_orders)
+        for position, coefficient in zip(model_positions, coefficients, strict=True):
+            coordinates[position] = coefficient
+        return model_engine.linear_combination_of_smith_form_gens(vector(ZZ, coordinates))
+
+    forward = tensor_mediator(mixed, mixed, model, into_model)
+
+    def back_to_tensor(value):
+        total = 0 * tensor_basis[0]
+        for position, basis_value in zip(model_positions, tensor_basis, strict=True):
+            total += int(value.vector()[position]) * basis_value
+        return total
+
+    backward = abelian_homomorphism(model, product, back_to_tensor)
+    assert ask(forward * backward == Mor(AbelianGroups())(model, model).one()) is True
+    assert ask(backward * forward == Mor(AbelianGroups())(product, product).one()) is True
+
+
 test_tensor_of_cyclic_groups()
 test_unit_comparison_acts_by_scalar_multiplication()
+test_tensor_of_integers_is_the_integers()
+test_tensor_keeps_free_and_torsion_summands()

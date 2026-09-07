@@ -1,12 +1,12 @@
 """Finitely generated abelian groups over Sage's presented-module engine, and their tensor product.
 
 ``AbelianGroups()`` is ``AdditiveGroups(Cartesian(Sets())).Commutative()``, the commutative
-additive group objects of sets (``specs/magmas-monoids-semirings.md``, "Groups").  This leaf
-adds two things.  ``presented_abelian_group(engine)`` constructs the object of that category
-carried by the elements of a finite Sage ``AdditiveAbelianGroup`` or ``ZZ^n / W`` module, with
-the engine's addition; ``integer_group()`` is the integers on their rule-defined carrier.  The
-tensor product is the selected monoidal structure ``AbelianTensor()`` on ``AbelianGroups()``
-with unit the integers (``specs/modules.md``, "Instances").
+additive group objects of sets (``specs/magmas-monoids-semirings.md``, "Groups").
+``presented_abelian_group(engine)`` constructs its object from a Sage
+``AdditiveAbelianGroup`` or ``ZZ^n / W`` module, and ``integer_group()`` gives the integers.
+``AbelianTensor()`` selects tensor product with unit the integers.  For a monoid object
+``R``, ``AbelianBimoduleTensor(R)`` selects relative tensor product on ``(R,R)``-bimodules
+with unit the regular bimodule (``specs/bimodules.md``, "Relative tensor product").
 
 The private engine is Smith coordinates.  Every presented carrier registers its
 ``Presentation`` with ``Sets`` as the object form, and every homomorphism between presented
@@ -24,6 +24,7 @@ factors through the mediator that sends the class of ``e_{ij}`` to ``f(e_i, e_j)
 from __future__ import annotations
 
 __all__ = [
+    "AbelianBimoduleTensor",
     "AbelianGroups",
     "AbelianTensor",
     "LinearForm",
@@ -61,13 +62,14 @@ from sage.modules.free_module_element import vector
 from sage.rings.integer_ring import ZZ
 from sympy import Q, false, true
 
+from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.monoidal import Cartesian, MonoidalStructures, MonoidalStructuresCategory, tensor_morphism, tensor_parentheses, tensor_units
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Proposition, ask
-from sage_categories.cat.structured_objects import AdditiveGroups, Groups, Monoids
+from sage_categories.cat.structured_objects import AdditiveGroups, Groups, MonoidCategory, Monoids
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 from sage_categories.sets.finite import Sets
@@ -288,7 +290,7 @@ def _engine_membership(engine: Engine, datum: Hashable) -> Proposition:
 
 @cached_function(key=identity_key)
 def presented_abelian_group(engine: Engine) -> CategoryOfCategories.ElementType:
-    """The object of ``Ab`` whose points are the elements of a finite presented Sage abelian group, with its addition; one object per engine."""
+    """The object of ``Ab`` whose points are the elements of a finitely generated presented Sage abelian group, with its addition; one object per engine."""
     return _group_from_engine(engine)
 
 
@@ -425,7 +427,6 @@ def _pair_vector(data: _TensorData, a: Hashable, b: Hashable) -> Hashable:
 @cached_function(key=identity_key)
 def _tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     quotient = _pair_generators(presentation(first), presentation(second))
-    assert quotient.is_finite(), f"the tensor of {first!r} and {second!r} is infinite; only finite tensor products are enumerated"
     result = _group_from_engine(quotient)
     _tensor_data[result] = _TensorData(first, second, quotient)
     return result
@@ -565,6 +566,7 @@ def AbelianTensor() -> MonoidalStructuresCategory.ObjectType:
     return MonoidalStructures(base)(tensor, unit, associator, left_unitor, right_unitor)
 
 
+@cached_function(key=identity_key)
 def relative_tensor(
     right_action: MorphismCategory.ObjectType,
     left_action: MorphismCategory.ObjectType,
@@ -742,3 +744,179 @@ def relative_right_unitor(
     """``X (x)_S S -> X``, ``x (x)_S s`` to ``x s``, with its inverse ``x -> x (x)_S 1``."""
     one = _monoid_one(unit_morphism)
     return _unitor(projection, right_action, lambda datum: balanced_tensor(projection, datum, one))
+
+
+@cached_function(key=identity_key)
+def AbelianBimoduleTensor(
+    scalars: MonoidCategory.ObjectType,
+) -> MonoidalStructuresCategory.ObjectType:
+    """The relative tensor monoidal structure on Smith-presented ``(R,R)``-bimodules in ``Ab``.
+
+    The abelian leaf supplies the balancing coequalizers.  Tensor product over the
+    integers preserves these coequalizers in each variable, so the outer actions,
+    associator, and unit comparisons descend from ``AbelianTensor()``.  The unit is
+    the regular ``(R,R)``-bimodule.
+    """
+    monoidal = AbelianTensor()
+    abelian_groups, abelian_tensor = monoidal.underlying_category(), monoidal.tensor()
+    bimodules = Bimodules(scalars, scalars, monoidal)
+    pairs = Cat().Products()((bimodules, bimodules))
+    forgetful = bimodules.forgetful()
+
+    def on_object(pair: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        first, second = (pair.family_component(index) for index in range(2))
+        projection = relative_tensor(first.right_action(), second.left_action())
+        return bimodules(
+            induced_left_action(projection, first.left_action()),
+            induced_right_action(projection, second.right_action()),
+        )
+
+    def on_morphism(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        source_pair, target_pair = arrow.domain(), arrow.codomain()
+        source_first, source_second = (source_pair.family_component(index) for index in range(2))
+        target_first, target_second = (target_pair.family_component(index) for index in range(2))
+        source_projection = relative_tensor(source_first.right_action(), source_second.left_action())
+        target_projection = relative_tensor(target_first.right_action(), target_second.left_action())
+        first = forgetful.on_morphism(arrow.family_component(0))
+        second = forgetful.on_morphism(arrow.family_component(1))
+        underlying = relative_tensor_morphism(source_projection, target_projection, first, second)
+        return bimodules.homomorphism(
+            tensor.on_object(source_pair),
+            tensor.on_object(target_pair),
+            underlying,
+        )
+
+    tensor = Fun(pairs, bimodules)(on_object, on_morphism)
+    unit = bimodules(scalars.operation(), scalars.operation())
+
+    @cached_function(key=identity_key)
+    def associator_components(
+        triple: CategoryOfCategories.ElementType,
+    ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+        first, second, third = (triple.family_component(index) for index in range(3))
+        first_second = tensor.on_object(pairs((first, second)))
+        second_third = tensor.on_object(pairs((second, third)))
+        source = tensor.on_object(pairs((first_second, third)))
+        target = tensor.on_object(pairs((first, second_third)))
+        first_group, second_group, third_group = (
+            forgetful.on_object(value) for value in (first, second, third)
+        )
+
+        first_second_projection = relative_tensor(first.right_action(), second.left_action())
+        second_third_projection = relative_tensor(second.right_action(), third.left_action())
+        source_projection = relative_tensor(first_second.right_action(), third.left_action())
+        target_projection = relative_tensor(first.right_action(), second_third.left_action())
+
+        abelian_triples = monoidal.associator().domain().domain()
+        abelian_triple = abelian_triples((first_group, second_group, third_group))
+        rebracket = monoidal.associator().component(abelian_triple)
+        unbracket = monoidal.associator().inverse().component(abelian_triple)
+        identity_first = Mor(abelian_groups)(first_group, first_group).one()
+        identity_third = Mor(abelian_groups)(third_group, third_group).one()
+        forward_from_unbalanced = (
+            target_projection
+            * tensor_morphism(abelian_tensor, identity_first, second_third_projection)
+            * rebracket
+        )
+        backward_from_unbalanced = (
+            source_projection
+            * tensor_morphism(abelian_tensor, first_second_projection, identity_third)
+            * unbracket
+        )
+
+        def forward_rule(value: Hashable, third_value: Hashable) -> Hashable:
+            argument = simple_tensor(
+                first_second_projection.domain(),
+                third_group,
+                coequalizer_lift(first_second_projection, value),
+                third_value,
+            )
+            return forward_from_unbalanced(argument).datum()
+
+        def backward_rule(first_value: Hashable, value: Hashable) -> Hashable:
+            argument = simple_tensor(
+                first_group,
+                second_third_projection.domain(),
+                first_value,
+                coequalizer_lift(second_third_projection, value),
+            )
+            return backward_from_unbalanced(argument).datum()
+
+        forward_underlying = relative_tensor_mediator(
+            source_projection,
+            target_projection.codomain(),
+            forward_rule,
+        )
+        backward_underlying = relative_tensor_mediator(
+            target_projection,
+            source_projection.codomain(),
+            backward_rule,
+        )
+        assert ask(
+            forward_underlying * backward_underlying
+            == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()
+        ) is True
+        assert ask(
+            backward_underlying * forward_underlying
+            == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()
+        ) is True
+        return (
+            bimodules.homomorphism(source, target, forward_underlying),
+            bimodules.homomorphism(target, source, backward_underlying),
+        )
+
+    left_parenthesized, right_parenthesized = tensor_parentheses(tensor)
+    associator = natural_isomorphism(
+        left_parenthesized,
+        right_parenthesized,
+        lambda triple: associator_components(triple)[0],
+        lambda triple: associator_components(triple)[1],
+    )
+
+    @cached_function(key=identity_key)
+    def left_unitor_components(
+        value: CategoryOfCategories.ElementType,
+    ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+        source = tensor.on_object(pairs((unit, value)))
+        projection = relative_tensor(unit.right_action(), value.left_action())
+        forward, backward = relative_left_unitor(
+            projection,
+            value.left_action(),
+            scalars.unit_morphism(),
+        )
+        return (
+            bimodules.homomorphism(source, value, forward),
+            bimodules.homomorphism(value, source, backward),
+        )
+
+    @cached_function(key=identity_key)
+    def right_unitor_components(
+        value: CategoryOfCategories.ElementType,
+    ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+        source = tensor.on_object(pairs((value, unit)))
+        projection = relative_tensor(value.right_action(), unit.left_action())
+        forward, backward = relative_right_unitor(
+            projection,
+            value.right_action(),
+            scalars.unit_morphism(),
+        )
+        return (
+            bimodules.homomorphism(source, value, forward),
+            bimodules.homomorphism(value, source, backward),
+        )
+
+    left_unit, right_unit = tensor_units(tensor, unit)
+    identity = Fun(bimodules, bimodules).one()
+    left_unitor = natural_isomorphism(
+        left_unit,
+        identity,
+        lambda value: left_unitor_components(value)[0],
+        lambda value: left_unitor_components(value)[1],
+    )
+    right_unitor = natural_isomorphism(
+        right_unit,
+        identity,
+        lambda value: right_unitor_components(value)[0],
+        lambda value: right_unitor_components(value)[1],
+    )
+    return MonoidalStructures(bimodules)(tensor, unit, associator, left_unitor, right_unitor)

@@ -193,3 +193,14 @@ Ideas, to be weighed, not obligations.*
   6. **Linear and additive categories:**
      - *Hand-rolled:* `cat/modules.py` and `cat/bimodules.py` write bespoke module and matrix handling.
      - *Mature libraries:* GAP (`LinearAlgebraForCAP`, `LinearClosuresForCAP`, `AdditiveClosuresForCAP`, `FreydCategoriesForCAP`).
+
+## Failure to integrate Catlab.jl for finite diagrams and presentations
+
+- **Area:** Julia / Catlab engine integration.
+
+- **Contract:** [specs/resolution.md](specs/resolution.md#L53), [pyproject.toml](pyproject.toml#L37), and [src/sage_categories/juliapkg.json](src/sage_categories/juliapkg.json) explicitly specify Julia 1.12.7, Catlab 0.17.6, and GATlab 0.2.4 via `JuliaCall` as the computation engine for finite diagrams, free diagrams, and limit/colimit presentations.
+
+- **Defect:** Previous implementations failed to integrate Catlab.jl. Instead of using Python as the stitching layer to coordinate independent engines, agents fabricated an artificial requirement for a direct GAP-to-Julia FFI bridge and treated `JuliaCall` as an unwanted boundary. To avoid writing the `JuliaCall` adapter, agents substituted hand-rolled Python algorithms (`cat/finite_categories.py`, `cat/presented_colimits.py`).
+
+- **Required resolution:** Implement the private `JuliaCall` adapter connecting Python categorical data to Catlab's `FreeDiagram`, `diagram_limit`, and `diagram_colimit` in `Catlab.CategoricalAlgebra.Limits`, removing hand-rolled Python iteration.
+

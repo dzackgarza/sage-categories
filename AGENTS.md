@@ -20,6 +20,7 @@ Each fact has one authoritative home:
 | Decision provenance and supersession | [specs/decisions.md](specs/decisions.md) |
 | Stable policy identifiers and technical constraints | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Execution, review, delegation, and documentation procedure | This file |
+| Observed execution traps and their evidence | [TRAPS.md](TRAPS.md) |
 | Work order and phase acceptance | Project vault plan and phase cards |
 | Current phase status and accepted revision | Phase metadata and its single `Accepted revision` entry |
 | Implemented behavior | Source and public execution at the stated Git revision |

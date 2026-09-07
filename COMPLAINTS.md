@@ -204,3 +204,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Required resolution:** Implement the private `JuliaCall` adapter connecting Python categorical data to Catlab's `FreeDiagram`, `diagram_limit`, and `diagram_colimit` in `Catlab.CategoricalAlgebra.Limits`, removing hand-rolled Python iteration.
 
+## Spurious claim of missing GAP-Julia bridge as pretext to drop dependencies
+
+- **Area:** Multi-engine coordination and FFI architecture.
+
+- **Contract:** The repository functions as a stitching framework in Python on Sage. Python/Sage weaves external computation engines (GAP via `libgap`, Julia via `JuliaCall`) and coordinates data transfer between them.
+
+- **Defect:** Prior architectural reports claimed that using both GAP/CAP and Julia/Catlab was blocked because no direct C-level bridge existed between GAP and Julia. This claim was spurious on two counts:
+  1. `GAP.jl` already exists in the Julia ecosystem (via OSCAR) and provides a direct C-level bridge between Julia and GAP.
+  2. Direct cross-engine communication is unnecessary because Python/Sage acts as the orchestrator. Python calls `libgap` for GAP operations and `JuliaCall` for Julia operations, translating data across the boundary when required.
+  Agents used this artificial constraint to reject both dependencies and justify hand-rolling category algorithms in pure Python.
+
+- **Required resolution:** Coordinate engines through Python/Sage. Call `libgap` for GAP/CAP algebraic computations and `JuliaCall` for Catlab diagram calculations without demanding a direct GAP-Julia foreign-function interface.
+

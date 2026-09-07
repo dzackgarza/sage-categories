@@ -161,3 +161,35 @@ Ideas, to be weighed, not obligations.*
   - `ToolsForHomalg`: Foundational homalg data structures and matrix tools.
 
   - `Toposes`: Topos-theoretic constructions.
+
+## Hand-rolling algorithms available in mature external libraries
+
+- **Area:** Computational engines and concrete leaf operations.
+
+- **Contract:** The repository must avoid hand-rolled code where mature external libraries exist (GAP, Julia/Catlab, SageMath, SymPy, Singular, Macaulay2, NetworkX). Leaf categories must delegate computation to these engines.
+
+- **Defect:** Across multiple mathematical domains, the codebase contains bespoke, hand-rolled Python algorithms for problems with existing reference implementations:
+
+  1. **Posets and binary relations:**
+     - *Hand-rolled:* `order/posets.py` implements $O(n^3)$ triple Python loops to verify reflexivity, antisymmetry, and transitivity. `cat/relations.py` hand-rolls relation inclusion and composition.
+     - *Mature libraries:* SageMath (`sage.combinat.posets.posets.Poset`, `sage.graphs.digraph.DiGraph`), NetworkX (`algorithms.dag`, `transitive_closure`), GAP (`Posets`, `Digraphs`), and Julia (`Catlab.CategoricalAlgebra.FinRelations`).
+
+  2. **Finite sets, functions, and quotients:**
+     - *Hand-rolled:* `sets/_finite.py` constructs ad-hoc NetworkX graphs to compute equivalence classes. `sets/finite.py` hand-rolls tuple equality recursion and membership searches.
+     - *Mature libraries:* GAP (`FinSetsForCAP`), SageMath (`FiniteEnumeratedSet`, `DisjointSet`), and SymPy (`FiniteSet`, `ProductSet`).
+
+  3. **Quivers, path categories, and presented colimits:**
+     - *Hand-rolled:* `cat/presented_colimits.py` and `cat/canonical.py` manually manipulate generator strings, quiver relations, and path concatenation in Python dictionaries. Only word reduction delegates to GAP `kbmag`.
+     - *Mature libraries:* GAP (`FpCategories` for quivers, path categories, and quotients; `QPA` for quiver representations and path algebras) and Julia (`Catlab.Presentation`).
+
+  4. **Finite diagram limits, functor categories, and slices:**
+     - *Hand-rolled:* `cat/finite_categories.py` uses nested `itertools.product` loops to enumerate commuting squares, limits, and comma categories. `cat/kan.py` and `cat/weighted.py` hand-roll pointwise Kan extensions and weighted limits.
+     - *Mature libraries:* GAP / CategoricalTowers (`ToolsForCategoricalTowers` for `LimitPair`/`ColimitPair`, `SliceCategories`, `FunctorCategories`) and Julia (`Catlab.CategoricalAlgebra.Limits`).
+
+  5. **Internal algebraic structures:**
+     - *Hand-rolled:* `cat/structured_objects.py` hand-rolls inserters, equifiers, and operation renaming for magmas, monoids, groups, and semirings.
+     - *Mature libraries:* GAP (`MonoidalCategories`, `CartesianCategories`, `Algebroids`, `GroupsAsCategoriesForCAP`), SageMath algebraic categories, and Singular/Macaulay2.
+
+  6. **Linear and additive categories:**
+     - *Hand-rolled:* `cat/modules.py` and `cat/bimodules.py` write bespoke module and matrix handling.
+     - *Mature libraries:* GAP (`LinearAlgebraForCAP`, `LinearClosuresForCAP`, `AdditiveClosuresForCAP`, `FreydCategoriesForCAP`).

@@ -1,7 +1,9 @@
 """Chosen set enumerations supply the vertices of a categorical product."""
 
 from sage_categories.all import Cat, Discrete, Fun, Mor, Sets, ask
-from sage_categories.cat.cones import cone
+from sage_categories.cat.cones import cone, cones
+from sage_categories.cat.declarations import NN
+from sage_categories.cat.predicates import Unknown
 
 
 def test_discrete_owned_set_indexes_a_product_with_its_mediator() -> None:
@@ -25,7 +27,7 @@ def test_discrete_owned_set_indexes_a_product_with_its_mediator() -> None:
     )
     identity = Fun(interval, interval).one()
     candidate = cone(diagram, interval, lambda vertex: identity if vertex is first_vertex else inclusion)
-    mediator = presentation.lift(candidate)
+    mediator = presentation.lift(cones(diagram)(candidate))
     edge = interval.generator("0->1")
     image = mediator.on_morphism(edge)
 
@@ -39,4 +41,34 @@ def test_discrete_owned_set_indexes_a_product_with_its_mediator() -> None:
     assert ask(second_projection * mediator == inclusion) is True
 
 
+def test_product_enumeration_composes_the_chosen_factor_enumerations() -> None:
+    colors, numbers = Sets(("red", "blue")), Sets((10, 20, 30))
+    color_indices = Sets((7, 9))
+    color_enumeration = Mor(Sets)(color_indices, colors).Isomorphisms()({7: "blue", 9: "red"})
+    inclusion = Mor(Sets)(color_indices, NN).Monomorphisms()(lambda index: index)
+    Sets.retain_enumeration(color_enumeration, inclusion)
+    number_enumeration = Sets.chosen_enumeration(numbers)
+    product = Sets.Products()((colors, numbers))
+    enumeration = Sets.chosen_enumeration(product)
+    indices = enumeration.domain()
+    index_inclusion = Sets.enumeration_index_inclusion(enumeration)
+    product_indices = Sets.Products()((color_indices, number_enumeration.domain()))
+    index_enumeration = Sets.chosen_enumeration(product_indices)
+
+    assert enumeration.codomain() is product
+    assert index_inclusion.domain() is indices
+    assert index_inclusion.codomain() is NN
+    assert index_inclusion(indices.point(6)) is NN.point(6)
+    assert enumeration(indices.point(1)) is product.point(("blue", 10))
+    assert enumeration(indices.point(6)) is product.point(("red", 30))
+    assert ask(product.product_projection(0) * enumeration == color_enumeration * product_indices.product_projection(0) * index_enumeration) is True
+    assert ask(product.product_projection(1) * enumeration == number_enumeration * product_indices.product_projection(1) * index_enumeration) is True
+    assert ask(enumeration.inverse() * enumeration == Mor(Sets)(indices, indices).one()) is True
+    assert ask(enumeration * enumeration.inverse() == Mor(Sets)(product, product).one()) is True
+    assert Sets.chosen_enumeration(colors) is color_enumeration
+    assert Sets.enumeration_index_inclusion(color_enumeration) is inclusion
+    assert Sets.chosen_enumeration(NN) is Unknown
+
+
 test_discrete_owned_set_indexes_a_product_with_its_mediator()
+test_product_enumeration_composes_the_chosen_factor_enumerations()

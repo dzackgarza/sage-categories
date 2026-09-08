@@ -23,6 +23,9 @@ from sage_categories.sets._finite_cap import (
 )
 
 __all__ = [
+    "cartesian_associator",
+    "cartesian_left_unitor",
+    "cartesian_right_unitor",
     "equal_morphisms",
     "factor_through_monomorphism",
     "finite_colimit",
@@ -123,6 +126,61 @@ def _owned_morphism(
     retain_finite_native_morphism(owned, native)
     return owned
 
+
+
+def cartesian_associator(
+    first: object,
+    second: object,
+    third: object,
+    source: object,
+    target: object,
+    *,
+    forward: bool,
+) -> MorphismCategory.ObjectType:
+    """CAP's selected Cartesian associator on the retained finite-set products."""
+    a, b, c = (_native_object(value) for value in (first, second, third))
+    native_source, native_target = _native_object(source), _native_object(target)
+    match forward:
+        case True:
+            operation = libgap.CartesianAssociatorLeftToRightWithGivenDirectProducts
+        case False:
+            operation = libgap.CartesianAssociatorRightToLeftWithGivenDirectProducts
+    computed = operation(native_source, a, b, c, native_target)
+    return _native_map_on_owned_endpoints(source, target, computed)
+
+
+def cartesian_left_unitor(
+    value: object,
+    source: object,
+    target: object,
+    *,
+    forward: bool,
+) -> MorphismCategory.ObjectType:
+    """CAP's selected left unitor or its inverse on finite sets."""
+    native_value = _native_object(value)
+    match forward:
+        case True:
+            computed = libgap.CartesianLeftUnitorWithGivenDirectProduct(native_value, _native_object(source))
+        case False:
+            computed = libgap.CartesianLeftUnitorInverseWithGivenDirectProduct(native_value, _native_object(target))
+    return _native_map_on_owned_endpoints(source, target, computed)
+
+
+def cartesian_right_unitor(
+    value: object,
+    source: object,
+    target: object,
+    *,
+    forward: bool,
+) -> MorphismCategory.ObjectType:
+    """CAP's selected right unitor or its inverse on finite sets."""
+    native_value = _native_object(value)
+    match forward:
+        case True:
+            computed = libgap.CartesianRightUnitorWithGivenDirectProduct(native_value, _native_object(source))
+        case False:
+            computed = libgap.CartesianRightUnitorInverseWithGivenDirectProduct(native_value, _native_object(target))
+    return _native_map_on_owned_endpoints(source, target, computed)
 
 def is_monomorphism(value: MorphismCategory.ObjectType) -> bool:
     return bool(libgap.IsMonomorphism(_native_morphism(value)))

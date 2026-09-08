@@ -853,3 +853,31 @@ register_handler(Sets.equality(), Sets._equal_points)
 register_handler(Mor(Sets).Monomorphisms().predicate(), Sets._injective)
 register_handler(Mor(Sets).Epimorphisms().predicate(), Sets._surjective)
 register_handler(Mor(Sets).Isomorphisms().predicate(), Sets._bijective)
+
+
+def _finite_cartesian_comparison(operation: str, *arguments: object) -> MorphismCategory.ObjectType:
+    from sage_categories.engines import finite_sets
+
+    match operation, arguments:
+        case "associator_forward", (first, second, third, left, right):
+            return finite_sets.cartesian_associator(first, second, third, left, right, forward=True)
+        case "associator_inverse", (first, second, third, left, right):
+            return finite_sets.cartesian_associator(first, second, third, right, left, forward=False)
+        case "left_unitor_forward", (value, product):
+            return finite_sets.cartesian_left_unitor(value, product, value, forward=True)
+        case "left_unitor_inverse", (value, product):
+            return finite_sets.cartesian_left_unitor(value, value, product, forward=False)
+        case "right_unitor_forward", (value, product):
+            return finite_sets.cartesian_right_unitor(value, product, value, forward=True)
+        case "right_unitor_inverse", (value, product):
+            return finite_sets.cartesian_right_unitor(value, value, product, forward=False)
+    raise ValueError(f"unknown finite Cartesian comparison {operation!r}")
+
+
+def _register_finite_cartesian_comparisons() -> None:
+    from sage_categories.cat.monoidal import register_cartesian_comparisons
+
+    register_cartesian_comparisons(SetsCategory, _finite_cartesian_comparison)
+
+
+_register_finite_cartesian_comparisons()

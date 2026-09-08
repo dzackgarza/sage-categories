@@ -7,6 +7,7 @@ https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Mono
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import NamedTuple
 
 from sage_categories.cat.calculus import (
@@ -24,8 +25,32 @@ from sage_categories.engines.diagrams import evaluate_path
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
-__all__ = ["Actions", "ActionsCategory", "Cartesian", "Composition", "MonoidalStructures", "MonoidalStructuresCategory", "Reversed", "SelfAction", "TrivialAction"]
+__all__ = ["Actions", "ActionsCategory", "Cartesian", "Composition", "MonoidalStructures", "MonoidalStructuresCategory", "Reversed", "SelfAction", "TrivialAction", "register_cartesian_comparisons"]
 
+
+
+type CartesianComparisonHandler = Callable[..., MorphismCategory.ObjectType]
+_cartesian_comparison_handlers: dict[type[Category], CartesianComparisonHandler] = {}
+
+
+def register_cartesian_comparisons(
+    category_type: type[Category],
+    handler: CartesianComparisonHandler,
+) -> None:
+    """Register one leaf category's native Cartesian comparison engine."""
+    _cartesian_comparison_handlers[category_type] = handler
+
+
+def _native_cartesian_comparison(
+    base: Category,
+    operation: str,
+    *arguments: object,
+) -> MorphismCategory.ObjectType | None:
+    match type(base) in _cartesian_comparison_handlers:
+        case True:
+            return _cartesian_comparison_handlers[type(base)](operation, *arguments)
+        case False:
+            return None
 
 def tensor_object(tensor: Functor, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     return tensor.on_object(tensor.domain()((first, second)))
@@ -171,21 +196,96 @@ def Cartesian(base: Category) -> MonoidalStructuresCategory.ObjectType:
     def rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
         x, y, z = (triple.family_component(index) for index in range(3))
         xy, yz = binary_product_data(base, x, y), binary_product_data(base, y, z)
-        if forward:
-            source = binary_product_data(base, xy.apex(), z)
-            return pair_maps(base, xy.leg(0) * source.leg(0), pair_maps(base, xy.leg(1) * source.leg(0), source.leg(1)))
-        source = binary_product_data(base, x, yz.apex())
-        return pair_maps(base, pair_maps(base, source.leg(0), yz.leg(0) * source.leg(1)), yz.leg(1) * source.leg(1))
+        left_product = binary_product_data(base, xy.apex(), z)
+        right_product = binary_product_data(base, x, yz.apex())
+        match forward:
+            case True:
+                operation = "associator_forward"
+            case False:
+                operation = "associator_inverse"
+        native = _native_cartesian_comparison(
+            base,
+            operation,
+            x,
+            y,
+            z,
+            left_product.apex(),
+            right_product.apex(),
+        )
+        match native is None:
+            case False:
+                return native
+            case True:
+                pass
+        match forward:
+            case True:
+                source = left_product
+                return pair_maps(base, xy.leg(0) * source.leg(0), pair_maps(base, xy.leg(1) * source.leg(0), source.leg(1)))
+            case False:
+                source = right_product
+                return pair_maps(base, pair_maps(base, source.leg(0), yz.leg(0) * source.leg(1)), yz.leg(1) * source.leg(1))
 
     associator = natural_isomorphism(left, right, lambda triple: rebracket(triple, True), lambda triple: rebracket(triple, False))
     left_unit, right_unit = tensor_units(tensor, unit)
     identity = Fun(base, base).one()
-    left_unitor = natural_isomorphism(left_unit, identity,
-        lambda x: binary_product_data(base, unit, x).leg(1),
-        lambda x: pair_maps(base, terminal_map(base, x), Mor(base)(x, x).one()))
-    right_unitor = natural_isomorphism(right_unit, identity,
-        lambda x: binary_product_data(base, x, unit).leg(0),
-        lambda x: pair_maps(base, Mor(base)(x, x).one(), terminal_map(base, x)))
+    def left_unitor_component(x: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
+        product = binary_product_data(base, unit, x)
+        match forward:
+            case True:
+                operation = "left_unitor_forward"
+            case False:
+                operation = "left_unitor_inverse"
+        native = _native_cartesian_comparison(
+            base,
+            operation,
+            x,
+            product.apex(),
+        )
+        match native is None:
+            case False:
+                return native
+            case True:
+                match forward:
+                    case True:
+                        return product.leg(1)
+                    case False:
+                        return pair_maps(base, terminal_map(base, x), Mor(base)(x, x).one())
+
+    def right_unitor_component(x: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
+        product = binary_product_data(base, x, unit)
+        match forward:
+            case True:
+                operation = "right_unitor_forward"
+            case False:
+                operation = "right_unitor_inverse"
+        native = _native_cartesian_comparison(
+            base,
+            operation,
+            x,
+            product.apex(),
+        )
+        match native is None:
+            case False:
+                return native
+            case True:
+                match forward:
+                    case True:
+                        return product.leg(0)
+                    case False:
+                        return pair_maps(base, Mor(base)(x, x).one(), terminal_map(base, x))
+
+    left_unitor = natural_isomorphism(
+        left_unit,
+        identity,
+        lambda x: left_unitor_component(x, True),
+        lambda x: left_unitor_component(x, False),
+    )
+    right_unitor = natural_isomorphism(
+        right_unit,
+        identity,
+        lambda x: right_unitor_component(x, True),
+        lambda x: right_unitor_component(x, False),
+    )
     return MonoidalStructures(base)(tensor, unit, associator, left_unitor, right_unitor)
 
 

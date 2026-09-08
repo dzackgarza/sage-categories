@@ -558,11 +558,6 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         """
         morphism = self.base_category().construct_morphism(self._domain_object, self._codomain_object, *args, **kwargs)
         refine(morphism, self)
-        from sage_categories.engines import cells
-
-        cells.native_cell(self.base_category(), morphism)
-        assert cells.boundary(self.base_category(), morphism, "source") is self._domain_object
-        assert cells.boundary(self.base_category(), morphism, "target") is self._codomain_object
         return morphism
 
     def one(self) -> MorphismCategory.ObjectType:

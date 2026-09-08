@@ -10,10 +10,10 @@ from a different system installation.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import os
-from pathlib import Path
 import re
+from dataclasses import dataclass
+from pathlib import Path
 
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
@@ -21,9 +21,12 @@ from sage.libs.gap.libgap import libgap
 __all__ = [
     "FINITE_CATEGORY_PACKAGES",
     "FINITE_SETS_PACKAGES",
-    "GapPackage",
+    "FUNCTOR_CATEGORIES",
     "PRESENTED_MODULE_PACKAGES",
+    "SLICE_CATEGORIES",
+    "GapPackage",
     "load_packages",
+    "load_repository_package",
     "package_directory",
 ]
 
@@ -47,6 +50,8 @@ FINITE_SETS = GapPackage("FinSetsForCAP", "2025.12-08")
 MODULE_PRESENTATIONS = GapPackage("ModulePresentationsForCAP", "2026.06-01")
 QUOTIENT_CATEGORIES = GapPackage("QuotientCategories", "2026.04-01")
 FP_CATEGORIES = GapPackage("FpCategories", "2026.07-03")
+FUNCTOR_CATEGORIES = GapPackage("FunctorCategories", "2026.08-01")
+SLICE_CATEGORIES = GapPackage("SliceCategories", "2026.06-01")
 
 FINITE_SETS_PACKAGES = (
     TOOLS_FOR_HOMALG,
@@ -133,6 +138,36 @@ def _loaded_package_info(package: GapPackage, expected_path: Path) -> GapElement
     )
     return info
 
+
+
+def load_repository_package(package: GapPackage) -> GapElement:
+    """Load one exact package after forcing every repository-local package path.
+
+    Broad categorical packages such as FunctorCategories have deep dependency
+    closures.  PackageManager has already resolved that closure into ``.gap/pkg``;
+    this function only fixes every installed package name to that local path before
+    GAP is allowed to resolve dependencies.  PackageManager backup directories are
+    not active installations and are ignored.
+    """
+    root = _package_root()
+    installed: dict[str, tuple[GapPackage, Path]] = {}
+    for info in root.glob("*/PackageInfo.g"):
+        if info.parent.name.endswith(".old"):
+            continue
+        identity = _package_identity(info)
+        key = identity.name.lower()
+        assert key not in installed, f"multiple active repository packages named {identity.name}"
+        installed[key] = (identity, info.parent.resolve())
+    key = package.name.lower()
+    assert key in installed and installed[key][0] == package, (
+        f"repository allocation contains no exact {package.name} {package.version}"
+    )
+    for identity, path in installed.values():
+        libgap.SetPackagePath(identity.name, str(path))
+    path = installed[key][1]
+    loaded = libgap.LoadPackage(package.name, f"={package.version}", False)
+    assert loaded == libgap.true, f"failed to load {package.name} {package.version} from {path}"
+    return _loaded_package_info(package, path)
 
 def load_packages(packages: tuple[GapPackage, ...]) -> tuple[GapElement, ...]:
     """Force an exact package closure, then load it in dependency order.

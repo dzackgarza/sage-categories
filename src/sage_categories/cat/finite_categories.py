@@ -14,9 +14,9 @@ from itertools import product
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.cat_constructions import LimitCategory
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.declarations import Sets
 from sage_categories.cat.comma import CommaCategory
-from sage_categories.cat.functors import Cat, Fun, FunctorCategory
+from sage_categories.cat.declarations import Sets
+from sage_categories.cat.functors import Cat, FunctorCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import OppositeCategory, opposite_morphism
 from sage_categories.cat.predicates import Unknown, UnknownClass, ask
@@ -74,8 +74,8 @@ def finite_objects(category: Category) -> tuple[CategoryOfCategories.ElementType
 
 
 def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
-    from sage_categories.cat.shapes import DiscreteCategory
     from sage_categories.cat.indexed import GrothendieckCategory
+    from sage_categories.cat.shapes import DiscreteCategory
 
     if isinstance(category, DiscreteCategory):
         objects = finite_objects(category)
@@ -124,18 +124,14 @@ def _arrows(category: FunctorCategory) -> FiniteCategoryData | UnknownClass:
     target = finite_category(category.codomain())
     if target is Unknown:
         return Unknown
-    objects = target.morphisms
-    arrows: list[MorphismCategory.ObjectType] = []
-    for source, destination in product(objects, repeat=2):
-        for first, second in product(target.morphisms, repeat=2):
-            if not (first.domain() is source.domain() and first.codomain() is destination.domain()
-                    and second.domain() is source.codomain() and second.codomain() is destination.codomain()):
-                continue
-            if equal(destination * first, second * source):
-                arrows.append(Mor(category)(source, destination)(
-                    lambda vertex, first=first, second=second: first if vertex is Cat().Simplex(1)(0) else second,
-                ))
-    return FiniteCategoryData(objects, tuple(arrows))
+    if not isinstance(category.codomain(), FinitePresentedCategory):
+        return Unknown
+    from sage_categories.engines import functor_categories
+
+    objects, morphisms = functor_categories.arrow_category(
+        category, category.codomain(), target.morphisms
+    )
+    return FiniteCategoryData(objects, morphisms)
 
 
 def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:

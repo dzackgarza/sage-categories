@@ -9,7 +9,14 @@ from sage.libs.gap.libgap import libgap
 
 from sage_categories.engines.gap import FINITE_CATEGORY_PACKAGES, load_packages
 
-__all__ = ["finite_morphisms", "reduce_word"]
+__all__ = [
+    "finite_morphisms",
+    "native_category",
+    "native_morphism",
+    "native_object",
+    "owned_morphism",
+    "reduce_word",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,3 +187,34 @@ def finite_morphisms(category: object) -> tuple[tuple[int, int, tuple[str, ...]]
         target_index = int(libgap.ObjectIndex(libgap.Target(native))) - 1
         result.append((source_index, target_index, _word(presentation, native)))
     return tuple(result)
+
+
+def native_category(category: object) -> GapElement:
+    """The retained FpCategories model of one exact owned presentation."""
+    return _presentation(category).native
+
+
+def native_object(category: object, value: object) -> GapElement:
+    """Native vertex corresponding to one exact owned vertex."""
+    presentation = _presentation(category)
+    index = tuple(category.labels()).index(category.label(value))
+    return presentation.native_objects[index]
+
+
+def native_morphism(category: object, value: object) -> GapElement:
+    """Native path corresponding to one exact owned morphism."""
+    presentation = _presentation(category)
+    return _native_path(category, presentation, value.domain(), value.codomain(), value.word())
+
+
+def owned_morphism(category: object, native: GapElement) -> object:
+    """Reconstruct one owned morphism from its native path representative."""
+    presentation = _presentation(category)
+    source_index = int(libgap.ObjectIndex(libgap.Source(native))) - 1
+    target_index = int(libgap.ObjectIndex(libgap.Target(native))) - 1
+    labels = tuple(category.labels())
+    return category.construct_morphism(
+        category(labels[source_index]),
+        category(labels[target_index]),
+        _word(presentation, native),
+    )

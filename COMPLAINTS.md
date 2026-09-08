@@ -3,6 +3,38 @@
 Friction, papercuts, and kernel/Cat design deficiencies observed while working, recorded against the philosophy that leaf authoring should be thin and mostly mathematical.
 Excludes defects fixed within the same workstream.
 
+## Recording new issues
+
+Apply [POL-WORK-002](CONTRIBUTING.md#work-selection-and-issue-capture) during
+source reading, implementation, mathematical review and ordinary use. Capture
+an unresolved observation before leaving the affected work, even when it is
+small or independent of the current assignment. An immediate verified fix can
+record its evidence in the fixing commit instead.
+
+Add a descriptive heading, or extend the existing entry for the same cause:
+
+- **Mathematical need or user action:** exact input/output objects, maps,
+  hypotheses and laws, or the workflow gesture and expected result.
+- **Evidence:** source passage, declaration/path and revision, or the actual
+  action and output. Distinguish source inspection from an executed failure.
+- **Gap and impact:** existing partial capability, the unmet condition,
+  affected consumers, and the earliest mathematical or operational owner.
+- **Uncertainty:** inspected scope, confidence, and unresolved questions.
+  For absence claims give Searched, Found, Conclusion, Confidence and Gaps.
+- **Repair link and acceptance:** the [TODO node](TODO.md), governing-plan
+  obligation or upstream issue, and the result needed to resolve the complaint.
+
+A failed name search is not proof of missing mathematics. Label an unresolved
+availability question as such. Record a mathematical need before proposing an
+engine or implementation; a package name does not establish its required domain.
+Read historical observations at their stated revisions before relying on them.
+
+Preserve concurrent entries. Once the full repair is verified, retain only the
+unresolved requirement here and put resolution evidence in its commit. A local
+fix does not resolve missing downstream maps or broader hypotheses. Recording
+an independent issue allows the assigned work to continue; recording a required
+prerequisite does not authorize bypassing it.
+
 ## Leaf-authoring friction — production-tower scaffolds
 
 - **Workstream:** production-tower leaf scaffolds — Sets integration, supplied monoidal structures, the order leaf (binary relations, posets, total orders), and magma/monoid consumers over sets.

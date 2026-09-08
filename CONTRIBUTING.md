@@ -8,7 +8,16 @@ A direct rule records a constraint without a complete specification owner.
 [System architecture](specs/system.md) defines layers and dependencies.
 Topic specifications define mathematics and public contracts.
 [Decisions](specs/decisions.md) records provenance and supersession.
-Phase cards alone record current work and acceptance state.
+The governing remediation plan records detailed work and acceptance state;
+[TODO.md](TODO.md) exposes its dependency routing without a second status ledger.
+
+## Work selection and issue capture
+
+| Policy identifier | Name and contract |
+| --- | --- |
+| `POL-WORK-001` | **Follow mathematical dependencies.** Use [TODO.md](TODO.md) and the linked governing plan. Give work stable IDs and explicit immediate prerequisites. Preserve exact objects, maps, hypotheses and complete consumer obligations when adjusting edges; verify references and acyclicity. Shared files and subject priority are not mathematical dependencies. |
+| `POL-WORK-002` | **Record issues when encountered.** Capture observed mathematical gaps, incorrect constructions, missing maps, and concrete papercuts in [COMPLAINTS.md](COMPLAINTS.md#recording-new-issues), including discoveries outside the selected unit. State the expected mathematics or user action, evidence, existing partial capability, affected owner/consumer and uncertainty. Extend the entry for an existing cause. Link the repair owner; recording a defect does not discharge its repair or authorize a dependent workaround. |
+| `POL-WORK-003` | **Preserve concurrent records.** Reread the target entry before editing; preserve other workers' changes and staged files. Commit only the intended paths. Keep complaint evidence, execution dependencies, and enduring mathematical contracts at their respective owners. |
 
 ## Scope and layers
 

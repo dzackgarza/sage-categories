@@ -1,5 +1,11 @@
 # Agent instructions
 
+Read [TODO.md](TODO.md) for the execution DAG and its governing-plan links,
+[CONTRIBUTING.md](CONTRIBUTING.md) for named policies, and
+[COMPLAINTS.md](COMPLAINTS.md) for observed mathematical issues and papercuts.
+Apply `POL-WORK-002` when an issue arises, including outside the selected task.
+Capture the evidence before leaving that work; recording it does not repair it.
+
 `sage-categories` builds a foundational category framework for Sage mathematics.
 The repository is initialized. Deliver each specified capability to its complete public consumer.
 
@@ -41,6 +47,8 @@ Each fact has one authoritative home:
 | Mathematics and public contracts | Topic specifications linked from [specs/system.md](specs/system.md#ownership-map) |
 | Decision provenance and supersession | [specs/decisions.md](specs/decisions.md) |
 | Stable policy identifiers and technical constraints | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Repository entry point to the execution DAG | [TODO.md](TODO.md); full obligations and acceptance remain in the governing plan |
+| Observed mathematical issues and workflow friction | [COMPLAINTS.md](COMPLAINTS.md) |
 | Execution, review, delegation, and documentation procedure | This file |
 | Remediation scope, implementation allocation, and work order | Project vault `PLAN-native-engine-remediation` |
 | Current execution and acceptance evidence | The governing plan's retained issue dependencies and exact-revision public consumers; retired planning records are historical evidence only |

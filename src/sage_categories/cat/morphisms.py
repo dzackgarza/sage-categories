@@ -25,15 +25,18 @@ from sage_categories.cat.category import (
     Decision,
     Predicate,
     Proposition,
-    ask,
     composite_factors,
     is_composite,
-    member,
     refine,
     retain_composite_factors,
 )
 from sage_categories.cat.predicates import decide, property_predicate, register_handler
-from sage_categories.cat.properties import Axiom, FullSubcategory, PredicateSubcategory, PropertySubcategory
+from sage_categories.cat.properties import (
+    Axiom,
+    FullSubcategory,
+    PredicateSubcategory,
+    PropertySubcategory,
+)
 from sage_categories.kernel.refinement import common_ancestor, is_placed
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import Integer, TripleDict, Unknown
@@ -135,38 +138,17 @@ def hom_inhabitation(hom_category: Category) -> Decision:
     return base.base_category()._chosen_hom_inhabited(hom_category)
 
 
-def _factor_sequence(morphism: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, ...]:
-    """The retained factors of ``morphism``, flattened, in application order."""
-    if not is_composite(morphism):
-        return (morphism,)
-    first, second = morphism.factors()
-    return (*_factor_sequence(first), *_factor_sequence(second))
-
-
 def _equal_words(
     first: MorphismCategory.ObjectType,
     second: MorphismCategory.ObjectType,
     assumptions: Proposition,
 ) -> Decision:
-    """Two morphisms of ``C`` are equal when their reduced words and their endpoints are.
-
-    This is the exact positive case every category has beyond identity: composition is
-    associative and ``1_X`` is its unit, so two composites of the same factors in the same
-    order are one morphism however they were bracketed (D44, D84, D86).  The endpoints
-    decide the empty word, where the morphism is an identity and its object is the whole
-    of it.  A category whose morphism data decides more registers its own exact handler on
-    its own semantic domain.
-
-    Identity is decided before this runs, for every equality predicate
-    (``kernel/predicates.py``, ``register_predicate_handler``).
-    """
+    """Generic morphism equality through Maude's typed native reductions."""
     if first.domain() is not second.domain() or first.codomain() is not second.codomain():
         return Unknown
-    left, right = first.word(), second.word()
-    # By identity: a morphism's own equality is the question being answered here.
-    if len(left) == len(right) and all(one is other for one, other in zip(left, right)):
-        return True
-    return Unknown
+    from sage_categories.engines import equations
+
+    return True if equations.equal_morphisms(first, second) else Unknown
 
 
 class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismData, []]):
@@ -224,17 +206,9 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             hold by placement.  A category adding mathematics to composition reduces
             further and overrides, as D44 licenses.
             """
-            base = self.base_category()
-            identities = base.morphism_category(1).Identity()
-            factors = [factor for factor in _factor_sequence(self) if not is_placed(factor, identities)]
-            index = 0
-            while index < len(factors) - 1:
-                if base.retained_inverse(factors[index]) is factors[index + 1]:
-                    del factors[index : index + 2]
-                    index = max(index - 1, 0)
-                    continue
-                index += 1
-            return tuple(factors)
+            from sage_categories.engines import equations
+
+            return equations.reduced_word(self)
 
         def factors(self) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
             """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order.

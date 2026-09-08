@@ -34,7 +34,11 @@ dev = [
 migration = [
     "libcst>=1.9,<2",
 ]
-platform = ["juliacall>=0.9.35,<0.10"]
+platform = [
+    "discopy==1.2.2",
+    "juliacall>=0.9.35,<0.10",
+    "maude>=1.6,<2",
+]
 
 
 # D132: the source dependency directions of specs/system.md, as a hard stop at the push tier.

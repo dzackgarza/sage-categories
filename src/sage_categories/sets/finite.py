@@ -408,7 +408,9 @@ class SetsCategory(Category[[Map], []]):
                 return decision
         values = _finite_data(domain)
         if values is not Unknown:
-            return all(_equal_datum(first._action(value), second._action(value)) for value in values)
+            from sage_categories.engines import finite_sets
+
+            return finite_sets.equal_morphisms(first, second)
         if domain in _enumerations:
             points = self.finite_points(domain)
             if points is not Unknown:
@@ -434,9 +436,9 @@ class SetsCategory(Category[[Map], []]):
     def _injective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
         """Monic: no two points identified, read off the table, a separating pair of samples, or the solved inverse."""
         if isinstance(arrow.domain().set_presentation(), tuple):
-            # Points hash by their data, so distinct images are distinct data.
-            images = tuple(arrow.codomain().representative(arrow._action(value)) for value in arrow.domain()._values)
-            return len(set(images)) == len(images)
+            from sage_categories.engines import finite_sets
+
+            return finite_sets.is_monomorphism(arrow)
         samples = tuple(islice(_samples(arrow.domain()), 16))
         images = tuple(arrow._action(sample) for sample in samples)
         if any(_equal_datum(images[i], images[j]) for i in range(len(images)) for j in range(i)):
@@ -446,8 +448,9 @@ class SetsCategory(Category[[Map], []]):
     def _surjective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
         """Epic: every codomain point is a value, read off the tables or from the solved inverse."""
         if isinstance(arrow.domain().set_presentation(), tuple) and isinstance(arrow.codomain().set_presentation(), tuple):
-            images = {arrow.codomain().representative(arrow._action(value)) for value in arrow.domain()._values}
-            return all(target in images for target in arrow.codomain()._values)
+            from sage_categories.engines import finite_sets
+
+            return finite_sets.is_epimorphism(arrow)
         return self._symbolic_surjective(arrow)
 
     def _bijective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
@@ -523,12 +526,10 @@ class SetsCategory(Category[[Map], []]):
                     morphism,
                     self.MorphismType(domain=codomain, codomain=domain, data=_SetMap(inverse_form.evaluate, None, inverse_form)),
                 )
-            elif isinstance(domain.set_presentation(), tuple) and self._bijective(morphism, true) is True:
-                table = {codomain.representative(morphism._action(value)): value for value in domain._values}
-                self.retain_inverses(
-                    morphism,
-                    self.MorphismType(domain=codomain, codomain=domain, data=lambda datum: table[codomain.representative(datum)]),
-                )
+            elif isinstance(domain.set_presentation(), tuple) and isinstance(codomain.set_presentation(), tuple) and self._bijective(morphism, true) is True:
+                from sage_categories.engines import finite_sets
+
+                self.retain_inverses(morphism, finite_sets.inverse_morphism(morphism))
             elif (rule := self._solved_inverse(morphism)) is not None:
                 self.retain_inverses(
                     morphism,
@@ -872,21 +873,17 @@ class SetsCategory(Category[[Map], []]):
         self, arrow: MorphismCategory.ObjectType
     ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
         """The surjection onto the image and its inclusion into the codomain."""
-        image = self(arrow._table.values())
-        return Mor(self)(arrow.domain(), image)(lambda value: arrow._action(value)), Mor(
-            self
-        )(image, arrow.codomain()).Monomorphisms()(lambda value: value)
+        from sage_categories.engines import finite_sets
+
+        return finite_sets.image_factorization(arrow)
 
     def factor_through_monomorphism(
         self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType
     ) -> MorphismCategory.ObjectType | Literal[False]:
         assert mono.codomain() is arrow.codomain()
-        inverse = {image: value for value, image in mono._table.items()}
-        if not all(image in inverse for image in arrow._table.values()):
-            return False
-        return Mor(self)(arrow.domain(), mono.domain())(
-            lambda value: inverse[arrow._action(value)]
-        )
+        from sage_categories.engines import finite_sets
+
+        return finite_sets.factor_through_monomorphism(mono, arrow)
 
     @cache
     def hom_morphisms(
@@ -894,10 +891,9 @@ class SetsCategory(Category[[Map], []]):
         source: CategoryOfCategories.ElementType,
         target: CategoryOfCategories.ElementType,
     ) -> tuple[MorphismCategory.ObjectType, ...]:
-        return tuple(
-            Mor(self)(source, target)(dict(zip(source._values, images)).__getitem__)
-            for images in cartesian(target._values for _ in source._values)
-        )
+        from sage_categories.engines import finite_sets
+
+        return finite_sets.hom_morphisms(source, target)
 
 
 def _finite_presentation(value: SetsCategory.ObjectType, assumptions: Proposition) -> bool | None:

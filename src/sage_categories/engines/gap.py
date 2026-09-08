@@ -105,7 +105,11 @@ def _loaded_package_info(package: GapPackage, expected_path: Path) -> GapElement
         f"loaded {package.name} {version} instead of repository allocation {package.version}"
     )
     info = libgap.PackageInfo(package.name)[0]
-    installed_path = Path(str(info.InstallationPath)).resolve()
+    directories = tuple(libgap.DirectoriesPackageLibrary(package.name, ""))
+    assert len(directories) == 1, (
+        f"expected one active package library for {package.name}, found {len(directories)}"
+    )
+    installed_path = Path(str(libgap.Filename(directories[0], ""))).resolve()
     assert installed_path == expected_path, (
         f"loaded {package.name} from {installed_path}, expected {expected_path}"
     )

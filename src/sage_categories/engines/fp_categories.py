@@ -15,6 +15,7 @@ __all__ = [
     "native_morphism",
     "native_object",
     "owned_morphism",
+    "owned_object",
     "reduce_word",
 ]
 
@@ -206,6 +207,12 @@ def native_morphism(category: object, value: object) -> GapElement:
     presentation = _presentation(category)
     return _native_path(category, presentation, value.domain(), value.codomain(), value.word())
 
+
+
+def owned_object(category: object, native: GapElement) -> object:
+    """Reconstruct one owned vertex from its native FpCategories object."""
+    index = int(libgap.ObjectIndex(native)) - 1
+    return category(tuple(category.labels())[index])
 
 def owned_morphism(category: object, native: GapElement) -> object:
     """Reconstruct one owned morphism from its native path representative."""

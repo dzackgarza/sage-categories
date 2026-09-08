@@ -139,6 +139,8 @@ def _arrows(category: FunctorCategory) -> FiniteCategoryData | UnknownClass:
 
 
 def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
+    from sage_categories.cat.shapes import DiscreteCategory
+
     shape = finite_category(category.shape())
     if shape is Unknown:
         return Unknown
@@ -146,6 +148,31 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
     factors = tuple(finite_category(category.factor(vertex)) for vertex in vertices)
     if any(factor is Unknown for factor in factors):
         return Unknown
+
+    if isinstance(category.shape(), DiscreteCategory) and all(
+        isinstance(category.factor(vertex), FinitePresentedCategory) for vertex in vertices
+    ):
+        from sage_categories.engines import category_products
+
+        factor_categories = tuple(category.factor(vertex) for vertex in vertices)
+        concrete_factors = tuple(factor for factor in factors if factor is not Unknown)
+        object_components, morphism_components = category_products.finite_product_data(
+            factor_categories,
+            tuple(factor.objects for factor in concrete_factors),
+            tuple(factor.morphisms for factor in concrete_factors),
+        )
+        objects = tuple(category(components) for components in object_components)
+        by_components = {
+            tuple(id(component) for component in components): value
+            for components, value in zip(object_components, objects, strict=True)
+        }
+        morphisms = []
+        for components in morphism_components:
+            domain = by_components[tuple(id(component.domain()) for component in components)]
+            codomain = by_components[tuple(id(component.codomain()) for component in components)]
+            morphisms.append(category.construct_morphism(domain, codomain, components))
+        return FiniteCategoryData(objects, tuple(morphisms))
+
     vertex_positions = {id(vertex): index for index, vertex in enumerate(vertices)}
 
     def agrees(components: tuple[CategoryOfCategories.ElementType, ...], morphisms: bool) -> bool:

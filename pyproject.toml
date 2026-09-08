@@ -83,4 +83,4 @@ type = "forbidden"
 allow_indirect_imports = true
 source_modules = ["sage_categories.kernel", "sage_categories.cat", "sage_categories.engines"]
 forbidden_modules = ["sage"]
-ignore_imports = ["sage_categories.kernel.sage_runtime -> sage", "sage_categories.engines.gap -> sage", "sage_categories.engines.finite_sets -> sage", "sage_categories.engines.fp_categories -> sage", "sage_categories.engines.functor_categories -> sage", "sage_categories.engines.slice_categories -> sage"]
+ignore_imports = ["sage_categories.kernel.sage_runtime -> sage", "sage_categories.engines.gap -> sage", "sage_categories.engines.finite_sets -> sage", "sage_categories.engines.fp_categories -> sage", "sage_categories.engines.functor_categories -> sage", "sage_categories.engines.slice_categories -> sage", "sage_categories.engines.category_products -> sage"]

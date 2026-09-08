@@ -14,7 +14,7 @@ from collections.abc import Callable
 from discopy import cat as discopy_cat
 from discopy import monoidal as discopy_monoidal
 
-__all__ = ["NonstrictMonoidalModel"]
+__all__ = ["NonstrictMonoidalModel", "evaluate_path"]
 
 
 class _ObjectValue:
@@ -168,3 +168,64 @@ class NonstrictMonoidalModel:
             cod=self._category,
         )
         return functor(diagram).value
+
+
+def evaluate_path(
+    arrows: tuple[object, ...],
+    *,
+    domain: object,
+    codomain: object,
+    identity: Callable[[object], object],
+    compose: Callable[[object, object], object],
+) -> object:
+    """Compose a retained semantic path through DisCoPy's native arrow evaluator."""
+    object_type = type(
+        f"_PathObject_{id(arrows)}",
+        (),
+        {
+            "__init__": lambda self, value=None: setattr(self, "value", value),
+            "__eq__": lambda self, other: type(self) is type(other) and self.value is other.value,
+            "__hash__": lambda self: hash(id(self.value)),
+        },
+    )
+
+    class ArrowValue:
+        def __init__(self, dom, cod, value):
+            self.dom, self.cod, self.value = dom, cod, value
+
+        @classmethod
+        def id(cls, value):
+            return cls(value, value, identity(value.value))
+
+        def __rshift__(self, other):
+            assert self.cod == other.dom
+            return type(self)(self.dom, other.cod, compose(other.value, self.value))
+
+    category = discopy_cat.Category(object_type, ArrowValue)
+    objects: dict[int, object] = {}
+
+    def ob(value: object):
+        key=id(value)
+        if key not in objects:
+            objects[key]=object_type(value)
+        return objects[key]
+
+    boxes=[]
+    current=domain
+    for index, arrow in enumerate(arrows):
+        target = arrow.codomain()
+        boxes.append(discopy_cat.Box(f"a{index}", discopy_cat.Ob(str(id(current))), discopy_cat.Ob(str(id(target))), data=arrow))
+        current=target
+    assert current is codomain
+    token_values={str(id(value)): value for value in [domain, codomain, *(a.domain() for a in arrows), *(a.codomain() for a in arrows)]}
+    functor=discopy_cat.Functor(
+        lambda token: ob(token_values[token.name]),
+        lambda box: ArrowValue(ob(box.data.domain()), ob(box.data.codomain()), box.data),
+        cod=category,
+    )
+    if not boxes:
+        return identity(domain)
+    diagram=boxes[0]
+    for box in boxes[1:]:
+        diagram = diagram >> box
+    return functor(diagram).value

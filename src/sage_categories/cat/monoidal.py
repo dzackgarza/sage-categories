@@ -9,15 +9,22 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-from sage_categories.cat.calculus import binary_product_data, natural_isomorphism, pair_maps, product_functor, terminal_map
+from sage_categories.cat.calculus import (
+    binary_product_data,
+    natural_isomorphism,
+    pair_maps,
+    product_functor,
+    terminal_map,
+)
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Proposition
+from sage_categories.engines.diagrams import evaluate_path
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
-__all__ = ["MonoidalStructures", "MonoidalStructuresCategory", "Cartesian", "Composition", "Reversed", "Actions", "ActionsCategory", "SelfAction", "TrivialAction"]
+__all__ = ["Actions", "ActionsCategory", "Cartesian", "Composition", "MonoidalStructures", "MonoidalStructuresCategory", "Reversed", "SelfAction", "TrivialAction"]
 
 
 def tensor_object(tensor: Functor, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
@@ -90,14 +97,41 @@ class MonoidalStructuresCategory(Category[[], []]):
             a = lambda p, q, r: associator.component(triples((p, q, r)))
             wx, xy, yz = tensor_object(tensor, w, x), tensor_object(tensor, x, y), tensor_object(tensor, y, z)
             base = self.underlying_category()
-            long = tensor_morphism(tensor, Mor(base)(w, w).one(), a(x, y, z)) * a(w, xy, z) * tensor_morphism(tensor, a(w, x, y), Mor(base)(z, z).one())
-            short = a(w, x, yz) * a(wx, y, z)
+            identity = lambda value: Mor(base)(value, value).one()
+            compose = lambda second, first: second * first
+            first_leg = tensor_morphism(tensor, a(w, x, y), Mor(base)(z, z).one())
+            middle_leg = a(w, xy, z)
+            last_leg = tensor_morphism(tensor, Mor(base)(w, w).one(), a(x, y, z))
+            long = evaluate_path(
+                (first_leg, middle_leg, last_leg),
+                domain=first_leg.domain(),
+                codomain=last_leg.codomain(),
+                identity=identity,
+                compose=compose,
+            )
+            short_first, short_last = a(wx, y, z), a(w, x, yz)
+            short = evaluate_path(
+                (short_first, short_last),
+                domain=short_first.domain(),
+                codomain=short_last.codomain(),
+                identity=identity,
+                compose=compose,
+            )
             return long == short
 
         def triangle(self, x: CategoryOfCategories.ElementType, y: CategoryOfCategories.ElementType) -> Proposition:
             tensor, base = self.tensor(), self.underlying_category()
             associator = self.associator().component(self.associator().domain().domain()((x, self.unit(), y)))
-            return tensor_morphism(tensor, Mor(base)(x, x).one(), self.left_unitor().component(y)) * associator == tensor_morphism(tensor, self.right_unitor().component(x), Mor(base)(y, y).one())
+            last = tensor_morphism(tensor, Mor(base)(x, x).one(), self.left_unitor().component(y))
+            left = evaluate_path(
+                (associator, last),
+                domain=associator.domain(),
+                codomain=last.codomain(),
+                identity=lambda value: Mor(base)(value, value).one(),
+                compose=lambda second, first: second * first,
+            )
+            right = tensor_morphism(tensor, self.right_unitor().component(x), Mor(base)(y, y).one())
+            return left == right
 
     class ElementType:
         pass
@@ -251,14 +285,41 @@ class ActionsCategory(Category[[], []]):
             alpha = monoidal.associator().component(monoidal.associator().domain().domain()((m, n, p)))
             identity_m = Mor(monoidal.underlying_category())(m, m).one()
             identity_x = Mor(self.underlying_category())(x, x).one()
-            return a(m, n, px) * a(mn, p, x) == tensor_morphism(action, identity_m, a(n, p, x)) * a(m, np, x) * tensor_morphism(action, alpha, identity_x)
+            left_first, left_last = a(mn, p, x), a(m, n, px)
+            left = evaluate_path(
+                (left_first, left_last),
+                domain=left_first.domain(),
+                codomain=left_last.codomain(),
+                identity=lambda value: Mor(self.underlying_category())(value, value).one(),
+                compose=lambda second, first: second * first,
+            )
+            right_first = tensor_morphism(action, alpha, identity_x)
+            right_middle = a(m, np, x)
+            right_last = tensor_morphism(action, identity_m, a(n, p, x))
+            right = evaluate_path(
+                (right_first, right_middle, right_last),
+                domain=right_first.domain(),
+                codomain=right_last.codomain(),
+                identity=lambda value: Mor(self.underlying_category())(value, value).one(),
+                compose=lambda second, first: second * first,
+            )
+            return left == right
 
         def triangle(self, m: CategoryOfCategories.ElementType, x: CategoryOfCategories.ElementType) -> Proposition:
             monoidal, action = self.monoidal_structure(), self.action()
             associator = self.associator().component(self.associator().domain().domain()((m, monoidal.unit(), x)))
             identity_m = Mor(monoidal.underlying_category())(m, m).one()
             identity_x = Mor(self.underlying_category())(x, x).one()
-            return tensor_morphism(action, identity_m, self.unitor().component(x)) * associator == tensor_morphism(action, monoidal.right_unitor().component(m), identity_x)
+            last = tensor_morphism(action, identity_m, self.unitor().component(x))
+            left = evaluate_path(
+                (associator, last),
+                domain=associator.domain(),
+                codomain=last.codomain(),
+                identity=lambda value: Mor(self.underlying_category())(value, value).one(),
+                compose=lambda second, first: second * first,
+            )
+            right = tensor_morphism(action, monoidal.right_unitor().component(m), identity_x)
+            return left == right
 
     class ElementType:
         pass

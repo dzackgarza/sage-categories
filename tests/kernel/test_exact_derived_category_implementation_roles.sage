@@ -41,3 +41,11 @@ assert point.installed_element_operation() is point
 assert identity.installed_morphism_operation() is identity
 assert (-point + point).datum() == cyclic.zero()
 assert identity(point) is point
+
+fresh_cyclic = AdditiveAbelianGroup([5])
+fresh = presented_abelian_group(fresh_cyclic)
+fresh_point = fresh.point(fresh_cyclic.gen(0))
+fresh_identity = Mor(Ab)(fresh, fresh).one()
+assert fresh.installed_object_operation() is fresh
+assert fresh_point.installed_element_operation() is fresh_point
+assert fresh_identity.installed_morphism_operation() is fresh_identity

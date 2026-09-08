@@ -732,6 +732,11 @@ class SetsCategory(Category[[Map], []]):
             or shape.op() is Cat().WalkingParallelPair()
         ):
             return self._primitive_limit
+        from sage_categories.cat.finite_categories import finite_category
+        from sage_categories.engines import finite_sets
+
+        if finite_category(shape) is not Unknown:
+            return finite_sets.finite_limit
         return Category.limit_construction(self, shape)
 
     def colimit_construction(
@@ -743,6 +748,11 @@ class SetsCategory(Category[[Map], []]):
             or shape.op() is Cat().WalkingParallelPair()
         ):
             return self._primitive_colimit
+        from sage_categories.cat.finite_categories import finite_category
+        from sage_categories.engines import finite_sets
+
+        if finite_category(shape) is not Unknown:
+            return finite_sets.finite_colimit
         return Category.colimit_construction(self, shape)
 
     def _primitive_limit(self, diagram: Functor) -> CategoryOfCategories.ElementType:

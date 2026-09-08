@@ -19,8 +19,8 @@ from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
 
 __all__ = [
-    "GapPackage",
     "FINITE_SETS_PACKAGES",
+    "GapPackage",
     "PRESENTED_MODULE_PACKAGES",
     "load_packages",
     "package_directory",
@@ -40,6 +40,7 @@ MATRICES_FOR_HOMALG = GapPackage("MatricesForHomalg", "2026.04-01")
 CAP = GapPackage("CAP", "2026.07-04")
 MONOIDAL_CATEGORIES = GapPackage("MonoidalCategories", "2026.08-02")
 CARTESIAN_CATEGORIES = GapPackage("CartesianCategories", "2026.08-02")
+TOOLS_FOR_CATEGORICAL_TOWERS = GapPackage("ToolsForCategoricalTowers", "2026.08-01")
 TOPOSES = GapPackage("Toposes", "2025.12-02")
 FINITE_SETS = GapPackage("FinSetsForCAP", "2025.12-08")
 MODULE_PRESENTATIONS = GapPackage("ModulePresentationsForCAP", "2026.06-01")
@@ -49,6 +50,7 @@ FINITE_SETS_PACKAGES = (
     CAP,
     MONOIDAL_CATEGORIES,
     CARTESIAN_CATEGORIES,
+    TOOLS_FOR_CATEGORICAL_TOWERS,
     TOPOSES,
     FINITE_SETS,
 )

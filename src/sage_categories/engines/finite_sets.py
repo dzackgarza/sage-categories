@@ -25,6 +25,8 @@ from sage_categories.sets._finite_cap import (
 __all__ = [
     "equal_morphisms",
     "factor_through_monomorphism",
+    "finite_colimit",
+    "finite_limit",
     "hom_morphisms",
     "image_factorization",
     "inverse_morphism",
@@ -199,6 +201,118 @@ def _native_map_on_owned_endpoints(
     )
     return _owned_morphism(source, target, native)
 
+
+
+def _native_diagram(diagram: object):
+    from sage_categories.cat.finite_categories import finite_category
+    from sage_categories.cat.predicates import Unknown
+
+    finite = finite_category(diagram.domain())
+    assert finite is not Unknown, "native finite-set execution requires exact finite structural data"
+    vertices = tuple(finite.objects)
+    positions = {id(vertex): index for index, vertex in enumerate(vertices)}
+    factors = tuple(diagram.on_object(vertex) for vertex in vertices)
+    native_factors = [_native_object(factor) for factor in factors]
+    decorated = []
+    for arrow in finite.morphisms:
+        source = positions[id(arrow.domain())]
+        target = positions[id(arrow.codomain())]
+        decorated.append([source, _native_morphism(diagram.on_morphism(arrow)), target])
+    return vertices, positions, factors, native_factors, decorated
+
+
+def finite_limit(diagram: object) -> object:
+    """Selected limit of an arbitrary exact finite diagram, computed by CAP."""
+    from sage_categories.cat.cones import cone, cone_apex
+    from sage_categories.sets.finite import Sets
+
+    vertices, positions, factors, native_factors, decorated = _native_diagram(diagram)
+    category = _category()
+    computed_apex = libgap.Limit(category, native_factors, decorated)
+    computed_projections = tuple(
+        libgap.ProjectionInFactorOfLimitWithGivenLimit(
+            category, native_factors, decorated, index, computed_apex
+        )
+        for index in range(len(vertices))
+    )
+    records = tuple(finite_native_object(factor) for factor in factors)
+    graphs = tuple(_graph(projection) for projection in computed_projections)
+    apex_data = tuple(
+        tuple(records[index].construction.data[graphs[index][native_index]] for index in range(len(vertices)))
+        for native_index in range(int(libgap.Cardinality(computed_apex)))
+    )
+    apex = Sets(apex_data)
+    native_apex = _native_object(apex)
+    legs = tuple(
+        _native_map_on_owned_endpoints(
+            apex,
+            factors[index],
+            libgap.MapOfFinSets(native_apex, graphs[index], native_factors[index]),
+        )
+        for index in range(len(vertices))
+    )
+
+    def lift(candidate: object) -> MorphismCategory.ObjectType:
+        source = cone_apex(candidate)
+        tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
+        computed = libgap.UniversalMorphismIntoLimitWithGivenLimit(
+            category, native_factors, decorated, _native_object(source), tau, computed_apex
+        )
+        return _native_map_on_owned_endpoints(source, apex, computed)
+
+    return Sets.Limits(diagram.domain()).with_universal_data(
+        diagram,
+        apex,
+        cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+        lift,
+    )
+
+
+def finite_colimit(diagram: object) -> object:
+    """Selected colimit of an arbitrary exact finite diagram, computed by CAP."""
+    from sage_categories.cat.cones import cocone, cocone_apex
+    from sage_categories.sets.finite import Sets
+
+    vertices, positions, factors, native_factors, decorated = _native_diagram(diagram)
+    category = _category()
+    computed_apex = libgap.Colimit(category, native_factors, decorated)
+    computed_injections = tuple(
+        libgap.InjectionOfCofactorOfColimitWithGivenColimit(
+            category, native_factors, decorated, index, computed_apex
+        )
+        for index in range(len(vertices))
+    )
+    graphs = tuple(_graph(injection) for injection in computed_injections)
+    classes: list[set[object]] = [set() for _ in range(int(libgap.Cardinality(computed_apex)))]
+    for factor_index, factor in enumerate(factors):
+        record = finite_native_object(factor)
+        for source_index, target_index in enumerate(graphs[factor_index]):
+            classes[target_index].add((factor_index, record.construction.data[source_index]))
+    apex = Sets(tuple(frozenset(part) for part in classes))
+    native_apex = _native_object(apex)
+    legs = tuple(
+        _native_map_on_owned_endpoints(
+            factors[index],
+            apex,
+            libgap.MapOfFinSets(native_factors[index], graphs[index], native_apex),
+        )
+        for index in range(len(vertices))
+    )
+
+    def descent(candidate: object) -> MorphismCategory.ObjectType:
+        target = cocone_apex(candidate)
+        tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
+        computed = libgap.UniversalMorphismFromColimitWithGivenColimit(
+            category, native_factors, decorated, _native_object(target), tau, computed_apex
+        )
+        return _native_map_on_owned_endpoints(apex, target, computed)
+
+    return Sets.Colimits(diagram.domain()).with_universal_data(
+        diagram,
+        apex,
+        cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+        descent,
+    )
 
 def _product(diagram: object, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cone, cone_apex

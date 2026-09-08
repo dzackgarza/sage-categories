@@ -114,6 +114,10 @@ def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData 
     if isinstance(category, FunctorCategory) and category.domain() is Cat().Simplex(1):
         return _arrows(category)
     if isinstance(category, CommaCategory):
+        from sage_categories.cat.slices import SliceLikeCategory
+
+        if isinstance(category, SliceLikeCategory):
+            return _slice(category)
         return _comma(category)
     if isinstance(category, LimitCategory):
         return _limit(category)
@@ -171,6 +175,20 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
         for components in product(*(factor.morphisms for factor in factors)) if agrees(components, True)
     )
     return FiniteCategoryData(objects, arrows)
+
+
+def _slice(category: object) -> FiniteCategoryData | UnknownClass:
+    if category._fixed_label != 1 or not isinstance(category.base_of_slice(), FinitePresentedCategory):
+        return Unknown
+    base = finite_category(category.base_of_slice())
+    if base is Unknown:
+        return Unknown
+    from sage_categories.engines import slice_categories
+
+    objects, morphisms = slice_categories.slice_category(
+        category, category.base_of_slice(), base.morphisms
+    )
+    return FiniteCategoryData(objects, morphisms)
 
 
 def _comma(category: CommaCategory) -> FiniteCategoryData | UnknownClass:

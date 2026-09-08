@@ -109,6 +109,24 @@ When output is truncated, narrow the next read to the missing relevant section. 
 Keep current contracts, the active failure, and its evidence in the working context.
 Retrieve old history for a disputed decision or repeated failure, rather than routinely replaying the project history.
 
+Retrieve a governing plan once per work unit and retain its path, relevant sections,
+and revision in the existing task context. After an interruption, compare the source
+revision and the plan's revision before refreshing either. Read changed sections and
+the pending result first. Rebinding an already-bound repository is not a retrieval
+step: use `plan show` or `retrieve`. Project initialization and vault-wide indexing
+belong to their own setup or maintenance operation, not a routine TODO update.
+
+Before launching another command after an interruption, collect the retained terminal
+session's result. A delivery error says nothing about whether its process finished.
+For work that must survive the calling turn, use the existing host `tmux` session
+with `remain-on-exit` enabled on that pane. Retain its name in the current work unit;
+recover output with `tmux capture-pane -p -S - -t SESSION` and inspect
+`tmux display-message -p -t SESSION '#{pane_dead} #{pane_dead_status}'`.
+Keep full stdout and stderr in the job's existing output artifact when scrollback
+would truncate the failure. Resume the same operation from its observed result.
+Terminal persistence preserves the job; it does not promise that the agent or
+connector will automatically start another turn.
+
 Separate the requested deliverable from incidental defects exposed while reaching it.
 Repair an incidental defect in this unit only when the deliverable depends on that repair.
 Record other concrete defects with their existing owners, then return to the assigned operation.
@@ -487,15 +505,31 @@ Prefer a decisive public exercise to another aggregate diagnostic total.
 
 Commit and push hooks own test, lint, type-check, format, stub, and aggregate recipes. Do not run these suites manually.
 A targeted Sage-aware exercise is the routine manual exception.
+Execute a complete `.sage` consumer with the configured Sage file-loading path.
+For related consumers in one Sage process, use Sage's `load()` with one complete
+Sage globals dictionary per file, including the Sage numeric constructors; use
+`load_attach_mode(load_debug=True)` to retain source-backed tracebacks.
+Keep declaration-order and fresh-process claims in separate processes. Never strip
+assertions, inject future-annotation semantics, or supply test classes through a
+different locals dictionary to make a consumer executable. The runner must preserve
+the file's Python and Sage semantics.
+
+Measure native runtime startup separately from the public operation before changing
+process reuse. Preserve Julia's resolved project and compiled cache between ordinary
+runs. Batch compatible consumers at the same source revision; after a binding error,
+collect its full native exception and exercise the failing binding before repeating
+the complete public consumer. A passing native probe does not replace that consumer.
+Check the configured Sage interpreter against the project's declared Python version
+before loading a consumer. An older installed Sage is not an interchangeable runtime.
 An R-gate also runs `just architecture` on its declared owned rule set.
 D132 admits exact architectural invariant checks with file-and-line failures at the architecture push tier.
 `scripts/rule_coverage.py` rejects a rule whose file glob matches nothing.
 Retain static projection. Add no automated convention enforcement before 1.0.
 
-`just plan-state` still implements the superseded phase-model check. The execution-owner
-mismatch is the existing #51 repair in governing-plan section 19.6. Do not mark an
-archived phase active or revive an old completion claim to satisfy that check;
-repair its actual owner without bypassing the gate.
+`just plan-state` validates the governing plan and its retained native issue DAG.
+Its successful result establishes execution-state consistency, not implementation
+acceptance. Exact public consumers and prerequisite evidence remain required by
+the governing plan. Preserve archived phase evidence without reactivating it.
 Keep known red checks, owners, reasons, and permitted checkpoint commands in the active plan.
 For a documented red baseline, run required owned architecture and plan-state checks before a kernel checkpoint.
 Use `--no-verify` only under that recorded exception, naming the red gate in the commit message.

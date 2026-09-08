@@ -39,8 +39,10 @@ end;
 
 packages := [
     [ "ToolsForHomalg", "2026.04-01", "https://github.com/homalg-project/homalg_project/releases/download/ToolsForHomalg-2026.04-01/ToolsForHomalg-2026.04-01.tar.gz" ],
+    [ "MatricesForHomalg", "2026.04-01", "https://github.com/homalg-project/homalg_project/releases/download/MatricesForHomalg-2026.04-01/MatricesForHomalg-2026.04-01.tar.gz" ],
     [ "CAP", "2026.07-04", "https://github.com/homalg-project/CAP_project/releases/download/CAP-2026.07-04/CAP-2026.07-04.tar.gz" ],
     [ "MonoidalCategories", "2026.08-02", "https://github.com/homalg-project/CAP_project/releases/download/MonoidalCategories-2026.08-02/MonoidalCategories-2026.08-02.tar.gz" ],
+    [ "ModulePresentationsForCAP", "2026.06-01", "https://github.com/homalg-project/CAP_project/releases/download/ModulePresentationsForCAP-2026.06-01/ModulePresentationsForCAP-2026.06-01.tar.gz" ],
     [ "CartesianCategories", "2026.08-02", "https://github.com/homalg-project/CAP_project/releases/download/CartesianCategories-2026.08-02/CartesianCategories-2026.08-02.tar.gz" ],
     [ "ToolsForCategoricalTowers", "2026.08-01", "https://github.com/homalg-project/CategoricalTowers/releases/download/ToolsForCategoricalTowers-2026.08-01/ToolsForCategoricalTowers-2026.08-01.tar.gz" ],
     [ "Toposes", "2025.12-02", "https://github.com/homalg-project/CategoricalTowers/releases/download/Toposes-2025.12-02/Toposes-2025.12-02.tar.gz" ],

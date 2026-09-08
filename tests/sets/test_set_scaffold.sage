@@ -1,10 +1,25 @@
 """Owned set maps, universal maps, and represented infinite sets."""
 
-from sympy import Q
+from __future__ import annotations
+
 from collections.abc import Hashable
-from sage_categories.all import Cat, Category, Fun, Sets, FiniteSets, Mor, ask, Unknown, pair_maps, parallel_pair
-from sage_categories.cat.constructions import constructed_data
+
+from sympy import Dummy, Lambda, Q, pi, sqrt
+
+from sage_categories.all import (
+    Cat,
+    Category,
+    FiniteSets,
+    Fun,
+    Mor,
+    Sets,
+    Unknown,
+    ask,
+    pair_maps,
+    parallel_pair,
+)
 from sage_categories.cat.cones import cocone, cocones
+from sage_categories.cat.constructions import constructed_data
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.shapes import Discrete
 from sage_categories.sets.finite import SetsCategory
@@ -143,6 +158,31 @@ def test_rule_defined_infinite_set() -> None:
     assert addition(pair).datum() == 7
     assert addition(pair).parent() is integers
     assert square.product_projection(1)(pair).datum() == 4
+
+    # Mixed finite/infinite products use the same represented product without attempting
+    # to enumerate the rule-defined factor.
+    finite = Sets((10, 20))
+    mixed = Sets.Products()((finite, integers))
+    mixed_point = mixed.point((10, 9))
+    assert mixed.product_projection(0)(mixed_point).datum() == 10
+    assert mixed.product_projection(1)(mixed_point).datum() == 9
+
+    # A represented real domain is not a sample or a finite enumeration.  Product points,
+    # projections, and an independent cone mediator act directly on supplied exact reals.
+    reals = Sets.from_membership(lambda value: Q.real(value))
+    real_square = Sets.Products()((reals, reals))
+    real_point = real_square.point((sqrt(2), pi))
+    assert real_square.product_projection(0)(real_point).datum() == sqrt(2)
+    assert real_square.product_projection(1)(real_point).datum() == pi
+
+    variable = Dummy("x")
+    double = Mor(Sets)(reals, reals)(Lambda((variable,), 2 * variable))
+    translate = Mor(Sets)(reals, reals)(Lambda((variable,), variable + 1))
+    mediator = pair_maps(Sets, double, translate)
+    witness = reals.point(sqrt(2))
+    assert mediator(witness).datum() == (2 * sqrt(2), 1 + sqrt(2))
+    assert (real_square.product_projection(0) * mediator)(witness).datum() == double(witness).datum()
+    assert (real_square.product_projection(1) * mediator)(witness).datum() == translate(witness).datum()
 
 
 test_finite_set_universal_maps()

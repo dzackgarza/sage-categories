@@ -24,6 +24,7 @@ from sympy import ask as sympy_ask
 from sympy.core.basic import Basic
 
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.cones import cone, cone_apex
 from sage_categories.cat.declarations import NN, Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
@@ -755,9 +756,78 @@ class SetsCategory(Category[[Map], []]):
             return finite_sets.finite_colimit
         return Category.colimit_construction(self, shape)
 
+    def _represented_product(
+        self,
+        diagram: Functor,
+        vertices: tuple[CategoryOfCategories.ElementType, ...],
+    ) -> CategoryOfCategories.ElementType:
+        """Represent a product whose factors cannot all enter ``FinSetsForCAP``.
+
+        The apex retains the full factor family as a membership rule.  Projections and
+        mediators evaluate only the supplied tuple or source point; neither operation
+        enumerates a factor.  Exact finite products take the separate CAP path in
+        ``_primitive_limit``.
+        """
+        factors = tuple(diagram.on_object(vertex) for vertex in vertices)
+        apex = self.from_membership(_ProductRule(factors))
+        forms = tuple(_form_of(factor) for factor in factors)
+        presented = bool(factors) and all(form is not None for form in forms)
+        if presented and apex not in _object_forms:
+            _object_forms[apex] = forms[0].direct_sum(forms)
+        apex_form = _form_of(apex)
+        position = {id(vertex): index for index, vertex in enumerate(vertices)}
+
+        def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            index = position[id(vertex)]
+            structure = _structure(apex)
+            symbolic = Lambda((structure,), structure[index])
+            form = None if apex_form is None else apex_form.projection(index)
+            return Mor(self)(apex, diagram.on_object(vertex))(
+                _SetMap(lambda value: value[index], symbolic, form)
+            )
+
+        def lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            components = tuple(candidate.component(vertex) for vertex in vertices)
+            source = cone_apex(candidate)
+            structure = _structure(source)
+            symbolic = None
+            if all(component._symbolic is not None for component in components):
+                symbolic = Lambda(
+                    (structure,),
+                    Tuple(*(component._symbolic(structure) for component in components)),
+                )
+            source_form = _form_of(source)
+            component_forms = tuple(component._form for component in components)
+            form = None
+            if (
+                apex_form is not None
+                and source_form is not None
+                and all(component_form is not None for component_form in component_forms)
+            ):
+                form = source_form.pair(component_forms, apex_form)
+            return Mor(self)(source, apex)(
+                _SetMap(
+                    lambda value: tuple(component._action(value) for component in components),
+                    symbolic,
+                    form,
+                )
+            )
+
+        return self.Limits(diagram.domain()).with_universal_data(
+            diagram, apex, cone(diagram, apex, leg), lift
+        )
+
     def _primitive_limit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
+        from sage_categories.cat.finite_categories import finite_category
         from sage_categories.engines import finite_sets
 
+        shape = diagram.domain()
+        vertices = tuple(finite_category(shape).objects)
+        if shape.is_discrete():
+            factors = tuple(diagram.on_object(vertex) for vertex in vertices)
+            if all(_finite_data(factor) is not Unknown for factor in factors):
+                return finite_sets.primitive_limit(diagram)
+            return self._represented_product(diagram, vertices)
         return finite_sets.primitive_limit(diagram)
 
     def _primitive_colimit(self, diagram: Functor) -> CategoryOfCategories.ElementType:

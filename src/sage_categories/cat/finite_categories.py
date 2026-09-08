@@ -173,35 +173,36 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
             morphisms.append(category.construct_morphism(domain, codomain, components))
         return FiniteCategoryData(objects, tuple(morphisms))
 
-    vertex_positions = {id(vertex): index for index, vertex in enumerate(vertices)}
+    from sage_categories.engines import category_limits
 
-    def agrees(components: tuple[CategoryOfCategories.ElementType, ...], morphisms: bool) -> bool:
-        for edge in shape.morphisms:
-            functor = category.defining_diagram().on_morphism(edge)
-            source = components[vertex_positions[id(edge.domain())]]
-            image = functor.on_morphism(source) if morphisms else functor.on_object(source)
-            if not equal(image, components[vertex_positions[id(edge.codomain())]]):
-                return False
-        return True
-
-    families = tuple(components for components in product(*(factor.objects for factor in factors)) if agrees(components, False))
-    objects = tuple(category.from_components(lambda vertex, components=components: components[vertex_positions[id(vertex)]]) for components in families)
-
-    def endpoint(components: tuple[CategoryOfCategories.ElementType, ...]) -> CategoryOfCategories.ElementType:
-        for index, family in enumerate(families):
-            if all(equal(first, second) for first, second in zip(components, family, strict=True)):
-                return objects[index]
-        raise AssertionError("a compatible arrow family has no endpoint in its limit")
-
-    arrows = tuple(
-        category.morphism_from_components(
-            endpoint(tuple(arrow.domain() for arrow in components)),
-            endpoint(tuple(arrow.codomain() for arrow in components)),
-            lambda vertex, components=components: components[vertex_positions[id(vertex)]],
-        )
-        for components in product(*(factor.morphisms for factor in factors)) if agrees(components, True)
+    concrete_factors = tuple(factor for factor in factors if factor is not Unknown)
+    diagram = category.defining_diagram()
+    object_components = category_limits.compatible_families(
+        vertices,
+        shape.morphisms,
+        tuple(factor.objects for factor in concrete_factors),
+        lambda arrow, value: diagram.on_morphism(arrow).on_object(value),
     )
-    return FiniteCategoryData(objects, arrows)
+    objects = tuple(category(components) for components in object_components)
+    by_components = {
+        tuple(id(component) for component in components): value
+        for components, value in zip(object_components, objects, strict=True)
+    }
+    morphism_components = category_limits.compatible_families(
+        vertices,
+        shape.morphisms,
+        tuple(factor.morphisms for factor in concrete_factors),
+        lambda arrow, value: diagram.on_morphism(arrow).on_morphism(value),
+    )
+    morphisms = tuple(
+        category.construct_morphism(
+            by_components[tuple(id(component.domain()) for component in components)],
+            by_components[tuple(id(component.codomain()) for component in components)],
+            components,
+        )
+        for components in morphism_components
+    )
+    return FiniteCategoryData(objects, morphisms)
 
 
 def _slice(category: object) -> FiniteCategoryData | UnknownClass:

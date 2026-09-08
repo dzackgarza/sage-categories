@@ -9,7 +9,6 @@ This private evaluator supplies finite inputs to the presented colimit engine.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import product
 
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.cat_constructions import LimitCategory
@@ -90,16 +89,38 @@ def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData 
         fibers = {id(value): finite_category(indexed.on_object(value)) for value in base.objects}
         if any(fiber is Unknown for fiber in fibers.values()):
             return Unknown
-        objects = tuple(category(value, point) for value in base.objects for point in fibers[id(value)].objects)
+        concrete_fibers = {key: value for key, value in fibers.items() if value is not Unknown}
+        objects = tuple(
+            category(value, point)
+            for value in base.objects
+            for point in concrete_fibers[id(value)].objects
+        )
+        by_pair = {(id(value.base_object()), id(value.fiber_object())): value for value in objects}
+        from sage_categories.engines import category_limits
+
         arrows = []
         for arrow in base.morphisms:
-            for source, target in product(objects, repeat=2):
-                if source.base_object() is not arrow.domain() or target.base_object() is not arrow.codomain():
-                    continue
-                image = indexed.reindex(arrow).on_object(target.fiber_object())
-                for fiber_arrow in fibers[id(arrow.domain())].morphisms:
-                    if equal(fiber_arrow.domain(), source.fiber_object()) and equal(fiber_arrow.codomain(), image):
-                        arrows.append(category.construct_morphism(source, target, arrow, fiber_arrow))
+            source_fiber = concrete_fibers[id(arrow.domain())]
+            target_fiber = concrete_fibers[id(arrow.codomain())]
+            reindex = indexed.reindex(arrow)
+            triples = category_limits.matching_triples(
+                source_fiber.objects,
+                target_fiber.objects,
+                source_fiber.morphisms,
+                reindex.on_object,
+                lambda morphism: morphism.domain(),
+                lambda morphism: morphism.codomain(),
+                position,
+            )
+            arrows.extend(
+                category.construct_morphism(
+                    by_pair[(id(arrow.domain()), id(source))],
+                    by_pair[(id(arrow.codomain()), id(target))],
+                    arrow,
+                    fiber_arrow,
+                )
+                for source, target, fiber_arrow in triples
+            )
         return FiniteCategoryData(objects, tuple(arrows))
     if isinstance(category, FinitePresentedCategory):
         arrows = category.finite_morphisms()

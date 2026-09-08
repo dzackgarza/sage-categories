@@ -8,3 +8,7 @@ def compatible_families(
     image: Callable[[Any, Any], Any],
     locate: Callable[[tuple[Any, ...], Any], int],
 ) -> tuple[tuple[Any, ...], ...]: ...
+
+from collections.abc import Callable
+
+def matching_triples(source_values: tuple[object, ...], target_values: tuple[object, ...], morphisms: tuple[object, ...], reindex: Callable[[object], object], domain: Callable[[object], object], codomain: Callable[[object], object], locate: Callable[[tuple[object, ...], object], int]) -> tuple[tuple[object, object, object], ...]: ...

@@ -66,8 +66,8 @@ agent-memory plan show PLAN-native-engine-remediation
 When the installed command is unavailable, use the same command through
 `uvx --python 3.14 --from git+https://github.com/dzackgarza/agent-memory agent-memory`.
 
-`PLAN-native-engine-remediation` contains the approved detailed plan verbatim and
-supersedes every earlier project plan, including their core, production, scaffold,
+`PLAN-native-engine-remediation` contains the approved detailed plan with its current
+amendments. It supersedes every earlier project plan, including their core, production, scaffold,
 static-projection, and remediation execution orders. Sections 19 and 20 own the
 integration order and complete consumer requirements. Retain the issue dependencies
 and mathematical contracts incorporated there, not an independent older plan.

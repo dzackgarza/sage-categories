@@ -1,8 +1,8 @@
 # Remediation continuation
 
 The sole governing plan is the project-vault `PLAN-native-engine-remediation`.
-It contains `SageCategories-Detailed-Remediation-Plan.md` verbatim and supersedes
-all earlier project plans and handoff execution orders.
+It retains `SageCategories-Detailed-Remediation-Plan.md` with the current amendments
+and supersedes all earlier project plans and handoff execution orders.
 
 ```bash
 agent-memory plan show PLAN-native-engine-remediation

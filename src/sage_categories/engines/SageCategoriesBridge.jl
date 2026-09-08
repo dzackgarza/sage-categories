@@ -9,7 +9,9 @@ using GATlab
 export callable_category, callable_functor, callable_transformation,
        compose_functors, identity_functor, functor_object_image, functor_morphism_image,
        transformation_component, identity_transformation, compose_transformations,
-       whisker_left, whisker_right, horizontal_composite
+       whisker_left, whisker_right, horizontal_composite, presented_coproduct,
+       presented_coproduct_data, presented_coproduct_object_image,
+       presented_coproduct_path_image, presented_functor, presented_functor_morphism_image
 
 """A Catlab category whose primitive operations are supplied by the owned runtime.
 
@@ -105,6 +107,95 @@ function horizontal_composite(first::Transformation, second::Transformation)
     outer = whisker_right(second, dom(first))
     inner = whisker_left(codom(second), first)
     compose_transformations(outer, inner)
+end
+
+
+
+"""Build a Catlab FinCat presentation from index-based owned presentation data."""
+function _presented_fincat(object_names, generator_data, relation_data)
+    p = Presentation(FreeSchema)
+    objects = [add_generator!(p, Ob(FreeSchema.Ob, Symbol(name))) for name in object_names]
+    generators = map(generator_data) do datum
+        name, source, target = datum
+        add_generator!(p, Hom(Symbol(name), objects[source], objects[target]))
+    end
+    function path(indices, source)
+        isempty(indices) && return id(objects[source])
+        length(indices) == 1 && return generators[only(indices)]
+        compose(generators[indices]...)
+    end
+    for relation in relation_data
+        source, left, right = relation
+        add_equation!(p, path(left, source), path(right, source))
+    end
+    FinCat(p)
+end
+
+function _fincat_path(category, indices, source)
+    generators = collect(hom_generators(category))
+    objects = collect(ob_generators(category))
+    isempty(indices) && return id(category, objects[source])
+    length(indices) == 1 && return generators[only(indices)]
+    compose(category, generators[indices]...)
+end
+
+function _path_names(category, morphism)
+    [String(Symbol(edge)) for edge in edges(decompose(getvalue(category), morphism))]
+end
+
+struct PresentedCoproduct
+    categories::Any
+    cocone::Any
+    target::Any
+end
+
+"""Catlab-owned coproduct presentation retained as one opaque native value."""
+function presented_coproduct(presentations)
+    categories = [
+        _presented_fincat(data[1], data[2], data[3])
+        for data in presentations
+    ]
+    cocone = Catlab.CategoricalAlgebra.Pointwise.Chase.coproduct_fincat(categories)
+    PresentedCoproduct(categories, cocone, apex(cocone))
+end
+
+function presented_coproduct_data(value::PresentedCoproduct)
+    target = value.target
+    object_names = [String(Symbol(object)) for object in ob_generators(target)]
+    homs = [
+        (String(Symbol(hom)), String(Symbol(dom(target, hom))), String(Symbol(codom(target, hom))))
+        for hom in hom_generators(target)
+    ]
+    relations = [
+        (_path_names(target, left), _path_names(target, right))
+        for (left, right) in equations(target)
+    ]
+    (object_names, homs, relations)
+end
+
+function presented_coproduct_object_image(value::PresentedCoproduct, factor, object)
+    leg = legs(value.cocone)[factor]
+    String(Symbol(ob_map(leg, collect(ob_generators(value.categories[factor]))[object])))
+end
+
+function presented_coproduct_path_image(value::PresentedCoproduct, factor, indices, source)
+    category = value.categories[factor]
+    leg = legs(value.cocone)[factor]
+    _path_names(value.target, hom_map(leg, _fincat_path(category, indices, source)))
+end
+
+"""Native functor from a finite presentation into an arbitrary Catlab category."""
+function presented_functor(presentation, object_images, generator_images, target::Cat)
+    source = _presented_fincat(presentation[1], presentation[2], presentation[3])
+    objects = collect(object_images)
+    generators = collect(generator_images)
+    object_map = Dict(zip(collect(ob_generators(source)), objects))
+    generator_map = Dict(zip(collect(hom_generators(source)), generators))
+    FinDomFunctor(object_map, generator_map, source, target; homtype=:hom)
+end
+
+function presented_functor_morphism_image(functor, indices, source)
+    hom_map(functor, _fincat_path(dom(functor), indices, source))
 end
 
 end

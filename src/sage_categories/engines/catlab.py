@@ -43,6 +43,12 @@ __all__ = [
     "horizontal_composite",
     "identity_functor",
     "identity_transformation",
+    "presented_coproduct",
+    "presented_coproduct_data",
+    "presented_coproduct_object_image",
+    "presented_coproduct_path_image",
+    "presented_functor",
+    "presented_functor_morphism_image",
     "retain_composite_functor",
     "transformation_component",
     "whisker_left",
@@ -316,4 +322,123 @@ def horizontal_composite(
 ) -> None:
     _retain_transformation_recipe(
         value, ("horizontal", (first, second, source, target))
+    )
+
+
+def _presented_category_data(
+    category: object,
+) -> tuple[
+    list[str], list[tuple[str, int, int]], list[tuple[int, list[int], list[int]]]
+]:
+    labels = tuple(category.labels())
+    names = tuple(category.generator_names())
+    label_positions = {label: index + 1 for index, label in enumerate(labels)}
+    generator_positions = {name: index + 1 for index, name in enumerate(names)}
+    object_names = [f"o{index}" for index in range(len(labels))]
+    generators = [
+        (
+            f"g{index}",
+            label_positions[category._generator_endpoints[name][0]],
+            label_positions[category._generator_endpoints[name][1]],
+        )
+        for index, name in enumerate(names)
+    ]
+    relations = []
+    for left, right in category.relations():
+        witness = left or right
+        source, _ = category._path_endpoints(witness)
+        assert source is not None
+        relations.append(
+            (
+                label_positions[source],
+                [generator_positions[name] for name in left],
+                [generator_positions[name] for name in right],
+            )
+        )
+    return object_names, generators, relations
+
+
+def presented_coproduct(categories: tuple[object, ...]) -> object:
+    """Native Catlab coproduct of exact finite presentations."""
+    return _bridge().presented_coproduct(
+        [_presented_category_data(category) for category in categories]
+    )
+
+
+def presented_coproduct_data(
+    value: object,
+) -> tuple[
+    tuple[str, ...],
+    tuple[tuple[str, str, str], ...],
+    tuple[tuple[tuple[str, ...], tuple[str, ...]], ...],
+]:
+    objects, homs, relations = _bridge().presented_coproduct_data(value)
+    return (
+        tuple(str(name) for name in objects),
+        tuple((str(name), str(source), str(target)) for name, source, target in homs),
+        tuple(
+            (tuple(str(name) for name in left), tuple(str(name) for name in right))
+            for left, right in relations
+        ),
+    )
+
+
+def presented_coproduct_object_image(
+    value: object, factor: int, object_index: int
+) -> str:
+    return str(
+        _bridge().presented_coproduct_object_image(value, factor + 1, object_index + 1)
+    )
+
+
+def _word_indices(category: object, word: tuple[str, ...]) -> list[int]:
+    positions = {
+        name: index + 1 for index, name in enumerate(category.generator_names())
+    }
+    return [positions[name] for name in word]
+
+
+def presented_coproduct_path_image(
+    value: object,
+    categories: tuple[object, ...],
+    factor: int,
+    word: tuple[str, ...],
+    source: object,
+) -> tuple[str, ...]:
+    category = categories[factor]
+    source_index = tuple(category.labels()).index(category.label(source))
+    result = _bridge().presented_coproduct_path_image(
+        value,
+        factor + 1,
+        _word_indices(category, word),
+        source_index + 1,
+    )
+    return tuple(str(name) for name in result)
+
+
+def presented_functor(
+    source: object,
+    target: Category,
+    object_images: tuple[object, ...],
+    generator_images: tuple[object, ...],
+) -> object:
+    """Native Catlab functor extending supplied images of a finite presentation."""
+    return _bridge().presented_functor(
+        _presented_category_data(source),
+        list(object_images),
+        list(generator_images),
+        ensure_native_category(target),
+    )
+
+
+def presented_functor_morphism_image(
+    functor: object,
+    source: object,
+    morphism: object,
+) -> object:
+    source_index = tuple(source.labels()).index(source.label(morphism.domain()))
+    return _bridge().presented_functor_morphism_image(
+        functor,
+        _word_indices(source, morphism.word()),
+        source_index + 1,
     )

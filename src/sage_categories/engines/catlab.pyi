@@ -59,3 +59,30 @@ def retain_composite_functor(
 ) -> None: ...
 def identity_functor(value: MorphismCategory.ObjectType, owner: Category) -> None: ...
 def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object: ...
+def presented_coproduct(categories: tuple[object, ...]) -> object: ...
+def presented_coproduct_data(
+    value: object,
+) -> tuple[
+    tuple[str, ...],
+    tuple[tuple[str, str, str], ...],
+    tuple[tuple[tuple[str, ...], tuple[str, ...]], ...],
+]: ...
+def presented_coproduct_object_image(
+    value: object, factor: int, object_index: int
+) -> str: ...
+def presented_coproduct_path_image(
+    value: object,
+    categories: tuple[object, ...],
+    factor: int,
+    word: tuple[str, ...],
+    source: object,
+) -> tuple[str, ...]: ...
+def presented_functor(
+    source: object,
+    target: Category,
+    object_images: tuple[object, ...],
+    generator_images: tuple[object, ...],
+) -> object: ...
+def presented_functor_morphism_image(
+    functor: object, source: object, morphism: object
+) -> object: ...

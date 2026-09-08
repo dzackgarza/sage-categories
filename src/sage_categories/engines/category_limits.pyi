@@ -9,6 +9,20 @@ def compatible_families(
     locate: Callable[[tuple[Any, ...], Any], int],
 ) -> tuple[tuple[Any, ...], ...]: ...
 
-from collections.abc import Callable
 
-def matching_triples(source_values: tuple[object, ...], target_values: tuple[object, ...], morphisms: tuple[object, ...], reindex: Callable[[object], object], domain: Callable[[object], object], codomain: Callable[[object], object], locate: Callable[[tuple[object, ...], object], int]) -> tuple[tuple[object, object, object], ...]: ...
+def matching_triples(
+    source_values: tuple[object, ...],
+    target_values: tuple[object, ...],
+    morphisms: tuple[object, ...],
+    reindex: Callable[[object], object],
+    domain: Callable[[object], object],
+    codomain: Callable[[object], object],
+    locate: Callable[[tuple[object, ...], object], int],
+) -> tuple[tuple[object, object, object], ...]: ...
+def identified_objects(
+    vertices: tuple[object, ...],
+    arrows: tuple[object, ...],
+    families: tuple[tuple[object, ...], ...],
+    image: Callable[[object, object], object],
+    locate: Callable[[tuple[object, ...], object], int],
+) -> tuple[int, tuple[tuple[int, ...], ...]]: ...

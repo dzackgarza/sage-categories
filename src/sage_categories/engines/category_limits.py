@@ -8,7 +8,7 @@ from sage.libs.gap.libgap import libgap
 
 from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
 
-__all__ = ["compatible_families", "matching_triples"]
+__all__ = ["compatible_families", "identified_objects", "matching_triples"]
 
 _loaded = False
 
@@ -55,7 +55,9 @@ def compatible_families(
         decorated.append(
             [
                 source,
-                libgap.MapOfFinSets(native_factors[source], graph, native_factors[target]),
+                libgap.MapOfFinSets(
+                    native_factors[source], graph, native_factors[target]
+                ),
                 target,
             ]
         )
@@ -70,11 +72,67 @@ def compatible_families(
         )
         for index in range(len(vertices))
     )
-    graphs = tuple(tuple(int(value) for value in libgap.AsList(projection)) for projection in projections)
+    graphs = tuple(
+        tuple(int(value) for value in libgap.AsList(projection))
+        for projection in projections
+    )
     return tuple(
-        tuple(families[index][graphs[index][native_index]] for index in range(len(vertices)))
+        tuple(
+            families[index][graphs[index][native_index]]
+            for index in range(len(vertices))
+        )
         for native_index in range(int(libgap.Cardinality(apex)))
     )
+
+
+def identified_objects(
+    vertices: tuple[object, ...],
+    arrows: tuple[object, ...],
+    families: tuple[tuple[object, ...], ...],
+    image: Callable[[object, object], object],
+    locate: Callable[[tuple[object, ...], object], int],
+) -> tuple[int, tuple[tuple[int, ...], ...]]:
+    """Native finite colimit of object families, returned as factor-to-class maps."""
+    _load()
+    assert len(vertices) == len(families)
+    vertex_positions = {id(vertex): index for index, vertex in enumerate(vertices)}
+    value_positions = tuple(
+        {id(value): index for index, value in enumerate(family)} for family in families
+    )
+    native_factors = [libgap.FinSet(len(family)) for family in families]
+    decorated = []
+    for arrow in arrows:
+        source = vertex_positions[id(arrow.domain())]
+        target = vertex_positions[id(arrow.codomain())]
+        graph = []
+        for value in families[source]:
+            result = image(arrow, value)
+            match id(result) in value_positions[target]:
+                case True:
+                    graph.append(value_positions[target][id(result)])
+                case False:
+                    graph.append(locate(families[target], result))
+        decorated.append(
+            [
+                source,
+                libgap.MapOfFinSets(
+                    native_factors[source], graph, native_factors[target]
+                ),
+                target,
+            ]
+        )
+    apex = libgap.Colimit(libgap.SkeletalFinSets, native_factors, decorated)
+    injections = tuple(
+        libgap.InjectionOfCofactorOfColimitWithGivenColimit(
+            libgap.SkeletalFinSets, native_factors, decorated, index, apex
+        )
+        for index in range(len(vertices))
+    )
+    mappings = tuple(
+        tuple(int(value) for value in libgap.AsList(injection))
+        for injection in injections
+    )
+    return int(libgap.Cardinality(apex)), mappings
 
 
 def matching_triples(
@@ -106,7 +164,11 @@ def matching_triples(
         for index in range(3)
     )
 
-    def graph(values: tuple[object, ...], target: tuple[object, ...], action: Callable[[object], object]) -> list[int]:
+    def graph(
+        values: tuple[object, ...],
+        target: tuple[object, ...],
+        action: Callable[[object], object],
+    ) -> list[int]:
         return [locate(target, action(value)) for value in values]
 
     domain_map = libgap.MapOfFinSets(
@@ -140,7 +202,8 @@ def matching_triples(
     )
     selected = tuple(int(value) for value in libgap.AsList(embedding))
     projection_graphs = tuple(
-        tuple(int(value) for value in libgap.AsList(projection)) for projection in projections
+        tuple(int(value) for value in libgap.AsList(projection))
+        for projection in projections
     )
     return tuple(
         (

@@ -63,6 +63,7 @@ __all__ = [
     "retained_object_by_datum",
     "retained_object_input",
     "retained_objects",
+    "retained_values",
 ]
 
 
@@ -177,6 +178,20 @@ def retained_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
         for _, construction_input in _object_inputs.items()
         if construction_input.identity.category is category
     )
+
+
+def retained_values() -> tuple[CategoryPoint, ...]:
+    """Every live value with a retained kernel construction input, once by identity."""
+    values: list[CategoryPoint] = []
+    seen: set[int] = set()
+    for table in (_object_inputs, _element_inputs, _morphism_inputs):
+        for _, construction_input in table.items():
+            value = construction_input.canonical_image
+            if id(value) in seen:
+                continue
+            seen.add(id(value))
+            values.append(value)
+    return tuple(values)
 
 
 def is_constructed(value: ObjectOfCategory) -> bool:

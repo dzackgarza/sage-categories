@@ -22,6 +22,8 @@ class _MemberPredicate(Predicate):
 member: Predicate
 
 class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.kernel.roles.ObjectOfCategory):
+    _implementation_selected_functors: tuple[Functor, ...]
+    _installed_category_implementations: tuple[type[Category], ...]
 
     def __init__(self, data: None=None) -> None:
         ...

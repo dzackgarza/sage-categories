@@ -90,7 +90,7 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
 def recompile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     ...
 
-def implement_category(category: Category, implementation: type[Category]) -> None:
+def implement_category(category: Category, implementation: type[Category], selected_functors: tuple[Functor, ...], *, augment: bool) -> None:
     ...
 
 def apply_level_shift(member: Category, placement: Category) -> None:

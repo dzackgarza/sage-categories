@@ -260,6 +260,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         self._equality = equality_predicate()
         self._ambient_category: Category | None = None
         self._ambient_monomorphism: Functor | None = None
+        self._implementation_selected_functors: tuple[Functor, ...] = ()
+        self._installed_category_implementations: tuple[type[Category], ...] = ()
         functors = category_construction_functors(self)
         self._selected_functors = functors
         implemented = _declares_implementation(functors[0]) if functors else None
@@ -268,7 +270,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             # so there is no second category to construct: ``Cat`` strengthens that value
             # to this class in place (D156).  The construction stops here, before an
             # ordinal is taken, and this half-built value is discarded.
-            self.universe()._adopt(implemented, type(self))
+            self.universe()._adopt(implemented, type(self), functors)
             return
         self._ordinal = next(_category_ordinals)
         self._compile_category(functors)
@@ -301,7 +303,13 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         this category's own constructor chain and never again: every later kernel read
         is ``selected_functors()`` (D111, D154).
         """
-        functors = tuple(self.structure_functors())
+        declared = tuple(self.structure_functors())
+        extensions = self._implementation_selected_functors
+        functors = declared + tuple(
+            functor
+            for functor in extensions
+            if not any(functor is known for known in declared)
+        )
         self._selected_functors = functors
         self._ambient_monomorphism = next((functor for functor in functors if _declares_subcategory(functor)), None)
         self._ambient_category = None if self._ambient_monomorphism is None else self._ambient_monomorphism.codomain()
@@ -1617,7 +1625,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """
         implementation()
 
-    def _adopt(self, declared: Category, implementation: type[Category]) -> None:
+    def _adopt(
+        self,
+        declared: Category,
+        implementation: type[Category],
+        selected_functors: tuple[Functor, ...],
+    ) -> None:
         """Strengthen the declaration ``declared`` to ``implementation`` in place (D80, D156).
 
         The declared object is the final object, so nothing is constructed here: its
@@ -1632,12 +1645,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         assert issubclass(implementation, self.ObjectType)
         name = self.open_declaration(declared)
-        assert name is not None, (
-            f"{implementation!r} implements {declared!r}, which is not a declaration of Cat awaiting one"
-        )
-        self._implementations[name] = implementation
-        del self._open_declarations[declared]
-        implement_category(declared, implementation)
+        if name is not None:
+            self._implementations[name] = implementation
+            del self._open_declarations[declared]
+        implement_category(declared, implementation, selected_functors, augment=name is None)
 
     def morphism_category_type(self) -> type[FunctorsCategory]:
         from sage_categories.cat.functors import FunctorsCategory

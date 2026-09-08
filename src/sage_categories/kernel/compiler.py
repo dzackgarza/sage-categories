@@ -38,6 +38,7 @@ from sage_categories.kernel.construction import (
     retained_object_by_datum,
     retained_object_input,
     retained_objects,
+    retained_values,
 )
 from sage_categories.kernel.roles import (
     CategoryPoint,
@@ -1249,22 +1250,69 @@ def recompile_category(category: Category, functors: tuple[Functor, ...]) -> Non
     compile_category(category, functors)
 
 
-def implement_category(category: Category, implementation: type[Category]) -> None:
-    """Install a declared implementation on its retained category identity.
+def implement_category(
+    category: Category,
+    implementation: type[Category],
+    selected_functors: tuple[Functor, ...],
+    *,
+    augment: bool,
+) -> None:
+    """Install one implementation on a retained category identity.
 
-    Python's in-place class assignment preserves references to the declaration.
-    The ordinary initializer supplies implementation state before roles are compiled.
+    Open named declarations retain the original replacement semantics.  An exact
+    category that already exists is augmented in place: its category class, selected
+    structural graph, and compiled runtime categories remain the same, while the new
+    declaration body is installed on its exact role classes.
     """
-    object.__setattr__(category, "__class__", implementation)
-    vars(category)["_own_classes"] = (implementation,)
-    implementation.__init__(category)
-    root = retained_object_input(category)
-    context = ObjectConstructionContext(category, root.identity, CategoryPointIdentity(root.identity.category), ())
-    token = activate_object_context(context)
-    try:
-        category.recompile()
-    finally:
-        deactivate_object_context(token)
+    identity = category.universe().morphism_category(1)(category, category).one()
+    assert selected_functors and selected_functors[0] is identity
+    if not augment:
+        object.__setattr__(category, "__class__", implementation)
+        vars(category)["_own_classes"] = (implementation,)
+        implementation.__init__(category)
+        root = retained_object_input(category)
+        context = ObjectConstructionContext(category, root.identity, CategoryPointIdentity(root.identity.category), ())
+        token = activate_object_context(context)
+        try:
+            category.recompile()
+        finally:
+            deactivate_object_context(token)
+        return
+
+    category._installed_category_implementations = (*category._installed_category_implementations, implementation)
+    realize_implementation_class(category, implementation)
+    category_initializer = vars(implementation).get("__init__")
+    if category_initializer is not None:
+        category_initializer(category)
+    additions = tuple(
+        functor
+        for functor in selected_functors[1:]
+        if not any(functor is known for known in category.selected_functors())
+    )
+    category._implementation_selected_functors = (*category._implementation_selected_functors, *additions)
+    category._selected_functors = (*category.selected_functors(), *additions)
+
+    from sage_categories.kernel.roles import role_of
+    for role in Role:
+        declaration = vars(implementation)[role.value]
+        compiled = category.role_class(role)
+        if not issubclass(compiled, declaration):
+            with building_role_classes():
+                compiled.__bases__ = (declaration, *compiled.__bases__)
+        runtime = _node_runtimes[role][category]
+        local_initializer = vars(declaration).get("__init__")
+        if local_initializer is None:
+            continue
+        previous = runtime.initializer
+
+        def combined(instance: CategoryPoint, datum: object, previous=previous, local_initializer=local_initializer) -> None:
+            previous(instance, datum)
+            local_initializer(instance, datum)
+
+        _node_runtimes[role][category] = _NodeRuntime(combined, runtime.owner, True)
+        for value in retained_values():
+            if role_of(value) is role and isinstance(value, compiled):
+                local_initializer(value, retained_input(value).datum)
 
 
 def apply_level_shift(member: Category, placement: Category) -> None:

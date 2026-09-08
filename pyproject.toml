@@ -36,6 +36,7 @@ migration = [
 ]
 platform = [
     "discopy==1.2.2",
+    "sage-categories-homotopy",
     "juliacall>=0.9.35,<0.10",
     "maude>=1.6,<2",
 ]
@@ -88,3 +89,9 @@ allow_indirect_imports = true
 source_modules = ["sage_categories.kernel", "sage_categories.cat", "sage_categories.engines"]
 forbidden_modules = ["sage"]
 ignore_imports = ["sage_categories.kernel.sage_runtime -> sage", "sage_categories.engines.gap -> sage", "sage_categories.engines.finite_sets -> sage", "sage_categories.engines.fp_categories -> sage", "sage_categories.engines.functor_categories -> sage", "sage_categories.engines.slice_categories -> sage", "sage_categories.engines.category_products -> sage", "sage_categories.engines.category_limits -> sage"]
+
+[tool.uv.sources]
+sage-categories-homotopy = { workspace = true }
+
+[tool.uv.workspace]
+members = ["native/homotopy-python"]

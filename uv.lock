@@ -2,6 +2,12 @@ version = 1
 revision = 3
 requires-python = "==3.14.*"
 
+[manifest]
+members = [
+    "sage-categories",
+    "sage-categories-homotopy",
+]
+
 [[package]]
 name = "annotated-types"
 version = "0.8.0"
@@ -831,6 +837,7 @@ platform = [
     { name = "discopy" },
     { name = "juliacall" },
     { name = "maude" },
+    { name = "sage-categories-homotopy" },
 ]
 
 [package.metadata]
@@ -858,7 +865,13 @@ platform = [
     { name = "discopy", specifier = "==1.2.2" },
     { name = "juliacall", specifier = ">=0.9.35,<0.10" },
     { name = "maude", specifier = ">=1.6,<2" },
+    { name = "sage-categories-homotopy", editable = "native/homotopy-python" },
 ]
+
+[[package]]
+name = "sage-categories-homotopy"
+version = "0.1.0"
+source = { editable = "native/homotopy-python" }
 
 [[package]]
 name = "sage-mypy-category-plugin"

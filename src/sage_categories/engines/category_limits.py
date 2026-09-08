@@ -25,6 +25,7 @@ def compatible_families(
     arrows: tuple[object, ...],
     families: tuple[tuple[object, ...], ...],
     image: Callable[[object, object], object],
+    locate: Callable[[tuple[object, ...], object], int],
 ) -> tuple[tuple[object, ...], ...]:
     """Return the compatible families selected by the native finite-set limit.
 
@@ -46,10 +47,11 @@ def compatible_families(
         graph = []
         for value in families[source]:
             result = image(arrow, value)
-            assert id(result) in value_positions[target], (
-                "finite category functor action did not return the retained target value"
-            )
-            graph.append(value_positions[target][id(result)])
+            match id(result) in value_positions[target]:
+                case True:
+                    graph.append(value_positions[target][id(result)])
+                case False:
+                    graph.append(locate(families[target], result))
         decorated.append(
             [
                 source,

@@ -6,4 +6,5 @@ def compatible_families(
     arrows: tuple[Any, ...],
     families: tuple[tuple[Any, ...], ...],
     image: Callable[[Any, Any], Any],
+    locate: Callable[[tuple[Any, ...], Any], int],
 ) -> tuple[tuple[Any, ...], ...]: ...

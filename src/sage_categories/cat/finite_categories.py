@@ -182,6 +182,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
         shape.morphisms,
         tuple(factor.objects for factor in concrete_factors),
         lambda arrow, value: diagram.on_morphism(arrow).on_object(value),
+        position,
     )
     objects = tuple(category(components) for components in object_components)
     by_components = {
@@ -193,6 +194,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
         shape.morphisms,
         tuple(factor.morphisms for factor in concrete_factors),
         lambda arrow, value: diagram.on_morphism(arrow).on_morphism(value),
+        position,
     )
     morphisms = tuple(
         category.construct_morphism(
@@ -220,15 +222,56 @@ def _slice(category: object) -> FiniteCategoryData | UnknownClass:
 
 
 def _comma(category: CommaCategory) -> FiniteCategoryData | UnknownClass:
-    forward, backward = category.comma_functors()
-    first, second, target = (finite_category(owner) for owner in (forward.domain(), backward.domain(), forward.codomain()))
-    if first is Unknown or second is Unknown or target is Unknown:
+    from sage_categories.cat.diagrams import cospan_diagram
+    from sage_categories.cat.slices import _endpoint_functor, _pair_functor
+
+    first, second = category.comma_functors()
+    cospan = Cat().WalkingCospan()
+    diagram = cospan_diagram(
+        Cat(),
+        _pair_functor(first, second),
+        _endpoint_functor(first.codomain()),
+    )
+    pullback = LimitCategory(diagram)
+    data = finite_category(pullback)
+    if data is Unknown:
         return Unknown
-    objects = tuple(category.from_arrow(a, b, arrow) for a, b, arrow in product(first.objects, second.objects, target.morphisms)
-        if equal(arrow.domain(), forward.on_object(a)) and equal(arrow.codomain(), backward.on_object(b)))
-    arrows = tuple(category.morphism_from_pair(source, destination, a, b)
-        for source, destination in product(objects, repeat=2) for a, b in product(first.morphisms, second.morphisms)
-        if equal(a.domain(), source.first()) and equal(a.codomain(), destination.first())
-        and equal(b.domain(), source.second()) and equal(b.codomain(), destination.second())
-        and equal(backward.on_morphism(b) * source.arrow(), destination.arrow() * forward.on_morphism(a)))
-    return FiniteCategoryData(objects, arrows)
+
+    pair_vertex, arrow_vertex = cospan(0), cospan(1)
+    objects = []
+    by_components: dict[tuple[int, int, int], CategoryOfCategories.ElementType] = {}
+    for value in data.objects:
+        pair = value.family_component(pair_vertex)
+        arrow = value.family_component(arrow_vertex)
+        first_value = pair.family_component(0)
+        second_value = pair.family_component(1)
+        owned = category.from_arrow(first_value, second_value, arrow)
+        objects.append(owned)
+        by_components[(id(first_value), id(second_value), id(arrow))] = owned
+
+    morphisms = []
+    for value in data.morphisms:
+        pair = value.family_component(pair_vertex)
+        source_family = value.domain()
+        target_family = value.codomain()
+
+        def comma_endpoint(family: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            pair_object = family.family_component(pair_vertex)
+            arrow_object = family.family_component(arrow_vertex)
+            return by_components[
+                (
+                    id(pair_object.family_component(0)),
+                    id(pair_object.family_component(1)),
+                    id(arrow_object),
+                )
+            ]
+
+        morphisms.append(
+            category.morphism_from_pair(
+                comma_endpoint(source_family),
+                comma_endpoint(target_family),
+                pair.family_component(0),
+                pair.family_component(1),
+            )
+        )
+    return FiniteCategoryData(tuple(objects), tuple(morphisms))

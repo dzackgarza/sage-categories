@@ -555,6 +555,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         if member_object not in self._identities:
             identity = self.construct_identity(member_object)
             self._identities[member_object] = identity
+            from sage_categories.engines import cells
+
+            cells.retain_identity(self, identity)
             self.retain_inverses(identity, identity)
             refine(identity, self.morphism_category(1).Identity())
         return self._identities[member_object]
@@ -577,6 +580,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         isomorphisms = self.morphism_category(1).Isomorphisms()
         refine(forward, isomorphisms)
         refine(backward, isomorphisms)
+        from sage_categories.engines import cells
+
+        cells.retain_inverses(self, forward, backward)
 
     def compose_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         """``second * first`` through the owned composition; a composite of retained-invertible morphisms retains ``first⁻¹ * second⁻¹``."""
@@ -685,6 +691,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         if key not in self._composites:
             formal = self.MorphismType(first.domain(), second.codomain())
             formal.retain_factors(first, second)
+            from sage_categories.engines import cells
+
+            cells.retain_composite(self, formal, first, second)
             self._composites[key] = formal
         return self._composites[key]
 
@@ -696,7 +705,11 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             refine(two_cell, self.morphism_category(2))
             return two_cell
         two_cells = self.morphism_category(2)
-        return two_cells.ObjectType(domain=morphism, codomain=morphism)
+        two_cell = two_cells.ObjectType(domain=morphism, codomain=morphism)
+        from sage_categories.engines import cells
+
+        cells.retain_identity(self.morphism_category(1), two_cell)
+        return two_cell
 
     def compose_two_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         from sage_categories.kernel.refinement import refine
@@ -708,6 +721,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         # A 1-category has identity 2-morphisms only: the composite of two identities is either.
         assert first.domain() is first.codomain() and second.domain() is second.codomain()
         assert first.domain() is second.domain()
+        from sage_categories.engines import cells
+
+        cells.retain_composite(self.morphism_category(1), first, first, second)
         return first
 
     def construct_two_morphism(
@@ -1698,6 +1714,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         identity = self.construct_morphism(category, category, on_object, on_morphism)
         catlab.identity_functor(identity, category)
+        from sage_categories.engines import cells
+
+        cells.retain_identity(self, identity)
         # The identity functor is an equivalence: Mathlib ``CategoryTheory.Functor.id``
         # with ``IsEquivalence`` of the identity (inspected 2026-08-26).
         refine(identity, Fun.Equivalences())
@@ -1739,6 +1758,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             composite = self.construct_morphism(first.domain(), second.codomain(), on_object, on_morphism)
             catlab.retain_composite_functor(composite, first, second)
             composite.retain_factors(first, second)
+            from sage_categories.engines import cells
+
+            cells.retain_composite(self, composite, first, second)
             table[self] = composite
         composite = table[self]
         # Full, faithful, fully faithful, essentially surjective, and equivalence
@@ -1758,31 +1780,58 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 refine(composite, property_category)
         return composite
 
-    def construct_two_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, assignment: Assignment, source_functor: Functor | None = None, target_functor: Functor | None = None) -> NaturalTransformation:
-        """``Mor(Fun(C, D))(F, G)(assignment)``: a natural transformation from a rule (POL-FUN-007).
-
-        The endpoints are objects of ``Fun(C, D)``: functors, or the points of ``D``
-        with domain ``C`` that denote their defining functors (specs/functor.md, "The Mor(n, C) tower").
-        """
+    def _construct_transformation(
+        self,
+        source: CategoryOfCategories.ElementType,
+        target: CategoryOfCategories.ElementType,
+        assignment: Assignment,
+        source_functor: Functor | None = None,
+        target_functor: Functor | None = None,
+    ) -> NaturalTransformation:
+        """Construct one owned transformation and its Catlab callable semantics."""
         from sage_categories.cat.functors import NaturalTransformationData, diagram_of
+        from sage_categories.engines import catlab
 
         functors = self.morphism_category(1)
         source_functor = diagram_of(source) if source_functor is None else source_functor
         target_functor = diagram_of(target) if target_functor is None else target_functor
         assert source_functor in functors and target_functor in functors
-        assert source_functor.domain() is target_functor.domain() and source_functor.codomain() is target_functor.codomain()
+        assert (
+            source_functor.domain() is target_functor.domain()
+            and source_functor.codomain() is target_functor.codomain()
+        )
         transformation = functors.MorphismType(
             domain=source,
             codomain=target,
             data=NaturalTransformationData(assignment, source_functor, target_functor),
         )
-        from sage_categories.engines import catlab
-
-        catlab.callable_transformation(transformation, source_functor, target_functor, assignment)
+        catlab.callable_transformation(
+            transformation, source_functor, target_functor, assignment
+        )
         return transformation
 
-    def identity_two_morphism(self, member_object: CategoryOfCategories.ElementType) -> NaturalTransformation:
+    def construct_two_morphism(
+        self,
+        source: CategoryOfCategories.ElementType,
+        target: CategoryOfCategories.ElementType,
+        assignment: Assignment,
+        source_functor: Functor | None = None,
+        target_functor: Functor | None = None,
+    ) -> NaturalTransformation:
+        """``Mor(Fun(C, D))(F, G)(assignment)``: a native-backed natural transformation."""
+        transformation = self._construct_transformation(
+            source, target, assignment, source_functor, target_functor
+        )
+        from sage_categories.engines import cells
+
+        cells.retain_generator(self.morphism_category(1), transformation)
+        return transformation
+
+    def identity_two_morphism(
+        self, member_object: CategoryOfCategories.ElementType
+    ) -> NaturalTransformation:
         from sage_categories.cat.functors import diagram_of
+        from sage_categories.engines import catlab, cells
 
         functor = diagram_of(member_object)
 
@@ -1790,16 +1839,19 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             image = functor.on_object(x)
             return image.category().morphism_category(1)(image, image).one()
 
-        transformation = self.construct_two_morphism(member_object, member_object, component)
-        from sage_categories.engines import catlab
-
+        transformation = self._construct_transformation(
+            member_object, member_object, component
+        )
         catlab.identity_transformation(transformation, functor)
+        cells.retain_identity(self.morphism_category(1), transformation)
         return transformation
 
-    def compose_two_morphisms(self, second: NaturalTransformation, first: NaturalTransformation) -> NaturalTransformation:
-        """Vertical composition: components compose in the codomain category."""
+    def compose_two_morphisms(
+        self, second: NaturalTransformation, first: NaturalTransformation
+    ) -> NaturalTransformation:
+        """Vertical composition in Catlab and homotopy-core, with one owned result."""
         assert first.codomain() is second.domain()
-        from sage_categories.engines import catlab
+        from sage_categories.engines import catlab, cells
 
         result = None
 
@@ -1807,8 +1859,18 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert result is not None
             return catlab.transformation_component(result, value)
 
-        result = self.construct_two_morphism(first.domain(), second.codomain(), component, first.source_functor(), second.target_functor())
-        catlab.compose_transformations(result, first, second, first.source_functor(), second.target_functor())
+        result = self._construct_transformation(
+            first.domain(),
+            second.codomain(),
+            component,
+            first.source_functor(),
+            second.target_functor(),
+        )
+        catlab.compose_transformations(
+            result, first, second, first.source_functor(), second.target_functor()
+        )
+        result.retain_factors(first, second)
+        cells.retain_composite(self.morphism_category(1), result, first, second)
         return result
 
     # -- horizontal composition with 1-morphisms: whiskering (POL-CAT-021, POL-MATH-036) ---
@@ -1835,8 +1897,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """``H . eta: H F => H G`` for ``eta: F => G`` in ``Fun(I, D)`` and ``H: D -> E``; its component at ``X`` is ``H(eta_X)``."""
         source = transformation.source_functor()
         assert source.codomain() is functor.domain()
-        images = self.exponential(source.domain(), functor.codomain())
-        from sage_categories.engines import catlab
+        from sage_categories.engines import catlab, cells
 
         source_image = self.postcompose(functor, transformation.domain())
         target_image = self.postcompose(functor, transformation.codomain())
@@ -1846,16 +1907,16 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert result is not None
             return catlab.transformation_component(result, value)
 
-        result = images.morphism_category(1)(source_image, target_image)(component)
+        result = self._construct_transformation(source_image, target_image, component)
         catlab.whisker_left(result, functor, transformation, source_image, target_image)
+        cells.retain_whisker_left(self.morphism_category(1), result, functor, transformation)
         return result
 
     def whisker_right(self, transformation: NaturalTransformation, functor: Functor) -> NaturalTransformation:
         """``theta . F: H F => K F`` for ``theta: H => K`` in ``Fun(D, E)`` and ``F: I -> D``; its component at ``X`` is ``theta_{F(X)}``."""
         source, target = transformation.source_functor(), transformation.target_functor()
         assert functor.codomain() is source.domain()
-        images = self.exponential(functor.domain(), source.codomain())
-        from sage_categories.engines import catlab
+        from sage_categories.engines import catlab, cells
 
         source_image = self.compose_morphisms(source, functor)
         target_image = self.compose_morphisms(target, functor)
@@ -1865,8 +1926,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert result is not None
             return catlab.transformation_component(result, value)
 
-        result = images.morphism_category(1)(source_image, target_image)(component)
+        result = self._construct_transformation(source_image, target_image, component)
         catlab.whisker_right(result, transformation, functor, source_image, target_image)
+        cells.retain_whisker_right(self.morphism_category(1), result, transformation, functor)
         return result
 
     def horizontal_composite(self, second: NaturalTransformation, first: NaturalTransformation) -> NaturalTransformation:
@@ -1883,8 +1945,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """
         outer = self.whisker_right(second, first.source_functor())
         inner = self.whisker_left(second.target_functor(), first)
-        images = self.exponential(first.source_functor().domain(), second.target_functor().codomain())
-        from sage_categories.engines import catlab
+        from sage_categories.engines import catlab, cells
 
         result = None
 
@@ -1892,8 +1953,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert result is not None
             return catlab.transformation_component(result, value)
 
-        result = images.morphism_category(1)(outer.domain(), inner.codomain())(component)
+        result = self._construct_transformation(outer.domain(), inner.codomain(), component)
         catlab.horizontal_composite(result, first, second, first.source_functor(), second.target_functor())
+        cells.retain_composite(self.morphism_category(1), result, outer, inner)
         return result
 
     # -- the constructions Cat() owns (POL-CAT-050; ``cat/cat_constructions.py``) --------

@@ -175,6 +175,28 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             """The target object of ``self``, the endpoint its construction fixed."""
             return self._codomain
 
+        def cell_dimension(self) -> int:
+            """The dimension of this owned cell in homotopy-core's retained signature."""
+            from sage_categories.engines import cells
+
+            return cells.dimension(self.base_category(), self)
+
+        def boundary(
+            self,
+            side: Literal["source", "target"],
+            depth: int = 0,
+        ) -> CategoryOfCategories.ElementType:
+            """The exact owned boundary selected by the native cell boundary path."""
+            from sage_categories.engines import cells
+
+            return cells.boundary(self.base_category(), self, side, depth)
+
+        def typecheck_cell(self) -> None:
+            """Run homotopy-core typechecking on this exact owned cell."""
+            from sage_categories.engines import cells
+
+            cells.typecheck(self.base_category(), self)
+
         def base_category(self) -> Category:
             """The category ``C`` whose morphism this is.
 
@@ -536,6 +558,11 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         """
         morphism = self.base_category().construct_morphism(self._domain_object, self._codomain_object, *args, **kwargs)
         refine(morphism, self)
+        from sage_categories.engines import cells
+
+        cells.native_cell(self.base_category(), morphism)
+        assert cells.boundary(self.base_category(), morphism, "source") is self._domain_object
+        assert cells.boundary(self.base_category(), morphism, "target") is self._codomain_object
         return morphism
 
     def one(self) -> MorphismCategory.ObjectType:

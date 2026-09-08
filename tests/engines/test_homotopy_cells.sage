@@ -31,6 +31,24 @@ def test_owned_morphism_cells() -> None:
     assert native_identity.target().same_as(native_x)
     cells.typecheck(Sets, composite)
 
+    two_identity = Mor(2, Sets)(f, f).one()
+    assert two_identity.cell_dimension() == 2
+    assert two_identity.boundary("source") is f
+    assert two_identity.boundary("target") is f
+    assert two_identity.boundary("source", 1) is X
+    assert two_identity.boundary("target", 1) is Y
+    two_identity.typecheck_cell()
+
+    three_identity = Mor(3, Sets)(two_identity, two_identity).one()
+    assert three_identity.cell_dimension() == 3
+    assert three_identity.boundary("source") is two_identity
+    assert three_identity.boundary("target") is two_identity
+    assert three_identity.boundary("source", 1) is f
+    assert three_identity.boundary("target", 1) is f
+    assert three_identity.boundary("source", 2) is X
+    assert three_identity.boundary("target", 2) is Y
+    three_identity.typecheck_cell()
+
 
 def test_native_signature_respects_invertibility_classification() -> None:
     import sage_categories_homotopy as homotopy

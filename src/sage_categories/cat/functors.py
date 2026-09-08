@@ -299,12 +299,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         return Cat().construct_two_morphism(source, target, assignment, self.diagram(source), self.diagram(target))
 
     def construct_identity(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation:
-        diagram = self.diagram(value)
-        return Cat().construct_two_morphism(
-            value, value,
-            lambda vertex: diagram.codomain().morphism_category(1)(diagram.on_object(vertex), diagram.on_object(vertex)).one(),
-            diagram, diagram,
-        )
+        return Cat().identity_two_morphism(value)
 
     # -- diagrams (POL-FUN-029) -----------------------------------------------------
 

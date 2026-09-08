@@ -87,9 +87,9 @@ def component_between(
     target: Cat().MorphismType,
     label: str,
 ):
-    return lambda value: Mor(TARGET)(source.on_object(value), target.on_object(value))(
-        label
-    )
+    return lambda value: Mor(source.codomain())(
+        source.on_object(value), target.on_object(value)
+    )(label)
 
 
 eta = Mor(Fun(SOURCE, TARGET))(parallel0, parallel1)(
@@ -108,6 +108,17 @@ assert second_factor.label() == "theta"
 assert has_native_transformation(eta)
 assert has_native_transformation(theta)
 assert has_native_transformation(vertical)
+assert eta.cell_dimension() == 2
+assert theta.cell_dimension() == 2
+assert vertical.cell_dimension() == 2
+assert eta.boundary("source") is parallel0
+assert eta.boundary("target") is parallel1
+assert vertical.boundary("source") is parallel0
+assert vertical.boundary("target") is parallel2
+assert eta.boundary("source", 1) is SOURCE
+assert eta.boundary("target", 1) is TARGET
+eta.typecheck_cell()
+vertical.typecheck_cell()
 
 
 # Both whiskerings retain native transformations and evaluate their components only at
@@ -119,6 +130,12 @@ assert left_component.domain().label() == 56
 assert left_component.codomain().label() == 59
 assert left_component.label() == "eta"
 assert has_native_transformation(left)
+assert left.cell_dimension() == 2
+assert left.boundary("source") is left.domain()
+assert left.boundary("target") is left.codomain()
+assert left.boundary("source", 1) is SOURCE
+assert left.boundary("target", 1) is MIDDLE
+left.typecheck_cell()
 
 pre = affine_functor(MIDDLE, SOURCE, 2, -4)
 right = eta.whisker_right(pre)
@@ -127,3 +144,28 @@ assert right_component.domain().label() == 42
 assert right_component.codomain().label() == 43
 assert right_component.label() == "eta"
 assert has_native_transformation(right)
+assert right.cell_dimension() == 2
+assert right.boundary("source") is right.domain()
+assert right.boundary("target") is right.codomain()
+assert right.boundary("source", 1) is MIDDLE
+assert right.boundary("target", 1) is TARGET
+right.typecheck_cell()
+
+
+# Horizontal composition uses both lower-boundary whiskerings and then the native
+# top-boundary attachment, while Catlab supplies the semantic component.
+post1 = affine_functor(TARGET, MIDDLE, 3, 6)
+sigma = Mor(Fun(TARGET, MIDDLE))(post, post1)(
+    component_between(post, post1, "sigma")
+)
+horizontal = eta.horizontal(sigma)
+horizontal_component = horizontal.component(SOURCE(17))
+assert horizontal_component.domain().label() == 56
+assert horizontal_component.codomain().label() == 60
+assert has_native_transformation(horizontal)
+assert horizontal.cell_dimension() == 2
+assert horizontal.boundary("source") is horizontal.domain()
+assert horizontal.boundary("target") is horizontal.codomain()
+assert horizontal.boundary("source", 1) is SOURCE
+assert horizontal.boundary("target", 1) is MIDDLE
+horizontal.typecheck_cell()

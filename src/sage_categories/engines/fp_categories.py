@@ -17,6 +17,7 @@ __all__ = [
     "owned_morphism",
     "owned_object",
     "reduce_word",
+    "terminal_object",
 ]
 
 
@@ -213,6 +214,22 @@ def owned_object(category: object, native: GapElement) -> object:
     """Reconstruct one owned vertex from its native FpCategories object."""
     index = int(libgap.ObjectIndex(native)) - 1
     return category(tuple(category.labels())[index])
+
+
+def terminal_object(category: object) -> object | None:
+    """Choose the first native-certified terminal vertex, if one exists."""
+    presentation = _presentation(category)
+    if not bool(libgap.HasIsFiniteCategory(presentation.native)):
+        return None
+    if not bool(libgap.IsFiniteCategory(presentation.native)):
+        return None
+    for target in presentation.native_objects:
+        if all(
+            len(libgap.MorphismsOfExternalHom(source, target)) == 1
+            for source in presentation.native_objects
+        ):
+            return owned_object(category, target)
+    return None
 
 def owned_morphism(category: object, native: GapElement) -> object:
     """Reconstruct one owned morphism from its native path representative."""

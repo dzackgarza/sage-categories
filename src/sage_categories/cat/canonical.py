@@ -123,6 +123,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         self._object_set: MonoDict = MonoDict()
         self._morphism_set: MonoDict = MonoDict()
         self._finite_arrows: tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass | None = None
+        self._terminal: FinitePresentedCategory.ObjectType | None = None
         super().__init__()
         self._vertices = {label: self.ObjectType(VertexData(label)) for label in labels}
         register_handler(self._equality, self._equal_objects)
@@ -203,26 +204,14 @@ class FinitePresentedCategory(Category[[Word], []]):
         return self._finite_arrows
 
     def Terminal(self) -> FinitePresentedCategory.ObjectType:
-        """The terminal vertex: the one receiving exactly one morphism from every vertex.
+        """A retained terminal vertex certified by native finite Hom sets."""
+        if self._terminal is None:
+            from sage_categories.engines import fp_categories
 
-        A terminal object is the limit of the empty diagram; in a finite category it is the
-        object ``t`` with a single morphism ``v -> t`` from each object ``v`` (Mathlib
-        ``CategoryTheory.Limits.IsTerminal``).  The simplex ``[n]`` has terminal ``n``; the
-        walking parallel pair has none, and this raises as the generic declaration does.
-        """
-        arrows = self.finite_morphisms()
-        assert arrows is not Unknown, f"{self!r} has no finite morphism enumeration to decide a terminal object"
-        vertices = tuple(self(label) for label in self._labels)
-        candidates = tuple(
-            target
-            for target in vertices
-            if all(
-                sum(1 for arrow in arrows if arrow.domain() is source and arrow.codomain() is target) == 1
-                for source in vertices
-            )
-        )
-        assert len(candidates) == 1, f"{self!r} declares no terminal object"
-        return candidates[0]
+            selected = fp_categories.terminal_object(self)
+            assert selected is not None, f"{self!r} declares no native-computable terminal object"
+            self._terminal = selected
+        return self._terminal
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.MorphismType:
         source, word = enumerated_datum(ask(self.morphism_set()), point)

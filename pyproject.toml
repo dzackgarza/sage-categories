@@ -20,7 +20,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-sage_categories = ["juliapkg.json"]
+sage_categories = ["juliapkg.json", "engines/*.jl"]
 [dependency-groups]
 dev = [
     "hypothesis>=6.165,<7",

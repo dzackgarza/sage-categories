@@ -17,15 +17,55 @@ from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 
 __all__ = [
+    "NativeCategoryRealization",
+    "NativeFunctorRealization",
     "NativeMorphismRealization",
     "NativeMorphismRealizations",
     "NativeObjectRealization",
     "NativeObjectRealizations",
+    "NativeTransformationRealization",
     "NativeUniversalPresentationRealization",
     "NativeUniversalPresentationRealizations",
+    "has_native_category",
+    "has_native_functor",
+    "has_native_transformation",
+    "native_category",
+    "native_functor",
+    "native_transformation",
     "native_universal_presentation",
+    "retain_native_category",
+    "retain_native_functor",
+    "retain_native_transformation",
     "retain_native_universal_presentation",
 ]
+
+@dataclass(frozen=True, eq=False, slots=True)
+class NativeCategoryRealization[Native]:
+    """A native category model for one exact owned category."""
+
+    owner: Category
+    native: Native
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class NativeFunctorRealization[Native]:
+    """A native functor retaining its exact owned source and target categories."""
+
+    value: MorphismCategory.ObjectType
+    source: Category
+    target: Category
+    native: Native
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class NativeTransformationRealization[Native]:
+    """A native transformation retaining its exact owned functor endpoints."""
+
+    value: MorphismCategory.ObjectType
+    source: MorphismCategory.ObjectType
+    target: MorphismCategory.ObjectType
+    native: Native
+
 
 @dataclass(frozen=True, eq=False, slots=True)
 class NativeObjectRealization[Native, Construction]:
@@ -192,7 +232,54 @@ class NativeUniversalPresentationRealizations[NativeDiagram, NativePresentation]
         return self._records.get(presentation)
 
 
+_native_categories: _IdentityRecords[NativeCategoryRealization[object]] = _IdentityRecords()
+_native_functors: _IdentityRecords[NativeFunctorRealization[object]] = _IdentityRecords()
+_native_transformations: _IdentityRecords[NativeTransformationRealization[object]] = _IdentityRecords()
 _universal_presentations: NativeUniversalPresentationRealizations[object, object] = NativeUniversalPresentationRealizations()
+
+def retain_native_category(owner: Category, native: object) -> NativeCategoryRealization[object]:
+    record = NativeCategoryRealization(owner, native)
+    _native_categories.retain(owner, record)
+    return record
+
+def has_native_category(owner: Category) -> bool:
+    return _native_categories.has(owner)
+
+def native_category(owner: Category) -> NativeCategoryRealization[object]:
+    return _native_categories.get(owner)
+
+def retain_native_functor(
+    value: MorphismCategory.ObjectType,
+    source: Category,
+    target: Category,
+    native: object,
+) -> NativeFunctorRealization[object]:
+    assert value.domain() is source and value.codomain() is target
+    record = NativeFunctorRealization(value, source, target, native)
+    _native_functors.retain(value, record)
+    return record
+
+def has_native_functor(value: MorphismCategory.ObjectType) -> bool:
+    return _native_functors.has(value)
+
+def native_functor(value: MorphismCategory.ObjectType) -> NativeFunctorRealization[object]:
+    return _native_functors.get(value)
+
+def retain_native_transformation(
+    value: MorphismCategory.ObjectType,
+    source: MorphismCategory.ObjectType,
+    target: MorphismCategory.ObjectType,
+    native: object,
+) -> NativeTransformationRealization[object]:
+    record = NativeTransformationRealization(value, source, target, native)
+    _native_transformations.retain(value, record)
+    return record
+
+def has_native_transformation(value: MorphismCategory.ObjectType) -> bool:
+    return _native_transformations.has(value)
+
+def native_transformation(value: MorphismCategory.ObjectType) -> NativeTransformationRealization[object]:
+    return _native_transformations.get(value)
 
 def retain_native_universal_presentation(
     owner: Category,

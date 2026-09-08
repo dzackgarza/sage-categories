@@ -436,7 +436,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             if member_object in self._components:
                 return self._components[member_object]
             source, target = self.source_functor(), self.target_functor()
-            component = self._assignment(member_object)
+            from sage_categories.engines import catlab
+
+            component = catlab.transformation_component(self, member_object)
             expected = source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
             assert component in expected, f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
             self._components[member_object] = component

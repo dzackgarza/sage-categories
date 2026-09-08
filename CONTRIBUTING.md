@@ -21,6 +21,7 @@ Phase cards alone record current work and acceptance state.
 | `POL-SCOPE-008`, `POL-SCOPE-010`, `POL-SCOPE-011`, `POL-SCOPE-012`, `POL-SCOPE-013`, `POL-SCOPE-016` | [Layer ownership][layer ownership]. |
 | `POL-SCOPE-014` | Apply a primitive ban to its stated purpose and layer; an implementation-only kernel use is not mathematical classification. |
 | `POL-SCOPE-015` | A primitive ban applies to every layer unless an explicit layer rule narrows it. |
+| `POL-SCOPE-017` | [Checkpoints and progress over time](AGENTS.md#checkpoints-and-progress-over-time) measures retained public capability against the unchanged task, including regression and restoration, rather than commit or activity counts. |
 
 ## Owned package universe
 
@@ -136,6 +137,7 @@ Phase cards alone record current work and acceptance state.
 | `POL-ENGINE-011` | A timeout, crash, incomplete calculation, or indeterminate engine result establishes no property, refinement, or Boolean answer. |
 | `POL-ENGINE-013` | A private representation, cache, or algorithm call requires no realization functor, category, compiler binding, or natural transformation. |
 | `POL-ENGINE-015` | [Fixed private dependencies][fixed private dependencies]. |
+| `POL-ENGINE-017` | [Replacing an engine or representation](AGENTS.md#replacing-an-engine-or-representation) requires transfer of the complete assigned operation and its admitted domain; replacing one inner calculation does not replace its surrounding algorithm or consumer. |
 
 ## Algebraic generality
 
@@ -152,15 +154,17 @@ Phase cards alone record current work and acceptance state.
 | `POL-GEN-009` | Treat one Python realization with different base objects, ambient categories, actions, or structure morphisms as different mathematical objects. Relate them through the applicable scalar-change functor. |
 | `POL-GEN-010` | Preserve infinite algebra-generation data. Do not force a finitely generated presentation onto an algebra such as `QQ` over `ZZ`. |
 | `POL-GEN-011` | Keep rank, dimension, cardinality, and minimum number of module generators distinct. Use each invariant only under its defining hypotheses. |
-| `POL-GEN-012` | Assume finiteness only when the mathematical definition or a selected property subcategory requires it. Define the arbitrary small indexed construction first and obtain its finite form by restriction. |
+| `POL-GEN-012` | Assume finiteness only when the mathematical definition or a selected property subcategory requires it. Define the arbitrary small indexed construction first and obtain its finite form by restriction. [Mathematical generality](specs/computational-generality.md#mathematical-domain) and [infinitary constructions](specs/computational-generality.md#infinitary-constructions) fix its representation and executable-map obligations. |
 | `POL-GEN-013`, `POL-GEN-014` | General coefficient families define formal power series. Polynomials require finite support and arise by restriction; use `poincare_series()` for the general operation. |
-| `POL-GEN-015` | Return a lazy iterator when a method enumerates a result family and materialization is not part of the mathematics. Do not encode an unproved finiteness assumption by returning a list or tuple. |
+| `POL-GEN-015` | Return a lazy iterator when a method enumerates a result family and materialization is not part of the mathematics. Do not encode an unproved finiteness assumption by returning a list or tuple. This traversal protocol does not replace an arbitrary mathematical family or admit enumeration of a nonenumerable domain; see [independent finiteness conditions](specs/computational-generality.md#independent-finiteness-conditions). |
 | `POL-GEN-016` | [Internal algebraic families][internal algebraic families]: magmas require a tensor bifunctor, monoids a monoidal structure, and groups a cartesian monoidal structure. |
 | `POL-GEN-017` | [Internal semirings][internal semirings] and [Internal rings][internal rings]. |
 | `POL-GEN-018` | [Module objects][module objects] and [Module action laws][module action laws]. |
 | `POL-GEN-019` | [Algebra objects][algebra objects] and [Algebra structure functor][algebra structure functor]. |
 | `POL-GEN-020` | Define each algebraic family once over its ambient parameter. An instance fixes the parameter; it is neither the definition nor its specialization. Cite each instance and state only downstream mathematical additions. |
 | `POL-GEN-021` | [Algebraic laws][algebraic laws]. Structure maps are morphisms out of products; they carry no diagram, cone, injection, or projection. |
+| `POL-GEN-022` | Keep carrier size, presentation size, index size, arity, support, chosen enumeration, and decidability separate under [independent finiteness conditions](specs/computational-generality.md#independent-finiteness-conditions). Transfer a finiteness property through a functor only with the relevant theorem. |
+| `POL-GEN-023` | [Finite observations and approximations](specs/computational-generality.md#finite-observations-and-approximations) retain the cutoff and comparison to the original object; finite evidence gives an exact global answer only under a theorem establishing its sufficiency. |
 
 ## Forms and lattices
 
@@ -476,6 +480,7 @@ Phase cards alone record current work and acceptance state.
 | Policy identifiers | Contract |
 | --- | --- |
 | `POL-TEST-001`, `POL-TEST-002`, `POL-TEST-003`, `POL-TEST-004`, `POL-TEST-005`, `POL-TEST-006`, `POL-TEST-007`, `POL-TEST-008`, `POL-TEST-009`, `POL-TEST-010`, `POL-TEST-011`, `POL-TEST-012`, `POL-TEST-013`, `POL-TEST-014`, `POL-TEST-015`, `POL-TEST-016`, `POL-TEST-017`, `POL-TEST-018`, `POL-TEST-019`, `POL-TEST-020`, `POL-TEST-021`, `POL-TEST-022`, `POL-TEST-023`, `POL-TEST-024`, `POL-TEST-025`, `POL-TEST-026`, `POL-TEST-027`, `POL-TEST-028`, `POL-TEST-029`, `POL-TEST-030`, `POL-TEST-031` | [Verification][verification]. |
+| `POL-TEST-032` | [Preserve the strength of the example](AGENTS.md#preserve-the-strength-of-the-example) applies to command selection and source slicing as well as assertion edits. Unexecuted assertions do not establish preservation of a shared operation's domain. |
 
 ## Performance
 

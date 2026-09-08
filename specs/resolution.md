@@ -63,13 +63,22 @@ SymPy proposition expressions are the sole public engine values.
 Their mathematical predicates remain category-owned.
 No dependency defines the category graph, category containment, or another semantic owner.
 
-The inspected dependencies evaluate only finite or presented functor-category cases.
-The owned theory can still construct an arbitrary symbolic `Fun(I, C)` and its universal presentations.
-Evaluation is available only when an exact engine adapter supports the supplied presentation.
-They also do not supply a strict pullback category of arbitrary functors or one Python--GAP--Julia bridge.
-CAP object-level pullbacks are not pullbacks in owned `Cat`.
-Mathlib and Agda Categories provide mature formal references for generic functor and comma categories, but no executable engine for this runtime.
-Repository-owned implementation of any uncovered generic construction requires owner approval before its phase starts.
+The finite table and finite presentation interfaces in this table describe those
+interfaces' scope, not the full capabilities of their packages or a restriction on
+owned `Fun(I, C)`. Native callable actions, symbolic presentations, and exact
+algorithms have distinct input requirements. Verify the actual operation before
+claiming an external dependency cannot supply it.
+The owned theory retains general functor categories and universal presentations;
+their required public actions follow the mathematical contract in
+[computational-generality.md](computational-generality.md#representation-and-execution).
+CAP object-level pullbacks alone do not establish pullbacks in owned `Cat`.
+An uncovered construction or missing Python--GAP--Julia interoperation remains an
+implementation obligation under the governing plan. Mathlib and Agda Categories
+remain formal references for generic functor and comma categories; a formal
+reference alone supplies no executable adapter for this runtime.
+Repository-owned implementation of an uncovered generic construction requires
+owner approval before its work unit starts. Existing approval in the governing
+plan remains approval; a missing adapter does not authorize duplicate algorithms.
 
 Development uses pytest `>=9.1,<10`, Hypothesis `>=6.165,<7`, Ruff `>=0.16.5,<1`, mypy `>=2`, and `dzackgarza/sagemath-mypy-plugin@main`.
 Migration uses LibCST `>=1.9,<2` until its codemods finish.

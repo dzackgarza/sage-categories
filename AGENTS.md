@@ -197,6 +197,35 @@ Leaf categories delegate computation to backend engines (such as GAP, Julia/Catl
 `Cat` coordinates these engines through category structure.
 Every mathematical algorithm must cite its external engine owner unless proven that no dependency supplies it.
 
+### Replacing an engine or representation
+
+Before replacing a shared operation, compare its full declared input domain with
+the proposed engine's domain. Read the existing consumers of the displaced paths,
+including nonfinite and symbolic cases. Use
+[computational generality](specs/computational-generality.md) to distinguish carrier
+size, presentation size, index size, chosen enumeration, and decidability.
+An engine restriction belongs to that computation; it cannot silently narrow the
+shared constructor, its annotations, its functor images, or inherited operations.
+
+Trace the complete responsibility being replaced: input representation, identities,
+composition, relations, any promised inverses or decision procedures, and public
+reconstruction. A native reduction call inside a local path algorithm replaces only
+reduction. A native apex calculation replaces neither the retained cone nor its
+mediator. Keep the rest of the originally assigned responsibility open until its
+replacement works through the same public consumer.
+
+Remove a displaced implementation only after its required behavior has transferred
+to the conforming owner. If the old implementation violates policy but supplies a
+valid operation, preserve the operation's assertions and repair its ownership.
+Neither keeping an obsolete fallback nor deleting the operation satisfies the
+replacement. When a complete transfer is blocked, retain the explicit incomplete
+claim under its existing owner; do not mark the unit accepted or change its domain.
+
+When a new consumer fails on a constructed category, follow the same operation
+through its defining functors and generic owner. Do not restrict acceptance to raw
+engine categories merely because composites, slices, or functor images expose the
+missing interoperation. A broader private adapter test cannot replace this path.
+
 ### Construction, scope, and generality
 
 Follow initialization in dependency order: written source data, required functor images, then the inherited operation using that state.
@@ -222,6 +251,10 @@ Use the existing generic calculus or the specified engine domain to cover the re
 Keep legitimate finite or presented evaluation restrictions explicit at their owner.
 Do not expand those restrictions to excuse missing generic representation, retained maps, or declared categorical structure.
 A later integration phase composes working capabilities; it cannot retroactively justify accepting an unexercised primitive.
+Use a small complete example of the stated domain. Substituting a finite domain,
+identity action, strict coherence, or fixed finite stage makes a different claim.
+The infinite and nonenumerable obligations are at their
+[specification owner](specs/computational-generality.md#acceptance-across-domains).
 
 ## Review and acceptance
 
@@ -252,6 +285,28 @@ Record out-of-unit findings with their issue or mathematical owner. They do not 
 Keep one current acceptance record and one unresolved-work section on each card.
 Archive detailed reviews once; do not paste them into subsequent cards or prompts.
 The governing plan's complete integration consumers determine closure; historical R6 status does not substitute for them.
+
+### Checkpoints and progress over time
+
+A committed adapter or targeted reproducer is a useful intermediate artifact.
+Keep its claim at that boundary until the assigned public consumer and affected
+preservation obligations hold. Do not turn a successful inner call into acceptance
+of its operation family or advance a dependent unit on that premise. Independent
+authorized work can continue while the incomplete prerequisite stays visible.
+
+For a temporal assessment, reconstruct what the public consumer could do at the
+start, what became possible, what stopped working, and what was subsequently
+restored. Follow each correction across commits and handoffs as the same operation.
+Restoring a regression restores lost capability; it does not establish another new
+capability. Distinguish productive diagnosis that yields a new counterexample or
+repairs the consumer from repeated changes leaving the same failure intact.
+
+Use timestamps and observed active work to order that evidence. Commit counts,
+changed-line totals, diagnostic totals, review counts, and the fraction of commits
+devoted to administration are not measures of substantive progress. A missing
+activity record does not establish idle time. Report gains and losses by capability
+and dependency, without cancelling an unresolved required regression against an
+unrelated gain or declaring all work unproductive because one claim remains open.
 
 ### Review the claim independently
 
@@ -291,6 +346,8 @@ Apply these actions to observed conditions, regardless of how productive the cur
 | A task is called difficult because it contains many similar items | Examine one operation and its dependencies; execute independent items as a batch. |
 | A known command fails again without new evidence | Read the owned command and first failure. Change the hypothesis before another run. |
 | A reviewer requests already-located provenance again | Open the retained locator. Search further only if it is incomplete or contradicted. |
+| The same public operation loses an already repaired domain or law | Recover the earlier failing and passing consumer, locate the changed premise, and repair that boundary before claiming restoration. A new filename or engine does not reset the correction sequence. |
+| A finite backend introduces enumeration into a shared constructor | Compare the declared domain with the adapter preconditions and exercise an affected nonfinite consumer before accepting the replacement. |
 
 Keep a correction sequence anchored to the same public operation and expected result.
 Renaming the issue, changing files, switching agents, or proposing a new cause does not start a new sequence.
@@ -366,6 +423,19 @@ Keep the assertion, record the defect with its owner, and commit the test red un
 Read each assertion as a proposition: its inputs, quantifiers, expected result, and the wrong behavior it excludes.
 Changing the specimen to an easier case changes what it proves, even if its test name stays the same.
 
+Selecting which assertions execute is part of the proof boundary. A test file left
+unchanged on disk supplies no evidence when a command cuts its source before the
+nonfinite cases, filters them out, or invokes only an easier function. Targeted
+selection is useful while diagnosing a case; label its result by that case. Before
+accepting a shared replacement, exercise the affected consumer obligations that
+selection omitted, through the declared verification route.
+
+Inspect removed implementation branches alongside the assertions and invocations
+that used them. Preserve their mathematical obligations even when the implementation
+was nonconforming. Adapter-level exercises establish adapter behavior; the public
+constructor, functor action, inherited operation, and reconstruction remain separate
+obligations until the ordinary consumer reaches them.
+
 For framework acceptance, a small local category may supply its mathematical data, operations, and permitted declarations.
 It must receive the framework capability under review exactly as an ordinary leaf receives it.
 If setup installs generic methods, registers retained projections, copies inherited state, or directly supplies Python inheritance, inspect its role.
@@ -408,6 +478,9 @@ Use only the active plan's explicit checkpoint exception while that defect remai
 
 A diagnostic baseline classifies already-established failures; it is not evidence that a new failure is pre-existing.
 Attribute a claimed baseline failure to its recorded owner and cause before using the exception.
+Compare concrete failures, not just their number: removing one old failure while
+introducing another does not preserve the baseline. A run that stops during import
+does not test the later mathematical assertions. Keep that distinction in its claim.
 Read the first concrete failure and the relevant output once. Re-run after a change or new diagnostic question.
 Inspect the actual rule scope when a green check is used for acceptance; an empty or wrong scope proves nothing.
 Prefer a decisive public exercise to another aggregate diagnostic total.

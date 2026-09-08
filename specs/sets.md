@@ -61,6 +61,19 @@ Morphism categories, fixed-object methods, universal-construction methods, and o
 
 `X.cardinality()` returns an applied query with result category `Cardinal()`. `ask(X.cardinality())` returns an owned cardinal or Sage `Unknown`.
 
+## Nonfinite domains
+
+The [generality contract](computational-generality.md) applies to every set
+constructor and inherited operation. `Sets()` includes finite, infinite,
+nonenumerable, and predicate-defined sets. Neither membership, points, maps, images,
+products, nor their universal data require a chosen enumeration of the underlying
+set. An individual decision procedure may require additional hypotheses or data.
+
+Rule-defined integers and the real domain remain admissible inputs to the same
+product and morphism constructors. A finite engine route must establish its own
+chosen finite data before lowering; it cannot make `_values`, a list of points, or
+complete equality tables prerequisites of the shared set surface.
+
 ## Canonical objects and the terminal object
 
 `Sets()` realizes these inherited constructions, each retained by identity:
@@ -130,13 +143,19 @@ In `Sets()`:
 A morphism-property predicate returns its applied proposition.
 `ask()` evaluates it.
 The kernel refines a morphism only after an exact result, scoped hypothesis, or named theorem establishes the property.
-Over an enumerated domain the three properties are read off the table.
+Over a domain with a chosen finite enumeration, a complete image table decides
+injectivity using exact equality of its images. Surjectivity and bijectivity also
+require an exact comparison of that image with the entire codomain. Infinite
+enumerations cannot supply a completed table. Other exact symbolic or structural
+algorithms can decide these properties on their stated domains.
 Over a rule-defined domain they are decided from the retained symbolic form: solving `f(x) = a` for the domain symbols with exactly one solution that the domain rule admits under the codomain rule establishes a bijection and yields the inverse rule; solving `f(x) = f(y)` with the sole solution `y = x` establishes injectivity, and two admitted samples with one image refute it; a codomain sample whose only preimage the domain rule rejects refutes surjectivity.
 Anything else stays `Unknown`.
 
 An inverse of an isomorphism is an owned set morphism.
 It satisfies both inverse equations.
-For a bijection between enumerated sets it reads the table backwards; for a symbolic bijection it is the solved inverse rule.
+For a bijection presented by a complete finite table it reads that table backwards;
+for a symbolic bijection it uses the established inverse rule. A supplied executable
+enumeration isomorphism retains its inverse independently of a finite table.
 
 ## Products
 
@@ -147,10 +166,18 @@ For a diagram `i |-> X_i` on `S`, `Sets()` constructs the owned set
 \prod_{i\in S} X_i=\{(x_i)_{i\in S}\mid x_i\in X_i\text{ for every }i\in S\}.
 \]
 
-Membership is the conjunction of the component membership propositions.
-Equality is the conjunction of the component equality propositions.
-A product of factors that retain object forms states its membership by those propositions and materializes no tuples, because its size is the product of theirs and its maps are decided by the factors' forms.
-A product of enumerated factors that retain no form is enumerated.
+Membership quantifies over the component membership propositions.
+Equality quantifies over the component equality propositions.
+For an infinite index, retain that quantifier and the indexed rule; do not construct
+it by exhausting a Python iterator. Finite conjunction is its finite-index case.
+A product of factors that retain object forms states its membership by those
+propositions without enumerating the carrier. Retained forms supply exact map
+operations on the domains their engines support; possession of a form alone does
+not establish a decision procedure for every product query.
+A finite chosen index with chosen finite enumerations of every factor admits finite
+enumeration. Enumeration of the factors alone does not supply enumeration of an
+arbitrary product: a countable product of two-element sets is already uncountable.
+Preserve general products through their indexed families and selected presentations.
 `ask()` evaluates either proposition when the retained diagram and the selected set engines supply an exact algorithm.
 The set implementation selects a private exact representation from the retained diagram.
 The membership and equality predicates use the components obtained through the inherited projections.
@@ -175,10 +202,21 @@ The cardinality query uses the computational cases in [Cardinality and enumerati
 The specialization supplies the following set-valued realizations.
 
 The limit of `D: I -> Sets()` is the predicate subset of the product `prod_{i in Ob(I)} D(i)` cut out by compatibility.
-A family's membership proposition is the conjunction of `D(u)(x_i) == x_j` over every generating morphism `u: i -> j` of `I`. `ask()` decides this proposition when `I` is finitely presented and every generating equality decides; otherwise it returns `Unknown`.
+A family's membership proposition quantifies the equations `D(u)(x_i) == x_j` over
+every generating morphism `u: i -> j` of `I`. For a finite presentation the equations
+form a finite conjunction; decided component equations decide that conjunction.
+For an infinite family, exact construction theorems or applicable symbolic handlers
+may decide the quantified proposition. Otherwise `ask()` returns `Unknown`, while
+the limit presentation and its maps remain represented.
 
 The colimit of `D` is the quotient of the coproduct `coprod_i D(i)` by the equivalence relation generated by `(i, x) ~ (j, D(u)(x))`. Its element equality uses the exact category-owned SymPy predicate.
-For `I = omega`, the exact handler decides `True` when two representatives agree at the larger of their two indices under the transition maps and returns `Unknown` otherwise; for every other infinite shape it returns `Unknown`.
+For `I = omega`, two representatives are equal precisely when their images agree at
+some common later stage. Agreement at the larger of the two original indices is a
+sufficient positive case; failure to agree there need not persist at later stages.
+Use an exact applicable handler or construction theorem to decide more. Absence of
+such a decision returns `Unknown`; no infinite shape forces every equality query to
+remain undecided. The index, transition maps, injections, and universal mediator
+are retained independently of this equality decision.
 
 ## Subobjects, images, and power objects
 
@@ -482,6 +520,13 @@ The implementation satisfies this specification when the public API establishes 
 - every abstract subobject retains its monomorphism and chosen image;
 
 - products retain `product_projection(i)` and universal maps;
+
+- the same public product constructor works on rule-defined integer and real
+  domains; owned point evaluation, projections, and pairing preserve their exact
+  values and endpoints without a finite enumeration requirement;
+
+- infinite indexed products retain their full index and component rules; selected
+  projections and mediator equations operate beyond any finite sample;
 
 - coproducts retain `coproduct_injection(i)` and universal maps;
 

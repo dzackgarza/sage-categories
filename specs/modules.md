@@ -161,10 +161,40 @@ A\longrightarrow \operatorname{End}_C(X)
 in `M`. This is the closed or enriched presentation of the same module action.
 The action morphism `A bullet X -> X` remains the definition under the weaker actegory hypotheses.
 
-In the ordinary module setting, elements and morphisms use a tensor representation.
-Vector and matrix constructors are its special cases, with shape and base-ring data (D46).
+In the ordinary module setting, elements and morphisms use the specified tensor
+representation. Vector and matrix constructors are its coordinate special cases,
+with the necessary chosen data and base ring (D46). A finite matrix is not the
+definition of an arbitrary module morphism.
 
 For ordinary left modules over a ring `R`, take `M = Ab`, regard `R` as a monoid object under tensor product, and use the standard `Ab`-action on `Ab`.
+
+## Size and coordinate presentations
+
+`Modules(A, C)` imposes no finite generation, finite rank, freeness, basis, or chosen
+enumeration beyond the supplied ambient hypotheses. Finite-dimensional linear
+algebra engines compute their stated special cases. They cannot determine the
+domain of the module category or its inherited operations; see
+[computational generality](computational-generality.md).
+
+For an ordinary ring `R` and index set `S`, the free module `R^(S)` is the algebraic
+direct sum of copies of `R`. Its elements have finite support in `S`, even when `S`
+is infinite or nonenumerable. This finiteness concerns each element separately.
+The full module and its defining injections retain all of `S`.
+The direct product `R^S` permits arbitrary component families and is a different
+construction when `S` is infinite and `R` is nonzero.
+
+A linear map out of `R^(S)` is determined by a supplied family of images of its
+basis elements. That family need not be materialized. Evaluation on a finite
+linear combination needs only its support and the corresponding images. Matrices
+require the appropriate bases and index families; a finite rectangular matrix
+cannot replace a morphism on an infinite rank module. General modules need not
+have a basis at all.
+
+The structure functors retain the entire underlying object and action. In
+particular, the module underlying a finitely presented algebra need not be finitely
+generated; [algebras.md](algebras.md#finite-presentation-and-the-underlying-module)
+fixes a distinguishing consumer. A coordinate algorithm's limitation must not
+truncate that functor image or narrow its declared target.
 
 ## Instances
 
@@ -189,6 +219,10 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 - `A` is a monoid object of the acting monoidal category `M`.
 
 - The underlying object of a module is an object of the supplied category `C`.
+
+- Ordinary infinite rank module consumers retain their full index and scalar
+  action; evaluation of a map on a finite-support element uses its supplied
+  component images, without imposing a common finite basis on the module.
 
 - The action is a morphism `A bullet X -> X` in `C`.
 

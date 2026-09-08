@@ -25,6 +25,7 @@ The kernel executes class refinement; the property category owns what that refin
 
 | Contract | Canonical specification |
 | --- | --- |
+| Infinite and nonenumerable domains, infinitary constructions, and computational restrictions | [computational-generality.md](computational-generality.md) |
 | `Cat`, `Mor`, `Fun`, points, natural transformations, and categorical calculus | [functor.md](functor.md) |
 | Selected functors and conditions for inheritance | [functor.md — Structure functors](functor.md#structure-functors-and-inherited-classes) |
 | Diagrams, pullbacks, images, opposites, fibers, and universal presentations | [functor.md — Universal constructions](functor.md#diagram-shapes-and-universal-constructions) and its related construction sections |
@@ -56,7 +57,9 @@ The kernel executes class refinement; the property category owns what that refin
 
 Sage supplies controlled C3, dynamic classes, refinement, and identity facilities.
 SymPy supplies proposition algebra, assumptions, and proposition dispatch.
-Typed queries use private exact dispatch. CAP, GAP packages, Catlab, and GATlab serve their declared finite computation domains.
+Typed queries use private exact dispatch. CAP, GAP packages, Catlab, and GATlab serve their declared computation domains.
+Finite evaluator restrictions do not restrict the owned mathematical universe; see
+[mathematical generality](computational-generality.md#mathematical-domain).
 The exact dependency scope is recorded once in [resolution.md](resolution.md#fixed-private-dependencies).
 Every public computation returns an owned value or the authorized public SymPy expression containing private identity atoms.
 

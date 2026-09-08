@@ -1617,3 +1617,34 @@ Source: explicit plan-adoption and supersession instruction in the SageCategorie
 remediation-consolidation conversation, 2026-09-07. The supplied artifact is
 `SageCategories-Detailed-Remediation-Plan.md`, SHA-256
 `525cb453efb5712897be5faf409b3b3c09a5cb402f3e4d7a759a450ba527cf63`.
+
+### D187
+
+Infinite objects, nonenumerable objects, and infinitary constructions belong to the
+framework's mathematical scope. `ZZ`, `RR`, `CP^infty`, adeles, and infinitely
+generated modules such as the module underlying a free finitely presented algebra
+are explicit motivating requirements. Finite or enumerable engine representations
+cannot restrict that scope.
+
+Owner: [Mathematical generality and computation](computational-generality.md), with
+the set, module, and algebra consequences at their topic owners. This clarifies
+`POL-GEN-012`, D27, and D68; it does not change the governing implementation order
+or certify any implementation.
+
+The accompanying workflow changes extend D182. They require preserving the domain
+of replaced operations, separating inner engine calls from complete consumer
+acceptance, and examining which assertions actually execute. Temporal judgments
+follow retained capabilities, regressions, and restorations over observed work
+intervals. The proposed causal chain from backend convenience to narrowed proof
+and premature acceptance is an inference from inspected work, not a claim about
+the worker's intent.
+
+Source: explicit temporal-assessment and subsequent policy/specification instruction
+in Codex session `01a08089-fe93-77b0-b6bb-cbc9d7b0dde4`, 2026-09-08. The policy
+instruction immediately follows the temporal assessment. The transcript parser exposes the message and session locator
+but omits its precise timestamp; this source date retains that limitation.
+Evidence anchors for the operational inference: the removed rule-defined product
+path in `78e48e5`, the retained infinite consumer in
+`tests/sets/test_set_scaffold.sage`, and the 2026-09-08T02:59:49Z selected exercise
+in recorded session `2026-09-07-49d921b8` (tool call `T2CG`). The native replacement
+obligations remain in governing-plan sections 6, 19, and 20.

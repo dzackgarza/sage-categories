@@ -1,0 +1,6 @@
+{
+  "check": "normalize-common",
+  "diagnostics": ".ai-review-ci/sage/normalize-common.diagnostics.log",
+  "log": ".ai-review-ci/sage/normalize-common.log",
+  "status": 0
+}

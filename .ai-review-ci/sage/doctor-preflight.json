@@ -1,0 +1,6 @@
+{
+  "check": "doctor-preflight",
+  "diagnostics": ".ai-review-ci/sage/doctor-preflight.diagnostics.log",
+  "log": ".ai-review-ci/sage/doctor-preflight.log",
+  "status": 0
+}

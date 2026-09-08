@@ -1,0 +1,308 @@
+"""``Groupoids()``, the core functor, and its inclusion (D99; ``specs/functor.md``, "The core functor").
+
+``Groupoids()`` is a declared point of ``Cat()``, and this foundation needs only that
+declaration.  The one arrow the documents state is the inclusion ``U: Groupoids() ->
+Cat()``, and it is the whole content here: a groupoid is a category, a functor between
+groupoids is a functor, and a category isomorphic in ``Cat()`` to a groupoid is one, which
+is the isofibration condition placement follows (POL-FUN-036).  No groupoid theory stands
+behind it, so a category is a groupoid here exactly when it entered ``Groupoids()``, and
+``Core`` is what puts one there.
+
+``Core.on_object(C)``, written ``C.Core()``, has the objects of ``C``, and its morphisms
+are the isomorphisms of ``C``: "the maximal sub-groupoid of C: the subcategory consisting
+of all objects of C but with morphisms only the isomorphisms of C" (nLab "core"; Mathlib
+``CategoryTheory.Core`` with ``Core.inclusion``; both inspected 2026-08-27).  Those are
+the very values of ``C``: an object is a member by ``C``'s membership proposition, a
+morphism by placement in ``Mor(C).Isomorphisms()``, and ``Mor(C.Core())(A, B)(data)``
+constructs through the trusted constructor ``Mor(C)(A, B).Isomorphisms()``
+(POL-MATH-037).  ``C.Core()`` is not ``Mor(C).Isomorphisms()``: that category has the
+isomorphisms of ``C`` as its objects and lives one categorical level higher.
+
+For ``F: C -> D``, ``Core.on_morphism(F)`` restricts ``F`` to those isomorphisms.  A
+functor carries an isomorphism to an isomorphism, with ``F(f⁻¹)`` its inverse (Mathlib
+``CategoryTheory.Functor.mapIso``; inspected 2026-08-29), and retaining that pair is what
+makes the image a morphism of ``D.Core()``, the codomain the restriction is declared
+with, where the restriction's action places it.
+
+``epsilon_C: U(C.Core()) -> C`` is the component at ``C`` of the natural inclusion
+``epsilon: U * Core => End_Cat(Cat()).one()``.  The core selects that same monomorphism as
+its one structural functor, so the component and the structural inclusion are one functor.
+Its image is every isomorphism of ``C``, so an isomorphism of ``C`` with an endpoint in the
+core is one of the core: here, unlike a general subcategory on a multiplicative property,
+the isofibration condition holds.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from sage_categories.cat.category import Assignment, Category, OnMorphism, OnObject
+from sage_categories.cat.declarations import Groupoids
+from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
+from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
+from sage_categories.cat.predicates import Decision
+from sage_categories.cat.predicates import Proposition, ask
+from sage_categories.kernel.refinement import refine
+
+if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
+
+__all__ = ["Core", "CoreCategory", "CoreFixedEndpointCategory", "CoreMorphismCategory", "GroupoidsCategory", "U", "epsilon"]
+
+
+class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
+    """``Groupoids()``: the declared point of ``Cat()`` whose one stated arrow is its inclusion."""
+
+    # A groupoid is a category, a point of a groupoid is an object of it, and a functor
+    # between groupoids is a functor.  Groupoid theory would add its mathematics to the
+    # three bodies below and the documents state none, so all three are empty
+    # (POL-CAT-057).  That the objects here are categories is carried by ``U``, the
+    # inclusion this category selects: a selected structure functor is what makes this
+    # class inherit ``Cat()``'s compiled object class (POL-CAT-053, POL-KERNEL-028).
+    class ObjectType:
+        """A groupoid, which is a category."""
+
+    class ElementType:
+        """A point ``* -> G`` of a groupoid, whose value is an object of it."""
+
+    class MorphismType:
+        """A functor between two groupoids."""
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """Declare this class the implementation of ``Groupoids``, and select the inclusion.
+
+        The first functor is ``End_Cat(Groupoids).one()``, the identity of ``Groupoids``
+        in ``Cat()``, and selecting it is the whole implementation declaration (D156).
+        The inclusion after it is written against ``self``, like every other structure
+        functor: ``Cat`` reads this declaration while constructing the class, and ``self``
+        is the value that construction lands on ``Groupoids``.
+        """
+        return (Fun(Groupoids, Groupoids).one(), Fun(self, Cat()).Monomorphisms().Isofibrations()())
+
+    def __repr__(self) -> str:
+        return "Groupoids"
+
+
+Cat().implement(GroupoidsCategory)
+
+
+class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
+    """``C.Core()``: the objects of ``C`` with its isomorphisms as morphisms."""
+
+    class ObjectType:
+        """An object of ``C``: the core has every one of them, as the same value."""
+
+    class ElementType:
+        """A generalized element ``t: T -> X`` whose defining morphism is an isomorphism, since those are the morphisms of the core."""
+
+    class MorphismType:
+        """An isomorphism of ``C``: the core narrows the morphisms and nothing else."""
+
+    def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
+        self._ambient = ambient
+        self._isomorphisms = ambient.morphism_category(1).Isomorphisms()
+        super().__init__()
+
+    def isomorphisms(self) -> Category:
+        """``Mor(C).Isomorphisms()``, whose objects are the morphisms of this category."""
+        return self._isomorphisms
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (Fun(self, self._ambient).Monomorphisms().Isofibrations()(),)
+
+    def morphism_category_type(self) -> type[CoreMorphismCategory]:
+        return CoreMorphismCategory
+
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
+        return self._ambient.membership_proposition(candidate)
+
+    # -- morphisms: the isomorphisms of ``C``, as its own values (POL-MATH-037) ----------
+
+    def construct_morphism(
+        self,
+        domain: CategoryOfCategories.ElementType,
+        codomain: CategoryOfCategories.ElementType,
+        *args: MorphismData.args,
+        **kwargs: MorphismData.kwargs,
+    ) -> MorphismCategory.ObjectType:
+        """``Mor(C.Core())(A, B)(data)``: the trusted constructor ``Mor(C)(A, B).Isomorphisms()(data)``."""
+        return self._isomorphisms(domain, codomain)(*args, **kwargs)
+
+    def _identity_morphism_(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        """The identity of ``C``, which is a morphism of the core because it is an isomorphism.
+
+        ``C`` owns the identity, so the core states the theorem by placing it (D21,
+        ``POL-MATH-037``); a constructor takes construction data and never a value
+        already constructed (D150).  The placement is ``Mor(C.Core())(X, X)``, the core's
+        own endomorphism monoid: ``Mor(C).Isomorphisms()`` is a declared ancestor of it,
+        so placing the identity there instead would answer with an ancestor of the
+        category that owns the value (``POL-CAT-074``).
+        """
+        identity = self._ambient.morphism_category(1)(member_object, member_object).one()
+        refine(identity, self.morphism_category(1)(member_object, member_object))
+        return identity
+
+    def compose_morphisms(
+        self,
+        second: MorphismCategory.ObjectType,
+        first: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
+        """The composite in ``C``, of two isomorphisms and so a morphism of the core.
+
+        ``C`` owns the composition, so the core states that theorem by placing the
+        composite (D21, ``POL-MATH-037``), not by feeding it to a constructor (D150).
+        The placement is ``Mor(C.Core())(A, D)``, the hom category of the core the
+        composite belongs to, for the reason ``_identity_morphism_`` gives.
+        """
+        composite = self._ambient.compose_morphisms(second, first)
+        refine(composite, self.morphism_category(1)(first.domain(), second.codomain()))
+        return composite
+
+    def inverse_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        """The inverse in ``C``, of an isomorphism and so a morphism of the core.
+
+        A groupoid is a category in which every morphism is invertible, so this is the
+        core's own defining operation and its value is a morphism of the core: ``C`` owns
+        the inverse and the core states that theorem by placing it (D21, ``POL-MATH-037``),
+        not by feeding a value already constructed to a constructor (D150).  The placement
+        is ``Mor(C.Core())(B, A)``, for the reason ``_identity_morphism_`` gives; leaving
+        it in ``Mor(C).Isomorphisms()``, a declared ancestor, would answer with an ancestor
+        (``POL-CAT-074``) and take ``f⁻¹ * f`` out of the core.
+        """
+        inverse = self._ambient.inverse_morphism(morphism)
+        refine(inverse, self.morphism_category(1)(morphism.codomain(), morphism.domain()))
+        return inverse
+
+    def retain_inverses(
+        self,
+        forward: MorphismCategory.ObjectType,
+        backward: MorphismCategory.ObjectType,
+    ) -> None:
+        self._ambient.retain_inverses(forward, backward)
+
+    def retained_inverse(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | None:
+        """The pair ``C`` retains, which is the pair the core retains: an inverse pair of ``C`` between two of its objects is one of the core.
+
+        ``retain_inverses`` above records into ``C``, so this reads from ``C``.  A word of
+        the core cancels two adjacent factors exactly when the ambient retains them as
+        mutually inverse (``Mor(C).ObjectType.word``), and the core stores nothing of its
+        own for that reader to find.
+        """
+        return self._ambient.retained_inverse(morphism)
+
+    def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
+        """``Mor(C.Core())(A, B)`` narrowed by roots is inhabited exactly when ``Mor(C)(A, B).Isomorphisms()`` narrowed the same way is."""
+        base = hom_category.narrowing_base()
+        target = self._ambient.morphism_category(1)(base.domain(), base.codomain()).property_subcategory(self._isomorphisms)
+        for root in hom_category.narrowing_roots():
+            target = target.property_subcategory(root)
+        return ask(target.is_inhabited())
+
+    def __repr__(self) -> str:
+        return f"{self._ambient!r}.Core()"
+
+
+class CoreMorphismCategory(MorphismCategory):
+    """``Mor(C.Core())``: a morphism of ``C`` is a member exactly when it is an isomorphism."""
+
+    class ObjectType:
+        """An isomorphism of ``C``: the core narrows the morphisms and nothing else."""
+
+    class ElementType:
+        """A generalized element of an isomorphism, read in ``Mor(C.Core())``."""
+
+    class MorphismType:
+        """A 2-morphism between two isomorphisms of ``C``."""
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """The inherited monomorphism into ``Mor(C)``, then the one into ``Mor(C).Isomorphisms()``.
+
+        The objects of this category are the morphisms of the core, which are the
+        isomorphisms of ``C``: the containment is that statement, and D83 has it declared
+        rather than induced from the membership proposition below.  Two morphisms of the
+        core with different endpoints then have ``Mor(C.Core())`` as their least common
+        category, so ``g * f`` is composed by the core, which is where the theorem that
+        the composite is again an isomorphism is stated (``POL-CAT-088``, D21).
+        """
+        return (*super().structure_functors(), Fun.full_subcategory_monomorphism(self, self._base.isomorphisms()))
+
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
+        return self._base.isomorphisms().membership_proposition(candidate)
+
+    def fixed_endpoint_type(self) -> type[CoreFixedEndpointCategory]:
+        return CoreFixedEndpointCategory
+
+
+class CoreFixedEndpointCategory(FixedEndpointCategory):
+    """``Mor(C.Core())(A, B)``: the full subcategory ``Mor(C)(A, B).Isomorphisms()`` of ``Mor(C)(A, B)``."""
+
+    # The core narrows the morphisms of ``C`` and nothing else, so each body below is
+    # empty: an isomorphism ``A -> B`` here is that same value of ``C``.
+    class ObjectType:
+        """An isomorphism ``A -> B`` of ``C``."""
+
+    class ElementType:
+        """A generalized element of such an isomorphism."""
+
+    class MorphismType:
+        """A 2-morphism between two isomorphisms ``A -> B``."""
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """The inherited monomorphism into ``Mor(C.Core())``, then the one into ``Mor(C)(A, B).Isomorphisms()``.
+
+        The containment is the statement and nothing induces it (D83).  The inherited
+        monomorphism reaches ``Mor(C.Core())`` and from there ``Mor(C)``, and neither
+        carries these endpoints, so without this second one nothing says that a morphism
+        of the core between ``A`` and ``B`` is an isomorphism ``A -> B`` of ``C``: the
+        value ``CoreCategory.construct_morphism`` builds in ``Mor(C)(A, B).Isomorphisms()``
+        and this category have no common placement, and refining it here would weaken an
+        established one (``POL-CAT-074``, ``POL-MATH-037``, D21).
+
+        It is full.  ``Mor(C).Isomorphisms()`` is a full subcategory of ``Mor(C)``, so the
+        2-morphisms between two isomorphisms ``A -> B`` are the same on both sides.
+        """
+        isomorphisms_between = self.base_category().isomorphisms()(self.domain(), self.codomain())
+        return (*super().structure_functors(), Fun.full_subcategory_monomorphism(self, isomorphisms_between))
+
+
+def _core_of(category: Category) -> Category:
+    """``Core.on_object(C)``: the core, placed in ``Groupoids()`` because that is where ``Core`` lands."""
+    core = CoreCategory(category)
+    refine(core, Groupoids)
+    return core
+
+
+def _restricted(functor: Functor) -> Functor:
+    """``Core.on_morphism(F)``: ``F`` restricted to the isomorphisms."""
+    core = functor.codomain().Core()
+    return Fun(functor.domain().Core(), core)(functor.on_object, lambda isomorphism: _image(functor, core, isomorphism))
+
+
+def _image(functor: Functor, core: Category, isomorphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+    """``F(f)``, a morphism of ``D.Core()``, because ``F(f⁻¹)`` is retained as its inverse.
+
+    ``F`` owns the image and ``D`` owns the inverse pair, so this action states the
+    restriction's own theorem by placing the image (D21, ``POL-MATH-037``), not by
+    feeding a value already constructed to a constructor (D150).  The placement is
+    ``Mor(D.Core())(F A, F B)``, the hom category of the codomain the restriction was
+    declared with: ``Mor(D).Isomorphisms()`` is a declared ancestor of it, so leaving the
+    image there would answer with an ancestor of the category that owns the value
+    (``POL-CAT-074``), and ``(F g) * (F f)`` would then be composed by ``D`` and leave the
+    core.  The core's own three operations state their theorems the same way.
+    """
+    image = functor.on_morphism(isomorphism)
+    functor.codomain().retain_inverses(image, functor.on_morphism(isomorphism.inverse()))
+    refine(image, core.morphism_category(1)(image.domain(), image.codomain()))
+    return image
+
+
+Core: Functor = Fun(Cat(), Groupoids)(_core_of, _restricted)
+
+# The one retained identity-on-values functor out of ``Groupoids()``, which is also the
+# structure functor ``GroupoidsCategory`` selects after its implementation declaration.
+U: Functor = Fun(Groupoids, Cat()).Monomorphisms().Isofibrations()()
+
+_endofunctors = Fun(Cat(), Cat())
+epsilon: NaturalTransformation = _endofunctors.morphism_category(1)(U * Core, _endofunctors.one())(
+    lambda category: Fun(category.Core(), category).Monomorphisms().Isofibrations()()
+)

@@ -1,0 +1,6 @@
+{
+  "check": "sage-syntax",
+  "diagnostics": ".ai-review-ci/sage/sage-syntax.diagnostics.log",
+  "log": ".ai-review-ci/sage/sage-syntax.log",
+  "status": 0
+}

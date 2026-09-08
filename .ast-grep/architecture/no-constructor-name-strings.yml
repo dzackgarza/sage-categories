@@ -1,0 +1,14 @@
+id: no-constructor-name-strings
+language: python
+severity: error
+files:
+  - src/sage_categories/**/*.py
+ignores:
+  - src/sage_categories/kernel/**
+message: POL-LEAF-064, D133
+rule:
+  pattern: super().__init__($$$ARGS)
+  has:
+    kind: argument_list
+    has:
+      kind: string

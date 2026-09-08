@@ -1,0 +1,3 @@
+from typing import Any
+
+def slice_category(category: Any, base: Any, arrows: tuple[Any, ...]) -> tuple[tuple[Any, ...], tuple[Any, ...]]: ...

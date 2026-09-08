@@ -1,105 +1,123 @@
-"""Minimal structured leaf for ``PartiallyOrderedSets()``.
+"""Local declarations for the ``Relations()`` and ``Posets()`` design specimen.
 
-A poset object is a pair ``(X, R)``. The constructor accepts only the owned
-relation ``R``. Its ambient product determines ``X``.
-
-The private defining data is ``(X, R)``. The selected set projection maps this
-pair to ``X`` and supplies the inherited set surface. The other component remains
-the order data.
-
-Both component projections are mathematical functors. Only the set projection
-is a structure functor. The relation projection remains an ordinary functor because
-its subset-of-a-product catalogue is not a public poset surface.
-
-The poset category is a subcategory of a product category. The first factor contains
-``X``. The second contains the relation subobject ``R``. The general
-subobject-of-product construction supplies both component functors.
-
-In particular, component zero is already an owned object of ``Sets()``. The projection
-extracts that component and uses its canonical set image. No poset method delegates to
-the component by hand.
-
-Elements add no constructor data. The kernel constructs the exact
-``PartiallyOrderedSets().ElementType`` with its ambient poset and retains its
-canonical image in the projected set.
-
-This example presents ``R`` as ``<=``. A strict-order presentation would own
-the corresponding ``<`` operation instead.
-
-Construction in ``PartiallyOrderedSets()`` asserts that ``R`` satisfies the partial-order
-laws. The constructor does not run a law checker. A relation-bearing ambient object can
-instead expose a property proposition and bind exact handlers through the property
-subcategory template.
-
-The ``ask()`` call below decides only the cardinality precondition used by this
-construction. It does not decide the partial-order laws. Theory code constructs known
-posets directly. Interactive code can use ``assume(proposition)`` or
-``proposition.assume()`` for a property supplied by the mathematical context.
+``Relations()`` is sets with additional structure, a structure category: its datum is
+``(X, R <= X * X)``, and it defines its structure functor to ``Sets()`` by its two actions,
+sending a relation to its underlying set ``X``, never to the relation ``R``, and constructs
+it into ``Fun(Relations(), Sets()).Fibrations()``. It declares the ``PartialOrder`` axiom
+together with the private proposition deciding it, applying a new SymPy predicate; the
+``cat_kernel`` generates the public ``R.is_partial_order()``. ``Posets()`` is
+``Relations().PartialOrder()``, its axiom subcategory, and inherits that functor; the poset
+class declares itself the implementation of that implicit subcategory by selecting its
+identity functor as a structure functor, defines its own structure functor to ``Sets()``
+with its theorem, adds order comparison and monotone maps, and wires no constructor.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 
-class PartiallyOrderedSetsCategory(Category):
-    """The category of partially ordered sets and monotone maps."""
+from sympy.logic.boolalg import Boolean
 
-    class ObjectType(Implementation):
-        """Implement the partial order determined by an owned relation."""
+
+class PartialOrderPredicate(Predicate):
+    """State the partial-order laws for an owned relation.
+
+    ``Predicate`` is the base ``Cat`` exports: a SymPy ``Predicate`` whose application is
+    the three-valued proposition only ``ask()`` reads (D179).
+    """
+
+    name = "partial_order"
+
+
+partial_order_laws = PartialOrderPredicate()
+
+
+class RelationsCategory(Category):
+    """Implement relations ``R -> X * X`` over varying ``X``."""
+
+    class ObjectType:
+        """Retain the relation subobject."""
 
         def __init__(
             self,
-            *,
-            category: PartiallyOrderedSetsCategory,
-            relation: SetSubset,
+            relation: Sets().Subobjects(Sets().Products()(X, X)).ObjectType,
         ) -> None:
-            assert relation in Sets().Products().Subsets()
-            factors = relation.factors()
-            assert ask(factors.cardinality() == 2) is True
-            underlying_set = factors[0]
-            assert factors[1] is underlying_set
-            self._defining_data = (underlying_set, relation)
-            super().__init__(category=category)
+            """Retain the relation subobject; its codomain ``X * X`` determines ``X``."""
+            self._relation = relation
 
-        def order_relation(self) -> SetSubset:
-            """Return the defining subobject of ``X × X``."""
-            return self._defining_data[1]
+    class ElementType:
+        """Inherit the points of ``X`` through the structure functor to ``Sets()``."""
 
-        def elements_are_related(
-            self,
-            left: PartiallyOrderedSetsCategory.ElementType,
-            right: PartiallyOrderedSetsCategory.ElementType,
-        ) -> Proposition:
-            """Return the proposition that ``(left, right)`` belongs to ``R``."""
-            assert left.ambient_object() is self
-            assert right.ambient_object() is self
-            return self.order_relation().contains_pair(left, right)
+    class MorphismType:
+        """Implement relation-preserving set maps."""
 
-    class ElementType(Implementation):
-        """Add order comparison to the inherited element implementation."""
+    def _partial_order(self, R: Relations().ObjectType) -> Boolean:
+        """State the proposition deciding membership in ``Relations().PartialOrder()``."""
+        return partial_order_laws(R)
 
-        def __le__(
-            self,
-            other: PartiallyOrderedSetsCategory.ElementType,
-        ) -> Proposition:
-            """Return the proposition that ``self <= other``."""
-            return self.ambient_object().elements_are_related(self, other)
-
-    class ArrowType(Implementation):
-        """Implement monotone maps with the inherited arrow surface."""
+    PartialOrder = Axiom(_partial_order)
 
     def __call__(
         self,
-        relation: SetSubset,
-    ) -> PartiallyOrderedSetsCategory.ObjectType:
-        """Construct the asserted partial order determined by ``relation``."""
-        return self.ObjectType(category=self, relation=relation)
+        relation: Sets().Subobjects(Sets().Products()(X, X)).ObjectType,
+    ) -> Relations().ObjectType:
+        """Construct the relation with subobject ``relation``."""
+        return self.ObjectType(relation)
 
-    def structure_functors(self) -> tuple[Cat().ArrowType, ...]:
-        """Select the set projection used for inheritance."""
-        # This tuple selects inheritance routes. It is not a list of all functors
-        # from this category. Do not add the second product projection here.
-        # A poset ``(X, R)`` receives its inherited public methods from ``X``.
-        # Projection to ``R`` would expose subset and product methods on posets.
-        # That projection can still exist and be called as an ordinary functor.
-        # Selecting only ``X`` mirrors Sage listing only ``Sets()`` as a supercategory.
-        return (self.product_projection(0),)
+    def from_predicate(
+        self,
+        X: Sets().ObjectType,
+        predicate: Callable[[Sets().ElementType, Sets().ElementType], Boolean],
+    ) -> Relations().ObjectType:
+        """Construct the relation whose subobject ``predicate`` selects in ``X * X``."""
+        return self(Sets().Subobjects(Sets().Products()(X, X)).from_predicate(predicate))
+
+    def to_sets(self) -> Cat().MorphismType:
+        """Define the fibration to ``Sets()``: ``(X, R) |-> X`` and ``f |-> f``.
+
+        A relation-preserving map is a map of the underlying sets.
+        """
+        D = Sets()
+
+        def on_object(R: self.ObjectType) -> D.ObjectType:
+            return R._relation.ambient_object().product_projection(0).codomain()
+
+        def on_morphism(f: self.MorphismType) -> D.MorphismType:
+            source = on_object(f.domain())
+            target = on_object(f.codomain())
+            return Mor(D)(source, target)(f)
+
+        return Fun(self, D).Fibrations()(on_object, on_morphism)
+
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+        """Select the fibration to ``Sets()``; a relation inherits the structure of ``X``."""
+        return (self.to_sets(),)
+
+
+class PosetsCategory(Category):
+    """Implement ``Relations().PartialOrder()``: add order comparison and monotone maps."""
+
+    class ObjectType:
+        """Add the operations the partial order supplies."""
+
+    class ElementType:
+        """Add order comparison to points of a poset."""
+
+        def __le__(self, other: Posets().ElementType) -> Boolean:
+            """Return the proposition ``self <= other``."""
+            relation = self.parent()._relation
+            return relation.membership_proposition(relation.ambient_object()(self, other))
+
+    class MorphismType:
+        """Implement monotone maps."""
+
+    def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
+        """Select the identity of ``Relations().PartialOrder()`` and ``U``.
+
+        The identity functor of that category is the whole implementation declaration; the
+        ``cat_kernel`` constructs its inclusion into ``Relations()``. The structure functor
+        ``U: Posets() -> Sets()`` and its componentwise-order lifting data are defined
+        in the poset-products template.
+        """
+        x = Relations().PartialOrder()
+        return (End_Cat(x).one(), self.to_sets())

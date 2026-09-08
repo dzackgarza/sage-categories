@@ -1,0 +1,8 @@
+id: no-compiler-state-in-constructor
+language: python
+severity: error
+files:
+  - tests/kernel/**/*.sage
+message: POL-LEAF-066, D133
+rule:
+  pattern: $TYPE(category=$CATEGORY, $$$)

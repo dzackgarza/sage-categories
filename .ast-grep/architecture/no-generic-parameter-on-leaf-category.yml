@@ -1,0 +1,16 @@
+id: no-generic-parameter-on-leaf-category
+language: python
+severity: error
+files:
+  - tests/kernel/**/*.sage
+ignores:
+  - src/sage_categories/**/_*_sage.py
+message: POL-LEAF-075, POL-LEAF-054, D133
+rule:
+  kind: subscript
+  inside:
+    kind: argument_list
+    stopBy: neighbor
+    inside:
+      kind: class_definition
+      stopBy: neighbor

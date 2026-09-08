@@ -1,0 +1,12 @@
+id: no-compiler-state-in-constructor-positional
+language: python
+severity: error
+files:
+  - tests/kernel/**/*.sage
+ignores:
+  - src/sage_categories/**/_*_sage.py
+message: POL-LEAF-066, D133
+rule:
+  any:
+    - pattern: $X.ObjectType($X, $$$)
+    - pattern: $X.MorphismType($X.morphism_category($$$), $$$)

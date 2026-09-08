@@ -1,0 +1,19 @@
+id: no-import-order-wiring
+language: python
+severity: error
+files:
+  - tests/kernel/**/*.sage
+ignores:
+  - src/sage_categories/**/_*_sage.py
+message: POL-LEAF-076, POL-SAGE-015, D122, D133
+rule:
+  any:
+    - kind: global_statement
+    - kind: function_definition
+      has:
+        field: name
+        regex: ^__getattr__$
+      not:
+        inside:
+          kind: class_definition
+          stopBy: end

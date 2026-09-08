@@ -1648,3 +1648,28 @@ path in `78e48e5`, the retained infinite consumer in
 `tests/sets/test_set_scaffold.sage`, and the 2026-09-08T02:59:49Z selected exercise
 in recorded session `2026-09-07-49d921b8` (tool call `T2CG`). The native replacement
 obligations remain in governing-plan sections 6, 19, and 20.
+
+### D188
+
+Ordinary infinitary objects must be easy to construct, express, and combine in the
+framework's mathematical vocabulary. Their defining categories, maps, families,
+and universal constructions must accommodate them without foundational redesign
+or implicit finiteness assumptions. The examples extend D187 to localizations,
+divisible groups, algebraic extension towers, series and completions, infinite
+graded algebras, products and duals, unbounded complexes, simplicial objects,
+formal and arc geometry, torsion towers, and generalized series.
+
+This is an expressibility and composability requirement. It selects no particular
+implementation, algorithm, engine, or representation for the examples and does
+not turn the catalogue into separate implementation commitments. Specialized
+computational claims retain their own scope; the ordinary vocabulary must retain
+the defining mathematical structure and maps.
+
+Owner: [Compositional expressibility](computational-generality.md#compositional-expressibility)
+and [Ordinary infinitary objects](computational-generality.md#ordinary-infinitary-objects).
+
+Source: explicit instruction to add the preceding infinitary-object catalogue as
+specifications or policies in Codex session `01a08089-fe93-77b0-b6bb-cbc9d7b0dde4`,
+2026-09-08. The instruction specifies ease of construction and expression without
+foundational reworks or surprising finiteness assumptions and leaves implementations
+unspecified. A precise message timestamp is not available in the supplied context.

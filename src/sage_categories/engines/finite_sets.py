@@ -30,6 +30,8 @@ __all__ = [
     "inverse_morphism",
     "is_epimorphism",
     "is_monomorphism",
+    "primitive_colimit",
+    "primitive_limit",
 ]
 
 
@@ -184,3 +186,230 @@ def hom_morphisms(
         _owned_morphism(source, target, native)
         for native in libgap.MorphismsOfExternalHom(native_source, native_target)
     )
+
+
+
+def _native_map_on_owned_endpoints(
+    source: object,
+    target: object,
+    computed: GapElement,
+) -> MorphismCategory.ObjectType:
+    native = libgap.MapOfFinSets(
+        _native_object(source), _graph(computed), _native_object(target)
+    )
+    return _owned_morphism(source, target, native)
+
+
+def _product(diagram: object, vertices: tuple[object, ...]) -> object:
+    from sage_categories.cat.cones import cone, cone_apex
+    from sage_categories.sets.finite import Sets
+
+    factors = tuple(diagram.on_object(vertex) for vertex in vertices)
+    native_factors = [_native_object(factor) for factor in factors]
+    category = _category()
+    computed_apex = libgap.DirectProduct(category, native_factors)
+    computed_projections = tuple(
+        libgap.ProjectionInFactorOfDirectProductWithGivenDirectProduct(
+            category, native_factors, index + 1, computed_apex
+        )
+        for index in range(len(vertices))
+    )
+    factor_records = tuple(finite_native_object(factor) for factor in factors)
+    projection_graphs = tuple(_graph(projection) for projection in computed_projections)
+    apex_data = tuple(
+        tuple(
+            factor_records[index].construction.data[projection_graphs[index][native_index]]
+            for index in range(len(vertices))
+        )
+        for native_index in range(int(libgap.Cardinality(computed_apex)))
+    )
+    apex = Sets(apex_data)
+    native_apex = _native_object(apex)
+    positions = {id(vertex): index for index, vertex in enumerate(vertices)}
+    legs = tuple(
+        _native_map_on_owned_endpoints(
+            apex,
+            factors[index],
+            libgap.MapOfFinSets(native_apex, projection_graphs[index], native_factors[index]),
+        )
+        for index in range(len(vertices))
+    )
+
+    def lift(candidate: object) -> MorphismCategory.ObjectType:
+        source = cone_apex(candidate)
+        tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
+        computed = libgap.UniversalMorphismIntoDirectProductWithGivenDirectProduct(
+            category, native_factors, _native_object(source), tau, computed_apex
+        )
+        return _native_map_on_owned_endpoints(source, apex, computed)
+
+    return Sets.Limits(diagram.domain()).with_universal_data(
+        diagram,
+        apex,
+        cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+        lift,
+    )
+
+
+def _equalizer(diagram: object, vertices: tuple[object, ...]) -> object:
+    from sage_categories.cat.cones import cone, cone_apex
+    from sage_categories.sets.finite import Sets
+
+    arrows = diagram.domain().generating_morphisms()
+    first, second = (diagram.on_morphism(arrow) for arrow in arrows)
+    source, target = first.domain(), first.codomain()
+    category = _category()
+    native_source = _native_object(source)
+    native_maps = [_native_morphism(first), _native_morphism(second)]
+    computed_apex = libgap.Equalizer(category, native_source, native_maps)
+    computed_embedding = libgap.EmbeddingOfEqualizerWithGivenEqualizer(
+        category, native_source, native_maps, computed_apex
+    )
+    source_record = finite_native_object(source)
+    embedding_graph = _graph(computed_embedding)
+    apex_data = tuple(source_record.construction.data[index] for index in embedding_graph)
+    apex = Sets(apex_data)
+    native_apex = _native_object(apex)
+    embedding_native = libgap.MapOfFinSets(native_apex, embedding_graph, native_source)
+    source_leg = _owned_morphism(apex, source, embedding_native)
+    target_computed = libgap.PreCompose(category, computed_embedding, native_maps[0])
+    target_leg = _native_map_on_owned_endpoints(apex, target, target_computed)
+    source_vertex = arrows[0].domain()
+
+    def leg(vertex: object) -> MorphismCategory.ObjectType:
+        return source_leg if vertex is source_vertex else target_leg
+
+    def lift(candidate: object) -> MorphismCategory.ObjectType:
+        candidate_source = cone_apex(candidate)
+        tau = _native_morphism(candidate.component(source_vertex))
+        computed = libgap.UniversalMorphismIntoEqualizerWithGivenEqualizer(
+            category,
+            native_source,
+            native_maps,
+            _native_object(candidate_source),
+            tau,
+            computed_apex,
+        )
+        return _native_map_on_owned_endpoints(candidate_source, apex, computed)
+
+    return Sets.Limits(diagram.domain()).with_universal_data(
+        diagram, apex, cone(diagram, apex, leg), lift
+    )
+
+
+def primitive_limit(diagram: object) -> object:
+    from sage_categories.cat.finite_categories import finite_category
+
+    shape = diagram.domain()
+    vertices = tuple(finite_category(shape).objects)
+    if shape.is_discrete():
+        return _product(diagram, vertices)
+    return _equalizer(diagram, vertices)
+
+
+def _coproduct(diagram: object, vertices: tuple[object, ...]) -> object:
+    from sage_categories.cat.cones import cocone, cocone_apex
+    from sage_categories.sets.finite import Sets
+
+    factors = tuple(diagram.on_object(vertex) for vertex in vertices)
+    native_factors = [_native_object(factor) for factor in factors]
+    category = _category()
+    computed_apex = libgap.Coproduct(category, native_factors)
+    computed_injections = tuple(
+        libgap.InjectionOfCofactorOfCoproductWithGivenCoproduct(
+            category, native_factors, index + 1, computed_apex
+        )
+        for index in range(len(vertices))
+    )
+    injection_graphs = tuple(_graph(injection) for injection in computed_injections)
+    apex_labels: list[object | None] = [None] * int(libgap.Cardinality(computed_apex))
+    for factor_index, factor in enumerate(factors):
+        record = finite_native_object(factor)
+        for source_index, target_index in enumerate(injection_graphs[factor_index]):
+            apex_labels[target_index] = (factor_index, record.construction.data[source_index])
+    assert all(label is not None for label in apex_labels)
+    apex = Sets(tuple(apex_labels))
+    native_apex = _native_object(apex)
+    positions = {id(vertex): index for index, vertex in enumerate(vertices)}
+    legs = tuple(
+        _native_map_on_owned_endpoints(
+            factors[index],
+            apex,
+            libgap.MapOfFinSets(native_factors[index], injection_graphs[index], native_apex),
+        )
+        for index in range(len(vertices))
+    )
+
+    def descent(candidate: object) -> MorphismCategory.ObjectType:
+        target = cocone_apex(candidate)
+        tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
+        computed = libgap.UniversalMorphismFromCoproductWithGivenCoproduct(
+            category, native_factors, _native_object(target), tau, computed_apex
+        )
+        return _native_map_on_owned_endpoints(apex, target, computed)
+
+    return Sets.Colimits(diagram.domain()).with_universal_data(
+        diagram,
+        apex,
+        cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+        descent,
+    )
+
+
+def _coequalizer(diagram: object, vertices: tuple[object, ...]) -> object:
+    from sage_categories.cat.cones import cocone, cocone_apex
+    from sage_categories.sets.finite import Sets
+
+    arrows = diagram.domain().generating_morphisms()
+    first, second = (diagram.on_morphism(arrow) for arrow in arrows)
+    source, target = first.domain(), first.codomain()
+    category = _category()
+    native_target = _native_object(target)
+    native_maps = [_native_morphism(first), _native_morphism(second)]
+    computed_apex = libgap.Coequalizer(category, native_target, native_maps)
+    computed_projection = libgap.ProjectionOntoCoequalizerWithGivenCoequalizer(
+        category, native_target, native_maps, computed_apex
+    )
+    projection_graph = _graph(computed_projection)
+    target_record = finite_native_object(target)
+    classes: list[set[object]] = [set() for _ in range(int(libgap.Cardinality(computed_apex)))]
+    for source_index, class_index in enumerate(projection_graph):
+        classes[class_index].add(target_record.construction.data[source_index])
+    apex_data = tuple(frozenset(part) for part in classes)
+    apex = Sets(apex_data)
+    native_apex = _native_object(apex)
+    projection_native = libgap.MapOfFinSets(native_target, projection_graph, native_apex)
+    target_leg = _owned_morphism(target, apex, projection_native)
+    source_computed = libgap.PreCompose(category, native_maps[0], computed_projection)
+    source_leg = _native_map_on_owned_endpoints(source, apex, source_computed)
+    source_vertex, target_vertex = arrows[0].domain(), arrows[0].codomain()
+
+    def leg(vertex: object) -> MorphismCategory.ObjectType:
+        return source_leg if vertex is source_vertex else target_leg
+
+    def descent(candidate: object) -> MorphismCategory.ObjectType:
+        candidate_target = cocone_apex(candidate)
+        tau = _native_morphism(candidate.component(target_vertex))
+        computed = libgap.UniversalMorphismFromCoequalizerWithGivenCoequalizer(
+            category,
+            native_target,
+            native_maps,
+            _native_object(candidate_target),
+            tau,
+            computed_apex,
+        )
+        return _native_map_on_owned_endpoints(apex, candidate_target, computed)
+
+    return Sets.Colimits(diagram.domain()).with_universal_data(
+        diagram, apex, cocone(diagram, apex, leg), descent
+    )
+
+
+def primitive_colimit(diagram: object) -> object:
+    from sage_categories.cat.finite_categories import finite_category
+
+    shape = diagram.domain()
+    vertices = tuple(finite_category(shape).objects)
+    if shape.is_discrete():
+        return _coproduct(diagram, vertices)
+    return _coequalizer(diagram, vertices)

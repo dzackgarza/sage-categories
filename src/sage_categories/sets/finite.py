@@ -27,12 +27,10 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.declarations import NN, Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.cones import cone, cocone, cone_apex, cocone_apex
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, Unknown, UnknownClass, ask, conjunction, register_handler
 from sage_categories.cat.slices import SliceProperty, SliceLikeCategory
 from sage_categories.cat.shapes import realize_discrete_object
 from sage_categories.kernel.sage_runtime import MonoDict
-from sage_categories.sets._finite import cartesian, quotient
 
 type Map = Callable[[Hashable], Hashable]
 type MembershipRule = Callable[[Hashable], Proposition]
@@ -747,127 +745,15 @@ class SetsCategory(Category[[Map], []]):
             return self._primitive_colimit
         return Category.colimit_construction(self, shape)
 
-    def _product_object(self, factors: tuple[SetsCategory.ObjectType, ...]) -> SetsCategory.ObjectType:
-        """``prod_i X_i``: the enumerated tuples when every factor has an enumeration, else the set of tuples whose components are members (``specs/sets.md``, "Products")."""
-        forms = tuple(_form_of(factor) for factor in factors)
-        presented = bool(factors) and all(form is not None for form in forms)
-        if presented or not all(isinstance(factor.set_presentation(), tuple) for factor in factors):
-            # A presented product states its membership by its factors' rules.  Materializing
-            # its tuples would cost the product of their sizes, and its maps are decided by
-            # the factors' forms rather than by a table.
-            apex = self.from_membership(_ProductRule(factors))
-        else:
-            apex = self(cartesian(factor._values for factor in factors))
-        if presented and apex not in _object_forms:
-            _object_forms[apex] = forms[0].direct_sum(forms)
-        return apex
-
     def _primitive_limit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
-        from sage_categories.cat.finite_categories import finite_category
+        from sage_categories.engines import finite_sets
 
-        shape = diagram.domain()
-        vertices = finite_category(shape).objects
-        if shape.is_discrete():
-            apex = self._product_object(tuple(diagram.on_object(vertex) for vertex in vertices))
-            position = {id(vertex): index for index, vertex in enumerate(vertices)}
-            apex_form = _form_of(apex)
-
-            def leg_rule(index: int) -> Lambda | None:
-                if not isinstance(apex.set_presentation(), _ProductRule):
-                    return None
-                structure = _structure(apex)
-                return Lambda((structure,), structure[index])
-
-            def lift_rule(candidate: CategoryOfCategories.ElementType) -> Lambda | None:
-                components = tuple(candidate.component(vertex) for vertex in vertices)
-                if any(component._symbolic is None for component in components):
-                    return None
-                structure = _structure(cone_apex(candidate))
-                return Lambda((structure,), Tuple(*(component._symbolic(structure) for component in components)))
-
-            def lift_form(candidate: CategoryOfCategories.ElementType) -> MapForm | None:
-                source_form = _form_of(cone_apex(candidate))
-                components = tuple(candidate.component(vertex)._form for vertex in vertices)
-                if apex_form is None or source_form is None or any(component is None for component in components):
-                    return None
-                return source_form.pair(components, apex_form)
-
-            legs = lambda vertex: Mor(self)(apex, diagram.on_object(vertex))(
-                _SetMap(
-                    lambda value: value[position[id(vertex)]],
-                    leg_rule(position[id(vertex)]),
-                    None if apex_form is None else apex_form.projection(position[id(vertex)]),
-                )
-            )
-            lift = lambda candidate: Mor(self)(cone_apex(candidate), apex)(
-                _SetMap(
-                    lambda value: tuple(candidate.component(vertex)._action(value) for vertex in vertices),
-                    lift_rule(candidate),
-                    lift_form(candidate),
-                )
-            )
-        else:
-            arrows = shape.generating_morphisms()
-            first, second = (diagram.on_morphism(arrow) for arrow in arrows)
-            apex = self(
-                value
-                for value in first.domain()._values
-                if _equal_datum(first._action(value), second._action(value))
-            )
-            legs = lambda vertex: Mor(self)(apex, diagram.on_object(vertex))(
-                lambda value: (
-                    value if vertex is arrows[0].domain() else first._action(value)
-                )
-            )
-            lift = lambda candidate: Mor(self)(cone_apex(candidate), apex)(
-                lambda value: candidate.component(arrows[0].domain())._action(value)
-            )
-        return self.Limits(shape).with_universal_data(
-            diagram, apex, cone(diagram, apex, legs), lift
-        )
+        return finite_sets.primitive_limit(diagram)
 
     def _primitive_colimit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
-        from sage_categories.cat.finite_categories import finite_category
+        from sage_categories.engines import finite_sets
 
-        shape = diagram.domain()
-        vertices = finite_category(shape).objects
-        if shape.is_discrete():
-            position = {id(vertex): index for index, vertex in enumerate(vertices)}
-            apex = self(
-                (index, value)
-                for index, vertex in enumerate(vertices)
-                for value in diagram.on_object(vertex)._values
-            )
-            legs = lambda vertex: Mor(self)(diagram.on_object(vertex), apex)(
-                lambda value: (position[id(vertex)], value)
-            )
-            descent = lambda candidate: Mor(self)(apex, cocone_apex(candidate))(
-                lambda value: candidate.component(vertices[value[0]])._action(value[1])
-            )
-        else:
-            arrows = shape.generating_morphisms()
-            first, second = (diagram.on_morphism(arrow) for arrow in arrows)
-            classes = quotient(
-                first.codomain()._values,
-                (
-                    (first._action(value), second._action(value))
-                    for value in first.domain()._values
-                ),
-            )
-            apex = self(classes.values())
-            legs = lambda vertex: Mor(self)(diagram.on_object(vertex), apex)(
-                lambda value: (
-                    classes[first._action(value)]
-                    if vertex is arrows[0].domain()
-                    else classes[value]
-                )
-            )
-            descent = lambda candidate: Mor(self)(apex, cocone_apex(candidate))(
-                lambda value: candidate.component(arrows[0].codomain())._action(next(iter(value)))
-            )
-        return self.Colimits(shape).with_universal_data(
-            diagram, apex, cocone(diagram, apex, legs), descent
-        )
+        return finite_sets.primitive_colimit(diagram)
 
     def image_factorization(
         self, arrow: MorphismCategory.ObjectType

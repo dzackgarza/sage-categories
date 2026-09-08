@@ -30,11 +30,15 @@ from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.declarations import Sets
-from sage_categories.cat.predicates import Decision, Proposition, Unknown, UnknownClass
-from sage_categories.cat.predicates import ask, register_handler
+from sage_categories.cat.predicates import (
+    Proposition,
+    Unknown,
+    UnknownClass,
+    ask,
+    register_handler,
+)
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
-from sage_categories.kernel.word_rewriting import WordRewriter
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -113,8 +117,6 @@ class FinitePresentedCategory(Category[[Word], []]):
                 source, target = first if first is not None else second
                 assert source == target, "a path equal to an identity must be a loop"
         self._relations = relations
-        self._rewriter: WordRewriter | None = None
-        self._generator_indices = {name: index for index, name in enumerate(self._generator_endpoints)}
         # One retained path per (source label, reduced word) (specs/functor.md, "Canonical objects of Cat"): a morphism of a
         # finitely presented category exists once by identity.
         self._paths: dict[tuple[Hashable, Word], FinitePresentedCategory.MorphismType] = {}
@@ -175,16 +177,6 @@ class FinitePresentedCategory(Category[[Word], []]):
     def object_point(self, vertex: FinitePresentedCategory.ObjectType) -> CategoryOfCategories.ElementType:
         return self.object_set().point(self.label(vertex))
 
-    def _has_directed_cycle(self) -> bool:
-        successors: dict[Hashable, list[Hashable]] = {label: [] for label in self._labels}
-        for source, target in self._generator_endpoints.values():
-            successors[source].append(target)
-
-        def reaches(start: Hashable, stack: tuple[Hashable, ...]) -> bool:
-            return any(target in stack or reaches(target, (*stack, target)) for target in successors[start])
-
-        return any(reaches(label, (label,)) for label in self._labels)
-
     def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
         """The finite set of morphisms when the presentation determines a finite normal-form language."""
         arrows = self.finite_morphisms()
@@ -195,25 +187,18 @@ class FinitePresentedCategory(Category[[Word], []]):
         return self._morphism_set[self]
 
     def finite_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass:
-        """The exact finite path enumeration, independent of the production set category."""
+        """The exact finite path enumeration supplied by FpCategories."""
         if self._finite_arrows is None:
-            if self._has_directed_cycle() and (not self._relations or not self._word_rewriter().finite()):
+            from sage_categories.engines import fp_categories
+
+            native = fp_categories.finite_morphisms(self)
+            if native is None:
                 self._finite_arrows = Unknown
                 return Unknown
-            words: list[tuple[Hashable, Word]] = [(label, ()) for label in self._labels]
-            frontier = list(words)
-            while frontier:
-                source, word = frontier.pop(0)
-                position = source if not word else self._generator_endpoints[word[-1]][1]
-                for name, (start, _) in self._generator_endpoints.items():
-                    if start == position:
-                        extended = (source, self._reduce((*word, name)))
-                        if extended not in words:
-                            words.append(extended)
-                            frontier.append(extended)
+            labels = self.labels()
             self._finite_arrows = tuple(
-                self.construct_morphism(self(source), self(source if not word else self._generator_endpoints[word[-1]][1]), word)
-                for source, word in words
+                self.construct_morphism(self(labels[source]), self(labels[target]), word)
+                for source, target, word in native
             )
         return self._finite_arrows
 
@@ -262,51 +247,17 @@ class FinitePresentedCategory(Category[[Word], []]):
             position = target
         return source, position
 
-    def _word_rewriter(self) -> WordRewriter:
-        """Complete the category's consolidation with separate local identities and zero."""
-        if self._rewriter is not None:
-            return self._rewriter
-        size = len(self._generator_indices)
-        vertices = {label: size + index for index, label in enumerate(self._labels)}
-        zero = size + len(vertices)
-        endpoints = {index: pair for name, pair in self._generator_endpoints.items() for index in (self._generator_indices[name],)}
-        endpoints.update({index: (label, label) for label, index in vertices.items()})
-        equations: list[tuple[tuple[int, ...], tuple[int, ...]]] = []
-        for first, (source, middle) in endpoints.items():
-            for second, (start, target) in endpoints.items():
-                if middle != start:
-                    equations.append(((first, second), (zero,)))
-                elif first >= size:
-                    equations.append(((first, second), (second,)))
-                elif second >= size:
-                    equations.append(((first, second), (first,)))
-        for index in range(zero + 1):
-            equations.extend((((zero, index), (zero,)), ((index, zero), (zero,))))
-        for left, right in self._relations:
-            if not left and not right:
-                continue
-            word = left or right
-            source = self._generator_endpoints[word[0]][0]
-            def letters(path: Word) -> tuple[int, ...]:
-                if not path:
-                    return (vertices[source],)
-                return tuple(self._generator_indices[name] for name in path)
-            equations.append((letters(left), letters(right)))
-        self._rewriter = WordRewriter(zero + 1, tuple(equations))
-        return self._rewriter
-
-    def _reduce(self, word: Word) -> Word:
+    def _reduce(
+        self,
+        domain: FinitePresentedCategory.ObjectType,
+        codomain: FinitePresentedCategory.ObjectType,
+        word: Word,
+    ) -> Word:
         if not word or not self._relations:
             return word
-        names = tuple(self._generator_indices)
-        rewriter = self._word_rewriter()
-        reduced = rewriter.reduce(tuple(self._generator_indices[name] for name in word))
-        source = self._generator_endpoints[word[0]][0]
-        identity = len(names) + self._labels.index(source)
-        if reduced == rewriter.reduce((identity,)):
-            return ()
-        assert len(names) + len(self._labels) not in reduced, "a category path reduced to the consolidation zero"
-        return tuple(names[index] for index in reduced if index < len(names))
+        from sage_categories.engines import fp_categories
+
+        return fp_categories.reduce_word(self, domain, codomain, word)
 
     def construct_morphism(self, domain: FinitePresentedCategory.ObjectType, codomain: FinitePresentedCategory.ObjectType, word: Word) -> FinitePresentedCategory.MorphismType:
         """The path along the named generators, reduced modulo the relations."""
@@ -316,7 +267,7 @@ class FinitePresentedCategory(Category[[Word], []]):
             assert source == position, f"{name} does not start at {position!r}"
             position = target
         assert position == self.label(codomain), f"the path ends at {position!r}, not at {codomain!r}"
-        key = (self.label(domain), self._reduce(word))
+        key = (self.label(domain), self._reduce(domain, codomain, word))
         if key not in self._paths:
             path = self.MorphismType(
                 domain=domain,
@@ -366,7 +317,7 @@ class FinitePresentedCategory(Category[[Word], []]):
             return False
         if first.word() == candidate.word():
             return True
-        return False if not self._relations or self._word_rewriter().confluent else None
+        return False
 
     def __repr__(self) -> str:
         return self._name

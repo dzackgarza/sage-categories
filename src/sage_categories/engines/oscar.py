@@ -14,6 +14,9 @@ __all__ = [
     "codomain",
     "covered_scheme",
     "covered_patches",
+    "covered_chart_inclusion",
+    "covered_domain",
+    "covered_codomain",
     "domain",
     "generators",
     "hom",
@@ -42,6 +45,7 @@ __all__ = [
     "sheaf_value",
     "simple_gluing",
     "glued_covered_scheme",
+    "gluing_mediator",
     "structure_sheaf",
     "stalk_map",
 ]
@@ -207,6 +211,31 @@ def glued_covered_scheme(left_chart: object, right_chart: object, gluing: object
 
 def covered_patches(scheme: object) -> tuple[object, ...]:
     return tuple(bridge().covered_patches(scheme))
+
+
+def covered_chart_inclusion(chart: object, glued: object) -> object:
+    """Return the native open chart map into a covered scheme."""
+    return bridge().covered_chart_inclusion(chart, glued)
+
+
+def gluing_mediator(
+    glued: object,
+    target: object,
+    left_chart: object,
+    right_chart: object,
+    left_map: object,
+    right_map: object,
+) -> object:
+    """Return the checked map induced by compatible maps on the two charts."""
+    return bridge().gluing_mediator(glued, target, left_chart, right_chart, left_map, right_map)
+
+
+def covered_domain(mapping: object) -> object:
+    return bridge().covered_domain(mapping)
+
+
+def covered_codomain(mapping: object) -> object:
+    return bridge().covered_codomain(mapping)
 
 
 def structure_sheaf(scheme: object) -> object:

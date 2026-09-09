@@ -259,6 +259,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         self._retained_data: MonoDict = MonoDict()
         self._biproduct_constructor: Callable[[object, object], object] | None = None
         self._zero_morphism_constructor: Callable[[object, object], object] | None = None
+        self._colimit_constructors: MonoDict = MonoDict()
         self._equality = equality_predicate()
         self._ambient_category: Category | None = None
         self._ambient_monomorphism: Functor | None = None
@@ -910,7 +911,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         raise AssertionError(f"{self!r} owns no {shape!r}-limit construction; supply universal data")
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        """Derive general colimits from owned coproducts and coequalizers."""
+        """Use this category's retained construction, then derive general colimits from coproducts and coequalizers."""
+        if shape in self._colimit_constructors:
+            return self._colimit_constructors[shape]
         if not shape.is_discrete() and shape is not Cat().WalkingParallelPair() and shape.op() is not Cat().WalkingParallelPair():
             from sage_categories.cat.limit_basis import colimit_from_coproducts_coequalizers
 
@@ -1048,6 +1051,14 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """Retain this exact category's selected biproduct and zero-morphism operations."""
         self._biproduct_constructor = biproduct
         self._zero_morphism_constructor = zero_morphism
+
+    def retain_colimit_construction(
+        self,
+        shape: Category,
+        construction: Callable[[Functor], CategoryOfCategories.ElementType],
+    ) -> None:
+        """Retain this exact category's selected colimit construction for ``shape``."""
+        self._colimit_constructors[shape] = construction
 
     def biproduct(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         """``X @ Y``, through this category's retained additive construction."""

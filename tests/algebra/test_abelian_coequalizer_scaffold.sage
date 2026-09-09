@@ -1,6 +1,6 @@
 """Coequalizers in Ab: the quotient of Z/4 by the image of the doubling map out of Z/2, and its mediator."""
 
-from sage_categories.all import ask
+from sage_categories.all import Cat, ask
 from sage_categories.algebra import (
     AbelianGroups,
     abelian_homomorphism,
@@ -22,6 +22,16 @@ def test_coequalizer_of_zero_and_doubling_is_the_quotient_by_the_even_classes() 
     assert apex in AbelianGroups()
     assert quotient.domain() is target
     assert ask(quotient * zero == quotient * double) is True
+
+    shape = Cat().WalkingParallelPair()
+    family = AbelianGroups().Colimits(shape)
+    diagrams = family.presenting_diagrams(apex)
+    assert len(diagrams) == 1
+    (diagram,) = diagrams
+    presentation = family.universal_data(diagram)
+    assert diagram.on_morphism(shape.generator("f")) is zero
+    assert diagram.on_morphism(shape.generator("g")) is double
+    assert presentation.leg(shape(1)) is quotient
 
     # The quotient identifies 2g with 0 and keeps g away from it, so the apex is Z/2.
     assert ask(quotient(target.point(2 * generator)) == apex.zero()) is True

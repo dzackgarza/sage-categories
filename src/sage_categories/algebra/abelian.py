@@ -64,10 +64,11 @@ from sympy import Q, false, true
 
 from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
-from sage_categories.cat.cones import cocone, cocones, cone, cones
-from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.functors import Cat, Fun
+from sage_categories.cat.cones import ConeCategory, cocone, cocones, cone
+from sage_categories.cat.diagrams import from_sequence, sequence_position
+from sage_categories.cat.functors import Cat, Fun, Functor
+from sage_categories.cat.limit_basis import parallel_pair
 from sage_categories.cat.monoidal import Cartesian, MonoidalStructures, MonoidalStructuresCategory, tensor_morphism, tensor_parentheses, tensor_units
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Proposition, ask
@@ -472,7 +473,7 @@ _install_additive_operations()
 
 
 @cached_function(key=identity_key)
-def coequalizer_projection(
+def _coequalizer_projection(
     first: MorphismCategory.ObjectType,
     second: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
@@ -501,7 +502,7 @@ def coequalizer_projection(
     return _linear_homomorphism(target, apex, LinearForm(into, apex_form, _matrix_of_rows(rows, apex_form.rank())))
 
 
-def coequalizer_mediator(
+def _coequalizer_mediator(
     projection: MorphismCategory.ObjectType,
     coequalizing: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
@@ -523,6 +524,90 @@ def coequalizer_mediator(
         for relation in engine.W().gens()
     ), f"{coequalizing!r} does not vanish on the relations of {apex!r}, so it does not factor through it"
     return _linear_homomorphism(apex, target, LinearForm(presentation(apex), into, _matrix_of_rows(rows, into.rank())))
+
+
+def _abelian_coequalizer(diagram: Functor) -> CategoryOfCategories.ElementType:
+    """Retain the selected coequalizer of one parallel pair in ``Ab``."""
+    abelian = AbelianGroups()
+    shape = Cat().WalkingParallelPair()
+    assert diagram.domain() is shape and diagram.codomain() is abelian
+    source_vertex, target_vertex = shape(0), shape(1)
+    first = diagram.on_morphism(shape.generator("f"))
+    second = diagram.on_morphism(shape.generator("g"))
+    projection = _coequalizer_projection(first, second)
+    apex = projection.codomain()
+    source_leg = projection * first
+    def selected_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        match vertex is source_vertex:
+            case True:
+                return source_leg
+            case False:
+                return projection
+
+    selected = cocone(diagram, apex, selected_leg)
+
+    def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
+        return _coequalizer_mediator(projection, candidate.component(target_vertex))
+
+    return abelian.Colimits(shape).with_universal_data(
+        diagram,
+        apex,
+        selected,
+        mediator,
+    )
+
+
+def _install_abelian_coequalizers() -> None:
+    """Install the presented walking-parallel-pair colimit on the exact category ``Ab``."""
+    AbelianGroups().retain_colimit_construction(
+        Cat().WalkingParallelPair(),
+        _abelian_coequalizer,
+    )
+
+
+_install_abelian_coequalizers()
+
+
+@cached_function(key=identity_key)
+def coequalizer_projection(
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """The retained coequalizer projection of a parallel pair in ``Ab``."""
+    diagram = parallel_pair(first, second)
+    family = AbelianGroups().Colimits(Cat().WalkingParallelPair())
+    family(diagram)
+    return family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1))
+
+
+def coequalizer_mediator(
+    projection: MorphismCategory.ObjectType,
+    coequalizing: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Factor ``coequalizing`` through the retained coequalizer presentation of ``projection``."""
+    family = AbelianGroups().Colimits(Cat().WalkingParallelPair())
+    matching = tuple(
+        diagram
+        for diagram in family.presenting_diagrams(projection.codomain())
+        if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
+    )
+    assert len(matching) == 1, f"{projection!r} is not the selected leg of one retained coequalizer presentation"
+    (diagram,) = matching
+    presentation = family.universal_data(diagram)
+    source_vertex, target_vertex = Cat().WalkingParallelPair()(0), Cat().WalkingParallelPair()(1)
+    first = diagram.on_morphism(Cat().WalkingParallelPair().generator("f"))
+    source_component = coequalizing * first
+
+    def component(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        match vertex is source_vertex:
+            case True:
+                return source_component
+            case False:
+                return coequalizing
+
+    candidate = cocones(diagram)(cocone(diagram, coequalizing.codomain(), component))
+    assert candidate.leg(target_vertex) is coequalizing
+    return presentation.lift(candidate)
 
 
 def _pair_generators(first: Presentation, second: Presentation) -> FGP_Module_class:

@@ -190,6 +190,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         ...
 
+    def retain_colimit_construction(self, shape: Category, construction: Callable[[Functor], CategoryOfCategories.ElementType]) -> None:
+        ...
+
     def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         ...
 
@@ -245,6 +248,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
         ...
 
     def biproduct(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        ...
+
+    def zero_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         ...
 
     def exponential(self, exponent: CategoryOfCategories.ElementType, base: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:

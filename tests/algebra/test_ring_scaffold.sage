@@ -72,6 +72,19 @@ def test_boolean_semiring_is_not_a_ring() -> None:
         Rings(Sets())(disjunction, zero, conjunction, one)
 
 
+def test_additive_nonunital_map_is_not_a_ring_map() -> None:
+    rings = Rings(Sets())
+    six = residue_operations(6)
+    residue_six = rings(*six[1:])
+    doubling = Mor(Sets)(six[0], six[0])(lambda value: (2 * value) % 6)
+    additive_group = rings.to_additive_group().on_object(residue_six)
+    additive = rings.factor(1).ambient()
+    additive_map = additive.homomorphism(additive_group, additive_group, doubling)
+    assert additive_map(additive_group.point(2)).datum() == 4
+    with pytest.raises(AssertionError):
+        rings.homomorphism(residue_six, residue_six, doubling)
+
+
 def test_matrix_ring_opposite_reverses_multiplication_and_maps() -> None:
     rings = Rings(Sets())
     carrier = Sets(tuple((a, b, c, d) for a in (0, 1) for b in (0, 1) for c in (0, 1) for d in (0, 1)))
@@ -107,4 +120,5 @@ def test_matrix_ring_opposite_reverses_multiplication_and_maps() -> None:
 test_residue_ring_operations()
 test_quotient_ring_homomorphism()
 test_boolean_semiring_is_not_a_ring()
+test_additive_nonunital_map_is_not_a_ring_map()
 test_matrix_ring_opposite_reverses_multiplication_and_maps()

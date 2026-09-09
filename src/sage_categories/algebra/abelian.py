@@ -64,6 +64,8 @@ from sympy import Q, false, true
 
 from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
+from sage_categories.cat.cones import cocone, cocones, cone, cones
+from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.monoidal import Cartesian, MonoidalStructures, MonoidalStructuresCategory, tensor_morphism, tensor_parentheses, tensor_units
@@ -224,18 +226,23 @@ def AbelianGroups() -> Category:
     return AdditiveGroups(_structure()).Commutative()
 
 
-def _points(group: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-    """The set of points of a group object: its image under the carrier functors of the named copies."""
+@cached_function(key=lambda: 0)
+def _forgetful() -> Functor:
+    """The retained composite ``Ab -> Sets`` through the named additive structure chain."""
     groups = AdditiveGroups(_structure())
-    monoids, magmas = groups.named_monoids(), groups.named_monoids().named_magmas()
-    return magmas.to_carrier().on_object(monoids.to_named_magmas().on_object(groups.to_named_monoids().on_object(group)))
+    monoids = groups.named_monoids()
+    magmas = monoids.named_magmas()
+    return magmas.to_carrier() * monoids.to_named_magmas() * groups.to_named_monoids()
+
+
+def _points(group: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+    """The carrier set of a group object, through the retained ``Ab -> Sets`` composite."""
+    return _forgetful().on_object(group)
 
 
 def _point_map(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-    """The set map carrying a homomorphism: its image under the carrier functors of the named copies."""
-    groups = AdditiveGroups(_structure())
-    monoids, magmas = groups.named_monoids(), groups.named_monoids().named_magmas()
-    return magmas.to_carrier().on_morphism(monoids.to_named_magmas().on_morphism(groups.to_named_monoids().on_morphism(arrow)))
+    """The carrier map of a homomorphism, through the retained ``Ab -> Sets`` composite."""
+    return _forgetful().on_morphism(arrow)
 
 
 def presentation(group: CategoryOfCategories.ElementType) -> Presentation:
@@ -253,9 +260,13 @@ def _group_from_operations(
     structure = _structure()
     Sets.retain_form(carrier, form)
     square = binary_product_data(Sets(), carrier, carrier).apex()
+    square_form = Sets.form_of(square)
+    assert isinstance(square_form, Presentation) and square_form.factors == (form, form)
     identity = identity_matrix(ZZ, form.rank())
-    addition = Mor(Sets)(square, carrier)(LinearForm(Sets.form_of(square), form, identity.stack(identity)))
-    unit = Mor(Sets)(structure.unit(), carrier)(lambda _: zero)
+    addition = Mor(Sets)(square, carrier)(LinearForm(square_form, form, identity.stack(identity)))
+    unit = Mor(Sets)(structure.unit(), carrier)(
+        LinearForm(_terminal_presentation, form, zero_matrix(ZZ, 0, form.rank()))
+    )
     monoid = Monoids(structure)(addition, unit)
     assert monoid in Groups(structure), f"{addition!r} is not a group operation"
     group = AdditiveGroups(structure).renamed(monoid)
@@ -352,6 +363,112 @@ def abelian_homomorphism(
     samples = (left.zero_datum(), *generators, *(first + second for first in generators for second in generators))
     assert all(rule(sample) == form.evaluate(sample) for sample in samples), f"{rule!r} differs from its linear extension on {source!r}"
     return _linear_homomorphism(source, target, form)
+
+
+def _zero_morphism(
+    source: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """The additive zero map between two presented objects of ``Ab``."""
+    source_form, target_form = presentation(source), presentation(target)
+    return _linear_homomorphism(source, target, target_form.zero_map(source_form))
+
+
+def _inclusion_form(direct_sum: Presentation, index: int) -> LinearForm:
+    """The selected inclusion of one factor into a presented direct sum."""
+    factor = direct_sum.factors[index]
+    offset = sum(part.rank() for part in direct_sum.factors[:index])
+    matrix = zero_matrix(ZZ, factor.rank(), direct_sum.rank())
+    for row in range(factor.rank()):
+        matrix[row, offset + row] = 1
+    return LinearForm(factor, direct_sum, matrix)
+
+
+def _copair_form(components: tuple[LinearForm, ...], source: Presentation) -> LinearForm:
+    """The map out of a presented direct sum with these component maps."""
+    assert components and len(components) == len(source.factors)
+    target = components[0].target
+    assert all(component.target is target for component in components)
+    matrix = components[0].matrix
+    for component in components[1:]:
+        matrix = matrix.stack(component.matrix)
+    return LinearForm(source, target, matrix)
+
+
+def _biproduct(
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    """The selected binary biproduct of two presented abelian groups, with both universal presentations."""
+    abelian = AbelianGroups()
+    assert first in abelian and second in abelian
+    first_form, second_form = presentation(first), presentation(second)
+    direct_sum = first_form.direct_sum((first_form, second_form))
+    carrier = Sets.Products()((_points(first), _points(second)))
+    apex = _group_from_operations(
+        carrier,
+        direct_sum,
+        (first_form.zero_datum(), second_form.zero_datum()),
+    )
+    projections = (
+        _linear_homomorphism(apex, first, direct_sum.projection(0)),
+        _linear_homomorphism(apex, second, direct_sum.projection(1)),
+    )
+    inclusions = (
+        _linear_homomorphism(first, apex, _inclusion_form(direct_sum, 0)),
+        _linear_homomorphism(second, apex, _inclusion_form(direct_sum, 1)),
+    )
+    diagram = from_sequence(abelian, (first, second))
+    shape = diagram.domain()
+
+    def product_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        return projections[sequence_position(vertex)]
+
+    def product_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        components = tuple(candidate.component(shape(index)) for index in (0, 1))
+        # The cone owner retains the competing apex.
+        from sage_categories.cat.cones import cone_apex
+
+        source = cone_apex(candidate)
+        source_form = presentation(source)
+        forms = tuple(linear_form(component) for component in components)
+        return _linear_homomorphism(source, apex, source_form.pair(forms, direct_sum))
+
+    product_apex = abelian.Limits(shape).with_universal_data(
+        diagram,
+        apex,
+        cone(diagram, apex, product_leg),
+        product_lift,
+    )
+    assert product_apex is apex
+
+    def coproduct_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        return inclusions[sequence_position(vertex)]
+
+    def coproduct_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        components = tuple(candidate.component(shape(index)) for index in (0, 1))
+        from sage_categories.cat.cones import cocone_apex
+
+        target = cocone_apex(candidate)
+        forms = tuple(linear_form(component) for component in components)
+        return _linear_homomorphism(apex, target, _copair_form(forms, direct_sum))
+
+    coproduct_apex = abelian.Colimits(shape).with_universal_data(
+        diagram,
+        apex,
+        cocone(diagram, apex, coproduct_leg),
+        coproduct_lift,
+    )
+    assert coproduct_apex is apex
+    return apex
+
+
+def _install_additive_operations() -> None:
+    """Install the presented additive operations on the exact category ``Ab``."""
+    AbelianGroups().retain_biproduct_operations(_biproduct, _zero_morphism)
+
+
+_install_additive_operations()
 
 
 @cached_function(key=identity_key)
@@ -723,7 +840,8 @@ def _unitor(
     backward = abelian_homomorphism(carrier, quotient, lambda datum: into_the_tensor(datum).datum())
     assert ask(forward * backward == Mor(AbelianGroups())(carrier, carrier).one()) is True
     assert ask(backward * forward == Mor(AbelianGroups())(quotient, quotient).one()) is True
-    return forward, backward
+    AbelianGroups().retain_inverses(forward, backward)
+    return forward, forward.inverse()
 
 
 def relative_left_unitor(

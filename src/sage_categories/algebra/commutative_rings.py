@@ -19,6 +19,7 @@ from sage_categories.engines import oscar
 __all__ = [
     "PrimeIdeal",
     "induced_stalk_map",
+    "induced_stalk_map_to",
     "inverse_unit",
     "localize_at_prime",
     "localization_extension",
@@ -189,6 +190,34 @@ def induced_stalk_map(
     )
     arrow = reconstruct_oscar_morphism(source_local, target_local, native)
     return source_prime, source_local, target_local, arrow
+
+
+def induced_stalk_map_to(
+    mapping: MorphismCategory.ObjectType,
+    target_prime: PrimeIdeal,
+    target_local: CategoryOfCategories.ElementType,
+    target_localization: MorphismCategory.ObjectType,
+) -> tuple[PrimeIdeal, CategoryOfCategories.ElementType, MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The stalk map landing in an already retained target local ring."""
+    assert target_localization.domain() is target_prime.ring
+    assert target_localization.codomain() is target_local
+    target_construction = _construction(target_local)
+    assert isinstance(target_construction, _PrimeLocalizationConstruction)
+    assert target_construction.prime is target_prime
+    source_prime = prime_ideal_preimage(mapping, target_prime)
+    source_local, source_localization = localize_at_prime(source_prime)
+    native = oscar.stalk_map(
+        oscar_native_morphism(mapping).native,
+        oscar_native_object(source_local).native,
+        oscar_native_object(target_local).native,
+        oscar_native_morphism(target_localization).native,
+    )
+    return (
+        source_prime,
+        source_local,
+        source_localization,
+        reconstruct_oscar_morphism(source_local, target_local, native),
+    )
 
 
 def _principal_localization_from_native(

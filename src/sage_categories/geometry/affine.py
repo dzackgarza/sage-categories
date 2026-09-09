@@ -12,7 +12,11 @@ from sage_categories.algebra._commutative_rings_oscar import (
     oscar_native_object,
 )
 from sage_categories.algebra.commutative_rings import (
+    PrimeIdeal,
     _principal_localization_from_native,
+    induced_stalk_map_to,
+    localize_at_prime,
+    prime_ideal,
 )
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.declarations import Sets
@@ -31,6 +35,7 @@ from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_fu
 __all__ = [
     "AffineOpen",
     "AffineOpenCategory",
+    "AffineSpectrumPoint",
     "AffineSchemes",
     "AffineSchemesCategory",
     "Spec",
@@ -45,6 +50,16 @@ class AffineSchemeConstruction:
     """The exact owned coordinate ring whose spectrum this scheme represents."""
 
     coordinate_ring: CategoryOfCategories.ElementType
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class AffineSpectrumPoint:
+    """A prime-spectrum point together with its exact retained local ring."""
+
+    scheme: AffineSchemesCategory.ObjectType
+    prime: PrimeIdeal
+    local_ring: CategoryOfCategories.ElementType
+    localization: MorphismCategory.ObjectType
 
 
 _objects: NativeObjectRealizations[object, AffineSchemeConstruction] = NativeObjectRealizations()
@@ -230,6 +245,33 @@ class AffineSchemesCategory(Category[Any, Any]):
             native,
         )
         return arrow
+
+    def spectrum_point(
+        self,
+        scheme: AffineSchemesCategory.ObjectType,
+        generators: tuple[CategoryOfCategories.ElementType, ...],
+    ) -> AffineSpectrumPoint:
+        """A point of ``Spec(A)`` represented by a checked prime ideal of ``A``."""
+        prime = prime_ideal(scheme.coordinate_ring(), generators)
+        local_ring, localization = localize_at_prime(prime)
+        return AffineSpectrumPoint(scheme, prime, local_ring, localization)
+
+    def map_spectrum_point(
+        self,
+        mapping: AffineSchemesCategory.MorphismType,
+        point: AffineSpectrumPoint,
+    ) -> tuple[AffineSpectrumPoint, MorphismCategory.ObjectType]:
+        """Map a source point and retain the induced local homomorphism on stalks."""
+        assert point.scheme is mapping.domain()
+        image_prime, image_local, image_localization, stalk = induced_stalk_map_to(
+            mapping.pullback(),
+            point.prime,
+            point.local_ring,
+            point.localization,
+        )
+        image = AffineSpectrumPoint(mapping.codomain(), image_prime, image_local, image_localization)
+        assert stalk.domain() is image.local_ring and stalk.codomain() is point.local_ring
+        return image, stalk
 
     def __repr__(self) -> str:
         return "AffineSchemes"

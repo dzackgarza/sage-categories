@@ -5,6 +5,7 @@ from sage_categories.geometry.affine import (
     AffineOpenCategory,
     AffineSchemes,
     AffineSchemesCategory,
+    AffineSpectrumPoint,
     Spec,
     affine_structure_sheaf,
 )
@@ -23,6 +24,7 @@ __all__ = [
     "AffineOpenCategory",
     "AffineSchemes",
     "AffineSchemesCategory",
+    "AffineSpectrumPoint",
     "RingPresheaf",
     "RingSheaf",
     "RingedSpaces",

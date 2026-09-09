@@ -21,6 +21,12 @@ def localize_at_prime(prime: PrimeIdeal) -> tuple[CategoryOfCategories.ElementTy
 def induced_stalk_map(
     mapping: MorphismCategory.ObjectType, target_prime: PrimeIdeal
 ) -> tuple[PrimeIdeal, CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType]: ...
+def induced_stalk_map_to(
+    mapping: MorphismCategory.ObjectType,
+    target_prime: PrimeIdeal,
+    target_local: CategoryOfCategories.ElementType,
+    target_localization: MorphismCategory.ObjectType,
+) -> tuple[PrimeIdeal, CategoryOfCategories.ElementType, MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
 def _principal_localization_from_native(
     source: CategoryOfCategories.ElementType, element: CategoryOfCategories.ElementType, native_localized: object, native_map: object
 ) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]: ...

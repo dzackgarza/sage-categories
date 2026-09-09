@@ -1,3 +1,4 @@
+from sage_categories.algebra.commutative_rings import PrimeIdeal
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
@@ -9,6 +10,12 @@ from sage_categories.geometry.sheaves import RingPresheaf
 
 class AffineSchemeConstruction:
     coordinate_ring: CategoryOfCategories.ElementType
+
+class AffineSpectrumPoint:
+    scheme: AffineSchemesCategory.ObjectType
+    prime: PrimeIdeal
+    local_ring: CategoryOfCategories.ElementType
+    localization: MorphismCategory.ObjectType
 
 class AffineOpenCategory(Category):
     class ObjectType(CategoryOfCategories.ElementType):
@@ -32,6 +39,8 @@ class AffineSchemesCategory(Category):
         def pullback(self) -> MorphismCategory.ObjectType: ...
     def from_native(self, coordinate_ring: CategoryOfCategories.ElementType, native: object) -> ObjectType: ...
     def from_native_morphism(self, source: ObjectType, target: ObjectType, pullback: MorphismCategory.ObjectType, native: object) -> MorphismType: ...
+    def spectrum_point(self, scheme: ObjectType, generators: tuple[CategoryOfCategories.ElementType, ...]) -> AffineSpectrumPoint: ...
+    def map_spectrum_point(self, mapping: MorphismType, point: AffineSpectrumPoint) -> tuple[AffineSpectrumPoint, MorphismCategory.ObjectType]: ...
 
 def AffineSchemes() -> AffineSchemesCategory: ...
 def native_affine_scheme(value: CategoryOfCategories.ElementType) -> NativeObjectRealization[object, AffineSchemeConstruction]: ...

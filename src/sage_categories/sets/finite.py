@@ -24,8 +24,8 @@ from sympy import ask as sympy_ask
 from sympy.core.basic import Basic
 
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.cones import cone, cone_apex
-from sage_categories.cat.declarations import NN, Sets
+from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
+from sage_categories.cat.declarations import NN, Sets, omega
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Axiom, Predicate, Proposition, Unknown, UnknownClass, ask, conjunction, register_handler
@@ -87,6 +87,70 @@ class _ProductRule:
         return conjunction(_datum_membership(factor, component) for factor, component in zip(self.factors, datum, strict=True))
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class _IndexedProductValue:
+    """One supplied family ``i |-> x_i`` in a represented indexed product."""
+
+    diagram: Functor
+    rule: Callable[[Hashable], Hashable]
+
+    def component(self, vertex: CategoryOfCategories.ElementType) -> Hashable:
+        return self.rule(vertex.point().datum())
+
+
+class _IndexedProductRule:
+    """Membership presentation for an arbitrary discrete indexed product.
+
+    A value is admitted by construction when it retains a component rule for this exact
+    diagram.  Component membership remains a quantified proposition represented by the
+    diagram; it is not discharged by traversing the index set.
+    """
+
+    def __init__(self, diagram: Functor) -> None:
+        self.diagram = diagram
+
+    def __call__(self, datum: Hashable) -> Proposition:
+        return true if isinstance(datum, _IndexedProductValue) and datum.diagram is self.diagram else false
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _IndexedCoproductValue:
+    """One tagged value ``(i, x)`` in a represented indexed coproduct."""
+
+    diagram: Functor
+    index: Hashable
+    value: Hashable
+
+
+class _IndexedCoproductRule:
+    """Membership presentation for a discrete coproduct without index traversal."""
+
+    def __init__(self, diagram: Functor) -> None:
+        self.diagram = diagram
+
+    def __call__(self, datum: Hashable) -> Proposition:
+        return true if isinstance(datum, _IndexedCoproductValue) and datum.diagram is self.diagram else false
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _SequentialColimitValue:
+    """One representative ``(n, x)`` of a sequential colimit."""
+
+    diagram: Functor
+    stage: Hashable
+    value: Hashable
+
+
+class _SequentialColimitRule:
+    """Membership presentation for a colimit over ``omega``."""
+
+    def __init__(self, diagram: Functor) -> None:
+        self.diagram = diagram
+
+    def __call__(self, datum: Hashable) -> Proposition:
+        return true if isinstance(datum, _SequentialColimitValue) and datum.diagram is self.diagram else false
+
+
 class _PredicateRule:
     """The subset ``{x in X : P(x)}``, retaining its ambient set and predicate."""
 
@@ -144,19 +208,9 @@ class MapForm(Protocol):
 
 
 class ObjectForm(Protocol):
-    """A retained presentation of a set object, from which ``Sets`` derives the forms of the maps it constructs itself."""
+    """A retained presentation of a set object whose engine supplies its identity map form."""
 
     def identity(self) -> MapForm: ...
-
-    def direct_sum(self, factors: tuple[ObjectForm, ...]) -> ObjectForm: ...
-
-    def projection(self, index: int) -> MapForm: ...
-
-    def pair(self, components: tuple[MapForm, ...], target: ObjectForm) -> MapForm: ...
-
-    def zero_datum(self) -> Hashable: ...
-
-    def zero_map(self, source: ObjectForm) -> MapForm: ...
 
 
 _object_forms: MonoDict = MonoDict()
@@ -333,6 +387,38 @@ class SetsCategory(Category[[Map], []]):
                 if datum in self._lookup:
                     return self._lookup[datum]
                 return _representative(presentation, datum)
+            if isinstance(presentation, _IndexedProductRule):
+                if isinstance(datum, _IndexedProductValue):
+                    assert datum.diagram is presentation.diagram, "indexed family belongs to another product"
+                    return datum
+                assert callable(datum), "an indexed product point requires a component rule"
+                return _IndexedProductValue(presentation.diagram, datum)
+            if isinstance(presentation, _IndexedCoproductRule):
+                if isinstance(datum, _IndexedCoproductValue):
+                    assert datum.diagram is presentation.diagram, "tagged value belongs to another coproduct"
+                    return datum
+                assert isinstance(datum, tuple) and len(datum) == 2, "an indexed coproduct point requires one index and one value"
+                index, value = datum
+                shape = presentation.diagram.domain()
+                vertex = shape.object_at(shape.object_set().point(index))
+                return _IndexedCoproductValue(
+                    presentation.diagram,
+                    index,
+                    presentation.diagram.on_object(vertex).representative(value),
+                )
+            if isinstance(presentation, _SequentialColimitRule):
+                if isinstance(datum, _SequentialColimitValue):
+                    assert datum.diagram is presentation.diagram, "representative belongs to another sequential colimit"
+                    return datum
+                assert isinstance(datum, tuple) and len(datum) == 2, "a sequential colimit point requires one stage and one value"
+                stage, value = datum
+                shape = presentation.diagram.domain()
+                vertex = shape.object_at(shape.object_set().point(stage))
+                return _SequentialColimitValue(
+                    presentation.diagram,
+                    stage,
+                    presentation.diagram.on_object(vertex).representative(value),
+                )
             assert ask(presentation(datum)) is True, "set membership is not established"
             return datum
 
@@ -425,10 +511,24 @@ class SetsCategory(Category[[Map], []]):
         first: SetsCategory.ElementType,
         second: SetsCategory.ElementType,
         assumptions: Proposition,
-    ) -> bool:
-        return first.parent() is second.parent() and _equal_datum(
-            first.datum(), second.datum()
-        )
+    ) -> bool | None:
+        if first.parent() is not second.parent():
+            return False
+        presentation = first.parent().set_presentation()
+        if isinstance(presentation, _SequentialColimitRule):
+            left, right = first.datum(), second.datum()
+            assert isinstance(left, _SequentialColimitValue) and isinstance(right, _SequentialColimitValue)
+            common = max(left.stage, right.stage)
+            shape = presentation.diagram.domain()
+            common_vertex = shape.object_at(shape.object_set().point(common))
+
+            def image(representative: _SequentialColimitValue) -> Hashable:
+                source = shape.object_at(shape.object_set().point(representative.stage))
+                transition = Mor(shape)(source, common_vertex)()
+                return presentation.diagram.on_morphism(transition)._action(representative.value)
+
+            return True if _equal_datum(image(left), image(right)) else None
+        return _equal_datum(first.datum(), second.datum())
 
     # -- monomorphisms, epimorphisms, isomorphisms (``specs/sets.md``, "Morphisms") ------------
 
@@ -703,9 +803,6 @@ class SetsCategory(Category[[Map], []]):
         if len(table) == 1:
             value = next(iter(table.values()))
             rule = rule if rule is not None else _constant_rule(source, value)
-            source_form, target_form = _form_of(source), _form_of(target)
-            if form is None and source_form is not None and target_form is not None and _equal_datum(value, target_form.zero_datum()):
-                form = target_form.zero_map(source_form)
         return self.MorphismType(domain=source, codomain=target, data=_SetMap(table.__getitem__, rule, form))
 
     def construct_identity(
@@ -743,6 +840,8 @@ class SetsCategory(Category[[Map], []]):
     def colimit_construction(
         self, shape: Category
     ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+        if shape is omega:
+            return self._sequential_colimit
         if (
             shape.is_discrete()
             or shape is Cat().WalkingParallelPair()
@@ -771,17 +870,20 @@ class SetsCategory(Category[[Map], []]):
         factors = tuple(diagram.on_object(vertex) for vertex in vertices)
         apex = self.from_membership(_ProductRule(factors))
         forms = tuple(_form_of(factor) for factor in factors)
-        presented = bool(factors) and all(form is not None for form in forms)
-        if presented and apex not in _object_forms:
-            _object_forms[apex] = forms[0].direct_sum(forms)
-        apex_form = _form_of(apex)
+        match forms and all(form is not None for form in forms):
+            case True:
+                product_form = forms[0].direct_sum(forms)
+                if apex not in _object_forms:
+                    _object_forms[apex] = product_form
+            case False:
+                product_form = None
         position = {id(vertex): index for index, vertex in enumerate(vertices)}
 
         def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             index = position[id(vertex)]
             structure = _structure(apex)
             symbolic = Lambda((structure,), structure[index])
-            form = None if apex_form is None else apex_form.projection(index)
+            form = None if product_form is None else product_form.projection(index)
             return Mor(self)(apex, diagram.on_object(vertex))(
                 _SetMap(lambda value: value[index], symbolic, form)
             )
@@ -800,11 +902,11 @@ class SetsCategory(Category[[Map], []]):
             component_forms = tuple(component._form for component in components)
             form = None
             if (
-                apex_form is not None
+                product_form is not None
                 and source_form is not None
                 and all(component_form is not None for component_form in component_forms)
             ):
-                form = source_form.pair(component_forms, apex_form)
+                form = source_form.pair(component_forms, product_form)
             return Mor(self)(source, apex)(
                 _SetMap(
                     lambda value: tuple(component._action(value) for component in components),
@@ -817,22 +919,106 @@ class SetsCategory(Category[[Map], []]):
             diagram, apex, cone(diagram, apex, leg), lift
         )
 
+    def _indexed_product(self, diagram: Functor) -> CategoryOfCategories.ElementType:
+        """Represent ``prod_i X_i`` over a discrete shape without enumerating ``i``."""
+        shape = diagram.domain()
+        apex = self.from_membership(_IndexedProductRule(diagram))
+
+        def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            return Mor(self)(apex, diagram.on_object(vertex))(
+                lambda family: family.component(vertex)
+            )
+
+        def lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            source = cone_apex(candidate)
+            return Mor(self)(source, apex)(
+                lambda value: _IndexedProductValue(
+                    diagram,
+                    lambda index: candidate.component(shape.object_at(shape.object_set().point(index)))._action(value),
+                )
+            )
+
+        return self.Limits(shape).with_universal_data(
+            diagram, apex, cone(diagram, apex, leg), lift
+        )
+
     def _primitive_limit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         from sage_categories.cat.finite_categories import finite_category
         from sage_categories.engines import finite_sets
 
         shape = diagram.domain()
-        vertices = tuple(finite_category(shape).objects)
         if shape.is_discrete():
+            finite_shape = finite_category(shape)
+            if finite_shape is Unknown:
+                return self._indexed_product(diagram)
+            vertices = tuple(finite_shape.objects)
             factors = tuple(diagram.on_object(vertex) for vertex in vertices)
             if all(_finite_data(factor) is not Unknown for factor in factors):
                 return finite_sets.primitive_limit(diagram)
             return self._represented_product(diagram, vertices)
         return finite_sets.primitive_limit(diagram)
 
+    def _sequential_colimit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
+        """Represent the colimit of a diagram on ``omega`` by stage representatives."""
+        shape = diagram.domain()
+        assert shape is omega
+        apex = self.from_membership(_SequentialColimitRule(diagram))
+
+        def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            stage = vertex.point().datum()
+            return Mor(self)(diagram.on_object(vertex), apex)(
+                lambda value: _SequentialColimitValue(diagram, stage, value)
+            )
+
+        def descent(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            target = cocone_apex(candidate)
+
+            def evaluate(representative: _SequentialColimitValue) -> Hashable:
+                vertex = shape.object_at(shape.object_set().point(representative.stage))
+                return candidate.component(vertex)._action(representative.value)
+
+            return Mor(self)(apex, target)(evaluate)
+
+        return self.Colimits(shape).with_universal_data(
+            diagram, apex, cocone(diagram, apex, leg), descent
+        )
+
+    def _indexed_coproduct(self, diagram: Functor) -> CategoryOfCategories.ElementType:
+        """Represent ``coprod_i X_i`` over a discrete shape without enumerating ``i``."""
+        shape = diagram.domain()
+        apex = self.from_membership(_IndexedCoproductRule(diagram))
+
+        def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            index = vertex.point().datum()
+            return Mor(self)(diagram.on_object(vertex), apex)(
+                lambda value: _IndexedCoproductValue(diagram, index, value)
+            )
+
+        def descent(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            target = cocone_apex(candidate)
+
+            def evaluate(tagged: _IndexedCoproductValue) -> Hashable:
+                vertex = shape.object_at(shape.object_set().point(tagged.index))
+                return candidate.component(vertex)._action(tagged.value)
+
+            return Mor(self)(apex, target)(evaluate)
+
+        return self.Colimits(shape).with_universal_data(
+            diagram, apex, cocone(diagram, apex, leg), descent
+        )
+
     def _primitive_colimit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
+        from sage_categories.cat.finite_categories import finite_category
         from sage_categories.engines import finite_sets
 
+        shape = diagram.domain()
+        if shape.is_discrete():
+            finite_shape = finite_category(shape)
+            if finite_shape is Unknown:
+                return self._indexed_coproduct(diagram)
+            summands = tuple(diagram.on_object(vertex) for vertex in finite_shape.objects)
+            if any(_finite_data(summand) is Unknown for summand in summands):
+                return self._indexed_coproduct(diagram)
         return finite_sets.primitive_colimit(diagram)
 
     def image_factorization(
@@ -925,8 +1111,11 @@ register_handler(Mor(Sets).Epimorphisms().predicate(), Sets._surjective)
 register_handler(Mor(Sets).Isomorphisms().predicate(), Sets._bijective)
 
 
-def _finite_cartesian_comparison(operation: str, *arguments: object) -> MorphismCategory.ObjectType:
+def _finite_cartesian_comparison(operation: str, *arguments: object) -> MorphismCategory.ObjectType | None:
     from sage_categories.engines import finite_sets
+
+    if any(_finite_data(argument) is Unknown for argument in arguments):
+        return None
 
     match operation, arguments:
         case "associator_forward", (first, second, third, left, right):

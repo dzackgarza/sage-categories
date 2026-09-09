@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from sage_categories.all import Cat, Category, Fun, Mor
+from sage_categories.cat.category import is_placed
 from sage_categories.cat.native import (
     has_native_functor,
     has_native_transformation,
@@ -108,6 +109,7 @@ assert second_factor.label() == "theta"
 assert has_native_transformation(eta)
 assert has_native_transformation(theta)
 assert has_native_transformation(vertical)
+assert not is_placed(eta, Mor(Fun(SOURCE, TARGET)).Isomorphisms())
 assert eta.cell_dimension() == 2
 assert theta.cell_dimension() == 2
 assert vertical.cell_dimension() == 2

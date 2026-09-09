@@ -20,6 +20,9 @@ __all__ = [
     "map_apply",
     "polynomial_ring",
     "prime_field",
+    "principal_open",
+    "principal_open_ambient",
+    "principal_open_inclusion",
     "quotient",
     "ring_add",
     "ring_coerce",
@@ -158,3 +161,16 @@ def sheaf_value(sheaf: object, open_subset: object) -> object:
 
 def sheaf_restriction(sheaf: object, larger: object, smaller: object) -> object:
     return bridge().sheaf_restriction(sheaf, larger, smaller)
+
+
+def principal_open(scheme: object, element: object) -> object:
+    """Return OSCAR's genuine ``PrincipalOpenSubset(scheme, element)``."""
+    return bridge().principal_open_subset(scheme, element)
+
+
+def principal_open_ambient(open_subset: object) -> object:
+    return bridge().principal_open_ambient(open_subset)
+
+
+def principal_open_inclusion(open_subset: object) -> object:
+    return bridge().principal_open_inclusion(open_subset)

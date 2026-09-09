@@ -9,7 +9,9 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        ring_coerce, ring_inverse, same_native,
        affine_spec, affine_morphism_from_pullback, affine_pullback,
        affine_domain, affine_codomain, covered_scheme_of,
-       structure_sheaf, sheaf_value, sheaf_restriction
+       structure_sheaf, sheaf_value, sheaf_restriction,
+       principal_open_subset, principal_open_ambient,
+       principal_open_inclusion
 
 """The prime field ``GF(p)`` used by the affine-ring consumer."""
 prime_field(p::Integer) = GF(p)
@@ -63,5 +65,8 @@ covered_scheme_of(scheme) = covered_scheme(scheme)
 structure_sheaf(scheme) = OO(scheme)
 sheaf_value(sheaf, open_subset) = sheaf(open_subset)
 sheaf_restriction(sheaf, larger, smaller) = restriction_map(sheaf, larger, smaller)
+principal_open_subset(scheme, element) = PrincipalOpenSubset(scheme, element)
+principal_open_ambient(open_subset) = ambient_scheme(open_subset)
+principal_open_inclusion(open_subset) = inclusion_morphism(open_subset)
 
 end

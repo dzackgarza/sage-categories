@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import Enum
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Any, Generic, Protocol, cast
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -101,9 +101,7 @@ class CategoryPoint(_AttributeWriteTracked):
         from sage_categories.kernel.construction import active_construction_context
 
         context = active_construction_context(self)
-        assert context is not None and context.canonical_image is self, (
-            "a category point requires its active construction context"
-        )
+        assert context is not None and context.canonical_image is self, "a category point requires its active construction context"
         self._cat_element_identity = context.cat_element_identity
 
     def __hash__(self) -> int:
@@ -131,10 +129,10 @@ def _install_category_initializer(category_class: type[CategoryPoint]) -> None:
         if type(self).__init__ is kernel_initializer:
             from sage_categories.kernel.compiler import construct_category_value
 
-            construct_category_value(self)
+            construct_category_value(cast(ObjectOfCategory, self))
 
-    kernel_initializer._runs_the_kernel_initializer = True
-    category_class.__init__ = kernel_initializer
+    cast(Any, kernel_initializer)._runs_the_kernel_initializer = True
+    cast(Any, category_class).__init__ = kernel_initializer
 
 
 def prepare_category_subclass(cls: type[CategoryPoint]) -> None:
@@ -159,39 +157,35 @@ class ObjectOfCategory(CategoryPoint):
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
-        if (
-            not _building_role_class
-            and _category_declaration_root is not None
-            and issubclass(cls, _category_declaration_root)
-        ):
+        if not _building_role_class and _category_declaration_root is not None and issubclass(cls, _category_declaration_root):
             _require_declarations(cls, _category_universal_class)
 
-    def _compile_category(self: Category, functors: tuple[Functor, ...]) -> None:
+    def _compile_category(self, functors: tuple[Functor, ...]) -> None:
         from sage_categories.kernel.compiler import compile_category
 
-        compile_category(self, functors)
+        compile_category(cast("Category", self), functors)
 
-    def _recompile_category(self: Category, functors: tuple[Functor, ...]) -> None:
+    def _recompile_category(self, functors: tuple[Functor, ...]) -> None:
         from sage_categories.kernel.compiler import recompile_category
 
-        recompile_category(self, functors)
+        recompile_category(cast("Category", self), functors)
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         """Return the declaration written for one role of this category."""
-        return vars(_written_class(type(self)))[role.value]
+        return cast(type[CategoryPoint], vars(_written_class(type(self)))[role.value])
 
     def role_class(self, role: Role) -> type[CategoryPoint]:
         """Return the compiled class installed for one role of this category."""
-        return getattr(self, role.value)
+        return cast(type[CategoryPoint], getattr(self, role.value))
 
-    def role_source(self: Category, role: Role) -> tuple[Category, Role]:
+    def role_source(self, role: Role) -> tuple[Category, Role]:
         """Return the category and role that own this role node."""
-        return self, role
+        return cast("Category", self), role
 
-    def _object_role_source(self: Category) -> tuple[Category, bool]:
+    def _object_role_source(self) -> tuple[Category, bool]:
         from sage_categories.kernel.compiler import node
 
-        source = node(self, Role.OBJECT)
+        source = node(cast("Category", self), Role.OBJECT)
         return source.category, source.role is Role.MORPHISM
 
     def _initialize_placement(self) -> None:
@@ -272,11 +266,7 @@ _declaration_owners: dict[type[CategoryPoint], tuple[type[CategoryPoint], Role]]
 
 def _written_class(runtime_class: type[CategoryPoint]) -> type[CategoryPoint]:
     """Return the category class that writes all three local role declarations."""
-    return next(
-        found
-        for found in runtime_class.__mro__
-        if all(role.value in vars(found) for role in Role)
-    )
+    return next(found for found in runtime_class.__mro__ if all(role.value in vars(found) for role in Role))
 
 
 def _borrowed_declaration(local: type[CategoryPoint]) -> type[CategoryPoint] | None:
@@ -423,6 +413,14 @@ def install_cat_element_root(root: type[CategoryPoint]) -> None:
 type RoleCandidate = CategoryPoint | int
 
 
+class _PlacedValue(Protocol):
+    def category(self) -> Category: ...
+
+
+class _ElementValue(Protocol):
+    def parent(self) -> _PlacedValue: ...
+
+
 def role_of(candidate: RoleCandidate) -> Role | None:
     """The constructor's role, or ``None`` for an unowned candidate (POL-TYPE-004)."""
     from sage_categories.kernel.construction import construction_role
@@ -434,7 +432,7 @@ def category_of(value: CategoryPoint, role: Role) -> Category:
     """The placement category of ``value`` in its role."""
     match role:
         case Role.OBJECT | Role.MORPHISM:
-            return value.category()
+            return cast(_PlacedValue, value).category()
         case Role.ELEMENT:
-            return value.parent().category()
+            return cast(_ElementValue, value).parent().category()
     raise AssertionError(role)

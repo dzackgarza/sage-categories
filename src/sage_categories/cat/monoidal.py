@@ -29,7 +29,18 @@ from sage_categories.engines.diagrams import (
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
-__all__ = ["Actions", "ActionsCategory", "Cartesian", "Composition", "MonoidalStructures", "MonoidalStructuresCategory", "Reversed", "SelfAction", "TrivialAction", "register_cartesian_comparisons"]
+__all__ = [
+    "Actions",
+    "ActionsCategory",
+    "Cartesian",
+    "Composition",
+    "MonoidalStructures",
+    "MonoidalStructuresCategory",
+    "Reversed",
+    "SelfAction",
+    "TrivialAction",
+    "register_cartesian_comparisons",
+]
 
 
 
@@ -196,10 +207,22 @@ class MonoidalStructuresCategory(Category[[], []]):
         def right_unitor(self) -> NaturalTransformation:
             return self._monoidal_data.right_unitor
 
-        def pentagon(self, w: CategoryOfCategories.ElementType, x: CategoryOfCategories.ElementType, y: CategoryOfCategories.ElementType, z: CategoryOfCategories.ElementType) -> Proposition:
+        def pentagon(
+            self,
+            w: CategoryOfCategories.ElementType,
+            x: CategoryOfCategories.ElementType,
+            y: CategoryOfCategories.ElementType,
+            z: CategoryOfCategories.ElementType,
+        ) -> Proposition:
             tensor, associator = self.tensor(), self.associator()
             triples = associator.domain().domain()
-            a = lambda p, q, r: associator.component(triples((p, q, r)))
+
+            def a(
+                p: CategoryOfCategories.ElementType,
+                q: CategoryOfCategories.ElementType,
+                r: CategoryOfCategories.ElementType,
+            ) -> MorphismCategory.ObjectType:
+                return associator.component(triples((p, q, r)))
             wx, xy, yz = tensor_object(tensor, w, x), tensor_object(tensor, x, y), tensor_object(tensor, y, z)
             base = self.underlying_category()
             model = _diagram_model(self)
@@ -260,7 +283,14 @@ class MonoidalStructuresCategory(Category[[], []]):
     def __init__(self, base: Category) -> None:
         self._base = base
 
-    def __call__(self, tensor: Functor, unit: CategoryOfCategories.ElementType, associator: NaturalTransformation, left_unitor: NaturalTransformation, right_unitor: NaturalTransformation) -> MonoidalStructuresCategory.ObjectType:
+    def __call__(
+        self,
+        tensor: Functor,
+        unit: CategoryOfCategories.ElementType,
+        associator: NaturalTransformation,
+        left_unitor: NaturalTransformation,
+        right_unitor: NaturalTransformation,
+    ) -> MonoidalStructuresCategory.ObjectType:
         assert tensor.codomain() is self._base
         assert all(tensor.domain().product_projection(index).codomain() is self._base for index in (0, 1))
         assert unit in self._base
@@ -404,7 +434,8 @@ def Reversed(monoidal: MonoidalStructuresCategory.ObjectType) -> MonoidalStructu
     left, right = tensor_parentheses(tensor)
     triples = left.domain()
     original, opposed = monoidal.associator(), monoidal.associator().inverse()
-    reverse = lambda triple: triples(tuple(triple.family_component(index) for index in (2, 1, 0)))
+    def reverse(triple: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return triples(tuple(triple.family_component(index) for index in (2, 1, 0)))
     associator = natural_isomorphism(
         left, right,
         lambda triple: opposed.component(reverse(triple)),
@@ -468,11 +499,23 @@ class ActionsCategory(Category[[], []]):
         def unitor(self) -> NaturalTransformation:
             return self._action_data.unitor
 
-        def pentagon(self, m: CategoryOfCategories.ElementType, n: CategoryOfCategories.ElementType, p: CategoryOfCategories.ElementType, x: CategoryOfCategories.ElementType) -> Proposition:
+        def pentagon(
+            self,
+            m: CategoryOfCategories.ElementType,
+            n: CategoryOfCategories.ElementType,
+            p: CategoryOfCategories.ElementType,
+            x: CategoryOfCategories.ElementType,
+        ) -> Proposition:
             monoidal, action = self.monoidal_structure(), self.action()
             tensor = monoidal.tensor()
             triples = self.associator().domain().domain()
-            a = lambda first, second, value: self.associator().component(triples((first, second, value)))
+
+            def a(
+                first: CategoryOfCategories.ElementType,
+                second: CategoryOfCategories.ElementType,
+                value: CategoryOfCategories.ElementType,
+            ) -> MorphismCategory.ObjectType:
+                return self.associator().component(triples((first, second, value)))
             mn, np = tensor_object(tensor, m, n), tensor_object(tensor, n, p)
             px = tensor_object(action, p, x)
             alpha = monoidal.associator().component(monoidal.associator().domain().domain()((m, n, p)))

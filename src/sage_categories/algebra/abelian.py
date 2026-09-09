@@ -896,7 +896,9 @@ def relative_tensor_morphism(
     one, which is what makes ``(x, y) -> f(x) (x)_S g(y)`` balanced and so factor through
     the source quotient (``specs/bimodules.md``).
     """
-    apply = lambda arrow, datum: arrow(arrow.domain().point(datum)).datum()
+    def apply(arrow: MorphismCategory.ObjectType, datum: Hashable) -> Hashable:
+        return arrow(arrow.domain().point(datum)).datum()
+
     return relative_tensor_mediator(
         source,
         target.codomain(),

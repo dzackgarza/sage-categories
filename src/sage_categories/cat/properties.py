@@ -676,7 +676,9 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         return root.predicate()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """The monomorphisms into the base, into each root, into the narrowing by the roots but one, and into the same narrowing of each category the base is a subcategory of, each once.
+        """The monomorphisms into the base, each root, and each one-root weakening.
+
+        Also include the same narrowing in every category containing the base, each once.
 
         Dropping one root at a time reaches the narrowing by every subset of the roots,
         which is what this category is a full subcategory of and what D83 requires it to

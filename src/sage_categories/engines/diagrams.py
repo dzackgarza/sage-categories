@@ -10,10 +10,11 @@ DisCoPy diagram evaluates boxes or layers.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import cast
+from importlib import import_module
+from typing import Any, Protocol, cast, overload
 
-from discopy import cat as discopy_cat
-from discopy import monoidal as discopy_monoidal
+discopy_cat: Any = import_module("discopy.cat")
+discopy_monoidal: Any = import_module("discopy.monoidal")
 
 __all__ = ["DiagramBox", "NonstrictMonoidalModel", "evaluate_path"]
 
@@ -27,6 +28,12 @@ class _ObjectValue:
         self.model = type(self)._model
         self.word = word
         self.value = self.model._unit if value is None and not word else value
+
+    @overload
+    def __matmul__(self, other: _ObjectValue) -> _ObjectValue: ...
+
+    @overload
+    def __matmul__(self, other: _ArrowValue) -> _ArrowValue: ...
 
     def __matmul__(self, other: _ObjectValue | _ArrowValue) -> _ObjectValue | _ArrowValue:
         assert self.model is other.model
@@ -108,11 +115,15 @@ class NonstrictMonoidalModel[Object, Arrow]:
         self._wire_values: dict[str, Object] = {}
         self._wire_tokens: dict[int, tuple[Object, str]] = {}
         self._next_wire = 0
-        self._object_type = type(
-            f"_NonstrictObject_{id(self)}", (_ObjectValue,), {"_model": self}
+        self._object_type: type[_ObjectValue] = type(
+            f"_NonstrictObject_{id(self)}",
+            (_ObjectValue,),
+            {"_model": self},
         )
-        self._arrow_type = type(
-            f"_NonstrictArrow_{id(self)}", (_ArrowValue,), {"_model": self}
+        self._arrow_type: type[_ArrowValue] = type(
+            f"_NonstrictArrow_{id(self)}",
+            (_ArrowValue,),
+            {"_model": self},
         )
         self._category = discopy_cat.Category(self._object_type, self._arrow_type)
 
@@ -156,6 +167,7 @@ class NonstrictMonoidalModel[Object, Arrow]:
 
     def evaluate(self, diagram: discopy_monoidal.Diagram) -> Arrow:
         """Interpret ``diagram`` entirely through DisCoPy's monoidal functor evaluator."""
+
         def object_image(atom: object) -> _ObjectValue:
             value = self._wire_values[str(atom)]
             return self._word((value,))
@@ -173,8 +185,14 @@ class NonstrictMonoidalModel[Object, Arrow]:
         return cast(Arrow, functor(diagram).value)
 
 
+class _PathArrow(Protocol):
+    def domain(self) -> object: ...
+
+    def codomain(self) -> object: ...
+
+
 def evaluate_path(
-    arrows: tuple[object, ...],
+    arrows: tuple[_PathArrow, ...],
     *,
     domain: object,
     codomain: object,
@@ -182,53 +200,53 @@ def evaluate_path(
     compose: Callable[[object, object], object],
 ) -> object:
     """Compose a retained semantic path through DisCoPy's native arrow evaluator."""
-    object_type = type(
-        f"_PathObject_{id(arrows)}",
-        (),
-        {
-            "__init__": lambda self, value=None: setattr(self, "value", value),
-            "__eq__": lambda self, other: type(self) is type(other) and self.value is other.value,
-            "__hash__": lambda self: hash(id(self.value)),
-        },
-    )
+    class ObjectValue:
+        def __init__(self, value: object) -> None:
+            self.value = value
+
+        def __eq__(self, other: object) -> bool:
+            return isinstance(other, ObjectValue) and self.value is other.value
+
+        def __hash__(self) -> int:
+            return hash(id(self.value))
 
     class ArrowValue:
-        def __init__(self, dom, cod, value):
+        def __init__(self, dom: ObjectValue, cod: ObjectValue, value: object) -> None:
             self.dom, self.cod, self.value = dom, cod, value
 
         @classmethod
-        def id(cls, value):
+        def id(cls, value: ObjectValue) -> ArrowValue:
             return cls(value, value, identity(value.value))
 
-        def __rshift__(self, other):
+        def __rshift__(self, other: ArrowValue) -> ArrowValue:
             assert self.cod == other.dom
             return type(self)(self.dom, other.cod, compose(other.value, self.value))
 
-    category = discopy_cat.Category(object_type, ArrowValue)
-    objects: dict[int, object] = {}
+    category = discopy_cat.Category(ObjectValue, ArrowValue)
+    objects: dict[int, ObjectValue] = {}
 
-    def ob(value: object):
-        key=id(value)
+    def ob(value: object) -> ObjectValue:
+        key = id(value)
         if key not in objects:
-            objects[key]=object_type(value)
+            objects[key] = ObjectValue(value)
         return objects[key]
 
-    boxes=[]
-    current=domain
+    boxes = []
+    current = domain
     for index, arrow in enumerate(arrows):
         target = arrow.codomain()
         boxes.append(discopy_cat.Box(f"a{index}", discopy_cat.Ob(str(id(current))), discopy_cat.Ob(str(id(target))), data=arrow))
-        current=target
+        current = target
     assert current is codomain
-    token_values={str(id(value)): value for value in [domain, codomain, *(a.domain() for a in arrows), *(a.codomain() for a in arrows)]}
-    functor=discopy_cat.Functor(
+    token_values = {str(id(value)): value for value in [domain, codomain, *(a.domain() for a in arrows), *(a.codomain() for a in arrows)]}
+    functor = discopy_cat.Functor(
         lambda token: ob(token_values[token.name]),
         lambda box: ArrowValue(ob(box.data.domain()), ob(box.data.codomain()), box.data),
         cod=category,
     )
     if not boxes:
         return identity(domain)
-    diagram=boxes[0]
+    diagram = boxes[0]
     for box in boxes[1:]:
         diagram = diagram >> box
-    return functor(diagram).value
+    return cast(object, functor(diagram).value)

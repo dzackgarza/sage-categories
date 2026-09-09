@@ -413,7 +413,10 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return Unknown
 
     def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
-        """The exact decision this category owns for the inhabitation of one of its fixed-endpoint categories ``Mor(self)(A, B)`` or a property narrowing of it (POL-CAT-086, POL-MATH-042).
+        """The exact decision this category owns for one fixed-endpoint category.
+
+        This covers ``Mor(self)(A, B)`` and its property narrowings
+        (POL-CAT-086, POL-MATH-042).
 
         A full subcategory has the morphism categories of its ambient (POL-CAT-087); every
         other category decides nothing by default.

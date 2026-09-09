@@ -34,6 +34,10 @@ from sage_categories.geometry.sheaves import (
     ring_sheaf,
 )
 from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
+from sage_categories.geometry.topological_rings import (
+    TopologicalRings,
+    TopologicalRingsCategory,
+)
 
 __all__ = [
     "AffineOpen",
@@ -53,6 +57,8 @@ __all__ = [
     "Schemes",
     "SchemesCategory",
     "Spec",
+    "TopologicalRings",
+    "TopologicalRingsCategory",
     "TopologicalSpaces",
     "TopologicalSpacesCategory",
     "TwoChartGluing",

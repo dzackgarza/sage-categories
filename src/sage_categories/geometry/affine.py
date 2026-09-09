@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cache
 from importlib import import_module
 from typing import Any, cast
 
@@ -10,10 +11,13 @@ from sage_categories.algebra._commutative_rings_oscar import (
     oscar_native_morphism,
     oscar_native_object,
 )
+from sage_categories.algebra.commutative_rings import (
+    _principal_localization_from_native,
+)
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.native import (
     NativeMorphismRealization,
     NativeMorphismRealizations,
@@ -22,13 +26,15 @@ from sage_categories.cat.native import (
 )
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.engines import oscar
-from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_function
+from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
 
 __all__ = [
+    "AffineOpen",
+    "AffineOpenCategory",
     "AffineSchemes",
     "AffineSchemesCategory",
     "Spec",
+    "affine_structure_sheaf",
     "native_affine_morphism",
     "native_affine_scheme",
 ]
@@ -49,7 +55,115 @@ def _commutative_rings() -> Any:
     return import_module("sage_categories.cat.structured_objects").Rings(Sets).Commutative()
 
 
-class AffineSchemesCategory(Category[[MorphismCategory.ObjectType], []]):
+@dataclass(frozen=True, eq=False, slots=True)
+class _AffineOpenData:
+    scheme: AffineSchemesCategory.ObjectType
+    native: object
+    section_ring: CategoryOfCategories.ElementType
+    ancestors: tuple[AffineOpenCategory.ObjectType, ...]
+    restrictions: tuple[tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType], ...]
+
+
+class AffineOpenCategory(Category[Any, Any]):
+    """The retained tree of admissible OSCAR affine/principal opens of one affine scheme."""
+
+    class ObjectType:
+        def __init__(self, data: _AffineOpenData) -> None:
+            self._data = data
+            self._ancestors = data.ancestors
+            self._restrictions = dict(data.restrictions)
+
+        def native(self) -> object:
+            return self._data.native
+
+        def section_ring(self) -> CategoryOfCategories.ElementType:
+            return self._data.section_ring
+
+        def restriction_to(self, ancestor: AffineOpenCategory.ObjectType) -> MorphismCategory.ObjectType:
+            assert any(ancestor is retained for retained in self._ancestors)
+            return self._restrictions[ancestor]
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __init__(self, scheme: AffineSchemesCategory.ObjectType) -> None:
+        self._scheme = scheme
+        native_scheme = native_affine_scheme(cast(CategoryOfCategories.ElementType, scheme)).native
+        self._native_sheaf = oscar.structure_sheaf(native_scheme)
+        self._root = self.ObjectType(_AffineOpenData(scheme, native_scheme, scheme.coordinate_ring(), (), ()))
+        super().__init__()
+
+    def scheme(self) -> AffineSchemesCategory.ObjectType:
+        return self._scheme
+
+    def root(self) -> AffineOpenCategory.ObjectType:
+        return self._root
+
+    def principal_open(
+        self,
+        parent: AffineOpenCategory.ObjectType,
+        element: CategoryOfCategories.ElementType,
+    ) -> AffineOpenCategory.ObjectType:
+        """Retain ``D(element)`` inside ``parent`` with OSCAR's actual section ring/map."""
+        assert element.parent() is parent.section_ring()
+        native_open = oscar.principal_open(parent.native(), cast(Any, element).datum())
+        native_ring = oscar.sheaf_value(self._native_sheaf, native_open)
+        native_restriction = oscar.sheaf_restriction(self._native_sheaf, parent.native(), native_open)
+        section_ring, restriction = _principal_localization_from_native(parent.section_ring(), element, native_ring, native_restriction)
+        ancestor_restrictions = tuple(
+            (
+                ancestor,
+                restriction * parent.restriction_to(ancestor),
+            )
+            for ancestor in parent._ancestors
+        )
+        return self.ObjectType(
+            _AffineOpenData(
+                self._scheme,
+                native_open,
+                section_ring,
+                (parent, *parent._ancestors),
+                ((parent, restriction), *ancestor_restrictions),
+            )
+        )
+
+    def construct_morphism(
+        self,
+        domain: CategoryOfCategories.ElementType,
+        codomain: CategoryOfCategories.ElementType,
+        *args: Any,
+        **kwargs: Any,
+    ) -> MorphismCategory.ObjectType:
+        source = cast(AffineOpenCategory.ObjectType, domain)
+        target = cast(AffineOpenCategory.ObjectType, codomain)
+        assert source is target or any(target is ancestor for ancestor in source._ancestors)
+        return cast(
+            MorphismCategory.ObjectType,
+            cast(Any, self).MorphismType(domain=source, codomain=target),
+        )
+
+    def construct_identity(self, member_object: Any) -> Any:
+        return self.construct_morphism(member_object, member_object)
+
+    def composite(
+        self,
+        second: Any,
+        first: Any,
+    ) -> Any:
+        assert first.codomain() is second.domain()
+        return self.construct_morphism(first.domain(), second.codomain())
+
+    def __repr__(self) -> str:
+        return f"AffineOpens({self._scheme!r})"
+
+
+AffineOpen = AffineOpenCategory.ObjectType
+
+
+class AffineSchemesCategory(Category[Any, Any]):
     """Affine schemes whose computational realization is retained privately in OSCAR."""
 
     class ObjectType:
@@ -121,7 +235,7 @@ class AffineSchemesCategory(Category[[MorphismCategory.ObjectType], []]):
         return "AffineSchemes"
 
 
-@cached_function(key=identity_key)
+@cache
 def AffineSchemes() -> AffineSchemesCategory:
     return AffineSchemesCategory()
 
@@ -159,3 +273,37 @@ def _spec_morphism(opposite_ring_map: MorphismCategory.ObjectType) -> MorphismCa
 
 
 Spec: Functor = Fun(_commutative_rings().op(), AffineSchemes())(_spec_object, _spec_morphism)
+
+
+def affine_structure_sheaf(
+    scheme: AffineSchemesCategory.ObjectType,
+) -> tuple[AffineOpenCategory, RingPresheaf]:
+    """The OSCAR structure sheaf on the retained principal-open tree of ``scheme``."""
+    opens = AffineOpenCategory(scheme)
+    rings = _commutative_rings()
+
+    def on_object(open_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return cast(AffineOpenCategory.ObjectType, open_object).section_ring()
+
+    def on_morphism(opposite_inclusion: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        inclusion = opposite_morphism(opposite_inclusion)
+        smaller = cast(AffineOpenCategory.ObjectType, inclusion.domain())
+        larger = cast(AffineOpenCategory.ObjectType, inclusion.codomain())
+        match smaller is larger:
+            case True:
+                return Mor(rings)(larger.section_ring(), larger.section_ring()).one()
+            case False:
+                return smaller.restriction_to(larger)
+
+    def key_to_open(key: object) -> CategoryOfCategories.ElementType:
+        return cast(CategoryOfCategories.ElementType, cast(AffineOpenCategory.ObjectType, key))
+
+    functor = Fun(opens.op(), rings)(on_object, on_morphism)
+    presheaf = ring_presheaf_from_functor(
+        scheme,
+        opens,
+        functor,
+        key_to_open,
+        lambda open_object: open_object,
+    )
+    return opens, presheaf

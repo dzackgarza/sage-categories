@@ -94,12 +94,8 @@ def quotient_ring(
     assert relations
     assert all(relation.parent() is source for relation in relations)
     native_source = oscar_native_object(source).native
-    native_quotient, native_projection = oscar.quotient(
-        native_source, tuple(_datum(relation) for relation in relations)
-    )
-    quotient = reconstruct_oscar_object(
-        native_quotient, _QuotientConstruction(source, relations)
-    )
+    native_quotient, native_projection = oscar.quotient(native_source, tuple(_datum(relation) for relation in relations))
+    quotient = reconstruct_oscar_object(native_quotient, _QuotientConstruction(source, relations))
     projection = reconstruct_oscar_morphism(source, quotient, native_projection)
     return quotient, projection
 
@@ -111,12 +107,26 @@ def principal_localization(
     """The principal localization ``source[element^-1]`` and its canonical map."""
     assert element.parent() is source
     native_source = oscar_native_object(source).native
-    native_localized, native_map = oscar.localization_at_element(
-        native_source, _datum(element)
-    )
-    localized = reconstruct_oscar_object(
-        native_localized, _LocalizationConstruction(source, element)
-    )
+    native_localized, native_map = oscar.localization_at_element(native_source, _datum(element))
+    localized = reconstruct_oscar_object(native_localized, _LocalizationConstruction(source, element))
+    canonical = reconstruct_oscar_morphism(source, localized, native_map)
+    return localized, canonical
+
+
+def _principal_localization_from_native(
+    source: CategoryOfCategories.ElementType,
+    element: CategoryOfCategories.ElementType,
+    native_localized: object,
+    native_map: object,
+) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
+    """Reconstruct the selected principal localization from an existing OSCAR realization.
+
+    This is the owner-side entrypoint used by the affine structure sheaf: OSCAR has
+    already constructed the admissible principal open and its section ring, so geometry
+    passes those native values back to the ring owner rather than recomputing localization.
+    """
+    assert element.parent() is source
+    localized = reconstruct_oscar_object(native_localized, _LocalizationConstruction(source, element))
     canonical = reconstruct_oscar_morphism(source, localized, native_map)
     return localized, canonical
 

@@ -6,11 +6,6 @@ component callbacks.  Catlab retains and executes every composite representation
 
 from __future__ import annotations
 
-from functools import cache
-from importlib import import_module
-from pathlib import Path
-from typing import Any
-
 from sage_categories.cat.category import Category
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.native import (
@@ -30,6 +25,7 @@ from sage_categories.cat.native import (
 from sage_categories.cat.native import (
     native_transformation as retained_native_transformation,
 )
+from sage_categories.engines.julia_bridge import catlab_bridge as _bridge
 
 __all__ = [
     "callable_transformation",
@@ -60,19 +56,6 @@ type TransformationRecipe = tuple[str, tuple[object, ...]]
 
 _functor_recipes: dict[int, tuple[object, FunctorRecipe]] = {}
 _transformation_recipes: dict[int, tuple[object, TransformationRecipe]] = {}
-
-
-def _bridge_source() -> Path:
-    return Path(__file__).with_name("SageCategoriesBridge.jl")
-
-
-@cache
-def _bridge() -> Any:
-    """Load the pinned Julia bridge through JuliaCall exactly once."""
-    juliacall = import_module("juliacall")
-    main = juliacall.Main
-    main.include(str(_bridge_source()))
-    return main.SageCategoriesBridge
 
 
 def _retain_functor_recipe(

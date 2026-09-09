@@ -327,3 +327,10 @@ Ideas, to be weighed, not obligations.*
   4. Homotopy moves, diagrammatic rewriting, and equivalence verification for higher morphisms.
 
 - **Required resolution:** Delegate higher-dimensional morphism towers, 2-cell compositions, and interchange handling to `homotopy-core` (via Rust/PyO3 bindings) instead of maintaining a truncated, hand-rolled Python implementation.
+
+## OSCAR availability probe stalls in the embedded Julia environment
+
+- **Area:** Julia / OSCAR engine integration for #47.
+- **Observed:** `uv run --no-project --python 3.14 --with juliacall` reached JuliaCall startup but `Base.find_package("Oscar")` produced no result after repeated 30-second polls. The probe process remained alive until explicitly killed.
+- **Impact:** The governing plan allocates polynomial rings, quotients, localizations, affine schemes, sheaves, and gluings to OSCAR. The repository cannot currently verify that the embedded Julia environment exposes OSCAR before extending `SageCategoriesBridge.jl`.
+- **Required resolution:** Make the repository's pinned Julia environment expose and load OSCAR through the existing JuliaCall bridge, with a fast deterministic availability/version probe suitable for the ring/affine acceptance gate.

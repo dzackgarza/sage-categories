@@ -1,5 +1,6 @@
 """Topological, ringed, and scheme-theoretic leaves."""
 
+from sage_categories.geometry.affine import AffineSchemes, AffineSchemesCategory, Spec
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
 from sage_categories.geometry.sheaves import (
     RingPresheaf,
@@ -10,10 +11,13 @@ from sage_categories.geometry.sheaves import (
 from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 
 __all__ = [
+    "AffineSchemes",
+    "AffineSchemesCategory",
     "RingPresheaf",
     "RingSheaf",
     "RingedSpaces",
     "RingedSpacesCategory",
+    "Spec",
     "TopologicalSpaces",
     "TopologicalSpacesCategory",
     "ring_presheaf",

@@ -15,7 +15,8 @@ jq -e --arg id "$plan_id" '
 # completion contracts, and selection of work whose own and ancestor blockers are
 # satisfied. A source directory or an archived completion label cannot certify a
 # prerequisite. Failure to read either owner is a failed gate.
-report="$(uvx --from git+https://github.com/dzackgarza/itree itree doctor dzackgarza/sage-categories --json | tee /dev/stderr)"
+report="$(uvx --from git+https://github.com/dzackgarza/itree itree doctor dzackgarza/sage-categories --json)"
+printf '%s\n' "$report" >&2
 jq -e '.status == "ok" and .root.ref.number == 36' <<<"$report" >/dev/null
 
 if [ "$(jq -r '.metadata.status' <<<"$plan")" = complete ]; then

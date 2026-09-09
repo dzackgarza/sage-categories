@@ -80,6 +80,33 @@ These represented cases are the general public construction, not a fallback fini
 The owned theory retains general functor categories and universal presentations;
 their required public actions follow the mathematical contract in
 [computational-generality.md](computational-generality.md#representation-and-execution).
+
+The sequential topological consumer keeps the same separation of owners. `Sets`
+owns the stage-representative colimit of the underlying carriers, while
+`TopologicalSpaces()` owns each `CP^n`, its standard inclusions, the weak CW topology
+on `CP^infty`, and the topological colimit presentation. An open of the weak topology
+retains its compatible open on every finite skeleton; no finite skeleton, finite cell
+list, or finite family of opens replaces the colimit topology. The colimit mediator
+descends its underlying map through the `Sets` colimit and retains the inverse-image
+functor stagewise. In particular, compatible complex conjugations on all `CP^n`
+induce the retained nonidentity endomorphism of `CP^infty`.
+
+The adelic consumer similarly separates exact mathematical values from numerical
+realizations. The installed OSCAR/Hecke `PadicField` interface is precision-bearing,
+so its elements are not used as exact `QQ_p` values. Exact local-field values retain
+symbolic field expressions, exact rational embeddings, and exact valuations whenever
+the retained expression determines them; finite-precision local-field values remain
+possible future approximations rather than representatives of the exact carrier.
+The prime index is a predicate-defined infinite set. An adele retains a real
+component, a callable component at every prime, a finite set of possibly nonintegral
+primes, and the defining integrality rule at every other prime. Addition and
+multiplication act componentwise and combine exceptional sets by finite union.
+`TopologicalRings()` retains the same underlying set for the ordinary `Rings(Sets)`
+object and its topology, together with represented product-topology preimages that
+witness continuity of addition and multiplication. Basic adelic opens retain only
+their finite exceptional local conditions; `ZZ_p` remains the required local
+condition at every other prime.
+
 CAP object-level pullbacks alone do not establish pullbacks in owned `Cat`.
 An uncovered construction or missing Python--GAP--Julia interoperation remains an
 implementation obligation under the governing plan. Mathlib and Agda Categories

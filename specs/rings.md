@@ -106,6 +106,14 @@ Unary `-` and subtraction come from `AdditiveGroups(C_x).Commutative()`. Additio
 At `C = Sets()`, the internal diagrams give the usual element operations.
 For a general `C`, the morphisms and diagrams above remain the public definition.
 
+Topology is an additional structure and is not part of `Rings(C)`. The geometric
+owner `TopologicalRings()` pairs an ordinary `Rings(Sets())` object with a
+`TopologicalSpaces()` object on the exact same carrier and retains continuity data
+for the ring's addition and multiplication. In particular, the adelic restricted
+product remains an ordinary commutative ring under this forgetful projection; its
+restricted-product topology and the represented product-topology preimages of ring
+operations belong to `TopologicalRings()`, not to `Rings(Sets())`.
+
 ## Acceptance conditions
 
 - `Rings(C)` retains one underlying object in `C`.

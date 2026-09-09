@@ -166,6 +166,21 @@ The module and algebra consequences are specified in
 [modules.md](modules.md#size-and-coordinate-presentations) and
 [algebras.md](algebras.md#finite-presentation-and-the-underlying-module).
 
+For these two topological examples, “retain” includes the topology and its maps, not
+only the underlying set. The `CP^infty` carrier is the sequential `Sets` colimit, and
+its weak CW topology is represented by compatible opens on all finite skeleta. The
+standard inclusion of each supplied stage is a continuous structure map into that
+same colimit object. A finite `CP^n` therefore remains a separate object with its own
+comparison map.
+
+For the adeles, a represented value carries a component rule on the full prime index
+and a finite exceptional set outside which its components are certified to lie in
+`ZZ_p`. The unit is consequently not finitely supported. A basic restricted-product
+open carries arbitrary open conditions at finitely many places and the integral
+condition at every remaining finite place. Exact local-field elements and their
+finite-precision approximations are different representations: a precision-bearing
+`p`-adic backend value cannot replace the exact `QQ_p` component.
+
 ## Ordinary infinitary objects
 
 The following families extend the examples above. They state mathematical

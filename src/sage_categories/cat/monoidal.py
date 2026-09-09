@@ -21,7 +21,11 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Proposition
-from sage_categories.engines.diagrams import evaluate_path
+from sage_categories.engines.diagrams import (
+    DiagramBox,
+    NonstrictMonoidalModel,
+    evaluate_path,
+)
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
@@ -62,6 +66,82 @@ def tensor_morphism(tensor: Functor, first: MorphismCategory.ObjectType, second:
         pairs((first.domain(), second.domain())),
         pairs((first.codomain(), second.codomain())),
     )((first, second)))
+
+
+def _word_interpretation(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    word: tuple[CategoryOfCategories.ElementType, ...],
+) -> CategoryOfCategories.ElementType:
+    """The selected left-associated interpretation ``E(word)`` of a tensor word."""
+    match word:
+        case ():
+            return monoidal.unit()
+        case (first, *rest):
+            value = first
+            for following in rest:
+                value = tensor_object(monoidal.tensor(), value, following)
+            return value
+    raise AssertionError("tensor-word interpretation is exhaustive")
+
+
+def _word_comparison(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    first: tuple[CategoryOfCategories.ElementType, ...],
+    second: tuple[CategoryOfCategories.ElementType, ...],
+) -> MorphismCategory.ObjectType:
+    """The supplied comparison ``c_{u,v}: E(uv) -> E(u) tensor E(v)``.
+
+    This constructs the comparison from the selected associator and unitors; DisCoPy
+    remains the evaluator of diagrams that consume it.  The recursion is on the formal
+    tensor word, not on a DisCoPy diagram.
+    """
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    match first, second:
+        case (), _:
+            value = _word_interpretation(monoidal, second)
+            return monoidal.left_unitor().inverse().component(value)
+        case _, ():
+            value = _word_interpretation(monoidal, first)
+            return monoidal.right_unitor().inverse().component(value)
+        case _, (_single,):
+            source = _word_interpretation(monoidal, first + second)
+            return Mor(base)(source, source).one()
+        case _, (*prefix, last):
+            prefix_word = tuple(prefix)
+            previous = _word_comparison(monoidal, first, prefix_word)
+            last_value = last
+            first_value = _word_interpretation(monoidal, first)
+            prefix_value = _word_interpretation(monoidal, prefix_word)
+            tensored = tensor_morphism(tensor, previous, Mor(base)(last_value, last_value).one())
+            triples = monoidal.associator().domain().domain()
+            associator = monoidal.associator().component(triples((first_value, prefix_value, last_value)))
+            return associator * tensored
+    raise AssertionError("tensor-word comparison is exhaustive")
+
+
+def _diagram_model(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+) -> NonstrictMonoidalModel[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
+    """DisCoPy interpretation into this exact supplied nonstrict monoidal structure."""
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    return NonstrictMonoidalModel(
+        unit=monoidal.unit(),
+        tensor_object=lambda first, second: tensor_object(tensor, first, second),
+        tensor_morphism=lambda first, second: tensor_morphism(tensor, first, second),
+        identity=lambda value: Mor(base)(value, value).one(),
+        compose=lambda second, first: second * first,
+        inverse=lambda arrow: arrow.inverse(),
+        comparison=lambda first, second: _word_comparison(monoidal, first, second),
+    )
+
+
+def _diagram_box(
+    model: NonstrictMonoidalModel[CategoryOfCategories.ElementType, MorphismCategory.ObjectType],
+    name: str,
+    arrow: MorphismCategory.ObjectType,
+) -> DiagramBox:
+    """One native generating box carrying an exact owned semantic morphism."""
+    return model.box(name, (arrow.domain(),), (arrow.codomain(),), arrow)
 
 
 @cached_function(key=identity_key)
@@ -122,32 +202,42 @@ class MonoidalStructuresCategory(Category[[], []]):
             a = lambda p, q, r: associator.component(triples((p, q, r)))
             wx, xy, yz = tensor_object(tensor, w, x), tensor_object(tensor, x, y), tensor_object(tensor, y, z)
             base = self.underlying_category()
-            identity = lambda value: Mor(base)(value, value).one()
-            compose = lambda second, first: second * first
-            first_leg = tensor_morphism(tensor, a(w, x, y), Mor(base)(z, z).one())
-            middle_leg = a(w, xy, z)
-            last_leg = tensor_morphism(tensor, Mor(base)(w, w).one(), a(x, y, z))
+            model = _diagram_model(self)
+            first_leg = model.evaluate(
+                _diagram_box(model, "a_wxy", a(w, x, y))
+                @ _diagram_box(model, "1_z", Mor(base)(z, z).one())
+            )
+            middle_leg = model.evaluate(_diagram_box(model, "a_w_xy_z", a(w, xy, z)))
+            last_leg = model.evaluate(
+                _diagram_box(model, "1_w", Mor(base)(w, w).one())
+                @ _diagram_box(model, "a_xyz", a(x, y, z))
+            )
             long = evaluate_path(
                 (first_leg, middle_leg, last_leg),
                 domain=first_leg.domain(),
                 codomain=last_leg.codomain(),
-                identity=identity,
-                compose=compose,
+                identity=lambda value: Mor(base)(value, value).one(),
+                compose=lambda second, first: second * first,
             )
-            short_first, short_last = a(wx, y, z), a(w, x, yz)
+            short_first = model.evaluate(_diagram_box(model, "a_wx_y_z", a(wx, y, z)))
+            short_last = model.evaluate(_diagram_box(model, "a_w_x_yz", a(w, x, yz)))
             short = evaluate_path(
                 (short_first, short_last),
                 domain=short_first.domain(),
                 codomain=short_last.codomain(),
-                identity=identity,
-                compose=compose,
+                identity=lambda value: Mor(base)(value, value).one(),
+                compose=lambda second, first: second * first,
             )
             return long == short
 
         def triangle(self, x: CategoryOfCategories.ElementType, y: CategoryOfCategories.ElementType) -> Proposition:
-            tensor, base = self.tensor(), self.underlying_category()
+            base = self.underlying_category()
             associator = self.associator().component(self.associator().domain().domain()((x, self.unit(), y)))
-            last = tensor_morphism(tensor, Mor(base)(x, x).one(), self.left_unitor().component(y))
+            model = _diagram_model(self)
+            last = model.evaluate(
+                _diagram_box(model, "1_x", Mor(base)(x, x).one())
+                @ _diagram_box(model, "lambda_y", self.left_unitor().component(y))
+            )
             left = evaluate_path(
                 (associator, last),
                 domain=associator.domain(),
@@ -155,7 +245,10 @@ class MonoidalStructuresCategory(Category[[], []]):
                 identity=lambda value: Mor(base)(value, value).one(),
                 compose=lambda second, first: second * first,
             )
-            right = tensor_morphism(tensor, self.right_unitor().component(x), Mor(base)(y, y).one())
+            right = model.evaluate(
+                _diagram_box(model, "rho_x", self.right_unitor().component(x))
+                @ _diagram_box(model, "1_y", Mor(base)(y, y).one())
+            )
             return left == right
 
     class ElementType:

@@ -1,5 +1,7 @@
 """Cartesian finite-set coherence comparisons are reconstructed from CAP."""
 
+from sympy import Q
+
 from sage_categories.all import Cartesian, Sets, ask
 from sage_categories.sets._finite_cap import finite_native_morphism
 
@@ -21,3 +23,24 @@ assert left.inverse()(X.point(1)).datum() == ((), 1)
 assert right.inverse()(X.point(1)).datum() == (1, ())
 assert ask(structure.pentagon(X, X, Y, Z)) is True
 assert ask(structure.triangle(X, Y)) is True
+
+
+# The native CAP realization is finite-domain only.  A rule-defined set keeps the
+# same public Cartesian coherence through the generic selected-product calculus,
+# without acquiring or requiring a finite enumeration.
+integers = Sets.from_membership(lambda value: Q.integer(value))
+represented_triples = structure.associator().domain().domain()
+represented_alpha = structure.associator().component(
+    represented_triples((integers, integers, integers))
+)
+represented_point = represented_alpha.domain().point(((1, 2), 3))
+assert represented_alpha(represented_point).datum() == (1, (2, 3))
+assert represented_alpha.inverse()(represented_alpha(represented_point)).datum() == ((1, 2), 3)
+represented_left = structure.left_unitor().component(integers)
+represented_right = structure.right_unitor().component(integers)
+assert represented_left(represented_left.domain().point(((), 7))).datum() == 7
+assert represented_right(represented_right.domain().point((7, ()))).datum() == 7
+assert represented_left.inverse()(integers.point(7)).datum() == ((), 7)
+assert represented_right.inverse()(integers.point(7)).datum() == (7, ())
+assert ask(structure.pentagon(integers, integers, integers, integers)) is True
+assert ask(structure.triangle(integers, integers)) is True

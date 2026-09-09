@@ -10,11 +10,14 @@ DisCoPy diagram evaluates boxes or layers.
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import cast
 
 from discopy import cat as discopy_cat
 from discopy import monoidal as discopy_monoidal
 
-__all__ = ["NonstrictMonoidalModel", "evaluate_path"]
+__all__ = ["DiagramBox", "NonstrictMonoidalModel", "evaluate_path"]
+
+type DiagramBox = discopy_monoidal.Box
 
 
 class _ObjectValue:
@@ -80,19 +83,19 @@ class _ArrowValue:
     __add__ = __matmul__
 
 
-class NonstrictMonoidalModel:
+class NonstrictMonoidalModel[Object, Arrow]:
     """A DisCoPy semantic target for one supplied owned monoidal structure."""
 
     def __init__(
         self,
         *,
-        unit: object,
-        tensor_object: Callable[[object, object], object],
-        tensor_morphism: Callable[[object, object], object],
-        identity: Callable[[object], object],
-        compose: Callable[[object, object], object],
-        inverse: Callable[[object], object],
-        comparison: Callable[[tuple[object, ...], tuple[object, ...]], object],
+        unit: Object,
+        tensor_object: Callable[[Object, Object], Object],
+        tensor_morphism: Callable[[Arrow, Arrow], Arrow],
+        identity: Callable[[Object], Arrow],
+        compose: Callable[[Arrow, Arrow], Arrow],
+        inverse: Callable[[Arrow], Arrow],
+        comparison: Callable[[tuple[Object, ...], tuple[Object, ...]], Arrow],
     ) -> None:
         self._unit = unit
         self._tensor_object = tensor_object
@@ -102,8 +105,8 @@ class NonstrictMonoidalModel:
         self._inverse = inverse
         self._comparison = comparison
         self._word_cache: dict[tuple[int, ...], _ObjectValue] = {}
-        self._wire_values: dict[str, object] = {}
-        self._wire_tokens: dict[int, tuple[object, str]] = {}
+        self._wire_values: dict[str, Object] = {}
+        self._wire_tokens: dict[int, tuple[Object, str]] = {}
         self._next_wire = 0
         self._object_type = type(
             f"_NonstrictObject_{id(self)}", (_ObjectValue,), {"_model": self}
@@ -113,20 +116,20 @@ class NonstrictMonoidalModel:
         )
         self._category = discopy_cat.Category(self._object_type, self._arrow_type)
 
-    def _word(self, word: tuple[object, ...]) -> _ObjectValue:
+    def _word(self, word: tuple[Object, ...]) -> _ObjectValue:
         key = tuple(id(value) for value in word)
         if key not in self._word_cache:
-            match word:
-                case ():
+            match len(word):
+                case 0:
                     value = self._unit
-                case (first, *rest):
-                    value = first
-                    for following in rest:
+                case _:
+                    value = word[0]
+                    for following in word[1:]:
                         value = self._tensor_object(value, following)
             self._word_cache[key] = self._object_type(word, value)
         return self._word_cache[key]
 
-    def wire(self, value: object) -> discopy_monoidal.Ty:
+    def wire(self, value: Object) -> discopy_monoidal.Ty:
         """A stable DisCoPy atomic wire retaining one exact owned object."""
         identifier = id(value)
         if identifier in self._wire_tokens:
@@ -142,16 +145,16 @@ class NonstrictMonoidalModel:
     def box(
         self,
         name: str,
-        domain: tuple[object, ...],
-        codomain: tuple[object, ...],
-        value: object,
-    ) -> discopy_monoidal.Box:
+        domain: tuple[Object, ...],
+        codomain: tuple[Object, ...],
+        value: Arrow,
+    ) -> DiagramBox:
         """A DisCoPy generating box retaining one exact owned semantic morphism."""
         dom = discopy_monoidal.Ty(*(self.wire(item).inside[0] for item in domain))
         cod = discopy_monoidal.Ty(*(self.wire(item).inside[0] for item in codomain))
         return discopy_monoidal.Box(name, dom, cod, data=value)
 
-    def evaluate(self, diagram: discopy_monoidal.Diagram) -> object:
+    def evaluate(self, diagram: discopy_monoidal.Diagram) -> Arrow:
         """Interpret ``diagram`` entirely through DisCoPy's monoidal functor evaluator."""
         def object_image(atom: object) -> _ObjectValue:
             value = self._wire_values[str(atom)]
@@ -167,7 +170,7 @@ class NonstrictMonoidalModel:
             arrow_image,
             cod=self._category,
         )
-        return functor(diagram).value
+        return cast(Arrow, functor(diagram).value)
 
 
 def evaluate_path(

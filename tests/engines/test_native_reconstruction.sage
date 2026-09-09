@@ -6,15 +6,23 @@ from sage_categories.algebra._presented_modules_cap import (
     presented_native_object,
     retain_presented_native_object,
 )
+from sage_categories.algebra._commutative_rings_oscar import (
+    oscar_native_morphism,
+    oscar_native_object,
+    retain_oscar_native_morphism,
+    retain_oscar_native_object,
+)
 from sage_categories.algebra.abelian import AbelianGroups, presented_abelian_group
 from sage_categories.cat.calculus import binary_product_data
 from sage_categories.cat.cones import cone, limit_cones, vertex_of
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.monoidal import Cartesian
 from sage_categories.cat.native import (
     native_universal_presentation,
     retain_native_universal_presentation,
 )
+from sage_categories.cat.structured_objects import Rings
 from sage_categories.sets._finite_cap import (
     finite_native_morphism,
     finite_native_object,
@@ -59,6 +67,40 @@ assert first_record.value is not second_record.value
 
 assert presented_native_object(first).construction.data is first_engine
 assert presented_native_object(second).construction.data is second_engine
+
+# OSCAR may use one native presentation for several isomorphic rings; owned identity and
+# construction remain distinct, and a retained map keeps its exact ring endpoints.
+rings = Rings(Sets)
+structure = Cartesian(Sets)
+
+def residue_ring(modulus):
+    carrier = Sets(tuple(range(modulus)))
+    square = binary_product_data(Sets, carrier, carrier).apex()
+    addition = Mor(Sets)(square, carrier)(lambda pair: (pair[0] + pair[1]) % modulus)
+    multiplication = Mor(Sets)(square, carrier)(lambda pair: (pair[0] * pair[1]) % modulus)
+    zero = Mor(Sets)(structure.unit(), carrier)(lambda _: 0)
+    one = Mor(Sets)(structure.unit(), carrier)(lambda _: 1)
+    return rings(addition, zero, multiplication, one)
+
+first_ring, second_ring = residue_ring(2), residue_ring(3)
+shared_native_ring = object()
+first_ring_record = retain_oscar_native_object(first_ring, shared_native_ring, ("residue", 2))
+second_ring_record = retain_oscar_native_object(second_ring, shared_native_ring, ("residue", 3))
+assert first_ring_record.native is second_ring_record.native
+assert first_ring_record.value is first_ring and second_ring_record.value is second_ring
+assert first_ring_record.value is not second_ring_record.value
+assert oscar_native_object(first_ring).construction.data == ("residue", 2)
+assert oscar_native_object(second_ring).construction.data == ("residue", 3)
+
+first_identity = Mor(rings)(first_ring, first_ring).one()
+second_identity = Mor(rings)(second_ring, second_ring).one()
+shared_native_ring_map = object()
+retain_oscar_native_morphism(first_identity, shared_native_ring_map)
+retain_oscar_native_morphism(second_identity, shared_native_ring_map)
+assert oscar_native_morphism(first_identity).source is first_ring
+assert oscar_native_morphism(first_identity).target is first_ring
+assert oscar_native_morphism(second_identity).source is second_ring
+assert oscar_native_morphism(second_identity).target is second_ring
 
 # A native apex may underlie several selected universal presentations.  Selection is by
 # the owned presentation, not by that apex or by its native handle.

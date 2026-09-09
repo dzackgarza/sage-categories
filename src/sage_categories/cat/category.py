@@ -1497,6 +1497,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 on_object(morphism.codomain()),
             )
             assert image in expected, f"{image!r} is not a morphism of {expected!r}"
+            refine(image, expected)
             from sage_categories.cat.images import retain_morphism_image
 
             retain_morphism_image(self, image)

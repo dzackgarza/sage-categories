@@ -93,6 +93,8 @@ def test_the_unit_comparisons_are_isomorphisms_with_executable_inverses() -> Non
     into_columns, into_rows = relative_tensor(regular, left_action), relative_tensor(right_action, regular)
     left, back_to_columns = relative_left_unitor(into_columns, left_action, ring.unit_morphism())
     right, back_to_rows = relative_right_unitor(into_rows, right_action, ring.unit_morphism())
+    assert left.inverse() is back_to_columns
+    assert right.inverse() is back_to_rows
     assert left.domain() is into_columns.codomain() and left.codomain() is columns
     assert right.domain() is into_rows.codomain() and right.codomain() is rows
 

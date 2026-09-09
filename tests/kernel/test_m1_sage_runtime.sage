@@ -788,6 +788,54 @@ def test_an_arrow_that_writes_no_point_declaration_places_nothing() -> None:
         UndeclaredPoint()
 
 
+def test_refining_reached_category_preserves_objects_above_it() -> None:
+    """Refining a category object rebuilds descendant role classes without losing local state (#31)."""
+
+    class UpperCategory(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._upper_state = label
+                self._synthetic_label = label
+
+            def upper_object(self) -> tuple[Self, Integer]:
+                return self, self._upper_state
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            return (
+                Fun(self, DIAMOND).Isofibrations()(
+                    self._object_to_diamond,
+                    self._morphism_to_diamond,
+                ),
+            )
+
+        def _object_to_diamond(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            return DIAMOND(self._label(member_object))
+
+        def _morphism_to_diamond(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            domain = self._object_to_diamond(morphism.domain())
+            codomain = self._object_to_diamond(morphism.codomain())
+            return DIAMOND.morphism_category(1)(domain, codomain).one()
+
+    from sage_categories.kernel.refinement import refine
+
+    upper = UpperCategory()
+    member = upper(23)
+    identity = id(member)
+    assert member.upper_object() == (member, 23)
+
+    refine(DIAMOND, Cat().Concrete())
+
+    assert id(member) == identity
+    assert member.upper_object() == (member, 23)
+    assert member.category() is upper
+
+
 def test_property_subcategory_constructs_through_its_ambient() -> None:
     """``C.P()`` has exactly the constructors of ``C``, and construction places the result (D150)."""
     property_category = DIAMOND.SyntheticR1Property()

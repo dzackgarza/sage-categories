@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Hashable
+from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 
 from sympy import false, true
@@ -22,6 +22,9 @@ __all__ = ["TopologicalSpaces", "TopologicalSpacesCategory"]
 class _TopologyData:
     carrier: CategoryOfCategories.ElementType
     opens: CategoryOfCategories.ElementType
+    open_category: Category
+    open_point_rule: Callable[[object], CategoryOfCategories.ElementType]
+    open_object_rule: Callable[[object], CategoryOfCategories.ElementType]
 
 
 class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
@@ -31,10 +34,9 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         def __init__(self, data: _TopologyData) -> None:
             self._carrier = data.carrier
             self._opens = data.opens
-            self._open_category = Thin.on_object(data.opens)
-            self._open_points = {
-                point.datum(): point for point in data.opens.carrier()
-            }
+            self._open_category = data.open_category
+            self._open_point_rule = data.open_point_rule
+            self._open_object_rule = data.open_object_rule
 
         def carrier(self) -> CategoryOfCategories.ElementType:
             return self._carrier
@@ -47,12 +49,11 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
             """The thin category ``O(X)`` of represented opens and inclusions."""
             return self._open_category
 
-        def open_point(self, subset: frozenset[Hashable]) -> CategoryOfCategories.ElementType:
-            assert subset in self._open_points, f"{subset!r} is not a represented open"
-            return self._open_points[subset]
+        def open_point(self, key: object) -> CategoryOfCategories.ElementType:
+            return self._open_point_rule(key)
 
-        def open_object(self, subset: frozenset[Hashable]) -> CategoryOfCategories.ElementType:
-            return self._open_category(self.open_point(subset))
+        def open_object(self, key: object) -> CategoryOfCategories.ElementType:
+            return self._open_object_rule(key)
 
     class ElementType:
         pass
@@ -99,7 +100,42 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
             lambda first, second: true if first.datum() <= second.datum() else false,
         )
         open_poset = Posets()(relation.relation())
-        return self.ObjectType(_TopologyData(carrier, open_poset))
+        open_category = Thin.on_object(open_poset)
+        open_points = {point.datum(): point for point in open_poset.carrier()}
+
+        def open_point(key: object) -> CategoryOfCategories.ElementType:
+            subset = frozenset(key)
+            assert subset in open_points, f"{subset!r} is not a represented open"
+            return open_points[subset]
+
+        return self.ObjectType(
+            _TopologyData(
+                carrier,
+                open_poset,
+                open_category,
+                open_point,
+                lambda key: open_category(open_point(key)),
+            )
+        )
+
+    def from_open_category(
+        self,
+        carrier: CategoryOfCategories.ElementType,
+        opens: CategoryOfCategories.ElementType,
+        open_category: Category,
+        open_point_rule: Callable[[object], CategoryOfCategories.ElementType],
+        open_object_rule: Callable[[object], CategoryOfCategories.ElementType],
+    ) -> TopologicalSpacesCategory.ObjectType:
+        """Retain a topology whose opens and inclusion category are represented without enumeration."""
+        return self.ObjectType(
+            _TopologyData(
+                carrier,
+                opens,
+                open_category,
+                open_point_rule,
+                open_object_rule,
+            )
+        )
 
     def _inverse_image_functor(
         self,
@@ -140,16 +176,30 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
     ) -> TopologicalSpacesCategory.MorphismType:
         assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()
         inverse = self._inverse_image_functor(source, target, underlying)
+        return self.morphism_with_inverse_image(source, target, underlying, inverse)
+
+    def morphism_with_inverse_image(
+        self,
+        source: TopologicalSpacesCategory.ObjectType,
+        target: TopologicalSpacesCategory.ObjectType,
+        underlying: MorphismCategory.ObjectType,
+        inverse: Functor,
+    ) -> TopologicalSpacesCategory.MorphismType:
+        """Retain a continuous map from its exact underlying map and inverse-image functor."""
+        assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()
+        assert inverse.domain() is target.open_category()
+        assert inverse.codomain() is source.open_category()
         return self.MorphismType(domain=source, codomain=target, data=(underlying, inverse))
 
     def construct_identity(
         self,
         member_object: TopologicalSpacesCategory.ObjectType,
     ) -> TopologicalSpacesCategory.MorphismType:
-        return self.construct_morphism(
+        return self.morphism_with_inverse_image(
             member_object,
             member_object,
             Mor(Sets)(member_object.carrier(), member_object.carrier()).one(),
+            Fun(member_object.open_category(), member_object.open_category()).one(),
         )
 
     def composite(
@@ -157,10 +207,11 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         second: TopologicalSpacesCategory.MorphismType,
         first: TopologicalSpacesCategory.MorphismType,
     ) -> TopologicalSpacesCategory.MorphismType:
-        return self.construct_morphism(
+        return self.morphism_with_inverse_image(
             first.domain(),
             second.codomain(),
             second.underlying_map() * first.underlying_map(),
+            first.inverse_image() * second.inverse_image(),
         )
 
     def __repr__(self) -> str:

@@ -153,7 +153,23 @@ def test_tensor_keeps_free_and_torsion_summands() -> None:
     assert ask(backward * forward == Mor(AbelianGroups())(product, product).one()) is True
 
 
+def test_tensor_mediator_rejects_generator_data_that_does_not_descend() -> None:
+    source_engine = AdditiveAbelianGroup([2])
+    target_engine = AdditiveAbelianGroup([4])
+    source = presented_abelian_group(source_engine)
+    target = presented_abelian_group(target_engine)
+    target_generator = target_engine.gen(0)
+
+    try:
+        tensor_mediator(source, source, target, lambda _left, _right: target_generator)
+    except AssertionError as error:
+        assert "does not respect the relations" in str(error)
+    else:
+        raise AssertionError("a tensor mediator whose generator image has order four must not descend from Z/2 tensor Z/2")
+
+
 test_tensor_of_cyclic_groups()
 test_unit_comparison_acts_by_scalar_multiplication()
 test_tensor_of_integers_is_the_integers()
 test_tensor_keeps_free_and_torsion_summands()
+test_tensor_mediator_rejects_generator_data_that_does_not_descend()

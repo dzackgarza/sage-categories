@@ -320,6 +320,10 @@ def _linear_homomorphism(
     form: LinearForm,
 ) -> MorphismCategory.ObjectType:
     """The morphism of ``Ab`` with this linear form; the monoid constructor checks additivity and the unit through the forms."""
+    assert form.source is presentation(source) and form.target is presentation(target)
+    assert _descends(form.matrix, form.source.orders, form.target.orders), (
+        f"{form!r} does not respect the relations of {source!r} and {target!r}"
+    )
     structure = _structure()
     renaming = AdditiveGroups(structure).product_projection(0)
     carrier_map = Mor(Sets)(_points(source), _points(target))(form)
@@ -689,7 +693,11 @@ def tensor_mediator(
             if coefficient:
                 row += int(coefficient) * images[position // m][position % m]
         rows.append(row)
-    return _linear_homomorphism(result, target, LinearForm(form, into, _matrix_of_rows(rows, into.rank())))
+    matrix = _matrix_of_rows(rows, into.rank())
+    assert _descends(matrix, form.orders, into.orders), (
+        f"{biadditive!r} does not respect the relations of {result!r}, so it does not define a morphism out of the tensor product"
+    )
+    return _linear_homomorphism(result, target, LinearForm(form, into, matrix))
 
 
 def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:

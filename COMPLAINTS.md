@@ -29,6 +29,30 @@ availability question as such. Record a mathematical need before proposing an
 engine or implementation; a package name does not establish its required domain.
 Read historical observations at their stated revisions before relying on them.
 
+## Local transcript lookup can fail after daemon restart
+
+- **Mathematical need or user action:** Resume an interrupted repository work unit by searching the local ChatGPT recordings for the predecessor's last accepted/failing consumer and implementation notes.
+- **Evidence:** On 2026-09-09, `Chat On Steroids Core2` session search for `9fb5271 refinement_descendant sage-categories` returned HTTP 502 after the daemon had been restarted earlier that day. Repository source, Git state, and the uncommitted regression test remained available.
+- **Gap and impact:** The local recording search is not reliable enough to be the sole continuation mechanism after a daemon restart. A resumed worker can still reconstruct work from Git and files, but loses the predecessor's diagnostic narrative and must re-establish the last runtime observation.
+- **Uncertainty:** One search request was attempted in this resumed unit; the repository connector itself remained healthy. It is not yet established whether all session-search requests fail or only this recording/index path.
+- **Repair link and acceptance:** Operational tooling owner. Resolve when session search reliably returns predecessor recordings across daemon restarts, or returns a specific durable recovery path instead of a generic 502.
+
+## Documented repository CLI entry points are not directly on PATH
+
+- **Mathematical need or user action:** Resume a repository work unit using the documented `agent-memory plan show PLAN-native-engine-remediation` and `card dag` entry points from `AGENTS.md`.
+- **Evidence:** On 2026-09-09 in this checkout, direct invocations of both `agent-memory` and `card` returned `command not found`. The governing plan remained retrievable through the documented `uvx --python 3.14 --from git+https://github.com/dzackgarza/agent-memory agent-memory` fallback; no corresponding fallback for `card` is stated in `AGENTS.md`.
+- **Gap and impact:** The documented first-line continuation commands are not self-contained on this host. Plan retrieval degrades to the fallback path, while current DAG-card routing cannot be queried through the named command without separately discovering its installation route.
+- **Uncertainty:** This observation is limited to the current shell environment and checkout; it does not establish that the tools are absent from every configured development environment.
+- **Repair link and acceptance:** Operational tooling/documentation owner. Resolve when the documented direct commands are available in the supported shell or the documentation names a working repository-local/fallback invocation for each.
+
+## Commit QC loses repository runtime and workspace dependency bindings
+
+- **Mathematical need or user action:** Run the repository commit gate on a kernel refinement change in the tracked Sage/Python 3.14 environment with all workspace dependencies resolved exactly as declared by `pyproject.toml`.
+- **Evidence:** On 2026-09-09 after the daemon/runtime restart, `just test-commit` first failed because `SAGE_BIN` was unset. Sourcing the tracked `.envrc` selected `$HOME/miniforge3/envs/sage/bin/sage`, whose runtime is Python 3.12 and emits `ModuleNotFoundError: sageparse` during startup. The previously provisioned `/usr/local/sage-env/{sage,python,sage-preparse}` wrappers no longer existed. The mypy stage then invoked each dependency-group requirement separately through `uvx --with`; for the declared workspace dependency `sage-categories-homotopy`, that bypassed `[tool.uv.sources] sage-categories-homotopy = { workspace = true }` and attempted public-registry resolution. Building the checkout's CPython-3.14 wheel locally made that requirement resolvable and exposed the underlying known compiler mypy baseline. `just plan-state` also failed at `tee /dev/stderr` in this connector PTY even though the plan and `itree doctor` checks themselves passed when executed directly.
+- **Gap and impact:** The tracked local QC path does not currently reconstruct the same Sage/Python 3.14 runtime and workspace dependency graph that the project declares. A developer can reach source-format and static-analysis stages only by manually repairing environment state, and the public test consumer can block in the incompatible Python-3.12 Sage runtime before reaching its assertion.
+- **Uncertainty:** The failures above are specific to the post-restart local host/connector environment. CI provisioning still declares the `/usr/local/sage-env` wrapper path, but that provisioning was not rerun here. The workspace-resolution defect is in the current local QC launcher behavior and was reproduced independently of Sage startup.
+- **Repair link and acceptance:** Operational QC/runtime owner. Resolve when `just test-commit` provisions or selects the repository's Python-3.14 Sage runtime, preserves uv workspace-source resolution for local packages, and `just plan-state` works in the supported terminal without requiring a writable `/dev/stderr` device.
+
 Preserve concurrent entries. Once the full repair is verified, retain only the
 unresolved requirement here and put resolution evidence in its commit. A local
 fix does not resolve missing downstream maps or broader hypotheses. Recording
@@ -303,4 +327,3 @@ Ideas, to be weighed, not obligations.*
   4. Homotopy moves, diagrammatic rewriting, and equivalence verification for higher morphisms.
 
 - **Required resolution:** Delegate higher-dimensional morphism towers, 2-cell compositions, and interchange handling to `homotopy-core` (via Rust/PyO3 bindings) instead of maintaining a truncated, hand-rolled Python implementation.
-

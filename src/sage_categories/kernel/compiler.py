@@ -37,7 +37,6 @@ from sage_categories.kernel.construction import (
     retained_morphism_input,
     retained_object_by_datum,
     retained_object_input,
-    retained_objects,
     retained_values,
 )
 from sage_categories.kernel.roles import (
@@ -1322,11 +1321,24 @@ def apply_level_shift(member: Category, placement: Category) -> None:
     shifted = _runtime_category(node(placement, Role.ELEMENT))
     if issubclass(changed.parent_class, shifted.parent_class):
         return
+    def reaches_changed(runtime: _RuntimeImplementationCategory) -> bool:
+        frontier = [runtime._current]
+        seen: list[Node] = []
+        while frontier:
+            candidate = frontier.pop(0)
+            if same_node(candidate, current):
+                return True
+            if any(same_node(candidate, known) for known in seen):
+                continue
+            seen.append(candidate)
+            frontier.extend(target for _, target in successors(candidate))
+        return False
+
     affected = tuple(
         runtime
         for table in _runtime_categories.values()
         for _, runtime in table.items()
-        if runtime is changed or any(parent is changed for parent in runtime._all_super_categories)
+        if reaches_changed(runtime)
     )
     old_classes = {runtime.parent_class: runtime for runtime in affected}
     old_nodes = {
@@ -1341,17 +1353,37 @@ def apply_level_shift(member: Category, placement: Category) -> None:
         old_class: _install_runtime_node(runtime._current)
         for old_class, runtime in old_classes.items()
     }
-    for runtime in affected:
-        if runtime._current.role is not Role.OBJECT:
-            continue
-        added = tuple(
+    object_runtimes_by_old_class = {
+        old_class: runtime
+        for old_class, runtime in old_classes.items()
+        if runtime._current.role is Role.OBJECT
+    }
+    added_by_runtime = {
+        runtime: tuple(
             reached
             for reached in _linearized_nodes(runtime._current)
             if not any(same_node(reached, old) for old in old_nodes[runtime])
         )
-        for constructed in _placed_objects(runtime._current.category):
-            object.__setattr__(constructed, "__class__", _replace_runtime_classes(type(constructed), replacements))
-            _initialize_added_object_nodes(constructed, added)
+        for runtime in object_runtimes_by_old_class.values()
+    }
+    for constructed in retained_values():
+        if not isinstance(constructed, ObjectOfCategory) or not is_constructed(constructed):
+            continue
+        runtime = next(
+            (
+                object_runtimes_by_old_class[base]
+                for base in type(constructed).__mro__
+                if base in object_runtimes_by_old_class
+            ),
+            None,
+        )
+        if runtime is None:
+            continue
+        replacement = _replace_runtime_classes(type(constructed), replacements)
+        if replacement is type(constructed):
+            continue
+        object.__setattr__(constructed, "__class__", replacement)
+        _initialize_added_object_nodes(constructed, added_by_runtime[runtime])
 
 
 def _replace_runtime_classes(
@@ -1392,8 +1424,3 @@ def _initialize_added_object_nodes(value: ObjectOfCategory, added: tuple[Node, .
         context.assert_complete()
     finally:
         deactivate_object_context(token)
-
-
-def _placed_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
-    """The live objects whose construction inputs name ``category``."""
-    return retained_objects(category)

@@ -9,6 +9,15 @@ from sage_categories.geometry.affine import (
     Spec,
     affine_structure_sheaf,
 )
+from sage_categories.geometry.cw import (
+    ComplexProjectivePoint,
+    CWOpen,
+    ProjectiveInfinityPresentation,
+    ProjectiveSpacePresentation,
+    complex_projective_point,
+    projective_infinity,
+    projective_space,
+)
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
 from sage_categories.geometry.schemes import (
     ProjectiveLinePresentation,
@@ -32,11 +41,15 @@ __all__ = [
     "AffineSchemes",
     "AffineSchemesCategory",
     "AffineSpectrumPoint",
+    "CWOpen",
+    "ComplexProjectivePoint",
+    "ProjectiveInfinityPresentation",
+    "ProjectiveLinePresentation",
+    "ProjectiveSpacePresentation",
     "RingPresheaf",
     "RingSheaf",
     "RingedSpaces",
     "RingedSpacesCategory",
-    "ProjectiveLinePresentation",
     "Schemes",
     "SchemesCategory",
     "Spec",
@@ -44,8 +57,11 @@ __all__ = [
     "TopologicalSpacesCategory",
     "TwoChartGluing",
     "affine_structure_sheaf",
+    "complex_projective_point",
+    "projective_infinity",
+    "projective_line",
+    "projective_space",
     "ring_presheaf",
     "ring_presheaf_from_functor",
     "ring_sheaf",
-    "projective_line",
 ]

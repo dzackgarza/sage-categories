@@ -12,6 +12,7 @@ from sage_categories.cat.monoidal import (
     tensor_parentheses,
     tensor_units,
 )
+from sage_categories.cat.category import is_placed
 from sage_categories.cat.predicates import Proposition, register_handler
 
 
@@ -104,6 +105,25 @@ def test_scaled_associator_pentagon_retains_eight_versus_four() -> None:
         left_unitor,
         right_unitor,
     )
+
+    # The public diagram interpretation uses this supplied associator rather than
+    # silently strictifying tensor words.  The right box has a two-wire formal source,
+    # so tensoring it with the left box crosses the comparison
+    # E((Q),(Q,Q)) -> E(Q) tensor E(Q,Q), whose semantic value is this associator.
+    identity_arrow = category.construct_morphism(line, line, 1)
+    left_box = structure.diagram_box("left", (line,), (line,), identity_arrow)
+    right_box = structure.diagram_box("right", (line, line), (line,), identity_arrow)
+    interpreted_tensor = structure.interpret(left_box @ right_box)
+    assert interpreted_tensor.scalar() == 2
+
+    # A formal box carrying an ordinary noninvertible arrow remains that exact arrow
+    # after interpretation.  Native syntax does not manufacture an inverse for it.
+    zero = category.construct_morphism(line, line, 0)
+    interpreted_zero = structure.interpret(
+        structure.diagram_box("zero", (line,), (line,), zero)
+    )
+    assert interpreted_zero is zero
+    assert not is_placed(interpreted_zero, Mor(category).Isomorphisms())
 
     def component(x, y, z):
         return associator.component(triples((x, y, z)))

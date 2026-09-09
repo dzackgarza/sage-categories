@@ -43,7 +43,6 @@ __all__ = [
 ]
 
 
-
 type CartesianComparisonHandler = Callable[..., MorphismCategory.ObjectType]
 _cartesian_comparison_handlers: dict[type[Category], CartesianComparisonHandler] = {}
 
@@ -67,16 +66,19 @@ def _native_cartesian_comparison(
         case False:
             return None
 
+
 def tensor_object(tensor: Functor, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     return tensor.on_object(tensor.domain()((first, second)))
 
 
 def tensor_morphism(tensor: Functor, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
     pairs = tensor.domain()
-    return tensor.on_morphism(Mor(pairs)(
-        pairs((first.domain(), second.domain())),
-        pairs((first.codomain(), second.codomain())),
-    )((first, second)))
+    return tensor.on_morphism(
+        Mor(pairs)(
+            pairs((first.domain(), second.domain())),
+            pairs((first.codomain(), second.codomain())),
+        )((first, second))
+    )
 
 
 def _word_interpretation(
@@ -130,6 +132,7 @@ def _word_comparison(
     raise AssertionError("tensor-word comparison is exhaustive")
 
 
+@cached_function(key=identity_key)
 def _diagram_model(
     monoidal: MonoidalStructuresCategory.ObjectType,
 ) -> NonstrictMonoidalModel[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
@@ -207,6 +210,40 @@ class MonoidalStructuresCategory(Category[[], []]):
         def right_unitor(self) -> NaturalTransformation:
             return self._monoidal_data.right_unitor
 
+        def diagram_wire(self, value: CategoryOfCategories.ElementType):
+            """Return the formal DisCoPy wire carrying this exact owned object."""
+            assert value in self.underlying_category()
+            return _diagram_model(self).wire(value)
+
+        def diagram_box(
+            self,
+            name: str,
+            domain: tuple[CategoryOfCategories.ElementType, ...],
+            codomain: tuple[CategoryOfCategories.ElementType, ...],
+            arrow: MorphismCategory.ObjectType,
+        ) -> DiagramBox:
+            """Return one formal box with this structure's selected word endpoints.
+
+            The formal words are interpreted by the fixed left-associated convention
+            ``E``.  The supplied semantic arrow must have those exact owned endpoints;
+            the box therefore cannot silently strictify or retarget a comparison map.
+            """
+            domain = tuple(domain)
+            codomain = tuple(codomain)
+            expected_domain = _word_interpretation(self, domain)
+            expected_codomain = _word_interpretation(self, codomain)
+            assert arrow.domain() is expected_domain and arrow.codomain() is expected_codomain
+            return _diagram_model(self).box(name, domain, codomain, arrow)
+
+        def interpret(self, diagram) -> MorphismCategory.ObjectType:
+            """Interpret a formal DisCoPy diagram through this supplied structure.
+
+            Tensor layers use the retained associator and unitor comparisons of this
+            exact structure via ``c_{u,v}: E(uv) -> E(u) tensor E(v)``.  Ordinary boxes
+            retain their supplied semantic arrows, including noninvertible ones.
+            """
+            return _diagram_model(self).evaluate(diagram)
+
         def pentagon(
             self,
             w: CategoryOfCategories.ElementType,
@@ -223,18 +260,13 @@ class MonoidalStructuresCategory(Category[[], []]):
                 r: CategoryOfCategories.ElementType,
             ) -> MorphismCategory.ObjectType:
                 return associator.component(triples((p, q, r)))
+
             wx, xy, yz = tensor_object(tensor, w, x), tensor_object(tensor, x, y), tensor_object(tensor, y, z)
             base = self.underlying_category()
             model = _diagram_model(self)
-            first_leg = model.evaluate(
-                _diagram_box(model, "a_wxy", a(w, x, y))
-                @ _diagram_box(model, "1_z", Mor(base)(z, z).one())
-            )
+            first_leg = model.evaluate(_diagram_box(model, "a_wxy", a(w, x, y)) @ _diagram_box(model, "1_z", Mor(base)(z, z).one()))
             middle_leg = model.evaluate(_diagram_box(model, "a_w_xy_z", a(w, xy, z)))
-            last_leg = model.evaluate(
-                _diagram_box(model, "1_w", Mor(base)(w, w).one())
-                @ _diagram_box(model, "a_xyz", a(x, y, z))
-            )
+            last_leg = model.evaluate(_diagram_box(model, "1_w", Mor(base)(w, w).one()) @ _diagram_box(model, "a_xyz", a(x, y, z)))
             long = evaluate_path(
                 (first_leg, middle_leg, last_leg),
                 domain=first_leg.domain(),
@@ -257,10 +289,7 @@ class MonoidalStructuresCategory(Category[[], []]):
             base = self.underlying_category()
             associator = self.associator().component(self.associator().domain().domain()((x, self.unit(), y)))
             model = _diagram_model(self)
-            last = model.evaluate(
-                _diagram_box(model, "1_x", Mor(base)(x, x).one())
-                @ _diagram_box(model, "lambda_y", self.left_unitor().component(y))
-            )
+            last = model.evaluate(_diagram_box(model, "1_x", Mor(base)(x, x).one()) @ _diagram_box(model, "lambda_y", self.left_unitor().component(y)))
             left = evaluate_path(
                 (associator, last),
                 domain=associator.domain(),
@@ -268,10 +297,7 @@ class MonoidalStructuresCategory(Category[[], []]):
                 identity=lambda value: Mor(base)(value, value).one(),
                 compose=lambda second, first: second * first,
             )
-            right = model.evaluate(
-                _diagram_box(model, "rho_x", self.right_unitor().component(x))
-                @ _diagram_box(model, "1_y", Mor(base)(y, y).one())
-            )
+            right = model.evaluate(_diagram_box(model, "rho_x", self.right_unitor().component(x)) @ _diagram_box(model, "1_y", Mor(base)(y, y).one()))
             return left == right
 
     class ElementType:
@@ -351,6 +377,7 @@ def Cartesian(base: Category) -> MonoidalStructuresCategory.ObjectType:
     associator = natural_isomorphism(left, right, lambda triple: rebracket(triple, True), lambda triple: rebracket(triple, False))
     left_unit, right_unit = tensor_units(tensor, unit)
     identity = Fun(base, base).one()
+
     def left_unitor_component(x: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
         product = binary_product_data(base, unit, x)
         match forward:
@@ -434,10 +461,13 @@ def Reversed(monoidal: MonoidalStructuresCategory.ObjectType) -> MonoidalStructu
     left, right = tensor_parentheses(tensor)
     triples = left.domain()
     original, opposed = monoidal.associator(), monoidal.associator().inverse()
+
     def reverse(triple: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return triples(tuple(triple.family_component(index) for index in (2, 1, 0)))
+
     associator = natural_isomorphism(
-        left, right,
+        left,
+        right,
         lambda triple: opposed.component(reverse(triple)),
         lambda triple: original.component(reverse(triple)),
     )
@@ -445,7 +475,9 @@ def Reversed(monoidal: MonoidalStructuresCategory.ObjectType) -> MonoidalStructu
     identity = Fun(base, base).one()
     right_first, left_second = monoidal.right_unitor(), monoidal.left_unitor()
     return MonoidalStructures(base)(
-        tensor, unit, associator,
+        tensor,
+        unit,
+        associator,
         natural_isomorphism(left_unit, identity, right_first.component, right_first.inverse().component),
         natural_isomorphism(right_unit, identity, left_second.component, left_second.inverse().component),
     )
@@ -456,17 +488,20 @@ def Composition(base: Category) -> MonoidalStructuresCategory.ObjectType:
     endofunctors = Fun(base, base)
     pairs = Cat().Products()((endofunctors, endofunctors))
     tensor = Fun(pairs, endofunctors)(
-        lambda pair: pair.family_component(0) * pair.family_component(1),
-        lambda arrow: Cat().horizontal_composite(arrow.family_component(0), arrow.family_component(1)))
+        lambda pair: pair.family_component(0) * pair.family_component(1), lambda arrow: Cat().horizontal_composite(arrow.family_component(0), arrow.family_component(1))
+    )
     unit = endofunctors.one()
     left, right = tensor_parentheses(tensor)
     left_unit, right_unit = tensor_units(tensor, unit)
     identity = Fun(endofunctors, endofunctors).one()
 
     def comparison(first: Functor, second: Functor) -> NaturalTransformation:
-        return natural_isomorphism(first, second,
+        return natural_isomorphism(
+            first,
+            second,
             lambda x: Mor(endofunctors)(first.on_object(x), second.on_object(x)).one(),
-            lambda x: Mor(endofunctors)(second.on_object(x), first.on_object(x)).one())
+            lambda x: Mor(endofunctors)(second.on_object(x), first.on_object(x)).one(),
+        )
 
     return MonoidalStructures(endofunctors)(tensor, unit, comparison(left, right), comparison(left_unit, identity), comparison(right_unit, identity))
 
@@ -516,6 +551,7 @@ class ActionsCategory(Category[[], []]):
                 value: CategoryOfCategories.ElementType,
             ) -> MorphismCategory.ObjectType:
                 return self.associator().component(triples((first, second, value)))
+
             mn, np = tensor_object(tensor, m, n), tensor_object(tensor, n, p)
             px = tensor_object(action, p, x)
             alpha = monoidal.associator().component(monoidal.associator().domain().domain()((m, n, p)))
@@ -607,10 +643,11 @@ def TrivialAction(monoidal: MonoidalStructuresCategory.ObjectType, base: Categor
     identity = Fun(base, base).one()
     constant = Fun(base, monoidal.underlying_category()).constant(monoidal.unit())
     unital = action * pair_maps(Cat(), constant, identity)
-    associator = natural_isomorphism(left, right,
+    associator = natural_isomorphism(
+        left,
+        right,
         lambda triple: Mor(base)(triple.family_component(2), triple.family_component(2)).one(),
-        lambda triple: Mor(base)(triple.family_component(2), triple.family_component(2)).one())
-    unitor = natural_isomorphism(unital, identity,
-        lambda value: Mor(base)(value, value).one(),
-        lambda value: Mor(base)(value, value).one())
+        lambda triple: Mor(base)(triple.family_component(2), triple.family_component(2)).one(),
+    )
+    unitor = natural_isomorphism(unital, identity, lambda value: Mor(base)(value, value).one(), lambda value: Mor(base)(value, value).one())
     return Actions(monoidal, base)(action, associator, unitor)

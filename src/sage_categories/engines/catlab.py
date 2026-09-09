@@ -152,8 +152,8 @@ def ensure_native_functor(functor: MorphismCategory.ObjectType) -> object:
             )
         case None:
             native = bridge.callable_functor(
-                functor._on_object,
-                functor._on_morphism,
+                functor._declared_object_image,
+                functor._declared_morphism_image,
                 ensure_native_category(source),
                 ensure_native_category(target),
             )

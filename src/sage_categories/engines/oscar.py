@@ -15,6 +15,14 @@ __all__ = [
     "polynomial_ring",
     "prime_field",
     "quotient",
+    "ring_add",
+    "ring_coerce",
+    "ring_contains",
+    "ring_multiply",
+    "ring_negate",
+    "ring_one",
+    "ring_zero",
+    "same_native",
 ]
 
 
@@ -65,3 +73,35 @@ def codomain(mapping: object) -> object:
 
 def generators(ring: object) -> tuple[object, ...]:
     return tuple(bridge().ring_generators(ring))
+
+
+def ring_contains(ring: object, element: object) -> bool:
+    return bool(bridge().ring_contains(ring, element))
+
+
+def ring_zero(ring: object) -> object:
+    return bridge().ring_zero(ring)
+
+
+def ring_one(ring: object) -> object:
+    return bridge().ring_one(ring)
+
+
+def ring_add(first: object, second: object) -> object:
+    return bridge().ring_add(first, second)
+
+
+def ring_multiply(first: object, second: object) -> object:
+    return bridge().ring_multiply(first, second)
+
+
+def ring_negate(element: object) -> object:
+    return bridge().ring_negate(element)
+
+
+def ring_coerce(ring: object, value: object) -> object:
+    return bridge().ring_coerce(ring, value)
+
+
+def same_native(first: object, second: object) -> bool:
+    return bool(bridge().same_native(first, second))

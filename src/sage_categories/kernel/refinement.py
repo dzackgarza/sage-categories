@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 from typing import TYPE_CHECKING
 
-import sage_categories.kernel.compiler as compiler
+from sage_categories.kernel import compiler
 from sage_categories.kernel.roles import (
     CategoryPoint,
     MorphismOfCategory,
@@ -239,9 +239,10 @@ def _join(current: Category, target: Category) -> Category:
     return base.intersection((*current_roots, *target.narrowing_roots()))
 
 
-def refine(value: CategoryPoint, target: Category) -> None:
-    """Refine ``value`` in place into the subcategory ``target`` (POL-KERNEL-012)."""
+def refine[Value: CategoryPoint](value: Value, target: Category) -> Value:
+    """Refine ``value`` in place into ``target`` and return that same object."""
     if is_placed(value, target):
-        return
+        return value
     assert role_of(value) in (Role.OBJECT, Role.MORPHISM), f"{value!r} is not refinable: only objects and morphisms are placed"
     place(value, _join(value.category(), target))
+    return value

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Hashable, Mapping
+from collections.abc import Callable, Hashable, Mapping
 from dataclasses import dataclass
 from importlib import import_module
 from typing import Any, cast
@@ -15,11 +15,15 @@ from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import ask
 from sage_categories.geometry.spaces import TopologicalSpacesCategory
 
-__all__ = ["RingPresheaf", "ring_presheaf"]
+__all__ = ["RingPresheaf", "RingSheaf", "ring_presheaf", "ring_sheaf"]
 
 
 def _rings() -> Any:
     return import_module("sage_categories.cat.structured_objects").Rings(Sets).Commutative()
+
+
+def _ambient_rings() -> Any:
+    return import_module("sage_categories.cat.structured_objects").Rings(Sets)
 
 
 def _open_data(open_object: CategoryOfCategories.ElementType) -> frozenset[Hashable]:
@@ -28,6 +32,13 @@ def _open_data(open_object: CategoryOfCategories.ElementType) -> frozenset[Hasha
 
 def _opposite_original(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
     return cast(MorphismCategory.ObjectType, cast(Any, arrow).original())
+
+
+def _apply_ring_map(
+    arrow: MorphismCategory.ObjectType,
+    section: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    return cast(CategoryOfCategories.ElementType, cast(Any, arrow)(section))
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -50,6 +61,61 @@ class RingPresheaf:
         opens = self.space.open_category()
         inclusion = Mor(opens)(self.space.open_object(smaller), self.space.open_object(larger))()
         return cast(MorphismCategory.ObjectType, self.functor.on_morphism(opposite_morphism(inclusion)))
+
+
+type GluingRule = Callable[
+    [
+        frozenset[Hashable],
+        tuple[frozenset[Hashable], ...],
+        tuple[CategoryOfCategories.ElementType, ...],
+    ],
+    CategoryOfCategories.ElementType,
+]
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class RingSheaf:
+    """A ring presheaf with retained finite-cover gluing."""
+
+    presheaf: RingPresheaf
+    gluing_rule: GluingRule
+
+    def glue(
+        self,
+        open_set: frozenset[Hashable],
+        cover: tuple[frozenset[Hashable], ...],
+        local_sections: tuple[CategoryOfCategories.ElementType, ...],
+    ) -> CategoryOfCategories.ElementType:
+        """Glue one compatible finite family and verify its unique global section."""
+        assert cover and frozenset().union(*cover) == open_set
+        assert len(cover) == len(local_sections)
+        for member, section in zip(cover, local_sections, strict=True):
+            assert section.parent() is self.presheaf.section_ring(member)
+        for left_index, left in enumerate(cover):
+            for right_index, right in enumerate(cover):
+                overlap = left & right
+                left_restriction = _apply_ring_map(self.presheaf.restriction(left, overlap), local_sections[left_index])
+                right_restriction = _apply_ring_map(self.presheaf.restriction(right, overlap), local_sections[right_index])
+                assert ask(left_restriction == right_restriction) is True
+
+        global_section = self.gluing_rule(open_set, cover, local_sections)
+        global_ring = self.presheaf.section_ring(open_set)
+        assert global_section.parent() is global_ring
+        for member, local in zip(cover, local_sections, strict=True):
+            assert ask(_apply_ring_map(self.presheaf.restriction(open_set, member), global_section) == local) is True
+
+        carrier = _ambient_rings().forgetful().on_object(global_ring)
+        candidates = tuple(carrier)
+        matching = []
+        for candidate in candidates:
+            point = cast(Any, global_ring).point(candidate.datum())
+            if all(
+                ask(_apply_ring_map(self.presheaf.restriction(open_set, member), point) == local) is True
+                for member, local in zip(cover, local_sections, strict=True)
+            ):
+                matching.append(point)
+        assert len(matching) == 1 and ask(matching[0] == global_section) is True
+        return global_section
 
 
 def ring_presheaf(
@@ -94,3 +160,8 @@ def ring_presheaf(
         return restrictions[(larger, smaller)]
 
     return RingPresheaf(space, Fun(source, rings)(on_object, on_morphism), sections)
+
+
+def ring_sheaf(presheaf: RingPresheaf, gluing_rule: GluingRule) -> RingSheaf:
+    """Retain the supplied finite-cover gluing operation on this ring presheaf."""
+    return RingSheaf(presheaf, gluing_rule)

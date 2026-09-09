@@ -8,13 +8,11 @@ never reads a tracked ``.pyi`` file as input (`POL-TYPE-025`, `POL-TYPE-026`).
 from __future__ import annotations
 
 import ast
-from importlib import import_module
 import subprocess
 import sys
 from collections.abc import Iterator
+from importlib import import_module
 from pathlib import Path
-
-from sage_categories.kernel.compiler import compiler
 
 __all__ = ["generate_stubs"]
 
@@ -25,9 +23,11 @@ def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         [
             sys.executable,
             "-c",
-            "import sys; from pathlib import Path; "
-            "from sage_categories.kernel.stub_generator import _generate_stubs; "
-            "_generate_stubs(sys.argv[1], Path(sys.argv[2]))",
+            (
+                "import sys; from pathlib import Path; "
+                "from sage_categories.kernel.stub_generator import _generate_stubs; "
+                "_generate_stubs(sys.argv[1], Path(sys.argv[2]))"
+            ),
             package,
             str(output_directory.resolve()),
         ],
@@ -39,6 +39,8 @@ def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
 def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     """Project declarations from a fresh package bootstrap in the current Sage interpreter."""
     from mypy.stubgen import main as stubgen_main
+
+    from sage_categories.kernel.compiler import compiler
 
     sources = tuple(sorted(output_directory.rglob("*.py")))
     for source in sources:
@@ -60,7 +62,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         source = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
         _canonicalize_imports(tree, package, canonical_exports)
-        _project_paramspec_class_aliases(tree, source)
+        _project_class_aliases(tree, source)
         if providers:
             _project_provider_bases(tree, module, providers)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
@@ -170,63 +172,79 @@ def _canonicalize_imports(
     tree.body[:] = statements
 
 
-def _project_paramspec_class_aliases(tree: ast.Module, source: ast.Module) -> None:
-    """Bind the source class's parameter lists explicitly in its class aliases.
+def _project_class_aliases(
+    tree: ast.Module,
+    source: ast.Module,
+) -> None:
+    """Project runtime class aliases as explicit PEP 695 type aliases.
 
-    Generic legacy aliases bind free variables on their right-hand side and remain
-    usable as classes: https://mypy.readthedocs.io/en/stable/generics.html#generic-type-aliases
+    ``stubgen`` writes ``Category = CategoryDeclaration`` as an assignment alias.
+    For a generic class whose parameters are ``ParamSpec`` values, mypy cannot
+    parameterize that inferred alias.  The source assignment is nevertheless an
+    exact class alias, so its static form binds the target class's declared type
+    parameters explicitly: ``type Category[**P, **Q] =
+    CategoryDeclaration[P, Q]``.  The same transformation applies recursively to
+    nested aliases such as ``CategoryOfCategories.ObjectType``.  Provider classes
+    themselves remain class declarations and therefore retain their ``TypeInfo``.
     """
-    declarations = {
-        declaration.name: tuple(
-            parameter for parameter in declaration.type_params if isinstance(parameter, ast.ParamSpec)
-        )
-        for declaration in source.body
-        if isinstance(declaration, ast.ClassDef)
-        and declaration.type_params
-        and all(isinstance(parameter, ast.ParamSpec) for parameter in declaration.type_params)
+    declared_classes = {
+        statement.name: statement
+        for statement in source.body
+        if isinstance(statement, ast.ClassDef)
+        and statement.type_params
+        and all(isinstance(parameter, ast.ParamSpec) for parameter in statement.type_params)
     }
-    used: set[str] = set()
-    for statement in ast.walk(tree):
-        if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Name):
-            continue
-        name = statement.value.id
-        parameters = declarations.get(name)
-        if parameters is None:
-            continue
-        used.add(name)
-        statement.value = ast.Subscript(
-            value=statement.value,
-            slice=ast.Tuple(
-                elts=[ast.Name(id=f"_{name}_{parameter.name}", ctx=ast.Load()) for parameter in parameters],
+
+    def aliases(statements: list[ast.stmt]) -> dict[str, ast.ClassDef]:
+        result: dict[str, ast.ClassDef] = {}
+        for statement in statements:
+            if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Name):
+                continue
+            declaration = declared_classes.get(statement.value.id)
+            if declaration is None:
+                continue
+            for target in statement.targets:
+                if isinstance(target, ast.Name):
+                    result[target.id] = declaration
+        return result
+
+    def type_alias(alias_name: str, declaration: ast.ClassDef) -> ast.TypeAlias:
+        parameters = declaration.type_params
+        parameter_names = [ast.Name(id=parameter.name, ctx=ast.Load()) for parameter in parameters]
+        value: ast.expr = ast.Name(id=declaration.name, ctx=ast.Load())
+        if parameter_names:
+            value = ast.Subscript(
+                value=value,
+                slice=ast.Tuple(elts=parameter_names, ctx=ast.Load()),
                 ctx=ast.Load(),
-            ),
-            ctx=ast.Load(),
+            )
+        return ast.TypeAlias(
+            name=ast.Name(id=alias_name, ctx=ast.Store()),
+            type_params=[ast.copy_location(parameter, declaration) for parameter in parameters],
+            value=value,
         )
-    if not used:
-        return
-    statements: list[ast.stmt] = [ast.Import(names=[ast.alias(name="typing", asname="_typing")])]
-    for statement in tree.body:
-        statements.append(statement)
-        if not isinstance(statement, ast.ClassDef) or statement.name not in used:
-            continue
-        for parameter in declarations[statement.name]:
-            name = f"_{statement.name}_{parameter.name}"
-            keywords = (
-                [ast.keyword(arg="default", value=parameter.default_value)]
-                if parameter.default_value is not None
-                else []
-            )
-            statements.append(
-                ast.Assign(
-                    targets=[ast.Name(id=name, ctx=ast.Store())],
-                    value=ast.Call(
-                        func=ast.Attribute(value=ast.Name(id="_typing", ctx=ast.Load()), attr="ParamSpec", ctx=ast.Load()),
-                        args=[ast.Constant(value=name)],
-                        keywords=keywords,
-                    ),
-                )
-            )
-    tree.body[:] = statements
+
+    def project(stub_statements: list[ast.stmt], source_statements: list[ast.stmt]) -> None:
+        scope_aliases = aliases(source_statements)
+        source_classes = {
+            statement.name: statement
+            for statement in source_statements
+            if isinstance(statement, ast.ClassDef)
+        }
+        rewritten: list[ast.stmt] = []
+        for statement in stub_statements:
+            if isinstance(statement, ast.Assign):
+                target_names = [target.id for target in statement.targets if isinstance(target, ast.Name)]
+                if len(target_names) == 1 and target_names[0] in scope_aliases:
+                    alias_name = target_names[0]
+                    rewritten.append(type_alias(alias_name, scope_aliases[alias_name]))
+                    continue
+            if isinstance(statement, ast.ClassDef) and statement.name in source_classes:
+                project(statement.body, source_classes[statement.name].body)
+            rewritten.append(statement)
+        stub_statements[:] = rewritten
+
+    project(tree.body, source.body)
 
 
 def _project_provider_bases(

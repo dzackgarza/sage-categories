@@ -257,6 +257,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         self._slices: MonoDict = MonoDict()
         self._coslices: MonoDict = MonoDict()
         self._retained_data: MonoDict = MonoDict()
+        self._biproduct_constructor: Callable[[object, object], object] | None = None
+        self._zero_morphism_constructor: Callable[[object, object], object] | None = None
         self._equality = equality_predicate()
         self._ambient_category: Category | None = None
         self._ambient_monomorphism: Functor | None = None
@@ -1038,9 +1040,28 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """Find the unique factor through a mono, decide nonexistence, or remain undecided."""
         return Unknown
 
+    def retain_biproduct_operations(
+        self,
+        biproduct: Callable[[object, object], object],
+        zero_morphism: Callable[[object, object], object],
+    ) -> None:
+        """Retain this exact category's selected biproduct and zero-morphism operations."""
+        self._biproduct_constructor = biproduct
+        self._zero_morphism_constructor = zero_morphism
+
     def biproduct(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        """``X @ Y``, where the category declares biproducts; no owned category declares them."""
-        raise AssertionError(f"{self!r} declares no biproduct")
+        """``X @ Y``, through this category's retained additive construction."""
+        assert self._biproduct_constructor is not None, f"{self!r} declares no biproduct"
+        return self._biproduct_constructor(first, second)
+
+    def zero_morphism(
+        self,
+        source: CategoryOfCategories.ElementType,
+        target: CategoryOfCategories.ElementType,
+    ) -> MorphismCategory.ObjectType:
+        """The selected additive zero ``source -> target`` when this category supplies one."""
+        assert self._zero_morphism_constructor is not None, f"{self!r} declares no zero morphisms"
+        return self._zero_morphism_constructor(source, target)
 
     def exponential(self, exponent: CategoryOfCategories.ElementType, base: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         """``base ** exponent``, where the category is declared cartesian closed."""
@@ -1396,44 +1417,106 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             """The image of an object of the domain, one value per object."""
             return self._cached_object_image(member_object, self._construct_object_image)
 
-        def _construct_object_image(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        def _retain_object_action_result(
+            self,
+            member_object: CategoryOfCategories.ElementType,
+            image: CategoryOfCategories.ElementType,
+        ) -> CategoryOfCategories.ElementType:
             assert is_placed(member_object, self.domain()) or member_object in self.domain(), f"{member_object!r} is not an object of {self.domain()!r}"
-            from sage_categories.engines import catlab
-
-            image = catlab.functor_object_image(self, member_object)
             assert is_placed(image, self.codomain()) or image in self.codomain(), f"{image!r} is not an object of {self.codomain()!r}"
             from sage_categories.cat.images import retain_object_image
 
             retain_object_image(self, image)
             return image
 
-        def on_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-            """The image of a morphism of the domain, one value per morphism."""
-            image = self._cached_morphism_image(morphism, self.on_object, self._construct_morphism_image)
+        def _declared_object_image(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            """Execute this functor's declared object action through its retained image cache."""
+            return self._cached_object_image(
+                member_object,
+                lambda value: self._retain_object_action_result(value, self._on_object(value)),
+            )
+
+        def _construct_object_image(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            from sage_categories.engines import catlab
+
+            return self._retain_object_action_result(
+                member_object,
+                catlab.functor_object_image(self, member_object),
+            )
+
+        def _retain_isomorphism_image(
+            self,
+            morphism: MorphismCategory.ObjectType,
+            image: MorphismCategory.ObjectType,
+            on_object: Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType],
+            construct: Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType],
+        ) -> MorphismCategory.ObjectType:
             source, target = self.domain(), self.codomain()
             if is_placed(morphism, source.morphism_category(1).Isomorphisms()):
                 refine(image, target.morphism_category(1).Isomorphisms())
                 inverse = source.retained_inverse(morphism)
                 if inverse is not None and target.retained_inverse(image) is None:
-                    inverse_image = self._cached_morphism_image(inverse, self.on_object, self._construct_morphism_image)
+                    inverse_image = self._cached_morphism_image(inverse, on_object, construct)
                     target.retain_inverses(image, inverse_image)
             return image
 
-        def _construct_morphism_image(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        def on_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            """The image of a morphism of the domain, one value per morphism."""
+            image = self._cached_morphism_image(morphism, self.on_object, self._construct_morphism_image)
+            return self._retain_isomorphism_image(
+                morphism,
+                image,
+                self.on_object,
+                self._construct_morphism_image,
+            )
+
+        def _retain_morphism_action_result(
+            self,
+            morphism: MorphismCategory.ObjectType,
+            image: MorphismCategory.ObjectType,
+            on_object: Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType],
+        ) -> MorphismCategory.ObjectType:
             morphisms = self.domain().morphism_category(1)
             assert morphism in morphisms, f"{morphism!r} is not a morphism of {self.domain()!r}"
-            from sage_categories.engines import catlab
-
-            image = catlab.functor_morphism_image(self, morphism)
             expected = self.codomain().morphism_category(1)(
-                self.on_object(morphism.domain()),
-                self.on_object(morphism.codomain()),
+                on_object(morphism.domain()),
+                on_object(morphism.codomain()),
             )
             assert image in expected, f"{image!r} is not a morphism of {expected!r}"
             from sage_categories.cat.images import retain_morphism_image
 
             retain_morphism_image(self, image)
             return image
+
+        def _declared_morphism_image(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            """Execute this functor's declared morphism action through its retained image cache."""
+            def construct(value: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+                return self._retain_morphism_action_result(
+                    value,
+                    self._on_morphism(value),
+                    self._declared_object_image,
+                )
+
+            image = self._cached_morphism_image(
+                morphism,
+                self._declared_object_image,
+                construct,
+            )
+            return self._retain_isomorphism_image(
+                morphism,
+                image,
+                self._declared_object_image,
+                construct,
+            )
+
+        def _construct_morphism_image(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            from sage_categories.engines import catlab
+
+            return self._retain_morphism_action_result(
+                morphism,
+                catlab.functor_morphism_image(self, morphism),
+                self.on_object,
+            )
 
         def on_element(self, element: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             """Transport ``t: T -> X`` along ``self: X -> Y`` by composition (D17)."""

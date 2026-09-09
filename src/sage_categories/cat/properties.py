@@ -143,6 +143,13 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         """The elements of a full subcategory are those of its ambient on the shared values (POL-CAT-087)."""
         return self._ambient.element_from_defining_morphism(defining_morphism)
 
+    def point_morphism(
+        self,
+        point: CategoryOfCategories.ElementType,
+    ) -> MorphismCategory.ObjectType:
+        """The selected point morphism is the ambient's on the shared object and point."""
+        return self._ambient.point_morphism(point)
+
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         return self._ambient.limit_construction(shape)
 

@@ -53,7 +53,6 @@ from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category, member
-from sage_categories.cat.declarations import Sets
 from sage_categories.cat.cones import (
     ConeCategory,
     LimitConesCategory,
@@ -115,7 +114,11 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
     if objects is not Unknown:
         return len(objects) >= 2
     object_set = shape.object_set()
-    cardinal = ask(object_set.cardinality())
+    try:
+        cardinality = object_set.cardinality
+    except AttributeError:
+        return None
+    cardinal = ask(cardinality())
     if cardinal is Unknown:
         return None
     decision = ask(cardinal >= 2)

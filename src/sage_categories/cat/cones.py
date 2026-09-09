@@ -3,20 +3,16 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Hashable
-from typing import TYPE_CHECKING
 
-from sage_categories.cat.category import Category
+from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import CommaSpecialization
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Axiom
+from sage_categories.cat.predicates import Axiom, ask
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
-
-if TYPE_CHECKING:
-    from sage_categories.cat.category import CategoryOfCategories
 
 __all__ = [
     "ConeCategory",
@@ -78,15 +74,17 @@ def vertex_of(
     index: CategoryOfCategories.ElementType | Hashable,
 ) -> CategoryOfCategories.ElementType:
     """Return the shape object selected by an object or an index datum."""
-    if index in shape:
+    if ask(shape.membership_proposition(index)) is True:
         return index
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.opposites import OppositeCategory
 
-    if isinstance(shape, FinitePresentedCategory):
-        return shape(index)
     if isinstance(shape, OppositeCategory):
+        if ask(shape.original().membership_proposition(index)) is True:
+            return index
         return vertex_of(shape.original(), index)
+    if isinstance(shape, FinitePresentedCategory):
+        return shape.object_at(shape.object_set().point(index))
     return shape.object_at(shape.object_set().point(index))
 
 

@@ -8,12 +8,12 @@ bijection and delegates finite-map algorithms to CAP.
 from __future__ import annotations
 
 from functools import cache
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
 
-from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
 from sage_categories.sets._finite_cap import (
     finite_native_morphism,
@@ -21,6 +21,10 @@ from sage_categories.sets._finite_cap import (
     retain_finite_native_morphism,
     retain_finite_native_object,
 )
+
+if TYPE_CHECKING:
+    from sage_categories.cat.cones import ConeCategory
+    from sage_categories.cat.functors import Functor
 
 __all__ = [
     "cartesian_associator",
@@ -80,6 +84,21 @@ def _native_object(value: object) -> GapElement:
     native = libgap.FinSet(category, len(indexing))
     retain_finite_native_object(value, native, indexing)
     return native
+
+
+def _native_object_if_finite(value: object) -> GapElement | None:
+    """Return the native finite realization when ``value`` is exactly finite, else ``None``.
+
+    Universal maps out of or into a CAP-selected finite construction still range over
+    arbitrary owned sets.  Their source/target is lowered only when the owned finite-set
+    evaluator applies on that endpoint.
+    """
+    from sage_categories.cat.predicates import Unknown
+    from sage_categories.sets.finite import _finite_data
+
+    if _finite_data(value) is Unknown:
+        return None
+    return _native_object(value)
 
 
 def _native_morphism(value: MorphismCategory.ObjectType) -> GapElement:
@@ -261,7 +280,7 @@ def _native_map_on_owned_endpoints(
 
 
 
-def _native_diagram(diagram: object):
+def _native_diagram(diagram: Functor):
     from sage_categories.cat.finite_categories import finite_category
     from sage_categories.cat.predicates import Unknown
 
@@ -279,7 +298,7 @@ def _native_diagram(diagram: object):
     return vertices, positions, factors, native_factors, decorated
 
 
-def finite_limit(diagram: object) -> object:
+def finite_limit(diagram: Functor) -> object:
     """Selected limit of an arbitrary exact finite diagram, computed by CAP."""
     from sage_categories.cat.cones import cone, cone_apex
     from sage_categories.sets.finite import Sets
@@ -310,15 +329,23 @@ def finite_limit(diagram: object) -> object:
         for index in range(len(vertices))
     )
 
-    def lift(candidate: object) -> MorphismCategory.ObjectType:
+    def lift(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
         source = cone_apex(candidate)
+        native_source = _native_object_if_finite(source)
+        if native_source is None:
+            components = tuple(candidate.component(vertex) for vertex in vertices)
+            return diagram.codomain().construct_morphism(
+                source,
+                apex,
+                lambda value: tuple(component._action(value) for component in components)
+            )
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismIntoLimitWithGivenLimit(
-            category, native_factors, decorated, _native_object(source), tau, computed_apex
+            category, native_factors, decorated, native_source, tau, computed_apex
         )
         return _native_map_on_owned_endpoints(source, apex, computed)
 
-    return Sets.Limits(diagram.domain()).with_universal_data(
+    return diagram.codomain().Limits(diagram.domain()).with_universal_data(
         diagram,
         apex,
         cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
@@ -326,7 +353,7 @@ def finite_limit(diagram: object) -> object:
     )
 
 
-def finite_colimit(diagram: object) -> object:
+def finite_colimit(diagram: Functor) -> object:
     """Selected colimit of an arbitrary exact finite diagram, computed by CAP."""
     from sage_categories.cat.cones import cocone, cocone_apex
     from sage_categories.sets.finite import Sets
@@ -357,22 +384,31 @@ def finite_colimit(diagram: object) -> object:
         for index in range(len(vertices))
     )
 
-    def descent(candidate: object) -> MorphismCategory.ObjectType:
+    def descent(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
         target = cocone_apex(candidate)
+        native_target = _native_object_if_finite(target)
+        if native_target is None:
+            components = tuple(candidate.component(vertex) for vertex in vertices)
+
+            def evaluate(part: frozenset[tuple[int, object]]) -> object:
+                factor_index, datum = next(iter(part))
+                return components[factor_index]._action(datum)
+
+            return diagram.codomain().construct_morphism(apex, target, evaluate)
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismFromColimitWithGivenColimit(
-            category, native_factors, decorated, _native_object(target), tau, computed_apex
+            category, native_factors, decorated, native_target, tau, computed_apex
         )
         return _native_map_on_owned_endpoints(apex, target, computed)
 
-    return Sets.Colimits(diagram.domain()).with_universal_data(
+    return diagram.codomain().Colimits(diagram.domain()).with_universal_data(
         diagram,
         apex,
         cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
         descent,
     )
 
-def _product(diagram: object, vertices: tuple[object, ...]) -> object:
+def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cone, cone_apex
     from sage_categories.sets.finite import Sets
 
@@ -407,15 +443,23 @@ def _product(diagram: object, vertices: tuple[object, ...]) -> object:
         for index in range(len(vertices))
     )
 
-    def lift(candidate: object) -> MorphismCategory.ObjectType:
+    def lift(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
         source = cone_apex(candidate)
+        native_source = _native_object_if_finite(source)
+        if native_source is None:
+            components = tuple(candidate.component(vertex) for vertex in vertices)
+            return diagram.codomain().construct_morphism(
+                source,
+                apex,
+                lambda value: tuple(component._action(value) for component in components)
+            )
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismIntoDirectProductWithGivenDirectProduct(
-            category, native_factors, _native_object(source), tau, computed_apex
+            category, native_factors, native_source, tau, computed_apex
         )
         return _native_map_on_owned_endpoints(source, apex, computed)
 
-    return Sets.Limits(diagram.domain()).with_universal_data(
+    return diagram.codomain().Limits(diagram.domain()).with_universal_data(
         diagram,
         apex,
         cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
@@ -423,7 +467,7 @@ def _product(diagram: object, vertices: tuple[object, ...]) -> object:
     )
 
 
-def _equalizer(diagram: object, vertices: tuple[object, ...]) -> object:
+def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cone, cone_apex
     from sage_categories.sets.finite import Sets
 
@@ -451,25 +495,29 @@ def _equalizer(diagram: object, vertices: tuple[object, ...]) -> object:
     def leg(vertex: object) -> MorphismCategory.ObjectType:
         return source_leg if vertex is source_vertex else target_leg
 
-    def lift(candidate: object) -> MorphismCategory.ObjectType:
+    def lift(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
         candidate_source = cone_apex(candidate)
-        tau = _native_morphism(candidate.component(source_vertex))
+        candidate_native = _native_object_if_finite(candidate_source)
+        component = candidate.component(source_vertex)
+        if candidate_native is None:
+            return diagram.codomain().construct_morphism(candidate_source, apex, component._action)
+        tau = _native_morphism(component)
         computed = libgap.UniversalMorphismIntoEqualizerWithGivenEqualizer(
             category,
             native_source,
             native_maps,
-            _native_object(candidate_source),
+            candidate_native,
             tau,
             computed_apex,
         )
         return _native_map_on_owned_endpoints(candidate_source, apex, computed)
 
-    return Sets.Limits(diagram.domain()).with_universal_data(
+    return diagram.codomain().Limits(diagram.domain()).with_universal_data(
         diagram, apex, cone(diagram, apex, leg), lift
     )
 
 
-def primitive_limit(diagram: object) -> object:
+def primitive_limit(diagram: Functor) -> object:
     from sage_categories.cat.finite_categories import finite_category
 
     shape = diagram.domain()
@@ -479,7 +527,7 @@ def primitive_limit(diagram: object) -> object:
     return _equalizer(diagram, vertices)
 
 
-def _coproduct(diagram: object, vertices: tuple[object, ...]) -> object:
+def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cocone, cocone_apex
     from sage_categories.sets.finite import Sets
 
@@ -512,15 +560,23 @@ def _coproduct(diagram: object, vertices: tuple[object, ...]) -> object:
         for index in range(len(vertices))
     )
 
-    def descent(candidate: object) -> MorphismCategory.ObjectType:
+    def descent(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
         target = cocone_apex(candidate)
+        native_target = _native_object_if_finite(target)
+        if native_target is None:
+            components = tuple(candidate.component(vertex) for vertex in vertices)
+            return diagram.codomain().construct_morphism(
+                apex,
+                target,
+                lambda tagged: components[tagged[0]]._action(tagged[1])
+            )
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismFromCoproductWithGivenCoproduct(
-            category, native_factors, _native_object(target), tau, computed_apex
+            category, native_factors, native_target, tau, computed_apex
         )
         return _native_map_on_owned_endpoints(apex, target, computed)
 
-    return Sets.Colimits(diagram.domain()).with_universal_data(
+    return diagram.codomain().Colimits(diagram.domain()).with_universal_data(
         diagram,
         apex,
         cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
@@ -528,7 +584,7 @@ def _coproduct(diagram: object, vertices: tuple[object, ...]) -> object:
     )
 
 
-def _coequalizer(diagram: object, vertices: tuple[object, ...]) -> object:
+def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cocone, cocone_apex
     from sage_categories.sets.finite import Sets
 
@@ -559,25 +615,33 @@ def _coequalizer(diagram: object, vertices: tuple[object, ...]) -> object:
     def leg(vertex: object) -> MorphismCategory.ObjectType:
         return source_leg if vertex is source_vertex else target_leg
 
-    def descent(candidate: object) -> MorphismCategory.ObjectType:
+    def descent(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
         candidate_target = cocone_apex(candidate)
-        tau = _native_morphism(candidate.component(target_vertex))
+        candidate_native = _native_object_if_finite(candidate_target)
+        component = candidate.component(target_vertex)
+        if candidate_native is None:
+            return diagram.codomain().construct_morphism(
+                apex,
+                candidate_target,
+                lambda part: component._action(next(iter(part)))
+            )
+        tau = _native_morphism(component)
         computed = libgap.UniversalMorphismFromCoequalizerWithGivenCoequalizer(
             category,
             native_target,
             native_maps,
-            _native_object(candidate_target),
+            candidate_native,
             tau,
             computed_apex,
         )
         return _native_map_on_owned_endpoints(apex, candidate_target, computed)
 
-    return Sets.Colimits(diagram.domain()).with_universal_data(
+    return diagram.codomain().Colimits(diagram.domain()).with_universal_data(
         diagram, apex, cocone(diagram, apex, leg), descent
     )
 
 
-def primitive_colimit(diagram: object) -> object:
+def primitive_colimit(diagram: Functor) -> object:
     from sage_categories.cat.finite_categories import finite_category
 
     shape = diagram.domain()

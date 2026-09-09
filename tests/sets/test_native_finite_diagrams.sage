@@ -1,3 +1,5 @@
+from sympy import Q
+
 from sage_categories.all import Cat, Fun, Mor, Sets, ask
 from sage_categories.cat.cones import cocone, cocones, cone, cones
 
@@ -44,6 +46,21 @@ def test_native_finite_limit_and_colimit_over_three_vertices() -> None:
     lift = selected_limit.lift(cones(diagram)(candidate))
     assert ask(selected_limit.leg(0) * lift == to_a) is True
 
+    integers = Sets.from_membership(lambda value: Q.integer(value))
+    infinite_to_a = Mor(Sets)(integers, A)(lambda value: "a0" if value % 2 == 0 else "a1")
+    infinite_candidate = cone(
+        diagram,
+        integers,
+        lambda vertex: infinite_to_a
+        if vertex is v0
+        else f * infinite_to_a
+        if vertex is v1
+        else g * f * infinite_to_a,
+    )
+    infinite_lift = selected_limit.lift(cones(diagram)(infinite_candidate))
+    assert infinite_lift(integers.point(2)).datum() == ("a0", "b0", "c0")
+    assert infinite_lift(integers.point(3)).datum() == ("a1", "b1", "c1")
+
     colimit = Sets.Colimits(shape)(diagram)
     selected_colimit = Sets.Colimits(shape).universal_data(diagram)
     assert len(tuple(colimit)) == 2
@@ -56,6 +73,20 @@ def test_native_finite_limit_and_colimit_over_three_vertices() -> None:
     )
     descent = selected_colimit.lift(cocones(diagram)(candidate))
     assert ask(descent * selected_colimit.leg(2) == from_c) is True
+
+    infinite_from_c = Mor(Sets)(C, integers)({"c0": 10, "c1": 11})
+    infinite_candidate = cocone(
+        diagram,
+        integers,
+        lambda vertex: infinite_from_c * g * f
+        if vertex is v0
+        else infinite_from_c * g
+        if vertex is v1
+        else infinite_from_c,
+    )
+    infinite_descent = selected_colimit.lift(cocones(diagram)(infinite_candidate))
+    assert infinite_descent(selected_colimit.leg(2)(C.point("c0"))).datum() == 10
+    assert infinite_descent(selected_colimit.leg(2)(C.point("c1"))).datum() == 11
 
 
 test_native_finite_limit_and_colimit_over_three_vertices()

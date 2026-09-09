@@ -4,9 +4,13 @@ from functools import cache
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.predicates import UnknownClass
 from typing import Literal
 __all__ = ['FiniteSetsCategory', 'FiniteSets']
 type Map = Callable[[Hashable], Hashable]
+
+def _finite_data(value: sage_categories.kernel.roles.ObjectOfCategory) -> tuple[Hashable, ...] | UnknownClass:
+    ...
 
 class FiniteSetsCategory(Category[[Map], []]):
 

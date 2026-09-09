@@ -108,8 +108,7 @@ end
 covered_patches(scheme) = patches(scheme)
 
 """The canonical map from one affine chart into a covered scheme containing it."""
-function covered_chart_inclusion(chart, glued)
-    source = CoveredScheme(chart)
+function covered_chart_inclusion(source, chart, glued)
     source_cover = default_covering(source)
     target_cover = default_covering(glued)
     maps = IdDict{AbsAffineScheme, AbsAffineSchemeMor}(chart => identity_map(chart))

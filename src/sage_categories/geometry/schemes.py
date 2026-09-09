@@ -1,0 +1,202 @@
+"""Schemes represented by OSCAR covered schemes and retained affine gluings."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from functools import cache
+from typing import Any, cast
+
+from sage_categories.algebra._commutative_rings_oscar import oscar_native_morphism
+from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.native import (
+    NativeMorphismRealization,
+    NativeMorphismRealizations,
+    NativeObjectRealization,
+    NativeObjectRealizations,
+)
+from sage_categories.engines import oscar
+from sage_categories.geometry.affine import (
+    AffineOpenCategory,
+    AffineSchemesCategory,
+    native_affine_scheme,
+)
+
+__all__ = [
+    "Schemes",
+    "SchemesCategory",
+    "TwoChartGluing",
+    "native_scheme",
+    "native_scheme_morphism",
+]
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _AffineSchemeConstruction:
+    affine: AffineSchemesCategory.ObjectType
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class TwoChartGluing:
+    left: AffineSchemesCategory.ObjectType
+    right: AffineSchemesCategory.ObjectType
+    left_open: AffineOpenCategory.ObjectType
+    right_open: AffineOpenCategory.ObjectType
+    left_to_right_pullback: MorphismCategory.ObjectType
+    right_to_left_pullback: MorphismCategory.ObjectType
+
+
+_objects: NativeObjectRealizations[object, object] = NativeObjectRealizations()
+_morphisms: NativeMorphismRealizations[object] = NativeMorphismRealizations()
+
+
+class SchemesCategory(Category[Any, Any]):
+    """Covered schemes with retained affine presentations and native mediators."""
+
+    class ObjectType:
+        def __init__(self, construction: object) -> None:
+            self._construction = construction
+
+        def construction(self) -> object:
+            return self._construction
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __init__(self) -> None:
+        self._affine_wrappers: dict[int, tuple[AffineSchemesCategory.ObjectType, SchemesCategory.ObjectType]] = {}
+        super().__init__()
+
+    def _from_native(self, construction: object, native: object) -> SchemesCategory.ObjectType:
+        value = self.ObjectType(construction)
+        _objects.retain(self, cast(CategoryOfCategories.ElementType, value), native, construction)
+        return value
+
+    def _from_native_morphism(
+        self,
+        source: SchemesCategory.ObjectType,
+        target: SchemesCategory.ObjectType,
+        native: object,
+    ) -> SchemesCategory.MorphismType:
+        assert oscar.same_native(oscar.covered_domain(native), native_scheme(cast(CategoryOfCategories.ElementType, source)).native)
+        assert oscar.same_native(oscar.covered_codomain(native), native_scheme(cast(CategoryOfCategories.ElementType, target)).native)
+        arrow = cast(
+            SchemesCategory.MorphismType,
+            cast(Any, self).MorphismType(domain=source, codomain=target),
+        )
+        _morphisms.retain(
+            self,
+            cast(MorphismCategory.ObjectType, arrow),
+            cast(CategoryOfCategories.ElementType, source),
+            cast(CategoryOfCategories.ElementType, target),
+            native,
+        )
+        return arrow
+
+    def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType:
+        """The affine scheme as a scheme, preserving its exact OSCAR chart."""
+        key = id(affine)
+        match self._affine_wrappers.get(key):
+            case (retained, value) if retained is affine:
+                return value
+            case _:
+                native = oscar.covered_scheme(native_affine_scheme(cast(CategoryOfCategories.ElementType, affine)).native)
+                value = self._from_native(_AffineSchemeConstruction(affine), native)
+                self._affine_wrappers[key] = (affine, value)
+                return value
+
+    def glue_two_affines(
+        self,
+        left: AffineSchemesCategory.ObjectType,
+        right: AffineSchemesCategory.ObjectType,
+        left_open: AffineOpenCategory.ObjectType,
+        right_open: AffineOpenCategory.ObjectType,
+        left_to_right_pullback: MorphismCategory.ObjectType,
+        right_to_left_pullback: MorphismCategory.ObjectType,
+    ) -> tuple[SchemesCategory.ObjectType, SchemesCategory.MorphismType, SchemesCategory.MorphismType]:
+        """Glue two affine charts along inverse principal-open maps."""
+        assert left_to_right_pullback.domain() is right_open.section_ring()
+        assert left_to_right_pullback.codomain() is left_open.section_ring()
+        assert right_to_left_pullback.domain() is left_open.section_ring()
+        assert right_to_left_pullback.codomain() is right_open.section_ring()
+        native_left = native_affine_scheme(cast(CategoryOfCategories.ElementType, left)).native
+        native_right = native_affine_scheme(cast(CategoryOfCategories.ElementType, right)).native
+        native_left_to_right = oscar.affine_morphism_direct(
+            left_open.native(), right_open.native(), oscar_native_morphism(left_to_right_pullback).native
+        )
+        native_right_to_left = oscar.affine_morphism_direct(
+            right_open.native(), left_open.native(), oscar_native_morphism(right_to_left_pullback).native
+        )
+        native_gluing = oscar.simple_gluing(native_left, native_right, native_left_to_right, native_right_to_left)
+        native_glued = oscar.glued_covered_scheme(native_left, native_right, native_gluing)
+        construction = TwoChartGluing(
+            left,
+            right,
+            left_open,
+            right_open,
+            left_to_right_pullback,
+            right_to_left_pullback,
+        )
+        glued = self._from_native(construction, native_glued)
+        left_scheme, right_scheme = self.affine(left), self.affine(right)
+        left_inclusion = self._from_native_morphism(
+            left_scheme,
+            glued,
+            oscar.covered_chart_inclusion(
+                native_scheme(cast(CategoryOfCategories.ElementType, left_scheme)).native,
+                native_left,
+                native_glued,
+            ),
+        )
+        right_inclusion = self._from_native_morphism(
+            right_scheme,
+            glued,
+            oscar.covered_chart_inclusion(
+                native_scheme(cast(CategoryOfCategories.ElementType, right_scheme)).native,
+                native_right,
+                native_glued,
+            ),
+        )
+        return glued, left_inclusion, right_inclusion
+
+    def gluing_mediator(
+        self,
+        glued: SchemesCategory.ObjectType,
+        target: SchemesCategory.ObjectType,
+        left_map: SchemesCategory.MorphismType,
+        right_map: SchemesCategory.MorphismType,
+    ) -> SchemesCategory.MorphismType:
+        """The unique map induced by compatible maps on the retained two-chart presentation."""
+        construction = glued.construction()
+        assert isinstance(construction, TwoChartGluing)
+        left_scheme, right_scheme = self.affine(construction.left), self.affine(construction.right)
+        assert left_map.domain() is left_scheme and right_map.domain() is right_scheme
+        assert left_map.codomain() is target and right_map.codomain() is target
+        native = oscar.gluing_mediator(
+            native_scheme(cast(CategoryOfCategories.ElementType, glued)).native,
+            native_scheme(cast(CategoryOfCategories.ElementType, target)).native,
+            native_affine_scheme(cast(CategoryOfCategories.ElementType, construction.left)).native,
+            native_affine_scheme(cast(CategoryOfCategories.ElementType, construction.right)).native,
+            native_scheme_morphism(cast(MorphismCategory.ObjectType, left_map)).native,
+            native_scheme_morphism(cast(MorphismCategory.ObjectType, right_map)).native,
+        )
+        return self._from_native_morphism(glued, target, native)
+
+    def __repr__(self) -> str:
+        return "Schemes"
+
+
+@cache
+def Schemes() -> SchemesCategory:
+    return SchemesCategory()
+
+
+def native_scheme(value: CategoryOfCategories.ElementType) -> NativeObjectRealization[object, object]:
+    return _objects.realization(value)
+
+
+def native_scheme_morphism(value: MorphismCategory.ObjectType) -> NativeMorphismRealization[object]:
+    return _morphisms.realization(value)

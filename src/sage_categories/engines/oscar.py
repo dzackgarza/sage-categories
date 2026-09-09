@@ -213,9 +213,9 @@ def covered_patches(scheme: object) -> tuple[object, ...]:
     return tuple(bridge().covered_patches(scheme))
 
 
-def covered_chart_inclusion(chart: object, glued: object) -> object:
+def covered_chart_inclusion(source: object, chart: object, glued: object) -> object:
     """Return the native open chart map into a covered scheme."""
-    return bridge().covered_chart_inclusion(chart, glued)
+    return bridge().covered_chart_inclusion(source, chart, glued)
 
 
 def gluing_mediator(

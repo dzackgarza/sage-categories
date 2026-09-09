@@ -24,6 +24,12 @@ from sage_categories.algebra.abelian import (
     simple_tensor,
     tensor_mediator,
 )
+from sage_categories.algebra.adeles import (
+    AdeleOpen,
+    AdelePresentation,
+    AdeleValue,
+    adeles_of_rationals,
+)
 from sage_categories.algebra.commutative_rings import (
     PrimeIdeal,
     induced_stalk_map,
@@ -52,12 +58,16 @@ __all__ = [
     "AbelianBimoduleTensor",
     "AbelianGroups",
     "AbelianTensor",
+    "AdeleOpen",
+    "AdelePresentation",
+    "AdeleValue",
     "ExactLocalFieldPresentation",
     "ExactLocalValue",
     "LinearForm",
     "Presentation",
     "PrimeIdeal",
     "abelian_homomorphism",
+    "adeles_of_rationals",
     "balanced_tensor",
     "bilinear_map",
     "coequalizer_lift",

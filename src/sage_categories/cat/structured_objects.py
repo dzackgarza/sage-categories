@@ -796,6 +796,13 @@ class MonoidPairsCategory(LimitSubcategory):
             lambda value: value.family_component(1), lambda arrow: arrow.family_component(1)
         )
 
+    @cached_method
+    def to_carrier(self) -> Functor:
+        """The shared carrier ``(A, M, X) |-> X`` of the two named monoid structures."""
+        return Fun(self, self.factor(2)).Faithful().Isofibrations()(
+            lambda value: value.family_component(2), lambda arrow: arrow.family_component(2)
+        )
+
     def homomorphism(
         self,
         source: MonoidPairsCategory.ObjectType,
@@ -860,6 +867,11 @@ class SemiringCategory(EquifierCategory):
     def to_multiplicative(self) -> Functor:
         """The retained leg to ``MultiplicativeMonoids(C_x)``."""
         return self._pairs.to_multiplicative() * Fun.full_subcategory_monomorphism(self, self._pairs)
+
+    @cached_method
+    def to_carrier(self) -> Functor:
+        """The retained carrier functor of a semiring."""
+        return self._pairs.to_carrier() * Fun.full_subcategory_monomorphism(self, self._pairs)
 
     def homomorphism(
         self,
@@ -1011,6 +1023,11 @@ class RingCategory(LimitSubcategory):
         return Fun(self, self.factor(1)).Faithful().Isofibrations()(
             lambda value: value.family_component(1), lambda arrow: arrow.family_component(1)
         )
+
+    @cached_method
+    def forgetful(self) -> Functor:
+        """The retained carrier functor ``Rings(C) -> C`` through the semiring leg."""
+        return self.factor(0).to_carrier() * self.to_semiring()
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (*super().structure_functors(), self.to_semiring(), self.to_additive_group())

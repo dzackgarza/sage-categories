@@ -51,6 +51,11 @@ def test_quotient_ring_homomorphism() -> None:
     assert quotient(residue_six.point(5) * residue_six.point(5)).datum() == 1
     assert ask(quotient(-residue_six.point(2)) == -quotient(residue_six.point(2))) is True
     assert ask(quotient(residue_six.one()) == residue_three.one()) is True
+    forgetful = rings.forgetful()
+    carrier_map = forgetful.on_morphism(quotient)
+    assert carrier_map.domain() is forgetful.on_object(residue_six)
+    assert carrier_map.codomain() is forgetful.on_object(residue_three)
+    assert carrier_map(carrier_map.domain().point(5)).datum() == 2
 
 
 def test_boolean_semiring_is_not_a_ring() -> None:

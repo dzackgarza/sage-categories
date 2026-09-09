@@ -10,7 +10,13 @@ from sage_categories.geometry.affine import (
     affine_structure_sheaf,
 )
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
-from sage_categories.geometry.schemes import Schemes, SchemesCategory, TwoChartGluing
+from sage_categories.geometry.schemes import (
+    ProjectiveLinePresentation,
+    Schemes,
+    SchemesCategory,
+    TwoChartGluing,
+    projective_line,
+)
 from sage_categories.geometry.sheaves import (
     RingPresheaf,
     RingSheaf,
@@ -30,6 +36,7 @@ __all__ = [
     "RingSheaf",
     "RingedSpaces",
     "RingedSpacesCategory",
+    "ProjectiveLinePresentation",
     "Schemes",
     "SchemesCategory",
     "Spec",
@@ -40,4 +47,5 @@ __all__ = [
     "ring_presheaf",
     "ring_presheaf_from_functor",
     "ring_sheaf",
+    "projective_line",
 ]

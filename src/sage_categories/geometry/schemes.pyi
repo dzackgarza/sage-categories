@@ -11,6 +11,16 @@ class TwoChartGluing:
     left_to_right_pullback: MorphismCategory.ObjectType
     right_to_left_pullback: MorphismCategory.ObjectType
 
+class ProjectiveLinePresentation:
+    scheme: SchemesCategory.ObjectType
+    left_chart: AffineSchemesCategory.ObjectType
+    right_chart: AffineSchemesCategory.ObjectType
+    left_open: AffineOpenCategory.ObjectType
+    right_open: AffineOpenCategory.ObjectType
+    left_inclusion: SchemesCategory.MorphismType
+    right_inclusion: SchemesCategory.MorphismType
+    chart_swap: SchemesCategory.MorphismType
+
 class SchemesCategory(Category):
     class ObjectType(CategoryOfCategories.ElementType):
         def construction(self) -> object: ...
@@ -29,7 +39,11 @@ class SchemesCategory(Category):
         right_to_left_pullback: MorphismCategory.ObjectType,
     ) -> tuple[ObjectType, MorphismType, MorphismType]: ...
     def gluing_mediator(self, glued: ObjectType, target: ObjectType, left_map: MorphismType, right_map: MorphismType) -> MorphismType: ...
+    def chart_map(
+        self, source: AffineSchemesCategory.ObjectType, target: ObjectType, target_chart: AffineSchemesCategory.ObjectType, pullback: MorphismCategory.ObjectType
+    ) -> MorphismType: ...
 
 def Schemes() -> SchemesCategory: ...
 def native_scheme(value: CategoryOfCategories.ElementType) -> NativeObjectRealization[object, object]: ...
 def native_scheme_morphism(value: MorphismCategory.ObjectType) -> NativeMorphismRealization[object]: ...
+def projective_line(field: CategoryOfCategories.ElementType) -> ProjectiveLinePresentation: ...

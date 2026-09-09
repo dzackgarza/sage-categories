@@ -15,7 +15,7 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        principal_open_inclusion, affine_morphism_direct,
        simple_gluing, glued_covered_scheme, covered_patches,
        covered_chart_inclusion, gluing_mediator,
-       covered_domain, covered_codomain
+       covered_chart_map, covered_domain, covered_codomain
 
 """The prime field ``GF(p)`` used by the affine-ring consumer."""
 prime_field(p::Integer) = GF(p)
@@ -114,6 +114,15 @@ function covered_chart_inclusion(source, chart, glued)
     maps = IdDict{AbsAffineScheme, AbsAffineSchemeMor}(chart => identity_map(chart))
     covering_map = CoveringMorphism(source_cover, target_cover, maps)
     CoveredSchemeMorphism(source, glued, covering_map)
+end
+
+"""A covered-scheme map from one affine source chart into a chosen target chart."""
+function covered_chart_map(source, source_chart, target, affine_map)
+    source_cover = default_covering(source)
+    target_cover = default_covering(target)
+    maps = IdDict{AbsAffineScheme, AbsAffineSchemeMor}(source_chart => affine_map)
+    covering_map = CoveringMorphism(source_cover, target_cover, maps)
+    CoveredSchemeMorphism(source, target, covering_map)
 end
 
 """The unique covered-scheme map induced by compatible maps on two glued charts."""

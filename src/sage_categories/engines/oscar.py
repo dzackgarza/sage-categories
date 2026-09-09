@@ -15,6 +15,7 @@ __all__ = [
     "covered_scheme",
     "covered_patches",
     "covered_chart_inclusion",
+    "covered_chart_map",
     "covered_domain",
     "covered_codomain",
     "domain",
@@ -216,6 +217,11 @@ def covered_patches(scheme: object) -> tuple[object, ...]:
 def covered_chart_inclusion(source: object, chart: object, glued: object) -> object:
     """Return the native open chart map into a covered scheme."""
     return bridge().covered_chart_inclusion(source, chart, glued)
+
+
+def covered_chart_map(source: object, source_chart: object, target: object, affine_map: object) -> object:
+    """Return a covered map from one affine source into a chosen target chart."""
+    return bridge().covered_chart_map(source, source_chart, target, affine_map)
 
 
 def gluing_mediator(

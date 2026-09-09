@@ -141,6 +141,14 @@ Record other concrete defects with their existing owners, then return to the ass
 Do not replace difficult implementation with easier policy, typing, environment, or documentation work.
 Documentation is the deliverable when the user requests documentation; that does not certify implementation.
 
+## Gates, fronts, and claims
+
+- **Red gate protocol.** The first time a commit gate, hook, or QC stage goes red, diagnosing that failure becomes the current task. Stop authoring; root-cause and fix the gate, or report it as a blocker with a reproducer. Never keep writing code behind a red gate, and never accumulate uncommitted work around one. A gate that is red on two consecutive commit attempts is a defect to diagnose, not an environment condition to wait out.
+
+- **Single-front closure.** Work exactly one [TODO.md](TODO.md) node at a time, in the DAG's dependency order, and drive it to its governing-plan acceptance before opening any other front. Shared-substrate (kernel) edits are in scope only when the current node's contract requires them. If multiple fronts are already open, close the nearest-to-acceptance front before any new authoring.
+
+- **Claim freshness.** At every claim and every release, reconcile the shared queue and claim state against actual repository state across all branches before selecting work. Never select work from a queue older than your last branch sync. All authoring requires a live claim; batch-committing work authored off-ledger is prohibited.
+
 ## Implementation and dependencies
 
 Follow [specs/system.md](specs/system.md#dependency-directions).

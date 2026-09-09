@@ -67,6 +67,39 @@ def test_boolean_semiring_is_not_a_ring() -> None:
         Rings(Sets())(disjunction, zero, conjunction, one)
 
 
+def test_matrix_ring_opposite_reverses_multiplication_and_maps() -> None:
+    rings = Rings(Sets())
+    carrier = Sets(tuple((a, b, c, d) for a in (0, 1) for b in (0, 1) for c in (0, 1) for d in (0, 1)))
+    structure = Cartesian(Sets())
+    square = binary_product_data(Sets(), carrier, carrier).apex()
+
+    def add(pair):
+        return tuple((left + right) % 2 for left, right in zip(pair[0], pair[1], strict=True))
+
+    def multiply(pair):
+        a, b, c, d = pair[0]
+        e, f, g, h = pair[1]
+        return ((a * e + b * g) % 2, (a * f + b * h) % 2, (c * e + d * g) % 2, (c * f + d * h) % 2)
+
+    addition = Mor(Sets)(square, carrier)(add)
+    multiplication = Mor(Sets)(square, carrier)(multiply)
+    zero = Mor(Sets)(structure.unit(), carrier)(lambda _: (0, 0, 0, 0))
+    one = Mor(Sets)(structure.unit(), carrier)(lambda _: (1, 0, 0, 1))
+    matrix_ring = rings(addition, zero, multiplication, one)
+    opposite = rings.opposite_ring(matrix_ring)
+    e12, e21 = matrix_ring.point((0, 1, 0, 0)), matrix_ring.point((0, 0, 1, 0))
+    assert (e12 * e21).datum() == (1, 0, 0, 0)
+    assert (e21 * e12).datum() == (0, 0, 0, 1)
+    opposite_e12, opposite_e21 = opposite.point(e12.datum()), opposite.point(e21.datum())
+    assert (opposite_e12 * opposite_e21).datum() == (e21 * e12).datum()
+
+    identity_map = rings.homomorphism(matrix_ring, matrix_ring, Mor(Sets)(carrier, carrier).one())
+    opposite_map = rings.opposite_functor().on_morphism(identity_map)
+    assert opposite_map.domain() is opposite and opposite_map.codomain() is opposite
+    assert opposite_map(opposite_e12).datum() == opposite_e12.datum()
+
+
 test_residue_ring_operations()
 test_quotient_ring_homomorphism()
 test_boolean_semiring_is_not_a_ring()
+test_matrix_ring_opposite_reverses_multiplication_and_maps()

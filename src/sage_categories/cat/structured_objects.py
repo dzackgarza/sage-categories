@@ -1065,6 +1065,40 @@ class RingCategory(LimitSubcategory):
         )
         return self.construct_morphism(source, target, (semiring_map, group_map, semirings.to_additive().on_morphism(semiring_map)))
 
+    @cached_method(key=identity_key)
+    def opposite_ring(self, ring: RingCategory.ObjectType) -> RingCategory.ObjectType:
+        """The opposite ring on the same carrier, with multiplication ``(x, y) |-> yx``."""
+        assert ring in self
+        monoidal, base = self.monoidal_structure(), self.monoidal_structure().underlying_category()
+        semirings = self.factor(0)
+        semiring = self.to_semiring().on_object(ring)
+        additive = semirings.to_additive().on_object(semiring)
+        multiplicative = semirings.to_multiplicative().on_object(semiring)
+        additive_monoid = AdditiveMonoids(monoidal).product_projection(0).on_object(additive)
+        multiplicative_monoid = MultiplicativeMonoids(monoidal).product_projection(0).on_object(multiplicative)
+        carrier = additive_monoid.operation().codomain()
+        product = binary_product_data(base, carrier, carrier)
+        swap = pair_maps(base, product.leg(1), product.leg(0))
+        return self(
+            additive_monoid.operation(),
+            additive_monoid.unit_morphism(),
+            multiplicative_monoid.operation() * swap,
+            multiplicative_monoid.unit_morphism(),
+        )
+
+    @cached_method
+    def opposite_functor(self) -> Functor:
+        """``R |-> R^op`` and ``f |-> f`` on the underlying carrier map."""
+        def on_object(ring: RingCategory.ObjectType) -> RingCategory.ObjectType:
+            return self.opposite_ring(ring)
+
+        def on_morphism(arrow: RingCategory.MorphismType) -> RingCategory.MorphismType:
+            semiring_map = self.to_semiring().on_morphism(arrow)
+            carrier_map = semiring_map.family_component(2)
+            return self.homomorphism(on_object(arrow.domain()), on_object(arrow.codomain()), carrier_map)
+
+        return Fun(self, self)(on_object, on_morphism)
+
 
 @cached_function(key=identity_key)
 def Rings(base: Category) -> RingCategory:

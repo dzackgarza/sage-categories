@@ -50,7 +50,9 @@ class Tiny(Category):
 
         def evaluate(candidate: Tiny.ObjectType) -> Tiny.ObjectType:
             match candidate.value():
-                case 4:
+                # Raw literal: the preparser must not rewrite a match pattern
+                # into a _sage_const_* name, which Python reads as a capture.
+                case 4r:
                     return self(2)
             return Unknown
 
@@ -62,7 +64,9 @@ class Tiny(Category):
 
 def _decide_special(candidate: Tiny.ObjectType, assumptions: Proposition) -> bool | None:
     match candidate.value():
-        case 99:
+        # Raw literal: the preparser must not rewrite a match pattern into a
+        # _sage_const_* name, which Python reads as a capture.
+        case 99r:
             return None
         case value if value >= 0:
             return True

@@ -15,7 +15,13 @@ from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import ask
 from sage_categories.geometry.spaces import TopologicalSpacesCategory
 
-__all__ = ["RingPresheaf", "RingSheaf", "ring_presheaf", "ring_sheaf"]
+__all__ = [
+    "RingPresheaf",
+    "RingSheaf",
+    "ring_presheaf",
+    "ring_presheaf_from_functor",
+    "ring_sheaf",
+]
 
 
 def _rings() -> Any:
@@ -43,23 +49,33 @@ def _apply_ring_map(
 
 @dataclass(frozen=True, eq=False, slots=True)
 class RingPresheaf:
-    """A retained functor ``O(X)^op -> CRing`` with exact owned section rings."""
+    """A retained functor ``O(X)^op -> CRing`` on an arbitrary owned open category."""
 
-    space: TopologicalSpacesCategory.ObjectType
+    space: object
+    opens: Any
     functor: Functor
-    sections: Mapping[frozenset[Hashable], CategoryOfCategories.ElementType]
+    open_object_rule: Callable[[object], CategoryOfCategories.ElementType]
+    open_key_rule: Callable[[CategoryOfCategories.ElementType], object]
 
-    def section_ring(self, open_set: frozenset[Hashable]) -> CategoryOfCategories.ElementType:
-        return self.sections[open_set]
+    def open_object(self, key: object) -> CategoryOfCategories.ElementType:
+        return self.open_object_rule(key)
+
+    def open_key(self, open_object: CategoryOfCategories.ElementType) -> object:
+        return self.open_key_rule(open_object)
+
+    def section_ring(self, open_set: object) -> CategoryOfCategories.ElementType:
+        return cast(
+            CategoryOfCategories.ElementType,
+            self.functor.on_object(self.open_object(open_set)),
+        )
 
     def restriction(
         self,
-        larger: frozenset[Hashable],
-        smaller: frozenset[Hashable],
+        larger: object,
+        smaller: object,
     ) -> MorphismCategory.ObjectType:
         """The owned ring map ``F(larger) -> F(smaller)`` for ``smaller <= larger``."""
-        opens = self.space.open_category()
-        inclusion = Mor(opens)(self.space.open_object(smaller), self.space.open_object(larger))()
+        inclusion = Mor(self.opens)(self.open_object(smaller), self.open_object(larger))()
         return cast(MorphismCategory.ObjectType, self.functor.on_morphism(opposite_morphism(inclusion)))
 
 
@@ -159,7 +175,26 @@ def ring_presheaf(
         larger = _open_data(inclusion.codomain())
         return restrictions[(larger, smaller)]
 
-    return RingPresheaf(space, Fun(source, rings)(on_object, on_morphism), sections)
+    return ring_presheaf_from_functor(
+        space,
+        space.open_category(),
+        Fun(source, rings)(on_object, on_morphism),
+        lambda key: space.open_object(cast(frozenset[Hashable], key)),
+        lambda open_object: _open_data(open_object),
+    )
+
+
+def ring_presheaf_from_functor(
+    space: object,
+    opens: Any,
+    functor: Functor,
+    open_object_rule: Callable[[object], CategoryOfCategories.ElementType],
+    open_key_rule: Callable[[CategoryOfCategories.ElementType], object],
+) -> RingPresheaf:
+    """Retain an arbitrary represented ring presheaf from its actual contravariant functor."""
+    assert functor.domain() is opens.op()
+    assert functor.codomain() is _rings()
+    return RingPresheaf(space, opens, functor, open_object_rule, open_key_rule)
 
 
 def ring_sheaf(presheaf: RingPresheaf, gluing_rule: GluingRule) -> RingSheaf:

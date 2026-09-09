@@ -6,6 +6,7 @@ from sage_categories.geometry.sheaves import (
     RingPresheaf,
     RingSheaf,
     ring_presheaf,
+    ring_presheaf_from_functor,
     ring_sheaf,
 )
 from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
@@ -21,5 +22,6 @@ __all__ = [
     "TopologicalSpaces",
     "TopologicalSpacesCategory",
     "ring_presheaf",
+    "ring_presheaf_from_functor",
     "ring_sheaf",
 ]

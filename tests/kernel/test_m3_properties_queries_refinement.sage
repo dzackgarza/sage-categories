@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import pytest
-from sage.all import Unknown
 from sympy.assumptions.assume import AppliedPredicate
 from sympy.logic.boolalg import Boolean
 
-from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Proposition, Query, ask, assume
+from sage_categories.cat.category import Axiom, Cat, Category, Predicate, Proposition, Query, Unknown, ask, assume
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.predicates import AppliedQuery, negation, retract
 

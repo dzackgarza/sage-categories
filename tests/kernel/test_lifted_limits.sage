@@ -26,11 +26,17 @@ class FiniteSets(Category):
         pass
 
     class MorphismType:
-        def __init__(self, pairs: tuple[tuple[Hashable, Hashable], ...]) -> None:
-            self._function = dict(pairs)
+        def __init__(self, data: object) -> None:
+            self._function = dict(data) if isinstance(data, tuple) else None
 
         def apply(self, value: Hashable) -> Hashable:
-            return self._function[value]
+            if self._function is not None:
+                return self._function[value]
+            if self.is_composite():
+                first, second = self.factors()
+                return second.apply(first.apply(value))
+            assert self.domain() is self.codomain()
+            return value
 
     def __call__(self, values: frozenset[Hashable]) -> FiniteSets.ObjectType:
         return self.ObjectType(values)
@@ -40,14 +46,6 @@ class FiniteSets(Category):
         pairs = tuple((value, action(value)) for value in source.values())
         assert all(image in target.values() for _, image in pairs)
         return self.MorphismType(domain=source, codomain=target, data=pairs)
-
-    def construct_identity(self, source: FiniteSets.ObjectType) -> FiniteSets.MorphismType:
-        return self.construct_morphism(source, source, lambda value: value)
-
-    def composite(self, second: FiniteSets.MorphismType,
-                  first: FiniteSets.MorphismType) -> FiniteSets.MorphismType:
-        return self.construct_morphism(first.domain(), second.codomain(),
-                                       lambda value: second.apply(first.apply(value)))
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], FiniteSets.ObjectType]:
         # The compatible-family construction of limits in Set (Mac Lane, V.2).
@@ -85,8 +83,19 @@ class FinitePosets(Category):
         pass
 
     class MorphismType:
-        def __init__(self, underlying: FiniteSets.MorphismType) -> None:
-            self._monotone_map = underlying
+        def __init__(self, data: object) -> None:
+            self._written_underlying = data if isinstance(data, FiniteSets.MorphismType) else None
+
+        def underlying_map(self) -> FiniteSets.MorphismType:
+            if self._written_underlying is not None:
+                return self._written_underlying
+            source = self.domain()._poset_set
+            target = self.codomain()._poset_set
+            if self.is_composite():
+                first, second = self.factors()
+                return second.underlying_map() * first.underlying_map()
+            assert source is target
+            return Mor(self.category().base_category()._sets)(source, target).one()
 
     def __init__(self, sets: FiniteSets) -> None:
         self._sets = sets
@@ -102,13 +111,6 @@ class FinitePosets(Category):
                    for x in source.values() for y in source.values() if source.leq(x, y))
         return self.MorphismType(domain=source, codomain=target, data=underlying)
 
-    def construct_identity(self, source: FinitePosets.ObjectType) -> FinitePosets.MorphismType:
-        return self.construct_morphism(source, source, Mor(self._sets)(source._poset_set, source._poset_set).one())
-
-    def composite(self, second: FinitePosets.MorphismType,
-                  first: FinitePosets.MorphismType) -> FinitePosets.MorphismType:
-        return self.construct_morphism(first.domain(), second.codomain(), second._monotone_map * first._monotone_map)
-
     def lift_order(self, diagram: Functor, base: LimitConesCategory.ObjectType) -> FinitePosets.ObjectType:
         vertices = tuple(diagram.domain()(label) for label in diagram.domain().labels())
         return self(base.apex(), lambda x, y: all(
@@ -117,7 +119,7 @@ class FinitePosets(Category):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         forget = Fun(self, self._sets).Faithful().Isofibrations()(
-            lambda value: value._poset_set, lambda arrow: arrow._monotone_map)
+            lambda value: value._poset_set, lambda arrow: arrow.underlying_map())
         forget.with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
         forget.with_limit_lifting(Cat().WalkingParallelPair(), self.lift_order, self.construct_morphism)
         return (forget,)
@@ -137,8 +139,19 @@ class PointedFiniteSets(Category):
         pass
 
     class MorphismType:
-        def __init__(self, underlying: FiniteSets.MorphismType) -> None:
-            self._pointed_map = underlying
+        def __init__(self, data: object) -> None:
+            self._written_underlying = data if isinstance(data, FiniteSets.MorphismType) else None
+
+        def underlying_map(self) -> FiniteSets.MorphismType:
+            if self._written_underlying is not None:
+                return self._written_underlying
+            source = self.domain()._pointed_set
+            target = self.codomain()._pointed_set
+            if self.is_composite():
+                first, second = self.factors()
+                return second.underlying_map() * first.underlying_map()
+            assert source is target
+            return Mor(self.category().base_category()._sets)(source, target).one()
 
     def __init__(self, sets: FiniteSets) -> None:
         self._sets = sets
@@ -152,13 +165,6 @@ class PointedFiniteSets(Category):
         assert underlying.apply(source.basepoint()) == target.basepoint()
         return self.MorphismType(domain=source, codomain=target, data=underlying)
 
-    def construct_identity(self, source: PointedFiniteSets.ObjectType) -> PointedFiniteSets.MorphismType:
-        return self.construct_morphism(source, source, Mor(self._sets)(source._pointed_set, source._pointed_set).one())
-
-    def composite(self, second: PointedFiniteSets.MorphismType,
-                  first: PointedFiniteSets.MorphismType) -> PointedFiniteSets.MorphismType:
-        return self.construct_morphism(first.domain(), second.codomain(), second._pointed_map * first._pointed_map)
-
     def lift_point(self, diagram: Functor, base: LimitConesCategory.ObjectType) -> PointedFiniteSets.ObjectType:
         singleton = self._sets(frozenset((0,)))
         points = cone(base.diagram(), singleton, lambda vertex: Mor(self._sets)(
@@ -168,7 +174,7 @@ class PointedFiniteSets(Category):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         forget = Fun(self, self._sets).Faithful().Isofibrations().CreatesLimits(Discrete)(
-            lambda value: value._pointed_set, lambda arrow: arrow._pointed_map)
+            lambda value: value._pointed_set, lambda arrow: arrow.underlying_map())
         return (forget.with_limit_lifting(Discrete, self.lift_point, self.construct_morphism),)
 
 

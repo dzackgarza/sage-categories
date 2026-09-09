@@ -124,7 +124,6 @@ def test_inserter_homomorphisms_and_monad_algebra_laws():
     algebras = EndofunctorAlgebras(identity)
     em = EilenbergMoore(identity, unit, unit)
     value = algebras.algebra(base(2), Mor(base)(base(2), base(2)).one())
-    em.ambient()(value)
     assert em(value).carrier() is base(2)
 
 

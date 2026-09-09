@@ -80,7 +80,7 @@ def test_functor_transports_points_and_generalized_elements_by_composition() -> 
     assert image.defining_morphism().on_morphism(edge(0, 2)).domain() is source(1)
 
 
-class PresentedEndofunctors(Category[[NaturalTransformation], []]):
+class PresentedEndofunctors(Category):
     class ObjectType:
         def __init__(self, functor: Functor) -> None:
             self._presented_functor = functor

@@ -74,14 +74,18 @@ def record_attribute_writes(value: CategoryPoint) -> Iterator[set[str]]:
         _attribute_writes.reset(token)
 
 
-class CategoryPoint:
-    """The stable Python end of the compiled ``Cat().ElementType`` role."""
+class _AttributeWriteTracked:
+    """Private Python plumbing that records initializer writes for the compiler."""
 
     def __setattr__[State](self, name: str, value: State) -> None:
         recording = _attribute_writes.get()
         if recording is not None and recording[0] is self:
             recording[1].add(name)
         super().__setattr__(name, value)
+
+
+class CategoryPoint(_AttributeWriteTracked):
+    """The stable Python end of the compiled ``Cat().ElementType`` role."""
 
     def _is_element(self) -> bool:
         return role_of(self) is Role.ELEMENT

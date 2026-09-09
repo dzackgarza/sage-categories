@@ -108,13 +108,19 @@ class ScalarPair(Category):
         self._reverse = reverse
 
     def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-        projections = tuple(
-            Fun(self, target).Isofibrations()(
-                lambda value, index=index, target=target: target(value._coordinates[index]),
-                lambda arrow, index=index, target=target: Mor(target)(target(arrow.domain()._coordinates[index]), target(arrow.codomain()._coordinates[index])).one(),
-            )
-            for index, target in enumerate(self._scalar_targets)
-        )
+        def projection(index: int, target: Scalars) -> Cat().MorphismType:
+            def on_object(value: ScalarPair.ObjectType) -> Scalars.ObjectType:
+                return target(value._coordinates[index])
+
+            def on_morphism(arrow: ScalarPair.MorphismType) -> Cat().MorphismType:
+                return Mor(target)(
+                    target(arrow.domain()._coordinates[index]),
+                    target(arrow.codomain()._coordinates[index]),
+                ).one()
+
+            return Fun(self, target).Isofibrations()(on_object, on_morphism)
+
+        projections = tuple(projection(index, target) for index, target in enumerate(self._scalar_targets))
         return projections[::-1] if self._reverse else projections
 
     def __call__(self, values: tuple[int, int]) -> ScalarPair.ObjectType:
@@ -173,7 +179,8 @@ def test_unrelated_state_owners_are_distinct_even_for_equal_values() -> None:
 
     class Combined(Category):
         class ObjectType:
-            pass
+            def __init__(self, value: int) -> None:
+                self._combined_value = value
 
         class ElementType:
             pass
@@ -182,20 +189,25 @@ def test_unrelated_state_owners_are_distinct_even_for_equal_values() -> None:
             pass
 
         def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
-            return tuple(
-                Fun(self, target).Isofibrations()(
-                    lambda value, target=target: target(0),
-                    lambda arrow, target=target: Mor(target)(target(0), target(0)).one(),
-                )
-                for target in (first, second)
-            )
+            def into(target: Category) -> Cat().MorphismType:
+                def on_object(value: Combined.ObjectType) -> Category.ObjectType:
+                    return target(value._combined_value)
 
-        def __call__(self) -> Combined.ObjectType:
-            return self.ObjectType(None)
+                def on_morphism(arrow: Combined.MorphismType) -> Cat().MorphismType:
+                    source = target(arrow.domain()._combined_value)
+                    target_object = target(arrow.codomain()._combined_value)
+                    return Mor(target)(source, target_object).one()
+
+                return Fun(self, target).Isofibrations()(on_object, on_morphism)
+
+            return tuple(into(target) for target in (first, second))
+
+        def __call__(self, value: int) -> Combined.ObjectType:
+            return self.ObjectType(value)
 
     category = Combined()
     with pytest.raises(SemanticCollisionError, match="_scalar"):
-        category()
+        category(0)
 
 
 def test_two_selected_targets_supply_one_inherited_property() -> None:

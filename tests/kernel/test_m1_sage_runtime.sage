@@ -822,14 +822,12 @@ def test_refining_reached_category_preserves_objects_above_it() -> None:
             codomain = self._object_to_diamond(morphism.codomain())
             return DIAMOND.morphism_category(1)(domain, codomain).one()
 
-    from sage_categories.kernel.refinement import refine
-
     upper = UpperCategory()
     member = upper(23)
     identity = id(member)
     assert member.upper_object() == (member, 23)
 
-    refine(DIAMOND, Cat().Concrete())
+    assume(DIAMOND.is_concrete())
 
     assert id(member) == identity
     assert member.upper_object() == (member, 23)

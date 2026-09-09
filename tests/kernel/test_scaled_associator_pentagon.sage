@@ -19,45 +19,26 @@ class RationalLine(Category):
     """The one-object category of one-dimensional rational linear maps."""
 
     class ObjectType:
-        pass
+        def __init__(self, name: str) -> None:
+            self._name = name
 
     class ElementType:
         pass
 
     class MorphismType:
-        def __init__(self, scalar: Fraction) -> None:
-            self.scalar = Fraction(scalar)
+        def __init__(self, data: object) -> None:
+            self._written_scalar = Fraction(data) if data is not None else None
 
-    def __init__(self) -> None:
-        super().__init__()
-        self._line = self.ObjectType(None)
-        register_handler(self.equality(), self._equal_objects)
-        register_handler(self.equality(), self._equal_morphisms)
+        def scalar(self) -> Fraction:
+            if self._written_scalar is not None:
+                return self._written_scalar
+            if self.is_composite():
+                first, second = self.factors()
+                return second.scalar() * first.scalar()
+            return Fraction(1)
 
-    def __call__(self) -> RationalLine.ObjectType:
-        return self._line
-
-    def construct_identity(self, value: RationalLine.ObjectType) -> RationalLine.MorphismType:
-        return self.MorphismType(value, value, Fraction(1))
-
-    def construct_morphism(
-        self,
-        source: RationalLine.ObjectType,
-        target: RationalLine.ObjectType,
-        scalar: Fraction | int,
-    ) -> RationalLine.MorphismType:
-        return self.MorphismType(source, target, Fraction(scalar))
-
-    def composite(
-        self,
-        second: RationalLine.MorphismType,
-        first: RationalLine.MorphismType,
-    ) -> RationalLine.MorphismType:
-        return self.construct_morphism(
-            first.domain(),
-            second.codomain(),
-            second.scalar * first.scalar,
-        )
+    def __call__(self, name: str) -> RationalLine.ObjectType:
+        return self.ObjectType(name)
 
     def _equal_objects(
         self,
@@ -76,20 +57,22 @@ class RationalLine(Category):
         return (
             first.domain() is second.domain()
             and first.codomain() is second.codomain()
-            and first.scalar == second.scalar
+            and first.scalar() == second.scalar()
         )
 
 
 def test_scaled_associator_pentagon_retains_eight_versus_four() -> None:
     category = RationalLine()
-    line = category()
+    register_handler(category.equality(), category._equal_objects)
+    register_handler(category.equality(), category._equal_morphisms)
+    line = category("Q")
     pairs = Cat().Products()((category, category))
     tensor = Fun(pairs, category)(
         lambda pair: line,
         lambda arrow: category.construct_morphism(
             line,
             line,
-            arrow.family_component(0).scalar * arrow.family_component(1).scalar,
+            arrow.family_component(0).scalar() * arrow.family_component(1).scalar(),
         ),
     )
     left, right = tensor_parentheses(tensor)
@@ -132,8 +115,8 @@ def test_scaled_associator_pentagon_retains_eight_versus_four() -> None:
     long = last * middle * first
     short = component(line, line, yz) * component(xy, line, line)
 
-    assert long.scalar == 8
-    assert short.scalar == 4
+    assert long.scalar() == 8
+    assert short.scalar() == 4
     assert ask(structure.pentagon(line, line, line, line)) is False
 
 

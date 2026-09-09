@@ -68,6 +68,15 @@ interfaces' scope, not the full capabilities of their packages or a restriction 
 owned `Fun(I, C)`. Native callable actions, symbolic presentations, and exact
 algorithms have distinct input requirements. Verify the actual operation before
 claiming an external dependency cannot supply it.
+
+For `Sets`, finite chosen diagrams lower to `FinSetsForCAP`/`ToolsForCategoricalTowers`.
+A discrete diagram whose index or factors have no chosen finite realization remains an
+owned represented product or coproduct: product points retain an indexed component rule,
+coproduct points retain one index and one summand datum, and their universal maps evaluate
+only requested components. The sequential shape `omega = Thin(NN, <=)` is represented
+without enumerating its stages; its colimit retains stage representatives and decides a
+positive equality by transport to a common later stage, leaving unresolved cases `Unknown`.
+These represented cases are the general public construction, not a fallback finite engine.
 The owned theory retains general functor categories and universal presentations;
 their required public actions follow the mathematical contract in
 [computational-generality.md](computational-generality.md#representation-and-execution).

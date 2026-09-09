@@ -2,6 +2,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.native import NativeMorphismRealization, NativeObjectRealization
 from sage_categories.geometry.affine import AffineOpenCategory, AffineSchemesCategory
+from sage_categories.geometry.sheaves import RingPresheaf
 
 class TwoChartGluing:
     left: AffineSchemesCategory.ObjectType
@@ -15,11 +16,15 @@ class ProjectiveLinePresentation:
     scheme: SchemesCategory.ObjectType
     left_chart: AffineSchemesCategory.ObjectType
     right_chart: AffineSchemesCategory.ObjectType
+    left_coordinate: CategoryOfCategories.ElementType
+    right_coordinate: CategoryOfCategories.ElementType
     left_open: AffineOpenCategory.ObjectType
     right_open: AffineOpenCategory.ObjectType
     left_inclusion: SchemesCategory.MorphismType
     right_inclusion: SchemesCategory.MorphismType
     chart_swap: SchemesCategory.MorphismType
+    structure_sheaf: RingPresheaf
+    overlap_swap: MorphismCategory.ObjectType
 
 class SchemesCategory(Category):
     class ObjectType(CategoryOfCategories.ElementType):

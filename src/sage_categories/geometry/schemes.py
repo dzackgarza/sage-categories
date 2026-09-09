@@ -13,14 +13,19 @@ from sage_categories.algebra.commutative_rings import (
     polynomial_ring,
     presented_ring_homomorphism,
 )
+from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.declarations import Sets
+from sage_categories.cat.functors import Fun
+from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.native import (
     NativeMorphismRealization,
     NativeMorphismRealizations,
     NativeObjectRealization,
     NativeObjectRealizations,
 )
+from sage_categories.cat.opposites import opposite_morphism
+from sage_categories.cat.structured_objects import Rings
 from sage_categories.engines import oscar
 from sage_categories.geometry.affine import (
     AffineOpenCategory,
@@ -29,6 +34,7 @@ from sage_categories.geometry.affine import (
     affine_structure_sheaf,
     native_affine_scheme,
 )
+from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
 
 __all__ = [
     "ProjectiveLinePresentation",
@@ -61,11 +67,15 @@ class ProjectiveLinePresentation:
     scheme: SchemesCategory.ObjectType
     left_chart: AffineSchemesCategory.ObjectType
     right_chart: AffineSchemesCategory.ObjectType
+    left_coordinate: CategoryOfCategories.ElementType
+    right_coordinate: CategoryOfCategories.ElementType
     left_open: AffineOpenCategory.ObjectType
     right_open: AffineOpenCategory.ObjectType
     left_inclusion: SchemesCategory.MorphismType
     right_inclusion: SchemesCategory.MorphismType
     chart_swap: SchemesCategory.MorphismType
+    structure_sheaf: RingPresheaf
+    overlap_swap: MorphismCategory.ObjectType
 
 
 _objects: NativeObjectRealizations[object, object] = NativeObjectRealizations()
@@ -292,13 +302,64 @@ def projective_line(field: CategoryOfCategories.ElementType) -> ProjectiveLinePr
         swap_right_pullback,
     )
     swap = schemes.gluing_mediator(glued, glued, left_to_glued, right_to_glued)
+
+    cover = FinitePresentedCategory(
+        "ProjectiveLineAffineCover",
+        ("overlap", "left", "right"),
+        (("overlap->left", "overlap", "left"), ("overlap->right", "overlap", "right")),
+        (),
+    )
+    rings = Rings(Sets).Commutative()
+    left_restriction = left_overlap.restriction_to(left_root)
+    right_restriction = right_overlap.restriction_to(right_root)
+    transported_right_restriction = right_to_left * right_restriction
+
+    def sections(open_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        match cover.label(cast(FinitePresentedCategory.ObjectType, open_object)):
+            case "left":
+                return left_ring
+            case "right":
+                return right_ring
+            case "overlap":
+                return left_overlap.section_ring()
+            case label:
+                raise AssertionError(f"unexpected projective-line open {label!r}")
+
+    def restriction(opposite_arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        arrow = opposite_morphism(opposite_arrow)
+        path = cast(FinitePresentedCategory.MorphismType, arrow).word()
+        match path:
+            case ():
+                section_ring = sections(arrow.domain())
+                return Mor(rings)(section_ring, section_ring).one()
+            case ("overlap->left",):
+                return left_restriction
+            case ("overlap->right",):
+                return transported_right_restriction
+            case _:
+                raise AssertionError(f"unexpected projective-line restriction path {path!r}")
+
+    sheaf_functor = Fun(cover.op(), rings)(sections, restriction)
+    structure_sheaf = ring_presheaf_from_functor(
+        glued,
+        cover,
+        sheaf_functor,
+        lambda key: cast(CategoryOfCategories.ElementType, cover(cast(str, key))),
+        lambda open_object: cover.label(cast(FinitePresentedCategory.ObjectType, open_object)),
+    )
+    swap_overlap_base = presented_ring_homomorphism(left_ring, left_overlap.section_ring(), (inverse_t,))
+    overlap_swap = localization_extension(left_overlap.section_ring(), left_overlap.section_ring(), swap_overlap_base)
     return ProjectiveLinePresentation(
         glued,
         cast(AffineSchemesCategory.ObjectType, left),
         cast(AffineSchemesCategory.ObjectType, right),
+        t,
+        u,
         left_overlap,
         right_overlap,
         left_inclusion,
         right_inclusion,
         swap,
+        structure_sheaf,
+        overlap_swap,
     )

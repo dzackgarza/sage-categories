@@ -6,7 +6,7 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        localization_at_element, ring_hom, localization_hom,
        map_apply, map_domain, map_codomain, ring_generators,
        ring_contains, ring_zero, ring_one, ring_add, ring_multiply, ring_negate,
-       ring_coerce, same_native
+       ring_coerce, ring_inverse, same_native
 
 """The prime field ``GF(p)`` used by the affine-ring consumer."""
 prime_field(p::Integer) = GF(p)
@@ -41,6 +41,7 @@ ring_add(first, second) = first + second
 ring_multiply(first, second) = first * second
 ring_negate(element) = -element
 ring_coerce(ring, value) = ring(value)
+ring_inverse(element) = inv(element)
 same_native(first, second) = first === second
 
 end

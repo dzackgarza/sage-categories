@@ -24,6 +24,15 @@ from sage_categories.algebra.abelian import (
     simple_tensor,
     tensor_mediator,
 )
+from sage_categories.algebra.commutative_rings import (
+    inverse_unit,
+    localization_extension,
+    polynomial_ring,
+    presented_ring_homomorphism,
+    prime_field,
+    principal_localization,
+    quotient_ring,
+)
 
 __all__ = [
     "AbelianBimoduleTensor",
@@ -40,7 +49,14 @@ __all__ = [
     "induced_left_action",
     "induced_right_action",
     "integer_group",
+    "inverse_unit",
+    "localization_extension",
+    "polynomial_ring",
+    "presented_ring_homomorphism",
+    "prime_field",
     "presented_abelian_group",
+    "principal_localization",
+    "quotient_ring",
     "relative_left_unitor",
     "relative_right_unitor",
     "relative_tensor",

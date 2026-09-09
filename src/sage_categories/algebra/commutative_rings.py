@@ -1,0 +1,168 @@
+"""OSCAR-backed polynomial, quotient, and localization constructions in owned commutative rings."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, cast
+
+from sage_categories.algebra._commutative_rings_oscar import (
+    OscarRingConstruction,
+    oscar_native_morphism,
+    oscar_native_object,
+    reconstruct_oscar_morphism,
+    reconstruct_oscar_object,
+)
+from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.engines import oscar
+
+__all__ = [
+    "inverse_unit",
+    "localization_extension",
+    "polynomial_ring",
+    "presented_ring_homomorphism",
+    "prime_field",
+    "principal_localization",
+    "quotient_ring",
+]
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _PrimeFieldConstruction:
+    characteristic: int
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _PolynomialConstruction:
+    base: CategoryOfCategories.ElementType
+    names: tuple[str, ...]
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _QuotientConstruction:
+    source: CategoryOfCategories.ElementType
+    relations: tuple[CategoryOfCategories.ElementType, ...]
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _LocalizationConstruction:
+    source: CategoryOfCategories.ElementType
+    element: CategoryOfCategories.ElementType
+
+
+def _construction(ring: CategoryOfCategories.ElementType) -> object:
+    record = oscar_native_object(ring)
+    assert isinstance(record.construction, OscarRingConstruction)
+    return record.construction.data
+
+
+def _point(
+    ring: CategoryOfCategories.ElementType,
+    datum: object,
+) -> CategoryOfCategories.ElementType:
+    return cast(CategoryOfCategories.ElementType, cast(Any, ring).point(datum))
+
+
+def _datum(point: CategoryOfCategories.ElementType) -> object:
+    return cast(Any, point).datum()
+
+
+def prime_field(characteristic: int) -> CategoryOfCategories.ElementType:
+    """The prime field ``F_p`` as an owned commutative ring."""
+    assert characteristic > 1
+    native = oscar.prime_field(characteristic)
+    return reconstruct_oscar_object(native, _PrimeFieldConstruction(characteristic))
+
+
+def polynomial_ring(
+    base: CategoryOfCategories.ElementType,
+    names: tuple[str, ...],
+) -> tuple[CategoryOfCategories.ElementType, tuple[CategoryOfCategories.ElementType, ...]]:
+    """The polynomial ring ``base[names]`` and its ordered owned generator points."""
+    assert names and len(set(names)) == len(names)
+    native_base = oscar_native_object(base).native
+    native_ring, native_generators = oscar.polynomial_ring(native_base, names)
+    ring = reconstruct_oscar_object(native_ring, _PolynomialConstruction(base, names))
+    return ring, tuple(_point(ring, generator) for generator in native_generators)
+
+
+def quotient_ring(
+    source: CategoryOfCategories.ElementType,
+    relations: tuple[CategoryOfCategories.ElementType, ...],
+) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
+    """The presented quotient ``source/(relations)`` and its canonical projection."""
+    assert relations
+    assert all(relation.parent() is source for relation in relations)
+    native_source = oscar_native_object(source).native
+    native_quotient, native_projection = oscar.quotient(
+        native_source, tuple(_datum(relation) for relation in relations)
+    )
+    quotient = reconstruct_oscar_object(
+        native_quotient, _QuotientConstruction(source, relations)
+    )
+    projection = reconstruct_oscar_morphism(source, quotient, native_projection)
+    return quotient, projection
+
+
+def principal_localization(
+    source: CategoryOfCategories.ElementType,
+    element: CategoryOfCategories.ElementType,
+) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
+    """The principal localization ``source[element^-1]`` and its canonical map."""
+    assert element.parent() is source
+    native_source = oscar_native_object(source).native
+    native_localized, native_map = oscar.localization_at_element(
+        native_source, _datum(element)
+    )
+    localized = reconstruct_oscar_object(
+        native_localized, _LocalizationConstruction(source, element)
+    )
+    canonical = reconstruct_oscar_morphism(source, localized, native_map)
+    return localized, canonical
+
+
+def presented_ring_homomorphism(
+    source: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    generator_images: tuple[CategoryOfCategories.ElementType, ...],
+) -> MorphismCategory.ObjectType:
+    """The checked map from a polynomial/quotient presentation with these generator images."""
+    construction = _construction(source)
+    assert isinstance(construction, (_PolynomialConstruction, _QuotientConstruction))
+    assert all(image.parent() is target for image in generator_images)
+    native = oscar.hom(
+        oscar_native_object(source).native,
+        oscar_native_object(target).native,
+        tuple(_datum(image) for image in generator_images),
+    )
+    return reconstruct_oscar_morphism(source, target, native)
+
+
+def localization_extension(
+    localized: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    base_map: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Extend a base map uniquely across a retained principal localization.
+
+    OSCAR checks that the selected element maps to a unit before constructing the
+    extension; the owned result retains ``localized`` and ``target`` as exact endpoints.
+    """
+    construction = _construction(localized)
+    assert isinstance(construction, _LocalizationConstruction)
+    assert base_map.domain() is construction.source and base_map.codomain() is target
+    native = oscar.localization_hom(
+        oscar_native_object(localized).native,
+        oscar_native_object(target).native,
+        oscar_native_morphism(base_map).native,
+    )
+    return reconstruct_oscar_morphism(localized, target, native)
+
+
+def inverse_unit(
+    element: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    """The multiplicative inverse of a unit in an OSCAR-backed commutative ring."""
+    ring = element.parent()
+    oscar_native_object(ring)
+    return _point(ring, oscar.ring_inverse(_datum(element)))

@@ -18,6 +18,7 @@ __all__ = [
     "ring_add",
     "ring_coerce",
     "ring_contains",
+    "ring_inverse",
     "ring_multiply",
     "ring_negate",
     "ring_one",
@@ -101,6 +102,10 @@ def ring_negate(element: object) -> object:
 
 def ring_coerce(ring: object, value: object) -> object:
     return bridge().ring_coerce(ring, value)
+
+
+def ring_inverse(element: object) -> object:
+    return bridge().ring_inverse(element)
 
 
 def same_native(first: object, second: object) -> bool:

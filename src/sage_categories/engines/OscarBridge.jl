@@ -12,7 +12,8 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        affine_domain, affine_codomain, covered_scheme_of,
        structure_sheaf, sheaf_value, sheaf_restriction,
        principal_open_subset, principal_open_ambient,
-       principal_open_inclusion
+       principal_open_inclusion, affine_morphism_direct,
+       simple_gluing, glued_covered_scheme, covered_patches
 
 """The prime field ``GF(p)`` used by the affine-ring consumer."""
 prime_field(p::Integer) = GF(p)
@@ -87,5 +88,21 @@ sheaf_restriction(sheaf, larger, smaller) = restriction_map(sheaf, larger, small
 principal_open_subset(scheme, element) = PrincipalOpenSubset(scheme, element)
 principal_open_ambient(open_subset) = ambient_scheme(open_subset)
 principal_open_inclusion(open_subset) = inclusion_morphism(open_subset)
+
+"""An affine-scheme morphism from its exact pullback ring map."""
+affine_morphism_direct(source_scheme, target_scheme, pullback_map) = morphism(source_scheme, target_scheme, pullback_map)
+
+"""A checked gluing of two affine charts along inverse principal-open maps."""
+simple_gluing(left_chart, right_chart, left_to_right, right_to_left) =
+    SimpleGluing(left_chart, right_chart, left_to_right, right_to_left)
+
+"""The covered scheme obtained from two charts and their gluing."""
+function glued_covered_scheme(left_chart, right_chart, gluing)
+    covering = Covering([left_chart, right_chart])
+    add_gluing!(covering, gluing)
+    CoveredScheme(covering)
+end
+
+covered_patches(scheme) = patches(scheme)
 
 end

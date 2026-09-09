@@ -8,10 +8,12 @@ __all__ = [
     "affine_codomain",
     "affine_domain",
     "affine_morphism",
+    "affine_morphism_direct",
     "affine_pullback",
     "affine_spec",
     "codomain",
     "covered_scheme",
+    "covered_patches",
     "domain",
     "generators",
     "hom",
@@ -38,6 +40,8 @@ __all__ = [
     "same_native",
     "sheaf_restriction",
     "sheaf_value",
+    "simple_gluing",
+    "glued_covered_scheme",
     "structure_sheaf",
     "stalk_map",
 ]
@@ -164,6 +168,11 @@ def affine_morphism(source_scheme: object, target_scheme: object, pullback_map: 
     return bridge().affine_morphism_from_pullback(source_scheme, target_scheme, pullback_map)
 
 
+def affine_morphism_direct(source_scheme: object, target_scheme: object, pullback_map: object) -> object:
+    """Return an OSCAR affine map using an already constructed pullback map."""
+    return bridge().affine_morphism_direct(source_scheme, target_scheme, pullback_map)
+
+
 def affine_pullback(mapping: object) -> object:
     """Return the coordinate-ring pullback of an affine scheme morphism."""
     return bridge().affine_pullback(mapping)
@@ -179,6 +188,25 @@ def affine_codomain(mapping: object) -> object:
 
 def covered_scheme(scheme: object) -> object:
     return bridge().covered_scheme_of(scheme)
+
+
+def simple_gluing(
+    left_chart: object,
+    right_chart: object,
+    left_to_right: object,
+    right_to_left: object,
+) -> object:
+    """Return OSCAR's checked simple gluing of two affine charts."""
+    return bridge().simple_gluing(left_chart, right_chart, left_to_right, right_to_left)
+
+
+def glued_covered_scheme(left_chart: object, right_chart: object, gluing: object) -> object:
+    """Return the covered scheme represented by the two-chart gluing."""
+    return bridge().glued_covered_scheme(left_chart, right_chart, gluing)
+
+
+def covered_patches(scheme: object) -> tuple[object, ...]:
+    return tuple(bridge().covered_patches(scheme))
 
 
 def structure_sheaf(scheme: object) -> object:

@@ -35,6 +35,8 @@ from sage_categories.geometry.sheaves import (
 )
 from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 from sage_categories.geometry.topological_rings import (
+    BinaryContinuity,
+    ProductTopologyOpen,
     TopologicalRings,
     TopologicalRingsCategory,
 )
@@ -45,8 +47,10 @@ __all__ = [
     "AffineSchemes",
     "AffineSchemesCategory",
     "AffineSpectrumPoint",
+    "BinaryContinuity",
     "CWOpen",
     "ComplexProjectivePoint",
+    "ProductTopologyOpen",
     "ProjectiveInfinityPresentation",
     "ProjectiveLinePresentation",
     "ProjectiveSpacePresentation",

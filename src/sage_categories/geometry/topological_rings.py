@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from importlib import import_module
 from typing import Any, cast
@@ -15,7 +16,12 @@ from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpaces
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
-__all__ = ["TopologicalRings", "TopologicalRingsCategory"]
+__all__ = [
+    "BinaryContinuity",
+    "ProductTopologyOpen",
+    "TopologicalRings",
+    "TopologicalRingsCategory",
+]
 
 
 def _rings() -> Any:
@@ -23,9 +29,41 @@ def _rings() -> Any:
 
 
 @dataclass(frozen=True, eq=False, slots=True)
+class ProductTopologyOpen:
+    """A represented open in the binary product topology of one space with itself."""
+
+    space: TopologicalSpacesCategory.ObjectType
+    membership: Callable[[tuple[object, object]], bool | None]
+    construction: object
+
+    def contains(self, first: object, second: object) -> bool | None:
+        return self.membership((first, second))
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class BinaryContinuity:
+    """Continuity data for a binary operation on one represented topological space."""
+
+    space: TopologicalSpacesCategory.ObjectType
+    operation: MorphismCategory.ObjectType
+    preimage_rule: Callable[[CategoryOfCategories.ElementType], ProductTopologyOpen]
+
+    def preimage(
+        self,
+        open_object: CategoryOfCategories.ElementType,
+    ) -> ProductTopologyOpen:
+        assert open_object in self.space.open_category()
+        result = self.preimage_rule(open_object)
+        assert result.space is self.space
+        return result
+
+
+@dataclass(frozen=True, eq=False, slots=True)
 class _TopologicalRingData:
     ring: CategoryOfCategories.ElementType
     space: TopologicalSpacesCategory.ObjectType
+    addition: BinaryContinuity
+    multiplication: BinaryContinuity
 
 
 class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
@@ -34,12 +72,31 @@ class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
     class ObjectType:
         def __init__(self, data: _TopologicalRingData) -> None:
             self._ring, self._space = data.ring, data.space
+            self._addition, self._multiplication = data.addition, data.multiplication
 
         def ring(self) -> CategoryOfCategories.ElementType:
             return self._ring
 
         def space(self) -> TopologicalSpacesCategory.ObjectType:
             return self._space
+
+        def addition_continuity(self) -> BinaryContinuity:
+            return self._addition
+
+        def multiplication_continuity(self) -> BinaryContinuity:
+            return self._multiplication
+
+        def addition_preimage(
+            self,
+            open_object: CategoryOfCategories.ElementType,
+        ) -> ProductTopologyOpen:
+            return self._addition.preimage(open_object)
+
+        def multiplication_preimage(
+            self,
+            open_object: CategoryOfCategories.ElementType,
+        ) -> ProductTopologyOpen:
+            return self._multiplication.preimage(open_object)
 
     class ElementType:
         pass
@@ -78,11 +135,16 @@ class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
         self,
         ring: CategoryOfCategories.ElementType,
         space: TopologicalSpacesCategory.ObjectType,
+        addition: BinaryContinuity,
+        multiplication: BinaryContinuity,
     ) -> TopologicalRingsCategory.ObjectType:
         rings = _rings()
         assert ring in rings
         assert rings.forgetful().on_object(ring) is space.carrier()
-        return self.ObjectType(_TopologicalRingData(ring, space))
+        assert addition.space is space and multiplication.space is space
+        assert addition.operation is cast(Any, ring).addition()
+        assert multiplication.operation is cast(Any, ring).multiplication()
+        return self.ObjectType(_TopologicalRingData(ring, space, addition, multiplication))
 
     def homomorphism(
         self,
@@ -136,4 +198,3 @@ class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
 @cached_function(key=identity_key)
 def TopologicalRings() -> TopologicalRingsCategory:
     return TopologicalRingsCategory()
-

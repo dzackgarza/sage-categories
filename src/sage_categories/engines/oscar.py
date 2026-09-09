@@ -5,7 +5,13 @@ from __future__ import annotations
 from sage_categories.engines.julia_bridge import oscar_bridge as bridge
 
 __all__ = [
+    "affine_codomain",
+    "affine_domain",
+    "affine_morphism",
+    "affine_pullback",
+    "affine_spec",
     "codomain",
+    "covered_scheme",
     "domain",
     "generators",
     "hom",
@@ -24,6 +30,9 @@ __all__ = [
     "ring_one",
     "ring_zero",
     "same_native",
+    "sheaf_restriction",
+    "sheaf_value",
+    "structure_sheaf",
 ]
 
 
@@ -110,3 +119,42 @@ def ring_inverse(element: object) -> object:
 
 def same_native(first: object, second: object) -> bool:
     return bool(bridge().same_native(first, second))
+
+
+def affine_spec(ring: object) -> object:
+    """Return OSCAR's affine scheme ``Spec(ring)``."""
+    return bridge().affine_spec(ring)
+
+
+def affine_morphism(source_scheme: object, target_scheme: object, pullback_map: object) -> object:
+    """Return ``source_scheme -> target_scheme`` with the supplied contravariant ring map."""
+    return bridge().affine_morphism_from_pullback(source_scheme, target_scheme, pullback_map)
+
+
+def affine_pullback(mapping: object) -> object:
+    """Return the coordinate-ring pullback of an affine scheme morphism."""
+    return bridge().affine_pullback(mapping)
+
+
+def affine_domain(mapping: object) -> object:
+    return bridge().affine_domain(mapping)
+
+
+def affine_codomain(mapping: object) -> object:
+    return bridge().affine_codomain(mapping)
+
+
+def covered_scheme(scheme: object) -> object:
+    return bridge().covered_scheme_of(scheme)
+
+
+def structure_sheaf(scheme: object) -> object:
+    return bridge().structure_sheaf(scheme)
+
+
+def sheaf_value(sheaf: object, open_subset: object) -> object:
+    return bridge().sheaf_value(sheaf, open_subset)
+
+
+def sheaf_restriction(sheaf: object, larger: object, smaller: object) -> object:
+    return bridge().sheaf_restriction(sheaf, larger, smaller)

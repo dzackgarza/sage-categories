@@ -6,7 +6,10 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        localization_at_element, ring_hom, localization_hom,
        map_apply, map_domain, map_codomain, ring_generators,
        ring_contains, ring_zero, ring_one, ring_add, ring_multiply, ring_negate,
-       ring_coerce, ring_inverse, same_native
+       ring_coerce, ring_inverse, same_native,
+       affine_spec, affine_morphism_from_pullback, affine_pullback,
+       affine_domain, affine_codomain, covered_scheme_of,
+       structure_sheaf, sheaf_value, sheaf_restriction
 
 """The prime field ``GF(p)`` used by the affine-ring consumer."""
 prime_field(p::Integer) = GF(p)
@@ -43,5 +46,22 @@ ring_negate(element) = -element
 ring_coerce(ring, value) = ring(value)
 ring_inverse(element) = inv(element)
 same_native(first, second) = first === second
+
+"""The affine scheme ``Spec(R)`` for a supported OSCAR coordinate ring."""
+affine_spec(ring) = spec(ring)
+
+"""The affine morphism ``Spec(B) -> Spec(A)`` defined by a ring map ``A -> B``."""
+function affine_morphism_from_pullback(source_scheme, target_scheme, ring_map)
+    images = [ring_map(generator) for generator in gens(OO(target_scheme))]
+    morphism(source_scheme, target_scheme, images)
+end
+
+affine_pullback(map) = pullback(map)
+affine_domain(map) = domain(map)
+affine_codomain(map) = codomain(map)
+covered_scheme_of(scheme) = covered_scheme(scheme)
+structure_sheaf(scheme) = OO(scheme)
+sheaf_value(sheaf, open_subset) = sheaf(open_subset)
+sheaf_restriction(sheaf, larger, smaller) = restriction_map(sheaf, larger, smaller)
 
 end

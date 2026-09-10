@@ -40,7 +40,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     """Project declarations from a fresh package bootstrap in the current Sage interpreter."""
     from mypy.stubgen import main as stubgen_main
 
-    from sage_categories.kernel.compiler import compiler
+    from sage_categories.kernel.compiler import compiler, runtime_declaration
 
     sources = tuple(sorted(output_directory.rglob("*.py")))
     for source in sources:
@@ -55,6 +55,8 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         ]
     )
     inheritance = compiler().declared_inheritance()
+    runtime_aliases = _runtime_class_aliases(package, output_directory, sources, runtime_declaration)
+    source_modules = frozenset(_module_name(package, output_directory, source) for source in sources)
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
         providers = _providers_in_module(inheritance, module)
@@ -63,8 +65,9 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
         _canonicalize_imports(tree, package, canonical_exports)
         _project_class_aliases(tree, source)
+        _project_runtime_class_aliases(tree, runtime_aliases.get(module, {}), source_modules)
         if providers:
-            _project_provider_bases(tree, module, providers)
+            _project_provider_bases(tree, module, providers, source_modules)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
     return tuple(sorted(output_directory.rglob("*.pyi")))
 
@@ -247,20 +250,115 @@ def _project_class_aliases(
     project(tree.body, source.body)
 
 
+
+def _runtime_class_aliases(
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+    runtime_declaration,
+) -> dict[str, dict[str, str]]:
+    """Return public runtime class aliases keyed by source module.
+
+    The package bootstrap has already constructed every owned category and role
+    class.  A public value such as ``Functor = Cat().MorphismType`` therefore
+    points at the compiled runtime class of one source declaration.  Project the
+    alias back to that declaration through the compiler rather than asking
+    ``stubgen`` to infer the result of the runtime category expression.
+    """
+    result: dict[str, dict[str, str]] = {}
+    for source in sources:
+        module_name = _module_name(package, output_directory, source)
+        source_tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        public = _public_names(source_tree)
+        if not public:
+            continue
+        module = import_module(module_name)
+        declared = _declared_names(source_tree)
+        aliases: dict[str, str] = {}
+        for name in public:
+            if name in declared:
+                continue
+            value = getattr(module, name, None)
+            if not isinstance(value, type):
+                continue
+            declaration = runtime_declaration(value) or value
+            aliases[name] = f"{declaration.__module__}.{declaration.__qualname__}"
+        if aliases:
+            result[module_name] = aliases
+    return result
+
+
+def _qualified_module(name: str, source_modules: frozenset[str]) -> str:
+    """Return the longest source-module prefix of one qualified declaration name."""
+    candidates = tuple(module for module in source_modules if name == module or name.startswith(f"{module}."))
+    if not candidates:
+        raise ValueError(f"{name!r} has no source module in the generated package")
+    return max(candidates, key=len)
+
+
+def _ensure_module_imports(tree: ast.Module, modules: set[str]) -> None:
+    """Import modules referenced by generated qualified type expressions."""
+    imported = {
+        alias.name
+        for statement in tree.body
+        if isinstance(statement, ast.Import)
+        for alias in statement.names
+    }
+    additions = [
+        ast.Import(names=[ast.alias(name=module)])
+        for module in sorted(modules - imported)
+    ]
+    tree.body[0:0] = additions
+
+
+def _project_runtime_class_aliases(
+    tree: ast.Module, aliases: dict[str, str], source_modules: frozenset[str]
+) -> None:
+    """Replace ``Incomplete`` runtime class values by aliases to their declarations."""
+    if not aliases:
+        return
+    rewritten: list[ast.stmt] = []
+    used = False
+    for statement in tree.body:
+        name = None
+        if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
+            name = statement.target.id
+        elif isinstance(statement, ast.Assign):
+            targets = [target.id for target in statement.targets if isinstance(target, ast.Name)]
+            if len(targets) == 1:
+                name = targets[0]
+        target = aliases.get(name) if name is not None else None
+        if target is None:
+            rewritten.append(statement)
+            continue
+        rewritten.append(
+            ast.TypeAlias(
+                name=ast.Name(id=name, ctx=ast.Store()),
+                type_params=[],
+                value=_base_expression(target),
+            )
+        )
+        used = True
+    tree.body[:] = rewritten
+    if used:
+        _ensure_module_imports(
+            tree, {_qualified_module(target, source_modules) for target in aliases.values()}
+        )
+
 def _project_provider_bases(
     tree: ast.Module,
     module: str,
     providers: dict[str, tuple[str, ...]],
+    source_modules: frozenset[str],
 ) -> None:
-    requires_package_import = False
+    required_modules: set[str] = set()
     for statement in _classes(tree.body, module):
         bases = providers.get(statement.name)
         if bases is None:
             continue
         statement.node.bases = [_base_expression(base) for base in bases]
-        requires_package_import = requires_package_import or bool(bases)
-    if requires_package_import:
-        tree.body[0:0] = [ast.Import(names=[ast.alias(name="sage_categories")])]
+        required_modules.update(_qualified_module(base, source_modules) for base in bases)
+    _ensure_module_imports(tree, required_modules)
 
 
 class _QualifiedClass:

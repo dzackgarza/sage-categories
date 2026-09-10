@@ -342,8 +342,17 @@ def _projection_providers() -> Iterator[tuple[str, Category, Role, type[Category
 
 
 def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
-    """Project the compiler's C3 declaration order for the static plugin."""
+    """Project the compiler's C3 declaration order shared by each source provider.
+
+    One written provider can compile several category nodes.  Its static nominal
+    class can carry only the ancestry common to every one of those runtime uses;
+    unioning their context-specific C3 lists makes the shared declaration inherit
+    from specializations of itself (for example PropertySubcategory from
+    IsomorphismsCategory) and creates a cyclic static MRO.  Preserve the first
+    C3 order and intersect it with every later use of the same provider.
+    """
     result: dict[str, dict[str, tuple[str, ...]]] = {}
+    observed: set[tuple[str, str]] = set()
     for surface_name, category, role, provider in _projection_providers():
         provider_name = _declaration_name(provider)
         names = tuple(
@@ -351,10 +360,14 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
             for declaration in declared_inheritance(category, role)
         )
         entry = tuple(name for name in names if name != provider_name)
-        existing = result.setdefault(surface_name, {}).get(provider_name, ())
-        result[surface_name][provider_name] = tuple(
-            dict.fromkeys(existing + entry)
-        )
+        relations = result.setdefault(surface_name, {})
+        key = (surface_name, provider_name)
+        if key not in observed:
+            relations[provider_name] = entry
+            observed.add(key)
+            continue
+        current = relations[provider_name]
+        relations[provider_name] = tuple(name for name in current if name in entry)
     from sage_categories.kernel.roles import declared_roles, category_universal_class
 
     for provider, role in declared_roles():

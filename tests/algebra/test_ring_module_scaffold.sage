@@ -1,9 +1,23 @@
 """Ordinary modules: rings as monoid objects in (Ab, tensor), and two module structures on F_2 over F_2 x F_2 through the two projections."""
 
-from sage_categories.all import Sets, SelfAction, ask
-from sage_categories.algebra import AbelianGroups, AbelianTensor, abelian_homomorphism, integer_group, presented_abelian_group, simple_tensor, tensor_mediator
+from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup
+from sage.modules.free_module_element import vector
+from sage.rings.integer_ring import ZZ
+
+from sage_categories.algebra import (
+    AbelianGroups,
+    AbelianTensor,
+    abelian_homomorphism,
+    integer_group,
+    presented_abelian_group,
+    simple_tensor,
+    tensor_mediator,
+)
+from sage_categories.cat.category import ask
 from sage_categories.cat.modules import Modules
+from sage_categories.cat.monoidal import SelfAction
 from sage_categories.cat.structured_objects import Monoids
+from sage_categories.sets.finite import Sets
 
 
 def ring_in_ab(engine, multiply):

@@ -244,10 +244,19 @@ class _IndexedTensorData:
     rank_one_on_left: bool
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class _IndexedPairTensorData:
+    """The tensor ``ZZ^(S) tensor ZZ^(T) = ZZ^(S x T)`` on the owned product index."""
+
+    first: CategoryOfCategories.ElementType
+    second: CategoryOfCategories.ElementType
+
+
 _presentations: MonoDict = MonoDict()
 _tensor_data: MonoDict = MonoDict()
 _quotient_covers: MonoDict = MonoDict()
 _indexed_free_data: MonoDict = MonoDict()
+_identity_coequalizers: MonoDict = MonoDict()
 
 _terminal_presentation = Presentation((), lambda datum: (), lambda coords: ())
 Sets.retain_form(Sets.Terminal(), _terminal_presentation)
@@ -301,9 +310,7 @@ def _group_from_operations(
     assert isinstance(square_form, Presentation) and square_form.factors == (form, form)
     identity = identity_matrix(ZZ, form.rank())
     addition = Mor(Sets)(square, carrier)(LinearForm(square_form, form, identity.stack(identity)))
-    unit = Mor(Sets)(structure.unit(), carrier)(
-        LinearForm(_terminal_presentation, form, zero_matrix(ZZ, 0, form.rank()))
-    )
+    unit = Mor(Sets)(structure.unit(), carrier)(LinearForm(_terminal_presentation, form, zero_matrix(ZZ, 0, form.rank())))
     monoid = Monoids(structure)(addition, unit)
     assert monoid in Groups(structure), f"{addition!r} is not a group operation"
     group = AdditiveGroups(structure).renamed(monoid)
@@ -365,7 +372,7 @@ class _OwnedIndexFacade(Parent):
     def __contains__(self, datum: object) -> bool:
         try:
             self._owned_index_set.representative(datum)
-        except (AssertionError, TypeError, ValueError):
+        except AssertionError, TypeError, ValueError:
             return False
         return True
 
@@ -416,9 +423,7 @@ def _rule_abelian_homomorphism(
     structure = _structure()
     carrier_map = Mor(Sets)(_points(source), _points(target))(rule)
     renaming = AdditiveGroups(structure).product_projection(0)
-    monoid_map = Monoids(structure).homomorphism(
-        renaming.on_object(source), renaming.on_object(target), carrier_map
-    )
+    monoid_map = Monoids(structure).homomorphism(renaming.on_object(source), renaming.on_object(target), carrier_map)
     return AdditiveGroups(structure).homomorphism(source, target, monoid_map)
 
 
@@ -441,11 +446,7 @@ def _new_indexed_free_abelian_group(
     """Construct a fresh native realization of ``ZZ^(S)`` on the same owned index."""
     assert index_set in Sets
     engine = CombinatorialFreeModule(ZZ, _OwnedIndexFacade(index_set))
-    carrier = Sets.from_membership(
-        lambda datum: true
-        if getattr(datum, "parent", lambda: None)() is engine
-        else false
-    )
+    carrier = Sets.from_membership(lambda datum: true if getattr(datum, "parent", lambda: None)() is engine else false)
     square = binary_product_data(Sets(), carrier, carrier).apex()
     addition = Mor(Sets)(square, carrier)(lambda pair: pair[0] + pair[1])
     zero = Mor(Sets)(_structure().unit(), carrier)(lambda _point: engine.zero())
@@ -467,9 +468,7 @@ def indexed_free_abelian_injection(
     record = _indexed_free_record(group)
     key = record.index_set.representative(index)
     basis = record.engine.monomial(key)
-    return _rule_abelian_homomorphism(
-        integer_group(), group, lambda coefficient: int(coefficient) * basis
-    )
+    return _rule_abelian_homomorphism(integer_group(), group, lambda coefficient: int(coefficient) * basis)
 
 
 def indexed_free_abelian_mediator(
@@ -559,9 +558,7 @@ def _linear_homomorphism(
 ) -> MorphismCategory.ObjectType:
     """The morphism of ``Ab`` with this linear form; the monoid constructor checks additivity and the unit through the forms."""
     assert form.source is presentation(source) and form.target is presentation(target)
-    assert _descends(form.matrix, form.source.orders, form.target.orders), (
-        f"{form!r} does not respect the relations of {source!r} and {target!r}"
-    )
+    assert _descends(form.matrix, form.source.orders, form.target.orders), f"{form!r} does not respect the relations of {source!r} and {target!r}"
     structure = _structure()
     renaming = AdditiveGroups(structure).product_projection(0)
     carrier_map = Mor(Sets)(_points(source), _points(target))(form)
@@ -761,10 +758,9 @@ def _coequalizer_mediator(
     target = coequalizing.codomain()
     matrix, into = linear_form(coequalizing).matrix, presentation(target)
     rows = [vector(ZZ, generator.lift()) * matrix for generator in engine.smith_form_gens()]
-    assert all(
-        into.element(tuple(int(c) for c in vector(ZZ, relation) * matrix)) == into.zero_datum()
-        for relation in engine.W().gens()
-    ), f"{coequalizing!r} does not vanish on the relations of {apex!r}, so it does not factor through it"
+    assert all(into.element(tuple(int(c) for c in vector(ZZ, relation) * matrix)) == into.zero_datum() for relation in engine.W().gens()), (
+        f"{coequalizing!r} does not vanish on the relations of {apex!r}, so it does not factor through it"
+    )
     return _linear_homomorphism(apex, target, LinearForm(presentation(apex), into, _matrix_of_rows(rows, into.rank())))
 
 
@@ -779,6 +775,7 @@ def _abelian_coequalizer(diagram: Functor) -> CategoryOfCategories.ElementType:
     projection = _coequalizer_projection(first, second)
     apex = projection.codomain()
     source_leg = projection * first
+
     def selected_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         match vertex is source_vertex:
             case True:
@@ -827,11 +824,13 @@ def coequalizer_mediator(
     coequalizing: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Factor ``coequalizing`` through the retained coequalizer presentation of ``projection``."""
+    if projection in _identity_coequalizers:
+        assert projection.domain() is projection.codomain()
+        assert coequalizing.domain() is projection.domain()
+        return coequalizing
     family = AbelianGroups().Colimits(Cat().WalkingParallelPair())
     matching = tuple(
-        diagram
-        for diagram in family.presenting_diagrams(projection.codomain())
-        if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
+        diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
     )
     assert len(matching) == 1, f"{projection!r} is not the selected leg of one retained coequalizer presentation"
     (diagram,) = matching
@@ -861,7 +860,11 @@ def _pair_generators(first: Presentation, second: Presentation) -> FGP_Module_cl
     return free / free.span(relations)
 
 
-def _pair_vector(data: _TensorData | _IndexedTensorData, a: Hashable, b: Hashable) -> Hashable:
+def _pair_vector(
+    data: _TensorData | _IndexedTensorData | _IndexedPairTensorData,
+    a: Hashable,
+    b: Hashable,
+) -> Hashable:
     """``Σ a_i b_j e_{ij}`` as an element of the tensor engine: the image of ``(a, b)`` under the biadditive map."""
     if isinstance(data, _IndexedTensorData):
         match data.rank_one_on_left:
@@ -871,6 +874,19 @@ def _pair_vector(data: _TensorData | _IndexedTensorData, a: Hashable, b: Hashabl
             case False:
                 coefficient = int(presentation(data.second).coordinates(b)[0])
                 return coefficient * a
+    if isinstance(data, _IndexedPairTensorData):
+        result = _tensor_object(data.first, data.second)
+        result_record = _indexed_free_record(result)
+        left = a.monomial_coefficients(copy=False)
+        right = b.monomial_coefficients(copy=False)
+        return result_record.engine.sum_of_terms(
+            (
+                ((first_index, second_index), int(first_coefficient) * int(second_coefficient))
+                for first_index, first_coefficient in left.items()
+                for second_index, second_coefficient in right.items()
+            ),
+            distinct=True,
+        )
     left, right = presentation(data.first).coordinates(a), presentation(data.second).coordinates(b)
     m = len(right)
     return data.quotient(vector(ZZ, [left[i] * right[j] for i in range(len(left)) for j in range(m)]))
@@ -880,6 +896,13 @@ def _pair_vector(data: _TensorData | _IndexedTensorData, a: Hashable, b: Hashabl
 def _tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     first_indexed = first in _indexed_free_data
     second_indexed = second in _indexed_free_data
+    if first_indexed and second_indexed:
+        first_record = _indexed_free_record(first)
+        second_record = _indexed_free_record(second)
+        index_product = binary_product_data(Sets(), first_record.index_set, second_record.index_set).apex()
+        result = _new_indexed_free_abelian_group(index_product)
+        _tensor_data[result] = _IndexedPairTensorData(first, second)
+        return result
     if first_indexed != second_indexed:
         presented = second if first_indexed else first
         presented_form = presentation(presented)
@@ -945,6 +968,23 @@ def tensor_mediator(
     """
     result = _tensor_object(first, second)
     data = _tensor_data[result]
+    if isinstance(data, _IndexedPairTensorData):
+        first_record = _indexed_free_record(first)
+        second_record = _indexed_free_record(second)
+
+        def evaluate(value: Hashable) -> Hashable:
+            result_record = _indexed_free_record(result)
+            assert getattr(value, "parent", lambda: None)() is result_record.engine
+            total = target.zero()
+            for pair, coefficient in value.monomial_coefficients(copy=False).items():
+                first_index, second_index = pair
+                first_basis = first_record.engine.monomial(first_index)
+                second_basis = second_record.engine.monomial(second_index)
+                image = target.point(biadditive(first_basis, second_basis))
+                total = total + _integer_multiple(target, int(coefficient), image)
+            return total.datum()
+
+        return _rule_abelian_homomorphism(result, target, evaluate)
     if isinstance(data, _IndexedTensorData):
         indexed_record = _indexed_free_record(data.indexed_factor)
         rank_one = first if data.rank_one_on_left else second
@@ -1017,6 +1057,25 @@ def _indexed_free_relabel(
     return _rule_abelian_homomorphism(source, target, evaluate)
 
 
+def _indexed_free_reindex(
+    source: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    index_map: Callable[[Hashable], Hashable],
+) -> MorphismCategory.ObjectType:
+    """The linear map of indexed free groups induced by a map of their basis indices."""
+    source_record = _indexed_free_record(source)
+    target_record = _indexed_free_record(target)
+
+    def evaluate(value: Hashable) -> Hashable:
+        assert getattr(value, "parent", lambda: None)() is source_record.engine
+        return target_record.engine.sum_of_terms(
+            tuple((target_record.index_set.representative(index_map(index)), coefficient) for index, coefficient in value.monomial_coefficients(copy=False).items()),
+            distinct=False,
+        )
+
+    return _rule_abelian_homomorphism(source, target, evaluate)
+
+
 def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
     """``(A ⊗ B) ⊗ C -> A ⊗ (B ⊗ C)`` and back, each the mediator of a biadditive rule written through lifts."""
     a, b, c = (triple.family_component(index) for index in range(3))
@@ -1032,6 +1091,25 @@ def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> Morph
                     return _indexed_free_relabel(left_object, right_object)
                 case False:
                     return _indexed_free_relabel(right_object, left_object)
+        if (
+            isinstance(_tensor_data[left_object], _IndexedPairTensorData)
+            and isinstance(_tensor_data[right_object], _IndexedPairTensorData)
+            and isinstance(_tensor_data[ab], _IndexedPairTensorData)
+            and isinstance(_tensor_data[bc], _IndexedPairTensorData)
+        ):
+            match forward:
+                case True:
+                    return _indexed_free_reindex(
+                        left_object,
+                        right_object,
+                        lambda index: (index[0][0], (index[0][1], index[1])),
+                    )
+                case False:
+                    return _indexed_free_reindex(
+                        right_object,
+                        left_object,
+                        lambda index: ((index[0], index[1][0]), index[1][1]),
+                    )
     ab_data, bc_data = _tensor_data[ab], _tensor_data[bc]
     generators_a, generators_b, generators_c = _generators(presentation(a)), _generators(presentation(b)), _generators(presentation(c))
     if forward:
@@ -1131,6 +1209,13 @@ def relative_tensor(
     monoidal = AbelianTensor()
     base, tensor = monoidal.underlying_category(), monoidal.tensor()
     first, second = right_action.codomain(), left_action.codomain()
+    selected_right = monoidal.right_unitor().component(first)
+    selected_left = monoidal.left_unitor().component(second)
+    if right_action is selected_right and left_action is selected_left:
+        product = _tensor_object(first, second)
+        projection = Mor(base)(product, product).one()
+        _identity_coequalizers[projection] = (right_action, left_action)
+        return projection
     scalars = _tensor_data[left_action.domain()].first
     triples = monoidal.associator().domain().domain()
     rebracket = monoidal.associator().component(triples((first, scalars, second)))
@@ -1175,6 +1260,9 @@ def coequalizer_lift(
     which the constructed morphism checks.
     """
     apex = projection.codomain()
+    if projection in _identity_coequalizers:
+        assert projection.domain() is apex
+        return datum
     assert apex in _quotient_covers, f"{apex!r} is not a quotient this leaf constructed"
     free, engine = _quotient_covers[apex]
     total = free.zero()
@@ -1202,7 +1290,9 @@ def induced_left_action(
     rebracket = monoidal.associator().inverse().component(triples((scalars, first, second)))
     acting = projection * tensor_morphism(tensor, left_action, Mor(base)(second, second).one()) * rebracket
     return tensor_mediator(
-        scalars, quotient, quotient,
+        scalars,
+        quotient,
+        quotient,
         lambda scalar, value: acting(simple_tensor(scalars, product, scalar, coequalizer_lift(projection, value))).datum(),
     )
 
@@ -1222,7 +1312,9 @@ def induced_right_action(
     rebracket = monoidal.associator().component(triples((first, second, scalars)))
     acting = projection * tensor_morphism(tensor, Mor(base)(first, first).one(), right_action) * rebracket
     return tensor_mediator(
-        quotient, scalars, quotient,
+        quotient,
+        scalars,
+        quotient,
         lambda value, scalar: acting(simple_tensor(product, scalars, coequalizer_lift(projection, value), scalar)).datum(),
     )
 
@@ -1239,6 +1331,7 @@ def relative_tensor_morphism(
     one, which is what makes ``(x, y) -> f(x) (x)_S g(y)`` balanced and so factor through
     the source quotient (``specs/bimodules.md``).
     """
+
     def apply(arrow: MorphismCategory.ObjectType, datum: Hashable) -> Hashable:
         return arrow(arrow.domain().point(datum)).datum()
 
@@ -1346,9 +1439,7 @@ def AbelianBimoduleTensor(
         second_third = tensor.on_object(pairs((second, third)))
         source = tensor.on_object(pairs((first_second, third)))
         target = tensor.on_object(pairs((first, second_third)))
-        first_group, second_group, third_group = (
-            forgetful.on_object(value) for value in (first, second, third)
-        )
+        first_group, second_group, third_group = (forgetful.on_object(value) for value in (first, second, third))
 
         first_second_projection = relative_tensor(first.right_action(), second.left_action())
         second_third_projection = relative_tensor(second.right_action(), third.left_action())
@@ -1361,16 +1452,8 @@ def AbelianBimoduleTensor(
         unbracket = monoidal.associator().inverse().component(abelian_triple)
         identity_first = Mor(abelian_groups)(first_group, first_group).one()
         identity_third = Mor(abelian_groups)(third_group, third_group).one()
-        forward_from_unbalanced = (
-            target_projection
-            * tensor_morphism(abelian_tensor, identity_first, second_third_projection)
-            * rebracket
-        )
-        backward_from_unbalanced = (
-            source_projection
-            * tensor_morphism(abelian_tensor, first_second_projection, identity_third)
-            * unbracket
-        )
+        forward_from_unbalanced = target_projection * tensor_morphism(abelian_tensor, identity_first, second_third_projection) * rebracket
+        backward_from_unbalanced = source_projection * tensor_morphism(abelian_tensor, first_second_projection, identity_third) * unbracket
 
         def forward_rule(value: Hashable, third_value: Hashable) -> Hashable:
             argument = simple_tensor(
@@ -1400,14 +1483,8 @@ def AbelianBimoduleTensor(
             source_projection.codomain(),
             backward_rule,
         )
-        assert ask(
-            forward_underlying * backward_underlying
-            == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()
-        ) is True
-        assert ask(
-            backward_underlying * forward_underlying
-            == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()
-        ) is True
+        assert ask(forward_underlying * backward_underlying == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()) is True
+        assert ask(backward_underlying * forward_underlying == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()) is True
         return (
             bimodules.homomorphism(source, target, forward_underlying),
             bimodules.homomorphism(target, source, backward_underlying),

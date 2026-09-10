@@ -17,6 +17,7 @@ from sage_categories.algebra.abelian import (
     AbelianGroups,
     AbelianTensor,
     _indexed_free_record,
+    _rule_abelian_homomorphism,
     indexed_free_abelian_coproduct,
     indexed_free_abelian_injection,
     indexed_free_abelian_mediator,
@@ -36,7 +37,9 @@ from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 from sage_categories.sets.finite import Sets
 
 __all__ = [
+    "indexed_free_integer_coefficients",
     "indexed_free_integer_element",
+    "indexed_free_integer_homomorphism",
     "indexed_free_integer_module",
     "indexed_free_integer_support",
     "integer_regular_module",
@@ -149,11 +152,7 @@ def indexed_free_integer_element(
     assert module in _indexed_integer_module_data, f"{module!r} is not an indexed free integer module"
     module_data = _indexed_integer_module_data[module]
     record = _indexed_free_record(module_data.carrier)
-    native_terms = tuple(
-        (record.index_set.representative(index), coefficient)
-        for index, coefficient in terms.items()
-        if int(coefficient) != 0
-    )
+    native_terms = tuple((record.index_set.representative(index), coefficient) for index, coefficient in terms.items() if int(coefficient) != 0)
     datum = record.engine.sum_of_terms(native_terms, distinct=True)
     return module.point(datum)
 
@@ -169,3 +168,50 @@ def indexed_free_integer_support(
     _indexed_free_record(module_data.carrier)
     support = tuple(element.datum().monomial_coefficients(copy=False))
     return Sets(support)
+
+
+def indexed_free_integer_coefficients(
+    module: ModuleCategory.ObjectType,
+    element: CategoryOfCategories.ElementType,
+) -> dict[Hashable, int]:
+    r"""Return the finite coefficient map of ``element`` in the selected basis of ``ZZ^(S)``.
+
+    This is the coordinate surface of the indexed-free construction itself.  It
+    exposes the owned basis labels and integer coefficients, not the private
+    ``CombinatorialFreeModule`` element that stores them.
+    """
+    assert element.parent() is module
+    assert module in _indexed_integer_module_data, f"{module!r} is not an indexed free integer module"
+    module_data = _indexed_integer_module_data[module]
+    _indexed_free_record(module_data.carrier)
+    return {index: int(coefficient) for index, coefficient in element.datum().monomial_coefficients(copy=False).items() if int(coefficient) != 0}
+
+
+def indexed_free_integer_homomorphism(
+    source: ModuleCategory.ObjectType,
+    target: ModuleCategory.ObjectType,
+    basis_image,
+) -> MorphismCategory.ObjectType:
+    r"""Return the unique ``ZZ``-linear map with the supplied images of basis indices.
+
+    ``basis_image(i)`` is a point of ``target``.  Evaluation is the universal
+    map of the indexed coproduct and therefore inspects only the finite support
+    of each supplied source element; it never traverses the full index set.
+    """
+    assert source in _indexed_integer_module_data, f"{source!r} is not an indexed free integer module"
+    source_data = _indexed_integer_module_data[source]
+    assert target in source_data.modules, "indexed free module maps require one module category"
+    source_carrier = source_data.carrier
+    target_carrier = source_data.modules.forgetful().on_object(target)
+
+    def component(index: Hashable) -> MorphismCategory.ObjectType:
+        image = basis_image(index)
+        assert image.parent() is target
+        return _rule_abelian_homomorphism(
+            integer_group(),
+            target_carrier,
+            lambda coefficient: int(coefficient) * image.datum(),
+        )
+
+    additive = indexed_free_abelian_mediator(source_carrier, target_carrier, component)
+    return source_data.modules.homomorphism(source, target, additive)

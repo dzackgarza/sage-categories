@@ -236,13 +236,23 @@ def _join(current: Category, target: Category) -> Category:
         return target
     elif is_subcategory(current_base, target_base):
         base = current_base
+    elif is_subcategory(target_base, current_base):
+        base = target_base
     else:
-        # A placement is never weakened to reach a property (POL-CAT-074): the two
-        # bases must be comparable so that the join is a narrowing of the finer one.
-        assert is_subcategory(target_base, current_base), (
+        # Two incomparable full-subcategory placements can still have a common
+        # refinement.  Find their least represented common container and narrow it by
+        # both bases; this is their intersection in the subcategory lattice.  Reject
+        # only genuinely unrelated categories, for which no placement-tracing common
+        # container exists.
+        assert current_base.has_full_ambient() and target_base.has_full_ambient(), (
+            f"{current!r} and {target!r} have no common placement: incomparable non-full bases cannot be intersected"
+        )
+        base = common_ancestor(current_base, target_base)
+        assert base is not None, (
             f"{current!r} and {target!r} have no common placement: {current_base!r} and {target_base!r} are incomparable"
         )
-        base = target_base
+        current_roots = (*current_roots, current_base)
+        return base.intersection((*current_roots, target_base, *target.narrowing_roots()))
     return base.intersection((*current_roots, *target.narrowing_roots()))
 
 

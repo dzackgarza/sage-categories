@@ -9,6 +9,7 @@ from sage_categories.cat.images import full_image, strict_image
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import Op, op_squared_isomorphism
 from sage_categories.cat.predicates import Proposition, Unknown, register_handler
+from sage_categories.kernel.refinement import _join
 
 
 class Tokens(Category):
@@ -891,6 +892,20 @@ def test_the_core_constructs_its_morphisms_through_the_isomorphisms_of_its_ambie
     assert is_placed(composite, Mor(core))
     assert is_placed(composite, Mor(core)(A, D))
     assert is_placed(Mor(core)(A, A).one(), Mor(core)(A, A))
+
+
+def test_incomparable_fixed_homs_join_in_their_common_full_ambient() -> None:
+    marked, tagged = TOKENS.Marked(), TOKENS.Tagged()
+    both = TOKENS.intersection((marked, tagged))
+    value = both("shared endpoint")
+
+    marked_end = Mor(marked)(value, value)
+    tagged_end = Mor(tagged)(value, value)
+    joined = _join(marked_end, tagged_end)
+
+    assert joined is _join(tagged_end, marked_end)
+    assert is_subcategory(joined, marked_end)
+    assert is_subcategory(joined, tagged_end)
 
 
 def test_the_restriction_of_a_functor_places_its_images_in_the_core_it_was_declared_into() -> None:

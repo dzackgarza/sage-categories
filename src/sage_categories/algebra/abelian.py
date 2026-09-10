@@ -745,21 +745,16 @@ def _coequalizer_mediator(
 ) -> MorphismCategory.ObjectType:
     """The one homomorphism ``h`` out of a quotient with ``h ∘ q = k``, for a ``k`` that kills the same subgroup.
 
-    A Smith generator of the quotient goes along its lift to the free cover and then
-    through ``k``, which is well defined exactly because ``k`` vanishes on the relations
-    the quotient adjoined.
+    The selected quotient is retained together with its private CAP cokernel.  CAP's
+    ``CokernelColift`` computes the universal factor, which is reconstructed on the exact
+    public owned endpoints.
     """
+    from sage_categories.engines.presented_modules import coequalizer_mediator
+
     apex = projection.codomain()
     assert apex in _quotient_covers, f"{apex!r} is not a quotient this leaf constructed"
     assert coequalizing.domain() is projection.domain(), f"{coequalizing!r} does not start at {projection.domain()!r}"
-    _free, engine = _quotient_covers[apex]
-    target = coequalizing.codomain()
-    matrix, into = linear_form(coequalizing).matrix, presentation(target)
-    rows = [vector(ZZ, generator.lift()) * matrix for generator in engine.smith_form_gens()]
-    assert all(into.element(tuple(int(c) for c in vector(ZZ, relation) * matrix)) == into.zero_datum() for relation in engine.W().gens()), (
-        f"{coequalizing!r} does not vanish on the relations of {apex!r}, so it does not factor through it"
-    )
-    return _linear_homomorphism(apex, target, LinearForm(presentation(apex), into, _matrix_of_rows(rows, into.rank())))
+    return coequalizer_mediator(projection, coequalizing)
 
 
 def _abelian_coequalizer(diagram: Functor) -> CategoryOfCategories.ElementType:

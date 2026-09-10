@@ -10,6 +10,7 @@ matrix; no CAP object escapes this module.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import cache
 
 from sage.libs.gap.element import GapElement
@@ -26,7 +27,23 @@ from sage_categories.algebra._presented_modules_cap import (
 )
 from sage_categories.engines.gap import PRESENTED_MODULE_PACKAGES, load_packages
 
-__all__ = ["coequalizer_projection", "tensor_object", "tensor_morphism"]
+__all__ = [
+    "coequalizer_mediator",
+    "coequalizer_projection",
+    "tensor_morphism",
+    "tensor_object",
+]
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _PresentationBridge:
+    """The raw CAP presentation basis behind one reconstructed public Smith basis."""
+
+    free: object
+    engine: object
+
+
+_cokernel_differences: dict[int, tuple[object, GapElement]] = {}
 
 
 @cache
@@ -87,20 +104,64 @@ def _native_object(value: object) -> GapElement:
         _category(),
         _homalg_matrix(tuple(relations), rank),
     )
-    retain_presented_native_object(value, native, form.orders)
+    retain_presented_native_object(value, native, None)
     return native
+
+
+def _bridge(value: object) -> _PresentationBridge | None:
+    data = presented_native_object(value).construction.data
+    assert data is None or isinstance(data, _PresentationBridge)
+    return data
+
+
+def _public_coordinates_from_raw(value: object, raw_coordinates) -> tuple[int, ...]:
+    from sage_categories.algebra.abelian import presentation
+
+    form = presentation(value)
+    bridge = _bridge(value)
+    if bridge is None:
+        return form.coordinates(form.element(tuple(int(entry) for entry in raw_coordinates)))
+    raw = bridge.free(vector(ZZ, raw_coordinates))
+    return form.coordinates(bridge.engine(raw))
+
+
+def _raw_coordinates_from_public(value: object, public_coordinates) -> tuple[int, ...]:
+    from sage_categories.algebra.abelian import presentation
+
+    form = presentation(value)
+    normalized = form.element(tuple(int(entry) for entry in public_coordinates))
+    bridge = _bridge(value)
+    if bridge is None:
+        return tuple(int(entry) for entry in form.coordinates(normalized))
+    element = bridge.engine(normalized)
+    return tuple(int(entry) for entry in element.lift())
+
+
+def _native_matrix_from_public(value: object) -> GapElement:
+    from sage_categories.algebra.abelian import linear_form
+
+    form = linear_form(value)
+    source, target = value.domain(), value.codomain()
+    native_source = _native_object(source)
+    native_target = _native_object(target)
+    source_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(native_source)))
+    target_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(native_target)))
+    rows = []
+    for position in range(source_rank):
+        raw_source = [0] * source_rank
+        raw_source[position] = 1
+        public_source = vector(ZZ, _public_coordinates_from_raw(source, raw_source))
+        public_target = public_source * form.matrix
+        rows.append(_raw_coordinates_from_public(target, public_target))
+    return _homalg_matrix(tuple(rows), target_rank)
 
 
 def _native_morphism(value: object) -> GapElement:
     if _has_native_morphism(value):
         return presented_native_morphism(value).native
-    from sage_categories.algebra.abelian import linear_form
-
-    form = linear_form(value)
-    rows = tuple(tuple(int(entry) for entry in row) for row in form.matrix.rows())
     native = libgap.PresentationMorphism(
         _native_object(value.domain()),
-        _homalg_matrix(rows, form.target.rank()),
+        _native_matrix_from_public(value),
         _native_object(value.codomain()),
     )
     retain_presented_native_morphism(value, native)
@@ -136,60 +197,107 @@ def _public_engine_from_native(native_object: GapElement):
     return free, free / free.span(relations)
 
 
+def _owned_morphism_from_native(source: object, target: object, native: GapElement):
+    from sage_categories.algebra.abelian import (
+        LinearForm,
+        _linear_homomorphism,
+        _matrix_of_rows,
+        presentation,
+    )
+
+    source_form = presentation(source)
+    target_form = presentation(target)
+    native_matrix_rows = _integer_matrix_rows(libgap.UnderlyingMatrix(native))
+    native_matrix = _matrix_of_rows(
+        tuple(vector(ZZ, row) for row in native_matrix_rows),
+        int(libgap.NumberColumns(libgap.UnderlyingMatrix(native))),
+    )
+    raw_source_rank = int(
+        libgap.NumberColumns(libgap.UnderlyingMatrix(_native_object(source)))
+    )
+    rows = []
+    for position in range(source_form.rank()):
+        public_source = [0] * source_form.rank()
+        public_source[position] = 1
+        raw_source = _raw_coordinates_from_public(source, public_source)
+        assert len(raw_source) == raw_source_rank
+        raw_target = vector(ZZ, raw_source) * native_matrix
+        rows.append(vector(ZZ, _public_coordinates_from_raw(target, raw_target)))
+    owned = _linear_homomorphism(
+        source,
+        target,
+        LinearForm(
+            source_form,
+            target_form,
+            _matrix_of_rows(tuple(rows), target_form.rank()),
+        ),
+    )
+    retain_presented_native_morphism(owned, native)
+    return owned
+
+
 def coequalizer_projection(first: object, second: object):
     """Return CAP's selected cokernel of ``first-second`` as an owned ``Ab`` map."""
     from sage_categories.algebra.abelian import (
-        LinearForm,
         _group_from_engine,
-        _linear_homomorphism,
-        _matrix_of_rows,
         linear_form,
-        presentation,
     )
 
     source, target = first.domain(), first.codomain()
     assert second.domain() is source and second.codomain() is target
     first_form, second_form = linear_form(first), linear_form(second)
     difference = first_form.matrix - second_form.matrix
-    rows = tuple(tuple(int(entry) for entry in row) for row in difference.rows())
+    source_native = _native_object(source)
+    target_native = _native_object(target)
+    source_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(source_native)))
+    target_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(target_native)))
+    rows = []
+    for position in range(source_rank):
+        raw_source = [0] * source_rank
+        raw_source[position] = 1
+        public_source = vector(ZZ, _public_coordinates_from_raw(source, raw_source))
+        public_target = public_source * difference
+        rows.append(_raw_coordinates_from_public(target, public_target))
     native_difference = libgap.PresentationMorphism(
-        _native_object(source),
-        _homalg_matrix(rows, first_form.target.rank()),
-        _native_object(target),
+        source_native,
+        _homalg_matrix(tuple(rows), target_rank),
+        target_native,
     )
     native_projection = libgap.CokernelProjection(native_difference)
     native_apex = libgap.Range(native_projection)
 
     free, engine = _public_engine_from_native(native_apex)
     apex = _group_from_engine(engine)
-    retain_presented_native_object(apex, native_apex, _integer_rows(native_apex))
-
-    apex_form = presentation(apex)
-    target_form = presentation(target)
-    native_projection_rows = _integer_matrix_rows(
-        libgap.UnderlyingMatrix(native_projection)
-    )
-    assert len(native_projection_rows) == target_form.rank()
-    projection_rows = tuple(
-        vector(
-            ZZ,
-            apex_form.coordinates(
-                engine(free(vector(ZZ, native_projection_rows[position])))
-            ),
-        )
-        for position in range(target_form.rank())
-    )
-    owned_projection = _linear_homomorphism(
-        target,
+    retain_presented_native_object(
         apex,
-        LinearForm(
-            target_form,
-            apex_form,
-            _matrix_of_rows(projection_rows, apex_form.rank()),
-        ),
+        native_apex,
+        _PresentationBridge(free, engine),
     )
-    retain_presented_native_morphism(owned_projection, native_projection)
+    owned_projection = _owned_morphism_from_native(target, apex, native_projection)
+    _cokernel_differences[id(owned_projection)] = (
+        owned_projection,
+        native_difference,
+    )
     return owned_projection, free, engine
+
+
+def coequalizer_mediator(projection: object, coequalizing: object):
+    """Return CAP's universal colift through an already retained cokernel projection."""
+    record = _cokernel_differences.get(id(projection))
+    assert record is not None and record[0] is projection, (
+        f"{projection!r} is not a retained CAP cokernel projection"
+    )
+    native_difference = record[1]
+    apex = projection.codomain()
+    target = coequalizing.codomain()
+    assert coequalizing.domain() is projection.domain()
+    native = libgap.CokernelColiftWithGivenCokernelObject(
+        native_difference,
+        _native_object(target),
+        _native_morphism(coequalizing),
+        _native_object(apex),
+    )
+    return _owned_morphism_from_native(apex, target, native)
 
 
 def tensor_object(first: object, second: object):
@@ -200,9 +308,9 @@ def tensor_object(first: object, second: object):
         _native_object(first),
         _native_object(second),
     )
-    _free, engine = _public_engine_from_native(native)
+    free, engine = _public_engine_from_native(native)
     result = _group_from_engine(engine)
-    retain_presented_native_object(result, native, _integer_rows(native))
+    retain_presented_native_object(result, native, _PresentationBridge(free, engine))
     return result, engine
 
 
@@ -213,14 +321,6 @@ def tensor_morphism(
     target_tensor: object,
 ):
     """Return CAP's ``first tensor second`` on the retained public tensor objects."""
-    from sage_categories.algebra.abelian import (
-        LinearForm,
-        _linear_homomorphism,
-        _matrix_of_rows,
-        _tensor_data,
-        presentation,
-    )
-
     native_source = presented_native_object(source_tensor).native
     native_target = presented_native_object(target_tensor).native
     native = libgap.TensorProductOnMorphismsWithGivenTensorProducts(
@@ -229,29 +329,4 @@ def tensor_morphism(
         _native_morphism(second),
         native_target,
     )
-    native_underlying = libgap.UnderlyingMatrix(native)
-    native_rows = _integer_matrix_rows(native_underlying)
-    native_matrix = _matrix_of_rows(
-        tuple(vector(ZZ, row) for row in native_rows),
-        int(libgap.NumberColumns(native_underlying)),
-    )
-    source_data = _tensor_data[source_tensor]
-    target_data = _tensor_data[target_tensor]
-    source_form = presentation(source_tensor)
-    target_form = presentation(target_tensor)
-    rows = []
-    for generator in source_data.quotient.smith_form_gens():
-        raw_image = vector(ZZ, generator.lift()) * native_matrix
-        image = target_data.quotient(raw_image)
-        rows.append(vector(ZZ, target_form.coordinates(image)))
-    owned = _linear_homomorphism(
-        source_tensor,
-        target_tensor,
-        LinearForm(
-            source_form,
-            target_form,
-            _matrix_of_rows(tuple(rows), target_form.rank()),
-        ),
-    )
-    retain_presented_native_morphism(owned, native)
-    return owned
+    return _owned_morphism_from_native(source_tensor, target_tensor, native)

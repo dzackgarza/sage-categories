@@ -18,6 +18,7 @@ from sage_categories.algebra._presented_modules_cap import (
     presented_native_morphism,
     presented_native_object,
 )
+from sage_categories.algebra.abelian import presentation
 from sage_categories.cat.predicates import ask
 
 
@@ -64,4 +65,45 @@ def test_cap_computes_the_selected_nonidentity_coequalizer_and_owned_mediator() 
     assert ask(mediator * projection == coequalizing) is True
 
 
+def test_cap_colift_crosses_a_non_diagonal_raw_quotient_to_its_public_smith_basis() -> None:
+    cyclic_engine = AdditiveAbelianGroup([4])
+    square_engine = AdditiveAbelianGroup([4, 4])
+    cyclic = presented_abelian_group(cyclic_engine)
+    square = presented_abelian_group(square_engine)
+    cyclic_generator = cyclic_engine.gen(0)
+
+    def square_element(left, right):
+        return square_engine.linear_combination_of_smith_form_gens(
+            vector(ZZ, [left, right])
+        )
+
+    zero = abelian_homomorphism(cyclic, square, lambda _value: square_engine.zero())
+    diagonal = abelian_homomorphism(
+        cyclic,
+        square,
+        lambda value: int(value.vector()[0]) * square_element(1, 1),
+    )
+    projection = coequalizer_projection(zero, diagonal)
+    apex = projection.codomain()
+
+    native_apex = presented_native_object(apex).native
+    assert int(libgap.NumberColumns(libgap.UnderlyingMatrix(native_apex))) == 2
+    assert presentation(apex).rank() == 1
+
+    difference = abelian_homomorphism(
+        square,
+        cyclic,
+        lambda value: (
+            (int(value.vector()[0]) - int(value.vector()[1])) * cyclic_generator
+        ),
+    )
+    mediator = coequalizer_mediator(projection, difference)
+    native_mediator = presented_native_morphism(mediator)
+    assert native_mediator.value is mediator
+    assert native_mediator.source is apex
+    assert native_mediator.target is cyclic
+    assert ask(mediator * projection == difference) is True
+
+
 test_cap_computes_the_selected_nonidentity_coequalizer_and_owned_mediator()
+test_cap_colift_crosses_a_non_diagonal_raw_quotient_to_its_public_smith_basis()

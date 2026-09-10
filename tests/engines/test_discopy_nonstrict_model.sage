@@ -1,8 +1,11 @@
 """DisCoPy evaluates tensor diagrams through retained nonstrict comparisons."""
 
+import sys
 from dataclasses import dataclass
 
 from sage_categories.engines.diagrams import NonstrictMonoidalModel
+
+assert not any(name == "discopy" or name.startswith("discopy.") for name in sys.modules)
 
 
 @dataclass(frozen=True)
@@ -58,6 +61,7 @@ def test_nonstrict_tensor_uses_comparison_maps() -> None:
         comparison=comparison,
     )
     f = model.box("f", (("x",),), (("y",), ("z",)), Arrow(("x",), ("y", "z"), 1))
+    assert "discopy.monoidal" in sys.modules
     g = model.box("g", (("u",),), (("v",),), Arrow(("u",), ("v",), 2))
     result = model.evaluate(f @ g)
     assert result.domain == ("x", "u")

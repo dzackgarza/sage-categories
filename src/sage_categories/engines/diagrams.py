@@ -10,15 +10,23 @@ DisCoPy diagram evaluates boxes or layers.
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import cache
 from importlib import import_module
 from typing import Any, Protocol, cast, overload
 
-discopy_cat: Any = import_module("discopy.cat")
-discopy_monoidal: Any = import_module("discopy.monoidal")
+
+@cache
+def _discopy_cat() -> Any:
+    return import_module("discopy.cat")
+
+
+@cache
+def _discopy_monoidal() -> Any:
+    return import_module("discopy.monoidal")
 
 __all__ = ["DiagramBox", "NonstrictMonoidalModel", "evaluate_path"]
 
-type DiagramBox = discopy_monoidal.Box
+type DiagramBox = Any
 
 
 class _ObjectValue:
@@ -134,7 +142,7 @@ class NonstrictMonoidalModel[Object, Arrow]:
             (_ArrowValue,),
             {"_model": self},
         )
-        self._category = discopy_cat.Category(self._object_type, self._arrow_type)
+        self._category = _discopy_cat().Category(self._object_type, self._arrow_type)
 
     def _word(self, word: tuple[Object, ...]) -> _ObjectValue:
         key = tuple(id(value) for value in word)
@@ -149,7 +157,7 @@ class NonstrictMonoidalModel[Object, Arrow]:
             self._word_cache[key] = self._object_type(word, value)
         return self._word_cache[key]
 
-    def wire(self, value: Object) -> discopy_monoidal.Ty:
+    def wire(self, value: Object) -> Any:
         """A stable DisCoPy atomic wire retaining one exact owned object."""
         identifier = id(value)
         if identifier in self._wire_tokens:
@@ -160,7 +168,7 @@ class NonstrictMonoidalModel[Object, Arrow]:
             self._next_wire += 1
             self._wire_tokens[identifier] = (value, token)
             self._wire_values[token] = value
-        return discopy_monoidal.Ty(token)
+        return _discopy_monoidal().Ty(token)
 
     def box(
         self,
@@ -170,25 +178,26 @@ class NonstrictMonoidalModel[Object, Arrow]:
         value: Arrow,
     ) -> DiagramBox:
         """A DisCoPy generating box retaining one exact owned semantic morphism."""
-        dom = discopy_monoidal.Ty(*(self.wire(item).inside[0] for item in domain))
-        cod = discopy_monoidal.Ty(*(self.wire(item).inside[0] for item in codomain))
-        return discopy_monoidal.Box(name, dom, cod, data=value)
+        monoidal = _discopy_monoidal()
+        dom = monoidal.Ty(*(self.wire(item).inside[0] for item in domain))
+        cod = monoidal.Ty(*(self.wire(item).inside[0] for item in codomain))
+        return monoidal.Box(name, dom, cod, data=value)
 
-    def evaluate(self, diagram: discopy_monoidal.Diagram) -> Arrow:
+    def evaluate(self, diagram: Any) -> Arrow:
         """Interpret ``diagram`` entirely through DisCoPy's monoidal functor evaluator."""
 
         def object_image(atom: object) -> _ObjectValue:
             value = self._wire_values[str(atom)]
             return self._word((value,))
 
-        def arrow_image(box: discopy_monoidal.Box) -> _ArrowValue:
+        def arrow_image(box: Any) -> _ArrowValue:
             dom_word = tuple(self._wire_values[str(atom)] for atom in box.dom.inside)
             cod_word = tuple(self._wire_values[str(atom)] for atom in box.cod.inside)
             return self._arrow_type(
                 self._word(dom_word), self._word(cod_word), box.data
             )
 
-        functor = discopy_monoidal.Functor(
+        functor = _discopy_monoidal().Functor(
             object_image,
             arrow_image,
             cod=self._category,
@@ -234,7 +243,8 @@ def evaluate_path(
             assert self.cod == other.dom
             return type(self)(self.dom, other.cod, compose(other.value, self.value))
 
-    category = discopy_cat.Category(ObjectValue, ArrowValue)
+    cat = _discopy_cat()
+    category = cat.Category(ObjectValue, ArrowValue)
     objects: dict[int, ObjectValue] = {}
 
     def ob(value: object) -> ObjectValue:
@@ -248,10 +258,10 @@ def evaluate_path(
     for index, arrow in enumerate(arrows):
         target = arrow.codomain()
         boxes.append(
-            discopy_cat.Box(
+            cat.Box(
                 f"a{index}",
-                discopy_cat.Ob(str(id(current))),
-                discopy_cat.Ob(str(id(target))),
+                cat.Ob(str(id(current))),
+                cat.Ob(str(id(target))),
                 data=arrow,
             )
         )
@@ -266,7 +276,7 @@ def evaluate_path(
             *(a.codomain() for a in arrows),
         ]
     }
-    functor = discopy_cat.Functor(
+    functor = cat.Functor(
         lambda token: ob(token_values[token.name]),
         lambda box: ArrowValue(
             ob(box.data.domain()), ob(box.data.codomain()), box.data

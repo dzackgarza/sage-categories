@@ -653,14 +653,13 @@ def _biproduct(
         direct_sum,
         (first_form.zero_datum(), second_form.zero_datum()),
     )
-    projections = (
-        _linear_homomorphism(apex, first, direct_sum.projection(0)),
-        _linear_homomorphism(apex, second, direct_sum.projection(1)),
+    from sage_categories.engines.presented_modules import (
+        direct_sum_coproduct_lift,
+        direct_sum_product_lift,
+        retain_binary_biproduct,
     )
-    inclusions = (
-        _linear_homomorphism(first, apex, _inclusion_form(direct_sum, 0)),
-        _linear_homomorphism(second, apex, _inclusion_form(direct_sum, 1)),
-    )
+
+    projections, inclusions = retain_binary_biproduct(first, second, apex)
     diagram = from_sequence(abelian, (first, second))
     shape = diagram.domain()
 
@@ -673,9 +672,7 @@ def _biproduct(
         from sage_categories.cat.cones import cone_apex
 
         source = cone_apex(candidate)
-        source_form = presentation(source)
-        forms = tuple(linear_form(component) for component in components)
-        return _linear_homomorphism(source, apex, source_form.pair(forms, direct_sum))
+        return direct_sum_product_lift((first, second), apex, source, components)
 
     product_apex = abelian.Limits(shape).with_universal_data(
         diagram,
@@ -693,8 +690,7 @@ def _biproduct(
         from sage_categories.cat.cones import cocone_apex
 
         target = cocone_apex(candidate)
-        forms = tuple(linear_form(component) for component in components)
-        return _linear_homomorphism(apex, target, _copair_form(forms, direct_sum))
+        return direct_sum_coproduct_lift((first, second), apex, target, components)
 
     coproduct_apex = abelian.Colimits(shape).with_universal_data(
         diagram,

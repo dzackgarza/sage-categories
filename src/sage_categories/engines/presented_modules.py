@@ -30,6 +30,9 @@ from sage_categories.engines.gap import PRESENTED_MODULE_PACKAGES, load_packages
 __all__ = [
     "coequalizer_mediator",
     "coequalizer_projection",
+    "direct_sum_coproduct_lift",
+    "direct_sum_product_lift",
+    "retain_binary_biproduct",
     "tensor_morphism",
     "tensor_object",
 ]
@@ -41,6 +44,13 @@ class _PresentationBridge:
 
     free: object
     engine: object
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _DirectSumBridge:
+    """A raw CAP direct-sum basis assembled from the retained factor bases."""
+
+    factors: tuple[object, ...]
 
 
 _cokernel_differences: dict[int, tuple[object, GapElement]] = {}
@@ -108,9 +118,9 @@ def _native_object(value: object) -> GapElement:
     return native
 
 
-def _bridge(value: object) -> _PresentationBridge | None:
+def _bridge(value: object) -> _PresentationBridge | _DirectSumBridge | None:
     data = presented_native_object(value).construction.data
-    assert data is None or isinstance(data, _PresentationBridge)
+    assert data is None or isinstance(data, (_PresentationBridge, _DirectSumBridge))
     return data
 
 
@@ -121,8 +131,23 @@ def _public_coordinates_from_raw(value: object, raw_coordinates) -> tuple[int, .
     bridge = _bridge(value)
     if bridge is None:
         return form.coordinates(form.element(tuple(int(entry) for entry in raw_coordinates)))
-    raw = bridge.free(vector(ZZ, raw_coordinates))
-    return form.coordinates(bridge.engine(raw))
+    if isinstance(bridge, _PresentationBridge):
+        raw = bridge.free(vector(ZZ, raw_coordinates))
+        return form.coordinates(bridge.engine(raw))
+    result = []
+    start = 0
+    for factor in bridge.factors:
+        native = _native_object(factor)
+        size = int(libgap.NumberColumns(libgap.UnderlyingMatrix(native)))
+        result.extend(
+            _public_coordinates_from_raw(
+                factor,
+                raw_coordinates[start : start + size],
+            )
+        )
+        start += size
+    assert start == len(raw_coordinates)
+    return tuple(result)
 
 
 def _raw_coordinates_from_public(value: object, public_coordinates) -> tuple[int, ...]:
@@ -133,8 +158,23 @@ def _raw_coordinates_from_public(value: object, public_coordinates) -> tuple[int
     bridge = _bridge(value)
     if bridge is None:
         return tuple(int(entry) for entry in form.coordinates(normalized))
-    element = bridge.engine(normalized)
-    return tuple(int(entry) for entry in element.lift())
+    if isinstance(bridge, _PresentationBridge):
+        element = bridge.engine(normalized)
+        return tuple(int(entry) for entry in element.lift())
+    normalized_coordinates = form.coordinates(normalized)
+    result = []
+    start = 0
+    for factor in bridge.factors:
+        factor_rank = presentation(factor).rank()
+        result.extend(
+            _raw_coordinates_from_public(
+                factor,
+                normalized_coordinates[start : start + factor_rank],
+            )
+        )
+        start += factor_rank
+    assert start == len(normalized_coordinates)
+    return tuple(result)
 
 
 def _native_matrix_from_public(value: object) -> GapElement:
@@ -295,6 +335,73 @@ def coequalizer_mediator(projection: object, coequalizing: object):
         native_difference,
         _native_object(target),
         _native_morphism(coequalizing),
+        _native_object(apex),
+    )
+    return _owned_morphism_from_native(apex, target, native)
+
+
+def retain_binary_biproduct(first: object, second: object, apex: object):
+    """Retain CAP's direct sum on the already selected owned biproduct apex."""
+    factors = (first, second)
+    native_factors = [_native_object(factor) for factor in factors]
+    native_apex = libgap.DirectSumOp(native_factors, _category())
+    retain_presented_native_object(apex, native_apex, _DirectSumBridge(factors))
+    projections = tuple(
+        _owned_morphism_from_native(
+            apex,
+            factor,
+            libgap.ProjectionInFactorOfDirectSumWithGivenDirectSum(
+                native_factors,
+                index + 1,
+                native_apex,
+            ),
+        )
+        for index, factor in enumerate(factors)
+    )
+    injections = tuple(
+        _owned_morphism_from_native(
+            factor,
+            apex,
+            libgap.InjectionOfCofactorOfDirectSumWithGivenDirectSum(
+                native_factors,
+                index + 1,
+                native_apex,
+            ),
+        )
+        for index, factor in enumerate(factors)
+    )
+    return projections, injections
+
+
+def direct_sum_product_lift(
+    factors: tuple[object, ...],
+    apex: object,
+    source: object,
+    components: tuple[object, ...],
+):
+    """Return CAP's universal map from ``source`` into the retained direct sum."""
+    native_factors = [_native_object(factor) for factor in factors]
+    native = libgap.UniversalMorphismIntoDirectSumWithGivenDirectSum(
+        native_factors,
+        _native_object(source),
+        [_native_morphism(component) for component in components],
+        _native_object(apex),
+    )
+    return _owned_morphism_from_native(source, apex, native)
+
+
+def direct_sum_coproduct_lift(
+    factors: tuple[object, ...],
+    apex: object,
+    target: object,
+    components: tuple[object, ...],
+):
+    """Return CAP's universal map from the retained direct sum into ``target``."""
+    native_factors = [_native_object(factor) for factor in factors]
+    native = libgap.UniversalMorphismFromDirectSumWithGivenDirectSum(
+        native_factors,
+        _native_object(target),
+        [_native_morphism(component) for component in components],
         _native_object(apex),
     )
     return _owned_morphism_from_native(apex, target, native)

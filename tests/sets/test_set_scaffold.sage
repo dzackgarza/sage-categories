@@ -1,7 +1,5 @@
 """Owned set maps, universal maps, and represented infinite sets."""
 
-from __future__ import annotations
-
 from collections.abc import Hashable
 
 from sympy import Dummy, Lambda, Q, pi, sqrt
@@ -176,10 +174,15 @@ def test_rule_defined_infinite_set() -> None:
     assert real_square.product_projection(1)(real_point).datum() == pi
 
     variable = Dummy("x")
-    double = Mor(Sets)(reals, reals)(Lambda((variable,), 2 * variable))
+    # A preparsed Sage integer on the left coerces the Dummy to Sage's symbolic
+    # ring, losing the variable identity before Lambda binds it. Keep this native
+    # SymPy expression in its own scalar domain.
+    double = Mor(Sets)(reals, reals)(Lambda((variable,), 2r * variable))
     translate = Mor(Sets)(reals, reals)(Lambda((variable,), variable + 1))
     mediator = pair_maps(Sets, double, translate)
     witness = reals.point(sqrt(2))
+    assert double(witness).datum() == 2 * sqrt(2)
+    assert translate(witness).datum() == 1 + sqrt(2)
     assert mediator(witness).datum() == (2 * sqrt(2), 1 + sqrt(2))
     assert (real_square.product_projection(0) * mediator)(witness).datum() == double(witness).datum()
     assert (real_square.product_projection(1) * mediator)(witness).datum() == translate(witness).datum()

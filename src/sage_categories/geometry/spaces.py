@@ -147,7 +147,9 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         target_opens = target.open_category()
         source_opens = source.open_category()
 
-        def inverse_subset(target_open: CategoryOfCategories.ElementType) -> frozenset[Hashable]:
+        def inverse_subset(
+            target_open: CategoryOfCategories.ElementType,
+        ) -> frozenset[Hashable]:
             subset = target_open.point().datum()
             return frozenset(
                 datum
@@ -155,11 +157,18 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
                 if underlying(source.carrier().point(datum)).datum() in subset
             )
 
-        def on_object(target_open: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        def on_object(
+            target_open: CategoryOfCategories.ElementType,
+        ) -> CategoryOfCategories.ElementType:
             return source.open_object(inverse_subset(target_open))
 
-        def on_morphism(inclusion: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-            domain, codomain = on_object(inclusion.domain()), on_object(inclusion.codomain())
+        def on_morphism(
+            inclusion: MorphismCategory.ObjectType,
+        ) -> MorphismCategory.ObjectType:
+            domain, codomain = (
+                on_object(inclusion.domain()),
+                on_object(inclusion.codomain()),
+            )
             return Mor(source_opens)(domain, codomain)()
 
         inverse = Fun(target_opens, source_opens)(on_object, on_morphism)
@@ -174,7 +183,10 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         target: TopologicalSpacesCategory.ObjectType,
         underlying: MorphismCategory.ObjectType,
     ) -> TopologicalSpacesCategory.MorphismType:
-        assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()
+        assert (
+            underlying.domain() is source.carrier()
+            and underlying.codomain() is target.carrier()
+        )
         inverse = self._inverse_image_functor(source, target, underlying)
         return self.morphism_with_inverse_image(source, target, underlying, inverse)
 
@@ -186,10 +198,15 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         inverse: Functor,
     ) -> TopologicalSpacesCategory.MorphismType:
         """Retain a continuous map from its exact underlying map and inverse-image functor."""
-        assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()
+        assert (
+            underlying.domain() is source.carrier()
+            and underlying.codomain() is target.carrier()
+        )
         assert inverse.domain() is target.open_category()
         assert inverse.codomain() is source.open_category()
-        return self.MorphismType(domain=source, codomain=target, data=(underlying, inverse))
+        return self.MorphismType(
+            domain=source, codomain=target, data=(underlying, inverse)
+        )
 
     def construct_identity(
         self,

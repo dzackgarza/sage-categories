@@ -33,7 +33,9 @@ class OscarRingConstruction:
     data: object
 
 
-_objects: NativeObjectRealizations[object, OscarRingConstruction] = NativeObjectRealizations()
+_objects: NativeObjectRealizations[object, OscarRingConstruction] = (
+    NativeObjectRealizations()
+)
 _morphisms: NativeMorphismRealizations[object] = NativeMorphismRealizations()
 
 

@@ -24,7 +24,9 @@ type DiagramBox = discopy_monoidal.Box
 class _ObjectValue:
     _model: NonstrictMonoidalModel
 
-    def __init__(self, word: tuple[object, ...] = (), value: object | None = None) -> None:
+    def __init__(
+        self, word: tuple[object, ...] = (), value: object | None = None
+    ) -> None:
         self.model = type(self)._model
         self.word = word
         self.value = self.model._unit if value is None and not word else value
@@ -35,7 +37,9 @@ class _ObjectValue:
     @overload
     def __matmul__(self, other: _ArrowValue) -> _ArrowValue: ...
 
-    def __matmul__(self, other: _ObjectValue | _ArrowValue) -> _ObjectValue | _ArrowValue:
+    def __matmul__(
+        self, other: _ObjectValue | _ArrowValue
+    ) -> _ObjectValue | _ArrowValue:
         assert self.model is other.model
         if isinstance(other, _ArrowValue):
             return type(other).id(self) @ other
@@ -48,7 +52,10 @@ class _ObjectValue:
             isinstance(other, _ObjectValue)
             and self.model is other.model
             and len(self.word) == len(other.word)
-            and all(first is second for first, second in zip(self.word, other.word, strict=True))
+            and all(
+                first is second
+                for first, second in zip(self.word, other.word, strict=True)
+            )
         )
 
     def __hash__(self) -> int:
@@ -70,7 +77,9 @@ class _ArrowValue:
 
     def __rshift__(self, other: _ArrowValue) -> _ArrowValue:
         assert self.model is other.model and self.cod == other.dom
-        return type(self)(self.dom, other.cod, self.model._compose(other.value, self.value))
+        return type(self)(
+            self.dom, other.cod, self.model._compose(other.value, self.value)
+        )
 
     def __matmul__(self, other: _ArrowValue | _ObjectValue) -> _ArrowValue:
         assert self.model is other.model
@@ -175,7 +184,9 @@ class NonstrictMonoidalModel[Object, Arrow]:
         def arrow_image(box: discopy_monoidal.Box) -> _ArrowValue:
             dom_word = tuple(self._wire_values[str(atom)] for atom in box.dom.inside)
             cod_word = tuple(self._wire_values[str(atom)] for atom in box.cod.inside)
-            return self._arrow_type(self._word(dom_word), self._word(cod_word), box.data)
+            return self._arrow_type(
+                self._word(dom_word), self._word(cod_word), box.data
+            )
 
         functor = discopy_monoidal.Functor(
             object_image,
@@ -200,6 +211,7 @@ def evaluate_path(
     compose: Callable[[object, object], object],
 ) -> object:
     """Compose a retained semantic path through DisCoPy's native arrow evaluator."""
+
     class ObjectValue:
         def __init__(self, value: object) -> None:
             self.value = value
@@ -235,13 +247,30 @@ def evaluate_path(
     current = domain
     for index, arrow in enumerate(arrows):
         target = arrow.codomain()
-        boxes.append(discopy_cat.Box(f"a{index}", discopy_cat.Ob(str(id(current))), discopy_cat.Ob(str(id(target))), data=arrow))
+        boxes.append(
+            discopy_cat.Box(
+                f"a{index}",
+                discopy_cat.Ob(str(id(current))),
+                discopy_cat.Ob(str(id(target))),
+                data=arrow,
+            )
+        )
         current = target
     assert current is codomain
-    token_values = {str(id(value)): value for value in [domain, codomain, *(a.domain() for a in arrows), *(a.codomain() for a in arrows)]}
+    token_values = {
+        str(id(value)): value
+        for value in [
+            domain,
+            codomain,
+            *(a.domain() for a in arrows),
+            *(a.codomain() for a in arrows),
+        ]
+    }
     functor = discopy_cat.Functor(
         lambda token: ob(token_values[token.name]),
-        lambda box: ArrowValue(ob(box.data.domain()), ob(box.data.codomain()), box.data),
+        lambda box: ArrowValue(
+            ob(box.data.domain()), ob(box.data.codomain()), box.data
+        ),
         cod=category,
     )
     if not boxes:

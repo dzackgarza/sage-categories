@@ -70,4 +70,3 @@ def certified_commutative_ring(
     ring = rings._ring(pair, group, additive)
     refine(ring, rings.Commutative())
     return cast(CategoryOfCategories.ElementType, ring)
-

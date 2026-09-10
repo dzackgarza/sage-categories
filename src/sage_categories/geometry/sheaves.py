@@ -25,7 +25,11 @@ __all__ = [
 
 
 def _rings() -> Any:
-    return import_module("sage_categories.cat.structured_objects").Rings(Sets).Commutative()
+    return (
+        import_module("sage_categories.cat.structured_objects")
+        .Rings(Sets)
+        .Commutative()
+    )
 
 
 def _ambient_rings() -> Any:
@@ -36,7 +40,9 @@ def _open_data(open_object: CategoryOfCategories.ElementType) -> frozenset[Hasha
     return cast(frozenset[Hashable], cast(Any, open_object).point().datum())
 
 
-def _opposite_original(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+def _opposite_original(
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
     return cast(MorphismCategory.ObjectType, cast(Any, arrow).original())
 
 
@@ -75,8 +81,13 @@ class RingPresheaf:
         smaller: object,
     ) -> MorphismCategory.ObjectType:
         """The owned ring map ``F(larger) -> F(smaller)`` for ``smaller <= larger``."""
-        inclusion = Mor(self.opens)(self.open_object(smaller), self.open_object(larger))()
-        return cast(MorphismCategory.ObjectType, self.functor.on_morphism(opposite_morphism(inclusion)))
+        inclusion = Mor(self.opens)(
+            self.open_object(smaller), self.open_object(larger)
+        )()
+        return cast(
+            MorphismCategory.ObjectType,
+            self.functor.on_morphism(opposite_morphism(inclusion)),
+        )
 
 
 type GluingRule = Callable[
@@ -110,15 +121,28 @@ class RingSheaf:
         for left_index, left in enumerate(cover):
             for right_index, right in enumerate(cover):
                 overlap = left & right
-                left_restriction = _apply_ring_map(self.presheaf.restriction(left, overlap), local_sections[left_index])
-                right_restriction = _apply_ring_map(self.presheaf.restriction(right, overlap), local_sections[right_index])
+                left_restriction = _apply_ring_map(
+                    self.presheaf.restriction(left, overlap), local_sections[left_index]
+                )
+                right_restriction = _apply_ring_map(
+                    self.presheaf.restriction(right, overlap),
+                    local_sections[right_index],
+                )
                 assert ask(left_restriction == right_restriction) is True
 
         global_section = self.gluing_rule(open_set, cover, local_sections)
         global_ring = self.presheaf.section_ring(open_set)
         assert global_section.parent() is global_ring
         for member, local in zip(cover, local_sections, strict=True):
-            assert ask(_apply_ring_map(self.presheaf.restriction(open_set, member), global_section) == local) is True
+            assert (
+                ask(
+                    _apply_ring_map(
+                        self.presheaf.restriction(open_set, member), global_section
+                    )
+                    == local
+                )
+                is True
+            )
 
         carrier = _ambient_rings().forgetful().on_object(global_ring)
         candidates = tuple(carrier)
@@ -126,7 +150,11 @@ class RingSheaf:
         for candidate in candidates:
             point = cast(Any, global_ring).point(candidate.datum())
             if all(
-                ask(_apply_ring_map(self.presheaf.restriction(open_set, member), point) == local) is True
+                ask(
+                    _apply_ring_map(self.presheaf.restriction(open_set, member), point)
+                    == local
+                )
+                is True
                 for member, local in zip(cover, local_sections, strict=True)
             ):
                 matching.append(point)
@@ -148,28 +176,46 @@ def ring_presheaf(
     rings = _rings()
     assert all(section in rings for section in sections.values())
 
-    comparable = tuple((larger, smaller) for larger in opens for smaller in opens if smaller <= larger)
+    comparable = tuple(
+        (larger, smaller) for larger in opens for smaller in opens if smaller <= larger
+    )
     assert set(restrictions) == set(comparable)
     for larger, smaller in comparable:
         arrow = restrictions[(larger, smaller)]
-        assert arrow.domain() is sections[larger] and arrow.codomain() is sections[smaller]
+        assert (
+            arrow.domain() is sections[larger] and arrow.codomain() is sections[smaller]
+        )
     for open_set in opens:
-        assert ask(restrictions[(open_set, open_set)] == Mor(rings)(sections[open_set], sections[open_set]).one()) is True
+        assert (
+            ask(
+                restrictions[(open_set, open_set)]
+                == Mor(rings)(sections[open_set], sections[open_set]).one()
+            )
+            is True
+        )
     for largest in opens:
         for middle in opens:
             for smallest in opens:
                 if smallest <= middle <= largest:
-                    assert ask(
-                        restrictions[(middle, smallest)] * restrictions[(largest, middle)]
-                        == restrictions[(largest, smallest)]
-                    ) is True
+                    assert (
+                        ask(
+                            restrictions[(middle, smallest)]
+                            * restrictions[(largest, middle)]
+                            == restrictions[(largest, smallest)]
+                        )
+                        is True
+                    )
 
     source = space.open_category().op()
 
-    def on_object(open_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+    def on_object(
+        open_object: CategoryOfCategories.ElementType,
+    ) -> CategoryOfCategories.ElementType:
         return sections[_open_data(open_object)]
 
-    def on_morphism(opposite_inclusion: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+    def on_morphism(
+        opposite_inclusion: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
         inclusion = _opposite_original(opposite_inclusion)
         smaller = _open_data(inclusion.domain())
         larger = _open_data(inclusion.codomain())

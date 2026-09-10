@@ -41,7 +41,9 @@ def projective_types(presentation: ProjectiveInfinityPresentation) -> None:
     assert_type(presentation.finite_skeleton(37), ProjectiveSpacePresentation)
     assert_type(presentation.space, TopologicalSpacesCategory.ObjectType)
     assert_type(presentation.structure_map(37), TopologicalSpacesCategory.MorphismType)
-    assert_type(presentation.complex_conjugation(), TopologicalSpacesCategory.MorphismType)
+    assert_type(
+        presentation.complex_conjugation(), TopologicalSpacesCategory.MorphismType
+    )
     assert_type(complex_projective_point(1, 1j, 0), ComplexProjectivePoint)
 
 
@@ -52,7 +54,9 @@ def local_field_types(field: ExactLocalFieldPresentation) -> None:
     assert_type(prime_indices(), CategoryOfCategories.ElementType)
     assert_type(field.value(Fraction(1, 5)), CategoryOfCategories.ElementType)
     assert_type(ExactLocalValue.rational(5, Fraction(1, 5)), ExactLocalValue)
-    assert_type(field.embed_rational(exact_rational_field().ring), MorphismCategory.ObjectType)
+    assert_type(
+        field.embed_rational(exact_rational_field().ring), MorphismCategory.ObjectType
+    )
 
 
 def adelic_types(
@@ -71,9 +75,13 @@ def adelic_types(
     assert_type(presentation.diagonal_map(), MorphismCategory.ObjectType)
     assert_type(presentation.open_object(open_set), CategoryOfCategories.ElementType)
     assert_type(presentation.topological_ring.addition_continuity(), BinaryContinuity)
-    assert_type(presentation.topological_ring.multiplication_continuity(), BinaryContinuity)
     assert_type(
-        presentation.topological_ring.addition_preimage(presentation.open_object(open_set)),
+        presentation.topological_ring.multiplication_continuity(), BinaryContinuity
+    )
+    assert_type(
+        presentation.topological_ring.addition_preimage(
+            presentation.open_object(open_set)
+        ),
         ProductTopologyOpen,
     )
     assert_type(

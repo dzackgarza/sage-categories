@@ -100,8 +100,10 @@ class AdeleValue:
             self.real + other.real,
             lambda prime: self.finite_component(prime) + other.finite_component(prime),
             exceptional,
-            lambda prime: self.integrality_certificate(prime)
-            and other.integrality_certificate(prime),
+            lambda prime: (
+                self.integrality_certificate(prime)
+                and other.integrality_certificate(prime)
+            ),
         )
 
     def __mul__(self, other: AdeleValue) -> AdeleValue:
@@ -112,8 +114,10 @@ class AdeleValue:
             self.real * other.real,
             lambda prime: self.finite_component(prime) * other.finite_component(prime),
             exceptional,
-            lambda prime: self.integrality_certificate(prime)
-            and other.integrality_certificate(prime),
+            lambda prime: (
+                self.integrality_certificate(prime)
+                and other.integrality_certificate(prime)
+            ),
         )
 
 
@@ -348,9 +352,9 @@ def adeles_of_rationals() -> AdelePresentation:
 
     owner = object()
     carrier = Sets.from_membership(
-        lambda value: true
-        if isinstance(value, AdeleValue) and value.owner is owner
-        else false
+        lambda value: (
+            true if isinstance(value, AdeleValue) and value.owner is owner else false
+        )
     )
     zero = AdeleValue(
         owner,
@@ -375,9 +379,9 @@ def adeles_of_rationals() -> AdelePresentation:
     )
 
     opens = Sets.from_membership(
-        lambda value: true
-        if isinstance(value, AdeleOpen) and value.owner is owner
-        else false
+        lambda value: (
+            true if isinstance(value, AdeleOpen) and value.owner is owner else false
+        )
     )
     open_category = Thin(opens, _open_order)
 

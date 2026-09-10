@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Literal
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
 
-from sage_categories.cat.morphisms import Mor, MorphismCategory
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
 from sage_categories.sets._finite_cap import (
     finite_native_morphism,
@@ -104,12 +104,26 @@ def _native_object_if_finite(value: object) -> GapElement | None:
 def _native_morphism(value: MorphismCategory.ObjectType) -> GapElement:
     if _has_native_morphism(value):
         return finite_native_morphism(value).native
-    source_record = finite_native_object(value.domain()) if _has_native_object(value.domain()) else None
-    target_record = finite_native_object(value.codomain()) if _has_native_object(value.codomain()) else None
+    source_record = (
+        finite_native_object(value.domain())
+        if _has_native_object(value.domain())
+        else None
+    )
+    target_record = (
+        finite_native_object(value.codomain())
+        if _has_native_object(value.codomain())
+        else None
+    )
     source_native = _native_object(value.domain())
     target_native = _native_object(value.codomain())
-    source_record = finite_native_object(value.domain()) if source_record is None else source_record
-    target_record = finite_native_object(value.codomain()) if target_record is None else target_record
+    source_record = (
+        finite_native_object(value.domain()) if source_record is None else source_record
+    )
+    target_record = (
+        finite_native_object(value.codomain())
+        if target_record is None
+        else target_record
+    )
     graph = [
         _index(target_record, value._action(datum))
         for datum in source_record.construction.data
@@ -146,7 +160,6 @@ def _owned_morphism(
     return owned
 
 
-
 def cartesian_associator(
     first: object,
     second: object,
@@ -179,9 +192,13 @@ def cartesian_left_unitor(
     native_value = _native_object(value)
     match forward:
         case True:
-            computed = libgap.CartesianLeftUnitorWithGivenDirectProduct(native_value, _native_object(source))
+            computed = libgap.CartesianLeftUnitorWithGivenDirectProduct(
+                native_value, _native_object(source)
+            )
         case False:
-            computed = libgap.CartesianLeftUnitorInverseWithGivenDirectProduct(native_value, _native_object(target))
+            computed = libgap.CartesianLeftUnitorInverseWithGivenDirectProduct(
+                native_value, _native_object(target)
+            )
     return _native_map_on_owned_endpoints(source, target, computed)
 
 
@@ -196,10 +213,15 @@ def cartesian_right_unitor(
     native_value = _native_object(value)
     match forward:
         case True:
-            computed = libgap.CartesianRightUnitorWithGivenDirectProduct(native_value, _native_object(source))
+            computed = libgap.CartesianRightUnitorWithGivenDirectProduct(
+                native_value, _native_object(source)
+            )
         case False:
-            computed = libgap.CartesianRightUnitorInverseWithGivenDirectProduct(native_value, _native_object(target))
+            computed = libgap.CartesianRightUnitorInverseWithGivenDirectProduct(
+                native_value, _native_object(target)
+            )
     return _native_map_on_owned_endpoints(source, target, computed)
+
 
 def is_monomorphism(value: MorphismCategory.ObjectType) -> bool:
     return bool(libgap.IsMonomorphism(_native_morphism(value)))
@@ -213,13 +235,17 @@ def equal_morphisms(
     first: MorphismCategory.ObjectType,
     second: MorphismCategory.ObjectType,
 ) -> bool:
-    return bool(libgap.IsEqualForMorphisms(_native_morphism(first), _native_morphism(second)))
+    return bool(
+        libgap.IsEqualForMorphisms(_native_morphism(first), _native_morphism(second))
+    )
 
 
 def inverse_morphism(value: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
     native = _native_morphism(value)
     assert bool(libgap.IsIsomorphism(native)), f"{value!r} is not invertible"
-    return _owned_morphism(value.codomain(), value.domain(), libgap.InverseForMorphisms(native))
+    return _owned_morphism(
+        value.codomain(), value.domain(), libgap.InverseForMorphisms(native)
+    )
 
 
 def image_factorization(
@@ -231,7 +257,9 @@ def image_factorization(
     computed_inclusion = libgap.ImageEmbedding(native)
     target_record = finite_native_object(value.codomain())
     image_indices = _graph(computed_inclusion)
-    image_data = tuple(target_record.construction.data[index] for index in image_indices)
+    image_data = tuple(
+        target_record.construction.data[index] for index in image_indices
+    )
     image = Sets(image_data)
     native_image = _native_object(image)
     native_inclusion = libgap.MapOfFinSets(
@@ -253,7 +281,9 @@ def factor_through_monomorphism(
     native_value, native_mono = _native_morphism(value), _native_morphism(mono)
     if not bool(libgap.IsLiftable(native_value, native_mono)):
         return False
-    return _owned_morphism(value.domain(), mono.domain(), libgap.Lift(native_value, native_mono))
+    return _owned_morphism(
+        value.domain(), mono.domain(), libgap.Lift(native_value, native_mono)
+    )
 
 
 def hom_morphisms(
@@ -267,7 +297,6 @@ def hom_morphisms(
     )
 
 
-
 def _native_map_on_owned_endpoints(
     source: object,
     target: object,
@@ -279,13 +308,14 @@ def _native_map_on_owned_endpoints(
     return _owned_morphism(source, target, native)
 
 
-
 def _native_diagram(diagram: Functor):
     from sage_categories.cat.finite_categories import finite_category
     from sage_categories.cat.predicates import Unknown
 
     finite = finite_category(diagram.domain())
-    assert finite is not Unknown, "native finite-set execution requires exact finite structural data"
+    assert finite is not Unknown, (
+        "native finite-set execution requires exact finite structural data"
+    )
     vertices = tuple(finite.objects)
     positions = {id(vertex): index for index, vertex in enumerate(vertices)}
     factors = tuple(diagram.on_object(vertex) for vertex in vertices)
@@ -315,7 +345,10 @@ def finite_limit(diagram: Functor) -> object:
     records = tuple(finite_native_object(factor) for factor in factors)
     graphs = tuple(_graph(projection) for projection in computed_projections)
     apex_data = tuple(
-        tuple(records[index].construction.data[graphs[index][native_index]] for index in range(len(vertices)))
+        tuple(
+            records[index].construction.data[graphs[index][native_index]]
+            for index in range(len(vertices))
+        )
         for native_index in range(int(libgap.Cardinality(computed_apex)))
     )
     apex = Sets(apex_data)
@@ -337,7 +370,9 @@ def finite_limit(diagram: Functor) -> object:
             return diagram.codomain().construct_morphism(
                 source,
                 apex,
-                lambda value: tuple(component._action(value) for component in components)
+                lambda value: tuple(
+                    component._action(value) for component in components
+                ),
             )
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismIntoLimitWithGivenLimit(
@@ -345,11 +380,15 @@ def finite_limit(diagram: Functor) -> object:
         )
         return _native_map_on_owned_endpoints(source, apex, computed)
 
-    return diagram.codomain().Limits(diagram.domain()).with_universal_data(
-        diagram,
-        apex,
-        cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
-        lift,
+    return (
+        diagram.codomain()
+        .Limits(diagram.domain())
+        .with_universal_data(
+            diagram,
+            apex,
+            cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+            lift,
+        )
     )
 
 
@@ -368,11 +407,15 @@ def finite_colimit(diagram: Functor) -> object:
         for index in range(len(vertices))
     )
     graphs = tuple(_graph(injection) for injection in computed_injections)
-    classes: list[set[object]] = [set() for _ in range(int(libgap.Cardinality(computed_apex)))]
+    classes: list[set[object]] = [
+        set() for _ in range(int(libgap.Cardinality(computed_apex)))
+    ]
     for factor_index, factor in enumerate(factors):
         record = finite_native_object(factor)
         for source_index, target_index in enumerate(graphs[factor_index]):
-            classes[target_index].add((factor_index, record.construction.data[source_index]))
+            classes[target_index].add(
+                (factor_index, record.construction.data[source_index])
+            )
     apex = Sets(tuple(frozenset(part) for part in classes))
     native_apex = _native_object(apex)
     legs = tuple(
@@ -401,12 +444,17 @@ def finite_colimit(diagram: Functor) -> object:
         )
         return _native_map_on_owned_endpoints(apex, target, computed)
 
-    return diagram.codomain().Colimits(diagram.domain()).with_universal_data(
-        diagram,
-        apex,
-        cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
-        descent,
+    return (
+        diagram.codomain()
+        .Colimits(diagram.domain())
+        .with_universal_data(
+            diagram,
+            apex,
+            cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+            descent,
+        )
     )
+
 
 def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cone, cone_apex
@@ -426,7 +474,9 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
     projection_graphs = tuple(_graph(projection) for projection in computed_projections)
     apex_data = tuple(
         tuple(
-            factor_records[index].construction.data[projection_graphs[index][native_index]]
+            factor_records[index].construction.data[
+                projection_graphs[index][native_index]
+            ]
             for index in range(len(vertices))
         )
         for native_index in range(int(libgap.Cardinality(computed_apex)))
@@ -438,7 +488,9 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
         _native_map_on_owned_endpoints(
             apex,
             factors[index],
-            libgap.MapOfFinSets(native_apex, projection_graphs[index], native_factors[index]),
+            libgap.MapOfFinSets(
+                native_apex, projection_graphs[index], native_factors[index]
+            ),
         )
         for index in range(len(vertices))
     )
@@ -451,7 +503,9 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
             return diagram.codomain().construct_morphism(
                 source,
                 apex,
-                lambda value: tuple(component._action(value) for component in components)
+                lambda value: tuple(
+                    component._action(value) for component in components
+                ),
             )
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismIntoDirectProductWithGivenDirectProduct(
@@ -459,11 +513,15 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
         )
         return _native_map_on_owned_endpoints(source, apex, computed)
 
-    return diagram.codomain().Limits(diagram.domain()).with_universal_data(
-        diagram,
-        apex,
-        cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
-        lift,
+    return (
+        diagram.codomain()
+        .Limits(diagram.domain())
+        .with_universal_data(
+            diagram,
+            apex,
+            cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+            lift,
+        )
     )
 
 
@@ -483,7 +541,9 @@ def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     )
     source_record = finite_native_object(source)
     embedding_graph = _graph(computed_embedding)
-    apex_data = tuple(source_record.construction.data[index] for index in embedding_graph)
+    apex_data = tuple(
+        source_record.construction.data[index] for index in embedding_graph
+    )
     apex = Sets(apex_data)
     native_apex = _native_object(apex)
     embedding_native = libgap.MapOfFinSets(native_apex, embedding_graph, native_source)
@@ -500,7 +560,9 @@ def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         candidate_native = _native_object_if_finite(candidate_source)
         component = candidate.component(source_vertex)
         if candidate_native is None:
-            return diagram.codomain().construct_morphism(candidate_source, apex, component._action)
+            return diagram.codomain().construct_morphism(
+                candidate_source, apex, component._action
+            )
         tau = _native_morphism(component)
         computed = libgap.UniversalMorphismIntoEqualizerWithGivenEqualizer(
             category,
@@ -512,8 +574,10 @@ def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         )
         return _native_map_on_owned_endpoints(candidate_source, apex, computed)
 
-    return diagram.codomain().Limits(diagram.domain()).with_universal_data(
-        diagram, apex, cone(diagram, apex, leg), lift
+    return (
+        diagram.codomain()
+        .Limits(diagram.domain())
+        .with_universal_data(diagram, apex, cone(diagram, apex, leg), lift)
     )
 
 
@@ -546,7 +610,10 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
     for factor_index, factor in enumerate(factors):
         record = finite_native_object(factor)
         for source_index, target_index in enumerate(injection_graphs[factor_index]):
-            apex_labels[target_index] = (factor_index, record.construction.data[source_index])
+            apex_labels[target_index] = (
+                factor_index,
+                record.construction.data[source_index],
+            )
     assert all(label is not None for label in apex_labels)
     apex = Sets(tuple(apex_labels))
     native_apex = _native_object(apex)
@@ -555,7 +622,9 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
         _native_map_on_owned_endpoints(
             factors[index],
             apex,
-            libgap.MapOfFinSets(native_factors[index], injection_graphs[index], native_apex),
+            libgap.MapOfFinSets(
+                native_factors[index], injection_graphs[index], native_apex
+            ),
         )
         for index in range(len(vertices))
     )
@@ -566,9 +635,7 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
         if native_target is None:
             components = tuple(candidate.component(vertex) for vertex in vertices)
             return diagram.codomain().construct_morphism(
-                apex,
-                target,
-                lambda tagged: components[tagged[0]]._action(tagged[1])
+                apex, target, lambda tagged: components[tagged[0]]._action(tagged[1])
             )
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismFromCoproductWithGivenCoproduct(
@@ -576,11 +643,15 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
         )
         return _native_map_on_owned_endpoints(apex, target, computed)
 
-    return diagram.codomain().Colimits(diagram.domain()).with_universal_data(
-        diagram,
-        apex,
-        cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
-        descent,
+    return (
+        diagram.codomain()
+        .Colimits(diagram.domain())
+        .with_universal_data(
+            diagram,
+            apex,
+            cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+            descent,
+        )
     )
 
 
@@ -600,13 +671,17 @@ def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     )
     projection_graph = _graph(computed_projection)
     target_record = finite_native_object(target)
-    classes: list[set[object]] = [set() for _ in range(int(libgap.Cardinality(computed_apex)))]
+    classes: list[set[object]] = [
+        set() for _ in range(int(libgap.Cardinality(computed_apex)))
+    ]
     for source_index, class_index in enumerate(projection_graph):
         classes[class_index].add(target_record.construction.data[source_index])
     apex_data = tuple(frozenset(part) for part in classes)
     apex = Sets(apex_data)
     native_apex = _native_object(apex)
-    projection_native = libgap.MapOfFinSets(native_target, projection_graph, native_apex)
+    projection_native = libgap.MapOfFinSets(
+        native_target, projection_graph, native_apex
+    )
     target_leg = _owned_morphism(target, apex, projection_native)
     source_computed = libgap.PreCompose(category, native_maps[0], computed_projection)
     source_leg = _native_map_on_owned_endpoints(source, apex, source_computed)
@@ -621,9 +696,7 @@ def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         component = candidate.component(target_vertex)
         if candidate_native is None:
             return diagram.codomain().construct_morphism(
-                apex,
-                candidate_target,
-                lambda part: component._action(next(iter(part)))
+                apex, candidate_target, lambda part: component._action(next(iter(part)))
             )
         tau = _native_morphism(component)
         computed = libgap.UniversalMorphismFromCoequalizerWithGivenCoequalizer(
@@ -636,8 +709,10 @@ def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         )
         return _native_map_on_owned_endpoints(apex, candidate_target, computed)
 
-    return diagram.codomain().Colimits(diagram.domain()).with_universal_data(
-        diagram, apex, cocone(diagram, apex, leg), descent
+    return (
+        diagram.codomain()
+        .Colimits(diagram.domain())
+        .with_universal_data(diagram, apex, cocone(diagram, apex, leg), descent)
     )
 
 

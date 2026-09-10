@@ -71,8 +71,14 @@ ordinary: int
         frozenset({"sage_categories.cat.category", "sage_categories.cat.functors"}),
     )
     projected = ast.unparse(ast.fix_missing_locations(stub))
-    assert "type Functor = sage_categories.cat.category.CategoryOfCategories.MorphismType" in projected
-    assert "type NaturalTransformation = sage_categories.cat.functors.FunctorsCategory.MorphismType" in projected
+    assert (
+        "type Functor = sage_categories.cat.category.CategoryOfCategories.MorphismType"
+        in projected
+    )
+    assert (
+        "type NaturalTransformation = sage_categories.cat.functors.FunctorsCategory.MorphismType"
+        in projected
+    )
     assert "class Functor" not in projected
     assert "class NaturalTransformation" not in projected
     assert "ordinary: int" in projected
@@ -99,16 +105,21 @@ class Owner:
                 "sage_categories.cat.category.CategoryOfCategories.ElementType",
             )
         },
-        frozenset({
-            "sage_categories.example",
-            "sage_categories.kernel.roles",
-            "sage_categories.cat.category",
-        }),
+        frozenset(
+            {
+                "sage_categories.example",
+                "sage_categories.kernel.roles",
+                "sage_categories.cat.category",
+            }
+        ),
     )
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "import sage_categories.cat.category" in projected
     assert "import sage_categories.kernel.roles" in projected
-    assert "class ObjectType(sage_categories.kernel.roles.ObjectOfCategory, sage_categories.cat.category.CategoryOfCategories.ElementType)" in projected
+    assert (
+        "class ObjectType(sage_categories.kernel.roles.ObjectOfCategory, sage_categories.cat.category.CategoryOfCategories.ElementType)"
+        in projected
+    )
 
 
 test_provider_projection_imports_the_modules_owning_qualified_bases()
@@ -133,7 +144,9 @@ def test_shared_provider_projection_uses_common_ancestry_not_context_union() -> 
 test_shared_provider_projection_uses_common_ancestry_not_context_union()
 
 
-def test_source_role_aliases_resolve_cat_and_typed_singletons_without_runtime_values(tmp_path: Path) -> None:
+def test_source_role_aliases_resolve_cat_and_typed_singletons_without_runtime_values(
+    tmp_path: Path,
+) -> None:
     package = tmp_path / "example"
     package.mkdir()
     (package / "category.py").write_text(

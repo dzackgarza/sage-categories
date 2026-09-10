@@ -7,7 +7,7 @@ are inherited from the product/equalizer calculus in Cat.
 
 from __future__ import annotations
 
-__all__ = ["SetsCategory", "Sets", "FiniteSets", "MapForm", "ObjectForm"]
+__all__ = ["FiniteSets", "MapForm", "ObjectForm", "Sets", "SetsCategory"]
 
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
@@ -18,7 +18,18 @@ from typing import Literal, Protocol, overload, runtime_checkable
 
 from sage.rings.integer import Integer as SageInteger
 from sage.symbolic.expression import Expression as SageExpression
-from sympy import Dummy, Eq, Lambda, Tuple, expand, false, simplify, solve, sympify, true
+from sympy import (
+    Dummy,
+    Eq,
+    Lambda,
+    Tuple,
+    expand,
+    false,
+    simplify,
+    solve,
+    sympify,
+    true,
+)
 from sympy import Integer as SympyInteger
 from sympy import ask as sympy_ask
 from sympy.core.basic import Basic
@@ -28,9 +39,18 @@ from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.declarations import NN, Sets, omega
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Axiom, Predicate, Proposition, Unknown, UnknownClass, ask, conjunction, register_handler
-from sage_categories.cat.slices import SliceProperty, SliceLikeCategory
+from sage_categories.cat.predicates import (
+    Axiom,
+    Predicate,
+    Proposition,
+    Unknown,
+    UnknownClass,
+    ask,
+    conjunction,
+    register_handler,
+)
 from sage_categories.cat.shapes import realize_discrete_object
+from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
 from sage_categories.kernel.sage_runtime import MonoDict
 
 type Map = Callable[[Hashable], Hashable]
@@ -73,7 +93,11 @@ def _datum_membership(value: SetsCategory.ObjectType, datum: Hashable) -> Propos
     """The proposition that ``datum`` is a point of ``value``: its rule, or the exact match against its enumeration."""
     presentation = value.set_presentation()
     if isinstance(presentation, tuple):
-        return true if any(_equal_datum(candidate, datum) for candidate in presentation) else false
+        return (
+            true
+            if any(_equal_datum(candidate, datum) for candidate in presentation)
+            else false
+        )
     return presentation(datum)
 
 
@@ -84,7 +108,10 @@ class _ProductRule:
         self.factors = factors
 
     def __call__(self, datum: Hashable) -> Proposition:
-        return conjunction(_datum_membership(factor, component) for factor, component in zip(self.factors, datum, strict=True))
+        return conjunction(
+            _datum_membership(factor, component)
+            for factor, component in zip(self.factors, datum, strict=True)
+        )
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -110,7 +137,11 @@ class _IndexedProductRule:
         self.diagram = diagram
 
     def __call__(self, datum: Hashable) -> Proposition:
-        return true if isinstance(datum, _IndexedProductValue) and datum.diagram is self.diagram else false
+        return (
+            true
+            if isinstance(datum, _IndexedProductValue) and datum.diagram is self.diagram
+            else false
+        )
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -129,7 +160,12 @@ class _IndexedCoproductRule:
         self.diagram = diagram
 
     def __call__(self, datum: Hashable) -> Proposition:
-        return true if isinstance(datum, _IndexedCoproductValue) and datum.diagram is self.diagram else false
+        return (
+            true
+            if isinstance(datum, _IndexedCoproductValue)
+            and datum.diagram is self.diagram
+            else false
+        )
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -148,13 +184,22 @@ class _SequentialColimitRule:
         self.diagram = diagram
 
     def __call__(self, datum: Hashable) -> Proposition:
-        return true if isinstance(datum, _SequentialColimitValue) and datum.diagram is self.diagram else false
+        return (
+            true
+            if isinstance(datum, _SequentialColimitValue)
+            and datum.diagram is self.diagram
+            else false
+        )
 
 
 class _PredicateRule:
     """The subset ``{x in X : P(x)}``, retaining its ambient set and predicate."""
 
-    def __init__(self, ambient: SetsCategory.ObjectType, predicate: Callable[[SetsCategory.ElementType], Proposition]) -> None:
+    def __init__(
+        self,
+        ambient: SetsCategory.ObjectType,
+        predicate: Callable[[SetsCategory.ElementType], Proposition],
+    ) -> None:
         self.ambient, self.predicate = ambient, predicate
 
     def __call__(self, datum: Hashable) -> Proposition:
@@ -171,7 +216,9 @@ def _finite_data(value: SetsCategory.ObjectType) -> tuple[Hashable, ...] | Unkno
         points = Sets.finite_points(presentation.ambient)
         if points is Unknown:
             return Unknown
-        decisions = tuple((point, ask(presentation.predicate(point))) for point in points)
+        decisions = tuple(
+            (point, ask(presentation.predicate(point))) for point in points
+        )
         if any(decision is Unknown for _, decision in decisions):
             return Unknown
         return tuple(point.datum() for point, decision in decisions if decision is True)
@@ -231,7 +278,9 @@ def _form_of(value: SetsCategory.ObjectType) -> ObjectForm | None:
     return _object_forms[value] if value in _object_forms else None
 
 
-def _composed_form(second: SetsCategory.MorphismType, first: SetsCategory.MorphismType) -> MapForm | None:
+def _composed_form(
+    second: SetsCategory.MorphismType, first: SetsCategory.MorphismType
+) -> MapForm | None:
     if second._form is None or first._form is None:
         return None
     return second._form.compose(first._form)
@@ -295,10 +344,14 @@ def _evaluation(action: MapData | _SetMap, rule: Lambda | None) -> Map:
 
 
 def _constant_rule(source: SetsCategory.ObjectType, datum: Hashable) -> Lambda | None:
-    return Lambda((_structure(source),), sympify(datum)) if _sympifiable(datum) else None
+    return (
+        Lambda((_structure(source),), sympify(datum)) if _sympifiable(datum) else None
+    )
 
 
-def _composed_rule(second: SetsCategory.MorphismType, first: SetsCategory.MorphismType) -> Lambda | None:
+def _composed_rule(
+    second: SetsCategory.MorphismType, first: SetsCategory.MorphismType
+) -> Lambda | None:
     """``g ∘ f`` symbolically: ``g``'s form applied to ``f``'s expression, or a constant when ``g`` leaves a one-point set."""
     if first._symbolic is None:
         return None
@@ -308,7 +361,11 @@ def _composed_rule(second: SetsCategory.MorphismType, first: SetsCategory.Morphi
     presentation = source.set_presentation()
     if isinstance(presentation, tuple) and len(presentation) == 1:
         value = second._action(presentation[0])
-        return Lambda(first._symbolic.signature, sympify(value)) if _sympifiable(value) else None
+        return (
+            Lambda(first._symbolic.signature, sympify(value))
+            if _sympifiable(value)
+            else None
+        )
     return None
 
 
@@ -331,15 +388,33 @@ def _samples(value: SetsCategory.ObjectType) -> Iterator[Hashable]:
     if values is not Unknown:
         return iter(values)
     if isinstance(presentation, _ProductRule):
-        return islice(cartesian_product(*(tuple(_samples(factor)) for factor in presentation.factors)), 64)
+        return islice(
+            cartesian_product(
+                *(tuple(_samples(factor)) for factor in presentation.factors)
+            ),
+            64,
+        )
     if isinstance(presentation, _PredicateRule):
-        return (datum for datum in _samples(presentation.ambient) if ask(presentation(datum)) is True)
-    return (candidate for candidate in range(-2, 3) if ask(presentation(candidate)) is True)
+        return (
+            datum
+            for datum in _samples(presentation.ambient)
+            if ask(presentation(datum)) is True
+        )
+    return (
+        candidate for candidate in range(-2, 3) if ask(presentation(candidate)) is True
+    )
 
 
-def _separated(domain: SetsCategory.ObjectType, first: SetsCategory.MorphismType, second: SetsCategory.MorphismType) -> bool:
+def _separated(
+    domain: SetsCategory.ObjectType,
+    first: SetsCategory.MorphismType,
+    second: SetsCategory.MorphismType,
+) -> bool:
     """Whether some sample datum of the domain has different images under the two maps."""
-    return any(not _equal_datum(first._action(sample), second._action(sample)) for sample in _samples(domain))
+    return any(
+        not _equal_datum(first._action(sample), second._action(sample))
+        for sample in _samples(domain)
+    )
 
 
 def _representative(values: tuple[Hashable, ...], datum: Hashable) -> Hashable:
@@ -389,15 +464,23 @@ class SetsCategory(Category[[Map], []]):
                 return _representative(presentation, datum)
             if isinstance(presentation, _IndexedProductRule):
                 if isinstance(datum, _IndexedProductValue):
-                    assert datum.diagram is presentation.diagram, "indexed family belongs to another product"
+                    assert datum.diagram is presentation.diagram, (
+                        "indexed family belongs to another product"
+                    )
                     return datum
-                assert callable(datum), "an indexed product point requires a component rule"
+                assert callable(datum), (
+                    "an indexed product point requires a component rule"
+                )
                 return _IndexedProductValue(presentation.diagram, datum)
             if isinstance(presentation, _IndexedCoproductRule):
                 if isinstance(datum, _IndexedCoproductValue):
-                    assert datum.diagram is presentation.diagram, "tagged value belongs to another coproduct"
+                    assert datum.diagram is presentation.diagram, (
+                        "tagged value belongs to another coproduct"
+                    )
                     return datum
-                assert isinstance(datum, tuple) and len(datum) == 2, "an indexed coproduct point requires one index and one value"
+                assert isinstance(datum, tuple) and len(datum) == 2, (
+                    "an indexed coproduct point requires one index and one value"
+                )
                 index, value = datum
                 shape = presentation.diagram.domain()
                 vertex = shape.object_at(shape.object_set().point(index))
@@ -408,9 +491,13 @@ class SetsCategory(Category[[Map], []]):
                 )
             if isinstance(presentation, _SequentialColimitRule):
                 if isinstance(datum, _SequentialColimitValue):
-                    assert datum.diagram is presentation.diagram, "representative belongs to another sequential colimit"
+                    assert datum.diagram is presentation.diagram, (
+                        "representative belongs to another sequential colimit"
+                    )
                     return datum
-                assert isinstance(datum, tuple) and len(datum) == 2, "a sequential colimit point requires one stage and one value"
+                assert isinstance(datum, tuple) and len(datum) == 2, (
+                    "a sequential colimit point requires one stage and one value"
+                )
                 stage, value = datum
                 shape = presentation.diagram.domain()
                 vertex = shape.object_at(shape.object_set().point(stage))
@@ -436,7 +523,9 @@ class SetsCategory(Category[[Map], []]):
         def __contains__(self, point: CategoryOfCategories.ElementType) -> bool:
             return ask(self.membership_proposition(point)) is True
 
-        def membership_proposition(self, point: CategoryOfCategories.ElementType) -> Proposition:
+        def membership_proposition(
+            self, point: CategoryOfCategories.ElementType
+        ) -> Proposition:
             return set_membership(self, point)
 
         def __repr__(self) -> str:
@@ -452,7 +541,11 @@ class SetsCategory(Category[[Map], []]):
     class MorphismType:
         def __init__(self, data: Map | _SetMap) -> None:
             if isinstance(data, _SetMap):
-                self._action, self._symbolic, self._form = data.action, data.rule, data.form
+                self._action, self._symbolic, self._form = (
+                    data.action,
+                    data.rule,
+                    data.form,
+                )
             else:
                 self._action, self._symbolic, self._form = data, None, None
 
@@ -472,7 +565,9 @@ class SetsCategory(Category[[Map], []]):
         second: SetsCategory.ObjectType,
         assumptions: Proposition,
     ) -> bool | None:
-        if not isinstance(first.set_presentation(), tuple) or not isinstance(second.set_presentation(), tuple):
+        if not isinstance(first.set_presentation(), tuple) or not isinstance(
+            second.set_presentation(), tuple
+        ):
             return None
         return len(first) == len(second) and all(
             any(_equal_datum(a, b) for b in second._values) for a in first._values
@@ -484,7 +579,10 @@ class SetsCategory(Category[[Map], []]):
         second: SetsCategory.MorphismType,
         assumptions: Proposition,
     ) -> bool | None:
-        if first.domain() is not second.domain() or first.codomain() is not second.codomain():
+        if (
+            first.domain() is not second.domain()
+            or first.codomain() is not second.codomain()
+        ):
             return False
         domain = first.domain()
         if first._form is not None and second._form is not None:
@@ -499,7 +597,10 @@ class SetsCategory(Category[[Map], []]):
         if domain in _enumerations:
             points = self.finite_points(domain)
             if points is not Unknown:
-                return sympy_ask(conjunction(first(point) == second(point) for point in points), assumptions)
+                return sympy_ask(
+                    conjunction(first(point) == second(point) for point in points),
+                    assumptions,
+                )
         if first._symbolic is not None and second._symbolic is not None:
             argument = _structure(domain)
             if _identically_zero(first._symbolic(argument), second._symbolic(argument)):
@@ -517,7 +618,9 @@ class SetsCategory(Category[[Map], []]):
         presentation = first.parent().set_presentation()
         if isinstance(presentation, _SequentialColimitRule):
             left, right = first.datum(), second.datum()
-            assert isinstance(left, _SequentialColimitValue) and isinstance(right, _SequentialColimitValue)
+            assert isinstance(left, _SequentialColimitValue) and isinstance(
+                right, _SequentialColimitValue
+            )
             common = max(left.stage, right.stage)
             shape = presentation.diagram.domain()
             common_vertex = shape.object_at(shape.object_set().point(common))
@@ -525,14 +628,18 @@ class SetsCategory(Category[[Map], []]):
             def image(representative: _SequentialColimitValue) -> Hashable:
                 source = shape.object_at(shape.object_set().point(representative.stage))
                 transition = Mor(shape)(source, common_vertex)()
-                return presentation.diagram.on_morphism(transition)._action(representative.value)
+                return presentation.diagram.on_morphism(transition)._action(
+                    representative.value
+                )
 
             return True if _equal_datum(image(left), image(right)) else None
         return _equal_datum(first.datum(), second.datum())
 
     # -- monomorphisms, epimorphisms, isomorphisms (``specs/sets.md``, "Morphisms") ------------
 
-    def _injective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
+    def _injective(
+        self, arrow: SetsCategory.MorphismType, assumptions: Proposition
+    ) -> bool | None:
         """Monic: no two points identified, read off the table, a separating pair of samples, or the solved inverse."""
         if isinstance(arrow.domain().set_presentation(), tuple):
             from sage_categories.engines import finite_sets
@@ -540,35 +647,66 @@ class SetsCategory(Category[[Map], []]):
             return finite_sets.is_monomorphism(arrow)
         samples = tuple(islice(_samples(arrow.domain()), 16))
         images = tuple(arrow._action(sample) for sample in samples)
-        if any(_equal_datum(images[i], images[j]) for i in range(len(images)) for j in range(i)):
+        if any(
+            _equal_datum(images[i], images[j])
+            for i in range(len(images))
+            for j in range(i)
+        ):
             return False
         return self._symbolic_injective(arrow)
 
-    def _surjective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
+    def _surjective(
+        self, arrow: SetsCategory.MorphismType, assumptions: Proposition
+    ) -> bool | None:
         """Epic: every codomain point is a value, read off the tables or from the solved inverse."""
-        if isinstance(arrow.domain().set_presentation(), tuple) and isinstance(arrow.codomain().set_presentation(), tuple):
+        if isinstance(arrow.domain().set_presentation(), tuple) and isinstance(
+            arrow.codomain().set_presentation(), tuple
+        ):
             from sage_categories.engines import finite_sets
 
             return finite_sets.is_epimorphism(arrow)
         return self._symbolic_surjective(arrow)
 
-    def _bijective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
+    def _bijective(
+        self, arrow: SetsCategory.MorphismType, assumptions: Proposition
+    ) -> bool | None:
         if arrow._form is not None and arrow._form.inverse() is not None:
             return True
-        injective, surjective = self._injective(arrow, assumptions), self._surjective(arrow, assumptions)
-        return None if injective is None or surjective is None else injective and surjective
+        injective, surjective = (
+            self._injective(arrow, assumptions),
+            self._surjective(arrow, assumptions),
+        )
+        return (
+            None
+            if injective is None or surjective is None
+            else injective and surjective
+        )
 
     def _symbolic_injective(self, arrow: SetsCategory.MorphismType) -> bool | None:
         """``f(x) = f(y)`` has only the solution ``y = x``: solved symbolically for a map out of a rule-defined set."""
-        if arrow._symbolic is None or isinstance(arrow.domain().set_presentation(), tuple):
+        if arrow._symbolic is None or isinstance(
+            arrow.domain().set_presentation(), tuple
+        ):
             return None
         first, second = _structure(arrow.domain()), _structure(arrow.domain())
         unknowns = _flatten(second)
-        equations = [Eq(left, right) for left, right in zip(_flatten(arrow._symbolic(first)), _flatten(arrow._symbolic(second)))]
+        equations = [
+            Eq(left, right)
+            for left, right in zip(
+                _flatten(arrow._symbolic(first)), _flatten(arrow._symbolic(second))
+            )
+        ]
         solutions = solve(equations, list(unknowns), dict=True)
         if len(solutions) != 1 or set(solutions[0]) != set(unknowns):
             return None
-        return True if all(solutions[0][symbol] == original for symbol, original in zip(unknowns, _flatten(first))) else None
+        return (
+            True
+            if all(
+                solutions[0][symbol] == original
+                for symbol, original in zip(unknowns, _flatten(first))
+            )
+            else None
+        )
 
     def _symbolic_surjective(self, arrow: SetsCategory.MorphismType) -> bool | None:
         """A solved inverse makes the map epic; a codomain sample whose only preimage the domain rule rejects makes it not epic."""
@@ -579,22 +717,38 @@ class SetsCategory(Category[[Map], []]):
             return None
         target, formula = preimage
         for sample in islice(_samples(arrow.codomain()), 16):
-            candidate = formula.xreplace(dict(zip(_flatten(target), _flatten(sympify(sample)))))
+            candidate = formula.xreplace(
+                dict(zip(_flatten(target), _flatten(sympify(sample))))
+            )
             if sympy_ask(_datum_membership(arrow.domain(), candidate)) is False:
                 return False
         return None
 
     @cache
-    def _generic_preimage(self, arrow: SetsCategory.MorphismType) -> tuple[Basic, Basic] | None:
+    def _generic_preimage(
+        self, arrow: SetsCategory.MorphismType
+    ) -> tuple[Basic, Basic] | None:
         """The codomain structure ``a`` and the one symbolic preimage of ``a`` under a symbolic map, when solving gives exactly one."""
         domain, codomain = arrow.domain(), arrow.codomain()
-        if arrow._symbolic is None or isinstance(domain.set_presentation(), tuple) or isinstance(codomain.set_presentation(), tuple):
+        if (
+            arrow._symbolic is None
+            or isinstance(domain.set_presentation(), tuple)
+            or isinstance(codomain.set_presentation(), tuple)
+        ):
             return None
         source, target = _structure(domain), _structure(codomain)
-        image, unknowns, targets = _flatten(arrow._symbolic(source)), _flatten(source), _flatten(target)
+        image, unknowns, targets = (
+            _flatten(arrow._symbolic(source)),
+            _flatten(source),
+            _flatten(target),
+        )
         if len(image) != len(targets):
             return None
-        solutions = solve([Eq(left, right) for left, right in zip(image, targets)], list(unknowns), dict=True)
+        solutions = solve(
+            [Eq(left, right) for left, right in zip(image, targets)],
+            list(unknowns),
+            dict=True,
+        )
         if len(solutions) != 1 or set(solutions[0]) != set(unknowns):
             return None
         return target, source.xreplace(solutions[0])
@@ -612,10 +766,15 @@ class SetsCategory(Category[[Map], []]):
         if preimage is None:
             return None
         target, formula = preimage
-        admitted = sympy_ask(_datum_membership(arrow.domain(), formula), _datum_membership(arrow.codomain(), target))
+        admitted = sympy_ask(
+            _datum_membership(arrow.domain(), formula),
+            _datum_membership(arrow.codomain(), target),
+        )
         return Lambda((target,), formula) if admitted is True else None
 
-    def inverse_morphism(self, morphism: SetsCategory.MorphismType) -> SetsCategory.MorphismType:
+    def inverse_morphism(
+        self, morphism: SetsCategory.MorphismType
+    ) -> SetsCategory.MorphismType:
         """The inverse of a bijection: the table read backwards, or the solved inverse rule of a symbolic map."""
         if self.retained_inverse(morphism) is None:
             domain, codomain = morphism.domain(), morphism.codomain()
@@ -623,16 +782,28 @@ class SetsCategory(Category[[Map], []]):
             if inverse_form is not None:
                 self.retain_inverses(
                     morphism,
-                    self.MorphismType(domain=codomain, codomain=domain, data=_SetMap(inverse_form.evaluate, None, inverse_form)),
+                    self.MorphismType(
+                        domain=codomain,
+                        codomain=domain,
+                        data=_SetMap(inverse_form.evaluate, None, inverse_form),
+                    ),
                 )
-            elif isinstance(domain.set_presentation(), tuple) and isinstance(codomain.set_presentation(), tuple) and self._bijective(morphism, true) is True:
+            elif (
+                isinstance(domain.set_presentation(), tuple)
+                and isinstance(codomain.set_presentation(), tuple)
+                and self._bijective(morphism, true) is True
+            ):
                 from sage_categories.engines import finite_sets
 
                 self.retain_inverses(morphism, finite_sets.inverse_morphism(morphism))
             elif (rule := self._solved_inverse(morphism)) is not None:
                 self.retain_inverses(
                     morphism,
-                    self.MorphismType(domain=codomain, codomain=domain, data=_SetMap(lambda datum: _plain(rule(datum)), rule)),
+                    self.MorphismType(
+                        domain=codomain,
+                        codomain=domain,
+                        data=_SetMap(lambda datum: _plain(rule(datum)), rule),
+                    ),
                 )
         return super().inverse_morphism(morphism)
 
@@ -642,7 +813,9 @@ class SetsCategory(Category[[Map], []]):
     @overload
     def __call__(self, values: Iterable[Hashable]) -> SetsCategory.ObjectType: ...
 
-    def __call__(self, values: Iterable[Hashable] | None = None) -> SetsCategory | SetsCategory.ObjectType:
+    def __call__(
+        self, values: Iterable[Hashable] | None = None
+    ) -> SetsCategory | SetsCategory.ObjectType:
         if values is None:
             return self
         return self.ObjectType(tuple(dict.fromkeys(values)))
@@ -655,7 +828,9 @@ class SetsCategory(Category[[Map], []]):
         """Whether this set has a supplied enumeration or an ordered finite presentation."""
         return self.chosen_enumeration(value) is not Unknown
 
-    def chosen_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass:
+    def chosen_enumeration(
+        self, value: SetsCategory.ObjectType
+    ) -> MorphismCategory.ObjectType | UnknownClass:
         """The retained isomorphism ``e: I -> X`` for the supplied enumeration of ``X``."""
         if value in _enumerations:
             return _enumerations[value]
@@ -667,7 +842,9 @@ class SetsCategory(Category[[Map], []]):
                     return self._product_enumeration(diagram)
         return self._finite_enumeration(value)
 
-    def _finite_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass:
+    def _finite_enumeration(
+        self, value: SetsCategory.ObjectType
+    ) -> MorphismCategory.ObjectType | UnknownClass:
         """Index the defining finite list by ``{1, ..., n}``."""
         if value in _enumerations:
             return _enumerations[value]
@@ -677,12 +854,16 @@ class SetsCategory(Category[[Map], []]):
         indices = self(range(1, len(values) + 1))
         enumeration = Mor(self)(indices, value)(lambda index: values[int(index) - 1])
         positions = {datum: index for index, datum in enumerate(values, start=1)}
-        inverse = Mor(self)(value, indices)(lambda datum: positions[value.representative(datum)])
+        inverse = Mor(self)(value, indices)(
+            lambda datum: positions[value.representative(datum)]
+        )
         self.retain_inverses(enumeration, inverse)
         _enumerations[value] = enumeration
         return enumeration
 
-    def _product_enumeration(self, diagram: Functor) -> MorphismCategory.ObjectType | UnknownClass:
+    def _product_enumeration(
+        self, diagram: Functor
+    ) -> MorphismCategory.ObjectType | UnknownClass:
         """``(prod_i e_i) * c``, with ``c`` the finite enumeration of ``prod_i I_i``."""
         from sage_categories.cat.finite_categories import finite_objects
 
@@ -690,28 +871,38 @@ class SetsCategory(Category[[Map], []]):
         vertices = finite_objects(shape)
         if vertices is Unknown:
             return Unknown
-        enumerations: dict[CategoryOfCategories.ElementType, MorphismCategory.ObjectType] = {}
+        enumerations: dict[
+            CategoryOfCategories.ElementType, MorphismCategory.ObjectType
+        ] = {}
         for vertex in vertices:
             enumeration = self.chosen_enumeration(diagram.on_object(vertex))
             if enumeration is Unknown:
                 return Unknown
             enumerations[vertex] = enumeration
-        indices = Fun(shape, self).from_object_rule(lambda vertex: enumerations[vertex].domain())
+        indices = Fun(shape, self).from_object_rule(
+            lambda vertex: enumerations[vertex].domain()
+        )
         family = self.Limits(shape)
         limit = family.limit_functor()
         index_product = limit.on_object(indices)
         index_enumeration = self._finite_enumeration(index_product)
         if index_enumeration is Unknown:
             return Unknown
-        forward = Mor(Fun(shape, self))(indices, diagram)(lambda vertex: enumerations[vertex])
-        backward = Mor(Fun(shape, self))(diagram, indices)(lambda vertex: enumerations[vertex].inverse())
+        forward = Mor(Fun(shape, self))(indices, diagram)(
+            lambda vertex: enumerations[vertex]
+        )
+        backward = Mor(Fun(shape, self))(diagram, indices)(
+            lambda vertex: enumerations[vertex].inverse()
+        )
         enumeration = limit.on_morphism(forward) * index_enumeration
         inverse = index_enumeration.inverse() * limit.on_morphism(backward)
         self.retain_inverses(enumeration, inverse)
         _enumerations[enumeration.codomain()] = enumeration
         return enumeration
 
-    def finite_points(self, value: SetsCategory.ObjectType) -> tuple[SetsCategory.ElementType, ...] | UnknownClass:
+    def finite_points(
+        self, value: SetsCategory.ObjectType
+    ) -> tuple[SetsCategory.ElementType, ...] | UnknownClass:
         """The points listed by a chosen enumeration with a finite presented index set."""
         enumeration = self.chosen_enumeration(value)
         if enumeration is Unknown:
@@ -720,15 +911,21 @@ class SetsCategory(Category[[Map], []]):
             return Unknown
         return tuple(enumeration(index) for index in enumeration.domain())
 
-    def enumeration_index_inclusion(self, enumeration: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+    def enumeration_index_inclusion(
+        self, enumeration: MorphismCategory.ObjectType
+    ) -> MorphismCategory.ObjectType:
         """The retained inclusion of the enumeration's positive index set into ``NN``."""
         if enumeration not in _enumeration_indices:
             assert enumeration in Mor(self).Isomorphisms()
-            _enumeration_indices[enumeration] = Mor(self)(enumeration.domain(), NN).Monomorphisms()(lambda index: index)
+            _enumeration_indices[enumeration] = Mor(self)(
+                enumeration.domain(), NN
+            ).Monomorphisms()(lambda index: index)
         return _enumeration_indices[enumeration]
 
     def retain_enumeration(
-        self, enumeration: MorphismCategory.ObjectType, inclusion: MorphismCategory.ObjectType
+        self,
+        enumeration: MorphismCategory.ObjectType,
+        inclusion: MorphismCategory.ObjectType,
     ) -> None:
         """Retain a supplied enumeration and the inclusion of its index set into ``NN``."""
         assert enumeration in Mor(self).Isomorphisms()
@@ -736,18 +933,30 @@ class SetsCategory(Category[[Map], []]):
         assert inclusion.domain() is enumeration.domain() and inclusion.codomain() is NN
         value = enumeration.codomain()
         if value in _enumerations:
-            assert _enumerations[value] is enumeration, "this set already has a different chosen enumeration"
+            assert _enumerations[value] is enumeration, (
+                "this set already has a different chosen enumeration"
+            )
         _enumerations[value] = enumeration
         _enumeration_indices[enumeration] = inclusion
 
-    def constant(self, source: SetsCategory.ObjectType, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
+    def constant(
+        self, source: SetsCategory.ObjectType, point: SetsCategory.ElementType
+    ) -> SetsCategory.MorphismType:
         """The total constant map with the supplied value; at a presented target's zero it is the zero map."""
         source_form, target_form = _form_of(source), _form_of(point.parent())
         form = None
-        if source_form is not None and target_form is not None and _equal_datum(point.datum(), target_form.zero_datum()):
+        if (
+            source_form is not None
+            and target_form is not None
+            and _equal_datum(point.datum(), target_form.zero_datum())
+        ):
             form = target_form.zero_map(source_form)
         return self.MorphismType(
-            domain=source, codomain=point.parent(), data=_SetMap(lambda datum: point.datum(), _constant_rule(source, point.datum()), form)
+            domain=source,
+            codomain=point.parent(),
+            data=_SetMap(
+                lambda datum: point.datum(), _constant_rule(source, point.datum()), form
+            ),
         )
 
     def retain_form(self, value: SetsCategory.ObjectType, form: ObjectForm) -> None:
@@ -776,7 +985,9 @@ class SetsCategory(Category[[Map], []]):
     def Terminal(self) -> SetsCategory.ObjectType:
         return self(((),))
 
-    def point_morphism(self, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
+    def point_morphism(
+        self, point: SetsCategory.ElementType
+    ) -> SetsCategory.MorphismType:
         """The constant map ``1 -> X`` at a point of ``X``."""
         return self.constant(self.Terminal(), point)
 
@@ -793,24 +1004,48 @@ class SetsCategory(Category[[Map], []]):
         action: MapData | _SetMap,
     ) -> MorphismCategory.ObjectType:
         """The map with this rule: tabulated over an enumerated domain, evaluated by its rule otherwise, with its symbolic or engine form retained."""
-        form = action.form if isinstance(action, _SetMap) else action if isinstance(action, MapForm) else None
+        form = (
+            action.form
+            if isinstance(action, _SetMap)
+            else action
+            if isinstance(action, MapForm)
+            else None
+        )
         rule = _symbolic_rule(action)
-        evaluate = form.evaluate if form is not None and not isinstance(action, _SetMap) else _evaluation(action, rule)
+        evaluate = (
+            form.evaluate
+            if form is not None and not isinstance(action, _SetMap)
+            else _evaluation(action, rule)
+        )
         if not isinstance(source.set_presentation(), tuple):
             # A rule needs no enumeration (``specs/sets.md``, "Morphisms").
-            return self.MorphismType(domain=source, codomain=target, data=_SetMap(lambda datum: target.representative(evaluate(datum)), rule, form))
-        table = {value: target.representative(evaluate(value)) for value in source._values}
+            return self.MorphismType(
+                domain=source,
+                codomain=target,
+                data=_SetMap(
+                    lambda datum: target.representative(evaluate(datum)), rule, form
+                ),
+            )
+        table = {
+            value: target.representative(evaluate(value)) for value in source._values
+        }
         if len(table) == 1:
             value = next(iter(table.values()))
             rule = rule if rule is not None else _constant_rule(source, value)
-        return self.MorphismType(domain=source, codomain=target, data=_SetMap(table.__getitem__, rule, form))
+        return self.MorphismType(
+            domain=source, codomain=target, data=_SetMap(table.__getitem__, rule, form)
+        )
 
     def construct_identity(
         self, value: CategoryOfCategories.ElementType
     ) -> MorphismCategory.ObjectType:
         structure, object_form = _structure(value), _form_of(value)
         form = None if object_form is None else object_form.identity()
-        return self.MorphismType(domain=value, codomain=value, data=_SetMap(lambda datum: datum, Lambda((structure,), structure), form))
+        return self.MorphismType(
+            domain=value,
+            codomain=value,
+            data=_SetMap(lambda datum: datum, Lambda((structure,), structure), form),
+        )
 
     def composite(
         self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType
@@ -818,7 +1053,11 @@ class SetsCategory(Category[[Map], []]):
         return self.MorphismType(
             domain=first.domain(),
             codomain=second.codomain(),
-            data=_SetMap(lambda value: second._action(first._action(value)), _composed_rule(second, first), _composed_form(second, first)),
+            data=_SetMap(
+                lambda value: second._action(first._action(value)),
+                _composed_rule(second, first),
+                _composed_form(second, first),
+            ),
         )
 
     def limit_construction(
@@ -879,7 +1118,9 @@ class SetsCategory(Category[[Map], []]):
                 product_form = None
         position = {id(vertex): index for index, vertex in enumerate(vertices)}
 
-        def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def leg(
+            vertex: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             index = position[id(vertex)]
             structure = _structure(apex)
             symbolic = Lambda((structure,), structure[index])
@@ -888,7 +1129,9 @@ class SetsCategory(Category[[Map], []]):
                 _SetMap(lambda value: value[index], symbolic, form)
             )
 
-        def lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def lift(
+            candidate: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             components = tuple(candidate.component(vertex) for vertex in vertices)
             source = cone_apex(candidate)
             structure = _structure(source)
@@ -896,7 +1139,9 @@ class SetsCategory(Category[[Map], []]):
             if all(component._symbolic is not None for component in components):
                 symbolic = Lambda(
                     (structure,),
-                    Tuple(*(component._symbolic(structure) for component in components)),
+                    Tuple(
+                        *(component._symbolic(structure) for component in components)
+                    ),
                 )
             source_form = _form_of(source)
             component_forms = tuple(component._form for component in components)
@@ -904,12 +1149,16 @@ class SetsCategory(Category[[Map], []]):
             if (
                 product_form is not None
                 and source_form is not None
-                and all(component_form is not None for component_form in component_forms)
+                and all(
+                    component_form is not None for component_form in component_forms
+                )
             ):
                 form = source_form.pair(component_forms, product_form)
             return Mor(self)(source, apex)(
                 _SetMap(
-                    lambda value: tuple(component._action(value) for component in components),
+                    lambda value: tuple(
+                        component._action(value) for component in components
+                    ),
                     symbolic,
                     form,
                 )
@@ -924,17 +1173,23 @@ class SetsCategory(Category[[Map], []]):
         shape = diagram.domain()
         apex = self.from_membership(_IndexedProductRule(diagram))
 
-        def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def leg(
+            vertex: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             return Mor(self)(apex, diagram.on_object(vertex))(
                 lambda family: family.component(vertex)
             )
 
-        def lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def lift(
+            candidate: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             source = cone_apex(candidate)
             return Mor(self)(source, apex)(
                 lambda value: _IndexedProductValue(
                     diagram,
-                    lambda index: candidate.component(shape.object_at(shape.object_set().point(index)))._action(value),
+                    lambda index: candidate.component(
+                        shape.object_at(shape.object_set().point(index))
+                    )._action(value),
                 )
             )
 
@@ -964,13 +1219,17 @@ class SetsCategory(Category[[Map], []]):
         assert shape is omega
         apex = self.from_membership(_SequentialColimitRule(diagram))
 
-        def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def leg(
+            vertex: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             stage = vertex.point().datum()
             return Mor(self)(diagram.on_object(vertex), apex)(
                 lambda value: _SequentialColimitValue(diagram, stage, value)
             )
 
-        def descent(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def descent(
+            candidate: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             target = cocone_apex(candidate)
 
             def evaluate(representative: _SequentialColimitValue) -> Hashable:
@@ -988,13 +1247,17 @@ class SetsCategory(Category[[Map], []]):
         shape = diagram.domain()
         apex = self.from_membership(_IndexedCoproductRule(diagram))
 
-        def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def leg(
+            vertex: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             index = vertex.point().datum()
             return Mor(self)(diagram.on_object(vertex), apex)(
                 lambda value: _IndexedCoproductValue(diagram, index, value)
             )
 
-        def descent(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def descent(
+            candidate: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             target = cocone_apex(candidate)
 
             def evaluate(tagged: _IndexedCoproductValue) -> Hashable:
@@ -1016,7 +1279,9 @@ class SetsCategory(Category[[Map], []]):
             finite_shape = finite_category(shape)
             if finite_shape is Unknown:
                 return self._indexed_coproduct(diagram)
-            summands = tuple(diagram.on_object(vertex) for vertex in finite_shape.objects)
+            summands = tuple(
+                diagram.on_object(vertex) for vertex in finite_shape.objects
+            )
             if any(_finite_data(summand) is Unknown for summand in summands):
                 return self._indexed_coproduct(diagram)
         return finite_sets.primitive_colimit(diagram)
@@ -1048,11 +1313,16 @@ class SetsCategory(Category[[Map], []]):
         return finite_sets.hom_morphisms(source, target)
 
 
-def _finite_presentation(value: SetsCategory.ObjectType, assumptions: Proposition) -> bool | None:
+def _finite_presentation(
+    value: SetsCategory.ObjectType, assumptions: Proposition
+) -> bool | None:
     presentation = value.set_presentation()
     if isinstance(presentation, tuple):
         return True
-    if isinstance(presentation, _PredicateRule) and sympy_ask(finite_set(presentation.ambient), assumptions) is True:
+    if (
+        isinstance(presentation, _PredicateRule)
+        and sympy_ask(finite_set(presentation.ambient), assumptions) is True
+    ):
         return True
     if value in _enumerations:
         index_presentation = _enumerations[value].domain().set_presentation()
@@ -1072,7 +1342,9 @@ def _set_member(
         return True
     presentation = value.set_presentation()
     if isinstance(presentation, _PredicateRule):
-        ambient_membership = sympy_ask(_datum_membership(presentation.ambient, point.datum()), assumptions)
+        ambient_membership = sympy_ask(
+            _datum_membership(presentation.ambient, point.datum()), assumptions
+        )
         if ambient_membership is not True:
             return ambient_membership
         ambient_point = presentation.ambient.point(point.datum())
@@ -1111,7 +1383,9 @@ register_handler(Mor(Sets).Epimorphisms().predicate(), Sets._surjective)
 register_handler(Mor(Sets).Isomorphisms().predicate(), Sets._bijective)
 
 
-def _finite_cartesian_comparison(operation: str, *arguments: object) -> MorphismCategory.ObjectType | None:
+def _finite_cartesian_comparison(
+    operation: str, *arguments: object
+) -> MorphismCategory.ObjectType | None:
     from sage_categories.engines import finite_sets
 
     if any(_finite_data(argument) is Unknown for argument in arguments):
@@ -1119,17 +1393,29 @@ def _finite_cartesian_comparison(operation: str, *arguments: object) -> Morphism
 
     match operation, arguments:
         case "associator_forward", (first, second, third, left, right):
-            return finite_sets.cartesian_associator(first, second, third, left, right, forward=True)
+            return finite_sets.cartesian_associator(
+                first, second, third, left, right, forward=True
+            )
         case "associator_inverse", (first, second, third, left, right):
-            return finite_sets.cartesian_associator(first, second, third, right, left, forward=False)
+            return finite_sets.cartesian_associator(
+                first, second, third, right, left, forward=False
+            )
         case "left_unitor_forward", (value, product):
-            return finite_sets.cartesian_left_unitor(value, product, value, forward=True)
+            return finite_sets.cartesian_left_unitor(
+                value, product, value, forward=True
+            )
         case "left_unitor_inverse", (value, product):
-            return finite_sets.cartesian_left_unitor(value, value, product, forward=False)
+            return finite_sets.cartesian_left_unitor(
+                value, value, product, forward=False
+            )
         case "right_unitor_forward", (value, product):
-            return finite_sets.cartesian_right_unitor(value, product, value, forward=True)
+            return finite_sets.cartesian_right_unitor(
+                value, product, value, forward=True
+            )
         case "right_unitor_inverse", (value, product):
-            return finite_sets.cartesian_right_unitor(value, value, product, forward=False)
+            return finite_sets.cartesian_right_unitor(
+                value, value, product, forward=False
+            )
     raise ValueError(f"unknown finite Cartesian comparison {operation!r}")
 
 

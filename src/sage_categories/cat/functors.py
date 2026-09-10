@@ -12,7 +12,6 @@ from sage_categories.cat.category import (
     Assignment,
     Category,
     CategoryOfCategories,
-    Decision,
     OnMorphism,
     OnObject,
     Predicate,
@@ -24,8 +23,17 @@ from sage_categories.cat.category import (
     is_subcategory,
     refine,
 )
-from sage_categories.cat.properties import Axiom
+from sage_categories.cat.morphisms import (
+    FixedEndpointCategory,
+    MorphismCategory,
+    endpoints,
+)
 from sage_categories.cat.predicates import conjunction, decide, register_handler
+from sage_categories.cat.properties import (
+    Axiom,
+    FixedEndpointProperty,
+    PropertySubcategory,
+)
 from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict
 
 __all__ = [
@@ -40,7 +48,9 @@ __all__ = [
 ]
 
 
-def identity_on_values(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+def identity_on_values(
+    value: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
     """The object and morphism action of every subcategory monomorphism: the identity on the shared values (POL-FUN-027)."""
     return value
 
@@ -65,7 +75,11 @@ def _defining_functor_equal(
     candidate_denotes = candidate._is_object() or candidate._is_morphism()
     if is_placed(first, Fun) and not is_placed(candidate, Fun) and candidate_denotes:
         return True if first is diagram_of(candidate) else None
-    if is_placed(candidate, Fun) and not is_placed(first, Fun) and (first._is_object() or first._is_morphism()):
+    if (
+        is_placed(candidate, Fun)
+        and not is_placed(first, Fun)
+        and (first._is_object() or first._is_morphism())
+    ):
         return True if candidate is diagram_of(first) else None
     return None
 
@@ -80,14 +94,12 @@ class NaturalTransformationData:
 
 
 Cat = _category.Cat
-Category = _category.Category
 Functor = Cat().MorphismType
 
-from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory, endpoints
-from sage_categories.cat.properties import FixedEndpointProperty, PropertySubcategory
 
-
-class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
+class ShapeIndexedFunctorProperty(
+    PropertySubcategory[[OnObject, OnMorphism], [Assignment]]
+):
     """``Fun.P(I)``: a property subcategory of ``Fun`` whose axiom takes a diagram shape (D107, D168, POL-FUN-039).
 
     The shape is the axiom's parameter, so the axiom retains one category per shape and
@@ -128,7 +140,9 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
     class MorphismType:
         """A natural transformation between two functors with the property."""
 
-    def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
+    def __call__(
+        self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism
+    ) -> Functor:
         """``Fun(S, T).P()(on_object, on_morphism)``, or ``Fun(S, T).P()()`` for the subcategory monomorphism.
 
         With no data the constructed functor is the identity on the values ``S`` and ``T``
@@ -167,9 +181,11 @@ def _construct_property_functor(
         functor = ambient(*args, **kwargs)
     else:
         functors = property_category.universe().morphism_category(1)
-        assert any(root is functors.Monomorphisms() for root in property_category.narrowing_roots()), (
-            f"{property_category!r} is not a monomorphism subcategory of Fun, so it requires "
-            f"object and morphism actions (D146, D162)"
+        assert any(
+            root is functors.Monomorphisms()
+            for root in property_category.narrowing_roots()
+        ), (
+            f"{property_category!r} is not a monomorphism subcategory of Fun, so it requires object and morphism actions (D146, D162)"
         )
         functor = functors.identity_on_values(ambient.domain(), ambient.codomain())
     refine(functor, property_category)
@@ -195,7 +211,9 @@ def _denotes_diagram_by_domain(
     if not isinstance(candidate, Cat().ElementType):
         return False
     if is_placed(candidate, functors.ambient()):
-        return sympy_ask(endpoints(candidate, functors.domain(), functors.codomain()), assumptions)
+        return sympy_ask(
+            endpoints(candidate, functors.domain(), functors.codomain()), assumptions
+        )
     if candidate._is_morphism() and functors.domain() is Cat().Simplex(1):
         # A morphism of ``C`` is an object of ``Mor(C)``, and the diagram it denotes is its
         # arrow functor ``[1] -> C``: this is how the objects of ``Fun([1], C)`` are the
@@ -206,7 +224,9 @@ def _denotes_diagram_by_domain(
         # placement, so the question there is containment in the codomain, not identity
         # (POL-CAT-068, POL-FUN-027): a set refined into ``Sets().Finite()`` is still a
         # diagram of shape ``1`` in ``Sets()``.
-        return functors.domain() is Cat().Terminal() and is_subcategory(candidate.parent(), functors.codomain())
+        return functors.domain() is Cat().Terminal() and is_subcategory(
+            candidate.parent(), functors.codomain()
+        )
     return False
 
 
@@ -228,7 +248,9 @@ def _denotes_functor_by_domain(
         return False
     if is_placed(candidate, functors):
         return True
-    return (candidate._is_object() or candidate._is_morphism()) and candidate.defining_morphism().domain() in Cat()
+    return (
+        candidate._is_object() or candidate._is_morphism()
+    ) and candidate.defining_morphism().domain() in Cat()
 
 
 class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
@@ -262,19 +284,25 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
     class MorphismType:
         """A natural transformation ``F => G``."""
 
-    def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
+    def __init__(
+        self, morphisms: MorphismCategory, domain: Category, codomain: Category
+    ) -> None:
         self._constant_values: MonoDict = MonoDict()
         self._finite_data: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 
-    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
+    def membership_proposition(
+        self, candidate: CategoryOfCategories.ElementType
+    ) -> Proposition:
         return denotes_diagram(candidate, self)
 
     def diagram(self, value: CategoryOfCategories.ElementType) -> Functor:
         """The functor ``I -> C`` that a value of this category denotes: its point for ``I = *``, else ``diagram_of``."""
         if is_placed(value, self.ambient()):
             return value
-        assert value in self, f"{value!r} is not a diagram of shape {self.domain()!r} in {self.codomain()!r}"
+        assert value in self, (
+            f"{value!r} is not a diagram of shape {self.domain()!r} in {self.codomain()!r}"
+        )
         if self.domain() is Cat().Terminal():
             return self.codomain().point_functor(value)
         if self.domain() is Cat().Simplex(1) and value._is_morphism():
@@ -292,13 +320,20 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         if self.domain() is walking_arrow:
             generator = walking_arrow.generator("0->1")
             first, second = assignment(walking_arrow(0)), assignment(walking_arrow(1))
-            square_source, square_target = self.diagram(source).on_morphism(generator), self.diagram(target).on_morphism(generator)
+            square_source, square_target = (
+                self.diagram(source).on_morphism(generator),
+                self.diagram(target).on_morphism(generator),
+            )
             assert ask(square_target * first == second * square_source) is not False, (
                 f"({first!r}, {second!r}) is not a commuting square from {square_source!r} to {square_target!r}"
             )
-        return Cat().construct_two_morphism(source, target, assignment, self.diagram(source), self.diagram(target))
+        return Cat().construct_two_morphism(
+            source, target, assignment, self.diagram(source), self.diagram(target)
+        )
 
-    def construct_identity(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation:
+    def construct_identity(
+        self, value: CategoryOfCategories.ElementType
+    ) -> NaturalTransformation:
         return Cat().identity_two_morphism(value)
 
     # -- diagrams (POL-FUN-029) -----------------------------------------------------
@@ -347,7 +382,9 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
 
     def constant_value(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         """The object at which a retained constant diagram is constant."""
-        assert diagram in self._constant_values, f"{diagram!r} is not a retained constant diagram"
+        assert diagram in self._constant_values, (
+            f"{diagram!r} is not a retained constant diagram"
+        )
         return self._constant_values[diagram]
 
     def from_object_rule(self, rule: OnObject) -> Functor:
@@ -362,10 +399,14 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         """For ``I = [1]``: the morphism set of ``C``, since the objects are the morphisms of ``C``."""
         assert self.domain() is Cat().Simplex(1), f"{self!r} declares no set of objects"
         morphisms = ask(self.codomain().morphism_set())
-        assert morphisms is not Unknown, f"{self.codomain()!r} chooses no finite set of morphisms"
+        assert morphisms is not Unknown, (
+            f"{self.codomain()!r} chooses no finite set of morphisms"
+        )
         return morphisms
 
-    def object_at(self, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+    def object_at(
+        self, point: CategoryOfCategories.ElementType
+    ) -> MorphismCategory.ObjectType:
         assert self.domain() is Cat().Simplex(1), f"{self!r} declares no set of objects"
         return self.codomain().morphism_at(point)
 
@@ -373,11 +414,16 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
         """For ``I = [1]``: the finite set of commuting squares, when ``C`` chooses a finite set of morphisms."""
         from sage_categories.cat.diagrams import square_set
 
-        if self.domain() is not Cat().Simplex(1) or ask(self.codomain().morphism_set()) is Unknown:
+        if (
+            self.domain() is not Cat().Simplex(1)
+            or ask(self.codomain().morphism_set()) is Unknown
+        ):
             return Unknown
         return square_set(self)
 
-    def morphism_at(self, point: CategoryOfCategories.ElementType) -> NaturalTransformation:
+    def morphism_at(
+        self, point: CategoryOfCategories.ElementType
+    ) -> NaturalTransformation:
         from sage_categories.cat.diagrams import square_at
 
         return square_at(self, point)
@@ -419,7 +465,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             self._source_functor = data.source
             self._target_functor = data.target
             self._components: MonoDict = MonoDict()
-            self._component_family = LazyFamily(self.source_functor().domain(), self._component_from_assignment)
+            self._component_family = LazyFamily(
+                self.source_functor().domain(), self._component_from_assignment
+            )
 
         def source_functor(self) -> Functor:
             return self._source_functor
@@ -427,19 +475,25 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         def target_functor(self) -> Functor:
             return self._target_functor
 
-        def _component_from_assignment(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def _component_from_assignment(
+            self, member_object: CategoryOfCategories.ElementType
+        ) -> MorphismCategory.ObjectType:
             if member_object in self._components:
                 return self._components[member_object]
             source, target = self.source_functor(), self.target_functor()
-            from sage_categories.engines import catlab
-
-            component = catlab.transformation_component(self, member_object)
-            expected = source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
-            assert component in expected, f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
+            component = self._assignment(member_object)
+            expected = source.codomain().morphism_category(1)(
+                source.on_object(member_object), target.on_object(member_object)
+            )
+            assert component in expected, (
+                f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
+            )
             self._components[member_object] = component
             return component
 
-        def component(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def component(
+            self, member_object: CategoryOfCategories.ElementType
+        ) -> MorphismCategory.ObjectType:
             """``eta_X: F(X) -> G(X)``, retained lazily as an indexed Sage family.
 
             The public declaration remains the rule ``X |-> eta_X``.  ``LazyFamily`` owns
@@ -466,7 +520,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             """``eta . F``: right whiskering by ``F`` (specs/functor.md)."""
             return Cat().whisker_right(self, functor)
 
-        def horizontal(self, transformation: NaturalTransformation) -> NaturalTransformation:
+        def horizontal(
+            self, transformation: NaturalTransformation
+        ) -> NaturalTransformation:
             """Horizontal composition ``transformation * self`` (specs/functor.md)."""
             return Cat().horizontal_composite(transformation, self)
 
@@ -492,7 +548,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
         return FunctorCategory
 
-    def __call__(self, shape: Category, target: Category | Functor) -> FunctorCategory | Functor:
+    def __call__(
+        self, shape: Category, target: Category | Functor
+    ) -> FunctorCategory | Functor:
         """``Fun(I, D)`` is the functor category; ``Fun(I, F)`` for a functor ``F: D -> E`` is ``(-) ** I`` applied to it.
 
         The exponential ``D ** I = Fun(I, D)`` is a functor in ``D``, so the second
@@ -504,12 +562,20 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return self.base_category().exponential_on_morphism(shape, target)
         return super().__call__(shape, target)
 
-    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
-        """A functor, or a point of a category with a category as domain denoting its defining functor (specs/functor.md, "The Mor(n, C) tower", specs/functor.md, "Slices and coslices")."""
+    def membership_proposition(
+        self, candidate: CategoryOfCategories.ElementType
+    ) -> Proposition:
+        """A functor, or a point whose category-domain denotes its defining functor.
+
+        See ``specs/functor.md``, "The Mor(n, C) tower" and
+        "Slices and coslices".
+        """
         return denotes_functor(candidate, self)
 
     # -- the functor property categories (POL-FUN-024) -----------------------------------
-    def _symbolic_inverse_(self, transformation: NaturalTransformation) -> NaturalTransformation:
+    def _symbolic_inverse_(
+        self, transformation: NaturalTransformation
+    ) -> NaturalTransformation:
         """The componentwise inverse of a natural transformation placed in ``Mor(Fun).Isomorphisms()``.
 
         A natural transformation is an isomorphism exactly when every component is
@@ -518,7 +584,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         inspected 2026-08-27), and its inverse has components ``(eta_X)⁻¹``.
         """
         source, target = transformation.domain(), transformation.codomain()
-        return self.morphism_category(1)(target, source).Isomorphisms()(lambda member_object: transformation.component(member_object).inverse())
+        return self.morphism_category(1)(target, source).Isomorphisms()(
+            lambda member_object: transformation.component(member_object).inverse()
+        )
 
     # -- the functor property categories (POL-FUN-024, POL-CAT-090, POL-FUN-039) ---------
 
@@ -604,7 +672,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         # A strict inverse supplies full faithfulness and lifts every isomorphism.
         isomorphisms = self.Isomorphisms()
         for containing in (self.Equivalences(), self.Isofibrations()):
-            isomorphisms._retain_structure_functor(self.full_subcategory_monomorphism(isomorphisms, containing))
+            isomorphisms._retain_structure_functor(
+                self.full_subcategory_monomorphism(isomorphisms, containing)
+            )
 
     # -- subcategory monomorphisms (POL-FUN-027, POL-FUN-036) -----------------------------
     #
@@ -624,10 +694,14 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         """
         key = (source, target, self)
         if key not in self._shared_value_functors:
-            self._shared_value_functors[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
+            self._shared_value_functors[key] = self._base.construct_morphism(
+                source, target, identity_on_values, identity_on_values
+            )
         return self._shared_value_functors[key]
 
-    def _shared_value_functor(self, source: Category, target: Category, full: bool) -> Functor:
+    def _shared_value_functor(
+        self, source: Category, target: Category, full: bool
+    ) -> Functor:
         """The identity-on-values functor ``source -> target``, placed in the declared property.
 
         Until ``_bootstrap`` has finished, the property category to place it in does not
@@ -665,7 +739,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return False
         placement = functor.category()
         if placement not in self._inheriting:
-            self._inheriting[placement] = is_subcategory(placement, self.Isofibrations())
+            self._inheriting[placement] = is_subcategory(
+                placement, self.Isofibrations()
+            )
         return self._inheriting[placement]
 
     def declares_subcategory(self, functor: Functor) -> bool:
@@ -686,7 +762,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         placement = functor.category()
         if placement not in self._declaring:
             roots = placement.narrowing_roots()
-            self._declaring[placement] = any(root is self.Monomorphisms() for root in roots) and any(root is self.Isofibrations() for root in roots)
+            self._declaring[placement] = any(
+                root is self.Monomorphisms() for root in roots
+            ) and any(root is self.Isofibrations() for root in roots)
         return self._declaring[placement]
 
     def declares_point(self, functor: Functor) -> bool:
@@ -704,7 +782,10 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return False
         if functor.domain() is not self.base_category().Terminal():
             return False
-        return any(root is self.Monomorphisms() for root in functor.category().narrowing_roots())
+        return any(
+            root is self.Monomorphisms()
+            for root in functor.category().narrowing_roots()
+        )
 
     def _declared_subcategory(self, full: bool) -> Category:
         """``Fun.Monomorphisms().Isofibrations()``, with fullness for a full subcategory (POL-FUN-036)."""
@@ -715,7 +796,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         """The monomorphism presenting ``source`` as a subcategory of ``target``, identity on the shared values."""
         return self._shared_value_functor(source, target, False)
 
-    def full_subcategory_monomorphism(self, source: Category, target: Category) -> Functor:
+    def full_subcategory_monomorphism(
+        self, source: Category, target: Category
+    ) -> Functor:
         """The same for a full subcategory, which adds fullness (Mathlib ``ObjectProperty.ι``)."""
         return self._shared_value_functor(source, target, True)
 
@@ -751,25 +834,44 @@ NaturalTransformation = Fun.MorphismType
 Fun._bootstrap()
 
 
-def _finite_functor_equal(first: CategoryOfCategories.MorphismType, second: CategoryOfCategories.MorphismType, assumptions: Proposition) -> bool | None:
+def _finite_functor_equal(
+    first: CategoryOfCategories.MorphismType,
+    second: CategoryOfCategories.MorphismType,
+    assumptions: Proposition,
+) -> bool | None:
     """Extensional equality on a finite category, on objects and morphisms.
 
     Reference: Mathlib CategoryTheory.Functor.ext.
     """
     from sage_categories.cat.finite_categories import finite_category
 
-    if first.domain() is not second.domain() or first.codomain() is not second.codomain():
+    if (
+        first.domain() is not second.domain()
+        or first.codomain() is not second.codomain()
+    ):
         return None
     data = finite_category(first.domain())
     if data is Unknown:
         return None
-    return decide(conjunction((
-        *(first.on_object(x) == second.on_object(x) for x in data.objects),
-        *(first.on_morphism(f) == second.on_morphism(f) for f in data.morphisms),
-    )), assumptions)
+    return decide(
+        conjunction(
+            (
+                *(first.on_object(x) == second.on_object(x) for x in data.objects),
+                *(
+                    first.on_morphism(f) == second.on_morphism(f)
+                    for f in data.morphisms
+                ),
+            )
+        ),
+        assumptions,
+    )
 
 
-def _finite_transformation_equal(first: FunctorsCategory.MorphismType, second: FunctorsCategory.MorphismType, assumptions: Proposition) -> bool | None:
+def _finite_transformation_equal(
+    first: FunctorsCategory.MorphismType,
+    second: FunctorsCategory.MorphismType,
+    assumptions: Proposition,
+) -> bool | None:
     """Natural transformations are equal exactly when all components agree.
 
     Reference: Mathlib CategoryTheory.NatTrans.ext.
@@ -782,10 +884,16 @@ def _finite_transformation_equal(first: FunctorsCategory.MorphismType, second: F
     data = finite_category(source)
     if data is Unknown:
         return None
-    return decide(conjunction((
-        first.domain() == second.domain(), first.codomain() == second.codomain(),
-        *(first.component(x) == second.component(x) for x in data.objects),
-    )), assumptions)
+    return decide(
+        conjunction(
+            (
+                first.domain() == second.domain(),
+                first.codomain() == second.codomain(),
+                *(first.component(x) == second.component(x) for x in data.objects),
+            )
+        ),
+        assumptions,
+    )
 
 
 register_handler(denotes_diagram, _denotes_diagram_by_domain)
@@ -793,6 +901,8 @@ register_handler(denotes_functor, _denotes_functor_by_domain)
 register_handler(Cat().equality(), _defining_functor_equal)
 register_handler(Cat().equality(), _finite_functor_equal)
 register_handler(Cat().equality(), _finite_transformation_equal)
+
+
 # The two property subcategories of ``Cat()`` are constructed here, after ``Fun`` exists to
 # supply their subcategory monomorphisms.  ``Inhabited`` reads the exact case a category
 # owns, in the shape ``morphism_set()`` uses; ``Empty`` is its negation, the one route

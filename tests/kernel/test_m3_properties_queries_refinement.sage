@@ -49,9 +49,9 @@ class Tiny(Category):
 
         def evaluate(candidate: Tiny.ObjectType) -> Tiny.ObjectType:
             match candidate.value():
-                # Raw literal: the preparser must not rewrite a match pattern
-                # into a _sage_const_* name, which Python reads as a capture.
-                case 4r:
+                # Use a guard: Sage may preparse the numeral in the comparison,
+                # but the pattern itself remains ordinary Python match syntax.
+                case value if value == 4:
                     return self(2)
             return Unknown
 
@@ -63,9 +63,8 @@ class Tiny(Category):
 
 def _decide_special(candidate: Tiny.ObjectType, assumptions: Proposition) -> bool | None:
     match candidate.value():
-        # Raw literal: the preparser must not rewrite a match pattern into a
-        # _sage_const_* name, which Python reads as a capture.
-        case 99r:
+        # Keep numerals in guards so the preparser never rewrites a pattern.
+        case value if value == 99:
             return None
         case value if value >= 0:
             return True

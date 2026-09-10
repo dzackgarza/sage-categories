@@ -1429,7 +1429,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def on_object(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             """The image of an object of the domain, one value per object."""
-            return self._cached_object_image(member_object, self._construct_object_image)
+            return self._declared_object_image(member_object)
 
         def _retain_object_action_result(
             self,
@@ -1476,13 +1476,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def on_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             """The image of a morphism of the domain, one value per morphism."""
-            image = self._cached_morphism_image(morphism, self.on_object, self._construct_morphism_image)
-            return self._retain_isomorphism_image(
-                morphism,
-                image,
-                self.on_object,
-                self._construct_morphism_image,
-            )
+            return self._declared_morphism_image(morphism)
 
         def _retain_morphism_action_result(
             self,

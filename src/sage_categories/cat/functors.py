@@ -450,8 +450,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             assert member_object in self.source_functor().domain(), (
                 f"{member_object!r} is not an object of {self.source_functor().domain()!r}"
             )
-            functors = Fun(self.source_functor().domain(), self.source_functor().codomain())
-            return functors.evaluation(member_object).on_morphism(self)
+            return self._component_family[member_object]
 
         def op(self) -> NaturalTransformation:
             """Return the retained reversed transformation between opposite functors."""

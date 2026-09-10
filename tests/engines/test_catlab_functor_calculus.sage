@@ -1,7 +1,5 @@
 """Catlab executes functor and transformation composites over a nonfinite source."""
 
-from __future__ import annotations
-
 from sage_categories.all import Cat, Category, Fun, Mor
 from sage_categories.cat.category import is_placed
 from sage_categories.cat.native import (
@@ -60,9 +58,12 @@ first = affine_functor(SOURCE, MIDDLE, 1, 1)
 second = affine_functor(MIDDLE, TARGET, 2, 0)
 composite = second * first
 
-# No source-object enumeration exists.  Evaluation at an arbitrary object enters the
-# Catlab CompositeFunctor and returns the exact owned reconstruction in TARGET.
+# No source-object enumeration exists.  A primitive declaration executes its retained
+# Python action directly and stays non-native; evaluating the retained composite then
+# enters the Catlab CompositeFunctor and materializes exactly the native factors it uses.
 value = SOURCE(10**6)
+assert not has_native_functor(first)
+assert first.on_object(value).label() == 10**6 + 1
 assert not has_native_functor(first)
 assert composite.on_object(value).label() == 2 * (10**6 + 1)
 assert has_native_functor(first)
@@ -99,6 +100,10 @@ eta = Mor(Fun(SOURCE, TARGET))(parallel0, parallel1)(
 theta = Mor(Fun(SOURCE, TARGET))(parallel1, parallel2)(
     component_between(parallel1, parallel2, "theta")
 )
+assert not has_native_transformation(eta)
+primitive_component = eta.component(SOURCE(10**8))
+assert primitive_component.label() == "eta"
+assert not has_native_transformation(eta)
 vertical = theta * eta
 component = vertical.component(SOURCE(10**9))
 assert component.domain().label() == 10**9

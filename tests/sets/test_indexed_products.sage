@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from sympy import Q, pi, sqrt
 
 from sage_categories.all import NN, Fun, Mor, Sets

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from sympy import Q
 
 from sage_categories import omega

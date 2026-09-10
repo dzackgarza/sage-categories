@@ -46,10 +46,22 @@ Read historical observations at their stated revisions before relying on them.
 
 ## Independent reviewer dispatch cannot identify the current conversation
 
-- **User action and evidence:** On 2026-09-10, spawning the required read-only `r-gate` reviewer through `Chat_On_Steroids_Core2.agents` returned `UNIDENTIFIED_CALLER`: the app could not establish the current conversation as the prime agent. It explicitly reported that no workers were created, although repository reads and command execution were working.
-- **Impact and owner:** The repository's fixed-revision independent-review requirement remains unsatisfied by that call. No second writer or worktree was created. The installed local reviewer CLIs provide a separate execution path to test; their existence alone is not a completed review.
-- **Local dispatch evidence:** The read-only Codex attempt exited at the account usage limit before reading source. The configured `r-gate` Fable invocation likewise returned HTTP 429 before any model tokens or source reads. A subsequent Sonnet invocation of the same review role, restricted to `Read`, `Grep`, and `Glob` with no MCP servers or command/edit tools, began reading the fixed-revision diff and sources. The result of that review, rather than the existence of its process, determines acceptance. No credits were purchased, and no permissions were broadened.
-- **Related friction:** Several `write_stdin` calls on existing benign sessions were blocked with “couldn't determine the safety status of the request.” Retained process IDs and output files allowed the actual job result to be read without treating the blocked poll as a live job or restarting successful mathematical work.
+- **User action and evidence:** On 2026-09-10, spawning the required read-only `r-gate` reviewer through `Chat_On_Steroids_Core2.agents` returned `UNIDENTIFIED_CALLER`: the app could not establish the current conversation as the prime agent.
+  It explicitly reported that no workers were created, although repository reads and command execution were working.
+
+- **Impact and owner:** The repository's fixed-revision independent-review requirement remains unsatisfied by that call.
+  No second writer or worktree was created.
+  The installed local reviewer CLIs provide a separate execution path to test; their existence alone is not a completed review.
+
+- **Local dispatch evidence:** The read-only Codex attempt exited at the account usage limit before reading source.
+  The configured `r-gate` Fable invocation likewise returned HTTP 429 before any model tokens or source reads.
+  A subsequent Sonnet invocation of the same review role, restricted to `Read`, `Grep`, and `Glob` with no MCP servers or command/edit tools, began reading the fixed-revision diff and sources.
+  The result of that review, rather than the existence of its process, determines acceptance.
+  No credits were purchased, and no permissions were broadened.
+
+- **Related friction:** Several `write_stdin` calls on existing benign sessions were blocked with “couldn't determine the safety status of the request.”
+  Retained process IDs and output files allowed the actual job result to be read without treating the blocked poll as a live job or restarting successful mathematical work.
+
 - **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.
 
 ## Documented repository CLI entry points are not directly on PATH
@@ -76,7 +88,14 @@ Read historical observations at their stated revisions before relying on them.
 
 - **Mathematical need or user action:** Run the repository commit gate on a kernel refinement change in the tracked Sage/Python 3.14 environment with all workspace dependencies resolved exactly as declared by `pyproject.toml`.
 
-- **Current gate outcome:** With the native CLI binding repaired, all 81 Sage files pass syntax validation. `_mypy` then reproduces the existing public-registry lookup of `sage-categories-homotopy`; pointing `UV_FIND_LINKS` at the wheel built from this checkout resolves that lookup. The following tool-environment build fetches the Sage-stubs Sage submodule before any type-check result. The pending commit launcher was stopped to bank the loader correction under the active plan's narrowly recorded checkpoint exception. The hook also selected 41 Python files from the unpushed branch difference despite this being a `.sage`-only code change; its 23 formatting edits were checked AST-identical and restored, rather than silently adding unrelated source changes to the checkpoint. No static or mathematical acceptance follows from syntax validation.
+- **Next concrete blocker after provisioning:** The 2026-09-10 ordinary commit gate now reaches mypy 2.0.0 but stops parsing `sage-stubs/matrix/matrix_integer_dense.pyi:174` from the declared `sage-stubs` revision `d0aa14f52c60431c587bf49ae9a78fe62ba3d940`. That source contains six invalid `..` placeholders at lines 174, 180, 186, 187, 201, and 202, and `def LLL\(` at line 210. The corresponding Sage definitions are at `matrix_integer_dense.pyx:2250` (`saturation`), `:2599` (`frobenius_form`), and `:3078` (`LLL`); their stub placeholders must be `...`, and the method identifier has no backslash. The current upstream file was checked independently and contains the same defects. No project type-check result follows from this parser stop. Do not edit installed caches, suppress the dependency's imports, or classify this new failure as an established project baseline; preserve the repair at the dependency source under its own hook requirements. No external repository source or dependency pin was changed here.
+
+- **Current gate outcome:** With the native CLI binding repaired, all 81 Sage files pass syntax validation.
+  `_mypy` then reproduces the existing public-registry lookup of `sage-categories-homotopy`; pointing `UV_FIND_LINKS` at the wheel built from this checkout resolves that lookup.
+  The following tool-environment build fetches the Sage-stubs Sage submodule before any type-check result.
+  The pending commit launcher was stopped to bank the loader correction under the active plan's narrowly recorded checkpoint exception.
+  The hook also selected 41 Python files from the unpushed branch difference despite this being a `.sage`-only code change; its 23 formatting edits were checked AST-identical and restored, rather than silently adding unrelated source changes to the checkpoint.
+  No static or mathematical acceptance follows from syntax validation.
 
 - **Current native CLI boundary:** The first 2026-09-10 commit attempt on the set-scaffold correction reached `_sage-syntax` and failed because the conda Sage 10.9 `sage.cli` entry point has no `--preparse` or `-python` option.
   The matching upstream `src/bin/sage-preparse` at tag `10.9` was provisioned unchanged (Git blob `aeb36c926751cf7b3b8a9dd58cfc56dbba7115f9`). `/tmp/sage314-qc/sage` delegates the legacy QC flags to that native script and the existing Python 3.14 interpreter; `SAGE_BIN=/tmp/sage314-qc/sage` selects this runtime.
@@ -106,6 +125,10 @@ Read historical observations at their stated revisions before relying on them.
   The consumer now uses the declared Python 3.14 annotation semantics without that incompatible future import; its mathematical assertions remain unchanged.
   Other `.sage` consumers with future imports require the same source-level diagnosis rather than a loader that strips or rewrites their assertions.
 
+- **Further full-consumer reproduction:** At `374015b`, native Sage `load()` also stops before assertions in `tests/sets/test_indexed_products.sage` and `tests/sets/test_sequential_colimits.sage`, with generated numeric constants preceding their future imports.
+  The two files now use the declared Python 3.14 semantics directly; their complete indexed and sequential assertions are unchanged.
+  The mypy tool environment subsequently provisioned successfully from the declared dependency groups and checkout-built homotopy wheel; a successful `mypy --version` is setup evidence, not a type-check result.
+
 - **Gap and impact:** The tracked local QC path does not currently reconstruct the same Sage/Python 3.14 runtime and workspace dependency graph that the project declares.
   A developer can reach source-format and static-analysis stages only by manually repairing environment state, and the public test consumer can block in the incompatible Python-3.12 Sage runtime before reaching its assertion.
 
@@ -120,6 +143,20 @@ Preserve concurrent entries.
 Once the full repair is verified, retain only the unresolved requirement here and put resolution evidence in its commit.
 A local fix does not resolve missing downstream maps or broader hypotheses.
 Recording an independent issue allows the assigned work to continue; recording a required prerequisite does not authorize bypassing it.
+
+## Sage scalar coercion can lose a SymPy Lambda variable's identity
+
+- **User action and evidence:** In the full set scaffold before `264b19f`, the preparsed expression `2 * variable`, with `variable = sympy.Dummy("x")`, is evaluated first by Sage's integer coercion.
+  Its Sage symbolic expression converts back to the body `2*x` with a distinct ordinary SymPy symbol.
+  `Lambda(variable, 2*x)` therefore returns the same unbound expression at zero and at `sqrt(2)`; it does not return `2*sqrt(2)`. The retained native diagnostic and result are `/tmp/sage-categories-lambda-binding-diagnostic-20260910.py` and its `.log` counterpart.
+
+- **Owner and impact:** This is a Sage/SymPy symbolic-conversion boundary, occurring before the set-map constructor receives its Lambda.
+  The set membership predicate correctly leaves realness of the unbound expression undecided.
+  It must not identify free and bound symbols by their printed names or weaken membership to accept an unproved real datum.
+
+- **Repair and preservation:** The scaffold now builds the native SymPy expression with the raw integer coefficient `2r`; the full original consumer passes with two additional independent component-value assertions.
+  Any upstream coercion repair must preserve the Dummy's identity through the symbolic conversion.
+  The independent review's claim that the failed datum was already a genuine `2*sqrt(2)` is contradicted by the native result and is not a basis for changing `representative()` or predicate decisions.
 
 ## Leaf-authoring friction — production-tower scaffolds
 
@@ -338,7 +375,12 @@ Ideas, to be weighed, not obligations.*
   Instead of using Python as the stitching layer to coordinate independent engines, agents fabricated an artificial requirement for a direct GAP-to-Julia FFI bridge and treated `JuliaCall` as an unwanted boundary.
   To avoid writing the `JuliaCall` adapter, agents substituted hand-rolled Python algorithms (`cat/finite_categories.py`, `cat/presented_colimits.py`).
 
-- **Current composite-action mismatch (source inspection at `264b19f`):** `tests/engines/test_catlab_functor_calculus.sage:62-76` explicitly requires an applied composite to remain without a native functor until `ensure_native_functor` is called. Its module docstring instead claims Catlab executes those composites. `CategoryOfCategories.MorphismType.on_object` and `on_morphism` route to the declared Python actions; the Catlab-backed `_construct_object_image` and `_construct_morphism_image` methods do not supply these public actions. The governing plan's sections 5, 10, and 19.2 still require native composite execution, including the unenumerated-source and selected-composite inheritance consumers. This observation does not assert that a new full callable-functor run failed. Reconcile actual execution with the governing native contract while preserving primitive declaration callbacks and the full admitted category domain; native representation registration alone does not establish native execution.
+- **Current composite-action mismatch (source inspection at `264b19f`):** `tests/engines/test_catlab_functor_calculus.sage:62-76` explicitly requires an applied composite to remain without a native functor until `ensure_native_functor` is called.
+  Its module docstring instead claims Catlab executes those composites.
+  `CategoryOfCategories.MorphismType.on_object` and `on_morphism` route to the declared Python actions; the Catlab-backed `_construct_object_image` and `_construct_morphism_image` methods do not supply these public actions.
+  The governing plan's sections 5, 10, and 19.2 still require native composite execution, including the unenumerated-source and selected-composite inheritance consumers.
+  This observation does not assert that a new full callable-functor run failed.
+  Reconcile actual execution with the governing native contract while preserving primitive declaration callbacks and the full admitted category domain; native representation registration alone does not establish native execution.
 
 - **Required resolution:** Implement the private `JuliaCall` adapter connecting Python categorical data to Catlab's `FreeDiagram`, `diagram_limit`, and `diagram_colimit` in `Catlab.CategoricalAlgebra.Limits`, removing hand-rolled Python iteration.
 

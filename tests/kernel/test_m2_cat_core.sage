@@ -944,6 +944,9 @@ def test_the_restriction_of_a_functor_places_its_images_in_the_core_it_was_decla
     # The image is an isomorphism of ``D`` with ``F(f⁻¹)`` retained as its inverse, which
     # is what the ambient placements state; the core placement narrows them and keeps them.
     assert is_placed(image, Mor(MARKS)(functor.on_object(X), functor.on_object(Y)).Isomorphisms())
+    # Refining into the fixed-Hom isomorphism narrowing must preserve established
+    # placement in the bare fixed-Hom category.
+    assert is_placed(image, between)
     assert image in Mor(MARKS).Isomorphisms()
     assert restricted.on_morphism(arrow.inverse()) is image.inverse()
     assert image.inverse().inverse() is image

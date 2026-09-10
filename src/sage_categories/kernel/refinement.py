@@ -124,6 +124,13 @@ def is_placed(candidate: RoleCandidate, category: Category) -> bool:
     if role_of(candidate) is None:
         return False
     assert isinstance(candidate, CategoryPoint)
+    # A value placed in a narrowing is already placed in that narrowing's base.  The
+    # compiled node walk can miss this exact edge when a fixed-endpoint Hom is its own
+    # narrowing base, so recognize it directly without traversing the category graph on
+    # every placement query.
+    placement = candidate.category()
+    if role_of(candidate) in (Role.OBJECT, Role.MORPHISM) and placement.narrowing_base() is category:
+        return True
     target = compiler.node(category, Role.OBJECT)
     placements = [_placement_node(candidate)]
     if role_of(candidate) is Role.OBJECT:

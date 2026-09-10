@@ -44,6 +44,13 @@ Read historical observations at their stated revisions before relying on them.
 - **Repair link and acceptance:** Operational tooling owner.
   Resolve when session search reliably returns predecessor recordings across daemon restarts, or returns a specific durable recovery path instead of a generic 502.
 
+## Independent reviewer dispatch cannot identify the current conversation
+
+- **User action and evidence:** On 2026-09-10, spawning the required read-only `r-gate` reviewer through `Chat_On_Steroids_Core2.agents` returned `UNIDENTIFIED_CALLER`: the app could not establish the current conversation as the prime agent. It explicitly reported that no workers were created, although repository reads and command execution were working.
+- **Impact and owner:** The repository's fixed-revision independent-review requirement remains unsatisfied by that call. No second writer or worktree was created. The installed local reviewer CLIs provide a separate execution path to test; their existence alone is not a completed review.
+- **Related friction:** Several `write_stdin` calls on existing benign sessions were blocked with “couldn't determine the safety status of the request.” Retained process IDs and output files allowed the actual job result to be read without treating the blocked poll as a live job or restarting successful mathematical work.
+- **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.
+
 ## Documented repository CLI entry points are not directly on PATH
 
 - **Mathematical need or user action:** Resume a repository work unit using the documented `agent-memory plan show PLAN-native-engine-remediation` and `card dag` entry points from `AGENTS.md`.

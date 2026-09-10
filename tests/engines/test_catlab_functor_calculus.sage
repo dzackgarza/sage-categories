@@ -6,6 +6,7 @@ from sage_categories.cat.native import (
     has_native_functor,
     has_native_transformation,
 )
+from sage_categories.engines.catlab import ensure_native_functor
 
 
 class IntegerLabels(Category):
@@ -58,14 +59,18 @@ first = affine_functor(SOURCE, MIDDLE, 1, 1)
 second = affine_functor(MIDDLE, TARGET, 2, 0)
 composite = second * first
 
-# No source-object enumeration exists.  A primitive declaration executes its retained
-# Python action directly and stays non-native; evaluating the retained composite then
-# enters the Catlab CompositeFunctor and materializes exactly the native factors it uses.
+# No source-object enumeration exists. Primitive declarations and the retained composite
+# execute their owned Python actions directly. The Catlab representation remains lazy and
+# is materialized only when a native engine consumer explicitly requests it.
 value = SOURCE(10**6)
 assert not has_native_functor(first)
 assert first.on_object(value).label() == 10**6 + 1
 assert not has_native_functor(first)
 assert composite.on_object(value).label() == 2 * (10**6 + 1)
+assert not has_native_functor(first)
+assert not has_native_functor(second)
+assert not has_native_functor(composite)
+ensure_native_functor(composite)
 assert has_native_functor(first)
 assert has_native_functor(second)
 assert has_native_functor(composite)

@@ -35,6 +35,10 @@ __all__ = [
     "coequalizer_lift",
     "coequalizer_mediator",
     "coequalizer_projection",
+    "indexed_free_abelian_coproduct",
+    "indexed_free_abelian_group",
+    "indexed_free_abelian_injection",
+    "indexed_free_abelian_mediator",
     "induced_left_action",
     "induced_right_action",
     "integer_group",
@@ -52,7 +56,11 @@ from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import partial
 
-from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup_class
+from sage.categories.sets_cat import Sets as SageSets
+from sage.combinat.free_module import CombinatorialFreeModule
+from sage.groups.additive_abelian.additive_abelian_group import (
+    AdditiveAbelianGroup_class,
+)
 from sage.matrix.constructor import block_matrix, identity_matrix, matrix, zero_matrix
 from sage.matrix.matrix_integer_dense import Matrix_integer_dense
 from sage.modules.fg_pid.fgp_element import FGP_Element
@@ -60,6 +68,7 @@ from sage.modules.fg_pid.fgp_module import FGP_Module_class
 from sage.modules.free_module import FreeModule
 from sage.modules.free_module_element import vector
 from sage.rings.integer_ring import ZZ
+from sage.structure.parent import Parent
 from sympy import Q, false, true
 
 from sage_categories.cat.bimodules import Bimodules
@@ -69,10 +78,26 @@ from sage_categories.cat.cones import ConeCategory, cocone, cocones, cone
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.limit_basis import parallel_pair
-from sage_categories.cat.monoidal import Cartesian, MonoidalStructures, MonoidalStructuresCategory, tensor_morphism, tensor_parentheses, tensor_units
+from sage_categories.cat.monoidal import (
+    Cartesian,
+    MonoidalStructures,
+    MonoidalStructuresCategory,
+    tensor_morphism,
+    tensor_parentheses,
+    tensor_units,
+)
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Proposition, ask
-from sage_categories.cat.structured_objects import AdditiveGroups, Groups, MonoidCategory, Monoids
+from sage_categories.cat.shapes import Discrete
+from sage_categories.cat.structured_objects import (
+    AdditiveGroups,
+    Groups,
+    Magmas,
+    MonoidCategory,
+    Monoids,
+    PointedMagmas,
+)
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 from sage_categories.sets.finite import Sets
@@ -209,9 +234,20 @@ class _TensorData:
     quotient: FGP_Module_class
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class _IndexedTensorData:
+    """A tensor with one rank-one free presented factor and one indexed free factor."""
+
+    first: CategoryOfCategories.ElementType
+    second: CategoryOfCategories.ElementType
+    indexed_factor: CategoryOfCategories.ElementType
+    rank_one_on_left: bool
+
+
 _presentations: MonoDict = MonoDict()
 _tensor_data: MonoDict = MonoDict()
 _quotient_covers: MonoDict = MonoDict()
+_indexed_free_data: MonoDict = MonoDict()
 
 _terminal_presentation = Presentation((), lambda datum: (), lambda coords: ())
 Sets.retain_form(Sets.Terminal(), _terminal_presentation)
@@ -312,6 +348,208 @@ def integer_group() -> CategoryOfCategories.ElementType:
     integers = Sets.from_membership(lambda n: Q.integer(n))
     form = Presentation((0,), lambda datum: (int(datum),), lambda coordinates: int(coordinates[0]))
     return _group_from_operations(integers, form, 0)
+
+
+class _OwnedIndexFacade(Parent):
+    """Private Sage basis-key parent whose membership is one exact owned set.
+
+    This is a facade only for the native ``CombinatorialFreeModule`` engine.
+    The public basis index remains the supplied object of this project's
+    ``Sets()`` and is retained separately on the resulting abelian group.
+    """
+
+    def __init__(self, index_set: CategoryOfCategories.ElementType) -> None:
+        self._owned_index_set = index_set
+        Parent.__init__(self, facade=True, category=SageSets())
+
+    def __contains__(self, datum: object) -> bool:
+        try:
+            self._owned_index_set.representative(datum)
+        except (AssertionError, TypeError, ValueError):
+            return False
+        return True
+
+    def _element_constructor_(self, datum: Hashable) -> Hashable:
+        return self._owned_index_set.representative(datum)
+
+    def _repr_(self) -> str:
+        return f"native basis keys for {self._owned_index_set!r}"
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _IndexedFreeAbelianData:
+    index_set: CategoryOfCategories.ElementType
+    engine: CombinatorialFreeModule
+
+
+def _certified_abelian_group(
+    carrier: CategoryOfCategories.ElementType,
+    addition: MorphismCategory.ObjectType,
+    zero: MorphismCategory.ObjectType,
+) -> CategoryOfCategories.ElementType:
+    """Reconstruct an engine-certified commutative additive group on ``carrier``."""
+    structure = _structure()
+    magmas = Magmas(structure)
+    pointed = PointedMagmas(structure.tensor(), structure.unit())
+    monoids = Monoids(structure)
+    magma = magmas.algebra(carrier, addition)
+    pointed_magma = pointed.algebra(magma, zero)
+    refine(pointed_magma, monoids)
+    refine(pointed_magma, Groups(structure))
+    group = AdditiveGroups(structure).renamed(pointed_magma)
+    refine(group, AbelianGroups())
+    return group
+
+
+def _rule_abelian_homomorphism(
+    source: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    rule: Callable[[Hashable], Hashable],
+) -> MorphismCategory.ObjectType:
+    """An additive-group map supplied by a mathematically additive rule on data.
+
+    This is used only at native/theorem-backed boundaries whose rule is defined
+    by finite linear combination.  The structured morphism constructor rejects
+    a square only when it is decided false; the finite-support theorem is the
+    construction justification when the carrier is nonenumerable.
+    """
+    structure = _structure()
+    carrier_map = Mor(Sets)(_points(source), _points(target))(rule)
+    renaming = AdditiveGroups(structure).product_projection(0)
+    monoid_map = Monoids(structure).homomorphism(
+        renaming.on_object(source), renaming.on_object(target), carrier_map
+    )
+    return AdditiveGroups(structure).homomorphism(source, target, monoid_map)
+
+
+@cached_function(key=identity_key)
+def indexed_free_abelian_group(
+    index_set: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    r"""Return ``ZZ^(S)`` for an arbitrary owned set ``S``.
+
+    The private Sage engine stores each element as a finite dictionary on the
+    full basis-key parent.  The owned group retains ``S`` itself; no chosen
+    enumeration, finite prefix, or common support bound is introduced.
+    """
+    return _new_indexed_free_abelian_group(index_set)
+
+
+def _new_indexed_free_abelian_group(
+    index_set: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    """Construct a fresh native realization of ``ZZ^(S)`` on the same owned index."""
+    assert index_set in Sets
+    engine = CombinatorialFreeModule(ZZ, _OwnedIndexFacade(index_set))
+    carrier = Sets.from_membership(
+        lambda datum: true
+        if getattr(datum, "parent", lambda: None)() is engine
+        else false
+    )
+    square = binary_product_data(Sets(), carrier, carrier).apex()
+    addition = Mor(Sets)(square, carrier)(lambda pair: pair[0] + pair[1])
+    zero = Mor(Sets)(_structure().unit(), carrier)(lambda _point: engine.zero())
+    group = _certified_abelian_group(carrier, addition, zero)
+    _indexed_free_data[group] = _IndexedFreeAbelianData(index_set, engine)
+    return group
+
+
+def _indexed_free_record(group: CategoryOfCategories.ElementType) -> _IndexedFreeAbelianData:
+    assert group in _indexed_free_data, f"{group!r} is not an indexed free abelian group"
+    return _indexed_free_data[group]
+
+
+def indexed_free_abelian_injection(
+    group: CategoryOfCategories.ElementType,
+    index: Hashable,
+) -> MorphismCategory.ObjectType:
+    r"""The basis injection ``ZZ -> ZZ^(S)`` at ``index``."""
+    record = _indexed_free_record(group)
+    key = record.index_set.representative(index)
+    basis = record.engine.monomial(key)
+    return _rule_abelian_homomorphism(
+        integer_group(), group, lambda coefficient: int(coefficient) * basis
+    )
+
+
+def indexed_free_abelian_mediator(
+    group: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    component: Callable[[Hashable], MorphismCategory.ObjectType],
+) -> MorphismCategory.ObjectType:
+    r"""The unique additive map ``ZZ^(S) -> target`` with supplied basis maps.
+
+    ``component(i)`` is a homomorphism ``ZZ -> target``.  Evaluation inspects
+    only the finite monomial support of its argument and sums those component
+    images using the target's own additive-group operation.
+    """
+    record = _indexed_free_record(group)
+
+    def evaluate(value: Hashable) -> Hashable:
+        assert getattr(value, "parent", lambda: None)() is record.engine
+        total = target.zero()
+        for index, coefficient in value.monomial_coefficients(copy=False).items():
+            arrow = component(index)
+            assert arrow.domain() is integer_group() and arrow.codomain() is target
+            total = total + arrow(integer_group().point(int(coefficient)))
+        return total.datum()
+
+    return _rule_abelian_homomorphism(group, target, evaluate)
+
+
+def _integer_multiple(
+    group: CategoryOfCategories.ElementType,
+    coefficient: int,
+    point: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    """Return ``coefficient * point`` using only the selected additive-group operations."""
+    coefficient = int(coefficient)
+    match coefficient < 0:
+        case True:
+            return _integer_multiple(group, -coefficient, -point)
+        case False:
+            pass
+    result = group.zero()
+    addend = point
+    remaining = coefficient
+    while remaining:
+        match remaining % 2:
+            case 1:
+                result = result + addend
+            case 0:
+                pass
+        remaining //= 2
+        if remaining:
+            addend = addend + addend
+    return result
+
+
+def indexed_free_abelian_coproduct(
+    index_set: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    r"""Retain ``ZZ^(S)`` as the coproduct of the constant ``ZZ`` family over ``S``."""
+    abelian = AbelianGroups()
+    shape = Discrete(index_set)
+    diagram = Fun(shape, abelian).constant(integer_group())
+    apex = indexed_free_abelian_group(index_set)
+
+    def leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        return indexed_free_abelian_injection(apex, vertex.point().datum())
+
+    selected = cocone(diagram, apex, leg)
+
+    def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
+        from sage_categories.cat.cones import cocone_apex
+
+        target = cocone_apex(candidate)
+
+        def component(index: Hashable) -> MorphismCategory.ObjectType:
+            vertex = shape.object_at(index_set.point(index))
+            return candidate.component(vertex)
+
+        return indexed_free_abelian_mediator(apex, target, component)
+
+    return abelian.Colimits(shape).with_universal_data(diagram, apex, selected, mediator)
 
 
 def _linear_homomorphism(
@@ -519,7 +757,7 @@ def _coequalizer_mediator(
     apex = projection.codomain()
     assert apex in _quotient_covers, f"{apex!r} is not a quotient this leaf constructed"
     assert coequalizing.domain() is projection.domain(), f"{coequalizing!r} does not start at {projection.domain()!r}"
-    free, engine = _quotient_covers[apex]
+    _free, engine = _quotient_covers[apex]
     target = coequalizing.codomain()
     matrix, into = linear_form(coequalizing).matrix, presentation(target)
     rows = [vector(ZZ, generator.lift()) * matrix for generator in engine.smith_form_gens()]
@@ -623,8 +861,16 @@ def _pair_generators(first: Presentation, second: Presentation) -> FGP_Module_cl
     return free / free.span(relations)
 
 
-def _pair_vector(data: _TensorData, a: Hashable, b: Hashable) -> Hashable:
+def _pair_vector(data: _TensorData | _IndexedTensorData, a: Hashable, b: Hashable) -> Hashable:
     """``Σ a_i b_j e_{ij}`` as an element of the tensor engine: the image of ``(a, b)`` under the biadditive map."""
+    if isinstance(data, _IndexedTensorData):
+        match data.rank_one_on_left:
+            case True:
+                coefficient = int(presentation(data.first).coordinates(a)[0])
+                return coefficient * b
+            case False:
+                coefficient = int(presentation(data.second).coordinates(b)[0])
+                return coefficient * a
     left, right = presentation(data.first).coordinates(a), presentation(data.second).coordinates(b)
     m = len(right)
     return data.quotient(vector(ZZ, [left[i] * right[j] for i in range(len(left)) for j in range(m)]))
@@ -632,6 +878,22 @@ def _pair_vector(data: _TensorData, a: Hashable, b: Hashable) -> Hashable:
 
 @cached_function(key=identity_key)
 def _tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+    first_indexed = first in _indexed_free_data
+    second_indexed = second in _indexed_free_data
+    if first_indexed != second_indexed:
+        presented = second if first_indexed else first
+        presented_form = presentation(presented)
+        if presented_form.orders == (0,):
+            indexed = first if first_indexed else second
+            record = _indexed_free_record(indexed)
+            result = _new_indexed_free_abelian_group(record.index_set)
+            _tensor_data[result] = _IndexedTensorData(
+                first,
+                second,
+                indexed,
+                not first_indexed,
+            )
+            return result
     quotient = _pair_generators(presentation(first), presentation(second))
     result = _group_from_engine(quotient)
     _tensor_data[result] = _TensorData(first, second, quotient)
@@ -683,6 +945,30 @@ def tensor_mediator(
     """
     result = _tensor_object(first, second)
     data = _tensor_data[result]
+    if isinstance(data, _IndexedTensorData):
+        indexed_record = _indexed_free_record(data.indexed_factor)
+        rank_one = first if data.rank_one_on_left else second
+        rank_one_generator = _generators(presentation(rank_one))[0]
+
+        def evaluate(value: Hashable) -> Hashable:
+            result_record = _indexed_free_record(result)
+            assert getattr(value, "parent", lambda: None)() is result_record.engine
+            total = target.zero()
+            for index, coefficient in value.monomial_coefficients(copy=False).items():
+                basis = indexed_record.engine.monomial(index)
+                match data.rank_one_on_left:
+                    case True:
+                        image = biadditive(rank_one_generator, basis)
+                    case False:
+                        image = biadditive(basis, rank_one_generator)
+                total = total + _integer_multiple(
+                    target,
+                    int(coefficient),
+                    target.point(image),
+                )
+            return total.datum()
+
+        return _rule_abelian_homomorphism(result, target, evaluate)
     left, right, into, form = presentation(first), presentation(second), presentation(target), presentation(result)
     m = right.rank()
     images = [[vector(ZZ, into.coordinates(biadditive(a, b))) for b in _generators(right)] for a in _generators(left)]
@@ -712,10 +998,40 @@ def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategor
     )
 
 
+def _indexed_free_relabel(
+    source: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """The coefficient-preserving map between two native copies of ``ZZ^(S)``."""
+    source_record = _indexed_free_record(source)
+    target_record = _indexed_free_record(target)
+    assert source_record.index_set is target_record.index_set
+
+    def evaluate(value: Hashable) -> Hashable:
+        assert getattr(value, "parent", lambda: None)() is source_record.engine
+        return target_record.engine.sum_of_terms(
+            tuple(value.monomial_coefficients(copy=False).items()),
+            distinct=True,
+        )
+
+    return _rule_abelian_homomorphism(source, target, evaluate)
+
+
 def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
     """``(A ⊗ B) ⊗ C -> A ⊗ (B ⊗ C)`` and back, each the mediator of a biadditive rule written through lifts."""
     a, b, c = (triple.family_component(index) for index in range(3))
     ab, bc = _tensor_object(a, b), _tensor_object(b, c)
+    left_object = _tensor_object(ab, c)
+    right_object = _tensor_object(a, bc)
+    if left_object in _indexed_free_data and right_object in _indexed_free_data:
+        left_index = _indexed_free_record(left_object).index_set
+        right_index = _indexed_free_record(right_object).index_set
+        if left_index is right_index:
+            match forward:
+                case True:
+                    return _indexed_free_relabel(left_object, right_object)
+                case False:
+                    return _indexed_free_relabel(right_object, left_object)
     ab_data, bc_data = _tensor_data[ab], _tensor_data[bc]
     generators_a, generators_b, generators_c = _generators(presentation(a)), _generators(presentation(b)), _generators(presentation(c))
     if forward:
@@ -758,20 +1074,39 @@ def AbelianTensor() -> MonoidalStructuresCategory.ObjectType:
     identity = Fun(base, base).one()
 
     def scalar(group: CategoryOfCategories.ElementType, k: Hashable, a: Hashable) -> Hashable:
+        if group in _indexed_free_data:
+            return int(k) * a
         into = presentation(group)
         return into.element(tuple(int(k) * coordinate for coordinate in into.coordinates(a)))
+
+    def inverse_unitor(
+        group: CategoryOfCategories.ElementType,
+        target: CategoryOfCategories.ElementType,
+        rule: Callable[[Hashable], Hashable],
+    ) -> MorphismCategory.ObjectType:
+        if group in _indexed_free_data:
+            return _rule_abelian_homomorphism(group, target, rule)
+        return abelian_homomorphism(group, target, rule)
 
     left_unitor = natural_isomorphism(
         left_unit,
         identity,
         lambda group: tensor_mediator(unit, group, group, lambda k, a: scalar(group, k, a)),
-        lambda group: abelian_homomorphism(group, _tensor_object(unit, group), lambda a: _pair_vector(_tensor_data[_tensor_object(unit, group)], 1, a)),
+        lambda group: inverse_unitor(
+            group,
+            _tensor_object(unit, group),
+            lambda a: _pair_vector(_tensor_data[_tensor_object(unit, group)], 1, a),
+        ),
     )
     right_unitor = natural_isomorphism(
         right_unit,
         identity,
         lambda group: tensor_mediator(group, unit, group, lambda a, k: scalar(group, k, a)),
-        lambda group: abelian_homomorphism(group, _tensor_object(group, unit), lambda a: _pair_vector(_tensor_data[_tensor_object(group, unit)], a, 1)),
+        lambda group: inverse_unitor(
+            group,
+            _tensor_object(group, unit),
+            lambda a: _pair_vector(_tensor_data[_tensor_object(group, unit)], a, 1),
+        ),
     )
     return MonoidalStructures(base)(tensor, unit, associator, left_unitor, right_unitor)
 

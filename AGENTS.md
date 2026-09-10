@@ -135,6 +135,26 @@ would truncate the failure. Resume the same operation from its observed result.
 Terminal persistence preserves the job; it does not promise that the agent or
 connector will automatically start another turn.
 
+Before continuing to wait on a long-running job, establish that its process is alive
+and that its output is advancing. This covers a `sage-eval` or `.sage` consumer run,
+a targeted test, an architecture or plan-state command, and a commit or push hook.
+Retain the job's PID and output artifact at launch. Read liveness from
+`ps -o pid=,stat=,etime= -p PID`, which prints nothing and exits nonzero once that
+process is gone, or from
+`tmux display-message -p -t SESSION '#{pane_dead} #{pane_dead_status}'` for a retained
+pane. `pgrep -a -f sage-eval` is the fallback when no PID was retained; `pgrep -f` also
+matches the command line running the check, so read the returned PIDs and discard the
+checking shell's own before concluding the job is alive. Read forward progress from two
+`stat -c '%s %Y' OUTPUT` samples separated by a measured interval. Neither reading
+substitutes for the other: a live PID that has produced no new output for the length of
+the wait is stalled, and stale output alone does not prove the process died.
+No live process and no new output is a dead session: its result will never arrive, and
+it is neither slow progress nor a reason to poll again. A host restart, an
+out-of-memory kill, or a daemon replacement ends the process without reporting that to
+the session that launched it. Record what the job produced before it died, relaunch the
+same operation, and resume from its observed result. A job whose liveness has not been
+checked cannot establish that the unit is blocked or waiting.
+
 Separate the requested deliverable from incidental defects exposed while reaching it.
 Repair an incidental defect in this unit only when the deliverable depends on that repair.
 Record other concrete defects with their existing owners, then return to the assigned operation.
@@ -148,6 +168,8 @@ Documentation is the deliverable when the user requests documentation; that does
 - **Single-front closure.** Work exactly one [TODO.md](TODO.md) node at a time, in the DAG's dependency order, and drive it to its governing-plan acceptance before opening any other front. Shared-substrate (kernel) edits are in scope only when the current node's contract requires them. If multiple fronts are already open, close the nearest-to-acceptance front before any new authoring.
 
 - **Claim freshness.** At every claim and every release, reconcile the shared queue and claim state against actual repository state across all branches before selecting work. Never select work from a queue older than your last branch sync. All authoring requires a live claim; batch-committing work authored off-ledger is prohibited.
+
+- **Bank before waiting.** Commit each substantive unit when it reaches its own boundary, and before launching or resuming a wait on a long-running job. Staged or modified work does not sit unbanked across hours while a job runs; a wait authorizes no uncommitted state. When that job is the only thing standing between the tree and a commit, commit the completed part and name the pending job in the commit message under the recorded known-red exception in [Verification](#verification). Before extending any such wait, run the liveness and forward-progress checks in [Context and attention](#context-and-attention). A dead session is not a reason to hold work back.
 
 ## Implementation and dependencies
 
@@ -618,6 +640,16 @@ Update status once the delivered revision proves the transition.
 Historical accepted revisions remain evidence; a documentation edit does not certify new code.
 
 Inspect repository and vault state before edits. Preserve unknown files and concurrent work.
+Establish that concurrent work exists before invoking that preservation. Read
+`git worktree list`, `git branch --show-current`, and `git status --short`.
+A single worktree on a single checked-out branch has a single writer, and that writer is
+you. Its uncommitted and staged changes are your own or your predecessor's, and finishing,
+validating, and banking them is the nearest-to-acceptance front under
+[Gates, fronts, and claims](#gates-fronts-and-claims), not another agent's live edit to
+leave untouched. When `git worktree list` names a second worktree, read its `HEAD` and look
+for a live process under its path before treating any file as concurrent.
+A tree that advanced while you were not editing is not evidence of a second writer.
+Compare it against your own last commit and this session's edits before concluding one.
 Stage exact files and commit each substantive unit. Push authorized work so it can be recovered.
 Use system trash for deletions. Do not use destructive Git operations.
 Keep user messages private; public documents contain neutral technical decisions and source locators.

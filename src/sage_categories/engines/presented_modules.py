@@ -37,6 +37,7 @@ __all__ = [
     "tensor_mediator",
     "tensor_morphism",
     "tensor_object",
+    "zero_morphism",
 ]
 
 
@@ -407,6 +408,15 @@ def direct_sum_coproduct_lift(
         _native_object(apex),
     )
     return _owned_morphism_from_native(apex, target, native)
+
+
+def zero_morphism(source: object, target: object):
+    """Return CAP's additive zero morphism on the retained public endpoints."""
+    native = libgap.ZeroMorphism(
+        _native_object(source),
+        _native_object(target),
+    )
+    return _owned_morphism_from_native(source, target, native)
 
 
 def tensor_object(first: object, second: object):

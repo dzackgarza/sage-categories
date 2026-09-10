@@ -46,6 +46,10 @@ def test_cap_direct_sum_preserves_the_owned_product_carrier_and_universal_maps()
     ):
         assert presented_native_morphism(arrow).value is arrow
 
+    zero = abelian.zero_morphism(two, four)
+    assert presented_native_morphism(zero).value is zero
+    assert ask(zero(two.point(two_engine.gen(0))) == four.zero()) is True
+
     source_engine = AdditiveAbelianGroup([4])
     source = presented_abelian_group(source_engine)
     source_generator = source_engine.gen(0)

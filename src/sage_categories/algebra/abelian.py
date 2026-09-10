@@ -613,8 +613,9 @@ def _zero_morphism(
     target: CategoryOfCategories.ElementType,
 ) -> MorphismCategory.ObjectType:
     """The additive zero map between two presented objects of ``Ab``."""
-    source_form, target_form = presentation(source), presentation(target)
-    return _linear_homomorphism(source, target, target_form.zero_map(source_form))
+    from sage_categories.engines.presented_modules import zero_morphism
+
+    return zero_morphism(source, target)
 
 
 def _inclusion_form(direct_sum: Presentation, index: int) -> LinearForm:

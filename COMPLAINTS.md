@@ -335,3 +335,10 @@ Ideas, to be weighed, not obligations.*
 - **Observed:** `uv run --no-project --python 3.14 --with juliacall` reached JuliaCall startup but `Base.find_package("Oscar")` produced no result after repeated 30-second polls. The probe process remained alive until explicitly killed.
 - **Impact:** The governing plan allocates polynomial rings, quotients, localizations, affine schemes, sheaves, and gluings to OSCAR. The repository cannot currently verify that the embedded Julia environment exposes OSCAR before extending `SageCategoriesBridge.jl`.
 - **Required resolution:** Make the repository's pinned Julia environment expose and load OSCAR through the existing JuliaCall bridge, with a fast deterministic availability/version probe suitable for the ring/affine acceptance gate.
+
+## Catlab and OSCAR cannot share the repository JuliaPkg environment
+
+- **Area:** Julia engine isolation; Catlab/GATlab and OSCAR.
+- **Observed:** In a recovered Sage 10.9 / Python 3.14.7 runtime, the decisive #31 public consumer reached JuliaPkg resolution and failed before any test assertion. Catlab 0.17.6 constrains Compose to a release requiring `JSON <= 0.21`, while OSCAR 1.8.2 requires `JSON >= 1.0`; Julia's resolver reports these requirements as unsatisfiable in one project.
+- **Impact:** Declaring OSCAR in `src/sage_categories/juliapkg.json` prevents every Catlab-backed category consumer from starting, even when the consumer never imports the OSCAR engine. Lazy Python loading does not isolate Julia package versions because both bridges still share one Julia process and project.
+- **Required resolution:** Keep Catlab/GATlab in the package-global JuliaPkg environment. Run OSCAR in a separate Julia process/project with an explicit opaque-handle boundary, so incompatible transitive dependencies never enter one Julia process. Until that process boundary exists, OSCAR must not be declared in the global JuliaPkg project.

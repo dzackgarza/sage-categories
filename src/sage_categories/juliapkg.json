@@ -8,10 +8,6 @@
     "GATlab": {
       "uuid": "f0ffcf3b-d13a-433e-917c-cc44ccf5ead2",
       "version": "=0.2.4"
-    },
-    "Oscar": {
-      "uuid": "f1435218-dba5-11e9-1e4d-f1a5fab5fc13",
-      "version": "=1.8.2"
     }
   }
 }

@@ -443,6 +443,26 @@ It reports delivered behavior, revision or diff, and unresolved claims.
 The integrating agent checks the actual diff and consumer against the original frame, then commits the integrated unit.
 Delegates do not edit shared phase state. Avoid nested delegation and repeated reviewers for an unchanged question.
 
+The agent that creates an isolated worktree retires it. Retire it once the integrated unit
+is committed and the delegate's commits are reachable from the branch: run
+`git worktree remove PATH`, then `git worktree prune` for records whose directory is
+already gone. Leave one in place only while an unresolved claim still needs it, and name
+that claim where the unit's unresolved work is recorded. A retired unit's worktree never
+stays in `git worktree list`: a later worker reads that list to establish writer count
+under [Session continuity](#session-continuity), and a stale entry there reads as a second
+live writer.
+
+Establish the state of a worktree you did not create before treating it as either live or
+disposable. Read `git -C PATH --no-optional-locks status --short` for uncommitted work,
+`git merge-base --is-ancestor "$(git -C PATH rev-parse HEAD)" HEAD` for commits not yet
+reachable from your branch, and `pgrep -a -f PATH` for a live process, discarding the
+checking shell's own PID as in [Context and attention](#context-and-attention). A clean
+tree, an ancestor `HEAD`, and no live process together establish that the worktree holds
+nothing unbanked. Failing any one of the three, it holds work of unknown provenance: leave
+it in place, report its path with all three readings, and ask before removing it. Being
+unrecognized is not evidence that a worktree is debris, and `git worktree remove` over
+uncommitted work is a destructive Git operation under [Session continuity](#session-continuity).
+
 A parallel split must have a stable shared interface before writers start.
 If both units require changing that interface, complete the prerequisite first or give the coherent change one writer.
 Do not split intertwined compiler and consumer changes merely to occupy available agents.
@@ -646,8 +666,9 @@ A single worktree on a single checked-out branch has a single writer, and that w
 you. Its uncommitted and staged changes are your own or your predecessor's, and finishing,
 validating, and banking them is the nearest-to-acceptance front under
 [Gates, fronts, and claims](#gates-fronts-and-claims), not another agent's live edit to
-leave untouched. When `git worktree list` names a second worktree, read its `HEAD` and look
-for a live process under its path before treating any file as concurrent.
+leave untouched. When `git worktree list` names a second worktree, establish its state
+through [Delegation](#delegation) before treating any file as concurrent; a worktree whose
+unit has been integrated is a retirement obligation, not a second writer.
 A tree that advanced while you were not editing is not evidence of a second writer.
 Compare it against your own last commit and this session's edits before concluding one.
 Stage exact files and commit each substantive unit. Push authorized work so it can be recovered.

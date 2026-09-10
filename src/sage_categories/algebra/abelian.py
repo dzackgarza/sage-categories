@@ -8,12 +8,15 @@ additive group objects of sets (``specs/magmas-monoids-semirings.md``, "Groups")
 ``R``, ``AbelianBimoduleTensor(R)`` selects relative tensor product on ``(R,R)``-bimodules
 with unit the regular bimodule (``specs/bimodules.md``, "Relative tensor product").
 
-The private engine is Smith coordinates.  Every presented carrier registers its
+The public presentation language is Smith coordinates.  Every presented carrier registers its
 ``Presentation`` with ``Sets`` as the object form, and every homomorphism between presented
 carriers is constructed from its ``LinearForm``, the integer matrix of its action on Smith
 generators; ``Sets`` composes, pairs, and projects these forms itself and decides the
 equality of two such maps by comparing matrices modulo the target orders, so no law is
-decided by enumeration.  A presented group ``A = Z^n / R_A`` in Smith generators of orders
+decided by enumeration.  Selected cokernels lower these presentations and morphisms to
+``ModulePresentationsForCAP`` and reconstruct the same owned ``Ab`` object from CAP's returned
+relations; the native CAP object and projection remain private retained realizations.  A
+presented group ``A = Z^n / R_A`` in Smith generators of orders
 ``(d_1, ..., d_n)`` has ``A ⊗ B = Z^{nm} / (R_A ⊗ 1 + 1 ⊗ R_B)``, the quotient of the free
 module on the pairs of generators by ``d_i e_{ij}`` and ``d'_j e_{ij}`` (Stacks, tag 00CV,
 tensor products; the presentation is the standard one from right exactness of ``⊗``).  The
@@ -372,7 +375,7 @@ class _OwnedIndexFacade(Parent):
     def __contains__(self, datum: object) -> bool:
         try:
             self._owned_index_set.representative(datum)
-        except AssertionError, TypeError, ValueError:
+        except (AssertionError, TypeError, ValueError):
             return False
         return True
 
@@ -726,19 +729,14 @@ def _coequalizer_projection(
     The coequalizer object is the codomain of this map, and ``coequalizer_mediator``
     factors a coequalizing homomorphism through it.
     """
-    source, target = first.domain(), first.codomain()
-    assert second.domain() is source and second.codomain() is target, f"{first!r} and {second!r} are not parallel"
-    into = presentation(target)
-    difference = linear_form(first).matrix - linear_form(second).matrix
-    free = FreeModule(ZZ, into.rank())
-    relations = [free.gen(j) * order for j, order in enumerate(into.orders) if order]
-    relations += [free(vector(ZZ, difference.row(i))) for i in range(difference.nrows())]
-    engine = free / free.span(relations)
-    apex = _group_from_engine(engine)
+    from sage_categories.engines.presented_modules import coequalizer_projection
+
+    target = first.codomain()
+    projection, free, engine = coequalizer_projection(first, second)
+    apex = projection.codomain()
     _quotient_covers[apex] = (free, engine)
-    apex_form = presentation(apex)
-    rows = [vector(ZZ, apex_form.coordinates(engine(free.gen(j)))) for j in range(into.rank())]
-    return _linear_homomorphism(target, apex, LinearForm(into, apex_form, _matrix_of_rows(rows, apex_form.rank())))
+    assert projection.domain() is target
+    return projection
 
 
 def _coequalizer_mediator(

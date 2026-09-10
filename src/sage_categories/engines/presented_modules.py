@@ -26,7 +26,7 @@ from sage_categories.algebra._presented_modules_cap import (
 )
 from sage_categories.engines.gap import PRESENTED_MODULE_PACKAGES, load_packages
 
-__all__ = ["coequalizer_projection"]
+__all__ = ["coequalizer_projection", "tensor_object", "tensor_morphism"]
 
 
 @cache
@@ -190,3 +190,68 @@ def coequalizer_projection(first: object, second: object):
     )
     retain_presented_native_morphism(owned_projection, native_projection)
     return owned_projection, free, engine
+
+
+def tensor_object(first: object, second: object):
+    """Return CAP's selected tensor product as the same public owned ``Ab`` object."""
+    from sage_categories.algebra.abelian import _group_from_engine
+
+    native = libgap.TensorProductOnObjects(
+        _native_object(first),
+        _native_object(second),
+    )
+    _free, engine = _public_engine_from_native(native)
+    result = _group_from_engine(engine)
+    retain_presented_native_object(result, native, _integer_rows(native))
+    return result, engine
+
+
+def tensor_morphism(
+    first: object,
+    second: object,
+    source_tensor: object,
+    target_tensor: object,
+):
+    """Return CAP's ``first tensor second`` on the retained public tensor objects."""
+    from sage_categories.algebra.abelian import (
+        LinearForm,
+        _linear_homomorphism,
+        _matrix_of_rows,
+        _tensor_data,
+        presentation,
+    )
+
+    native_source = presented_native_object(source_tensor).native
+    native_target = presented_native_object(target_tensor).native
+    native = libgap.TensorProductOnMorphismsWithGivenTensorProducts(
+        native_source,
+        _native_morphism(first),
+        _native_morphism(second),
+        native_target,
+    )
+    native_underlying = libgap.UnderlyingMatrix(native)
+    native_rows = _integer_matrix_rows(native_underlying)
+    native_matrix = _matrix_of_rows(
+        tuple(vector(ZZ, row) for row in native_rows),
+        int(libgap.NumberColumns(native_underlying)),
+    )
+    source_data = _tensor_data[source_tensor]
+    target_data = _tensor_data[target_tensor]
+    source_form = presentation(source_tensor)
+    target_form = presentation(target_tensor)
+    rows = []
+    for generator in source_data.quotient.smith_form_gens():
+        raw_image = vector(ZZ, generator.lift()) * native_matrix
+        image = target_data.quotient(raw_image)
+        rows.append(vector(ZZ, target_form.coordinates(image)))
+    owned = _linear_homomorphism(
+        source_tensor,
+        target_tensor,
+        LinearForm(
+            source_form,
+            target_form,
+            _matrix_of_rows(tuple(rows), target_form.rank()),
+        ),
+    )
+    retain_presented_native_morphism(owned, native)
+    return owned

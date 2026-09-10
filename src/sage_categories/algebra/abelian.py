@@ -849,15 +849,6 @@ def coequalizer_mediator(
     return presentation.lift(candidate)
 
 
-def _pair_generators(first: Presentation, second: Presentation) -> FGP_Module_class:
-    """``Z^{nm} / (d_i e_{ij}, d'_j e_{ij})``: the presented tensor product in the pair generators."""
-    n, m = first.rank(), second.rank()
-    free = FreeModule(ZZ, n * m)
-    relations = [free.gen(i * m + j) * order for i, order in enumerate(first.orders) for j in range(m)]
-    relations += [free.gen(i * m + j) * order for j, order in enumerate(second.orders) for i in range(n)]
-    return free / free.span(relations)
-
-
 def _pair_vector(
     data: _TensorData | _IndexedTensorData | _IndexedPairTensorData,
     a: Hashable,
@@ -915,8 +906,9 @@ def _tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCa
                 not first_indexed,
             )
             return result
-    quotient = _pair_generators(presentation(first), presentation(second))
-    result = _group_from_engine(quotient)
+    from sage_categories.engines.presented_modules import tensor_object
+
+    result, quotient = tensor_object(first, second)
     _tensor_data[result] = _TensorData(first, second, quotient)
     return result
 
@@ -1026,7 +1018,14 @@ def tensor_mediator(
 
 def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
     """``f ⊗ g``: the mediator of ``(a, b) ↦ f(a) ⊗ g(b)``."""
+    source = _tensor_object(first.domain(), second.domain())
     target = _tensor_object(first.codomain(), second.codomain())
+    if isinstance(_tensor_data[source], _TensorData) and isinstance(
+        _tensor_data[target], _TensorData
+    ):
+        from sage_categories.engines.presented_modules import tensor_morphism
+
+        return tensor_morphism(first, second, source, target)
     target_data = _tensor_data[target]
     return tensor_mediator(
         first.domain(),

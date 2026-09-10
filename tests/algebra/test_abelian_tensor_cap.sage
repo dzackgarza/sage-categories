@@ -5,13 +5,16 @@ from sage.libs.gap.libgap import libgap
 from sage_categories.algebra import (
     AbelianTensor,
     abelian_homomorphism,
+    coequalizer_projection,
     presented_abelian_group,
     simple_tensor,
+    tensor_mediator,
 )
 from sage_categories.algebra._presented_modules_cap import (
     presented_native_morphism,
     presented_native_object,
 )
+from sage_categories.algebra.abelian import presentation
 from sage_categories.cat.monoidal import tensor_morphism, tensor_object
 from sage_categories.cat.predicates import ask
 
@@ -50,4 +53,52 @@ def test_cap_computes_finite_presented_tensor_object_and_nonidentity_tensor_map(
     assert ask(induced(generator_tensor) == product.zero()) is True
 
 
+def test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis() -> None:
+    cyclic_engine = AdditiveAbelianGroup([4])
+    square_engine = AdditiveAbelianGroup([4, 4])
+    cyclic = presented_abelian_group(cyclic_engine)
+    square = presented_abelian_group(square_engine)
+
+    def square_element(left, right):
+        return square_engine.linear_combination_of_smith_form_gens(
+            vector(ZZ, [left, right])
+        )
+
+    zero = abelian_homomorphism(cyclic, square, lambda _value: square_engine.zero())
+    diagonal = abelian_homomorphism(
+        cyclic,
+        square,
+        lambda value: int(value.vector()[0]) * square_element(1, 1),
+    )
+    projection = coequalizer_projection(zero, diagonal)
+    quotient = projection.codomain()
+    two_engine = AdditiveAbelianGroup([2])
+    two = presented_abelian_group(two_engine)
+    tensor_functor = AbelianTensor().tensor()
+    product = tensor_object(tensor_functor, quotient, two)
+
+    quotient_generator = quotient.object_at(
+        projection(square.point(square_element(1, 0))).datum()
+    )
+    generator = simple_tensor(quotient, two, quotient_generator.datum(), two_engine.gen(0))
+    assert generator.parent() is product
+
+    target_engine = AdditiveAbelianGroup([2])
+    target = presented_abelian_group(target_engine)
+    target_generator = target_engine.gen(0)
+    mediator = tensor_mediator(
+        quotient,
+        two,
+        target,
+        lambda left, right: (
+            int(presentation(quotient).coordinates(left)[0])
+            * int(right.vector()[0])
+            * target_generator
+        ),
+    )
+    assert presented_native_morphism(mediator).value is mediator
+    assert ask(mediator(generator) == target.point(target_generator)) is True
+
+
 test_cap_computes_finite_presented_tensor_object_and_nonidentity_tensor_map()
+test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis()

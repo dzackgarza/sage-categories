@@ -867,9 +867,15 @@ def _pair_vector(
             ),
             distinct=True,
         )
-    left, right = presentation(data.first).coordinates(a), presentation(data.second).coordinates(b)
-    m = len(right)
-    return data.quotient(vector(ZZ, [left[i] * right[j] for i in range(len(left)) for j in range(m)]))
+    from sage_categories.engines.presented_modules import tensor_element
+
+    return tensor_element(
+        data.first,
+        data.second,
+        _tensor_object(data.first, data.second),
+        a,
+        b,
+    )
 
 
 @cached_function(key=identity_key)
@@ -990,21 +996,9 @@ def tensor_mediator(
             return total.datum()
 
         return _rule_abelian_homomorphism(result, target, evaluate)
-    left, right, into, form = presentation(first), presentation(second), presentation(target), presentation(result)
-    m = right.rank()
-    images = [[vector(ZZ, into.coordinates(biadditive(a, b))) for b in _generators(right)] for a in _generators(left)]
-    rows = []
-    for generator in data.quotient.smith_form_gens():
-        row = vector(ZZ, [0] * into.rank())
-        for position, coefficient in enumerate(generator.lift()):
-            if coefficient:
-                row += int(coefficient) * images[position // m][position % m]
-        rows.append(row)
-    matrix = _matrix_of_rows(rows, into.rank())
-    assert _descends(matrix, form.orders, into.orders), (
-        f"{biadditive!r} does not respect the relations of {result!r}, so it does not define a morphism out of the tensor product"
-    )
-    return _linear_homomorphism(result, target, LinearForm(form, into, matrix))
+    from sage_categories.engines.presented_modules import tensor_mediator as native_tensor_mediator
+
+    return native_tensor_mediator(first, second, result, target, biadditive)
 
 
 def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:

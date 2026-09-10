@@ -33,6 +33,8 @@ __all__ = [
     "direct_sum_coproduct_lift",
     "direct_sum_product_lift",
     "retain_binary_biproduct",
+    "tensor_element",
+    "tensor_mediator",
     "tensor_morphism",
     "tensor_object",
 ]
@@ -419,6 +421,67 @@ def tensor_object(first: object, second: object):
     result = _group_from_engine(engine)
     retain_presented_native_object(result, native, _PresentationBridge(free, engine))
     return result, engine
+
+
+def tensor_element(first: object, second: object, tensor: object, left: object, right: object):
+    """Return the public tensor datum of two public factor data via CAP's raw basis."""
+    from sage_categories.algebra.abelian import presentation
+
+    first_form = presentation(first)
+    second_form = presentation(second)
+    left_raw = _raw_coordinates_from_public(first, first_form.coordinates(left))
+    right_raw = _raw_coordinates_from_public(second, second_form.coordinates(right))
+    raw_pair = tuple(
+        left_coefficient * right_coefficient
+        for left_coefficient in left_raw
+        for right_coefficient in right_raw
+    )
+    bridge = _bridge(tensor)
+    assert isinstance(bridge, _PresentationBridge)
+    return bridge.engine(bridge.free(vector(ZZ, raw_pair)))
+
+
+def tensor_mediator(
+    first: object,
+    second: object,
+    tensor: object,
+    target: object,
+    biadditive,
+):
+    """Return the CAP morphism induced by one public biadditive rule on factor data."""
+    from sage_categories.algebra.abelian import presentation
+
+    first_native = _native_object(first)
+    second_native = _native_object(second)
+    first_raw_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(first_native)))
+    second_raw_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(second_native)))
+    target_native = _native_object(target)
+    target_raw_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(target_native)))
+    first_form = presentation(first)
+    second_form = presentation(second)
+    target_form = presentation(target)
+    rows = []
+    for first_position in range(first_raw_rank):
+        first_raw = [0] * first_raw_rank
+        first_raw[first_position] = 1
+        first_public = first_form.element(
+            _public_coordinates_from_raw(first, first_raw)
+        )
+        for second_position in range(second_raw_rank):
+            second_raw = [0] * second_raw_rank
+            second_raw[second_position] = 1
+            second_public = second_form.element(
+                _public_coordinates_from_raw(second, second_raw)
+            )
+            image = biadditive(first_public, second_public)
+            public_target = target_form.coordinates(image)
+            rows.append(_raw_coordinates_from_public(target, public_target))
+    native = libgap.PresentationMorphism(
+        _native_object(tensor),
+        _homalg_matrix(tuple(rows), target_raw_rank),
+        target_native,
+    )
+    return _owned_morphism_from_native(tensor, target, native)
 
 
 def tensor_morphism(

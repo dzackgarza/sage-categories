@@ -1,7 +1,5 @@
 """Refining a category preserves objects already placed in descendants above it (#31)."""
 
-from __future__ import annotations
-
 from sage_categories.all import Axiom, Category, Fun, Mor, Sets, ask
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.construction import retained_object_input

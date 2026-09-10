@@ -1,8 +1,11 @@
 """Refining a category preserves objects already placed in descendants above it (#31)."""
 
-from sage_categories.all import Axiom, Category, Fun, Mor, Sets, ask
+from sage_categories.cat.category import Axiom, Category, ask
+from sage_categories.cat.functors import Fun
+from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.construction import retained_object_input
+from sage_categories.sets.finite import Sets
 
 
 class RefinementMiddle(Category):

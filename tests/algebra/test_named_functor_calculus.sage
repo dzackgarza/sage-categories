@@ -1,8 +1,19 @@
 """Named operation categories retain renaming isomorphisms and their composites."""
 
-from sage_categories.all import Cartesian, Fun, Mor, Sets, ask
 from sage_categories.cat.calculus import binary_product_data
-from sage_categories.cat.structured_objects import AdditiveGroups, AdditiveMagmas, AdditiveMonoids, Groups, Monoids, Semirings
+from sage_categories.cat.category import ask
+from sage_categories.cat.functors import Fun
+from sage_categories.cat.monoidal import Cartesian
+from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.structured_objects import (
+    AdditiveGroups,
+    AdditiveMagmas,
+    AdditiveMonoids,
+    Groups,
+    Monoids,
+    Semirings,
+)
+from sage_categories.sets.finite import Sets
 
 
 def test_named_restriction_retains_renaming_and_both_actions() -> None:

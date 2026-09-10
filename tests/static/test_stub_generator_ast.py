@@ -131,3 +131,44 @@ def test_shared_provider_projection_uses_common_ancestry_not_context_union() -> 
 
 
 test_shared_provider_projection_uses_common_ancestry_not_context_union()
+
+
+def test_source_role_aliases_resolve_cat_and_typed_singletons_without_runtime_values(tmp_path: Path) -> None:
+    package = tmp_path / "example"
+    package.mkdir()
+    (package / "category.py").write_text(
+        """
+__all__ = ["Cat", "CategoryOfCategories"]
+class CategoryOfCategories:
+    class MorphismType:
+        pass
+def Cat() -> CategoryOfCategories:
+    raise RuntimeError
+"""
+    )
+    (package / "functors.py").write_text(
+        """
+from example import category as _category
+__all__ = ["Functor", "NaturalTransformation"]
+Cat = _category.Cat
+class FunctorsCategory:
+    class MorphismType:
+        pass
+Functor = Cat().MorphismType
+Fun: FunctorsCategory = object()
+NaturalTransformation = Fun.MorphismType
+"""
+    )
+    generator = _stub_generator()
+    sources = tuple(sorted(package.rglob("*.py")))
+    inheritance = {
+        "arrow": {
+            "example.category.CategoryOfCategories.MorphismType": (),
+            "example.functors.FunctorsCategory.MorphismType": (),
+        }
+    }
+    aliases = generator._source_role_aliases("example", package, sources, inheritance)
+    assert aliases["example.functors"] == {
+        "Functor": "example.category.CategoryOfCategories.MorphismType",
+        "NaturalTransformation": "example.functors.FunctorsCategory.MorphismType",
+    }

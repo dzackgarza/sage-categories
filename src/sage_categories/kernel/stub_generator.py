@@ -40,7 +40,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     """Project declarations from a fresh package bootstrap in the current Sage interpreter."""
     from mypy.stubgen import main as stubgen_main
 
-    from sage_categories.kernel.compiler import compiler, runtime_declaration
+    from sage_categories.kernel.compiler import compiler
 
     sources = tuple(sorted(output_directory.rglob("*.py")))
     for source in sources:
@@ -55,7 +55,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         ]
     )
     inheritance = compiler().declared_inheritance()
-    runtime_aliases = _runtime_class_aliases(package, output_directory, sources, runtime_declaration)
+    runtime_aliases = _source_role_aliases(package, output_directory, sources, inheritance)
     source_modules = frozenset(_module_name(package, output_directory, source) for source in sources)
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
@@ -251,42 +251,143 @@ def _project_class_aliases(
 
 
 
-def _runtime_class_aliases(
+
+def _source_symbol_tables(
     package: str,
     output_directory: Path,
     sources: tuple[Path, ...],
-    runtime_declaration,
-) -> dict[str, dict[str, str]]:
-    """Return public runtime class aliases keyed by source module.
+) -> tuple[dict[str, dict[str, str]], dict[str, str], dict[str, dict[str, str]], dict[str, ast.Module]]:
+    """Return source-declared symbols, function returns and value annotations.
 
-    The package bootstrap has already constructed every owned category and role
-    class.  A public value such as ``Functor = Cat().MorphismType`` therefore
-    points at the compiled runtime class of one source declaration.  Project the
-    alias back to that declaration through the compiler rather than asking
-    ``stubgen`` to infer the result of the runtime category expression.
+    This is a lexical projection only.  It never reads a constructed category or
+    native value: imported names, written classes/functions and annotations are
+    enough to resolve role expressions such as ``Cat().MorphismType`` and
+    ``Fun.MorphismType``.
     """
-    result: dict[str, dict[str, str]] = {}
-    for source in sources:
-        module_name = _module_name(package, output_directory, source)
-        source_tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
-        public = _public_names(source_tree)
-        if not public:
-            continue
-        module = import_module(module_name)
-        declared = _declared_names(source_tree)
-        aliases: dict[str, str] = {}
-        for name in public:
-            if name in declared:
-                continue
-            value = getattr(module, name, None)
-            if not isinstance(value, type):
-                continue
-            declaration = runtime_declaration(value) or value
-            aliases[name] = f"{declaration.__module__}.{declaration.__qualname__}"
-        if aliases:
-            result[module_name] = aliases
-    return result
+    trees: dict[str, ast.Module] = {}
+    symbols: dict[str, dict[str, str]] = {}
+    annotations: dict[str, dict[str, str]] = {}
 
+    for source in sources:
+        module = _module_name(package, output_directory, source)
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        trees[module] = tree
+        local: dict[str, str] = {}
+        for statement in tree.body:
+            match statement:
+                case ast.Import(names=names):
+                    for alias in names:
+                        bound = alias.asname or alias.name.split(".")[0]
+                        local[bound] = alias.name if alias.asname else bound
+                case ast.ImportFrom(module=imported, names=names, level=0) if imported is not None:
+                    for alias in names:
+                        local[alias.asname or alias.name] = f"{imported}.{alias.name}"
+                case ast.ClassDef(name=name) | ast.FunctionDef(name=name) | ast.AsyncFunctionDef(name=name):
+                    local[name] = f"{module}.{name}"
+        symbols[module] = local
+
+    def path(module: str, expression: ast.expr | None) -> str | None:
+        match expression:
+            case ast.Name(id=name):
+                return symbols[module].get(name)
+            case ast.Attribute(value=value, attr=attr):
+                base = path(module, value)
+                return None if base is None else f"{base}.{attr}"
+            case _:
+                return None
+
+    # Resolve simple source aliases such as ``Cat = _category.Cat`` before
+    # reading annotations and function returns that refer to them.
+    changed = True
+    while changed:
+        changed = False
+        for module, tree in trees.items():
+            for statement in tree.body:
+                if not isinstance(statement, ast.Assign) or len(statement.targets) != 1:
+                    continue
+                target = statement.targets[0]
+                if not isinstance(target, ast.Name):
+                    continue
+                resolved = path(module, statement.value)
+                if resolved is None or symbols[module].get(target.id) == resolved:
+                    continue
+                symbols[module][target.id] = resolved
+                changed = True
+
+    function_returns: dict[str, str] = {}
+    for module, tree in trees.items():
+        typed_values: dict[str, str] = {}
+        for statement in tree.body:
+            if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
+                resolved = path(module, statement.annotation)
+                if resolved is not None:
+                    typed_values[statement.target.id] = resolved
+            if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
+                resolved = path(module, statement.returns)
+                if resolved is not None:
+                    function_returns[f"{module}.{statement.name}"] = resolved
+        annotations[module] = typed_values
+    return symbols, function_returns, annotations, trees
+
+
+def _source_role_aliases(
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+    inheritance: dict[str, dict[str, tuple[str, ...]]],
+) -> dict[str, dict[str, str]]:
+    """Resolve public aliases to written role declarations without runtime inspection."""
+    symbols, function_returns, annotations, trees = _source_symbol_tables(
+        package, output_directory, sources
+    )
+    providers = {provider for relations in inheritance.values() for provider in relations}
+    result: dict[str, dict[str, str]] = {}
+
+    def symbol_path(module: str, expression: ast.expr) -> str | None:
+        match expression:
+            case ast.Name(id=name):
+                return symbols[module].get(name)
+            case ast.Attribute(value=value, attr=attr):
+                base = symbol_path(module, value)
+                return None if base is None else f"{base}.{attr}"
+            case _:
+                return None
+
+    def value_type(module: str, expression: ast.expr) -> str | None:
+        match expression:
+            case ast.Name(id=name):
+                return annotations[module].get(name)
+            case ast.Call(func=func):
+                callable_name = symbol_path(module, func)
+                return None if callable_name is None else function_returns.get(callable_name)
+            case _:
+                return None
+
+    for module, tree in trees.items():
+        public = frozenset(_public_names(tree))
+        aliases: dict[str, str] = {}
+        for statement in tree.body:
+            if not isinstance(statement, ast.Assign) or len(statement.targets) != 1:
+                continue
+            target = statement.targets[0]
+            if not isinstance(target, ast.Name) or target.id not in public:
+                continue
+            value = statement.value
+            if not isinstance(value, ast.Attribute) or value.attr not in {
+                "ObjectType",
+                "ElementType",
+                "MorphismType",
+            }:
+                continue
+            owner = value_type(module, value.value)
+            if owner is None:
+                continue
+            declaration = f"{owner}.{value.attr}"
+            if declaration in providers:
+                aliases[target.id] = declaration
+        if aliases:
+            result[module] = aliases
+    return result
 
 def _qualified_module(name: str, source_modules: frozenset[str]) -> str:
     """Return the longest source-module prefix of one qualified declaration name."""

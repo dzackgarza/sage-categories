@@ -85,6 +85,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     category_parameter_counts = _source_category_parameter_counts(sources)
     category_modules = _source_category_modules(package, output_directory, sources)
     source_class_parameters = _source_class_type_parameters(package, output_directory, sources)
+    hoisted_role_providers = _source_hoisted_role_providers(package, output_directory, sources)
     generic_category_bases = _source_generic_category_bases(sources, category_parameter_counts)
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
@@ -97,7 +98,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         _project_class_aliases(tree, source_tree)
         _project_runtime_class_aliases(tree, runtime_aliases.get(module, {}), source_modules)
         if providers:
-            _project_provider_bases(tree, module, providers, source_modules)
+            _project_provider_bases(tree, module, providers, source_modules, hoisted_role_providers)
         _project_exact_morphism_endpoints(tree)
         _hoist_lexically_cyclic_nested_classes(tree, module)
         _project_category_role_parameters(
@@ -157,6 +158,38 @@ def _source_class_type_parameters(package: str, output_directory: Path, sources:
             names = tuple(parameter.name for parameter in declaration.node.type_params)
             if names:
                 result[declaration.name] = names
+    return result
+
+
+def _source_hoisted_role_providers(
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+) -> dict[str, str]:
+    """Map written nested role classes to their direct generated helper TypeInfos.
+
+    Category roles are hoisted into ``_StaticRoles_<Owner>`` by the static projector.
+    A compiler provider base must name that direct TypeInfo rather than an inherited
+    ``Owner.Role`` spelling: mypy can resolve the inherited name as the same nominal
+    class, but generic base substitution through that inherited nested alias loses the
+    role's type arguments.  The mapping is source-derived and only covers roles written
+    as local classes; role aliases remain aliases to their actual declaration owner.
+    """
+    result: dict[str, str] = {}
+    for source in sources:
+        module = _module_name(package, output_directory, source)
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        for owner in tree.body:
+            if not isinstance(owner, ast.ClassDef):
+                continue
+            bound = {name for local in owner.body for name in _statement_names(local)}
+            if not set(_CATEGORY_ROLES).issubset(bound):
+                continue
+            for local in owner.body:
+                if not isinstance(local, ast.ClassDef) or local.name not in _CATEGORY_ROLES:
+                    continue
+                public = f"{module}.{owner.name}.{local.name}"
+                result[public] = f"{module}._StaticRoles_{owner.name}.{local.name}"
     return result
 
 
@@ -1374,14 +1407,16 @@ def _project_provider_bases(
     module: str,
     providers: dict[str, tuple[str, ...]],
     source_modules: frozenset[str],
+    hoisted_role_providers: dict[str, str],
 ) -> None:
     required_modules: set[str] = set()
     for statement in _classes(tree.body, module):
         bases = providers.get(statement.name)
         if bases is None:
             continue
-        statement.node.bases = [_base_expression(base) for base in bases]
-        required_modules.update(_qualified_module(base, source_modules) for base in bases)
+        projected_bases = tuple(hoisted_role_providers.get(base, base) for base in bases)
+        statement.node.bases = [_base_expression(base) for base in projected_bases]
+        required_modules.update(_qualified_module(base, source_modules) for base in projected_bases)
     _ensure_module_imports(tree, required_modules)
 
 

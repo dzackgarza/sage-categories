@@ -188,6 +188,7 @@ class Owner:
                 "sage_categories.cat.category",
             }
         ),
+        {},
     )
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "import sage_categories.cat.category" in projected
@@ -196,6 +197,27 @@ class Owner:
 
 
 test_provider_projection_imports_the_modules_owning_qualified_bases()
+
+
+def test_provider_projection_uses_direct_hoisted_role_typeinfo() -> None:
+    stub = ast.parse(
+        """
+class ObjectType:
+    pass
+"""
+    )
+    generator = _stub_generator()
+    public = "sage_categories.cat.category.CategoryOfCategories.MorphismType"
+    helper = "sage_categories.cat.category._StaticRoles_CategoryOfCategories.MorphismType"
+    generator._project_provider_bases(
+        stub,
+        "sage_categories.example",
+        {"sage_categories.example.ObjectType": (public,)},
+        frozenset({"sage_categories.example", "sage_categories.cat.category"}),
+        {public: helper},
+    )
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert f"class ObjectType({helper}):" in projected
 
 
 def test_shared_provider_projection_uses_common_ancestry_not_context_union() -> None:

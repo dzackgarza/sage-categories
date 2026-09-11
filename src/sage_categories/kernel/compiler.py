@@ -111,9 +111,7 @@ class _KernelRoleRootCategory(SageCategory):
 
     @lazy_attribute
     def _depth(self) -> int:
-        return 1 + max(
-            (target._cmp_key[1] for target in self.super_categories()), default=-1
-        )
+        return 1 + max((target._cmp_key[1] for target in self.super_categories()), default=-1)
 
     def super_categories(self) -> list[SageCategory]:
         if self._root is CategoryPoint:
@@ -122,11 +120,7 @@ class _KernelRoleRootCategory(SageCategory):
         current = _runtime_node(base)
         if current is not None:
             return [_runtime_category(current)]
-        return [
-            _cat_element_role_root()
-            if base is CategoryPoint
-            else _role_root(self._role, base)
-        ]
+        return [_cat_element_role_root() if base is CategoryPoint else _role_root(self._role, base)]
 
     @lazy_attribute
     def parent_class(self) -> type[CategoryPoint]:
@@ -184,9 +178,7 @@ _RUNTIME_CACHE_NAMES = (
 
 def _role_root(role: Role, root: type[CategoryPoint]) -> _KernelRoleRootCategory:
     """The Sage-canonical private category ending one role chain at ``root``."""
-    role = next(
-        (candidate for candidate in Role if kernel_base(candidate) is root), role
-    )
+    role = next((candidate for candidate in Role if kernel_base(candidate) is root), role)
     return _KernelRoleRootCategory(role, root)
 
 
@@ -200,9 +192,7 @@ def _cat_element_role_root() -> _KernelRoleRootCategory:
     return _role_root(Role.ELEMENT, CategoryPoint)
 
 
-_IGNORED_NAMES = frozenset(
-    {"__init__", "__new__", "__repr__", "__init_subclass__", "__class_getitem__"}
-)
+_IGNORED_NAMES = frozenset({"__init__", "__new__", "__repr__", "__init_subclass__", "__class_getitem__"})
 
 _ROLE_POSITIONS: dict[Role, int] = {
     Role.ELEMENT: 0,
@@ -243,36 +233,24 @@ def _runtime_category(current: Node) -> _RuntimeImplementationCategory:
 
 def _runtime_targets(current: Node) -> tuple[SageCategory, ...]:
     """The immediate Sage runtime targets of one implementation node."""
-    targets: list[SageCategory] = [
-        _runtime_category(target) for _, target in successors(current)
-    ]
+    targets: list[SageCategory] = [_runtime_category(target) for _, target in successors(current)]
     if not targets:
-        targets.append(
-            _cat_element_role_root()
-            if _is_cat_element_root(current)
-            else _kernel_role_root(current.role)
-        )
+        targets.append(_cat_element_role_root() if _is_cat_element_root(current) else _kernel_role_root(current.role))
     if current.role is Role.OBJECT:
         shifted = _runtime_category(node(current.category.category(), Role.ELEMENT))
-        if not any(
-            issubclass(target.parent_class, shifted.parent_class) for target in targets
-        ):
+        if not any(issubclass(target.parent_class, shifted.parent_class) for target in targets):
             targets.append(shifted)
     return tuple(targets)
 
 
 def _is_cat_element_root(current: Node) -> bool:
     """Whether ``current`` is the preallocated common ``Cat().ElementType`` node."""
-    return (
-        current.role is Role.ELEMENT and current.category.category() is current.category
-    )
+    return current.role is Role.ELEMENT and current.category.category() is current.category
 
 
 def _is_cat_object_root(current: Node) -> bool:
     """Whether ``current`` is the ``Cat().ObjectType`` node, whose objects are the categories."""
-    return (
-        current.role is Role.OBJECT and current.category.category() is current.category
-    )
+    return current.role is Role.OBJECT and current.category.category() is current.category
 
 
 def inheriting_functors(category: Category) -> tuple[Functor, ...]:
@@ -289,20 +267,13 @@ def inheriting_functors(category: Category) -> tuple[Functor, ...]:
     """
     from sage_categories.kernel.refinement import traces_inheritance
 
-    return tuple(
-        functor
-        for functor in category.selected_functors()
-        if traces_inheritance(functor)
-    )
+    return tuple(functor for functor in category.selected_functors() if traces_inheritance(functor))
 
 
 def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
     """The distinct implementation owners reached from ``current`` in the same role."""
     return tuple(
-        (functor, target)
-        for functor in inheriting_functors(current.category)
-        for target in (node(functor.codomain(), current.role),)
-        if not same_node(current, target)
+        (functor, target) for functor in inheriting_functors(current.category) for target in (node(functor.codomain(), current.role),) if not same_node(current, target)
     )
 
 
@@ -319,9 +290,7 @@ def declared_inheritance(
     """
     current = node(category, role)
     declared = runtime_semantic_bases(current.category.role_class(current.role))
-    assert declared is not None, (
-        f"{current.category!r}.{current.role.value} has no compiled declaration relation"
-    )
+    assert declared is not None, f"{current.category!r}.{current.role.value} has no compiled declaration relation"
     return declared
 
 
@@ -365,15 +334,11 @@ def _projection_surface(role: Role) -> str:
             return "arrow"
 
 
-def _projection_providers() -> Iterator[
-    tuple[str, Category, Role, type[CategoryPoint]]
-]:
+def _projection_providers() -> Iterator[tuple[str, Category, Role, type[CategoryPoint]]]:
     """Yield normalized declaration providers once for every installed role surface."""
     seen: list[Node] = []
     for role in Role:
-        for category, _ in sorted(
-            _node_runtimes[role].items(), key=lambda item: item[0]._ordinal
-        ):
+        for category, _ in sorted(_node_runtimes[role].items(), key=lambda item: item[0]._ordinal):
             current = node(category, role)
             if any(same_node(current, known) for known in seen):
                 continue
@@ -396,10 +361,7 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
     observed: set[tuple[str, str]] = set()
     for surface_name, category, role, provider in _projection_providers():
         provider_name = _declaration_name(provider)
-        names = tuple(
-            _declaration_name(declaration)
-            for declaration in declared_inheritance(category, role)
-        )
+        names = tuple(_declaration_name(declaration) for declaration in declared_inheritance(category, role))
         entry = tuple(name for name in names if name != provider_name)
         relations = result.setdefault(surface_name, {})
         key = (surface_name, provider_name)
@@ -417,11 +379,7 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
     )
     for provider, declared_role in declared_roles():
         role = next(
-            (
-                candidate
-                for candidate in Role
-                if _installed_root_declarations.get(kernel_base(candidate)) is provider
-            ),
+            (candidate for candidate in Role if _installed_root_declarations.get(kernel_base(candidate)) is provider),
             declared_role,
         )
         provider_name = _declaration_name(provider)
@@ -434,14 +392,8 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
         if installed is not None and installed is not provider:
             bases = (installed,)
         else:
-            bases = tuple(
-                declaration
-                for declaration in (universal, stable_role)
-                if declaration is not provider
-            )
-        relations[provider_name] = tuple(
-            _declaration_name(declaration) for declaration in bases
-        )
+            bases = tuple(declaration for declaration in (universal, stable_role) if declaration is not provider)
+        relations[provider_name] = tuple(_declaration_name(declaration) for declaration in bases)
     return result
 
 
@@ -450,12 +402,7 @@ def _subtyping_projection() -> dict[str, dict[str, tuple[str, ...]]]:
     result: dict[str, dict[str, tuple[str, ...]]] = {}
     for surface_name, category, role, provider in _projection_providers():
         provider_name = _declaration_name(provider)
-        names = tuple(
-            _declaration_name(
-                node(target, role).category.local_role_class(node(target, role).role)
-            )
-            for target in declared_subtyping(category, role)
-        )
+        names = tuple(_declaration_name(node(target, role).category.local_role_class(node(target, role).role)) for target in declared_subtyping(category, role))
         entry = tuple(name for name in names if name != provider_name)
         existing = result.setdefault(surface_name, {}).get(provider_name, ())
         result[surface_name][provider_name] = tuple(dict.fromkeys(existing + entry))
@@ -475,15 +422,11 @@ def _local_method_names(local_class: type[CategoryPoint]) -> tuple[str, ...]:
     return tuple(
         name
         for name, function in vars(local_class).items()
-        if inspect.isfunction(function)
-        and name not in _IGNORED_NAMES
-        and (not name.startswith("_") or name.startswith("__"))
+        if inspect.isfunction(function) and name not in _IGNORED_NAMES and (not name.startswith("_") or name.startswith("__"))
     )
 
 
-def _install_written_body(
-    compiled: type[CategoryPoint], local: type[CategoryPoint]
-) -> None:
+def _install_written_body(compiled: type[CategoryPoint], local: type[CategoryPoint]) -> None:
     """Install each written member of one declaration on the class compiled from it."""
     if Generic in local.__mro__:
         compiled.__class_getitem__ = classmethod(GenericAlias)
@@ -513,10 +456,7 @@ def install_on_declaration[**P, R](
     setattr(local, name, member)
     for table in _runtime_categories.values():
         for _, runtime in table.items():
-            if (
-                runtime._current.category.local_role_class(runtime._current.role)
-                is local
-            ):
+            if runtime._current.category.local_role_class(runtime._current.role) is local:
                 compiled = runtime.parent_class
                 setattr(compiled, name, member)
 
@@ -540,10 +480,7 @@ def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
     from sage_categories.kernel.predicates import axiom_layer
 
     runtime_by_class = {
-        runtime.__dict__["parent_class"]: runtime
-        for table in _runtime_categories.values()
-        for _, runtime in table.items()
-        if "parent_class" in runtime.__dict__
+        runtime.__dict__["parent_class"]: runtime for table in _runtime_categories.values() for _, runtime in table.items() if "parent_class" in runtime.__dict__
     }
     owners: dict[str, tuple[Node, type[CategoryPoint], type[CategoryPoint]]] = {}
     for surface in surfaces:
@@ -551,9 +488,7 @@ def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
             runtime = runtime_by_class.get(implementation)
             if runtime is None:
                 continue
-            declaration = runtime._current.category.local_role_class(
-                runtime._current.role
-            )
+            declaration = runtime._current.category.local_role_class(runtime._current.role)
             for name in _local_method_names(runtime.ParentMethods):
                 previous = owners.get(name)
                 if previous is None:
@@ -563,13 +498,9 @@ def _assert_no_semantic_collisions(*surfaces: type[CategoryPoint]) -> None:
                 if declaration is previous_declaration:
                     continue
                 axiom = axiom_layer().application_axiom(declaration, name)
-                if axiom is not None and axiom is axiom_layer().application_axiom(
-                    previous_declaration, name
-                ):
+                if axiom is not None and axiom is axiom_layer().application_axiom(previous_declaration, name):
                     continue
-                if issubclass(implementation, previous_class) or issubclass(
-                    previous_class, implementation
-                ):
+                if issubclass(implementation, previous_class) or issubclass(previous_class, implementation):
                     continue
                 raise SemanticCollisionError(
                     f"{name!r} is declared by both {previous_node.category!r} and {runtime._current.category!r}, "
@@ -597,17 +528,12 @@ def _own_classes(value: CategoryPoint) -> tuple[type[CategoryPoint], ...]:
     return tuple(current_classes)
 
 
-def _install_class_join(
-    value: CategoryPoint, classes: tuple[type[CategoryPoint], ...]
-) -> None:
+def _install_class_join(value: CategoryPoint, classes: tuple[type[CategoryPoint], ...]) -> None:
     """Set the value's class to the join of ``classes``, in that order, with subsumed classes dropped."""
     bases = tuple(
         candidate
         for position, candidate in enumerate(classes)
-        if not any(
-            other is not candidate and issubclass(other, candidate) for other in classes
-        )
-        and not any(other is candidate for other in classes[:position])
+        if not any(other is not candidate and issubclass(other, candidate) for other in classes) and not any(other is candidate for other in classes[:position])
     )
     if len(bases) == 1:
         object.__setattr__(value, "__class__", bases[0])
@@ -623,9 +549,7 @@ def _install_class_join(
     object.__setattr__(value, "__class__", refined)
 
 
-def realize_implementation_class(
-    value: CategoryPoint, category_type: type[CategoryPoint]
-) -> None:
+def realize_implementation_class(value: CategoryPoint, category_type: type[CategoryPoint]) -> None:
     """Give ``value`` the written class ``category_type`` beside the classes it already carries."""
     own = _own_classes(value)
     if not any(issubclass(cls, category_type) for cls in own):
@@ -634,9 +558,7 @@ def realize_implementation_class(
     _install_class_join(value, own)
 
 
-def _refine_implementation_class(
-    value: CategoryPoint, role_class: type[CategoryPoint]
-) -> None:
+def _refine_implementation_class(value: CategoryPoint, role_class: type[CategoryPoint]) -> None:
     """Refine one owned value with a compiled implementation class.
 
     The refined class is the join of the value's own classes with the role class of its
@@ -648,9 +570,7 @@ def _refine_implementation_class(
     takes its place, so the value's own class stays first (``refinement.place``).
     """
     own = _own_classes(value)
-    if issubclass(type(value), role_class) and all(
-        issubclass(type(value), cls) for cls in own
-    ):
+    if issubclass(type(value), role_class) and all(issubclass(type(value), cls) for cls in own):
         return
     classes = tuple(role_class if issubclass(role_class, cls) else cls for cls in own)
     if not any(cls is role_class for cls in classes):
@@ -692,15 +612,11 @@ def runtime_implementation_class(
 
 def _runtime[Value: CategoryPoint, Datum](current: Node) -> _NodeRuntime[Value, Datum]:
     table = _node_runtimes[current.role]
-    assert current.category in table, (
-        f"the {current.role.value} runtime of {current.category!r} is not compiled"
-    )
+    assert current.category in table, f"the {current.role.value} runtime of {current.category!r} is not compiled"
     return table[current.category]
 
 
-def _silent_initializer[Value: CategoryPoint, Datum](
-    _instance: Value, _datum: Datum
-) -> None:
+def _silent_initializer[Value: CategoryPoint, Datum](_instance: Value, _datum: Datum) -> None:
     """The initializer of a declaration with no local ``__init__``: it adds no state."""
 
 
@@ -709,8 +625,7 @@ def _linearized_nodes(current: Node) -> tuple[Node, ...]:
     return tuple(
         runtime._current
         for runtime in _runtime_category(current)._all_super_categories
-        if isinstance(runtime, _RuntimeImplementationCategory)
-        and not same_node(runtime._current, current)
+        if isinstance(runtime, _RuntimeImplementationCategory) and not same_node(runtime._current, current)
     )
 
 
@@ -743,19 +658,10 @@ def runtime_semantic_bases(
             if installed is not None and installed is not runtime_class:
                 return (installed,)
         return None
-    supplied = [
-        source.category.local_role_class(source.role)
-        for source in (current, *_linearized_nodes(current))
-    ]
-    result: list[type[CategoryPoint]] = [
-        declaration
-        for position, declaration in enumerate(supplied)
-        if not any(declaration is later for later in supplied[position + 1 :])
-    ]
+    supplied = [source.category.local_role_class(source.role) for source in (current, *_linearized_nodes(current))]
+    result: list[type[CategoryPoint]] = [declaration for position, declaration in enumerate(supplied) if not any(declaration is later for later in supplied[position + 1 :])]
     stable_role = kernel_base(current.role)
-    if not issubclass(stable_role, runtime_class) and not any(
-        issubclass(base, stable_role) for base in result
-    ):
+    if not issubclass(stable_role, runtime_class) and not any(issubclass(base, stable_role) for base in result):
         result.append(stable_role)
         # A declaration installed on the role root is a semantic base of every value of
         # that role: ``Mor(C).ObjectType`` is installed on the morphism root rather than
@@ -792,9 +698,7 @@ def _initialize_kernel_roots(instance: CategoryPoint, role: Role) -> None:
     instance._initialize_identity()
 
 
-def _with_cat_element_node(
-    nodes: tuple[Node, ...], universe: Category
-) -> tuple[Node, ...]:
+def _with_cat_element_node(nodes: tuple[Node, ...], universe: Category) -> tuple[Node, ...]:
     """Append the common ``Cat().ElementType`` root node when the linearization lacks it.
 
     An object of ``C`` and a morphism of ``C`` (an object of ``Mor(C)``) are each a point
@@ -815,14 +719,10 @@ def _unrelated_owners(first: Node, second: Node) -> bool:
     the bimodule of D167 -- or when one's compiled class stands below the other's, which
     is the ordinary refinement an inheriting functor installs.
     """
-    if first.category.local_role_class(first.role) is second.category.local_role_class(
-        second.role
-    ):
+    if first.category.local_role_class(first.role) is second.category.local_role_class(second.role):
         return False
     first_class, second_class = _runtime(first).owner, _runtime(second).owner
-    return not issubclass(first_class, second_class) and not issubclass(
-        second_class, first_class
-    )
+    return not issubclass(first_class, second_class) and not issubclass(second_class, first_class)
 
 
 def _keep_first_state(
@@ -879,9 +779,7 @@ def _keep_first_state(
                 f"{_declaration_name(owner.category.local_role_class(owner.role))}, "
                 "which are incomparable; name the two mathematical states distinctly"
             )
-        if owner.category.local_role_class(
-            owner.role
-        ) is not first_owner.category.local_role_class(first_owner.role) and issubclass(
+        if owner.category.local_role_class(owner.role) is not first_owner.category.local_role_class(first_owner.role) and issubclass(
             _runtime(owner).owner, _runtime(first_owner).owner
         ):
             installed[name] = (state, owner)
@@ -899,9 +797,7 @@ def _keep_first_state(
 
 
 def _initialize_graph(
-    context: ObjectConstructionContext
-    | ElementConstructionContext
-    | MorphismConstructionContext,
+    context: ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext,
     current: Node,
     instance: CategoryPoint,
     data: object,
@@ -940,11 +836,7 @@ def _initialize_graph(
 
     def resolution(owner: Node) -> tuple[object, CategoryPoint] | None:
         return next(
-            (
-                (datum, value)
-                for known, datum, value in resolved
-                if same_node(known, owner)
-            ),
+            ((datum, value) for known, datum, value in resolved if same_node(known, owner)),
             None,
         )
 
@@ -954,17 +846,13 @@ def _initialize_graph(
             action = queued.pop(0)
             if resolution(action.target) is not None:
                 continue
-            image, built, image_data = image_datum(
-                action.functor, action.representative
-            )
+            image, built, image_data = image_datum(action.functor, action.representative)
             if image is action.representative:
                 # An inclusion is the identity on this value: the target shares the datum
                 # this owner was constructed from, and adds nothing to it.
                 resolved.append((action.target, action.datum, action.representative))
                 return True
-            assert (
-                same_node(built, action.target) or not _runtime(action.target).written
-            ), (
+            assert same_node(built, action.target) or not _runtime(action.target).written, (
                 f"{action.functor!r} out of {type(action.owner.category).__name__} constructs its image at "
                 f"{type(built.category).__name__}.{built.role.value}, not at its codomain "
                 f"{type(action.target.category).__name__}.{action.target.role.value}, whose declaration initializes local state"
@@ -983,30 +871,19 @@ def _initialize_graph(
             continue
         ordered.append(owner)
         pending.extend(reversed([target for _, target in successors(owner)]))
-    ordered.extend(
-        owner
-        for owner in context.nodes
-        if not any(same_node(owner, known) for known in ordered)
-    )
+    ordered.extend(owner for owner in context.nodes if not any(same_node(owner, known) for known in ordered))
     for owner in ordered:
-        is_point_node = _is_cat_element_root(owner) or (
-            owner.role is Role.ELEMENT and current.role is not Role.ELEMENT
-        )
+        is_point_node = _is_cat_element_root(owner) or (owner.role is Role.ELEMENT and current.role is not Role.ELEMENT)
         while not is_point_node and resolution(owner) is None and run_next_action():
             pass
         found = (data, instance) if is_point_node else resolution(owner)
-        assert found is not None, (
-            f"no selected functor reaches {owner.category!r}.{owner.role.value} from {current.category!r}"
-        )
+        assert found is not None, f"no selected functor reaches {owner.category!r}.{owner.role.value} from {current.category!r}"
         datum, representative = found
         runtime = _runtime(owner)
         if isinstance(context, ObjectConstructionContext):
             context.initializing_image = representative
         with record_attribute_writes(instance) as written:
-            if (
-                isinstance(context, ObjectConstructionContext)
-                and owner.role is Role.MORPHISM
-            ):
+            if isinstance(context, ObjectConstructionContext) and owner.role is Role.MORPHISM:
                 identity = retained_morphism_input(representative).identity
                 instance._domain, instance._codomain = (
                     identity.domain,
@@ -1014,22 +891,15 @@ def _initialize_graph(
                 )
             context.run(
                 owner,
-                lambda runtime=runtime, datum=datum: runtime.initializer(
-                    instance, datum
-                ),
+                lambda runtime=runtime, datum=datum: runtime.initializer(instance, datum),
             )
         _keep_first_state(instance, installed, kernel_state, owner, written)
         if owner.role is not current.role:
             continue
-        queued.extend(
-            _SelectedAction(functor, owner, target, datum, representative)
-            for functor, target in successors(owner)
-        )
+        queued.extend(_SelectedAction(functor, owner, target, datum, representative) for functor, target in successors(owner))
 
 
-def _object_image_datum(
-    functor: Functor, instance: CategoryPoint
-) -> tuple[CategoryPoint, Node, object]:
+def _object_image_datum(functor: Functor, instance: CategoryPoint) -> tuple[CategoryPoint, Node, object]:
     image = functor.on_object(instance)
     if image is instance:
         return image, Node(functor.codomain(), Role.OBJECT), None
@@ -1037,9 +907,7 @@ def _object_image_datum(
     return image, node(retained.identity.category, Role.OBJECT), retained.datum
 
 
-def _morphism_image_datum(
-    functor: Functor, instance: CategoryPoint
-) -> tuple[CategoryPoint, Node, object]:
+def _morphism_image_datum(functor: Functor, instance: CategoryPoint) -> tuple[CategoryPoint, Node, object]:
     image = functor.on_morphism(instance)
     if image is instance:
         return image, Node(functor.codomain(), Role.MORPHISM), None
@@ -1047,9 +915,7 @@ def _morphism_image_datum(
     return image, node(retained.identity.category, Role.OBJECT), retained.datum
 
 
-def _element_image_datum(
-    functor: Functor, instance: CategoryPoint
-) -> tuple[CategoryPoint, Node, object]:
+def _element_image_datum(functor: Functor, instance: CategoryPoint) -> tuple[CategoryPoint, Node, object]:
     """The image of a point ``t: T -> X`` is the element of ``F(X)`` defined by ``F(t)`` (D17)."""
     defining_morphism = instance.defining_morphism()
     image_morphism = functor.on_morphism(defining_morphism)
@@ -1116,12 +982,8 @@ def _construct_morphism_root[Datum](
     root = MorphismConstructionInput(instance, identity, data)
     retain_morphism_input(root)
     cat_element_identity = CategoryPointIdentity(identity.category)
-    nodes = _with_cat_element_node(
-        (current, *_linearized_nodes(current)), identity.category.universe()
-    )
-    context = MorphismConstructionContext(
-        instance, identity, cat_element_identity, nodes
-    )
+    nodes = _with_cat_element_node((current, *_linearized_nodes(current)), identity.category.universe())
+    context = MorphismConstructionContext(instance, identity, cat_element_identity, nodes)
     token = activate_morphism_context(context)
     try:
         _initialize_kernel_roots(instance, Role.MORPHISM)
@@ -1202,11 +1064,7 @@ def _construction_node(instance: CategoryPoint, role: Role) -> Node:
     """
     for base in type(instance).__mro__:
         current = _runtime_node(base)
-        if (
-            current is not None
-            and current.role is role
-            and current.category in _node_runtimes[role]
-        ):
+        if current is not None and current.role is role and current.category in _node_runtimes[role]:
             return current
     raise AssertionError(f"{type(instance)!r} has no compiled {role.value} class")
 
@@ -1228,9 +1086,7 @@ def _retention_node(constructing_class: type[CategoryPoint]) -> Node | None:
     return current if current is not None and current.role is Role.OBJECT else None
 
 
-def _allocate_object(
-    cls: type[ObjectOfCategory], *arguments: object, **keywords: object
-) -> ObjectOfCategory:
+def _allocate_object(cls: type[ObjectOfCategory], *arguments: object, **keywords: object) -> ObjectOfCategory:
     """Return the object the constructing category retains for its datum, or a new one (D111).
 
     A category states its constructors from its datum and keeps no store of its own: one
@@ -1263,9 +1119,7 @@ def _initialize_object[Datum](
         return
     retention = _retention_node(type(instance))
     current = _construction_node(instance, Role.OBJECT)
-    _construct_object_root(
-        current, instance, ObjectRoleIdentity(current.category), data
-    )
+    _construct_object_root(current, instance, ObjectRoleIdentity(current.category), data)
     if retention is not None and data is not None:
         retain_object_by_datum(retention.category, data, instance)
 
@@ -1278,13 +1132,9 @@ def _initialize_element[Datum](
     active = active_construction_context(instance)
     if active is not None and active.canonical_image is instance:
         _reject_base_initializer_call(instance)
-    assert defining_morphism is not None, (
-        "an element root constructor requires its defining morphism"
-    )
+    assert defining_morphism is not None, "an element root constructor requires its defining morphism"
     current = _construction_node(instance, Role.ELEMENT)
-    _construct_element_root(
-        current, instance, ElementRoleIdentity(defining_morphism), data
-    )
+    _construct_element_root(current, instance, ElementRoleIdentity(defining_morphism), data)
 
 
 def _initialize_morphism[Datum](
@@ -1296,15 +1146,11 @@ def _initialize_morphism[Datum](
     active = active_construction_context(instance)
     if active is not None and active.canonical_image is instance:
         _reject_base_initializer_call(instance)
-    assert domain is not None and codomain is not None, (
-        "a morphism root constructor requires its endpoints"
-    )
+    assert domain is not None and codomain is not None, "a morphism root constructor requires its endpoints"
     current = _construction_node(instance, Role.MORPHISM)
     # A morphism of ``C`` is an object of ``Mor(C)``, and the compiled class the
     # constructor names says which ``C`` it belongs to (``_construction_node``).
-    identity = MorphismRoleIdentity(
-        current.category.morphism_category(1), domain, codomain
-    )
+    identity = MorphismRoleIdentity(current.category.morphism_category(1), domain, codomain)
     _construct_morphism_root(current, instance, identity, data)
 
 
@@ -1329,18 +1175,14 @@ def _debug_unresolved_diamonds(category: Category) -> None:
             if target not in paths:
                 paths[target] = []
             paths[target].append(next_path)
-            assert not any(target is ancestor for ancestor in path), (
-                f"the structural graph contains a cycle through {target!r}"
-            )
+            assert not any(target is ancestor for ancestor in path), f"the structural graph contains a cycle through {target!r}"
             walk(target, next_path)
 
     walk(category, (category,))
     for target, target_paths in paths.items():
         if len(target_paths) < 2:
             continue
-        rendered = " ; ".join(
-            " -> ".join(repr(node) for node in path) for path in target_paths
-        )
+        rendered = " ; ".join(" -> ".join(repr(node) for node in path) for path in target_paths)
         _LOGGER.debug(
             "unresolved structural diamond to %r from %r: %s",
             target,
@@ -1355,31 +1197,21 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
 
     for functor in functors:
         functor_category = category.universe().morphism_category(1)
-        assert is_placed(functor, functor_category), (
-            f"{functor!r} is not an object of {functor_category!r}"
-        )
+        assert is_placed(functor, functor_category), f"{functor!r} is not an object of {functor_category!r}"
         if declares_point(functor):
             # A selected point functor is the arrow ``* -> D`` that places this category
             # as an object of ``D``; it starts at the terminal category, not here, and
             # what it carries is the level shift rather than an implementation edge
             # (D154, D161, D169; ``refinement.place``).
             continue
-        assert functor.domain() is category, (
-            f"{functor!r} does not have domain {category!r}"
-        )
+        assert functor.domain() is category, f"{functor!r} does not have domain {category!r}"
         # Naming a declared category as a functor's *domain* is always safe; selecting a
         # functor into one that no implementation claims is not, because the declaration's
         # empty implementation classes would compile into this category's own
         # linearization (``specs/functor.md``, "Failing loudly").
         open_codomain = category.universe().open_declaration(functor.codomain())
-        assert open_codomain is None, (
-            f"{category!r} selects {functor!r} into {open_codomain}, which Cat declares and no implementation claims"
-        )
-    assert all(
-        first is not second
-        for index, first in enumerate(functors)
-        for second in functors[index + 1 :]
-    ), f"{category!r} selects one functor twice"
+        assert open_codomain is None, f"{category!r} selects {functor!r} into {open_codomain}, which Cat declares and no implementation claims"
+    assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), f"{category!r} selects one functor twice"
     _debug_unresolved_diamonds(category)
     for role in _COMPILE_ORDER:
         current = node(category, role)
@@ -1387,11 +1219,7 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
             _, declared_role = category.role_source(role)
             if declared_role is not role:
                 assert role is Role.OBJECT and declared_role is Role.MORPHISM
-                normalization_owner = next(
-                    owner
-                    for owner in type(category).__mro__
-                    if "role_source" in vars(owner)
-                )
+                normalization_owner = next(owner for owner in type(category).__mro__ if "role_source" in vars(owner))
                 root, declaration = (
                     kernel_base(current.role),
                     vars(normalization_owner)[Role.OBJECT.value],
@@ -1408,9 +1236,7 @@ def _install_runtime_node(current: Node) -> type[CategoryPoint]:
     compiled = _compiled_class(current)
     compiled._category_runtime_node = current
     _assert_no_semantic_collisions(compiled)
-    node_initializer = vars(current.category.local_role_class(current.role)).get(
-        "__init__"
-    )
+    node_initializer = vars(current.category.local_role_class(current.role)).get("__init__")
     written = node_initializer is not None
     if node_initializer is None:
         node_initializer = _silent_initializer
@@ -1427,9 +1253,7 @@ def _install_runtime_node(current: Node) -> type[CategoryPoint]:
             compiled.__init__ = _initialize_element
         case Role.MORPHISM:
             compiled.__init__ = _initialize_morphism
-    _node_runtimes[current.role][current.category] = _NodeRuntime(
-        node_initializer, compiled, written
-    )
+    _node_runtimes[current.role][current.category] = _NodeRuntime(node_initializer, compiled, written)
     setattr(current.category, current.role.value, compiled)
     return compiled
 
@@ -1468,9 +1292,7 @@ def implement_category(
         vars(category)["_own_classes"] = (implementation,)
         implementation.__init__(category)
         root = retained_object_input(category)
-        context = ObjectConstructionContext(
-            category, root.identity, CategoryPointIdentity(root.identity.category), ()
-        )
+        context = ObjectConstructionContext(category, root.identity, CategoryPointIdentity(root.identity.category), ())
         token = activate_object_context(context)
         try:
             category.recompile()
@@ -1486,11 +1308,7 @@ def implement_category(
     category_initializer = vars(implementation).get("__init__")
     if category_initializer is not None:
         category_initializer(category)
-    additions = tuple(
-        functor
-        for functor in selected_functors[1:]
-        if not any(functor is known for known in category.selected_functors())
-    )
+    additions = tuple(functor for functor in selected_functors[1:] if not any(functor is known for known in category.selected_functors()))
     category._implementation_selected_functors = (
         *category._implementation_selected_functors,
         *additions,
@@ -1547,46 +1365,24 @@ def apply_level_shift(member: Category, placement: Category) -> None:
             frontier.extend(target for _, target in successors(candidate))
         return False
 
-    affected = tuple(
-        runtime
-        for table in _runtime_categories.values()
-        for _, runtime in table.items()
-        if reaches_changed(runtime)
-    )
+    affected = tuple(runtime for table in _runtime_categories.values() for _, runtime in table.items() if reaches_changed(runtime))
     old_classes = {runtime.parent_class: runtime for runtime in affected}
     old_nodes = {runtime: _linearized_nodes(runtime._current) for runtime in affected}
     changed._targets = _runtime_targets(current)
     for runtime in affected:
         for name in _RUNTIME_CACHE_NAMES:
             runtime.__dict__.pop(name, None)
-    replacements = {
-        old_class: _install_runtime_node(runtime._current)
-        for old_class, runtime in old_classes.items()
-    }
-    object_runtimes_by_old_class = {
-        old_class: runtime
-        for old_class, runtime in old_classes.items()
-        if runtime._current.role is Role.OBJECT
-    }
+    replacements = {old_class: _install_runtime_node(runtime._current) for old_class, runtime in old_classes.items()}
+    object_runtimes_by_old_class = {old_class: runtime for old_class, runtime in old_classes.items() if runtime._current.role is Role.OBJECT}
     added_by_runtime = {
-        runtime: tuple(
-            reached
-            for reached in _linearized_nodes(runtime._current)
-            if not any(same_node(reached, old) for old in old_nodes[runtime])
-        )
+        runtime: tuple(reached for reached in _linearized_nodes(runtime._current) if not any(same_node(reached, old) for old in old_nodes[runtime]))
         for runtime in object_runtimes_by_old_class.values()
     }
     for constructed in retained_values():
-        if not isinstance(constructed, ObjectOfCategory) or not is_constructed(
-            constructed
-        ):
+        if not isinstance(constructed, ObjectOfCategory) or not is_constructed(constructed):
             continue
         runtime = next(
-            (
-                object_runtimes_by_old_class[base]
-                for base in type(constructed).__mro__
-                if base in object_runtimes_by_old_class
-            ),
+            (object_runtimes_by_old_class[base] for base in type(constructed).__mro__ if base in object_runtimes_by_old_class),
             None,
         )
         if runtime is None:
@@ -1605,9 +1401,7 @@ def _replace_runtime_classes(
     """Rebuild a dynamic value class over replacement runtime classes."""
     if candidate in replacements:
         return replacements[candidate]
-    bases = tuple(
-        _replace_runtime_classes(base, replacements) for base in candidate.__bases__
-    )
+    bases = tuple(_replace_runtime_classes(base, replacements) for base in candidate.__bases__)
     if bases == candidate.__bases__:
         return candidate
     with building_role_classes():
@@ -1621,26 +1415,18 @@ def _replace_runtime_classes(
         )
 
 
-def _initialize_added_object_nodes(
-    value: ObjectOfCategory, added: tuple[Node, ...]
-) -> None:
+def _initialize_added_object_nodes(value: ObjectOfCategory, added: tuple[Node, ...]) -> None:
     """Initialize the new nodes of one rebuilt object implementation graph."""
     if not added:
         return
-    assert all(current.role is Role.ELEMENT for current in added), (
-        f"a placement of {value!r} added a non-point node: {added!r}"
-    )
+    assert all(current.role is Role.ELEMENT for current in added), f"a placement of {value!r} added a non-point node: {added!r}"
     root = retained_object_input(value)
-    context = ObjectConstructionContext(
-        value, root.identity, CategoryPointIdentity(root.identity.category), added
-    )
+    context = ObjectConstructionContext(value, root.identity, CategoryPointIdentity(root.identity.category), added)
     token = activate_object_context(context)
     try:
         for current in added:
             runtime = _runtime(current)
-            context.run(
-                current, lambda runtime=runtime: runtime.initializer(value, root.datum)
-            )
+            context.run(current, lambda runtime=runtime: runtime.initializer(value, root.datum))
         context.assert_complete()
     finally:
         deactivate_object_context(token)

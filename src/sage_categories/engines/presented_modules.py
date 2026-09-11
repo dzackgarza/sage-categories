@@ -68,7 +68,8 @@ def _ring() -> GapElement:
 
 @cache
 def _category() -> GapElement:
-    return libgap.LeftPresentations(_ring())
+    ring = _ring()
+    return libgap.LeftPresentations(ring)
 
 
 def _homalg_matrix(rows: tuple[tuple[int, ...], ...], columns: int) -> GapElement:

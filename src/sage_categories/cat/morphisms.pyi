@@ -2,15 +2,12 @@ from typing import Literal, overload
 
 from _typeshed import Incomplete
 
-import sage_categories.cat.category
+import sage_categories.cat.category as _category
 import sage_categories.cat.morphisms
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
 from sage_categories.cat.category import (
     Category as Category,
-)
-from sage_categories.cat.category import (
-    CategoryDeclaration as CategoryDeclaration,
 )
 from sage_categories.cat.category import (
     CategoryOfCategories as CategoryOfCategories,
@@ -69,22 +66,22 @@ __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCatego
 
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
-    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+    category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
 ) -> MorphismCategory[M, T, _MorphismRole]: ...
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
-    level: Literal[0], category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
-) -> CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]: ...
+    level: Literal[0], category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
+) -> _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]: ...
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
-    level: Literal[1], category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
+    level: Literal[1], category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
 ) -> MorphismCategory[M, T, _MorphismRole]: ...
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
-    level: Literal[2], category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
+    level: Literal[2], category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
 ) -> MorphismCategory[T, []]: ...
 @overload
-def Mor(level: int | Integer, category: Category) -> Category: ...
+def Mor(level: int | Integer, category: _category.CategoryDeclaration) -> _category.CategoryDeclaration: ...
 
 endpoints: Incomplete
 endpoints_in: Incomplete

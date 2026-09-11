@@ -141,7 +141,10 @@ def _source_category_parameter_counts(sources: tuple[Path, ...]) -> dict[str, in
             if not set(_CATEGORY_ROLES).issubset(bound):
                 continue
             previous = result.get(statement.name)
-            arity = len(statement.type_params)
+            arity = sum(
+                isinstance(parameter, ast.ParamSpec)
+                for parameter in statement.type_params
+            )
             assert previous is None or previous == arity, (
                 f"category class name {statement.name!r} has conflicting public arities"
             )
@@ -227,6 +230,15 @@ def _project_category_role_parameters(
             else [expression.slice]
         )
 
+    source_owners = source_role_owners()
+    generic_category_bases = {
+        name
+        for owner in source_owners.values()
+        if owner.bases
+        for name in (base_name(owner.bases[0]),)
+        if name is not None and name in category_parameter_counts
+    }
+
     def role_alias(owner: ast.ClassDef, role: str) -> ast.expr | None:
         for local in owner.body:
             if isinstance(local, ast.Assign) and any(
@@ -298,9 +310,20 @@ def _project_category_role_parameters(
             "sage_categories.kernel.roles.ElementOfObject",
             "sage_categories.kernel.roles.MorphismOfCategory",
         )
-        existing = {parameter.name for parameter in category_declaration.type_params}
-        for hidden, default in zip(_HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True):
-            if hidden not in existing:
+        existing = {
+            parameter.name: parameter
+            for parameter in category_declaration.type_params
+        }
+        for hidden, default in zip(
+            _HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True
+        ):
+            if hidden in existing:
+                parameter = existing[hidden]
+                assert isinstance(parameter, ast.TypeVar), (
+                    f"CategoryDeclaration parameter {hidden!r} is not a TypeVar"
+                )
+                parameter.default_value = _base_expression(default)
+            else:
                 category_declaration.type_params.append(
                     ast.TypeVar(name=hidden, default_value=_base_expression(default))
                 )
@@ -358,7 +381,7 @@ def _project_category_role_parameters(
 
     required_helper_modules: set[str] = set()
     new_helpers: list[tuple[ast.ClassDef, ast.ClassDef]] = []
-    for owner_name, source_owner in source_role_owners().items():
+    for owner_name, source_owner in source_owners.items():
         owner = top_level.get(owner_name)
         if owner is None:
             continue
@@ -408,13 +431,22 @@ def _project_category_role_parameters(
             assert alias is not None, f"{owner_name}.{role} has no static role declaration"
             defaults[role] = alias
 
-        existing = {parameter.name for parameter in owner.type_params}
-        for role in _CATEGORY_ROLES:
-            hidden = _HIDDEN_CATEGORY_ROLES[role]
-            if hidden not in existing:
-                owner.type_params.append(
-                    ast.TypeVar(name=hidden, default_value=defaults[role])
-                )
+        generic_owner = owner_name in generic_category_bases
+        role_arguments: list[ast.expr]
+        if generic_owner:
+            existing = {parameter.name for parameter in owner.type_params}
+            for role in _CATEGORY_ROLES:
+                hidden = _HIDDEN_CATEGORY_ROLES[role]
+                if hidden not in existing:
+                    owner.type_params.append(
+                        ast.TypeVar(name=hidden, default_value=defaults[role])
+                    )
+            role_arguments = [
+                ast.Name(id=hidden, ctx=ast.Load())
+                for hidden in _HIDDEN_CATEGORY_ROLES.values()
+            ]
+        else:
+            role_arguments = [copy.deepcopy(defaults[role]) for role in _CATEGORY_ROLES]
 
         helper_base: ast.expr | None = None
         category_bases = [
@@ -447,17 +479,15 @@ def _project_category_role_parameters(
                 ast.Constant(value=Ellipsis)
                 for _ in range(category_parameter_counts[name])
             ]
-        arguments.extend(
-            ast.Name(id=hidden, ctx=ast.Load())
-            for hidden in _HIDDEN_CATEGORY_ROLES.values()
-        )
+        arguments.extend(role_arguments)
         projected_base = ast.Subscript(
             value=copy.deepcopy(carrier),
             slice=ast.Tuple(elts=arguments, ctx=ast.Load()),
             ctx=ast.Load(),
         )
         owner.bases[:] = [ast.Name(id=helper_name, ctx=ast.Load()), projected_base, *category_bases[1:]]
-        rewrite_local_roles(owner)
+        if generic_owner:
+            rewrite_local_roles(owner)
 
     for owner, helper in reversed(new_helpers):
         index = tree.body.index(owner)
@@ -865,8 +895,7 @@ def _project_class_aliases(
         )
         for declaration in source.body
         if isinstance(declaration, ast.ClassDef)
-        and declaration.type_params
-        and all(
+        and any(
             isinstance(parameter, ast.ParamSpec)
             for parameter in declaration.type_params
         )

@@ -455,7 +455,7 @@ class OwnEndpoints:
 def test_category_roles_are_hidden_parameters_threaded_through_base() -> None:
     source = ast.parse(
         """
-class CategoryDeclaration[**P, **Q]:
+class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
     pass
 Category = CategoryDeclaration
 
@@ -489,5 +489,6 @@ class Derived(Base):
     assert "_ObjectRole = _StaticRoles_Base.ObjectType" in projected
     assert "def construct(self, value: _ObjectRole) -> _MorphismRole:" in projected
     assert "class _StaticRoles_Derived(_StaticRoles_Base):" in projected
-    assert "class Derived" in projected and "_StaticRoles_Derived, Base[..., ..., _ObjectRole, _ElementRole, _MorphismRole]" in projected
-    assert "_ObjectRole = _StaticRoles_Derived.ObjectType" in projected
+    assert "class Derived" in projected
+    assert "_StaticRoles_Derived, Base[..., ..., _StaticRoles_Derived.ObjectType, _StaticRoles_Derived.ElementType, _StaticRoles_Derived.MorphismType]" in projected
+    assert "class Derived[_ObjectRole" not in projected

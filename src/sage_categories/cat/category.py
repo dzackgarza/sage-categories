@@ -201,7 +201,13 @@ def _declares_implementation(functor: MorphismCategory.ObjectType) -> Category |
     return domain if functor is Fun(domain, domain).one() else None
 
 
-class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
+class CategoryDeclaration[
+    **MorphismData,
+    **TwoMorphismData,
+    _ObjectRole = object,
+    _ElementRole = object,
+    _MorphismRole = object,
+]:
     """The local ``Cat().ObjectType`` declaration."""
 
     _constructs_from_diagrams: ClassVar[bool] = False
@@ -467,7 +473,13 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             self._ambient_monomorphism, self.universe().morphism_category(1).Full()
         )
 
-    def ambient(self) -> Category[MorphismData, TwoMorphismData]:
+    def ambient(self) -> Category[
+        MorphismData,
+        TwoMorphismData,
+        _ObjectRole,
+        _ElementRole,
+        _MorphismRole,
+    ]:
         """The category this one is a declared subcategory of, derived from the selected functors (POL-CAT-016, POL-FUN-036)."""
         assert self._ambient_category is not None, (
             f"{self!r} declares no monomorphism into an ambient category"
@@ -649,8 +661,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     # (``cat/core.py``, ``cat/shapes.py``, ``Sets()`` under D132).
 
     def _identity_morphism_(
-        self, member_object: CategoryOfCategories.ElementType
-    ) -> MorphismCategory.ObjectType:
+        self, member_object: _ObjectRole
+    ) -> _MorphismRole:
         """The private construction of ``1_X``, run once per object (POL-CAT-083).
 
         The mathematical owner of ``1_X`` is the endomorphism monoid, and its one public
@@ -675,8 +687,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return self._identities[member_object]
 
     def retained_inverse(
-        self, morphism: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType | None:
+        self, morphism: _MorphismRole
+    ) -> _MorphismRole | None:
         """The inverse this category retained for ``morphism``, or ``None``; it constructs nothing.
 
         ``inverse_morphism`` constructs a symbolic inverse when none is retained, which is
@@ -687,8 +699,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def retain_inverses(
         self,
-        forward: MorphismCategory.ObjectType,
-        backward: MorphismCategory.ObjectType,
+        forward: _MorphismRole,
+        backward: _MorphismRole,
     ) -> None:
         """Record two morphisms as mutually inverse; both enter ``Mor(self).Isomorphisms()`` (POL-MATH-037)."""
         from sage_categories.kernel.refinement import refine
@@ -703,8 +715,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         cells.retain_inverses(self, forward, backward)
 
     def compose_morphisms(
-        self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
+        self, second: _MorphismRole, first: _MorphismRole
+    ) -> _MorphismRole:
         """``second * first`` through the owned composition; a composite of retained-invertible morphisms retains ``first⁻¹ * second⁻¹``."""
         assert first.codomain() is second.domain()
         if (
@@ -729,8 +741,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return composite
 
     def inverse_morphism(
-        self, morphism: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
+        self, morphism: _MorphismRole
+    ) -> _MorphismRole:
         """The inverse of a morphism placed in ``Mor(self).Isomorphisms()`` (POL-CAT-079, POL-KERNEL-025).
 
         The retained inverse when this category retained one (an identity, a
@@ -752,8 +764,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return symbolic
 
     def _symbolic_inverse_(
-        self, morphism: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
+        self, morphism: _MorphismRole
+    ) -> _MorphismRole:
         """The symbolic inverse of ``morphism``, constructed in ``Mor(self)(B, A).Isomorphisms()`` with no executable rule.
 
         A category whose morphisms carry no data constructs it from none; a category
@@ -764,8 +776,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         ).Isomorphisms()()
 
     def element_from_defining_morphism(
-        self, defining_morphism: MorphismCategory.ObjectType
-    ) -> CategoryOfCategories.ElementType:
+        self, defining_morphism: _MorphismRole
+    ) -> _ElementRole:
         """The generalized element ``t: T -> X`` of ``X`` given by a morphism into it (POL-CAT-058).
 
         The element is retained by that exact morphism (POL-CAT-066): one defining
@@ -783,11 +795,11 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def construct_morphism(
         self,
-        domain: CategoryOfCategories.ElementType,
-        codomain: CategoryOfCategories.ElementType,
+        domain: _ObjectRole,
+        codomain: _ObjectRole,
         *args: MorphismData.args,
         **kwargs: MorphismData.kwargs,
-    ) -> MorphismCategory.ObjectType:
+    ) -> _MorphismRole:
         """The morphism ``domain -> codomain`` this category's morphism data names."""
         from sage_categories.kernel.refinement import refine
 
@@ -800,8 +812,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return self.MorphismType(domain, codomain, *args, **kwargs)
 
     def construct_identity(
-        self, member_object: CategoryOfCategories.ElementType
-    ) -> MorphismCategory.ObjectType:
+        self, member_object: _ObjectRole
+    ) -> _MorphismRole:
         """``1_X``: the morphism with both endpoints ``X``, which its object determines and no datum names.
 
         A subcategory contains the identities of its objects, full or not, so the guard
@@ -817,8 +829,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return self.MorphismType(member_object, member_object)
 
     def composite(
-        self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
+        self, second: _MorphismRole, first: _MorphismRole
+    ) -> _MorphismRole:
         """``second * first``: the morphism its two factors determine, retained on the pair.
 
         A subcategory is closed under composition, full or not, so the guard is the
@@ -902,7 +914,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     # -- points of the category as Cat elements (POL-CAT-058), retained once (POL-CAT-083) --------
 
-    def Terminal(self) -> CategoryOfCategories.ElementType:
+    def Terminal(self) -> _ObjectRole:
         """``1_C``: the chosen terminal object, whose points ``1_C -> X`` are the points of ``X``.
 
         A category that states no terminal object has no points; the ones this
@@ -911,8 +923,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         raise AssertionError(f"{self!r} declares no terminal object")
 
     def point_morphism(
-        self, point: CategoryOfCategories.ElementType
-    ) -> MorphismCategory.ObjectType:
+        self, point: _ElementRole
+    ) -> _MorphismRole:
         """The morphism ``1_C -> X`` that selects a point of ``X``, the converse of ``element_from_defining_morphism``.
 
         A category whose points are morphisms from its terminal object states this
@@ -923,7 +935,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             f"{self!r} declares no morphism from its terminal object selecting a point"
         )
 
-    def point_functor(self, member_object: CategoryOfCategories.ElementType) -> Functor:
+    def point_functor(self, member_object: _ObjectRole) -> Functor:
         """The point ``* -> self`` selecting the object ``member_object``.
 
         The objects of ``Mor(C)`` are the morphisms of ``C``, so ``member_object`` is a
@@ -971,7 +983,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         )
         return self.point_functor(context.canonical_image)
 
-    def arrow_functor(self, morphism: MorphismCategory.ObjectType) -> Functor:
+    def arrow_functor(self, morphism: _MorphismRole) -> Functor:
         """The diagram ``[1] -> self`` of shape the walking arrow that ``morphism`` denotes."""
         from sage_categories.cat.functors import Fun
 
@@ -1050,7 +1062,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def limit_construction(
         self, shape: Category
-    ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+    ) -> Callable[[Functor], _ObjectRole]:
         """The owned construction of ``I``-limits, when this category declares one."""
         from sage_categories.cat.constructions import lift_limit
         from sage_categories.cat.functors import FunctorCategory
@@ -1089,7 +1101,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def colimit_construction(
         self, shape: Category
-    ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+    ) -> Callable[[Functor], _ObjectRole]:
         """Use this category's retained construction, then derive general colimits from coproducts and coequalizers."""
         if shape in self._colimit_constructors:
             return self._colimit_constructors[shape]
@@ -1108,7 +1120,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         )
 
     def presenting_diagrams(
-        self, constructed: CategoryOfCategories.ElementType
+        self, constructed: _ObjectRole
     ) -> tuple[Functor, ...]:
         """The diagrams this category constructed ``constructed`` from; a category that constructs nothing retains none.
 
@@ -1120,7 +1132,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     # -- slices, coslices, and the categories of subobjects (POL-FUN-029, POL-CAT-095, POL-SCOPE-003) --
 
-    def SliceOver(self, member_object: CategoryOfCategories.ElementType) -> Category:
+    def SliceOver(self, member_object: _ObjectRole) -> Category:
         """``C.SliceOver(x)``: the strict pullback of ``ev_1: Fun([1], C) -> C`` along ``x: * -> C``."""
         from sage_categories.cat.slices import slice_over
 
@@ -1129,7 +1141,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             self._slices[member_object] = slice_over(self, member_object)
         return self._slices[member_object]
 
-    def CosliceUnder(self, member_object: CategoryOfCategories.ElementType) -> Category:
+    def CosliceUnder(self, member_object: _ObjectRole) -> Category:
         """``C.CosliceUnder(x) = C.op().SliceOver(x).op()``."""
         from sage_categories.cat.slices import coslice_under
 
@@ -1142,22 +1154,22 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     # category inherits them (POL-CAT-092).  The ambient named in the call fixes the role
     # of ``X``: an object of two categories gives two of these calls, not one.
 
-    def Subobjects(self, member_object: CategoryOfCategories.ElementType) -> Category:
+    def Subobjects(self, member_object: _ObjectRole) -> Category:
         """``C.Subobjects(X) = C.SliceOver(X).Monomorphisms()``: the monomorphisms into ``X`` with their domains."""
         return self.SliceOver(member_object).Monomorphisms()
 
-    def Superobjects(self, member_object: CategoryOfCategories.ElementType) -> Category:
+    def Superobjects(self, member_object: _ObjectRole) -> Category:
         """``C.Superobjects(X) = C.CosliceUnder(X).Monomorphisms()``."""
         return self.CosliceUnder(member_object).Monomorphisms()
 
     def CoveringObjects(
-        self, member_object: CategoryOfCategories.ElementType
+        self, member_object: _ObjectRole
     ) -> Category:
         """``C.CoveringObjects(X) = C.SliceOver(X).Epimorphisms()``: the pairs ``(Y, p: Y -> X)`` with ``p`` an epimorphism (POL-CAT-026)."""
         return self.SliceOver(member_object).Epimorphisms()
 
     def CoveredObjects(
-        self, member_object: CategoryOfCategories.ElementType
+        self, member_object: _ObjectRole
     ) -> Category:
         """``C.CoveredObjects(X) = C.CosliceUnder(X).Epimorphisms()``."""
         return self.CosliceUnder(member_object).Epimorphisms()
@@ -1186,12 +1198,12 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def object_at(
         self, point: CategoryOfCategories.ElementType
-    ) -> CategoryOfCategories.ElementType:
+    ) -> _ObjectRole:
         """The object selected by a point of ``object_set()``."""
         raise AssertionError(f"{self!r} declares no set of objects")
 
     def object_point(
-        self, member_object: CategoryOfCategories.ElementType
+        self, member_object: _ObjectRole
     ) -> CategoryOfCategories.ElementType:
         """The point of ``object_set()`` selecting an object: the one whose object equals it."""
         return next(
@@ -1210,13 +1222,13 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def morphism_at(
         self, point: CategoryOfCategories.ElementType
-    ) -> MorphismCategory.ObjectType:
+    ) -> _MorphismRole:
         """The morphism selected by a point of ``morphism_set()``."""
         raise AssertionError(f"{self!r} declares no set of morphisms")
 
     def generating_morphisms(
         self,
-    ) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
+    ) -> tuple[_MorphismRole, ...] | UnknownClass:
         """A finite family of morphisms generating this category under composition, or ``Unknown``.
 
         The default is every morphism when the morphism set is finite and enumerated, or
@@ -1233,9 +1245,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def hom_morphisms(
         self,
-        source: CategoryOfCategories.ElementType,
-        target: CategoryOfCategories.ElementType,
-    ) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
+        source: _ObjectRole,
+        target: _ObjectRole,
+    ) -> tuple[_MorphismRole, ...] | UnknownClass:
         """An exact finite enumeration of a hom, when owned evaluation supplies it."""
         from sage_categories.cat.finite_categories import finite_category
 
@@ -1249,14 +1261,14 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         )
 
     def image_factorization(
-        self, arrow: MorphismCategory.ObjectType
-    ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+        self, arrow: _MorphismRole
+    ) -> tuple[_MorphismRole, _MorphismRole]:
         """The chosen regular epimorphism/monomorphism factorization, when supplied."""
         raise AssertionError(f"{self!r} declares no regular image factorization")
 
     def factor_through_monomorphism(
-        self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType | Literal[False] | UnknownClass:
+        self, mono: _MorphismRole, arrow: _MorphismRole
+    ) -> _MorphismRole | Literal[False] | UnknownClass:
         """Find the unique factor through a mono, decide nonexistence, or remain undecided."""
         return Unknown
 
@@ -1272,16 +1284,16 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
     def retain_colimit_construction(
         self,
         shape: Category,
-        construction: Callable[[Functor], CategoryOfCategories.ElementType],
+        construction: Callable[[Functor], _ObjectRole],
     ) -> None:
         """Retain this exact category's selected colimit construction for ``shape``."""
         self._colimit_constructors[shape] = construction
 
     def biproduct(
         self,
-        first: CategoryOfCategories.ElementType,
-        second: CategoryOfCategories.ElementType,
-    ) -> CategoryOfCategories.ElementType:
+        first: _ObjectRole,
+        second: _ObjectRole,
+    ) -> _ObjectRole:
         """``X @ Y``, through this category's retained additive construction."""
         assert self._biproduct_constructor is not None, (
             f"{self!r} declares no biproduct"
@@ -1290,9 +1302,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def zero_morphism(
         self,
-        source: CategoryOfCategories.ElementType,
-        target: CategoryOfCategories.ElementType,
-    ) -> MorphismCategory.ObjectType:
+        source: _ObjectRole,
+        target: _ObjectRole,
+    ) -> _MorphismRole:
         """The selected additive zero ``source -> target`` when this category supplies one."""
         assert self._zero_morphism_constructor is not None, (
             f"{self!r} declares no zero morphisms"
@@ -1301,9 +1313,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def exponential(
         self,
-        exponent: CategoryOfCategories.ElementType,
-        base: CategoryOfCategories.ElementType,
-    ) -> CategoryOfCategories.ElementType:
+        exponent: _ObjectRole,
+        base: _ObjectRole,
+    ) -> _ObjectRole:
         """``base ** exponent``, where the category is declared cartesian closed."""
         if self.has_full_ambient():
             return self.ambient().exponential(exponent, base)
@@ -1324,17 +1336,40 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         """The spelling of this category as a root of a narrowing."""
         return repr(self)
 
-    def narrowing_base(self) -> Category[MorphismData, TwoMorphismData]:
+    def narrowing_base(
+        self,
+    ) -> Category[
+        MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole
+    ]:
         """The category whose narrowings this placement is one of; ``self`` when it is a base."""
         return self
 
-    def narrowing_roots(self) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
+    def narrowing_roots(
+        self,
+    ) -> tuple[
+        Category[
+            MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole
+        ],
+        ...,
+    ]:
         """The roots this placement is narrowed by, closed under the roots of each root's own placement."""
         return ()
 
     def intersection(
-        self, roots: tuple[Category[MorphismData, TwoMorphismData], ...]
-    ) -> Category[MorphismData, TwoMorphismData]:
+        self,
+        roots: tuple[
+            Category[
+                MorphismData,
+                TwoMorphismData,
+                _ObjectRole,
+                _ElementRole,
+                _MorphismRole,
+            ],
+            ...,
+        ],
+    ) -> Category[
+        MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole
+    ]:
         """The narrowing of this base by the given roots, one object per closed set of roots.
 
         A root containing the base narrows nothing; a set of roots that is exactly one
@@ -1367,8 +1402,8 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return self._narrowings[key]
 
     def closed_roots(
-        self, roots: tuple[Category[MorphismData, TwoMorphismData], ...]
-    ) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
+        self, roots: tuple[Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole], ...]
+    ) -> tuple[Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole], ...]:
         """The roots of the narrowing of this base by ``roots``: every root each one carries, in ordinal order, omitting those containing the base."""
         closed: dict[int, Category] = {}
         for root in roots:
@@ -1378,8 +1413,17 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
         return tuple(root for _, root in sorted(closed.items()))
 
     def property_subcategory(
-        self, property_category: Category[MorphismData, TwoMorphismData]
-    ) -> Category[MorphismData, TwoMorphismData]:
+        self,
+        property_category: Category[
+            MorphismData,
+            TwoMorphismData,
+            _ObjectRole,
+            _ElementRole,
+            _MorphismRole,
+        ],
+    ) -> Category[
+        MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole
+    ]:
         """``self.P()``: the narrowing of this placement by the roots of ``P`` (POL-CAT-084)."""
         return self.narrowing_base().intersection(
             (*self.narrowing_roots(), *property_category.narrowing_roots())
@@ -1398,7 +1442,16 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
 
     def __getattr__(
         self, name: str
-    ) -> Callable[..., Category[MorphismData, TwoMorphismData]]:
+    ) -> Callable[
+        ...,
+        Category[
+            MorphismData,
+            TwoMorphismData,
+            _ObjectRole,
+            _ElementRole,
+            _MorphismRole,
+        ],
+    ]:
         """``C.P().Q()``: an axiom of the ambient is an axiom here, along the subcategory monomorphism (D77 item 4).
 
         An axiom is a descriptor on the class that declares it, and a declared
@@ -1425,7 +1478,17 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData]:
             )
         return axiom.__get__(self, type(self))
 
-    def narrowing_type(self) -> type[Category[MorphismData, TwoMorphismData]]:
+    def narrowing_type(
+        self,
+    ) -> type[
+        Category[
+            MorphismData,
+            TwoMorphismData,
+            _ObjectRole,
+            _ElementRole,
+            _MorphismRole,
+        ]
+    ]:
         from sage_categories.cat.properties import NarrowedProperty
 
         return NarrowedProperty
@@ -2128,11 +2191,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def construct_morphism(
         self,
-        domain: Category,
-        codomain: Category,
+        domain: CategoryOfCategories.ObjectType,
+        codomain: CategoryOfCategories.ObjectType,
         on_object: OnObject,
         on_morphism: OnMorphism,
-    ) -> Functor:
+    ) -> CategoryOfCategories.MorphismType:
         """``Fun(C, D)(on_object, on_morphism)``: the functor selected by its four identity components (POL-FUN-001/027)."""
         assert domain in self and codomain in self
         key = (domain, codomain, on_object)
@@ -2147,7 +2210,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             )
         return by_morphism_action[on_morphism]
 
-    def construct_identity(self, category: Category) -> Functor:
+    def construct_identity(
+        self, category: CategoryOfCategories.ObjectType
+    ) -> CategoryOfCategories.MorphismType:
         from sage_categories.cat.functors import Fun
         from sage_categories.engines import catlab
         from sage_categories.kernel.refinement import refine
@@ -2172,7 +2237,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         refine(identity, Fun.Equivalences())
         return identity
 
-    def _symbolic_inverse_(self, functor: Functor) -> Functor:
+    def _symbolic_inverse_(
+        self, functor: CategoryOfCategories.MorphismType
+    ) -> CategoryOfCategories.MorphismType:
         """The inverse of a functor placed in ``Fun.Isomorphisms()`` by declaration: its actions have no executable rule."""
 
         def no_action(
@@ -2186,7 +2253,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             functor.codomain(), functor.domain()
         ).Isomorphisms()(no_action, no_action)
 
-    def composite(self, second: Functor, first: Functor) -> Functor:
+    def composite(
+        self,
+        second: CategoryOfCategories.MorphismType,
+        first: CategoryOfCategories.MorphismType,
+    ) -> CategoryOfCategories.MorphismType:
         """``second * first``: the composite functor, rules composed (Mathlib ``Functor.comp``)."""
         from sage_categories.cat.functors import Fun
         from sage_categories.kernel.refinement import refine
@@ -2449,7 +2520,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def limit_construction(
         self, shape: Category
-    ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+    ) -> Callable[
+        [CategoryOfCategories.MorphismType], CategoryOfCategories.ObjectType
+    ]:
         """The category of compatible object and morphism families over the supplied shape."""
         from sage_categories.cat.cat_constructions import (
             limit_of_categories,
@@ -2463,7 +2536,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return pullback_of_categories
         return lambda diagram: limit_of_categories(diagram, self.Limits(shape))
 
-    def exponential(self, exponent: Category, base: Category) -> Category:
+    def exponential(
+        self,
+        exponent: CategoryOfCategories.ObjectType,
+        base: CategoryOfCategories.ObjectType,
+    ) -> CategoryOfCategories.ObjectType:
         """``D ** C = Fun(C, D)``: ``Cat()`` is cartesian closed (Mathlib ``Cat.exp_obj``; inspected 2026-08-26)."""
         return self.morphism_category(1)(exponent, base)
 
@@ -2548,14 +2625,30 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def Terminal(self) -> FinitePresentedCategory:
         return self.Simplex(0)
 
-    def Point(self, member: CategoryOfCategories.ElementType) -> PointCategory:
-        """``{X}``: the one-object category on ``member``, retained by identity (POL-CAT-083)."""
-        from sage_categories.cat.points import PointCategory
+    @overload
+    def Point(self) -> CategoryOfCategories.MorphismType: ...
 
-        assert member._is_object(), f"{member!r} is not an object of a category"
-        if member not in self._point_categories:
-            self._point_categories[member] = PointCategory(member)
-        return self._point_categories[member]
+    @overload
+    def Point(
+        self, member: CategoryOfCategories.ElementType
+    ) -> PointCategory: ...
+
+    def Point(
+        self, member: CategoryOfCategories.ElementType | None = None
+    ) -> CategoryOfCategories.MorphismType | PointCategory:
+        """The point functor under construction, or the one-object category ``{X}``."""
+        match member:
+            case None:
+                return CategoryDeclaration.Point(self)
+            case _:
+                from sage_categories.cat.points import PointCategory
+
+                assert member._is_object(), (
+                    f"{member!r} is not an object of a category"
+                )
+                if member not in self._point_categories:
+                    self._point_categories[member] = PointCategory(member)
+                return self._point_categories[member]
 
     def Simplex(self, dimension: int | Integer) -> FinitePresentedCategory:
         from sage_categories.cat import canonical

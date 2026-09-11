@@ -9,8 +9,10 @@ from sage_categories.kernel import compiler
 from sage_categories.kernel.roles import (
     CategoryPoint,
     MorphismOfCategory,
+    ObjectOfCategory,
     Role,
     RoleCandidate,
+    category_of,
     is_category,
     role_of,
 )
@@ -121,34 +123,37 @@ def _reached_subcategories(start: Category) -> Iterator[Category]:
 
 def _placement_node(value: CategoryPoint) -> compiler.Node:
     """The object node named by the value's current placement."""
-    match role_of(value):
+    role = role_of(value)
+    match role:
         case Role.OBJECT | Role.MORPHISM:
-            return compiler.node(value.category(), Role.OBJECT)
+            return compiler.node(category_of(value, role), Role.OBJECT)
         case Role.ELEMENT:
-            return compiler.node(value.parent().category(), Role.ELEMENT)
+            return compiler.node(category_of(value, role), Role.ELEMENT)
     raise AssertionError(f"{value!r} is not an owned value")
 
 
 def is_placed(candidate: RoleCandidate, category: Category) -> bool:
     """Whether ``candidate`` is an object of ``category`` by established placement (the ``member`` handler; POL-TYPE-004)."""
-    if role_of(candidate) is None:
+    role = role_of(candidate)
+    if role is None:
         return False
     assert isinstance(candidate, CategoryPoint)
     # A value placed in a narrowing is already placed in that narrowing's base.  The
     # compiled node walk can miss this exact edge when a fixed-endpoint Hom is its own
     # narrowing base, so recognize it directly without traversing the category graph on
     # every placement query.
-    placement = candidate.category()
+    placement = category_of(candidate, role)
     if (
-        role_of(candidate) in (Role.OBJECT, Role.MORPHISM)
+        role in (Role.OBJECT, Role.MORPHISM)
         and placement.narrowing_base() is category
     ):
         return True
     target = compiler.node(category, Role.OBJECT)
     placements = [_placement_node(candidate)]
-    if role_of(candidate) is Role.OBJECT:
+    if role is Role.OBJECT:
         from sage_categories.kernel.construction import retained_object_input
 
+        assert isinstance(candidate, ObjectOfCategory)
         identity = retained_object_input(candidate).identity
         if identity.universe is not None:
             placements.append(compiler.node(identity.universe, Role.OBJECT))
@@ -230,7 +235,7 @@ def common_ancestor(first: Category, second: Category) -> Category | None:
     return None if ambient is None else ambient.intersection(common)
 
 
-def place(value: CategoryPoint, category: Category) -> None:
+def place(value: ObjectOfCategory, category: Category) -> None:
     """Record that ``value`` was constructed as an object of ``category``.
 
     The value keeps its own implementation class: an object of ``Cat()`` is an
@@ -281,23 +286,24 @@ def _join(current: Category, target: Category) -> Category:
         assert current_base.has_full_ambient() and target_base.has_full_ambient(), (
             f"{current!r} and {target!r} have no common placement: incomparable non-full bases cannot be intersected"
         )
-        base = common_ancestor(current_base, target_base)
-        assert base is not None, (
+        common_base = common_ancestor(current_base, target_base)
+        assert common_base is not None, (
             f"{current!r} and {target!r} have no common placement: {current_base!r} and {target_base!r} are incomparable"
         )
         current_roots = (*current_roots, current_base)
-        return base.intersection(
+        return common_base.intersection(
             (*current_roots, target_base, *target.narrowing_roots())
         )
     return base.intersection((*current_roots, *target.narrowing_roots()))
 
 
-def refine[Value: CategoryPoint](value: Value, target: Category) -> Value:
+def refine[Value: ObjectOfCategory](value: Value, target: Category) -> Value:
     """Refine ``value`` in place into ``target`` and return that same object."""
     if is_placed(value, target):
         return value
-    assert role_of(value) in (Role.OBJECT, Role.MORPHISM), (
+    role = role_of(value)
+    assert role in (Role.OBJECT, Role.MORPHISM), (
         f"{value!r} is not refinable: only objects and morphisms are placed"
     )
-    place(value, _join(value.category(), target))
+    place(value, _join(category_of(value, role), target))
     return value

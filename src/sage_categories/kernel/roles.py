@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Generic, Protocol, cast
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeIs, cast
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
@@ -154,6 +154,8 @@ def prepare_category_subclass(cls: type[CategoryPoint]) -> None:
 
 class ObjectOfCategory(CategoryPoint):
     """An object of a category: a point ``* -> C`` of it."""
+
+    _category: Category
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -360,7 +362,7 @@ def install_category_object_class(compiled: type[CategoryPoint]) -> None:
     _category_object_class = compiled
 
 
-def is_category(value: CategoryPoint) -> bool:
+def is_category(value: CategoryPoint) -> TypeIs[Category]:
     """Whether ``value`` is a category: an object of ``Cat()``.
 
     No value is one before the compiler installs the class, which is the window the

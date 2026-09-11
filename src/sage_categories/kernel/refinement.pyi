@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from sage_categories.cat.category import Category
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, RoleCandidate
+from sage_categories.kernel.roles import MorphismOfCategory, ObjectOfCategory, RoleCandidate
 __all__ = ['FunctorDeclarationReader', 'install_functor_declaration_readers', 'traces_placement', 'traces_inheritance', 'declares_point', 'is_placed', 'is_subcategory', 'common_ancestor', 'place', 'refine']
 type FunctorDeclarationReader = Callable[[MorphismOfCategory], bool]
 
@@ -25,8 +25,8 @@ def is_subcategory(inner: Category, outer: Category) -> bool:
 def common_ancestor(first: Category, second: Category) -> Category | None:
     ...
 
-def place(value: CategoryPoint, category: Category) -> None:
+def place(value: ObjectOfCategory, category: Category) -> None:
     ...
 
-def refine[Value: CategoryPoint](value: Value, target: Category) -> Value:
+def refine[Value: ObjectOfCategory](value: Value, target: Category) -> Value:
     ...

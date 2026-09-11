@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Any, cast
 
-from sage_categories.algebra._commutative_rings_oscar import oscar_native_morphism
+from sage_categories.algebra._commutative_rings_oscar import oscar_morphism_handle
 from sage_categories.algebra.commutative_rings import (
     inverse_unit,
     localization_extension,
@@ -27,6 +27,7 @@ from sage_categories.cat.native import (
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.structured_objects import Rings
 from sage_categories.engines import oscar
+from sage_categories.engines.julia_bridge import OscarHandle
 from sage_categories.geometry.affine import (
     AffineOpenCategory,
     AffineSchemesCategory,
@@ -78,8 +79,8 @@ class ProjectiveLinePresentation:
     overlap_swap: MorphismCategory.ObjectType
 
 
-_objects: NativeObjectRealizations[object, object] = NativeObjectRealizations()
-_morphisms: NativeMorphismRealizations[object] = NativeMorphismRealizations()
+_objects: NativeObjectRealizations[OscarHandle, object] = NativeObjectRealizations()
+_morphisms: NativeMorphismRealizations[OscarHandle] = NativeMorphismRealizations()
 
 
 class SchemesCategory(Category[Any, Any]):
@@ -105,7 +106,7 @@ class SchemesCategory(Category[Any, Any]):
         super().__init__()
 
     def _from_native(
-        self, construction: object, native: object
+        self, construction: object, native: OscarHandle
     ) -> SchemesCategory.ObjectType:
         value = self.ObjectType(construction)
         _objects.retain(
@@ -117,7 +118,7 @@ class SchemesCategory(Category[Any, Any]):
         self,
         source: SchemesCategory.ObjectType,
         target: SchemesCategory.ObjectType,
-        native: object,
+        native: OscarHandle,
     ) -> SchemesCategory.MorphismType:
         assert oscar.same_native(
             oscar.covered_domain(native),
@@ -185,12 +186,12 @@ class SchemesCategory(Category[Any, Any]):
         native_left_to_right = oscar.affine_morphism_direct(
             left_open.native(),
             right_open.native(),
-            oscar_native_morphism(left_to_right_pullback).native,
+            oscar_morphism_handle(left_to_right_pullback),
         )
         native_right_to_left = oscar.affine_morphism_direct(
             right_open.native(),
             left_open.native(),
-            oscar_native_morphism(right_to_left_pullback).native,
+            oscar_morphism_handle(right_to_left_pullback),
         )
         native_gluing = oscar.simple_gluing(
             native_left, native_right, native_left_to_right, native_right_to_left
@@ -278,7 +279,7 @@ class SchemesCategory(Category[Any, Any]):
             native_affine_scheme(
                 cast(CategoryOfCategories.ElementType, target_chart)
             ).native,
-            oscar_native_morphism(pullback).native,
+            oscar_morphism_handle(pullback),
         )
         native = oscar.covered_chart_map(
             native_scheme(cast(CategoryOfCategories.ElementType, source_scheme)).native,
@@ -299,13 +300,13 @@ def Schemes() -> SchemesCategory:
 
 def native_scheme(
     value: CategoryOfCategories.ElementType,
-) -> NativeObjectRealization[object, object]:
+) -> NativeObjectRealization[OscarHandle, object]:
     return _objects.realization(value)
 
 
 def native_scheme_morphism(
     value: MorphismCategory.ObjectType,
-) -> NativeMorphismRealization[object]:
+) -> NativeMorphismRealization[OscarHandle]:
     return _morphisms.realization(value)
 
 

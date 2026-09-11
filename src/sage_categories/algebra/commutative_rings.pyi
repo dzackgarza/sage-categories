@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.engines.julia_bridge import OscarHandle
 __all__ = ['PrimeIdeal', 'prime_field', 'polynomial_ring', 'quotient_ring', 'principal_localization', 'prime_ideal', 'prime_ideal_preimage', 'localize_at_prime', 'induced_stalk_map', 'induced_stalk_map_to', 'presented_ring_homomorphism', 'localization_extension', 'inverse_unit']
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -68,5 +69,5 @@ def localization_extension(localized: CategoryOfCategories.ElementType, target: 
 def inverse_unit(element: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     ...
 
-def _principal_localization_from_native(source: CategoryOfCategories.ElementType, element: CategoryOfCategories.ElementType, native_localized: object, native_map: object) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
+def _principal_localization_from_native(source: CategoryOfCategories.ElementType, element: CategoryOfCategories.ElementType, native_localized: OscarHandle, native_map: OscarHandle) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
     ...

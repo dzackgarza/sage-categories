@@ -6,6 +6,7 @@ from functools import cache
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.native import NativeMorphismRealization, NativeObjectRealization
+from sage_categories.engines.julia_bridge import OscarHandle
 from sage_categories.geometry.affine import AffineOpenCategory, AffineSchemesCategory
 from sage_categories.geometry.sheaves import RingPresheaf
 from typing import Any
@@ -80,10 +81,10 @@ class SchemesCategory(Category[Any, Any]):
 def Schemes() -> SchemesCategory:
     ...
 
-def native_scheme(value: CategoryOfCategories.ElementType) -> NativeObjectRealization[object, object]:
+def native_scheme(value: CategoryOfCategories.ElementType) -> NativeObjectRealization[OscarHandle, object]:
     ...
 
-def native_scheme_morphism(value: MorphismCategory.ObjectType) -> NativeMorphismRealization[object]:
+def native_scheme_morphism(value: MorphismCategory.ObjectType) -> NativeMorphismRealization[OscarHandle]:
     ...
 
 def projective_line(field: CategoryOfCategories.ElementType) -> ProjectiveLinePresentation:

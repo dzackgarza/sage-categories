@@ -14,11 +14,15 @@ from sage_categories.cat.native import (
     NativeObjectRealization,
     NativeObjectRealizations,
 )
+from sage_categories.engines.julia_bridge import OscarHandle
 
 __all__ = [
     "OscarRingConstruction",
+    "oscar_element_handle",
+    "oscar_morphism_handle",
     "oscar_native_morphism",
     "oscar_native_object",
+    "oscar_object_handle",
     "reconstruct_oscar_morphism",
     "reconstruct_oscar_object",
     "retain_oscar_native_morphism",
@@ -73,8 +77,29 @@ def oscar_native_morphism(
     return _morphisms.realization(value)
 
 
+def oscar_object_handle(value: CategoryOfCategories.ElementType) -> OscarHandle:
+    """Return the isolated-worker handle retained for one owned OSCAR ring."""
+    native = oscar_native_object(value).native
+    assert isinstance(native, OscarHandle)
+    return native
+
+
+def oscar_element_handle(value: CategoryOfCategories.ElementType) -> OscarHandle:
+    """Return the isolated-worker handle stored as one OSCAR ring element datum."""
+    native = cast(Any, value).datum()
+    assert isinstance(native, OscarHandle)
+    return native
+
+
+def oscar_morphism_handle(value: MorphismCategory.ObjectType) -> OscarHandle:
+    """Return the isolated-worker handle retained for one owned OSCAR ring map."""
+    native = oscar_native_morphism(value).native
+    assert isinstance(native, OscarHandle)
+    return native
+
+
 def reconstruct_oscar_object(
-    native: object,
+    native: OscarHandle,
     construction: object,
 ) -> CategoryOfCategories.ElementType:
     """Reconstruct an OSCAR-certified commutative ring in the existing ``Rings(Sets)`` owner.
@@ -150,13 +175,13 @@ def reconstruct_oscar_object(
 def reconstruct_oscar_morphism(
     source: CategoryOfCategories.ElementType,
     target: CategoryOfCategories.ElementType,
-    native: object,
+    native: OscarHandle,
 ) -> MorphismCategory.ObjectType:
     """Reconstruct an OSCAR-certified ring map with the exact owned endpoints."""
     from sage_categories.engines import oscar
 
-    source_native = oscar_native_object(source).native
-    target_native = oscar_native_object(target).native
+    source_native = oscar_object_handle(source)
+    target_native = oscar_object_handle(target)
     assert oscar.same_native(oscar.domain(native), source_native)
     assert oscar.same_native(oscar.codomain(native), target_native)
     declarations = import_module("sage_categories.cat.declarations")

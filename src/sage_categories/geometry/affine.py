@@ -8,8 +8,9 @@ from importlib import import_module
 from typing import Any, cast
 
 from sage_categories.algebra._commutative_rings_oscar import (
-    oscar_native_morphism,
-    oscar_native_object,
+    oscar_element_handle,
+    oscar_morphism_handle,
+    oscar_object_handle,
 )
 from sage_categories.algebra.commutative_rings import (
     PrimeIdeal,
@@ -30,14 +31,15 @@ from sage_categories.cat.native import (
 )
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.engines import oscar
+from sage_categories.engines.julia_bridge import OscarHandle
 from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
 
 __all__ = [
     "AffineOpen",
     "AffineOpenCategory",
-    "AffineSpectrumPoint",
     "AffineSchemes",
     "AffineSchemesCategory",
+    "AffineSpectrumPoint",
     "Spec",
     "affine_structure_sheaf",
     "native_affine_morphism",
@@ -62,8 +64,8 @@ class AffineSpectrumPoint:
     localization: MorphismCategory.ObjectType
 
 
-_objects: NativeObjectRealizations[object, AffineSchemeConstruction] = NativeObjectRealizations()
-_morphisms: NativeMorphismRealizations[object] = NativeMorphismRealizations()
+_objects: NativeObjectRealizations[OscarHandle, AffineSchemeConstruction] = NativeObjectRealizations()
+_morphisms: NativeMorphismRealizations[OscarHandle] = NativeMorphismRealizations()
 
 
 def _commutative_rings() -> Any:
@@ -73,7 +75,7 @@ def _commutative_rings() -> Any:
 @dataclass(frozen=True, eq=False, slots=True)
 class _AffineOpenData:
     scheme: AffineSchemesCategory.ObjectType
-    native: object
+    native: OscarHandle
     section_ring: CategoryOfCategories.ElementType
     ancestors: tuple[AffineOpenCategory.ObjectType, ...]
     restrictions: tuple[tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType], ...]
@@ -88,7 +90,7 @@ class AffineOpenCategory(Category[Any, Any]):
             self._ancestors = data.ancestors
             self._restrictions = dict(data.restrictions)
 
-        def native(self) -> object:
+        def native(self) -> OscarHandle:
             return self._data.native
 
         def section_ring(self) -> CategoryOfCategories.ElementType:
@@ -124,7 +126,7 @@ class AffineOpenCategory(Category[Any, Any]):
     ) -> AffineOpenCategory.ObjectType:
         """Retain ``D(element)`` inside ``parent`` with OSCAR's actual section ring/map."""
         assert element.parent() is parent.section_ring()
-        native_open = oscar.principal_open(parent.native(), cast(Any, element).datum())
+        native_open = oscar.principal_open(parent.native(), oscar_element_handle(element))
         native_ring = oscar.sheaf_value(self._native_sheaf, native_open)
         native_restriction = oscar.sheaf_restriction(self._native_sheaf, parent.native(), native_open)
         section_ring, restriction = _principal_localization_from_native(parent.section_ring(), element, native_ring, native_restriction)
@@ -202,11 +204,11 @@ class AffineSchemesCategory(Category[Any, Any]):
     def from_native(
         self,
         coordinate_ring: CategoryOfCategories.ElementType,
-        native: object,
+        native: OscarHandle,
     ) -> AffineSchemesCategory.ObjectType:
         """Wrap ``Spec(coordinate_ring)`` with exact owned/native correspondence."""
         assert coordinate_ring in _commutative_rings()
-        native_ring = oscar_native_object(coordinate_ring).native
+        native_ring = oscar_object_handle(coordinate_ring)
         native_sections = oscar.structure_sheaf(native)
         assert oscar.same_native(native_sections, native_ring)
         value = self.ObjectType(coordinate_ring)
@@ -223,7 +225,7 @@ class AffineSchemesCategory(Category[Any, Any]):
         source: AffineSchemesCategory.ObjectType,
         target: AffineSchemesCategory.ObjectType,
         pullback: MorphismCategory.ObjectType,
-        native: object,
+        native: OscarHandle,
     ) -> AffineSchemesCategory.MorphismType:
         """Wrap a native affine map and require its defining pullback and endpoints."""
         assert pullback.domain() is target.coordinate_ring()
@@ -232,7 +234,7 @@ class AffineSchemesCategory(Category[Any, Any]):
         target_value = cast(CategoryOfCategories.ElementType, target)
         assert oscar.same_native(oscar.affine_domain(native), native_affine_scheme(source_value).native)
         assert oscar.same_native(oscar.affine_codomain(native), native_affine_scheme(target_value).native)
-        assert oscar.same_native(oscar.affine_pullback(native), oscar_native_morphism(pullback).native)
+        assert oscar.same_native(oscar.affine_pullback(native), oscar_morphism_handle(pullback))
         arrow = cast(
             AffineSchemesCategory.MorphismType,
             cast(Any, self).MorphismType(domain=source, codomain=target, data=pullback),
@@ -284,18 +286,18 @@ def AffineSchemes() -> AffineSchemesCategory:
 
 def native_affine_scheme(
     value: CategoryOfCategories.ElementType,
-) -> NativeObjectRealization[object, AffineSchemeConstruction]:
+) -> NativeObjectRealization[OscarHandle, AffineSchemeConstruction]:
     return _objects.realization(value)
 
 
 def native_affine_morphism(
     value: MorphismCategory.ObjectType,
-) -> NativeMorphismRealization[object]:
+) -> NativeMorphismRealization[OscarHandle]:
     return _morphisms.realization(value)
 
 
 def _spec_object(ring: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-    native = oscar.affine_spec(oscar_native_object(ring).native)
+    native = oscar.affine_spec(oscar_object_handle(ring))
     return cast(CategoryOfCategories.ElementType, AffineSchemes().from_native(ring, native))
 
 
@@ -306,7 +308,7 @@ def _spec_morphism(opposite_ring_map: MorphismCategory.ObjectType) -> MorphismCa
     native = oscar.affine_morphism(
         native_affine_scheme(cast(CategoryOfCategories.ElementType, source)).native,
         native_affine_scheme(cast(CategoryOfCategories.ElementType, target)).native,
-        oscar_native_morphism(ring_map).native,
+        oscar_morphism_handle(ring_map),
     )
     return cast(
         MorphismCategory.ObjectType,

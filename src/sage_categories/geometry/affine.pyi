@@ -8,6 +8,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.native import NativeMorphismRealization, NativeObjectRealization
+from sage_categories.engines.julia_bridge import OscarHandle
 from sage_categories.geometry.sheaves import RingPresheaf
 from typing import Any
 __all__ = ['AffineSpectrumPoint', 'AffineOpenCategory', 'AffineOpen', 'AffineSchemesCategory', 'AffineSchemes', 'native_affine_scheme', 'native_affine_morphism', 'Spec', 'affine_structure_sheaf']
@@ -26,7 +27,7 @@ class AffineSpectrumPoint:
 @dataclass(frozen=True, eq=False, slots=True)
 class _AffineOpenData:
     scheme: AffineSchemesCategory.ObjectType
-    native: object
+    native: OscarHandle
     section_ring: CategoryOfCategories.ElementType
     ancestors: tuple[AffineOpenCategory.ObjectType, ...]
     restrictions: tuple[tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType], ...]
@@ -38,7 +39,7 @@ class AffineOpenCategory(Category[Any, Any]):
         def __init__(self, data: _AffineOpenData) -> None:
             ...
 
-        def native(self) -> object:
+        def native(self) -> OscarHandle:
             ...
 
         def section_ring(self) -> CategoryOfCategories.ElementType:
@@ -108,10 +109,10 @@ class AffineSchemesCategory(Category[Any, Any]):
         def codomain(self) -> AffineSchemesCategory.ObjectType:
             ...
 
-    def from_native(self, coordinate_ring: CategoryOfCategories.ElementType, native: object) -> AffineSchemesCategory.ObjectType:
+    def from_native(self, coordinate_ring: CategoryOfCategories.ElementType, native: OscarHandle) -> AffineSchemesCategory.ObjectType:
         ...
 
-    def from_native_morphism(self, source: AffineSchemesCategory.ObjectType, target: AffineSchemesCategory.ObjectType, pullback: MorphismCategory.ObjectType, native: object) -> AffineSchemesCategory.MorphismType:
+    def from_native_morphism(self, source: AffineSchemesCategory.ObjectType, target: AffineSchemesCategory.ObjectType, pullback: MorphismCategory.ObjectType, native: OscarHandle) -> AffineSchemesCategory.MorphismType:
         ...
 
     def spectrum_point(self, scheme: AffineSchemesCategory.ObjectType, generators: tuple[CategoryOfCategories.ElementType, ...]) -> AffineSpectrumPoint:
@@ -124,10 +125,10 @@ class AffineSchemesCategory(Category[Any, Any]):
 def AffineSchemes() -> AffineSchemesCategory:
     ...
 
-def native_affine_scheme(value: CategoryOfCategories.ElementType) -> NativeObjectRealization[object, AffineSchemeConstruction]:
+def native_affine_scheme(value: CategoryOfCategories.ElementType) -> NativeObjectRealization[OscarHandle, AffineSchemeConstruction]:
     ...
 
-def native_affine_morphism(value: MorphismCategory.ObjectType) -> NativeMorphismRealization[object]:
+def native_affine_morphism(value: MorphismCategory.ObjectType) -> NativeMorphismRealization[OscarHandle]:
     ...
 Spec: Functor
 

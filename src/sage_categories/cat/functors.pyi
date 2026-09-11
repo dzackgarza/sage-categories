@@ -98,12 +98,12 @@ class _StaticRoles_FunctorCategory(sage_categories.cat.morphisms._StaticRoles_Fi
     class ObjectType[
         DomainCategory = "Category[..., ...]",
         CodomainCategory = "Category[..., ...]",
-        DomainObject = "CategoryOfCategories.ElementType",
-        DomainElement = "CategoryOfCategories.ElementType",
-        DomainMorphism = "MorphismCategory.ObjectType",
-        CodomainObject = "CategoryOfCategories.ElementType",
-        CodomainElement = "CategoryOfCategories.ElementType",
-        CodomainMorphism = "MorphismCategory.ObjectType",
+        DomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+        DomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+        DomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
+        CodomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+        CodomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+        CodomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
     ](
         sage_categories.cat.category._StaticRoles_CategoryOfCategories.MorphismType[
             DomainCategory, CodomainCategory, DomainObject, DomainElement, DomainMorphism, CodomainObject, CodomainElement, CodomainMorphism
@@ -121,12 +121,12 @@ class _StaticRoles_FunctorCategory(sage_categories.cat.morphisms._StaticRoles_Fi
 class FunctorCategory[
     DomainCategory = "Category[..., ...]",
     CodomainCategory = "Category[..., ...]",
-    DomainObject = "CategoryOfCategories.ElementType",
-    DomainElement = "CategoryOfCategories.ElementType",
-    DomainMorphism = "MorphismCategory.ObjectType",
-    CodomainObject = "CategoryOfCategories.ElementType",
-    CodomainElement = "CategoryOfCategories.ElementType",
-    CodomainMorphism = "MorphismCategory.ObjectType",
+    DomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    DomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    DomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
+    CodomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    CodomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    CodomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
 ](
     _StaticRoles_FunctorCategory,
     FixedEndpointCategory[

@@ -119,9 +119,9 @@ class _StaticRoles_MorphismCategory:
 class MorphismCategory[
     **MorphismData,
     **TwoMorphismData,
-    _ObjectRole = "MorphismCategory.ObjectType",
-    _ElementRole = "MorphismCategory.ElementType",
-    _MorphismRole = "MorphismCategory.MorphismType",
+    _ObjectRole = _StaticRoles_MorphismCategory.ObjectType,
+    _ElementRole = _StaticRoles_MorphismCategory.ElementType,
+    _MorphismRole = _StaticRoles_MorphismCategory.MorphismType,
 ](_StaticRoles_MorphismCategory, Category[TwoMorphismData, [], _ObjectRole, _ElementRole, _MorphismRole]):
     def __init__(self, base: Category[MorphismData, TwoMorphismData]) -> None: ...
     def base_category(self) -> Category[MorphismData, TwoMorphismData]: ...
@@ -209,11 +209,11 @@ class _StaticRoles_FixedEndpointCategory(sage_categories.cat.properties._StaticR
 class FixedEndpointCategory[
     **MorphismData,
     **TwoMorphismData,
-    DomainType = "CategoryOfCategories.ElementType",
-    CodomainType = "CategoryOfCategories.ElementType",
-    _ObjectRole = "MorphismCategory.ObjectType",
-    _ElementRole = "MorphismCategory.ElementType",
-    _MorphismRole = "MorphismCategory.MorphismType",
+    DomainType = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    CodomainType = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    _ObjectRole = _StaticRoles_MorphismCategory.ObjectType,
+    _ElementRole = _StaticRoles_MorphismCategory.ElementType,
+    _MorphismRole = _StaticRoles_MorphismCategory.MorphismType,
 ](_StaticRoles_FixedEndpointCategory, FullSubcategory[TwoMorphismData, [], _ObjectRole, _ElementRole, _MorphismRole]):
     def __init__(self, morphisms: MorphismCategory[MorphismData, TwoMorphismData], domain: DomainType, codomain: CodomainType) -> None: ...
     def domain(self) -> DomainType: ...

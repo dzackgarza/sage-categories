@@ -76,9 +76,9 @@ member: Predicate
 class CategoryDeclaration[
     **MorphismData,
     **TwoMorphismData,
-    _ObjectRole = "CategoryOfCategories.ElementType",
-    _ElementRole = "CategoryOfCategories.ElementType",
-    _MorphismRole = "MorphismCategory.ObjectType",
+    _ObjectRole = _StaticRoles_CategoryOfCategories.ElementType,
+    _ElementRole = _StaticRoles_CategoryOfCategories.ElementType,
+    _MorphismRole = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
 ](sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
     def __init__(self, data: None = None) -> None: ...
     def is_discrete(self) -> bool: ...
@@ -184,9 +184,9 @@ class CategoryDeclaration[
 
 _CategoryDeclaration_MorphismData = _typing.ParamSpec("_CategoryDeclaration_MorphismData")
 _CategoryDeclaration_TwoMorphismData = _typing.ParamSpec("_CategoryDeclaration_TwoMorphismData")
-_CategoryDeclaration_ObjectRole = _typing.TypeVar("_CategoryDeclaration_ObjectRole", default="CategoryOfCategories.ElementType")
-_CategoryDeclaration_ElementRole = _typing.TypeVar("_CategoryDeclaration_ElementRole", default="CategoryOfCategories.ElementType")
-_CategoryDeclaration_MorphismRole = _typing.TypeVar("_CategoryDeclaration_MorphismRole", default="MorphismCategory.ObjectType")
+_CategoryDeclaration_ObjectRole = _typing.TypeVar("_CategoryDeclaration_ObjectRole", default=_StaticRoles_CategoryOfCategories.ElementType)
+_CategoryDeclaration_ElementRole = _typing.TypeVar("_CategoryDeclaration_ElementRole", default=_StaticRoles_CategoryOfCategories.ElementType)
+_CategoryDeclaration_MorphismRole = _typing.TypeVar("_CategoryDeclaration_MorphismRole", default=sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType)
 Category = CategoryDeclaration[
     _CategoryDeclaration_MorphismData,
     _CategoryDeclaration_TwoMorphismData,
@@ -221,12 +221,12 @@ class _StaticRoles_CategoryOfCategories:
     class MorphismType[
         DomainCategory: "Category[..., ...]" = "Category[..., ...]",
         CodomainCategory: "Category[..., ...]" = "Category[..., ...]",
-        DomainObject: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
-        DomainElement: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
-        DomainMorphism: "MorphismCategory.ObjectType" = "MorphismCategory.ObjectType",
-        CodomainObject: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
-        CodomainElement: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
-        CodomainMorphism: "MorphismCategory.ObjectType" = "MorphismCategory.ObjectType",
+        DomainObject: _StaticRoles_CategoryOfCategories.ElementType = _StaticRoles_CategoryOfCategories.ElementType,
+        DomainElement: _StaticRoles_CategoryOfCategories.ElementType = _StaticRoles_CategoryOfCategories.ElementType,
+        DomainMorphism: sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
+        CodomainObject: _StaticRoles_CategoryOfCategories.ElementType = _StaticRoles_CategoryOfCategories.ElementType,
+        CodomainElement: _StaticRoles_CategoryOfCategories.ElementType = _StaticRoles_CategoryOfCategories.ElementType,
+        CodomainMorphism: sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
     ](sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
         def __init__(self, data: FunctorData) -> None: ...
         def on_object(self, member_object: DomainObject) -> CodomainObject: ...

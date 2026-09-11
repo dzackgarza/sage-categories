@@ -498,10 +498,15 @@ def _project_category_role_parameters(
             if not helper.bases:
                 helper.bases.append(copy.deepcopy(helper_base))
 
+        public_arity = category_parameter_counts[name]
         if isinstance(category_base, ast.Subscript):
-            arguments = subscript_arguments(category_base)
+            written_arguments = subscript_arguments(category_base)
+            assert len(written_arguments) >= public_arity, (
+                f"category base {ast.unparse(category_base)} supplies fewer than its {public_arity} public parameters"
+            )
+            arguments = written_arguments[:public_arity]
         else:
-            arguments = [ast.Constant(value=Ellipsis) for _ in range(category_parameter_counts[name])]
+            arguments = [ast.Constant(value=Ellipsis) for _ in range(public_arity)]
         arguments.extend(role_arguments)
         projected_base = ast.Subscript(
             value=copy.deepcopy(carrier),

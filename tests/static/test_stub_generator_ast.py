@@ -521,6 +521,47 @@ class Derived(Base):
     assert "class Derived[_ObjectRole" not in projected
 
 
+def test_category_role_projection_replaces_existing_hidden_base_roles() -> None:
+    source = ast.parse(
+        """
+class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+    pass
+Category = CategoryDeclaration
+
+class Base[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object](
+    Category[P, Q, _ObjectRole, _ElementRole, _MorphismRole]
+):
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType: pass
+
+class Derived(Base):
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    stub = ast.parse(ast.unparse(source))
+    generator = _stub_generator()
+    counts = {"CategoryDeclaration": 2, "Category": 2, "Base": 2, "Derived": 0}
+    generator._project_class_aliases(stub, source)
+
+    generator._project_category_role_parameters(
+        stub,
+        source,
+        "example",
+        counts,
+        {"Base": "example", "Derived": "example"},
+        frozenset({"Base"}),
+        {},
+        frozenset({"example", "sage_categories.kernel.roles"}),
+    )
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "Category[P, Q, _ObjectRole, _ElementRole, _MorphismRole]" in projected
+    assert "Category[P, Q, _ObjectRole, _ElementRole, _MorphismRole, _ObjectRole" not in projected
+
+
 def test_public_exports_ignore_stubgen_function_local_classes() -> None:
     source = ast.parse(
         """

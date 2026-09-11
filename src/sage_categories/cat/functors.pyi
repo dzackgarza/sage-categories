@@ -66,9 +66,9 @@ __all__ = ["CreatesLimitsCategory", "Fun", "Functor", "FunctorCategory", "Functo
 
 @dataclass(frozen=True, eq=False, slots=True)
 class NaturalTransformationData:
-    assignment: Assignment
-    source: Functor
-    target: Functor
+    assignment: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
+    source: CategoryOfCategories.MorphismType
+    target: CategoryOfCategories.MorphismType
 
 type Functor = sage_categories.cat.category.CategoryOfCategories.MorphismType
 

@@ -87,9 +87,9 @@ def _defining_functor_equal(
 class NaturalTransformationData:
     """The local state introduced by the natural-transformation role."""
 
-    assignment: Assignment
-    source: Functor
-    target: Functor
+    assignment: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
+    source: CategoryOfCategories.MorphismType
+    target: CategoryOfCategories.MorphismType
 
 
 Cat = _category.Cat

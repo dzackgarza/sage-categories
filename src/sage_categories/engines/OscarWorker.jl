@@ -17,6 +17,7 @@ const _VALUES = Dict{Int,Any}()
 const _HANDLES = IdDict{Any,Int}()
 const _NEXT_HANDLE = Ref(0)
 const _OPERATIONS = Set([
+    "version",
     "prime_field",
     "polynomial_ring_with_generators",
     "quotient_ring",
@@ -100,6 +101,7 @@ end
 function _handle(request)
     operation = String(request["op"])
     operation in _OPERATIONS || error("unknown OSCAR operation $(operation)")
+    operation == "version" && return string(Base.pkgversion(Oscar))
     arguments = [_decode(argument) for argument in request["args"]]
     function_value = getfield(SageCategoriesOscarBridge, Symbol(operation))
     _encode(function_value(arguments...))

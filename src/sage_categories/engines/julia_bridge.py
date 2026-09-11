@@ -216,6 +216,11 @@ class _OscarBridge:
         assert isinstance(result, bool)
         return result
 
+    def text(self, operation: str, *arguments: object) -> str:
+        result = self._worker.request(operation, *arguments)
+        assert isinstance(result, str)
+        return result
+
 
 @cache
 def oscar_bridge() -> _OscarBridge:

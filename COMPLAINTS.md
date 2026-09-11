@@ -518,7 +518,7 @@ Ideas, to be weighed, not obligations.*
 
 - **Impact:** The governing plan allocates polynomial rings, quotients, localizations, affine schemes, sheaves, and gluings to OSCAR. The repository cannot currently verify that the embedded Julia environment exposes OSCAR before extending `SageCategoriesBridge.jl`.
 
-- **Required resolution:** Make the repository's pinned Julia environment expose and load OSCAR through the existing JuliaCall bridge, with a fast deterministic availability/version probe suitable for the ring/affine acceptance gate.
+- **Required resolution:** Superseded by the incompatible-project evidence below: OSCAR must not enter the embedded Catlab JuliaCall environment.  The repair is the dedicated OSCAR process/project and opaque-handle boundary at `6de3716`/`7578e61`; `sage_categories.engines.oscar.version()` is the deterministic loaded-version probe.  The ring/affine public consumers still own runtime acceptance.
 
 ## Catlab and OSCAR cannot share the repository JuliaPkg environment
 
@@ -533,6 +533,8 @@ Ideas, to be weighed, not obligations.*
 - **Required resolution:** Keep Catlab/GATlab in the package-global JuliaPkg environment.
   Run OSCAR in a separate Julia process/project with an explicit opaque-handle boundary, so incompatible transitive dependencies never enter one Julia process.
   Until that process boundary exists, OSCAR must not be declared in the global JuliaPkg project.
+
+- **Repair state:** `6de3716` keeps `Catlab = 0.17.6` / `GATlab = 0.2.4` in the package-global JuliaPkg project and launches OSCAR 1.8.2 under its own `OscarProject.toml` in a separate Julia 1.12.7 process.  Python exchanges only JSON primitives and worker-owned integer handles; `7578e61` carries those handles through the ring, affine, and covered-scheme native-retention boundaries.  Source/process-boundary tests and Julia syntax/project parsing are green.  This resolves the dependency-graph collision; it does not claim the pending OSCAR ring/affine runtime consumers on the resource-constrained host.
 
 ## Recovered Python-3.14 Sage runtime exhausts host headroom under public consumers
 

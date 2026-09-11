@@ -50,7 +50,14 @@ __all__ = [
     "simple_gluing",
     "stalk_map",
     "structure_sheaf",
+    "version",
 ]
+
+
+
+def version() -> str:
+    """Return the OSCAR package version loaded by the isolated worker."""
+    return bridge().text("version")
 
 
 def prime_field(characteristic: int) -> OscarHandle:

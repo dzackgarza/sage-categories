@@ -70,5 +70,7 @@ def test_oscar_worker_uses_only_handle_json_boundary() -> None:
     assert "using Oscar" in worker
     assert "using JSON" in worker
     assert "SageCategoriesOscarBridge" in worker
+    assert 'operation == "version"' in worker
+    assert "Base.pkgversion(Oscar)" in worker
     assert "using Catlab" not in worker
     assert "using GATlab" not in worker

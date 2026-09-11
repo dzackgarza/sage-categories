@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import overload
 
 from sympy import ask as sympy_ask
 
@@ -238,7 +239,17 @@ def _denotes_functor_by_domain(
     return (candidate._is_object() or candidate._is_morphism()) and candidate.defining_morphism().domain() in Cat()
 
 
-class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
+class FunctorCategory[
+    DomainCategory = "Category[..., ...]",
+    CodomainCategory = "Category[..., ...]",
+](
+    FixedEndpointCategory[
+        [OnObject, OnMorphism],
+        [Assignment],
+        DomainCategory,
+        CodomainCategory,
+    ]
+):
     """``Fun(C, D)``: functors ``C -> D`` and their natural transformations.
 
     As the category of diagrams of shape ``C`` in ``D`` it retains its evaluation
@@ -269,7 +280,12 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
     class MorphismType:
         """A natural transformation ``F => G``."""
 
-    def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
+    def __init__(
+        self,
+        morphisms: MorphismCategory,
+        domain: DomainCategory,
+        codomain: CodomainCategory,
+    ) -> None:
         self._constant_values: MonoDict = MonoDict()
         self._finite_data: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
@@ -497,6 +513,15 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
         return FunctorCategory
+
+    @overload
+    def __call__[
+        DomainCategory: Category[..., ...],
+        CodomainCategory: Category[..., ...],
+    ](self, shape: DomainCategory, target: CodomainCategory) -> FunctorCategory[DomainCategory, CodomainCategory]: ...
+
+    @overload
+    def __call__(self, shape: Category[..., ...], target: Functor) -> Functor: ...
 
     def __call__(self, shape: Category, target: Category | Functor) -> FunctorCategory | Functor:
         """``Fun(I, D)`` is the functor category; ``Fun(I, F)`` for a functor ``F: D -> E`` is ``(-) ** I`` applied to it.

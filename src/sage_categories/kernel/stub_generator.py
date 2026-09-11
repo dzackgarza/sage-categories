@@ -126,7 +126,8 @@ def _source_category_parameter_counts(sources: tuple[Path, ...]) -> dict[str, in
             if not set(_CATEGORY_ROLES).issubset(bound):
                 continue
             previous = result.get(statement.name)
-            arity = sum(isinstance(parameter, ast.ParamSpec) for parameter in statement.type_params)
+            hidden_roles = frozenset(_HIDDEN_CATEGORY_ROLES.values())
+            arity = sum(parameter.name not in hidden_roles for parameter in statement.type_params)
             assert previous is None or previous == arity, f"category class name {statement.name!r} has conflicting public arities"
             result[statement.name] = arity
     return result

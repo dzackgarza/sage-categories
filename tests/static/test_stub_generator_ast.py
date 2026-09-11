@@ -568,3 +568,28 @@ class Derived(Base):
     generic_bases = generator._source_generic_category_bases((base, derived), {"Base": 0, "Derived": 0})
 
     assert generic_bases == frozenset({"Base"})
+
+
+def test_category_parameter_counts_include_public_endpoint_typevars(tmp_path: Path) -> None:
+    source = tmp_path / "fixed.py"
+    source.write_text(
+        """
+class Fixed[
+    **P,
+    **Q,
+    DomainType=object,
+    CodomainType=object,
+    _ObjectRole=object,
+    _ElementRole=object,
+    _MorphismRole=object,
+]:
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    generator = _stub_generator()
+
+    counts = generator._source_category_parameter_counts((source,))
+
+    assert counts["Fixed"] == 4

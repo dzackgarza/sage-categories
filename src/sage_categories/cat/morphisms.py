@@ -371,11 +371,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
     # -- fixed endpoints ---------------------------------------------------------
 
-    def __call__(
-        self,
-        domain: CategoryOfCategories.ElementType,
-        codomain: CategoryOfCategories.ElementType,
-    ) -> FixedEndpointCategory[MorphismData, TwoMorphismData]:
+    def __call__[DomainType, CodomainType](self, domain: DomainType, codomain: CodomainType) -> FixedEndpointCategory[MorphismData, TwoMorphismData, DomainType, CodomainType]:
         """``Mor(C)(A, B)``: the full subcategory on morphisms ``A -> B``, one object per pair."""
         assert domain in self._base and codomain in self._base
         key = (domain, codomain, self)
@@ -494,7 +490,12 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
         return sympy_ask(candidate.domain() == candidate.codomain(), assumptions)
 
 
-class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):
+class FixedEndpointCategory[
+    **MorphismData,
+    **TwoMorphismData,
+    DomainType = "CategoryOfCategories.ElementType",
+    CodomainType = "CategoryOfCategories.ElementType",
+](FullSubcategory[TwoMorphismData, []]):
     """``Mor(C)(A, B)``: the full subcategory of ``Mor(C)`` on the morphisms ``A -> B``."""
 
     class ObjectType:
@@ -514,17 +515,17 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
     def __init__(
         self,
         morphisms: MorphismCategory[MorphismData, TwoMorphismData],
-        domain: CategoryOfCategories.ElementType,
-        codomain: CategoryOfCategories.ElementType,
+        domain: DomainType,
+        codomain: CodomainType,
     ) -> None:
         self._domain_object = domain
         self._codomain_object = codomain
         super().__init__(morphisms)
 
-    def domain(self) -> CategoryOfCategories.ElementType:
+    def domain(self) -> DomainType:
         return self._domain_object
 
-    def codomain(self) -> CategoryOfCategories.ElementType:
+    def codomain(self) -> CodomainType:
         return self._codomain_object
 
     # A fixed-endpoint category is its own base for narrowing: ``Mor(C)(A, B).P()`` is a

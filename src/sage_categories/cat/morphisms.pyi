@@ -3,7 +3,8 @@ import sage_categories.cat.morphisms
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
 from _typeshed import Incomplete
-from sage_categories.cat.category import Category, CategoryOfCategories, Decision, Predicate, Proposition
+from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.predicates import Decision, Predicate, Proposition
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.properties import FixedEndpointProperty, FullSubcategory, PredicateSubcategory, PropertySubcategory
 from sage_categories.kernel.roles import Role

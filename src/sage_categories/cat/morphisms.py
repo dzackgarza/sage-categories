@@ -22,15 +22,19 @@ from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import (
     Category,
-    Decision,
-    Predicate,
-    Proposition,
     composite_factors,
     is_composite,
     refine,
     retain_composite_factors,
 )
-from sage_categories.cat.predicates import decide, property_predicate, register_handler
+from sage_categories.cat.predicates import (
+    Decision,
+    Predicate,
+    Proposition,
+    decide,
+    property_predicate,
+    register_handler,
+)
 from sage_categories.cat.properties import (
     Axiom,
     FullSubcategory,

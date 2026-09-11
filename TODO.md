@@ -1,24 +1,18 @@
 # Mathematical execution DAG
 
-This is the repository entry point to the approved
-[native-engine remediation plan][plan], especially its sections 19 and 20.
-The plan owns full mathematical obligations, engine allocations, acceptance,
-and retained issue dependencies. This file names their work nodes and immediate
-dependency edges; it does not assert that an implementation is absent or that
-an earlier checkpoint must be repeated. Start from delivered source and valid
-consumer evidence. Preserve work already in flight.
+This is the repository entry point to the approved [native-engine remediation plan][plan], especially its sections 19 and 20. The plan owns full mathematical obligations, engine allocations, acceptance, and retained issue dependencies.
+This file names their work nodes and immediate dependency edges; it does not assert that an implementation is absent or that an earlier checkpoint must be repeated.
+Start from delivered source and valid consumer evidence.
+Preserve work already in flight.
 
-Read [AGENTS.md](AGENTS.md), the named [contribution policies](CONTRIBUTING.md),
-and [COMPLAINTS.md](COMPLAINTS.md) before selecting affected work. The
-[continuation locator](docs/remediation-handoff.md) supplies plan retrieval when
-the local vault link is unavailable.
+Read [AGENTS.md](AGENTS.md), the named [contribution policies](CONTRIBUTING.md), and [COMPLAINTS.md](COMPLAINTS.md) before selecting affected work.
+The [continuation locator](docs/remediation-handoff.md) supplies plan retrieval when the local vault link is unavailable.
 
 ## Nodes and prerequisites
 
-`A` in `B`'s Needs column means `A -> B`: B consumes the stated output of A.
-`none` means no prerequisite node in this table; existing mathematical inputs
-and the plan's retained issue contracts still apply. Acceptance belongs to the
-linked contract, not the short node name. Multiple prerequisites are conjunctive.
+`A` in `B`'s Needs column means `A -> B`: B consumes the stated output of A. `none` means no prerequisite node in this table; existing mathematical inputs and the plan's retained issue contracts still apply.
+Acceptance belongs to the linked contract, not the short node name.
+Multiple prerequisites are conjunctive.
 
 | ID | Work and full obligation in the governing plan | Needs |
 | --- | --- | --- |
@@ -56,28 +50,47 @@ linked contract, not the short node name. Multiple prerequisites are conjunctive
 
 ## Use the graph at the consumer boundary
 
-The plan's named next boundary is the general Sets product; reuse its accepted
-repair if already delivered. Continue independent authorized mathematics while
-runtime or gate repairs proceed. A runtime binding defect blocks acceptance of
-the affected consumer, not all source work. Static projection accompanies each
-affected operation; the `static` node is not permission to defer its first types.
+The plan's named next boundary is the general Sets product; reuse its accepted repair if already delivered.
+Continue independent authorized mathematics while runtime or gate repairs proceed.
+A runtime binding defect blocks acceptance of the affected consumer, not all source work.
+Static projection accompanies each affected operation; the `static` node is not permission to defer its first types.
 
-Edges apply to the required output, not blanket closure of a work family. In
-particular, additive #32 does not require the independent opposite-diagram #24
-consumer; group presentations need #32's intrinsic coequalizer, not additive
-completion. The topology and adelic extensions do not block projective-line
-gluing. Ordinary finite module/tensor consumers do not await all infinite-rank
-extensions. Read the retained issue prerequisites before selecting a subtask.
+**`gate`, `static` and `python-runtime` come before more mathematics, and the reason is measured.** Over 2026-09-10 to 2026-09-11 this repository took 41 commits.
+Twenty-five of them declare a known-red gate in their own subject line.
+Twelve are `docs: record ...` write-ups into COMPLAINTS, which grew by 250 lines in that day; eight more are `fix(static)` or `fix(architecture)` repairs against the gate.
+Eight are feature work.
+The tree gained 3,628 lines and 71 methods, five new classes — roughly one node's worth of surface for a day of a worker's whole attention.
 
-When a node's independently deliverable output needs its own scheduling, name
-that output at the existing task and redirect the affected edges without losing
-any obligation. Preserve the plan's full hypotheses and section-20 consumers.
-Do not infer readiness from a phase label or a package installation. Record new
-observed issues in COMPLAINTS and link the affected node; logging is not repair.
+Those three nodes each carry `Needs: none` and all three are prerequisites of `acceptance`, so nothing downstream can be accepted while they are open.
+That is the ordinary consequence of the graph; what makes them urgent rather than merely required is that every other node is currently being delivered *through* them, at the cost above.
+A repository where the majority of commits announce a red gate is not deferring verification by policy — it is paying for verification it does not get.
+Take them in this order:
 
-Before committing graph changes, check unique IDs, resolved prerequisite IDs,
-absence of cycles, and a path from each required node to `acceptance`. Keep
-completion evidence in the existing plan/issue records and implementation commits,
-not a second checkbox ledger in this routing table.
+1. **`gate`.** Make the commit-tier check either pass or say precisely which obligation is outstanding, so `[known red: ...]` stops being the normal ending of a commit subject.
+   A gate that is red for everyone all the time reports nothing about the commit in front of it, and the next real regression lands inside that noise.
+
+2. **`static`.** The `fix(static)` sequence of 2026-09-11 03:30–04:34 repaired seven distinct projection defects in one hour and still ended known-red.
+   Settle what exact projection the node requires and close it, rather than continuing to chase it one consumer at a time.
+
+3. **`python-runtime`, in part only.** The Julia side is repo work and is already specified in COMPLAINTS: Catlab 0.17.6 constrains Compose to `JSON <= 0.21` while OSCAR 1.8.2 requires `JSON >= 1.0`, so declaring OSCAR in `src/sage_categories/juliapkg.json` breaks every Catlab-backed consumer, and the recorded resolution is an explicit process/project boundary with an opaque handle rather than one shared Julia process.
+   Do that.
+
+**The host headroom half of `python-runtime` is not repo work — stop spending commits on it.** COMPLAINTS records the Sage 10.9 / Python 3.14.7 runtime being provisioned successfully and then failing under load: the root filesystem down to about 55 MiB free, roughly 11 GiB of swap in use, consumers sitting in `folio_wait_bit_common`, a stub regeneration alive for 2m15s without advancing a write.
+That observation is complete and correct, and no further reproduction of it changes anything, because the repair is more memory and disk on the machine.
+It is recorded, it is the owner's decision, and it is not a reason to keep re-running the consumers to watch them die.
+Continue authorized source work that does not need the runtime, and leave that complaint closed to further evidence until the hardware answer arrives.
+
+Edges apply to the required output, not blanket closure of a work family.
+In particular, additive #32 does not require the independent opposite-diagram #24 consumer; group presentations need #32's intrinsic coequalizer, not additive completion.
+The topology and adelic extensions do not block projective-line gluing.
+Ordinary finite module/tensor consumers do not await all infinite-rank extensions.
+Read the retained issue prerequisites before selecting a subtask.
+
+When a node's independently deliverable output needs its own scheduling, name that output at the existing task and redirect the affected edges without losing any obligation.
+Preserve the plan's full hypotheses and section-20 consumers.
+Do not infer readiness from a phase label or a package installation.
+Record new observed issues in COMPLAINTS and link the affected node; logging is not repair.
+
+Before committing graph changes, check unique IDs, resolved prerequisite IDs, absence of cycles, and a path from each required node to `acceptance`. Keep completion evidence in the existing plan/issue records and implementation commits, not a second checkbox ledger in this routing table.
 
 [plan]: .agents/plans/features/FEATURE-functor-owned-category-framework/plans/PLAN-native-engine-remediation/PLAN-native-engine-remediation.md

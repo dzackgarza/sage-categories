@@ -35,13 +35,13 @@ if TYPE_CHECKING:
 
 __all__ = [
     "Answer",
-    "Axiom",
     "AppliedPredicate",
     "AppliedQuery",
     "Argument",
+    "Axiom",
     "ConstructionFamily",
-    "Decision",
     "DecidingProposition",
+    "Decision",
     "Predicate",
     "PredicateHandler",
     "Proposition",

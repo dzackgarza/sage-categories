@@ -37,9 +37,18 @@ from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category
-from sage_categories.cat.cones import LimitConesCategory, cocone, cocone_apex, cone, cone_apex, cones
+from sage_categories.cat.cones import (
+    LimitConesCategory,
+    cocone,
+    cocone_apex,
+    cone,
+    cone_apex,
+    cones,
+)
 from sage_categories.cat.declarations import Sets
-from sage_categories.cat.dual_functor_categories import dual_functor_category_equivalence
+from sage_categories.cat.dual_functor_categories import (
+    dual_functor_category_equivalence,
+)
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
 from sage_categories.cat.opposites import opposite_morphism

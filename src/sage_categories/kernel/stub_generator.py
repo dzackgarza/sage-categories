@@ -903,9 +903,13 @@ def _project_quoted_type_parameter_references(
             source_parameter = source_parameters.get(parameter.name)
             if source_parameter is None:
                 continue
-            if isinstance(parameter, ast.TypeVar) and isinstance(source_parameter, ast.TypeVar):
-                if isinstance(source_parameter.bound, ast.Constant) and isinstance(source_parameter.bound.value, str):
-                    parameter.bound = copy.deepcopy(source_parameter.bound)
+            if (
+                isinstance(parameter, ast.TypeVar)
+                and isinstance(source_parameter, ast.TypeVar)
+                and isinstance(source_parameter.bound, ast.Constant)
+                and isinstance(source_parameter.bound.value, str)
+            ):
+                parameter.bound = copy.deepcopy(source_parameter.bound)
             source_default = source_parameter.default_value
             if isinstance(source_default, ast.Constant) and isinstance(source_default.value, str):
                 parameter.default_value = copy.deepcopy(source_default)

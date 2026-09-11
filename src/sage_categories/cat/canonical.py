@@ -304,9 +304,7 @@ class FinitePresentedCategory(Category[[Word], []]):
             return None
         if first.domain() is not candidate.domain() or first.codomain() is not candidate.codomain():
             return False
-        if first.word() == candidate.word():
-            return True
-        return False
+        return first.word() == candidate.word()
 
     def __repr__(self) -> str:
         return self._name

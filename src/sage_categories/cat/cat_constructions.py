@@ -55,8 +55,23 @@ from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
-from sage_categories.cat.predicates import Predicate, Proposition, Unknown, UnknownClass, ask, conjunction, decide, register_handler, unconditional
-from sage_categories.cat.shapes import Discrete, DiscreteCategory, DiscreteObjectCategory, carrier_comparison
+from sage_categories.cat.predicates import (
+    Predicate,
+    Proposition,
+    Unknown,
+    UnknownClass,
+    ask,
+    conjunction,
+    decide,
+    register_handler,
+    unconditional,
+)
+from sage_categories.cat.shapes import (
+    Discrete,
+    DiscreteCategory,
+    DiscreteObjectCategory,
+    carrier_comparison,
+)
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.retention import complete_constructions, deferred_category
 from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method

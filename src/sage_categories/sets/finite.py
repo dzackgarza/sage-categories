@@ -11,7 +11,7 @@ __all__ = ["FiniteSets", "MapForm", "ObjectForm", "Sets", "SetsCategory"]
 
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
-from functools import cache
+from functools import cached_property
 from itertools import islice
 from itertools import product as cartesian_product
 from typing import Literal, Protocol, overload, runtime_checkable
@@ -51,7 +51,7 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.cat.shapes import realize_discrete_object
 from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 from sage_categories.kernel.type_aliases import ContainmentInput
 
 type Map = Callable[[Hashable], Hashable]
@@ -276,7 +276,7 @@ class _SetMap:
 
 
 def _form_of(value: SetsCategory.ObjectType) -> ObjectForm | None:
-    return _object_forms[value] if value in _object_forms else None
+    return _object_forms.get(value, None)
 
 
 def _composed_form(
@@ -446,8 +446,7 @@ class SetsCategory(Category[[Map], []]):
             """The defining ordered finite set data, or the predicate deciding membership."""
             return self._presentation
 
-        @property
-        @cache
+        @cached_property
         def _lookup(self) -> dict[Hashable, Hashable]:
             return {value: value for value in self._values}
 
@@ -510,7 +509,7 @@ class SetsCategory(Category[[Map], []]):
             assert ask(presentation(datum)) is True, "set membership is not established"
             return datum
 
-        @cache
+        @cached_method
         def point(self, datum: Hashable) -> SetsCategory.ElementType:
             datum = self.representative(datum)
             return self.ObjectType(datum)
@@ -725,7 +724,7 @@ class SetsCategory(Category[[Map], []]):
                 return False
         return None
 
-    @cache
+    @cached_method
     def _generic_preimage(
         self, arrow: SetsCategory.MorphismType
     ) -> tuple[Basic, Basic] | None:
@@ -754,7 +753,7 @@ class SetsCategory(Category[[Map], []]):
             return None
         return target, source.xreplace(solutions[0])
 
-    @cache
+    @cached_method
     def _solved_inverse(self, arrow: SetsCategory.MorphismType) -> Lambda | None:
         """The inverse rule of a symbolic map between rule-defined sets, when solving its equations gives one preimage that the domain rule admits.
 
@@ -1303,7 +1302,7 @@ class SetsCategory(Category[[Map], []]):
 
         return finite_sets.factor_through_monomorphism(mono, arrow)
 
-    @cache
+    @cached_method
     def hom_morphisms(
         self,
         source: CategoryOfCategories.ElementType,

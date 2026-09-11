@@ -16,7 +16,13 @@ from sympy import ask as sympy_ask
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Decision, Proposition, Unknown, ask, register_handler
+from sage_categories.cat.predicates import (
+    Decision,
+    Proposition,
+    Unknown,
+    ask,
+    register_handler,
+)
 from sage_categories.kernel.construction import retained_objects
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key

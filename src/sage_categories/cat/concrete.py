@@ -20,7 +20,12 @@ from __future__ import annotations
 
 __all__ = ["ConcreteCategory"]
 
-from sage_categories.cat.category import Category, CategoryDeclaration, CategoryOfCategories, concrete_category
+from sage_categories.cat.category import (
+    Category,
+    CategoryDeclaration,
+    CategoryOfCategories,
+    concrete_category,
+)
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.predicates import Proposition, register_handler

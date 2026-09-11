@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING
 
 from sage_categories.cat.comma import CommaSpecialization
 from sage_categories.cat.cones import ConeCategory, cones, limit_cones
-from sage_categories.cat.functors import Fun, Functor, FunctorCategory, NaturalTransformation
+from sage_categories.cat.functors import (
+    Fun,
+    Functor,
+    FunctorCategory,
+    NaturalTransformation,
+)
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Axiom
 from sage_categories.cat.properties import PropertySubcategory

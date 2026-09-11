@@ -328,11 +328,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](
         self, constructed: CategoryOfCategories.ElementType
     ) -> tuple[Functor, ...]:
         """The diagrams this family constructed ``constructed`` from, in construction order; none for an object it did not construct."""
-        return (
-            self._source_diagrams[constructed]
-            if constructed in self._source_diagrams
-            else ()
-        )
+        return self._source_diagrams.get(constructed, ())
 
     def presentation(
         self, constructed: CategoryOfCategories.ElementType
@@ -375,11 +371,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](
         assert diagram not in self._data, (
             f"{self!r} already retains the construction of {diagram!r}"
         )
-        retained = (
-            self._source_diagrams[constructed]
-            if constructed in self._source_diagrams
-            else ()
-        )
+        retained = self._source_diagrams.get(constructed, ())
         self._data[diagram] = data
         self._constructed[diagram] = constructed
         self._source_diagrams[constructed] = (*retained, diagram)

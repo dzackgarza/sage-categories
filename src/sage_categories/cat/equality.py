@@ -10,12 +10,7 @@ domain, paths of a finitely presented category).  Everything else is ``Unknown``
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from sage_categories.cat.predicates import Predicate
-
-if TYPE_CHECKING:
-    pass
 
 __all__ = ["equality_predicate"]
 

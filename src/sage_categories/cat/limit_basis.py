@@ -10,10 +10,10 @@ from __future__ import annotations
 
 __all__ = [
     "DiagramPresentation",
-    "diagram_presentation",
-    "parallel_pair",
-    "limit_from_products_equalizers",
     "colimit_from_coproducts_coequalizers",
+    "diagram_presentation",
+    "limit_from_products_equalizers",
+    "parallel_pair",
 ]
 
 from collections.abc import Callable

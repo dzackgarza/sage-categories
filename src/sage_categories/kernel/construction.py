@@ -7,7 +7,13 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, NamedTuple
 
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
+from sage_categories.kernel.roles import (
+    CategoryPoint,
+    MorphismOfCategory,
+    ObjectOfCategory,
+    Role,
+    role_of,
+)
 from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
@@ -63,8 +69,8 @@ __all__ = [
     "is_constructed",
     "retain_element_input",
     "retain_morphism_input",
-    "retain_object_input",
     "retain_object_by_datum",
+    "retain_object_input",
     "retained_element_input",
     "retained_input",
     "retained_morphism_input",
@@ -188,7 +194,7 @@ def retained_values() -> tuple[CategoryPoint, ...]:
     values: list[CategoryPoint] = []
     seen: set[int] = set()
     for table in (_object_inputs, _element_inputs, _morphism_inputs):
-        for _, construction_input in table.items():
+        for construction_input in table.values():
             value = construction_input.canonical_image
             if id(value) in seen:
                 continue
@@ -244,7 +250,7 @@ def _objects_by[Datum](category: Category, datum: Datum) -> MonoDict | dict[Datu
 def retained_object_by_datum[Datum](category: Category, datum: Datum) -> ObjectOfCategory | None:
     """The object ``category`` retains for ``datum``, or ``None`` if it retains none yet."""
     table = _objects_by(category, datum)
-    return table[datum] if datum in table else None
+    return table.get(datum, None)
 
 
 def retain_object_by_datum[Value: ObjectOfCategory, Datum](category: Category, datum: Datum, value: Value) -> None:

@@ -6,14 +6,14 @@ Reference: Riehl, Category Theory in Context, Theorem 4.6.1.
 from __future__ import annotations
 
 __all__ = [
-    "TerminalObjectsCategory",
-    "TerminalObjects",
-    "InitialObjectsCategory",
     "InitialObjects",
-    "RightUniversalArrows",
+    "InitialObjectsCategory",
     "LeftUniversalArrows",
-    "right_mate",
+    "RightUniversalArrows",
+    "TerminalObjects",
+    "TerminalObjectsCategory",
     "left_mate",
+    "right_mate",
 ]
 
 from collections.abc import Callable

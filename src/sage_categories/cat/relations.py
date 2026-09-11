@@ -7,9 +7,9 @@ subobjects. Reference: https://1lab.dev/Cat.Bi.Instances.Relations.html
 from __future__ import annotations
 
 __all__ = [
-    "RelationsCategory",
     "RelationMorphismsCategory",
     "Relations",
+    "RelationsCategory",
     "relation_inclusion",
 ]
 
@@ -143,7 +143,7 @@ class RelationsCategory(Category[[MorphismCategory.ObjectType], [MorphismCategor
         base = self._regular_category
         pullback = constructed_data(base.Pullbacks(), cospan_diagram(base, first.right(), second.left()))
         arrow = pair_maps(base, first.left() * pullback.leg(0), second.right() * pullback.leg(1))
-        surjection, mono = base.image_factorization(arrow)
+        _surjection, mono = base.image_factorization(arrow)
         return self.construct_morphism(first.domain(), second.codomain(), mono)
 
     def meet(self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:

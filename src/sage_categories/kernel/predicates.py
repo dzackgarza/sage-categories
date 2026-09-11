@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from inspect import get_annotations, signature
 from itertools import count
-from typing import TYPE_CHECKING, Annotated, get_origin
+from typing import TYPE_CHECKING, Annotated, Self, get_origin
 
 from beartype.vale import Is
 from plum import Dispatcher, Function, NotFoundLookupError
@@ -79,7 +79,7 @@ class _OwnedValueAtom(AtomicExpr):
 
     is_commutative = True
 
-    def __new__(cls, identity: int) -> _OwnedValueAtom:
+    def __new__(cls, identity: int) -> Self:
         return AtomicExpr.__new__(cls, Integer(identity))
 
 

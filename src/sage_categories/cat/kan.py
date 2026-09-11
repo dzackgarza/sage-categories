@@ -37,14 +37,14 @@ if TYPE_CHECKING:
     from sage_categories.cat.morphisms import MorphismCategory
 
 __all__ = [
+    "left_kan_adjunction",
     "left_kan_desc",
     "left_kan_extension",
     "left_kan_unit",
+    "right_kan_adjunction",
     "right_kan_counit",
     "right_kan_extension",
     "right_kan_lift",
-    "left_kan_adjunction",
-    "right_kan_adjunction",
 ]
 
 

@@ -16,7 +16,14 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.monoidal import ActionsCategory, tensor_morphism
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.structured_objects import EndofunctorAlgebras, Equifier, EquifierCategory, InserterCategory, MonoidCategory, Monoids
+from sage_categories.cat.structured_objects import (
+    EndofunctorAlgebras,
+    Equifier,
+    EquifierCategory,
+    InserterCategory,
+    MonoidCategory,
+    Monoids,
+)
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
 

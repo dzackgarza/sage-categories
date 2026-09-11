@@ -38,14 +38,21 @@ from sage_categories.cat.category import Category, member
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Decision, Predicate, Proposition, UnknownClass, ask, register_handler
+from sage_categories.cat.predicates import (
+    Decision,
+    Predicate,
+    Proposition,
+    UnknownClass,
+    ask,
+    register_handler,
+)
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
 
-__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "carrier_comparison", "omega", "discrete_functor"]
+__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "carrier_comparison", "discrete_functor", "omega"]
 
 
 # -- Discrete(S) ---------------------------------------------------------------------

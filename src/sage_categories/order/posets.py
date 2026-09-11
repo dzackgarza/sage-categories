@@ -21,7 +21,13 @@ from sage_categories.cat.cones import LimitConesCategory
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Axiom, Predicate, Proposition, conjunction, register_handler
+from sage_categories.cat.predicates import (
+    Axiom,
+    Predicate,
+    Proposition,
+    conjunction,
+    register_handler,
+)
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete, ThinCategory
 from sage_categories.kernel.sage_runtime import cached_function

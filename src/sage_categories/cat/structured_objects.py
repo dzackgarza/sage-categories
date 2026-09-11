@@ -38,7 +38,7 @@ __all__ = [
     "Semirings",
 ]
 
-from functools import cache, partial
+from functools import partial
 
 from sage_categories.cat.calculus import (
     binary_product_data,
@@ -471,7 +471,7 @@ class GroupsCategory(PropertySubcategory):
     _base_category_class_and_axiom = (MonoidCategory, "Group")
 
     class ObjectType:
-        @cache
+        @cached_method
         def inversion(self) -> MorphismCategory.ObjectType:
             """``ι = π_1 ∘ ⟨π_0, μ⟩⁻¹ ∘ ⟨1_X, η ∘ !_X⟩``: the shear inverse read at ``(x, e)`` gives ``(x, x⁻¹)``."""
             operation = self.operation()

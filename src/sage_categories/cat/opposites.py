@@ -18,7 +18,11 @@ from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformatio
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Proposition, UnknownClass
 from sage_categories.kernel.refinement import is_placed, refine
-from sage_categories.kernel.retention import deferred_category, identity_key, retained_involution
+from sage_categories.kernel.retention import (
+    deferred_category,
+    identity_key,
+    retained_involution,
+)
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import cached_function
 

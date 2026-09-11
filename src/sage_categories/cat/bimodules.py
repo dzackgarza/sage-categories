@@ -22,9 +22,18 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.modules import ModuleCategory, Modules
-from sage_categories.cat.monoidal import MonoidalStructuresCategory, Reversed, SelfAction, tensor_morphism
+from sage_categories.cat.monoidal import (
+    MonoidalStructuresCategory,
+    Reversed,
+    SelfAction,
+    tensor_morphism,
+)
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.structured_objects import EquifierCategory, MonoidCategory, Monoids
+from sage_categories.cat.structured_objects import (
+    EquifierCategory,
+    MonoidCategory,
+    Monoids,
+)
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
 

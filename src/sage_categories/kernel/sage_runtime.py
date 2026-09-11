@@ -18,7 +18,6 @@ from sage.structure.dynamic_class import dynamic_class
 __all__ = [
     "DisjointSet",
     "GapElement",
-    "libgap",
     "Integer",
     "LazyFamily",
     "MonoDict",
@@ -30,5 +29,6 @@ __all__ = [
     "cached_method",
     "dynamic_class",
     "lazy_attribute",
+    "libgap",
     "uncamelcase",
 ]

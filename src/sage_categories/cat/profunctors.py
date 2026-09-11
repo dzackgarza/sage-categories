@@ -8,8 +8,8 @@ from __future__ import annotations
 
 __all__ = [
     "Profunctors",
-    "compose_profunctors",
     "compose_profunctor_transformations",
+    "compose_profunctors",
     "identity_profunctor",
     "profunctor_unitor",
 ]

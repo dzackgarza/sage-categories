@@ -122,9 +122,9 @@ class _StaticRoles_CategoryOfCategories:
 class CategoryDeclaration[
     **MorphismData,
     **TwoMorphismData,
-    _ObjectRole = sage_categories.kernel.roles.ObjectOfCategory,
-    _ElementRole = sage_categories.kernel.roles.ElementOfObject,
-    _MorphismRole = sage_categories.kernel.roles.MorphismOfCategory,
+    _ObjectRole = "CategoryOfCategories.ElementType",
+    _ElementRole = "CategoryOfCategories.ElementType",
+    _MorphismRole = "MorphismCategory.ObjectType",
 ](_StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
     def __init__(self, data: None = None) -> None: ...
     def is_discrete(self) -> bool: ...
@@ -230,9 +230,9 @@ class CategoryDeclaration[
 
 _CategoryDeclaration_MorphismData = _typing.ParamSpec("_CategoryDeclaration_MorphismData")
 _CategoryDeclaration_TwoMorphismData = _typing.ParamSpec("_CategoryDeclaration_TwoMorphismData")
-_CategoryDeclaration_ObjectRole = _typing.TypeVar("_CategoryDeclaration_ObjectRole", default=sage_categories.kernel.roles.ObjectOfCategory)
-_CategoryDeclaration_ElementRole = _typing.TypeVar("_CategoryDeclaration_ElementRole", default=sage_categories.kernel.roles.ElementOfObject)
-_CategoryDeclaration_MorphismRole = _typing.TypeVar("_CategoryDeclaration_MorphismRole", default=sage_categories.kernel.roles.MorphismOfCategory)
+_CategoryDeclaration_ObjectRole = _typing.TypeVar("_CategoryDeclaration_ObjectRole", default="CategoryOfCategories.ElementType")
+_CategoryDeclaration_ElementRole = _typing.TypeVar("_CategoryDeclaration_ElementRole", default="CategoryOfCategories.ElementType")
+_CategoryDeclaration_MorphismRole = _typing.TypeVar("_CategoryDeclaration_MorphismRole", default="MorphismCategory.ObjectType")
 Category = CategoryDeclaration[
     _CategoryDeclaration_MorphismData,
     _CategoryDeclaration_TwoMorphismData,

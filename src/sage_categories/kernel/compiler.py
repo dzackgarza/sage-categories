@@ -74,6 +74,7 @@ __all__ = [
     "declared_subtyping",
     "implement_category",
     "inheriting_functors",
+    "install_method_result_projection_reader",
     "install_on_declaration",
     "node",
     "realize_implementation_class",
@@ -82,6 +83,19 @@ __all__ = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
+
+type MethodResultProjection = tuple[str, tuple[tuple[int, int], ...]]
+type MethodResultProjectionReader = Callable[[], dict[str, MethodResultProjection]]
+_method_result_projection_reader: MethodResultProjectionReader | None = None
+
+
+def install_method_result_projection_reader(
+    reader: MethodResultProjectionReader,
+) -> None:
+    """Install the Cat-owned reader for parameter-dependent static method results."""
+    global _method_result_projection_reader
+    assert _method_result_projection_reader is None or _method_result_projection_reader is reader
+    _method_result_projection_reader = reader
 
 
 _runtime_ordinals = count()
@@ -322,6 +336,14 @@ class _CompilerProjection:
 
     def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:
         return _subtyping_projection()
+
+    def declared_method_result_projections(
+        self,
+    ) -> dict[str, MethodResultProjection]:
+        """Return Cat-owned parameter-dependent method result relations."""
+        if _method_result_projection_reader is None:
+            return {}
+        return _method_result_projection_reader()
 
 
 def _projection_surface(role: Role) -> str:

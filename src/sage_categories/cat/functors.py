@@ -242,6 +242,12 @@ def _denotes_functor_by_domain(
 class FunctorCategory[
     DomainCategory = "Category[..., ...]",
     CodomainCategory = "Category[..., ...]",
+    DomainObject = "CategoryOfCategories.ElementType",
+    DomainElement = "CategoryOfCategories.ElementType",
+    DomainMorphism = "MorphismCategory.ObjectType",
+    CodomainObject = "CategoryOfCategories.ElementType",
+    CodomainElement = "CategoryOfCategories.ElementType",
+    CodomainMorphism = "MorphismCategory.ObjectType",
 ](
     FixedEndpointCategory[
         [OnObject, OnMorphism],
@@ -266,7 +272,16 @@ class FunctorCategory[
     C ... given by the morphism c_1 x_{c_2} c'_2 -> c'_2").
     """
 
-    class ObjectType:
+    class ObjectType[
+        DomainCategory = "Category[..., ...]",
+        CodomainCategory = "Category[..., ...]",
+        DomainObject = "CategoryOfCategories.ElementType",
+        DomainElement = "CategoryOfCategories.ElementType",
+        DomainMorphism = "MorphismCategory.ObjectType",
+        CodomainObject = "CategoryOfCategories.ElementType",
+        CodomainElement = "CategoryOfCategories.ElementType",
+        CodomainMorphism = "MorphismCategory.ObjectType",
+    ]:
         """A functor ``C -> D``, which is a morphism of ``Cat()``.
 
         For ``C = [1]`` the objects are the morphisms of ``D``, and those are objects of
@@ -516,9 +531,26 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
     @overload
     def __call__[
-        DomainCategory: Category[..., ...],
-        CodomainCategory: Category[..., ...],
-    ](self, shape: DomainCategory, target: CodomainCategory) -> FunctorCategory[DomainCategory, CodomainCategory]: ...
+        DomainObject,
+        DomainElement,
+        DomainMorphism,
+        CodomainObject,
+        CodomainElement,
+        CodomainMorphism,
+    ](
+        self,
+        shape: Category[..., ..., DomainObject, DomainElement, DomainMorphism],
+        target: Category[..., ..., CodomainObject, CodomainElement, CodomainMorphism],
+    ) -> FunctorCategory[
+        Category[..., ..., DomainObject, DomainElement, DomainMorphism],
+        Category[..., ..., CodomainObject, CodomainElement, CodomainMorphism],
+        DomainObject,
+        DomainElement,
+        DomainMorphism,
+        CodomainObject,
+        CodomainElement,
+        CodomainMorphism,
+    ]: ...
 
     @overload
     def __call__(self, shape: Category[..., ...], target: Functor) -> Functor: ...

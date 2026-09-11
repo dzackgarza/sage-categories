@@ -431,6 +431,7 @@ def test_category_role_projection_is_noop_without_category_declarations() -> Non
         {},
         {},
         frozenset(),
+        {},
         frozenset({"example", "sage_categories.kernel.roles"}),
     )
     assert ast.dump(stub, include_attributes=False) == before
@@ -460,6 +461,7 @@ class RoleOnly(Category):
         counts,
         {"RoleOnly": "example"},
         frozenset(),
+        {},
         frozenset({"example", "sage_categories.kernel.roles"}),
     )
     projected = ast.unparse(ast.fix_missing_locations(stub))
@@ -499,6 +501,7 @@ class Derived(Base):
         counts,
         {"Base": "example", "Derived": "example"},
         frozenset({"Base"}),
+        {},
         frozenset({"example", "sage_categories.kernel.roles"}),
     )
     projected = ast.unparse(ast.fix_missing_locations(stub))
@@ -593,3 +596,63 @@ class Fixed[
     counts = generator._source_category_parameter_counts((source,))
 
     assert counts["Fixed"] == 4
+
+
+def test_generic_role_specializes_matching_provider_base() -> None:
+    source = ast.parse(
+        """
+class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+    pass
+Category = CategoryDeclaration
+
+class Provider[A, B]:
+    pass
+
+class Owner[A=object, B=object](Category):
+    class ObjectType[A=object, B=object]: pass
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    stub = ast.parse(ast.unparse(source))
+    owner = next(statement for statement in stub.body if isinstance(statement, ast.ClassDef) and statement.name == "Owner")
+    object_type = next(statement for statement in owner.body if isinstance(statement, ast.ClassDef) and statement.name == "ObjectType")
+    generator = _stub_generator()
+    object_type.bases = [generator._base_expression("example.Provider")]
+    counts = {"CategoryDeclaration": 2, "Category": 2, "Owner": 2}
+    generator._project_class_aliases(stub, source)
+
+    generator._project_category_role_parameters(
+        stub,
+        source,
+        "example",
+        counts,
+        {"Owner": "example"},
+        frozenset(),
+        {
+            "example.Provider": ("A", "B"),
+            "example.Owner.ObjectType": ("A", "B"),
+        },
+        frozenset({"example", "sage_categories.kernel.roles"}),
+    )
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "class ObjectType[A = object, B = object](example.Provider[A, B])" in projected
+    assert "_StaticRoles_Owner.ObjectType[A, B]" in projected
+
+
+def test_generic_morphism_projection_uses_declared_endpoint_parameters() -> None:
+    stub = ast.parse(
+        """
+class Owner:
+    class ObjectType: pass
+    class MorphismType[DomainCategory, CodomainCategory]: pass
+"""
+    )
+    generator = _stub_generator()
+
+    generator._project_exact_morphism_endpoints(stub)
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "def domain(self) -> DomainCategory:" in projected
+    assert "def codomain(self) -> CodomainCategory:" in projected

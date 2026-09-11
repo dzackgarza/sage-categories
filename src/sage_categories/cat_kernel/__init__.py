@@ -13,6 +13,7 @@ private bootstrap module calls ``install`` before ``Cat`` is loaded.
 from sage_categories.cat_kernel import axioms as _axioms
 from sage_categories.cat_kernel import functor_declarations as _functor_declarations
 from sage_categories.cat_kernel import realizations as _realizations
+from sage_categories.cat_kernel import static_projection as _static_projection
 
 __all__ = ["install"]
 
@@ -22,3 +23,4 @@ def install() -> None:
     _functor_declarations.install()
     _axioms.install()
     _realizations.install()
+    _static_projection.install()

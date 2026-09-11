@@ -72,6 +72,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     source_modules = frozenset(_module_name(package, output_directory, source) for source in sources)
     category_parameter_counts = _source_category_parameter_counts(sources)
     category_modules = _source_category_modules(package, output_directory, sources)
+    source_class_parameters = _source_class_type_parameters(package, output_directory, sources)
     generic_category_bases = _source_generic_category_bases(sources, category_parameter_counts)
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
@@ -94,6 +95,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
             category_parameter_counts,
             category_modules,
             generic_category_bases,
+            source_class_parameters,
             source_modules,
         )
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
@@ -130,6 +132,19 @@ def _source_category_parameter_counts(sources: tuple[Path, ...]) -> dict[str, in
             arity = sum(parameter.name not in hidden_roles for parameter in statement.type_params)
             assert previous is None or previous == arity, f"category class name {statement.name!r} has conflicting public arities"
             result[statement.name] = arity
+    return result
+
+
+def _source_class_type_parameters(package: str, output_directory: Path, sources: tuple[Path, ...]) -> dict[str, tuple[str, ...]]:
+    """Return source-declared generic parameters for every class, including roles."""
+    result: dict[str, tuple[str, ...]] = {}
+    for source in sources:
+        module = _module_name(package, output_directory, source)
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        for declaration in _classes(tree.body, module):
+            names = tuple(parameter.name for parameter in declaration.node.type_params)
+            if names:
+                result[declaration.name] = names
     return result
 
 
@@ -189,6 +204,7 @@ def _project_category_role_parameters(
     category_parameter_counts: dict[str, int],
     category_modules: dict[str, str],
     generic_category_bases: frozenset[str],
+    source_class_parameters: dict[str, tuple[str, ...]],
     source_modules: frozenset[str],
 ) -> None:
     """Thread each category's exact three roles through its static inheritance.
@@ -224,6 +240,18 @@ def _project_category_role_parameters(
         if isinstance(expression, ast.Attribute):
             return expression.attr
         return None
+
+    def expression_fullname(expression: ast.expr) -> str | None:
+        while isinstance(expression, ast.Subscript):
+            expression = expression.value
+        parts: list[str] = []
+        while isinstance(expression, ast.Attribute):
+            parts.append(expression.attr)
+            expression = expression.value
+        if not isinstance(expression, ast.Name):
+            return None
+        parts.append(expression.id)
+        return ".".join(reversed(parts))
 
     def subscript_arguments(expression: ast.Subscript) -> list[ast.expr]:
         return list(expression.slice.elts) if isinstance(expression.slice, ast.Tuple) else [expression.slice]
@@ -365,11 +393,38 @@ def _project_category_role_parameters(
                 None,
             )
             if helper_role is not None:
-                defaults[role] = ast.Attribute(
+                role_reference: ast.expr = ast.Attribute(
                     value=ast.Name(id=helper_name, ctx=ast.Load()),
                     attr=role,
                     ctx=ast.Load(),
                 )
+                role_parameters = tuple(parameter.name for parameter in helper_role.type_params)
+                if role_parameters:
+                    owner_parameters = {parameter.name for parameter in owner.type_params}
+                    assert set(role_parameters) <= owner_parameters, f"{owner_name}.{role} generic parameters are not carried by its category owner"
+                    role_reference = ast.Subscript(
+                        value=role_reference,
+                        slice=ast.Tuple(
+                            elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters],
+                            ctx=ast.Load(),
+                        ),
+                        ctx=ast.Load(),
+                    )
+                    for index, base in enumerate(helper_role.bases):
+                        fullname = expression_fullname(base)
+                        if fullname is None or isinstance(base, ast.Subscript):
+                            continue
+                        if source_class_parameters.get(fullname) != role_parameters:
+                            continue
+                        helper_role.bases[index] = ast.Subscript(
+                            value=base,
+                            slice=ast.Tuple(
+                                elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters],
+                                ctx=ast.Load(),
+                            ),
+                            ctx=ast.Load(),
+                        )
+                defaults[role] = role_reference
                 continue
             alias = role_alias(owner, role)
             assert alias is not None, f"{owner_name}.{role} has no static role declaration"
@@ -1076,7 +1131,17 @@ def _project_exact_morphism_endpoints(tree: ast.Module) -> None:
     concrete declaration itself owns.
     """
 
-    def endpoint_method(name: str, owner_name: str) -> ast.FunctionDef:
+    def endpoint_method(name: str, owner_name: str, morphism_type: ast.ClassDef) -> ast.FunctionDef:
+        parameter_names = {parameter.name for parameter in morphism_type.type_params}
+        endpoint_parameter = "DomainCategory" if name == "domain" else "CodomainCategory"
+        if endpoint_parameter in parameter_names:
+            returns: ast.expr = ast.Name(id=endpoint_parameter, ctx=ast.Load())
+        else:
+            returns = ast.Attribute(
+                value=ast.Name(id=owner_name, ctx=ast.Load()),
+                attr="ObjectType",
+                ctx=ast.Load(),
+            )
         return ast.FunctionDef(
             name=name,
             args=ast.arguments(
@@ -1088,11 +1153,7 @@ def _project_exact_morphism_endpoints(tree: ast.Module) -> None:
             ),
             body=[ast.Expr(value=ast.Constant(value=Ellipsis))],
             decorator_list=[],
-            returns=ast.Attribute(
-                value=ast.Name(id=owner_name, ctx=ast.Load()),
-                attr="ObjectType",
-                ctx=ast.Load(),
-            ),
+            returns=returns,
             type_comment=None,
             type_params=[],
         )
@@ -1109,7 +1170,7 @@ def _project_exact_morphism_endpoints(tree: ast.Module) -> None:
         local_methods = {statement.name for statement in morphism_type.body if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef)}
         for name in ("domain", "codomain"):
             if name not in local_methods:
-                morphism_type.body.append(endpoint_method(name, owner.name))
+                morphism_type.body.append(endpoint_method(name, owner.name, morphism_type))
 
 
 def _project_provider_bases(

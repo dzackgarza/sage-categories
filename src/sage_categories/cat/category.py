@@ -1523,7 +1523,16 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __repr__(self) -> str:
             return f"point of {self.parent()!r}"
 
-    class MorphismType:
+    class MorphismType[
+        DomainCategory: "Category[..., ...]" = "Category[..., ...]",
+        CodomainCategory: "Category[..., ...]" = "Category[..., ...]",
+        DomainObject: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
+        DomainElement: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
+        DomainMorphism: "MorphismCategory.ObjectType" = "MorphismCategory.ObjectType",
+        CodomainObject: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
+        CodomainElement: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
+        CodomainMorphism: "MorphismCategory.ObjectType" = "MorphismCategory.ObjectType",
+    ]:
         """A functor: a morphism of ``Cat()`` with a domain, a codomain, and total object and morphism actions."""
 
         def __init__(self, data: FunctorData) -> None:
@@ -1541,7 +1550,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         # builds its image from the domain's construction input, so it admits exactly the
         # values whose placement reaches that node.
 
-        def on_object(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        def on_object(self, member_object: DomainObject) -> CodomainObject:
             """The image of an object of the domain, one value per object."""
             return self._declared_object_image(member_object)
 
@@ -1588,7 +1597,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                     target.retain_inverses(image, inverse_image)
             return image
 
-        def on_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        def on_morphism(self, morphism: DomainMorphism) -> CodomainMorphism:
             """The image of a morphism of the domain, one value per morphism."""
             return self._declared_morphism_image(morphism)
 
@@ -1644,7 +1653,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 self.on_object,
             )
 
-        def on_element(self, element: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        def on_element(self, element: DomainElement) -> CodomainElement:
             """Transport ``t: T -> X`` along ``self: X -> Y`` by composition (D17)."""
             defining = element.defining_morphism()
             assert defining.codomain() is self.domain()

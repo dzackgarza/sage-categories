@@ -86,6 +86,10 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     category_modules = _source_category_modules(package, output_directory, sources)
     source_class_parameters = _source_class_type_parameters(package, output_directory, sources)
     hoisted_role_providers = _source_hoisted_role_providers(package, output_directory, sources)
+    source_class_parameters = _include_hoisted_role_parameters(
+        source_class_parameters,
+        hoisted_role_providers,
+    )
     generic_category_bases = _source_generic_category_bases(sources, category_parameter_counts)
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
@@ -190,6 +194,24 @@ def _source_hoisted_role_providers(
                     continue
                 public = f"{module}.{owner.name}.{local.name}"
                 result[public] = f"{module}._StaticRoles_{owner.name}.{local.name}"
+    return result
+
+
+def _include_hoisted_role_parameters(
+    source_class_parameters: dict[str, tuple[str, ...]],
+    hoisted_role_providers: dict[str, str],
+) -> dict[str, tuple[str, ...]]:
+    """Give each generated role helper the generic parameters of its source role.
+
+    ``_project_provider_bases`` emits the helper TypeInfo to avoid generic loss through
+    an inherited nested alias.  Generic specialization still comes from source, so the
+    helper receives exactly the parameter tuple written on the public role declaration.
+    """
+    result = dict(source_class_parameters)
+    for public, helper in hoisted_role_providers.items():
+        parameters = source_class_parameters.get(public)
+        if parameters is not None:
+            result[helper] = parameters
     return result
 
 

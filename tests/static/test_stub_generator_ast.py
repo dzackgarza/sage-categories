@@ -663,6 +663,19 @@ class Fixed[
     assert counts["Fixed"] == 4
 
 
+def test_hoisted_role_provider_keeps_source_generic_parameters() -> None:
+    generator = _stub_generator()
+    public = "example.Owner.ObjectType"
+    helper = "example._StaticRoles_Owner.ObjectType"
+
+    parameters = generator._include_hoisted_role_parameters(
+        {public: ("Domain", "Codomain")},
+        {public: helper},
+    )
+
+    assert parameters[helper] == ("Domain", "Codomain")
+
+
 def test_generic_role_specializes_matching_provider_base() -> None:
     source = ast.parse(
         """

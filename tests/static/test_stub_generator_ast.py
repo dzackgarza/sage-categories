@@ -327,3 +327,29 @@ def internal() -> str:
     projected = ast.parse((package / "owner.pyi").read_text())
     assert generator._public_names(projected) == ("public",)
     assert "def internal() -> str:" in ast.unparse(projected)
+
+
+def test_provider_projection_uses_direct_branches_not_transitive_c3_ancestry() -> None:
+    generator = _stub_generator()
+    relations = {
+        "example.Owner.MorphismType": (
+            "example.Root.ElementType",
+            "sage_categories.kernel.roles.MorphismOfCategory",
+            "example.MorphismCategory.ObjectType",
+        ),
+        "example.MorphismCategory.ObjectType": (
+            "example.Root.ElementType",
+        ),
+    }
+    assert generator._direct_provider_bases(
+        relations["example.Owner.MorphismType"], relations
+    ) == (
+        "sage_categories.kernel.roles.MorphismOfCategory",
+        "example.MorphismCategory.ObjectType",
+    )
+    assert generator._providers_in_module(
+        {"arrow": relations}, "example"
+    )["example.Owner.MorphismType"] == (
+        "sage_categories.kernel.roles.MorphismOfCategory",
+        "example.MorphismCategory.ObjectType",
+    )

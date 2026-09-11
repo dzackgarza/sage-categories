@@ -331,6 +331,30 @@ def _refresh_internal_static_definitions(
             )
 
 
+def _direct_provider_bases(
+    bases: tuple[str, ...],
+    relations: dict[str, tuple[str, ...]],
+) -> tuple[str, ...]:
+    """Return the direct nominal bases from one compiler C3 ancestry list.
+
+    ``compiler().declared_inheritance()`` records the complete semantic C3 order so
+    the plugin can inspect every inherited declaration.  A Python class declaration,
+    however, must name only the maximal branches of that order: listing an ancestor
+    before a descendant as a second direct base is an inconsistent MRO.  Remove exactly
+    those transitive ancestors while preserving the compiler's order on unrelated
+    branches.
+    """
+    return tuple(
+        base
+        for base in bases
+        if not any(
+            base in relations.get(other, ())
+            for other in bases
+            if other != base
+        )
+    )
+
+
 def _providers_in_module(
     inheritance: dict[str, dict[str, tuple[str, ...]]],
     module: str,
@@ -340,7 +364,7 @@ def _providers_in_module(
     for relations in inheritance.values():
         for provider, bases in relations.items():
             if provider.startswith(prefix):
-                providers[provider] = bases
+                providers[provider] = _direct_provider_bases(bases, relations)
     return providers
 
 

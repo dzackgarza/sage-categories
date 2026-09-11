@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-__all__ = ['coequalizer_projection', 'coequalizer_mediator', 'retain_binary_biproduct', 'direct_sum_product_lift', 'direct_sum_coproduct_lift', 'zero_morphism', 'tensor_object', 'tensor_element', 'tensor_mediator', 'tensor_morphism']
+__all__ = ['coequalizer_projection', 'coequalizer_mediator', 'colift_along_epimorphism', 'retain_binary_biproduct', 'direct_sum_product_lift', 'direct_sum_coproduct_lift', 'zero_morphism', 'tensor_object', 'tensor_element', 'tensor_mediator', 'tensor_morphism']
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _PresentationBridge:
@@ -14,6 +14,9 @@ def coequalizer_projection(first: object, second: object):
     ...
 
 def coequalizer_mediator(projection: object, coequalizing: object):
+    ...
+
+def colift_along_epimorphism(epimorphism: object, morphism: object):
     ...
 
 def retain_binary_biproduct(first: object, second: object, apex: object):

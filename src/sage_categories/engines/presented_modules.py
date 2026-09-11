@@ -30,6 +30,7 @@ from sage_categories.engines.gap import PRESENTED_MODULE_PACKAGES, load_packages
 __all__ = [
     "coequalizer_mediator",
     "coequalizer_projection",
+    "colift_along_epimorphism",
     "direct_sum_coproduct_lift",
     "direct_sum_product_lift",
     "retain_binary_biproduct",
@@ -321,7 +322,7 @@ def coequalizer_projection(first: object, second: object):
         owned_projection,
         native_difference,
     )
-    return owned_projection, free, engine
+    return owned_projection
 
 
 def coequalizer_mediator(projection: object, coequalizing: object):
@@ -341,6 +342,26 @@ def coequalizer_mediator(projection: object, coequalizing: object):
         _native_object(apex),
     )
     return _owned_morphism_from_native(apex, target, native)
+
+
+def colift_along_epimorphism(epimorphism: object, morphism: object):
+    """Return CAP's colift of ``morphism`` through the selected epimorphism.
+
+    Both public arrows have one source.  CAP computes the unique descended
+    arrow on the codomain of ``epimorphism`` when the latter is an
+    epimorphism and ``morphism`` kills its kernel; only the reconstructed
+    owned arrow crosses back into the public layer.
+    """
+    assert morphism.domain() is epimorphism.domain()
+    native = libgap.ColiftAlongEpimorphism(
+        _native_morphism(epimorphism),
+        _native_morphism(morphism),
+    )
+    return _owned_morphism_from_native(
+        epimorphism.codomain(),
+        morphism.codomain(),
+        native,
+    )
 
 
 def retain_binary_biproduct(first: object, second: object, apex: object):

@@ -35,7 +35,6 @@ __all__ = [
     "abelian_homomorphism",
     "balanced_tensor",
     "bilinear_map",
-    "coequalizer_lift",
     "coequalizer_mediator",
     "coequalizer_projection",
     "indexed_free_abelian_coproduct",
@@ -68,7 +67,6 @@ from sage.matrix.constructor import block_matrix, identity_matrix, matrix, zero_
 from sage.matrix.matrix_integer_dense import Matrix_integer_dense
 from sage.modules.fg_pid.fgp_element import FGP_Element
 from sage.modules.fg_pid.fgp_module import FGP_Module_class
-from sage.modules.free_module import FreeModule
 from sage.modules.free_module_element import vector
 from sage.rings.integer_ring import ZZ
 from sage.structure.parent import Parent
@@ -257,7 +255,6 @@ class _IndexedPairTensorData:
 
 _presentations: MonoDict = MonoDict()
 _tensor_data: MonoDict = MonoDict()
-_quotient_covers: MonoDict = MonoDict()
 _indexed_free_data: MonoDict = MonoDict()
 _identity_coequalizers: MonoDict = MonoDict()
 
@@ -729,9 +726,7 @@ def _coequalizer_projection(
     from sage_categories.engines.presented_modules import coequalizer_projection
 
     target = first.codomain()
-    projection, free, engine = coequalizer_projection(first, second)
-    apex = projection.codomain()
-    _quotient_covers[apex] = (free, engine)
+    projection = coequalizer_projection(first, second)
     assert projection.domain() is target
     return projection
 
@@ -748,8 +743,6 @@ def _coequalizer_mediator(
     """
     from sage_categories.engines.presented_modules import coequalizer_mediator
 
-    apex = projection.codomain()
-    assert apex in _quotient_covers, f"{apex!r} is not a quotient this leaf constructed"
     assert coequalizing.domain() is projection.domain(), f"{coequalizing!r} does not start at {projection.domain()!r}"
     return coequalizer_mediator(projection, coequalizing)
 
@@ -997,7 +990,9 @@ def tensor_mediator(
             return total.datum()
 
         return _rule_abelian_homomorphism(result, target, evaluate)
-    from sage_categories.engines.presented_modules import tensor_mediator as native_tensor_mediator
+    from sage_categories.engines.presented_modules import (
+        tensor_mediator as native_tensor_mediator,
+    )
 
     return native_tensor_mediator(first, second, result, target, biadditive)
 
@@ -1231,29 +1226,6 @@ def relative_tensor_mediator(
     return coequalizer_mediator(projection, tensor_mediator(factors.first, factors.second, target, balanced))
 
 
-def coequalizer_lift(
-    projection: MorphismCategory.ObjectType,
-    datum: Hashable,
-) -> Hashable:
-    """A preimage in ``B`` of a datum of ``B / im(f - g)``, read through the retained cover.
-
-    The choice is not natural: it sends each Smith generator of the quotient to the lift
-    the engine records for it and extends by the coordinates.  A rule written through it
-    defines a homomorphism exactly when the rule kills the subgroup the quotient adjoins,
-    which the constructed morphism checks.
-    """
-    apex = projection.codomain()
-    if projection in _identity_coequalizers:
-        assert projection.domain() is apex
-        return datum
-    assert apex in _quotient_covers, f"{apex!r} is not a quotient this leaf constructed"
-    free, engine = _quotient_covers[apex]
-    total = free.zero()
-    for coefficient, generator in zip(presentation(apex).coordinates(datum), engine.smith_form_gens(), strict=True):
-        total += int(coefficient) * generator.lift()
-    return presentation(projection.domain()).element(tuple(int(c) for c in total))
-
-
 def induced_left_action(
     projection: MorphismCategory.ObjectType,
     left_action: MorphismCategory.ObjectType,
@@ -1266,18 +1238,20 @@ def induced_left_action(
     monoidal = AbelianTensor()
     base, tensor = monoidal.underlying_category(), monoidal.tensor()
     scalars, first = _tensor_data[left_action.domain()].first, left_action.codomain()
-    product, quotient = projection.domain(), projection.codomain()
+    product = projection.domain()
     second = _tensor_data[product].second
     assert _tensor_data[product].first is first, f"{left_action!r} does not act on the left factor of {product!r}"
     triples = monoidal.associator().domain().domain()
     rebracket = monoidal.associator().inverse().component(triples((scalars, first, second)))
     acting = projection * tensor_morphism(tensor, left_action, Mor(base)(second, second).one()) * rebracket
-    return tensor_mediator(
-        scalars,
-        quotient,
-        quotient,
-        lambda scalar, value: acting(simple_tensor(scalars, product, scalar, coequalizer_lift(projection, value))).datum(),
+    tensorized_projection = tensor_morphism(
+        tensor,
+        Mor(base)(scalars, scalars).one(),
+        projection,
     )
+    from sage_categories.engines.presented_modules import colift_along_epimorphism
+
+    return colift_along_epimorphism(tensorized_projection, acting)
 
 
 def induced_right_action(
@@ -1288,18 +1262,20 @@ def induced_right_action(
     monoidal = AbelianTensor()
     base, tensor = monoidal.underlying_category(), monoidal.tensor()
     scalars, second = _tensor_data[right_action.domain()].second, right_action.codomain()
-    product, quotient = projection.domain(), projection.codomain()
+    product = projection.domain()
     first = _tensor_data[product].first
     assert _tensor_data[product].second is second, f"{right_action!r} does not act on the right factor of {product!r}"
     triples = monoidal.associator().domain().domain()
     rebracket = monoidal.associator().component(triples((first, second, scalars)))
     acting = projection * tensor_morphism(tensor, Mor(base)(first, first).one(), right_action) * rebracket
-    return tensor_mediator(
-        quotient,
-        scalars,
-        quotient,
-        lambda value, scalar: acting(simple_tensor(product, scalars, coequalizer_lift(projection, value), scalar)).datum(),
+    tensorized_projection = tensor_morphism(
+        tensor,
+        projection,
+        Mor(base)(scalars, scalars).one(),
     )
+    from sage_categories.engines.presented_modules import colift_along_epimorphism
+
+    return colift_along_epimorphism(tensorized_projection, acting)
 
 
 def relative_tensor_morphism(
@@ -1438,33 +1414,31 @@ def AbelianBimoduleTensor(
         forward_from_unbalanced = target_projection * tensor_morphism(abelian_tensor, identity_first, second_third_projection) * rebracket
         backward_from_unbalanced = source_projection * tensor_morphism(abelian_tensor, first_second_projection, identity_third) * unbracket
 
-        def forward_rule(value: Hashable, third_value: Hashable) -> Hashable:
-            argument = simple_tensor(
-                first_second_projection.domain(),
-                third_group,
-                coequalizer_lift(first_second_projection, value),
-                third_value,
-            )
-            return forward_from_unbalanced(argument).datum()
+        from sage_categories.engines.presented_modules import colift_along_epimorphism
 
-        def backward_rule(first_value: Hashable, value: Hashable) -> Hashable:
-            argument = simple_tensor(
-                first_group,
-                second_third_projection.domain(),
-                first_value,
-                coequalizer_lift(second_third_projection, value),
-            )
-            return backward_from_unbalanced(argument).datum()
-
-        forward_underlying = relative_tensor_mediator(
-            source_projection,
-            target_projection.codomain(),
-            forward_rule,
+        through_first_quotient = colift_along_epimorphism(
+            tensor_morphism(
+                abelian_tensor,
+                first_second_projection,
+                identity_third,
+            ),
+            forward_from_unbalanced,
         )
-        backward_underlying = relative_tensor_mediator(
+        forward_underlying = coequalizer_mediator(
+            source_projection,
+            through_first_quotient,
+        )
+        through_second_quotient = colift_along_epimorphism(
+            tensor_morphism(
+                abelian_tensor,
+                identity_first,
+                second_third_projection,
+            ),
+            backward_from_unbalanced,
+        )
+        backward_underlying = coequalizer_mediator(
             target_projection,
-            source_projection.codomain(),
-            backward_rule,
+            through_second_quotient,
         )
         assert ask(forward_underlying * backward_underlying == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()) is True
         assert ask(backward_underlying * forward_underlying == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()) is True

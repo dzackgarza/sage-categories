@@ -61,7 +61,10 @@ In Smith generators the quotient adjoins the rows of the difference matrix to th
 `induced_left_action(q, lambda_X)` and `induced_right_action(q, rho_Y)` are the outer actions: acting on the outer factor commutes with the identification the middle monoid makes, so each action descends to the quotient.
 `relative_tensor_morphism(q, q', f, g)` is `f tensor_S g`, the map a map of each factor induces.
 `relative_left_unitor(q, lambda_Y, eta)` gives `S tensor_S Y -> Y` and `relative_right_unitor(q, rho_X, eta)` gives `X tensor_S S -> X`, each with its inverse. Acting is itself balanced, so the comparison is the action read on the quotient, and the inverse tensors with the unit; both composites are checked on construction.
-`coequalizer_lift(q, t)` chooses a preimage through the retained cover; a rule written through it defines a homomorphism exactly when it kills the subgroup the quotient adjoins, which the constructed morphism checks.
+Descended outer actions and associativity maps are constructed through the
+tensorized quotient epimorphisms themselves.  The private CAP realization uses
+its epimorphism-colift operation, so relative tensor does not choose element
+representatives of a quotient in order to define these maps.
 
 The tensor product acts on pairs of compatible bimodule morphisms.
 For `R=S=T`, the regular bimodule is the unit, with comparison isomorphisms induced by its actions.

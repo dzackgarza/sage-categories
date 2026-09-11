@@ -9,7 +9,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.monoidal import MonoidalStructuresCategory
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import MonoidCategory
-__all__ = ['Presentation', 'LinearForm', 'AbelianGroups', 'presented_abelian_group', 'integer_group', 'indexed_free_abelian_group', 'indexed_free_abelian_injection', 'indexed_free_abelian_mediator', 'indexed_free_abelian_coproduct', 'abelian_homomorphism', 'coequalizer_projection', 'coequalizer_mediator', 'bilinear_map', 'simple_tensor', 'tensor_mediator', 'AbelianTensor', 'relative_tensor', 'balanced_tensor', 'relative_tensor_mediator', 'coequalizer_lift', 'induced_left_action', 'induced_right_action', 'relative_tensor_morphism', 'relative_left_unitor', 'relative_right_unitor', 'AbelianBimoduleTensor']
+__all__ = ['Presentation', 'LinearForm', 'AbelianGroups', 'presented_abelian_group', 'integer_group', 'indexed_free_abelian_group', 'indexed_free_abelian_injection', 'indexed_free_abelian_mediator', 'indexed_free_abelian_coproduct', 'abelian_homomorphism', 'coequalizer_projection', 'coequalizer_mediator', 'bilinear_map', 'simple_tensor', 'tensor_mediator', 'AbelianTensor', 'relative_tensor', 'balanced_tensor', 'relative_tensor_mediator', 'induced_left_action', 'induced_right_action', 'relative_tensor_morphism', 'relative_left_unitor', 'relative_right_unitor', 'AbelianBimoduleTensor']
 type Engine = AdditiveAbelianGroup_class | FGP_Module_class
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -141,9 +141,6 @@ def balanced_tensor(projection: MorphismCategory.ObjectType, left: Hashable, rig
     ...
 
 def relative_tensor_mediator(projection: MorphismCategory.ObjectType, target: CategoryOfCategories.ElementType, balanced: Callable[[Hashable, Hashable], Hashable]) -> MorphismCategory.ObjectType:
-    ...
-
-def coequalizer_lift(projection: MorphismCategory.ObjectType, datum: Hashable) -> Hashable:
     ...
 
 def induced_left_action(projection: MorphismCategory.ObjectType, left_action: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:

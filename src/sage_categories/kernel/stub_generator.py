@@ -494,10 +494,10 @@ def _project_category_role_parameters(
     for owner, helper in reversed(new_helpers):
         index = tree.body.index(owner)
         tree.body.insert(index, helper)
-    _ensure_module_imports(
-        tree,
-        {"sage_categories.kernel.roles", *required_helper_modules} & source_modules,
-    )
+    required_modules = set(required_helper_modules)
+    if category_declaration is not None:
+        required_modules.add("sage_categories.kernel.roles")
+    _ensure_module_imports(tree, required_modules & source_modules)
 
 def _bootstrap_source(output_directory: Path, source: Path) -> bool:
     """Whether ``source`` participates in the compiler-declaration bootstrap.

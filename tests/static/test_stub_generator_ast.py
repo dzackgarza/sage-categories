@@ -452,6 +452,17 @@ class OwnEndpoints:
     assert "def codomain(self) -> OwnEndpoints.ObjectType:" in projected
 
 
+def test_category_role_projection_is_noop_without_category_declarations() -> None:
+    source = ast.parse("def helper(value: int) -> int:\n    return value\n")
+    stub = ast.parse("def helper(value: int) -> int: ...\n")
+    before = ast.dump(stub, include_attributes=False)
+    generator = _stub_generator()
+    generator._project_category_role_parameters(
+        stub, source, "example", {}, {}, frozenset({"example", "sage_categories.kernel.roles"})
+    )
+    assert ast.dump(stub, include_attributes=False) == before
+
+
 def test_category_role_hoisting_keeps_role_only_owner_syntactic() -> None:
     source = ast.parse(
         """

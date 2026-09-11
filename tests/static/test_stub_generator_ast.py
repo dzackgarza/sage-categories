@@ -298,7 +298,8 @@ def public() -> PublicType: ...
 from example.types import PublicType, InternalType
 __all__ = ["public"]
 def public() -> PublicType: ...
-def internal(value: InternalType) -> InternalType: ...
+class _InternalRecord: ...
+def internal(value: InternalType) -> _InternalRecord: ...
 def _private() -> bool: ...
 """
     )
@@ -306,7 +307,8 @@ def _private() -> bool: ...
     generator._project_internal_definitions(stub, private_stub, frozenset({"internal", "_private"}))
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert generator._public_names(stub) == ("public",)
-    assert "def internal(value: InternalType) -> InternalType:" in projected
+    assert "class _InternalRecord:" in projected
+    assert "def internal(value: InternalType) -> _InternalRecord:" in projected
     assert "def _private() -> bool:" in projected
     assert "from example.types import InternalType" in projected
 
@@ -781,3 +783,19 @@ class Owner(Category):
     assert "class MorphismType[Local = object]" in projected
     assert "_StaticRoles_Owner.MorphismType[Local]" not in projected
     assert "_StaticRoles_Owner.MorphismType" in projected
+
+
+def test_source_value_alias_projection_restores_public_import_alias() -> None:
+    source = ast.parse(
+        """
+from example.owner import public as Public
+__all__ = ["Public"]
+"""
+    )
+    stub = ast.parse("")
+    generator = _stub_generator()
+
+    generator._project_source_value_aliases(stub, source)
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "from example.owner import public as Public" in projected

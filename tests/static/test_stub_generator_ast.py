@@ -452,6 +452,32 @@ class OwnEndpoints:
     assert "def codomain(self) -> OwnEndpoints.ObjectType:" in projected
 
 
+def test_category_role_hoisting_keeps_role_only_owner_syntactic() -> None:
+    source = ast.parse(
+        """
+class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+    pass
+Category = CategoryDeclaration
+
+class RoleOnly(Category):
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    stub = ast.parse(ast.unparse(source))
+    generator = _stub_generator()
+    counts = {"CategoryDeclaration": 2, "Category": 2, "RoleOnly": 0}
+    generator._project_class_aliases(stub, source)
+    generator._project_category_role_parameters(
+        stub, source, "example", counts, {"RoleOnly": "example"}, frozenset({"example", "sage_categories.kernel.roles"})
+    )
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    ast.parse(projected)
+    assert "class RoleOnly" in projected
+    assert "pass" in projected
+
+
 def test_category_roles_are_hidden_parameters_threaded_through_base() -> None:
     source = ast.parse(
         """

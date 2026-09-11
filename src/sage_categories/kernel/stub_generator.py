@@ -412,6 +412,8 @@ def _project_category_role_parameters(
             if nested is not None:
                 owner.body.remove(nested)
                 helper.body.append(nested)
+                if not owner.body:
+                    owner.body.append(ast.Pass())
             helper_role = next(
                 (
                     local

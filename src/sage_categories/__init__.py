@@ -14,7 +14,6 @@ The four layers, in the order of dependence D173 and D175 fix: the kernel
 from importlib.metadata import version as _distribution_version
 
 from sage_categories import _bootstrap as _bootstrap
-from sage_categories.algebra import AbelianGroups, AbelianTensor
 from sage_categories.cat.adjunctions import Adjunctions, Equivalences
 from sage_categories.cat.calculus import (
     binary_product_data,
@@ -225,8 +224,6 @@ __all__ = [
     "Semirings",
     "Modules",
     "ConcreteCategory",
-    "AbelianGroups",
-    "AbelianTensor",
     "InitialObjects",
     "LeftUniversalArrows",
     "RightUniversalArrows",

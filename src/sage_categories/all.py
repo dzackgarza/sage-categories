@@ -153,8 +153,6 @@ __all__ = [
 ]
 
 from sage_categories import (
-    AbelianGroups,
-    AbelianTensor,
     AdditiveGroups,
     AdditiveMagmas,
     AdditiveMonoids,
@@ -220,5 +218,6 @@ from sage_categories import (
     weighted_projection,
     yoneda,
 )
+from sage_categories.algebra import AbelianGroups, AbelianTensor
 from sage_categories.cat.monoidal import Actions, Cartesian, Composition, MonoidalStructures, SelfAction, TrivialAction
 from sage_categories.sets import FiniteSets, Sets

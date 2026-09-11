@@ -105,6 +105,7 @@ def _native_object(value: object) -> GapElement:
         return presented_native_object(value).native
     from sage_categories.algebra.abelian import presentation
 
+    category = _category()
     form = presentation(value)
     rank = form.rank()
     relations = []
@@ -115,7 +116,7 @@ def _native_object(value: object) -> GapElement:
         row[position] = int(order)
         relations.append(tuple(row))
     native = libgap.AsLeftPresentation(
-        _category(),
+        category,
         _homalg_matrix(tuple(relations), rank),
     )
     retain_presented_native_object(value, native, None)

@@ -925,3 +925,20 @@ class Family[T = Owner]: pass
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "class Role[T: 'Owner' = 'Owner']" in projected
     assert "class Family[T = 'Owner']" in projected
+
+
+def test_projection_scope_removes_stubs_for_ordinary_modules(tmp_path: Path) -> None:
+    package = tmp_path / "example"
+    package.mkdir()
+    (package / "category.pyi").write_text("class Category: ...\n")
+    (package / "ordinary.pyi").write_text("def value() -> int: ...\n")
+    generator = _stub_generator()
+
+    generator._remove_non_projection_stubs(
+        "example",
+        package,
+        frozenset({"example.category"}),
+    )
+
+    assert (package / "category.pyi").exists()
+    assert not (package / "ordinary.pyi").exists()

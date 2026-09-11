@@ -117,7 +117,27 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         )
         _project_hoisted_role_defaults(tree, module, hoisted_role_providers)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
+    projected_modules = frozenset(category_modules.values())
+    _remove_non_projection_stubs(package, output_directory, projected_modules)
     return tuple(sorted(output_directory.rglob("*.pyi")))
+
+
+def _remove_non_projection_stubs(
+    package: str,
+    output_directory: Path,
+    projected_modules: frozenset[str],
+) -> None:
+    """Keep adjacent stubs only where the compiler builds category role surfaces.
+
+    The generator uses parse-only stubs for every source module as temporary syntax
+    input, but an adjacent ``.pyi`` shadows the entire corresponding ``.py`` for mypy.
+    Ordinary modules therefore keep no tracked stub: their Python bodies remain visible
+    to the checker.  A module stays projected exactly when it owns a category declaration
+    with ``ObjectType``, ``ElementType`` and ``MorphismType``.
+    """
+    for stub_path in tuple(output_directory.rglob("*.pyi")):
+        if _module_name(package, output_directory, stub_path) not in projected_modules:
+            stub_path.unlink()
 
 
 _CATEGORY_ROLES = ("ObjectType", "ElementType", "MorphismType")

@@ -702,6 +702,10 @@ The compiler projector is the sole consumer of this model.
 It derives every `.pyi` symbol from the authoritative category declarations, selected structure functors, and the compiler's declared inheritance computation.
 No source module maintains a parallel hand-written type graph; generated stubs are output-only and do not become semantic authority (`POL-TYPE-025`, `POL-TYPE-026`).
 
+An adjacent stub is emitted only for a module that owns a compiler-built category declaration with its `ObjectType`, `ElementType`, and `MorphismType`.
+The projector may build temporary syntax stubs for other modules while computing that output, but it deletes them before publishing the projection so ordinary Python bodies remain visible to mypy.
+This boundary is measured rather than assumed: checking `algebra/free_associative.py` directly exposed body diagnostics that disappeared when its old adjacent stub shadowed the module, so a package-wide `.pyi` mirror would hide source obligations instead of projecting only dynamic category semantics.
+
 ## Category classes and category-valued families
 
 A category is constructed by its category class.

@@ -61,6 +61,27 @@ Twelve are `docs: record ...` write-ups into COMPLAINTS, which grew by 250 lines
 Eight are feature work.
 The tree gained 3,628 lines and 71 methods, five new classes — roughly one node's worth of surface for a day of a worker's whole attention.
 
+**Correction to the paragraph below, which was wrong for this repository.** It said to move the static projection to push tier. That reasoning was imported from `lean-categories`, where a commit gate cost twenty-four minutes and the work is transcription. Neither holds here. This gate is **cheap** — measured at 62 seconds end to end on 2026-09-11 — and this repository is code that other agents read and imitate, so an ill-typed or dynamically-shaped construction does not stay where it was written: the next worker copies the pattern, and the cost compounds instead of staying local. A cheap gate against a propagating failure belongs exactly where it is, on commit. Keep it there. The paragraph below is retained for the tier description of `architecture` and `plan-state`, which are correctly on push; disregard its instruction to relocate the static projection.
+
+**The real defect is that the gate has been red long enough to stop being a gate.** `ruff check src tests` reports **457 errors**, and a check that always fails informs nobody: it cannot distinguish the commit in front of it from the hundred before, so every worker learns to read `[known red: ...]` as the normal ending of a commit subject rather than as a fault to repair. Twenty-five of forty-one commits in one day ended that way. That is not a papercut being tolerated; it is the repository's one defence against pattern propagation being switched off, in a repository whose whole risk is pattern propagation.
+
+The inventory, so nobody has to re-derive it:
+
+- **379 of the 457 are in `.pyi` files, and those are generated.** `5d5dc78` committed "the generated static projection of the repository declarations"; `f59cb31` regenerated it. The rules are all stub shape — `I001` import order (118), `RUF022` `__all__` order (87), `PYI013` and `PIE790` stray `...` (132), `UP049` deprecated generic syntax (45). **No generator exists in this repository**: there is no recipe, no script under `scripts/`, and no `justfile` target that produces a `.pyi`. Regeneration has been happening by hand-run `stubgen`, which is why `fix(static): regenerate ...` commits keep re-introducing the same failures. Fixing the committed files by hand is therefore not the repair — the next regeneration undoes it.
+- **78 are in hand-written `.py`** and are straightforwardly owned: 28 `I001`, 15 `RUF022`, 10 `F401` unused imports, 6 `SIM401`, 6 `B019` (cached decorator on a method, a real leak risk), 5 `PERF102`, 2 `F841`, and a handful of others.
+- **417 of the 457 are auto-fixable** by `ruff check --fix`.
+
+The work, in order:
+
+1. **Bring stub generation into the repository as a recipe, and make its output conform.** The generation step must run the repository's own formatter and linter over what it emits, so a regenerated projection is green by construction. Until that exists, every hand-repair of a `.pyi` is erased by the next regeneration and the gate cannot stay green. If the generator is a third-party `stubgen` invocation, wrap it; if it is the kernel's own compiler projection, give it a target.
+2. **Clear the 78 hand-written findings.** These are owned code and several are real: an unused import is noise, but `B019` on a method is a retained-reference bug waiting to happen.
+3. **Regenerate the stubs through the new recipe and commit the result green.**
+4. **Then the commit gate is a gate again**, and `[known red: ...]` stops being a valid commit subject in this repository.
+
+**Acceptance:** `just test-commit` passes on a clean tree; regenerating the static projection leaves the tree green with no hand-editing; and no commit subject carries `[known red: ...]` for ruff or mypy thereafter. A suppression, a per-file ignore, or a widened `pyproject` exclusion does not satisfy this — the point is that the code conforms, not that the checker stops asking.
+
+**Why this is ahead of the mathematics.** A day of this repository's work produced 71 methods and 5 classes against 3,628 changed lines, with half its commits spent on the gate or on writing up why the gate could not pass. Paying the 457 down is bounded — most of one working session, the majority of it mechanical — and it converts every subsequent commit from an argument with a broken checker into a real check. The velocity problem here is not that the gate is slow; it is that it has been red so long that nobody treats it as information.
+
 **Before repairing the gate, move it to the tier it belongs on.** The three tiers already exist here and one of them is already right: `architecture` and `plan-state` run on `test-push`, described in the justfile as "a hard stop before push", which is exactly where a hard stop belongs. `test-commit` is the problem — it delegates to the shared Sage QC commit tier, which runs the static and type projection over the project, and that is a quality gate standing where a sanity check should be. That is why twenty-five commit subjects in a day end in `[known red: ...]`: the gate is being asked a question it cannot answer yet, on every single commit, while the mathematics it is guarding has not been written.
 
 What belongs on each tier here:

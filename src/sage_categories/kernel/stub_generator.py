@@ -411,29 +411,34 @@ def _project_category_role_parameters(
                 role_parameters = tuple(parameter.name for parameter in helper_role.type_params)
                 if role_parameters:
                     owner_parameters = {parameter.name for parameter in owner.type_params}
-                    assert set(role_parameters) <= owner_parameters, f"{owner_name}.{role} generic parameters are not carried by its category owner"
-                    role_reference = ast.Subscript(
-                        value=role_reference,
-                        slice=ast.Tuple(
-                            elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters],
-                            ctx=ast.Load(),
-                        ),
-                        ctx=ast.Load(),
+                    role_parameter_set = set(role_parameters)
+                    shared_parameters = role_parameter_set & owner_parameters
+                    assert not shared_parameters or role_parameter_set <= owner_parameters, (
+                        f"{owner_name}.{role} carries only some of its generic parameters on its category owner"
                     )
-                    for index, base in enumerate(helper_role.bases):
-                        fullname = expression_fullname(base)
-                        if fullname is None or isinstance(base, ast.Subscript):
-                            continue
-                        if source_class_parameters.get(fullname) != role_parameters:
-                            continue
-                        helper_role.bases[index] = ast.Subscript(
-                            value=base,
+                    if role_parameter_set <= owner_parameters:
+                        role_reference = ast.Subscript(
+                            value=role_reference,
                             slice=ast.Tuple(
                                 elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters],
                                 ctx=ast.Load(),
                             ),
                             ctx=ast.Load(),
                         )
+                        for index, base in enumerate(helper_role.bases):
+                            fullname = expression_fullname(base)
+                            if fullname is None or isinstance(base, ast.Subscript):
+                                continue
+                            if source_class_parameters.get(fullname) != role_parameters:
+                                continue
+                            helper_role.bases[index] = ast.Subscript(
+                                value=base,
+                                slice=ast.Tuple(
+                                    elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters],
+                                    ctx=ast.Load(),
+                                ),
+                                ctx=ast.Load(),
+                            )
                 defaults[role] = role_reference
                 continue
             alias = role_alias(owner, role)

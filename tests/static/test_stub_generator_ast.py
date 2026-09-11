@@ -747,3 +747,37 @@ class Owner(Category):
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "ObjectType = Base.MorphismType" in projected
     assert "ObjectType: Incomplete" not in projected
+
+
+def test_role_local_generics_do_not_require_category_owner_parameters() -> None:
+    source = ast.parse(
+        """
+class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+    pass
+Category = CategoryDeclaration
+
+class Owner(Category):
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType[Local=object]: pass
+"""
+    )
+    stub = ast.parse(ast.unparse(source))
+    generator = _stub_generator()
+    generator._project_class_aliases(stub, source)
+
+    generator._project_category_role_parameters(
+        stub,
+        source,
+        "example",
+        {"CategoryDeclaration": 2, "Category": 2, "Owner": 0},
+        {"Owner": "example"},
+        frozenset(),
+        {"example.Owner.MorphismType": ("Local",)},
+        frozenset({"example", "sage_categories.kernel.roles"}),
+    )
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "class MorphismType[Local = object]" in projected
+    assert "_StaticRoles_Owner.MorphismType[Local]" not in projected
+    assert "_StaticRoles_Owner.MorphismType" in projected

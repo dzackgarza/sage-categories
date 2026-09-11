@@ -16,7 +16,7 @@ from sage_categories.cat.slices import comma_category as comma_category
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 
-__all__ = ["left_kan_desc", "left_kan_extension", "left_kan_unit", "right_kan_counit", "right_kan_extension", "right_kan_lift", "left_kan_adjunction", "right_kan_adjunction"]
+__all__ = ["left_kan_adjunction", "left_kan_desc", "left_kan_extension", "left_kan_unit", "right_kan_adjunction", "right_kan_counit", "right_kan_extension", "right_kan_lift"]
 
 def left_kan_extension(along: Functor, functor: Functor) -> Functor: ...
 def left_kan_unit(along: Functor, functor: Functor) -> NaturalTransformation: ...

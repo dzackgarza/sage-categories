@@ -22,7 +22,7 @@ from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
-__all__ = ["RelationsCategory", "RelationMorphismsCategory", "Relations", "relation_inclusion"]
+__all__ = ["RelationMorphismsCategory", "Relations", "RelationsCategory", "relation_inclusion"]
 relation_inclusion: Predicate
 
 class _StaticRoles_RelationsCategory:

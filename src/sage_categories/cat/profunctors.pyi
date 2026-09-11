@@ -31,7 +31,7 @@ from sage_categories.cat.weighted import (
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 
-__all__ = ["Profunctors", "compose_profunctors", "compose_profunctor_transformations", "identity_profunctor", "profunctor_unitor"]
+__all__ = ["Profunctors", "compose_profunctor_transformations", "compose_profunctors", "identity_profunctor", "profunctor_unitor"]
 
 def Profunctors(first: Category, second: Category, sets: Category) -> Category: ...
 def compose_profunctors(first: Functor, second: Functor, hom: Functor) -> Functor: ...

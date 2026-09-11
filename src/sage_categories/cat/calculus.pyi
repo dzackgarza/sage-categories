@@ -14,18 +14,18 @@ from sage_categories.kernel.sage_runtime import cached_function as cached_functi
 
 __all__ = [
     "binary_product_data",
+    "curry",
+    "currying",
+    "evaluation",
+    "natural_isomorphism",
     "pair_maps",
     "power_data",
-    "terminal_map",
     "power_functor",
-    "product_functor",
     "precompose",
-    "curry",
-    "uncurry",
+    "product_functor",
+    "terminal_map",
     "transpose",
-    "evaluation",
-    "currying",
-    "natural_isomorphism",
+    "uncurry",
 ]
 
 def pair_maps(base: Category, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType: ...

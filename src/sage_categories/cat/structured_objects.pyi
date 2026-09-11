@@ -1,4 +1,4 @@
-from functools import cache, partial
+from functools import partial
 
 from _typeshed import Incomplete
 
@@ -197,7 +197,7 @@ def Monoids(structure: Category | MonoidalStructuresCategory.ObjectType) -> Mono
 
 class _StaticRoles_GroupsCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
     class ObjectType(sage_categories.cat.structured_objects.MonoidCategory.ObjectType):
-        @cache
+        @cached_method
         def inversion(self) -> MorphismCategory.ObjectType: ...
 
     class ElementType(sage_categories.cat.structured_objects.MonoidCategory.ElementType): ...

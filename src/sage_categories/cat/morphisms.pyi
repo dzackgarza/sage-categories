@@ -10,6 +10,9 @@ from sage_categories.cat.category import (
     Category as Category,
 )
 from sage_categories.cat.category import (
+    CategoryDeclaration as CategoryDeclaration,
+)
+from sage_categories.cat.category import (
     CategoryOfCategories as CategoryOfCategories,
 )
 from sage_categories.cat.category import (
@@ -65,17 +68,21 @@ from sage_categories.kernel.type_aliases import EqualityInput as EqualityInput
 __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "endpoints", "endpoints_in", "hom_inhabitation"]
 
 @overload
-def Mor[**M, **T, ObjectRole, ElementRole, MorphismRole](category: Category[M, T, ObjectRole, ElementRole, MorphismRole]) -> MorphismCategory[M, T, MorphismRole]: ...
+def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
+    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+) -> MorphismCategory[M, T, _MorphismRole]: ...
 @overload
-def Mor[**M, **T, ObjectRole, ElementRole, MorphismRole](
-    level: Literal[0], category: Category[M, T, ObjectRole, ElementRole, MorphismRole]
-) -> Category[M, T, ObjectRole, ElementRole, MorphismRole]: ...
+def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
+    level: Literal[0], category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
+) -> CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]: ...
 @overload
-def Mor[**M, **T, ObjectRole, ElementRole, MorphismRole](
-    level: Literal[1], category: Category[M, T, ObjectRole, ElementRole, MorphismRole]
-) -> MorphismCategory[M, T, MorphismRole]: ...
+def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
+    level: Literal[1], category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
+) -> MorphismCategory[M, T, _MorphismRole]: ...
 @overload
-def Mor[**M, **T, ObjectRole, ElementRole, MorphismRole](level: Literal[2], category: Category[M, T, ObjectRole, ElementRole, MorphismRole]) -> MorphismCategory[T, []]: ...
+def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
+    level: Literal[2], category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
+) -> MorphismCategory[T, []]: ...
 @overload
 def Mor(level: int | Integer, category: Category) -> Category: ...
 

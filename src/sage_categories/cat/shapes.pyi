@@ -34,7 +34,7 @@ from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
-__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "carrier_comparison", "omega", "discrete_functor"]
+__all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "carrier_comparison", "discrete_functor", "omega"]
 
 @dataclass(frozen=True, eq=False, slots=True)
 class DiscreteObjectData:

@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Self
 
 from plum import Function as Function
 from sympy import Predicate
@@ -55,7 +56,7 @@ def axiom_layer() -> AxiomLayer: ...
 class _OwnedValueAtom(AtomicExpr):
     is_commutative: bool
 
-    def __new__(cls, identity: int) -> _OwnedValueAtom: ...
+    def __new__(cls, identity: int) -> Self: ...
 
 class AppliedPredicate(_SymPyAppliedPredicate):
     def __bool__(self) -> bool: ...

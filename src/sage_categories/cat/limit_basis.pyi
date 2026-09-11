@@ -24,7 +24,7 @@ from sage_categories.cat.shapes import Discrete as Discrete
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 
-__all__ = ["DiagramPresentation", "diagram_presentation", "parallel_pair", "limit_from_products_equalizers", "colimit_from_coproducts_coequalizers"]
+__all__ = ["DiagramPresentation", "colimit_from_coproducts_coequalizers", "diagram_presentation", "limit_from_products_equalizers", "parallel_pair"]
 
 @dataclass(frozen=True)
 class DiagramPresentation:

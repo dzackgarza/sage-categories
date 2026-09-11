@@ -20,7 +20,7 @@ from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
-__all__ = ["TerminalObjectsCategory", "TerminalObjects", "InitialObjectsCategory", "InitialObjects", "RightUniversalArrows", "LeftUniversalArrows", "right_mate", "left_mate"]
+__all__ = ["InitialObjects", "InitialObjectsCategory", "LeftUniversalArrows", "RightUniversalArrows", "TerminalObjects", "TerminalObjectsCategory", "left_mate", "right_mate"]
 type Factor = Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
 type Choice = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
 

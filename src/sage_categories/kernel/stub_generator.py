@@ -81,6 +81,10 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     source_modules = frozenset(
         _module_name(package, output_directory, source) for source in sources
     )
+    category_parameter_counts = _source_category_parameter_counts(sources)
+    category_modules = _source_category_modules(
+        package, output_directory, sources
+    )
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
         providers = _providers_in_module(inheritance, module)
@@ -98,11 +102,370 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
             _project_provider_bases(tree, module, providers, source_modules)
         _project_exact_morphism_endpoints(tree)
         _hoist_lexically_cyclic_nested_classes(tree, module)
+        _project_category_role_parameters(
+            tree, source_tree, module, category_parameter_counts, category_modules, source_modules
+        )
         stub_path.write_text(
             ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8"
         )
     return tuple(sorted(output_directory.rglob("*.pyi")))
 
+
+_CATEGORY_ROLES = ("ObjectType", "ElementType", "MorphismType")
+_HIDDEN_CATEGORY_ROLES = {
+    "ObjectType": "_ObjectRole",
+    "ElementType": "_ElementRole",
+    "MorphismType": "_MorphismRole",
+}
+
+
+def _source_category_parameter_counts(sources: tuple[Path, ...]) -> dict[str, int]:
+    """Return each category declaration's public generic arity.
+
+    Category declaration class names are repository-wide unique.  The runtime source
+    writes all three role names in every category class (POL-CAT-057), so that
+    declaration is also the source-derived marker that the first base is a category
+    base.  Hidden static role parameters are not counted here.
+    """
+    result = {"CategoryDeclaration": 2, "Category": 2}
+    for source in sources:
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        for statement in tree.body:
+            if not isinstance(statement, ast.ClassDef):
+                continue
+            bound = {
+                name
+                for local in statement.body
+                for name in _statement_names(local)
+            }
+            if not set(_CATEGORY_ROLES).issubset(bound):
+                continue
+            previous = result.get(statement.name)
+            arity = len(statement.type_params)
+            assert previous is None or previous == arity, (
+                f"category class name {statement.name!r} has conflicting public arities"
+            )
+            result[statement.name] = arity
+    return result
+
+
+def _source_category_modules(
+    package: str, output_directory: Path, sources: tuple[Path, ...]
+) -> dict[str, str]:
+    """Map each uniquely named category declaration class to its source module."""
+    result: dict[str, str] = {}
+    for source in sources:
+        module = _module_name(package, output_directory, source)
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        for statement in tree.body:
+            if not isinstance(statement, ast.ClassDef):
+                continue
+            bound = {
+                name
+                for local in statement.body
+                for name in _statement_names(local)
+            }
+            if not set(_CATEGORY_ROLES).issubset(bound):
+                continue
+            assert statement.name not in result, (
+                f"category class name {statement.name!r} is not repository-wide unique"
+            )
+            result[statement.name] = module
+    return result
+
+
+def _project_category_role_parameters(
+    tree: ast.Module,
+    source: ast.Module,
+    module: str,
+    category_parameter_counts: dict[str, int],
+    category_modules: dict[str, str],
+    source_modules: frozenset[str],
+) -> None:
+    """Thread each category's exact three roles through its static inheritance.
+
+    The runtime compiler owns one ``ObjectType``, ``ElementType`` and ``MorphismType``
+    for every category.  Python's ordinary override checker can model that dependent
+    relation when the static category carrier has three hidden, defaulted parameters.
+    Existing public parameters stay first, so ``C[P, Q]`` keeps its source syntax; a
+    derived category supplies its own hidden roles to the mathematical base.  Bare
+    inheritance from a two-ParamSpec category uses ``...`` for those already-unknown
+    constructor parameters rather than inventing ``Any`` or claiming nullary data.
+
+    Local role classes are hoisted to the owner's existing ``_StaticRoles_*`` helper
+    (or a new one) so they exist when the class header states its defaults.  The owner
+    inherits that helper, preserving ``C.ObjectType`` as the same class TypeInfo.
+    """
+
+    def source_role_owners() -> dict[str, ast.ClassDef]:
+        owners: dict[str, ast.ClassDef] = {}
+        for statement in source.body:
+            if not isinstance(statement, ast.ClassDef):
+                continue
+            bound = {
+                name
+                for local in statement.body
+                for name in _statement_names(local)
+            }
+            if set(_CATEGORY_ROLES).issubset(bound):
+                owners[statement.name] = statement
+        return owners
+
+    def base_name(expression: ast.expr) -> str | None:
+        while isinstance(expression, ast.Subscript):
+            expression = expression.value
+        if isinstance(expression, ast.Name):
+            return expression.id
+        if isinstance(expression, ast.Attribute):
+            return expression.attr
+        return None
+
+    def subscript_arguments(expression: ast.Subscript) -> list[ast.expr]:
+        return (
+            list(expression.slice.elts)
+            if isinstance(expression.slice, ast.Tuple)
+            else [expression.slice]
+        )
+
+    def role_alias(owner: ast.ClassDef, role: str) -> ast.expr | None:
+        for local in owner.body:
+            if isinstance(local, ast.Assign) and any(
+                isinstance(target, ast.Name) and target.id == role
+                for target in local.targets
+            ):
+                if owner.name == "CategoryOfCategories" and role == "ObjectType":
+                    return ast.Subscript(
+                        value=ast.Name(id="Category", ctx=ast.Load()),
+                        slice=ast.Tuple(
+                            elts=[ast.Constant(value=Ellipsis), ast.Constant(value=Ellipsis)],
+                            ctx=ast.Load(),
+                        ),
+                        ctx=ast.Load(),
+                    )
+                return copy.deepcopy(local.value)
+            if (
+                isinstance(local, ast.TypeAlias)
+                and isinstance(local.name, ast.Name)
+                and local.name.id == role
+            ):
+                return copy.deepcopy(local.value)
+        return None
+
+    def rewrite_local_roles(owner: ast.ClassDef) -> None:
+        class RoleReferenceRewriter(ast.NodeTransformer):
+            def visit_Attribute(self, node: ast.Attribute) -> ast.expr:
+                node = self.generic_visit(node)
+                if (
+                    isinstance(node.value, ast.Name)
+                    and node.value.id == owner.name
+                    and node.attr in _HIDDEN_CATEGORY_ROLES
+                ):
+                    return ast.copy_location(
+                        ast.Name(
+                            id=_HIDDEN_CATEGORY_ROLES[node.attr], ctx=ast.Load()
+                        ),
+                        node,
+                    )
+                return node
+
+        rewriter = RoleReferenceRewriter()
+        for local in owner.body:
+            if not isinstance(local, ast.FunctionDef | ast.AsyncFunctionDef):
+                continue
+            for argument in (
+                *local.args.posonlyargs,
+                *local.args.args,
+                *local.args.kwonlyargs,
+            ):
+                if argument.annotation is not None:
+                    argument.annotation = rewriter.visit(argument.annotation)
+            if local.args.vararg is not None and local.args.vararg.annotation is not None:
+                local.args.vararg.annotation = rewriter.visit(local.args.vararg.annotation)
+            if local.args.kwarg is not None and local.args.kwarg.annotation is not None:
+                local.args.kwarg.annotation = rewriter.visit(local.args.kwarg.annotation)
+            if local.returns is not None:
+                local.returns = rewriter.visit(local.returns)
+
+    top_level = {
+        statement.name: statement
+        for statement in tree.body
+        if isinstance(statement, ast.ClassDef)
+    }
+    category_declaration = top_level.get("CategoryDeclaration")
+    if category_declaration is not None:
+        defaults = (
+            "sage_categories.kernel.roles.ObjectOfCategory",
+            "sage_categories.kernel.roles.ElementOfObject",
+            "sage_categories.kernel.roles.MorphismOfCategory",
+        )
+        existing = {parameter.name for parameter in category_declaration.type_params}
+        for hidden, default in zip(_HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True):
+            if hidden not in existing:
+                category_declaration.type_params.append(
+                    ast.TypeVar(name=hidden, default_value=_base_expression(default))
+                )
+
+        category_alias = next(
+            (
+                statement
+                for statement in tree.body
+                if isinstance(statement, ast.Assign)
+                and any(
+                    isinstance(target, ast.Name) and target.id == "Category"
+                    for target in statement.targets
+                )
+            ),
+            None,
+        )
+        if category_alias is not None and isinstance(category_alias.value, ast.Subscript):
+            alias_arguments = subscript_arguments(category_alias.value)
+            alias_hidden: list[ast.stmt] = []
+            for hidden, default in zip(_HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True):
+                name = f"_CategoryDeclaration{hidden}"
+                alias_arguments.append(ast.Name(id=name, ctx=ast.Load()))
+                if not any(
+                    isinstance(statement, ast.Assign)
+                    and any(
+                        isinstance(target, ast.Name) and target.id == name
+                        for target in statement.targets
+                    )
+                    for statement in tree.body
+                ):
+                    alias_hidden.append(
+                        ast.Assign(
+                            targets=[ast.Name(id=name, ctx=ast.Store())],
+                            value=ast.Call(
+                                func=ast.Attribute(
+                                    value=ast.Name(id="_typing", ctx=ast.Load()),
+                                    attr="TypeVar",
+                                    ctx=ast.Load(),
+                                ),
+                                args=[ast.Constant(value=name)],
+                                keywords=[
+                                    ast.keyword(
+                                        arg="default", value=_base_expression(default)
+                                    )
+                                ],
+                            ),
+                        )
+                    )
+            category_alias.value.slice = ast.Tuple(
+                elts=alias_arguments, ctx=ast.Load()
+            )
+            if alias_hidden:
+                index = tree.body.index(category_alias)
+                tree.body[index:index] = alias_hidden
+
+    required_helper_modules: set[str] = set()
+    new_helpers: list[tuple[ast.ClassDef, ast.ClassDef]] = []
+    for owner_name, source_owner in source_role_owners().items():
+        owner = top_level.get(owner_name)
+        if owner is None:
+            continue
+        helper_name = f"_StaticRoles_{owner_name}"
+        helper = top_level.get(helper_name)
+        if helper is None:
+            helper = ast.ClassDef(
+                name=helper_name,
+                bases=[],
+                keywords=[],
+                body=[],
+                decorator_list=[],
+                type_params=[],
+            )
+            top_level[helper_name] = helper
+            new_helpers.append((owner, helper))
+
+        defaults: dict[str, ast.expr] = {}
+        for role in _CATEGORY_ROLES:
+            nested = next(
+                (
+                    local
+                    for local in owner.body
+                    if isinstance(local, ast.ClassDef) and local.name == role
+                ),
+                None,
+            )
+            if nested is not None:
+                owner.body.remove(nested)
+                helper.body.append(nested)
+            helper_role = next(
+                (
+                    local
+                    for local in helper.body
+                    if isinstance(local, ast.ClassDef) and local.name == role
+                ),
+                None,
+            )
+            if helper_role is not None:
+                defaults[role] = ast.Attribute(
+                    value=ast.Name(id=helper_name, ctx=ast.Load()),
+                    attr=role,
+                    ctx=ast.Load(),
+                )
+                continue
+            alias = role_alias(owner, role)
+            assert alias is not None, f"{owner_name}.{role} has no static role declaration"
+            defaults[role] = alias
+
+        existing = {parameter.name for parameter in owner.type_params}
+        for role in _CATEGORY_ROLES:
+            hidden = _HIDDEN_CATEGORY_ROLES[role]
+            if hidden not in existing:
+                owner.type_params.append(
+                    ast.TypeVar(name=hidden, default_value=defaults[role])
+                )
+
+        helper_base: ast.expr | None = None
+        category_bases = [
+            base
+            for base in owner.bases
+            if not (isinstance(base, ast.Name) and base.id == helper_name)
+        ]
+        assert category_bases, f"category declaration {owner_name} has no category base"
+        category_base = category_bases[0]
+        carrier = category_base.value if isinstance(category_base, ast.Subscript) else category_base
+        name = base_name(carrier)
+        assert name in category_parameter_counts, (
+            f"cannot determine public generic arity of category base {ast.unparse(carrier)}"
+        )
+        base_module = category_modules.get(name)
+        if base_module is not None:
+            base_helper_name = f"_StaticRoles_{name}"
+            if base_module == module:
+                helper_base = ast.Name(id=base_helper_name, ctx=ast.Load())
+            else:
+                required_helper_modules.add(base_module)
+                helper_base = _base_expression(f"{base_module}.{base_helper_name}")
+            if not helper.bases:
+                helper.bases.append(copy.deepcopy(helper_base))
+
+        if isinstance(category_base, ast.Subscript):
+            arguments = subscript_arguments(category_base)
+        else:
+            arguments = [
+                ast.Constant(value=Ellipsis)
+                for _ in range(category_parameter_counts[name])
+            ]
+        arguments.extend(
+            ast.Name(id=hidden, ctx=ast.Load())
+            for hidden in _HIDDEN_CATEGORY_ROLES.values()
+        )
+        projected_base = ast.Subscript(
+            value=copy.deepcopy(carrier),
+            slice=ast.Tuple(elts=arguments, ctx=ast.Load()),
+            ctx=ast.Load(),
+        )
+        owner.bases[:] = [ast.Name(id=helper_name, ctx=ast.Load()), projected_base, *category_bases[1:]]
+        rewrite_local_roles(owner)
+
+    for owner, helper in reversed(new_helpers):
+        index = tree.body.index(owner)
+        tree.body.insert(index, helper)
+    _ensure_module_imports(
+        tree,
+        {"sage_categories.kernel.roles", *required_helper_modules} & source_modules,
+    )
 
 def _bootstrap_source(output_directory: Path, source: Path) -> bool:
     """Whether ``source`` participates in the compiler-declaration bootstrap.

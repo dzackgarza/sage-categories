@@ -450,3 +450,44 @@ class OwnEndpoints:
     assert projected.count("def domain(self) -> OwnEndpoints.ObjectType:") == 0
     assert "def domain(self) -> ObjectType:" in projected
     assert "def codomain(self) -> OwnEndpoints.ObjectType:" in projected
+
+
+def test_category_roles_are_hidden_parameters_threaded_through_base() -> None:
+    source = ast.parse(
+        """
+class CategoryDeclaration[**P, **Q]:
+    pass
+Category = CategoryDeclaration
+
+class Base[**P, **Q](Category[P, Q]):
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType: pass
+    def construct(self, value: Base.ObjectType) -> Base.MorphismType: ...
+
+class Derived(Base):
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType: pass
+    def construct(self, value: Derived.ObjectType) -> Derived.MorphismType: ...
+"""
+    )
+    stub = ast.parse(ast.unparse(source))
+    generator = _stub_generator()
+    counts = {"CategoryDeclaration": 2, "Category": 2, "Base": 2, "Derived": 0}
+    generator._project_class_aliases(stub, source)
+    generator._project_category_role_parameters(
+        stub, source, "example", counts, {"Base": "example", "Derived": "example"}, frozenset({"example", "sage_categories.kernel.roles"})
+    )
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "_ObjectRole = sage_categories.kernel.roles.ObjectOfCategory" in projected
+    assert "_ElementRole = sage_categories.kernel.roles.ElementOfObject" in projected
+    assert "_MorphismRole = sage_categories.kernel.roles.MorphismOfCategory" in projected
+    assert "class _StaticRoles_Base:" in projected
+    assert "Category[P, Q, _ObjectRole, _ElementRole, _MorphismRole]" in projected
+    assert "_CategoryDeclaration_ObjectRole = _typing.TypeVar" in projected
+    assert "_ObjectRole = _StaticRoles_Base.ObjectType" in projected
+    assert "def construct(self, value: _ObjectRole) -> _MorphismRole:" in projected
+    assert "class _StaticRoles_Derived(_StaticRoles_Base):" in projected
+    assert "class Derived" in projected and "_StaticRoles_Derived, Base[..., ..., _ObjectRole, _ElementRole, _MorphismRole]" in projected
+    assert "_ObjectRole = _StaticRoles_Derived.ObjectType" in projected

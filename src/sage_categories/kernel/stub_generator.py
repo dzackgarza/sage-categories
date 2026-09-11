@@ -16,7 +16,6 @@ from collections.abc import Iterator
 from importlib import import_module
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import cast
 
 __all__ = ["generate_stubs"]
 
@@ -30,11 +29,7 @@ def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
             [
                 sage_bin,
                 "-c",
-                (
-                    "from pathlib import Path; "
-                    "from sage_categories.kernel.stub_generator import _generate_stubs; "
-                    f"_generate_stubs({package!r}, Path({output!r}))"
-                ),
+                (f"from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs({package!r}, Path({output!r}))"),
             ],
             check=True,
         )
@@ -43,9 +38,7 @@ def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         [
             sys.executable,
             "-c",
-            (
-                "import sys; from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs(sys.argv[1], Path(sys.argv[2]))"
-            ),
+            ("import sys; from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs(sys.argv[1], Path(sys.argv[2]))"),
             package,
             output,
         ],
@@ -75,39 +68,26 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     )
     _refresh_internal_static_definitions(package, output_directory, sources)
     inheritance = compiler().declared_inheritance()
-    runtime_aliases = _source_role_aliases(
-        package, output_directory, sources, inheritance
-    )
-    source_modules = frozenset(
-        _module_name(package, output_directory, source) for source in sources
-    )
+    runtime_aliases = _source_role_aliases(package, output_directory, sources, inheritance)
+    source_modules = frozenset(_module_name(package, output_directory, source) for source in sources)
     category_parameter_counts = _source_category_parameter_counts(sources)
-    category_modules = _source_category_modules(
-        package, output_directory, sources
-    )
+    category_modules = _source_category_modules(package, output_directory, sources)
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
         providers = _providers_in_module(inheritance, module)
         source_path = stub_path.with_suffix(".py")
-        source_tree = ast.parse(
-            source_path.read_text(encoding="utf-8"), filename=str(source_path)
-        )
+        source_tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
+        _project_public_exports(tree, source_tree)
         _canonicalize_imports(tree, package, canonical_exports)
         _project_class_aliases(tree, source_tree)
-        _project_runtime_class_aliases(
-            tree, runtime_aliases.get(module, {}), source_modules
-        )
+        _project_runtime_class_aliases(tree, runtime_aliases.get(module, {}), source_modules)
         if providers:
             _project_provider_bases(tree, module, providers, source_modules)
         _project_exact_morphism_endpoints(tree)
         _hoist_lexically_cyclic_nested_classes(tree, module)
-        _project_category_role_parameters(
-            tree, source_tree, module, category_parameter_counts, category_modules, source_modules
-        )
-        stub_path.write_text(
-            ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8"
-        )
+        _project_category_role_parameters(tree, source_tree, module, category_parameter_counts, category_modules, source_modules)
+        stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
     return tuple(sorted(output_directory.rglob("*.pyi")))
 
 
@@ -133,28 +113,17 @@ def _source_category_parameter_counts(sources: tuple[Path, ...]) -> dict[str, in
         for statement in tree.body:
             if not isinstance(statement, ast.ClassDef):
                 continue
-            bound = {
-                name
-                for local in statement.body
-                for name in _statement_names(local)
-            }
+            bound = {name for local in statement.body for name in _statement_names(local)}
             if not set(_CATEGORY_ROLES).issubset(bound):
                 continue
             previous = result.get(statement.name)
-            arity = sum(
-                isinstance(parameter, ast.ParamSpec)
-                for parameter in statement.type_params
-            )
-            assert previous is None or previous == arity, (
-                f"category class name {statement.name!r} has conflicting public arities"
-            )
+            arity = sum(isinstance(parameter, ast.ParamSpec) for parameter in statement.type_params)
+            assert previous is None or previous == arity, f"category class name {statement.name!r} has conflicting public arities"
             result[statement.name] = arity
     return result
 
 
-def _source_category_modules(
-    package: str, output_directory: Path, sources: tuple[Path, ...]
-) -> dict[str, str]:
+def _source_category_modules(package: str, output_directory: Path, sources: tuple[Path, ...]) -> dict[str, str]:
     """Map each uniquely named category declaration class to its source module."""
     result: dict[str, str] = {}
     for source in sources:
@@ -163,16 +132,10 @@ def _source_category_modules(
         for statement in tree.body:
             if not isinstance(statement, ast.ClassDef):
                 continue
-            bound = {
-                name
-                for local in statement.body
-                for name in _statement_names(local)
-            }
+            bound = {name for local in statement.body for name in _statement_names(local)}
             if not set(_CATEGORY_ROLES).issubset(bound):
                 continue
-            assert statement.name not in result, (
-                f"category class name {statement.name!r} is not repository-wide unique"
-            )
+            assert statement.name not in result, f"category class name {statement.name!r} is not repository-wide unique"
             result[statement.name] = module
     return result
 
@@ -205,11 +168,7 @@ def _project_category_role_parameters(
         for statement in source.body:
             if not isinstance(statement, ast.ClassDef):
                 continue
-            bound = {
-                name
-                for local in statement.body
-                for name in _statement_names(local)
-            }
+            bound = {name for local in statement.body for name in _statement_names(local)}
             if set(_CATEGORY_ROLES).issubset(bound):
                 owners[statement.name] = statement
         return owners
@@ -224,27 +183,16 @@ def _project_category_role_parameters(
         return None
 
     def subscript_arguments(expression: ast.Subscript) -> list[ast.expr]:
-        return (
-            list(expression.slice.elts)
-            if isinstance(expression.slice, ast.Tuple)
-            else [expression.slice]
-        )
+        return list(expression.slice.elts) if isinstance(expression.slice, ast.Tuple) else [expression.slice]
 
     source_owners = source_role_owners()
     generic_category_bases = {
-        name
-        for owner in source_owners.values()
-        if owner.bases
-        for name in (base_name(owner.bases[0]),)
-        if name is not None and name in category_parameter_counts
+        name for owner in source_owners.values() if owner.bases for name in (base_name(owner.bases[0]),) if name is not None and name in category_parameter_counts
     }
 
     def role_alias(owner: ast.ClassDef, role: str) -> ast.expr | None:
         for local in owner.body:
-            if isinstance(local, ast.Assign) and any(
-                isinstance(target, ast.Name) and target.id == role
-                for target in local.targets
-            ):
+            if isinstance(local, ast.Assign) and any(isinstance(target, ast.Name) and target.id == role for target in local.targets):
                 if owner.name == "CategoryOfCategories" and role == "ObjectType":
                     return ast.Subscript(
                         value=ast.Name(id="Category", ctx=ast.Load()),
@@ -255,11 +203,7 @@ def _project_category_role_parameters(
                         ctx=ast.Load(),
                     )
                 return copy.deepcopy(local.value)
-            if (
-                isinstance(local, ast.TypeAlias)
-                and isinstance(local.name, ast.Name)
-                and local.name.id == role
-            ):
+            if isinstance(local, ast.TypeAlias) and isinstance(local.name, ast.Name) and local.name.id == role:
                 return copy.deepcopy(local.value)
         return None
 
@@ -267,15 +211,9 @@ def _project_category_role_parameters(
         class RoleReferenceRewriter(ast.NodeTransformer):
             def visit_Attribute(self, node: ast.Attribute) -> ast.expr:
                 node = self.generic_visit(node)
-                if (
-                    isinstance(node.value, ast.Name)
-                    and node.value.id == owner.name
-                    and node.attr in _HIDDEN_CATEGORY_ROLES
-                ):
+                if isinstance(node.value, ast.Name) and node.value.id == owner.name and node.attr in _HIDDEN_CATEGORY_ROLES:
                     return ast.copy_location(
-                        ast.Name(
-                            id=_HIDDEN_CATEGORY_ROLES[node.attr], ctx=ast.Load()
-                        ),
+                        ast.Name(id=_HIDDEN_CATEGORY_ROLES[node.attr], ctx=ast.Load()),
                         node,
                     )
                 return node
@@ -298,11 +236,7 @@ def _project_category_role_parameters(
             if local.returns is not None:
                 local.returns = rewriter.visit(local.returns)
 
-    top_level = {
-        statement.name: statement
-        for statement in tree.body
-        if isinstance(statement, ast.ClassDef)
-    }
+    top_level = {statement.name: statement for statement in tree.body if isinstance(statement, ast.ClassDef)}
     category_declaration = top_level.get("CategoryDeclaration")
     if category_declaration is not None:
         defaults = (
@@ -310,33 +244,20 @@ def _project_category_role_parameters(
             "sage_categories.kernel.roles.ElementOfObject",
             "sage_categories.kernel.roles.MorphismOfCategory",
         )
-        existing = {
-            parameter.name: parameter
-            for parameter in category_declaration.type_params
-        }
-        for hidden, default in zip(
-            _HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True
-        ):
+        existing = {parameter.name: parameter for parameter in category_declaration.type_params}
+        for hidden, default in zip(_HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True):
             if hidden in existing:
                 parameter = existing[hidden]
-                assert isinstance(parameter, ast.TypeVar), (
-                    f"CategoryDeclaration parameter {hidden!r} is not a TypeVar"
-                )
+                assert isinstance(parameter, ast.TypeVar), f"CategoryDeclaration parameter {hidden!r} is not a TypeVar"
                 parameter.default_value = _base_expression(default)
             else:
-                category_declaration.type_params.append(
-                    ast.TypeVar(name=hidden, default_value=_base_expression(default))
-                )
+                category_declaration.type_params.append(ast.TypeVar(name=hidden, default_value=_base_expression(default)))
 
         category_alias = next(
             (
                 statement
                 for statement in tree.body
-                if isinstance(statement, ast.Assign)
-                and any(
-                    isinstance(target, ast.Name) and target.id == "Category"
-                    for target in statement.targets
-                )
+                if isinstance(statement, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "Category" for target in statement.targets)
             ),
             None,
         )
@@ -347,12 +268,7 @@ def _project_category_role_parameters(
                 name = f"_CategoryDeclaration{hidden}"
                 alias_arguments.append(ast.Name(id=name, ctx=ast.Load()))
                 if not any(
-                    isinstance(statement, ast.Assign)
-                    and any(
-                        isinstance(target, ast.Name) and target.id == name
-                        for target in statement.targets
-                    )
-                    for statement in tree.body
+                    isinstance(statement, ast.Assign) and any(isinstance(target, ast.Name) and target.id == name for target in statement.targets) for statement in tree.body
                 ):
                     alias_hidden.append(
                         ast.Assign(
@@ -364,17 +280,11 @@ def _project_category_role_parameters(
                                     ctx=ast.Load(),
                                 ),
                                 args=[ast.Constant(value=name)],
-                                keywords=[
-                                    ast.keyword(
-                                        arg="default", value=_base_expression(default)
-                                    )
-                                ],
+                                keywords=[ast.keyword(arg="default", value=_base_expression(default))],
                             ),
                         )
                     )
-            category_alias.value.slice = ast.Tuple(
-                elts=alias_arguments, ctx=ast.Load()
-            )
+            category_alias.value.slice = ast.Tuple(elts=alias_arguments, ctx=ast.Load())
             if alias_hidden:
                 index = tree.body.index(category_alias)
                 tree.body[index:index] = alias_hidden
@@ -402,11 +312,7 @@ def _project_category_role_parameters(
         defaults: dict[str, ast.expr] = {}
         for role in _CATEGORY_ROLES:
             nested = next(
-                (
-                    local
-                    for local in owner.body
-                    if isinstance(local, ast.ClassDef) and local.name == role
-                ),
+                (local for local in owner.body if isinstance(local, ast.ClassDef) and local.name == role),
                 None,
             )
             if nested is not None:
@@ -415,11 +321,7 @@ def _project_category_role_parameters(
                 if not owner.body:
                     owner.body.append(ast.Pass())
             helper_role = next(
-                (
-                    local
-                    for local in helper.body
-                    if isinstance(local, ast.ClassDef) and local.name == role
-                ),
+                (local for local in helper.body if isinstance(local, ast.ClassDef) and local.name == role),
                 None,
             )
             if helper_role is not None:
@@ -440,29 +342,18 @@ def _project_category_role_parameters(
             for role in _CATEGORY_ROLES:
                 hidden = _HIDDEN_CATEGORY_ROLES[role]
                 if hidden not in existing:
-                    owner.type_params.append(
-                        ast.TypeVar(name=hidden, default_value=defaults[role])
-                    )
-            role_arguments = [
-                ast.Name(id=hidden, ctx=ast.Load())
-                for hidden in _HIDDEN_CATEGORY_ROLES.values()
-            ]
+                    owner.type_params.append(ast.TypeVar(name=hidden, default_value=defaults[role]))
+            role_arguments = [ast.Name(id=hidden, ctx=ast.Load()) for hidden in _HIDDEN_CATEGORY_ROLES.values()]
         else:
             role_arguments = [copy.deepcopy(defaults[role]) for role in _CATEGORY_ROLES]
 
         helper_base: ast.expr | None = None
-        category_bases = [
-            base
-            for base in owner.bases
-            if not (isinstance(base, ast.Name) and base.id == helper_name)
-        ]
+        category_bases = [base for base in owner.bases if not (isinstance(base, ast.Name) and base.id == helper_name)]
         assert category_bases, f"category declaration {owner_name} has no category base"
         category_base = category_bases[0]
         carrier = category_base.value if isinstance(category_base, ast.Subscript) else category_base
         name = base_name(carrier)
-        assert name in category_parameter_counts, (
-            f"cannot determine public generic arity of category base {ast.unparse(carrier)}"
-        )
+        assert name in category_parameter_counts, f"cannot determine public generic arity of category base {ast.unparse(carrier)}"
         base_module = category_modules.get(name)
         if base_module is not None:
             base_helper_name = f"_StaticRoles_{name}"
@@ -477,10 +368,7 @@ def _project_category_role_parameters(
         if isinstance(category_base, ast.Subscript):
             arguments = subscript_arguments(category_base)
         else:
-            arguments = [
-                ast.Constant(value=Ellipsis)
-                for _ in range(category_parameter_counts[name])
-            ]
+            arguments = [ast.Constant(value=Ellipsis) for _ in range(category_parameter_counts[name])]
         arguments.extend(role_arguments)
         projected_base = ast.Subscript(
             value=copy.deepcopy(carrier),
@@ -498,6 +386,7 @@ def _project_category_role_parameters(
     if category_declaration is not None:
         required_modules.add("sage_categories.kernel.roles")
     _ensure_module_imports(tree, required_modules & source_modules)
+
 
 def _bootstrap_source(output_directory: Path, source: Path) -> bool:
     """Whether ``source`` participates in the compiler-declaration bootstrap.
@@ -532,9 +421,7 @@ def _internal_static_names(
     package-internal surface distinct: this relation comes from actual source
     imports, not from adding private machinery to ``__all__``.
     """
-    modules = {
-        _module_name(package, output_directory, source): source for source in sources
-    }
+    modules = {_module_name(package, output_directory, source): source for source in sources}
     declarations: dict[str, frozenset[str]] = {}
     trees: dict[str, ast.Module] = {}
     for module, source in modules.items():
@@ -563,9 +450,7 @@ def _internal_static_names(
                         module_aliases[alias.asname or alias.name.rsplit(".", 1)[-1]] = alias.name
 
         for expression in ast.walk(tree):
-            if not isinstance(expression, ast.Attribute) or not isinstance(
-                expression.value, ast.Name
-            ):
+            if not isinstance(expression, ast.Attribute) or not isinstance(expression.value, ast.Name):
                 continue
             imported = module_aliases.get(expression.value.id)
             if imported is None or expression.attr not in declarations[imported]:
@@ -582,9 +467,7 @@ def _statement_names(statement: ast.stmt) -> frozenset[str]:
         case ast.AnnAssign(target=ast.Name(id=name)):
             return frozenset((name,))
         case ast.Assign(targets=targets):
-            return frozenset(
-                target.id for target in targets if isinstance(target, ast.Name)
-            )
+            return frozenset(target.id for target in targets if isinstance(target, ast.Name))
         case ast.TypeAlias(name=ast.Name(id=name)):
             return frozenset((name,))
         case _:
@@ -599,34 +482,19 @@ def _project_internal_definitions(
     """Merge explicitly cross-module source declarations omitted by ``__all__``."""
     if not names:
         return
-    existing = {
-        name
-        for statement in tree.body
-        for name in _statement_names(statement)
-    }
+    existing = {name for statement in tree.body for name in _statement_names(statement)}
     missing = names - existing
     if not missing:
         return
 
-    additions = [
-        copy.deepcopy(statement)
-        for statement in private_tree.body
-        if _statement_names(statement) & missing
-    ]
-    projected = {
-        name for statement in additions for name in _statement_names(statement)
-    }
+    additions = [copy.deepcopy(statement) for statement in private_tree.body if _statement_names(statement) & missing]
+    projected = {name for statement in additions for name in _statement_names(statement)}
     unresolved = missing - projected
     if unresolved:
-        raise ValueError(
-            f"private stub projection omitted package-internal declarations: {sorted(unresolved)!r}"
-        )
+        raise ValueError(f"private stub projection omitted package-internal declarations: {sorted(unresolved)!r}")
 
     required_import_names = {
-        expression.id
-        for statement in additions
-        for expression in ast.walk(statement)
-        if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
+        expression.id for statement in additions for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
     }
 
     def bound_name(alias: ast.alias, *, from_import: bool) -> str:
@@ -645,12 +513,7 @@ def _project_internal_definitions(
         if not isinstance(statement, ast.Import | ast.ImportFrom):
             continue
         from_import = isinstance(statement, ast.ImportFrom)
-        aliases = [
-            copy.deepcopy(alias)
-            for alias in statement.names
-            if (name := bound_name(alias, from_import=from_import))
-            in required_import_names - already_imported
-        ]
+        aliases = [copy.deepcopy(alias) for alias in statement.names if bound_name(alias, from_import=from_import) in required_import_names - already_imported]
         if not aliases:
             continue
         if isinstance(statement, ast.ImportFrom):
@@ -663,16 +526,10 @@ def _project_internal_definitions(
             )
         else:
             imports.append(ast.Import(names=aliases))
-        already_imported.update(
-            bound_name(alias, from_import=from_import) for alias in aliases
-        )
+        already_imported.update(bound_name(alias, from_import=from_import) for alias in aliases)
 
     insertion = next(
-        (
-            index
-            for index, statement in enumerate(tree.body)
-            if not isinstance(statement, ast.Import | ast.ImportFrom)
-        ),
+        (index for index, statement in enumerate(tree.body) if not isinstance(statement, ast.Import | ast.ImportFrom)),
         len(tree.body),
     )
     tree.body[insertion:insertion] = imports
@@ -707,7 +564,7 @@ def _refresh_internal_static_definitions(
         )
         private_root = private_output / Path(*package.split("."))
         for module, names in internal.items():
-            relative = Path(*module.split(".")[len(package.split(".")):])
+            relative = Path(*module.split(".")[len(package.split(".")) :])
             stub_path = output_directory / relative
             if stub_path.name == output_directory.name:
                 stub_path = output_directory / "__init__"
@@ -718,13 +575,9 @@ def _refresh_internal_static_definitions(
             if not private_stub.exists():
                 raise FileNotFoundError(private_stub)
             tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
-            private_tree = ast.parse(
-                private_stub.read_text(encoding="utf-8"), filename=str(private_stub)
-            )
+            private_tree = ast.parse(private_stub.read_text(encoding="utf-8"), filename=str(private_stub))
             _project_internal_definitions(tree, private_tree, names)
-            stub_path.write_text(
-                ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8"
-            )
+            stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
 
 
 def _direct_provider_bases(
@@ -740,15 +593,7 @@ def _direct_provider_bases(
     those transitive ancestors while preserving the compiler's order on unrelated
     branches.
     """
-    return tuple(
-        base
-        for base in bases
-        if not any(
-            base in relations.get(other, ())
-            for other in bases
-            if other != base
-        )
-    )
+    return tuple(base for base in bases if not any(base in relations.get(other, ()) for other in bases if other != base))
 
 
 def _providers_in_module(
@@ -766,17 +611,11 @@ def _providers_in_module(
     all_relations: dict[str, tuple[str, ...]] = {}
     for relations in inheritance.values():
         for provider, bases in relations.items():
-            assert provider not in all_relations, (
-                f"provider {provider!r} is projected on more than one role surface"
-            )
+            assert provider not in all_relations, f"provider {provider!r} is projected on more than one role surface"
             all_relations[provider] = bases
 
     prefix = f"{module}."
-    return {
-        provider: _direct_provider_bases(bases, all_relations)
-        for provider, bases in all_relations.items()
-        if provider.startswith(prefix)
-    }
+    return {provider: _direct_provider_bases(bases, all_relations) for provider, bases in all_relations.items() if provider.startswith(prefix)}
 
 
 def _canonical_exports(
@@ -793,28 +632,17 @@ def _canonical_exports(
         for name in _public_names(tree):
             if name in declarations:
                 candidates.setdefault(name, []).append(module)
-    return {
-        name: canonical
-        for name, modules in candidates.items()
-        if len(modules) == 1
-        for canonical in modules
-    }
+    return {name: canonical for name, modules in candidates.items() if len(modules) == 1 for canonical in modules}
 
 
 def _declared_names(tree: ast.Module) -> set[str]:
     names: set[str] = set()
     for statement in tree.body:
         match statement:
-            case (
-                ast.ClassDef(name=name)
-                | ast.FunctionDef(name=name)
-                | ast.AsyncFunctionDef(name=name)
-            ):
+            case ast.ClassDef(name=name) | ast.FunctionDef(name=name) | ast.AsyncFunctionDef(name=name):
                 names.add(name)
             case ast.Assign(targets=targets):
-                names.update(
-                    target.id for target in targets if isinstance(target, ast.Name)
-                )
+                names.update(target.id for target in targets if isinstance(target, ast.Name))
             case ast.AnnAssign(target=ast.Name(id=name)):
                 names.add(name)
     return names
@@ -824,18 +652,49 @@ def _public_names(tree: ast.Module) -> tuple[str, ...]:
     for statement in tree.body:
         if not isinstance(statement, ast.Assign):
             continue
-        if not any(
-            isinstance(target, ast.Name) and target.id == "__all__"
-            for target in statement.targets
-        ):
+        if not any(isinstance(target, ast.Name) and target.id == "__all__" for target in statement.targets):
             continue
         if isinstance(statement.value, ast.List | ast.Tuple):
-            return tuple(
-                element.value
-                for element in statement.value.elts
-                if isinstance(element, ast.Constant) and isinstance(element.value, str)
-            )
+            return tuple(element.value for element in statement.value.elts if isinstance(element, ast.Constant) and isinstance(element.value, str))
     return ()
+
+
+def _project_public_exports(tree: ast.Module, source: ast.Module) -> None:
+    """Keep generated ``__all__`` identical to the source module declaration.
+
+    ``stubgen`` can append function-local class spellings such as ``Local@42`` to
+    the generated export list. Those names are not module attributes, so the source
+    ``__all__`` remains authoritative. Modules without an explicit export list keep
+    ``stubgen``'s ordinary export behavior.
+    """
+    source_exports = next(
+        (
+            statement
+            for statement in source.body
+            if isinstance(statement, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "__all__" for target in statement.targets)
+        ),
+        None,
+    )
+    if source_exports is None:
+        return
+    projected = ast.Assign(
+        targets=[ast.Name(id="__all__", ctx=ast.Store())],
+        value=ast.List(
+            elts=[ast.Constant(value=name) for name in _public_names(source)],
+            ctx=ast.Load(),
+        ),
+    )
+    for index, statement in enumerate(tree.body):
+        if not isinstance(statement, ast.Assign):
+            continue
+        if any(isinstance(target, ast.Name) and target.id == "__all__" for target in statement.targets):
+            tree.body[index] = projected
+            return
+    insertion = next(
+        (index for index, statement in enumerate(tree.body) if not isinstance(statement, ast.Import | ast.ImportFrom)),
+        len(tree.body),
+    )
+    tree.body.insert(insertion, projected)
 
 
 def _canonicalize_imports(
@@ -856,19 +715,14 @@ def _canonicalize_imports(
         if not isinstance(statement, ast.ImportFrom) or statement.module is None:
             statements.append(statement)
             continue
-        if statement.module != package and not statement.module.startswith(
-            f"{package}."
-        ):
+        if statement.module != package and not statement.module.startswith(f"{package}."):
             statements.append(statement)
             continue
         grouped: dict[str, list[ast.alias]] = {}
         for alias in statement.names:
             module = canonical_exports.get(alias.name, statement.module)
             grouped.setdefault(module, []).append(alias)
-        statements.extend(
-            ast.ImportFrom(module=module, names=aliases, level=statement.level)
-            for module, aliases in grouped.items()
-        )
+        statements.extend(ast.ImportFrom(module=module, names=aliases, level=statement.level) for module, aliases in grouped.items())
     tree.body[:] = statements
 
 
@@ -890,17 +744,9 @@ def _project_class_aliases(
     converts a previously generated PEP 695 alias back to this stronger form.
     """
     declarations = {
-        declaration.name: tuple(
-            parameter
-            for parameter in declaration.type_params
-            if isinstance(parameter, ast.ParamSpec)
-        )
+        declaration.name: tuple(parameter for parameter in declaration.type_params if isinstance(parameter, ast.ParamSpec))
         for declaration in source.body
-        if isinstance(declaration, ast.ClassDef)
-        and any(
-            isinstance(parameter, ast.ParamSpec)
-            for parameter in declaration.type_params
-        )
+        if isinstance(declaration, ast.ClassDef) and any(isinstance(parameter, ast.ParamSpec) for parameter in declaration.type_params)
     }
 
     def alias_declaration(value: ast.expr) -> str | None:
@@ -913,10 +759,7 @@ def _project_class_aliases(
         return ast.Subscript(
             value=ast.Name(id=name, ctx=ast.Load()),
             slice=ast.Tuple(
-                elts=[
-                    ast.Name(id=f"_{name}_{parameter.name}", ctx=ast.Load())
-                    for parameter in declarations[name]
-                ],
+                elts=[ast.Name(id=f"_{name}_{parameter.name}", ctx=ast.Load()) for parameter in declarations[name]],
                 ctx=ast.Load(),
             ),
             ctx=ast.Load(),
@@ -944,9 +787,7 @@ def _project_class_aliases(
                     used.add(declaration)
                     rewritten.append(
                         ast.Assign(
-                            targets=[
-                                ast.Name(id=statement.name.id, ctx=ast.Store())
-                            ],
+                            targets=[ast.Name(id=statement.name.id, ctx=ast.Store())],
                             value=projected_value(declaration),
                         )
                     )
@@ -959,20 +800,9 @@ def _project_class_aliases(
         return
 
     has_typing_import = any(
-        isinstance(statement, ast.Import)
-        and any(
-            alias.name == "typing" and alias.asname == "_typing"
-            for alias in statement.names
-        )
-        for statement in tree.body
+        isinstance(statement, ast.Import) and any(alias.name == "typing" and alias.asname == "_typing" for alias in statement.names) for statement in tree.body
     )
-    existing_names = {
-        target.id
-        for statement in tree.body
-        if isinstance(statement, ast.Assign)
-        for target in statement.targets
-        if isinstance(target, ast.Name)
-    }
+    existing_names = {target.id for statement in tree.body if isinstance(statement, ast.Assign) for target in statement.targets if isinstance(target, ast.Name)}
     rewritten: list[ast.stmt] = []
     if not has_typing_import:
         rewritten.append(ast.Import(names=[ast.alias(name="typing", asname="_typing")]))
@@ -984,11 +814,7 @@ def _project_class_aliases(
             name = f"_{statement.name}_{parameter.name}"
             if name in existing_names:
                 continue
-            keywords = (
-                [ast.keyword(arg="default", value=parameter.default_value)]
-                if parameter.default_value is not None
-                else []
-            )
+            keywords = [ast.keyword(arg="default", value=parameter.default_value)] if parameter.default_value is not None else []
             rewritten.append(
                 ast.Assign(
                     targets=[ast.Name(id=name, ctx=ast.Store())],
@@ -1039,16 +865,10 @@ def _source_symbol_tables(
                     for alias in names:
                         bound = alias.asname or alias.name.split(".")[0]
                         local[bound] = alias.name if alias.asname else bound
-                case ast.ImportFrom(module=imported, names=names, level=0) if (
-                    imported is not None
-                ):
+                case ast.ImportFrom(module=imported, names=names, level=0) if imported is not None:
                     for alias in names:
                         local[alias.asname or alias.name] = f"{imported}.{alias.name}"
-                case (
-                    ast.ClassDef(name=name)
-                    | ast.FunctionDef(name=name)
-                    | ast.AsyncFunctionDef(name=name)
-                ):
+                case ast.ClassDef(name=name) | ast.FunctionDef(name=name) | ast.AsyncFunctionDef(name=name):
                     local[name] = f"{module}.{name}"
         symbols[module] = local
 
@@ -1084,9 +904,7 @@ def _source_symbol_tables(
     for module, tree in trees.items():
         typed_values: dict[str, str] = {}
         for statement in tree.body:
-            if isinstance(statement, ast.AnnAssign) and isinstance(
-                statement.target, ast.Name
-            ):
+            if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
                 resolved = path(module, statement.annotation)
                 if resolved is not None:
                     typed_values[statement.target.id] = resolved
@@ -1105,12 +923,8 @@ def _source_role_aliases(
     inheritance: dict[str, dict[str, tuple[str, ...]]],
 ) -> dict[str, dict[str, str]]:
     """Resolve public aliases to written role declarations without runtime inspection."""
-    symbols, function_returns, annotations, trees = _source_symbol_tables(
-        package, output_directory, sources
-    )
-    providers = {
-        provider for relations in inheritance.values() for provider in relations
-    }
+    symbols, function_returns, annotations, trees = _source_symbol_tables(package, output_directory, sources)
+    providers = {provider for relations in inheritance.values() for provider in relations}
     result: dict[str, dict[str, str]] = {}
 
     def symbol_path(module: str, expression: ast.expr) -> str | None:
@@ -1129,11 +943,7 @@ def _source_role_aliases(
                 return annotations[module].get(name)
             case ast.Call(func=func):
                 callable_name = symbol_path(module, func)
-                return (
-                    None
-                    if callable_name is None
-                    else function_returns.get(callable_name)
-                )
+                return None if callable_name is None else function_returns.get(callable_name)
             case _:
                 return None
 
@@ -1166,11 +976,7 @@ def _source_role_aliases(
 
 def _qualified_module(name: str, source_modules: frozenset[str]) -> str:
     """Return the longest source-module prefix of one qualified declaration name."""
-    candidates = tuple(
-        module
-        for module in source_modules
-        if name == module or name.startswith(f"{module}.")
-    )
+    candidates = tuple(module for module in source_modules if name == module or name.startswith(f"{module}."))
     if not candidates:
         raise ValueError(f"{name!r} has no source module in the generated package")
     return max(candidates, key=len)
@@ -1178,22 +984,12 @@ def _qualified_module(name: str, source_modules: frozenset[str]) -> str:
 
 def _ensure_module_imports(tree: ast.Module, modules: set[str]) -> None:
     """Import modules referenced by generated qualified type expressions."""
-    imported = {
-        alias.name
-        for statement in tree.body
-        if isinstance(statement, ast.Import)
-        for alias in statement.names
-    }
-    additions = [
-        ast.Import(names=[ast.alias(name=module)])
-        for module in sorted(modules - imported)
-    ]
+    imported = {alias.name for statement in tree.body if isinstance(statement, ast.Import) for alias in statement.names}
+    additions = [ast.Import(names=[ast.alias(name=module)]) for module in sorted(modules - imported)]
     tree.body[0:0] = additions
 
 
-def _project_runtime_class_aliases(
-    tree: ast.Module, aliases: dict[str, str], source_modules: frozenset[str]
-) -> None:
+def _project_runtime_class_aliases(tree: ast.Module, aliases: dict[str, str], source_modules: frozenset[str]) -> None:
     """Replace ``Incomplete`` runtime class values by aliases to their declarations."""
     if not aliases:
         return
@@ -1201,16 +997,10 @@ def _project_runtime_class_aliases(
     used = False
     for statement in tree.body:
         name = None
-        if isinstance(statement, ast.AnnAssign) and isinstance(
-            statement.target, ast.Name
-        ):
+        if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
             name = statement.target.id
         elif isinstance(statement, ast.Assign):
-            targets = [
-                target.id
-                for target in statement.targets
-                if isinstance(target, ast.Name)
-            ]
+            targets = [target.id for target in statement.targets if isinstance(target, ast.Name)]
             if len(targets) == 1:
                 name = targets[0]
         target = aliases.get(name) if name is not None else None
@@ -1271,21 +1061,12 @@ def _project_exact_morphism_endpoints(tree: ast.Module) -> None:
         if not isinstance(owner, ast.ClassDef):
             continue
         morphism_type = next(
-            (
-                statement
-                for statement in owner.body
-                if isinstance(statement, ast.ClassDef)
-                and statement.name == "MorphismType"
-            ),
+            (statement for statement in owner.body if isinstance(statement, ast.ClassDef) and statement.name == "MorphismType"),
             None,
         )
         if morphism_type is None:
             continue
-        local_methods = {
-            statement.name
-            for statement in morphism_type.body
-            if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef)
-        }
+        local_methods = {statement.name for statement in morphism_type.body if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef)}
         for name in ("domain", "codomain"):
             if name not in local_methods:
                 morphism_type.body.append(endpoint_method(name, owner.name))
@@ -1303,9 +1084,7 @@ def _project_provider_bases(
         if bases is None:
             continue
         statement.node.bases = [_base_expression(base) for base in bases]
-        required_modules.update(
-            _qualified_module(base, source_modules) for base in bases
-        )
+        required_modules.update(_qualified_module(base, source_modules) for base in bases)
     _ensure_module_imports(tree, required_modules)
 
 
@@ -1325,11 +1104,7 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
     if not classes:
         return
 
-    top_level = {
-        f"{module}.{statement.name}": statement
-        for statement in tree.body
-        if isinstance(statement, ast.ClassDef)
-    }
+    top_level = {f"{module}.{statement.name}": statement for statement in tree.body if isinstance(statement, ast.ClassDef)}
 
     def base_name(expression: ast.expr) -> str | None:
         while isinstance(expression, ast.Subscript):
@@ -1383,12 +1158,7 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
         if owner_class is None:
             continue
         nested = next(
-            (
-                statement
-                for statement in owner_class.body
-                if isinstance(statement, ast.ClassDef)
-                and statement.name == nested_name
-            ),
+            (statement for statement in owner_class.body if isinstance(statement, ast.ClassDef) and statement.name == nested_name),
             None,
         )
         if nested is not None:
@@ -1402,14 +1172,7 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
     for owner_name, nested_classes in sorted(owners.items()):
         owner_class = top_level[f"{module}.{owner_name}"]
         nested_names = {nested.name for nested in nested_classes}
-        owner_class.body[:] = [
-            statement
-            for statement in owner_class.body
-            if not (
-                isinstance(statement, ast.ClassDef)
-                and statement.name in nested_names
-            )
-        ]
+        owner_class.body[:] = [statement for statement in owner_class.body if not (isinstance(statement, ast.ClassDef) and statement.name in nested_names)]
         helper_name = f"_StaticRoles_{owner_name}"
         helper_body: list[ast.stmt] = []
         helper_body.extend(nested_classes)
@@ -1434,11 +1197,7 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
         rewritten: list[ast.expr] = []
         for base in entry.node.bases:
             qualified_base_name = base_name(base)
-            replacement = (
-                replacements.get(qualified_base_name)
-                if qualified_base_name is not None
-                else None
-            )
+            replacement = replacements.get(qualified_base_name) if qualified_base_name is not None else None
             if replacement is None:
                 rewritten.append(base)
                 continue
@@ -1455,11 +1214,7 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
         entry.node.bases = rewritten
 
     insertion = next(
-        (
-            index
-            for index, statement in enumerate(tree.body)
-            if isinstance(statement, ast.ClassDef)
-        ),
+        (index for index, statement in enumerate(tree.body) if isinstance(statement, ast.ClassDef)),
         len(tree.body),
     )
     tree.body[insertion:insertion] = helpers

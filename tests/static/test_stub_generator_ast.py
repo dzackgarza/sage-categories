@@ -29,6 +29,7 @@ def test_engine_sources_are_generated_without_runtime_bootstrap(tmp_path: Path) 
     assert not generator._bootstrap_source(package, engine)
     assert generator._bootstrap_source(package, category)
 
+
 def test_class_aliases_bind_declared_parameters() -> None:
     source = ast.parse(
         """
@@ -120,14 +121,8 @@ ordinary: int
         frozenset({"sage_categories.cat.category", "sage_categories.cat.functors"}),
     )
     projected = ast.unparse(ast.fix_missing_locations(stub))
-    assert (
-        "type Functor = sage_categories.cat.category.CategoryOfCategories.MorphismType"
-        in projected
-    )
-    assert (
-        "type NaturalTransformation = sage_categories.cat.functors.FunctorsCategory.MorphismType"
-        in projected
-    )
+    assert "type Functor = sage_categories.cat.category.CategoryOfCategories.MorphismType" in projected
+    assert "type NaturalTransformation = sage_categories.cat.functors.FunctorsCategory.MorphismType" in projected
     assert "class Functor" not in projected
     assert "class NaturalTransformation" not in projected
     assert "ordinary: int" in projected
@@ -161,15 +156,8 @@ class Consumer(Owner.ElementType):
     assert "class Declaration(_StaticRoles_Owner.ElementType):" in projected
     assert "class Owner(Declaration, _StaticRoles_Owner):" in projected
     assert "class Consumer(_StaticRoles_Owner.ElementType):" in projected
-    owner = next(
-        statement
-        for statement in stub.body
-        if isinstance(statement, ast.ClassDef) and statement.name == "Owner"
-    )
-    assert not any(
-        isinstance(statement, ast.ClassDef) and statement.name == "ElementType"
-        for statement in owner.body
-    )
+    owner = next(statement for statement in stub.body if isinstance(statement, ast.ClassDef) and statement.name == "Owner")
+    assert not any(isinstance(statement, ast.ClassDef) and statement.name == "ElementType" for statement in owner.body)
 
 
 test_nested_provider_cycle_hoists_one_identity_through_private_owner()
@@ -204,10 +192,7 @@ class Owner:
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "import sage_categories.cat.category" in projected
     assert "import sage_categories.kernel.roles" in projected
-    assert (
-        "class ObjectType(sage_categories.kernel.roles.ObjectOfCategory, sage_categories.cat.category.CategoryOfCategories.ElementType)"
-        in projected
-    )
+    assert "class ObjectType(sage_categories.kernel.roles.ObjectOfCategory, sage_categories.cat.category.CategoryOfCategories.ElementType)" in projected
 
 
 test_provider_projection_imports_the_modules_owning_qualified_bases()
@@ -280,7 +265,7 @@ def test_internal_static_names_follow_explicit_cross_module_use(tmp_path: Path) 
     package.mkdir()
     (package / "__init__.py").write_text("from . import owner\n")
     (package / "owner.py").write_text(
-        '''
+        """
 __all__ = ["public"]
 
 def public() -> int:
@@ -291,40 +276,34 @@ def internal() -> str:
 
 def _private() -> bool:
     return True
-'''
+"""
     )
     (package / "direct.py").write_text("from example.owner import internal\n")
-    (package / "qualified.py").write_text(
-        "from example import owner\nresult = owner._private()\n"
-    )
+    (package / "qualified.py").write_text("from example import owner\nresult = owner._private()\n")
     generator = _stub_generator()
     sources = tuple(sorted(package.rglob("*.py")))
-    assert generator._internal_static_names("example", package, sources)[
-        "example.owner"
-    ] == frozenset({"internal", "_private"})
+    assert generator._internal_static_names("example", package, sources)["example.owner"] == frozenset({"internal", "_private"})
 
 
 def test_internal_static_projection_keeps_runtime_exports_separate() -> None:
     stub = ast.parse(
-        '''
+        """
 from example.types import PublicType
 __all__ = ["public"]
 def public() -> PublicType: ...
-'''
+"""
     )
     private_stub = ast.parse(
-        '''
+        """
 from example.types import PublicType, InternalType
 __all__ = ["public"]
 def public() -> PublicType: ...
 def internal(value: InternalType) -> InternalType: ...
 def _private() -> bool: ...
-'''
+"""
     )
     generator = _stub_generator()
-    generator._project_internal_definitions(
-        stub, private_stub, frozenset({"internal", "_private"})
-    )
+    generator._project_internal_definitions(stub, private_stub, frozenset({"internal", "_private"}))
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert generator._public_names(stub) == ("public",)
     assert "def internal(value: InternalType) -> InternalType:" in projected
@@ -339,7 +318,7 @@ def test_refresh_internal_static_definitions_updates_only_internal_surface(
     package.mkdir()
     (package / "__init__.py").write_text("")
     (package / "owner.py").write_text(
-        '''
+        """
 __all__ = ["public"]
 
 def public() -> int:
@@ -347,16 +326,12 @@ def public() -> int:
 
 def internal() -> str:
     return "internal"
-'''
+"""
     )
     (package / "consumer.py").write_text("from example.owner import internal\n")
     (package / "__init__.pyi").write_text("")
-    (package / "owner.pyi").write_text(
-        '__all__ = ["public"]\ndef public() -> int: ...\n'
-    )
-    (package / "consumer.pyi").write_text(
-        "from example.owner import internal as internal\n"
-    )
+    (package / "owner.pyi").write_text('__all__ = ["public"]\ndef public() -> int: ...\n')
+    (package / "consumer.pyi").write_text("from example.owner import internal as internal\n")
     generator = _stub_generator()
     sources = tuple(sorted(package.rglob("*.py")))
     generator._refresh_internal_static_definitions("example", package, sources)
@@ -373,23 +348,16 @@ def test_provider_projection_uses_direct_branches_not_transitive_c3_ancestry() -
             "sage_categories.kernel.roles.MorphismOfCategory",
             "example.MorphismCategory.ObjectType",
         ),
-        "example.MorphismCategory.ObjectType": (
-            "example.Root.ElementType",
-        ),
+        "example.MorphismCategory.ObjectType": ("example.Root.ElementType",),
     }
-    assert generator._direct_provider_bases(
-        relations["example.Owner.MorphismType"], relations
-    ) == (
+    assert generator._direct_provider_bases(relations["example.Owner.MorphismType"], relations) == (
         "sage_categories.kernel.roles.MorphismOfCategory",
         "example.MorphismCategory.ObjectType",
     )
-    assert generator._providers_in_module(
-        {"arrow": relations}, "example"
-    )["example.Owner.MorphismType"] == (
+    assert generator._providers_in_module({"arrow": relations}, "example")["example.Owner.MorphismType"] == (
         "sage_categories.kernel.roles.MorphismOfCategory",
         "example.MorphismCategory.ObjectType",
     )
-
 
 
 def test_provider_projection_prunes_ancestry_across_role_surfaces() -> None:
@@ -420,12 +388,11 @@ def test_provider_projection_prunes_ancestry_across_role_surfaces() -> None:
             "example.CatElement": (),
         },
     }
-    assert generator._providers_in_module(inheritance, "example")[
-        "example.FunctorObject"
-    ] == ("example.CatMorphism",)
+    assert generator._providers_in_module(inheritance, "example")["example.FunctorObject"] == ("example.CatMorphism",)
 
 
 test_provider_projection_prunes_ancestry_across_role_surfaces()
+
 
 def test_concrete_morphism_projection_has_exact_owner_object_endpoints() -> None:
     stub = ast.parse(
@@ -457,9 +424,7 @@ def test_category_role_projection_is_noop_without_category_declarations() -> Non
     stub = ast.parse("def helper(value: int) -> int: ...\n")
     before = ast.dump(stub, include_attributes=False)
     generator = _stub_generator()
-    generator._project_category_role_parameters(
-        stub, source, "example", {}, {}, frozenset({"example", "sage_categories.kernel.roles"})
-    )
+    generator._project_category_role_parameters(stub, source, "example", {}, {}, frozenset({"example", "sage_categories.kernel.roles"}))
     assert ast.dump(stub, include_attributes=False) == before
 
 
@@ -480,9 +445,7 @@ class RoleOnly(Category):
     generator = _stub_generator()
     counts = {"CategoryDeclaration": 2, "Category": 2, "RoleOnly": 0}
     generator._project_class_aliases(stub, source)
-    generator._project_category_role_parameters(
-        stub, source, "example", counts, {"RoleOnly": "example"}, frozenset({"example", "sage_categories.kernel.roles"})
-    )
+    generator._project_category_role_parameters(stub, source, "example", counts, {"RoleOnly": "example"}, frozenset({"example", "sage_categories.kernel.roles"}))
     projected = ast.unparse(ast.fix_missing_locations(stub))
     ast.parse(projected)
     assert "class RoleOnly" in projected
@@ -529,3 +492,29 @@ class Derived(Base):
     assert "class Derived" in projected
     assert "_StaticRoles_Derived, Base[..., ..., _StaticRoles_Derived.ObjectType, _StaticRoles_Derived.ElementType, _StaticRoles_Derived.MorphismType]" in projected
     assert "class Derived[_ObjectRole" not in projected
+
+
+def test_public_exports_ignore_stubgen_function_local_classes() -> None:
+    source = ast.parse(
+        """
+__all__ = ["public"]
+
+def public() -> None:
+    class _Local:
+        pass
+"""
+    )
+    stub = ast.parse(
+        """
+__all__ = ["public", "_Local@5"]
+
+def public() -> None: ...
+"""
+    )
+    generator = _stub_generator()
+
+    generator._project_public_exports(stub, source)
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "__all__ = ['public']" in projected
+    assert "_Local@5" not in projected

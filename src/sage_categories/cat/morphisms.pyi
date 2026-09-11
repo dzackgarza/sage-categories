@@ -1,4 +1,7 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+import sage_categories.cat.properties
+import sage_categories.kernel.roles
 from _typeshed import Incomplete
 from sage_categories.cat.category import Category, CategoryOfCategories, Decision, Predicate, Proposition
 from sage_categories.cat.functors import Functor
@@ -6,7 +9,7 @@ from sage_categories.cat.properties import FixedEndpointProperty, FullSubcategor
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import Integer
 from typing import Literal, overload
-__all__ = ['Mor', 'hom_inhabitation', 'MorphismCategory', 'IsomorphismsCategory', 'EndomorphismsCategory', 'FixedEndpointCategory']
+__all__ = ['Mor', 'endpoints', 'endpoints_in', 'hom_inhabitation', 'MorphismCategory', 'IsomorphismsCategory', 'EndomorphismsCategory', 'FixedEndpointCategory']
 
 @overload
 def Mor[**M, **T](category: Category[M, T]) -> MorphismCategory[M, T]:
@@ -30,9 +33,11 @@ def Mor(level: int | Integer, category: Category) -> MorphismCategory[[], []]:
 
 class _EndpointsPredicate(Predicate):
     name: str
+endpoints: Incomplete
 
 class _EndpointsInPredicate(Predicate):
     name: str
+endpoints_in: Incomplete
 
 def hom_inhabitation(hom_category: Category) -> Decision:
     ...
@@ -45,6 +50,15 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             ...
 
         def codomain(self) -> CategoryOfCategories.ElementType:
+            ...
+
+        def cell_dimension(self) -> int:
+            ...
+
+        def boundary(self, side: Literal['source', 'target'], depth: int=0) -> CategoryOfCategories.ElementType:
+            ...
+
+        def typecheck_cell(self) -> None:
             ...
 
         def base_category(self) -> Category:
@@ -77,10 +91,10 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         def __hash__(self) -> int:
             ...
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self, base: Category[MorphismData, TwoMorphismData]) -> None:
@@ -144,37 +158,37 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
 class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
 
-    class ElementType(sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject, sage_categories.cat.morphisms.MorphismCategory.ElementType):
+    class ElementType(sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.morphisms.MorphismCategory.MorphismType):
+    class MorphismType(sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType(sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType, sage_categories.cat.functors.FunctorsCategory.MorphismType):
+    class ObjectType(sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def inverse(self) -> MorphismCategory.ObjectType:
             ...
 
 class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
 class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):
 
-    class ObjectType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.morphisms.MorphismCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.morphisms.MorphismCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __init__(self, morphisms: MorphismCategory[MorphismData, TwoMorphismData], domain: CategoryOfCategories.ElementType, codomain: CategoryOfCategories.ElementType) -> None:

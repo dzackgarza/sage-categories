@@ -1,4 +1,5 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
 from _typeshed import Incomplete
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import CommaSpecialization

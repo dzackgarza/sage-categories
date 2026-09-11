@@ -1,0 +1,88 @@
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+from sage_categories.cat.cat_constructions import LimitSubcategory
+from sage_categories.cat.category import Category
+from sage_categories.cat.functors import Functor, NaturalTransformation
+from sage_categories.cat.modules import ModuleCategory
+from sage_categories.cat.monoidal import MonoidalStructuresCategory
+from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.structured_objects import EquifierCategory, MonoidCategory
+from sage_categories.kernel.sage_runtime import cached_method
+__all__ = ['ActionPairsCategory', 'BimoduleCategory', 'Bimodules']
+
+class ActionPairsCategory(LimitSubcategory):
+
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        ...
+
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+        ...
+
+    @cached_method
+    def to_left(self) -> Functor:
+        ...
+
+    @cached_method
+    def to_right(self) -> Functor:
+        ...
+
+    def homomorphism(self, source: ActionPairsCategory.ObjectType, target: ActionPairsCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> ActionPairsCategory.MorphismType:
+        ...
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        ...
+
+class BimoduleCategory(EquifierCategory):
+
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+
+        def left_action(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def right_action(self) -> MorphismCategory.ObjectType:
+            ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        ...
+
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+        ...
+
+    def __init__(self, first: NaturalTransformation, second: NaturalTransformation, left: ModuleCategory, right: ModuleCategory, pairs: ActionPairsCategory) -> None:
+        ...
+
+    def left_modules(self) -> ModuleCategory:
+        ...
+
+    def right_modules(self) -> ModuleCategory:
+        ...
+
+    def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
+        ...
+
+    def underlying_category(self) -> Category:
+        ...
+
+    @cached_method
+    def to_left(self) -> Functor:
+        ...
+
+    @cached_method
+    def to_right(self) -> Functor:
+        ...
+
+    @cached_method
+    def forgetful(self) -> Functor:
+        ...
+
+    def __call__(self, left_action: MorphismCategory.ObjectType, right_action: MorphismCategory.ObjectType) -> BimoduleCategory.ObjectType:
+        ...
+
+    def homomorphism(self, source: BimoduleCategory.ObjectType, target: BimoduleCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> BimoduleCategory.MorphismType:
+        ...
+
+def Bimodules(left_scalars: MonoidCategory.ObjectType, right_scalars: MonoidCategory.ObjectType, monoidal: MonoidalStructuresCategory.ObjectType) -> BimoduleCategory:
+    ...

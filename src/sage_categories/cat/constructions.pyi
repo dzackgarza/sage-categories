@@ -1,4 +1,6 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from collections.abc import Callable, Hashable
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import LimitConesCategory, cocone as cocone, cocone_apex as cocone_apex, cone as cone, cone_apex as cone_apex, vertex_of as vertex_of
@@ -65,10 +67,10 @@ class LimitsCategory(ApexCategory):
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...], shape: Category) -> None:
@@ -106,10 +108,10 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def product_factors(self) -> Functor:
             ...

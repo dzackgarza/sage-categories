@@ -1,15 +1,20 @@
 from collections.abc import Hashable
-
-from sage_categories.cat.native import (
-    NativeMorphismRealization,
-    NativeObjectRealization,
-)
+from dataclasses import dataclass
 from sage_categories.sets.finite import SetsCategory
+__all__ = ['FiniteIndexing', 'retain_finite_native_object', 'finite_native_object', 'retain_finite_native_morphism', 'finite_native_morphism']
 
+@dataclass(frozen=True, eq=False, slots=True)
 class FiniteIndexing:
     data: tuple[Hashable, ...]
 
-def retain_finite_native_object(value: SetsCategory.ObjectType, native: object, indexing: tuple[Hashable, ...]) -> NativeObjectRealization[object, FiniteIndexing]: ...
-def finite_native_object(value: SetsCategory.ObjectType) -> NativeObjectRealization[object, FiniteIndexing]: ...
-def retain_finite_native_morphism(value: SetsCategory.MorphismType, native: object) -> NativeMorphismRealization[object]: ...
-def finite_native_morphism(value: SetsCategory.MorphismType) -> NativeMorphismRealization[object]: ...
+def retain_finite_native_object(value: SetsCategory.ObjectType, native: object, indexing: tuple[Hashable, ...]):
+    ...
+
+def finite_native_object(value: SetsCategory.ObjectType):
+    ...
+
+def retain_finite_native_morphism(value: SetsCategory.MorphismType, native: object):
+    ...
+
+def finite_native_morphism(value: SetsCategory.MorphismType):
+    ...

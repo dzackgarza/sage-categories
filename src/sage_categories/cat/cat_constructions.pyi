@@ -1,6 +1,9 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
+from functools import partial
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
@@ -11,40 +14,51 @@ type MorphismRule = Callable[['CategoryOfCategories.ElementType'], MorphismCateg
 
 @dataclass(frozen=True, eq=False, slots=True)
 class FamilyObjectData:
+    diagram: Functor
     rule: ObjectRule
+
+    def component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
+        ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class FamilyMorphismData:
+    diagram: Functor
     rule: MorphismRule
+
+    def component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
+        ...
 
 class _ComponentsAgreePredicate(Predicate):
     name: str
 
 class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, ...]], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: FamilyObjectData) -> None:
             ...
 
-        def component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
+        def family_component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: FamilyMorphismData) -> None:
             ...
 
-        def component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
+        def family_component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self, diagram: Functor) -> None:
         ...
 
     def shape(self) -> Category:
+        ...
+
+    def defining_diagram(self) -> Functor:
         ...
 
     def factor(self, index: CategoryOfCategories.ElementType | Hashable) -> Category:
@@ -100,7 +114,7 @@ class LimitSubcategory(LimitCategory):
     def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
-def limit_of_categories(diagram: Functor, family: Category, category_type: Callable[[Functor], LimitCategory]=...) -> CategoryOfCategories.ElementType:
+def limit_of_categories(diagram: Functor, family: Category, category_type: type[LimitCategory] | partial[LimitCategory]=...) -> CategoryOfCategories.ElementType:
     ...
 
 def product_of_categories(diagram: Functor) -> CategoryOfCategories.ElementType:

@@ -1,4 +1,6 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from collections.abc import Hashable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -18,12 +20,12 @@ class PathData:
 
 class FinitePresentedCategory(Category[[Word], []]):
 
-    class ObjectType(sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: VertexData) -> None:
             ...
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: PathData) -> None:
             ...
@@ -31,7 +33,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         def word(self) -> Word:
             ...
 
-    class ElementType(sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self, name: str, labels: tuple[Hashable, ...], generators: tuple[Generator, ...], relations: tuple[Relation, ...]) -> None:
@@ -65,6 +67,9 @@ class FinitePresentedCategory(Category[[Word], []]):
         ...
 
     def finite_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass:
+        ...
+
+    def Terminal(self) -> FinitePresentedCategory.ObjectType:
         ...
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.MorphismType:

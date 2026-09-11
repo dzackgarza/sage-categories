@@ -1,7 +1,4 @@
-from typing import Any
+__all__ = ['finite_product_data']
 
-def finite_product_data(
-    factors: tuple[Any, ...],
-    object_families: tuple[tuple[Any, ...], ...],
-    morphism_families: tuple[tuple[Any, ...], ...],
-) -> tuple[tuple[tuple[Any, ...], ...], tuple[tuple[Any, ...], ...]]: ...
+def finite_product_data(factors: tuple[object, ...], object_families: tuple[tuple[object, ...], ...], morphism_families: tuple[tuple[object, ...], ...]) -> tuple[tuple[tuple[object, ...], ...], tuple[tuple[object, ...], ...]]:
+    ...

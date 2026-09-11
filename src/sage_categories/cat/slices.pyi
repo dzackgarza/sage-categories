@@ -1,4 +1,5 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
 from collections.abc import Hashable
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import CommaCategory as CommaCategory, CommaSpecialization
@@ -102,7 +103,7 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    def __init__(self, ambient: SliceLikeCategory, property_category: Category) -> None:
+    def __init__(self, ambient: SliceLikeCategory | SliceProperty, property_category: Category) -> None:
         ...
 
     def property_category(self) -> Category:

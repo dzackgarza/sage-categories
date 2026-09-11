@@ -1,4 +1,6 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from _typeshed import Incomplete
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
@@ -17,13 +19,60 @@ type OnObject = Callable[[CategoryOfCategories.ElementType], CategoryOfCategorie
 type OnMorphism = Callable[['MorphismCategory.ObjectType'], 'MorphismCategory.ObjectType']
 type Assignment = Callable[[CategoryOfCategories.ElementType], 'MorphismCategory.ObjectType']
 
+class _StaticRoles_CategoryOfCategories:
+
+    class ElementType:
+
+        def parent(self) -> CategoryOfCategories.ElementType:
+            ...
+
+        def defining_morphism(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def category(self) -> Category:
+            ...
+
+        def __eq__(self, candidate: CategoryOfCategories.ElementType | int) -> Predicate:
+            ...
+
+        def __ne__(self, candidate: CategoryOfCategories.ElementType | int) -> Proposition:
+            ...
+
+        def __hash__(self) -> int:
+            ...
+
+        def __mul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            ...
+
+        def __add__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            ...
+
+        def __matmul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            ...
+
+        def __pow__(self, exponent: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            ...
+
+        def diagram(self) -> Functor:
+            ...
+
+        def index_category(self) -> Category:
+            ...
+
+        def projection(self, index: CategoryOfCategories.ElementType | int) -> MorphismCategory.ObjectType:
+            ...
+
+        def universal_morphism(self, candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+            ...
+
 class _MemberPredicate(Predicate):
     name: str
 member: Predicate
 
-class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.kernel.roles.ObjectOfCategory):
-    _implementation_selected_functors: tuple[Functor, ...]
-    _installed_category_implementations: tuple[type[Category], ...]
+class _ConcretePredicate(Predicate):
+    name: str
+
+class CategoryDeclaration[**MorphismData, **TwoMorphismData](_StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
     def __init__(self, data: None=None) -> None:
         ...
@@ -155,6 +204,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def Terminal(self) -> CategoryOfCategories.ElementType:
         ...
 
+    def point_morphism(self, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        ...
+
     def point_functor(self, member_object: CategoryOfCategories.ElementType) -> Functor:
         ...
 
@@ -188,9 +240,6 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
         ...
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        ...
-
-    def retain_colimit_construction(self, shape: Category, construction: Callable[[Functor], CategoryOfCategories.ElementType]) -> None:
         ...
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
@@ -247,6 +296,12 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False] | UnknownClass:
         ...
 
+    def retain_biproduct_operations(self, biproduct: Callable[[object, object], object], zero_morphism: Callable[[object, object], object]) -> None:
+        ...
+
+    def retain_colimit_construction(self, shape: Category, construction: Callable[[Functor], CategoryOfCategories.ElementType]) -> None:
+        ...
+
     def biproduct(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         ...
 
@@ -268,6 +323,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
     def intersection(self, roots: tuple[Category[MorphismData, TwoMorphismData], ...]) -> Category[MorphismData, TwoMorphismData]:
         ...
 
+    def closed_roots(self, roots: tuple[Category[MorphismData, TwoMorphismData], ...]) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
+        ...
+
     def property_subcategory(self, property_category: Category[MorphismData, TwoMorphismData]) -> Category[MorphismData, TwoMorphismData]:
         ...
 
@@ -279,7 +337,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](sage_categories.ker
 
     def narrowing_type(self) -> type[Category[MorphismData, TwoMorphismData]]:
         ...
-Category = CategoryDeclaration
+type Category[**MorphismData, **TwoMorphismData] = CategoryDeclaration[MorphismData, TwoMorphismData]
 type LiftRule = Callable[[MorphismCategory.ObjectType, CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -287,56 +345,13 @@ class FunctorData:
     on_object: OnObject
     on_morphism: OnMorphism
 
-class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignment]]):
-    ObjectType = CategoryDeclaration
+class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignment]], _StaticRoles_CategoryOfCategories):
+    type ObjectType[**MorphismData, **TwoMorphismData] = CategoryDeclaration[MorphismData, TwoMorphismData]
     Inhabited: Incomplete
     Empty: Incomplete
+    Concrete: Incomplete
 
-    class ElementType:
-
-        def parent(self) -> CategoryOfCategories.ElementType:
-            ...
-
-        def defining_morphism(self) -> MorphismCategory.ObjectType:
-            ...
-
-        def category(self) -> Category:
-            ...
-
-        def __eq__(self, candidate: CategoryOfCategories.ElementType | int) -> Predicate:
-            ...
-
-        def __ne__(self, candidate: CategoryOfCategories.ElementType | int) -> Proposition:
-            ...
-
-        def __hash__(self) -> int:
-            ...
-
-        def __mul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-            ...
-
-        def __add__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-            ...
-
-        def __matmul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-            ...
-
-        def __pow__(self, exponent: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-            ...
-
-        def diagram(self) -> Functor:
-            ...
-
-        def index_category(self) -> Category:
-            ...
-
-        def projection(self, index: CategoryOfCategories.ElementType | int) -> MorphismCategory.ObjectType:
-            ...
-
-        def universal_morphism(self, candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
-            ...
-
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(_StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: FunctorData) -> None:
             ...
@@ -372,15 +387,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             ...
 
         def limit_lifting(self, shape: Category) -> tuple[LimitApexLift, LimitMorphismLift] | None:
-            ...
-
-        def retain_terminal_comparison(self, comparison: MorphismCategory.ObjectType) -> None:
-            ...
-
-        def terminal_comparison(self) -> MorphismCategory.ObjectType:
-            ...
-
-        def after_terminal_comparison(self, image: MorphismCategory.ObjectType, defining: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             ...
 
         def retain_cartesian_lifts(self, rule: LiftRule) -> None:

@@ -1,57 +1,16 @@
 from collections.abc import Callable
 from contextvars import Token
-from dataclasses import dataclass
-from typing import Any
-
+from dataclasses import dataclass, field
 from sage_categories.cat.category import Category
 from sage_categories.kernel.compiler import Node
-from sage_categories.kernel.roles import (
-    CategoryPoint,
-    MorphismOfCategory,
-    ObjectOfCategory,
-    Role,
-)
+from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
+__all__ = ['ObjectRoleIdentity', 'ElementRoleIdentity', 'CategoryPointIdentity', 'CatElementRoleIdentity', 'MorphismRoleIdentity', 'ObjectConstructionInput', 'ElementConstructionInput', 'MorphismConstructionInput', 'retain_object_input', 'retain_element_input', 'retain_morphism_input', 'retained_objects', 'retained_values', 'is_constructed', 'retained_object_input', 'retained_element_input', 'retained_morphism_input', 'retained_object_by_datum', 'retain_object_by_datum', 'retained_input', 'ObjectConstructionContext', 'ElementConstructionContext', 'MorphismConstructionContext', 'active_object_context', 'active_element_context', 'active_morphism_context', 'active_construction_context', 'activate_object_context', 'activate_element_context', 'activate_morphism_context', 'deactivate_object_context', 'deactivate_element_context', 'deactivate_morphism_context']
+type ObjectRealization = Callable[[ObjectOfCategory, type[ObjectOfCategory]], None]
 
-__all__ = [
-    'CatElementRoleIdentity',
-    'CategoryPointIdentity',
-    'ElementConstructionContext',
-    'ElementConstructionInput',
-    'ElementRoleIdentity',
-    'MorphismConstructionContext',
-    'MorphismConstructionInput',
-    'MorphismRoleIdentity',
-    'ObjectConstructionContext',
-    'ObjectConstructionInput',
-    'ObjectRoleIdentity',
-    'activate_element_context',
-    'activate_morphism_context',
-    'activate_object_context',
-    'active_construction_context',
-    'active_element_context',
-    'active_morphism_context',
-    'active_object_context',
-    'construction_role',
-    'deactivate_element_context',
-    'deactivate_morphism_context',
-    'deactivate_object_context',
-    'is_constructed',
-    'retain_element_input',
-    'retain_morphism_input',
-    'retain_object_by_datum',
-    'retain_object_input',
-    'retained_element_input',
-    'retained_input',
-    'retained_morphism_input',
-    'retained_object_by_datum',
-    'retained_object_input',
-    'retained_objects',
-    'retained_values',
-]
-
-@dataclass(frozen=True, slots=True, eq=False)
+@dataclass(slots=True, eq=False)
 class ObjectRoleIdentity:
     category: Category
+    universe: Category | None = ...
 
 @dataclass(frozen=True, slots=True, eq=False)
 class ElementRoleIdentity:
@@ -86,9 +45,6 @@ class MorphismConstructionInput[Value: MorphismOfCategory, Datum]:
     identity: MorphismRoleIdentity
     datum: Datum
 
-def construction_role(value: CategoryPoint) -> Role | None:
-    ...
-
 def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: ObjectConstructionInput[Value, Datum]) -> None:
     ...
 
@@ -122,7 +78,7 @@ def retained_object_by_datum[Datum](category: Category, datum: Datum) -> ObjectO
 def retain_object_by_datum[Value: ObjectOfCategory, Datum](category: Category, datum: Datum, value: Value) -> None:
     ...
 
-def retained_input[Value: CategoryPoint, Datum](value: Value) -> ObjectConstructionInput[Any, Datum] | ElementConstructionInput[Value, Datum] | MorphismConstructionInput[Any, Datum]:
+def retained_input[Value: CategoryPoint, Datum](value: Value) -> ObjectConstructionInput[Value, Datum] | ElementConstructionInput[Value, Datum] | MorphismConstructionInput[Value, Datum]:
     ...
 
 @dataclass(slots=True)
@@ -131,7 +87,8 @@ class ObjectConstructionContext:
     identity: ObjectRoleIdentity
     cat_element_identity: CategoryPointIdentity
     nodes: tuple[Node, ...]
-    initialized: list[Node] = ...
+    initialized: list[Node] = field(default_factory=list)
+    initializing_image: ObjectOfCategory | None = ...
 
     def run(self, node: Node, initialize: Callable[[], None]) -> None:
         ...
@@ -145,7 +102,7 @@ class ElementConstructionContext:
     identity: ElementRoleIdentity
     cat_element_identity: ElementRoleIdentity
     nodes: tuple[Node, ...]
-    initialized: list[Node] = ...
+    initialized: list[Node] = field(default_factory=list)
 
     def run(self, node: Node, initialize: Callable[[], None]) -> None:
         ...
@@ -159,7 +116,7 @@ class MorphismConstructionContext:
     identity: MorphismRoleIdentity
     cat_element_identity: CategoryPointIdentity
     nodes: tuple[Node, ...]
-    initialized: list[Node] = ...
+    initialized: list[Node] = field(default_factory=list)
 
     def run(self, node: Node, initialize: Callable[[], None]) -> None:
         ...

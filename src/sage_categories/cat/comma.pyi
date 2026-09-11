@@ -1,4 +1,6 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
@@ -19,7 +21,7 @@ class CommaMorphism:
 
 class CommaCategory(Category[[MorphismCategory.ObjectType, MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: CommaObject) -> None:
             ...
@@ -33,10 +35,10 @@ class CommaCategory(Category[[MorphismCategory.ObjectType, MorphismCategory.Obje
         def arrow(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: CommaMorphism) -> None:
             ...

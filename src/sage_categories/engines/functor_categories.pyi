@@ -1,3 +1,4 @@
-from typing import Any
+__all__ = ['arrow_category']
 
-def arrow_category(category: Any, target: Any, arrows: tuple[Any, ...]) -> tuple[tuple[Any, ...], tuple[Any, ...]]: ...
+def arrow_category(category: object, target: object, arrows: tuple[object, ...]):
+    ...

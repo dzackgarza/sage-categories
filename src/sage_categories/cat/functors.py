@@ -14,27 +14,29 @@ from sage_categories.cat.category import (
     CategoryOfCategories,
     OnMorphism,
     OnObject,
-    Predicate,
-    Proposition,
-    Unknown,
-    UnknownClass,
-    ask,
-    is_placed,
-    is_subcategory,
-    refine,
 )
 from sage_categories.cat.morphisms import (
     FixedEndpointCategory,
     MorphismCategory,
     endpoints,
 )
-from sage_categories.cat.predicates import conjunction, decide, register_handler
+from sage_categories.cat.predicates import (
+    Predicate,
+    Proposition,
+    Unknown,
+    UnknownClass,
+    ask,
+    conjunction,
+    decide,
+    register_handler,
+)
 from sage_categories.cat.properties import (
     Axiom,
     FixedEndpointProperty,
     PropertySubcategory,
 )
 from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict
+from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 
 __all__ = [
     "CreatesLimitsCategory",

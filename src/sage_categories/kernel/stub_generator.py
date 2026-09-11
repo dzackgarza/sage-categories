@@ -8,17 +8,35 @@ never reads a tracked ``.pyi`` file as input (`POL-TYPE-025`, `POL-TYPE-026`).
 from __future__ import annotations
 
 import ast
+import os
 import subprocess
 import sys
 from collections.abc import Iterator
 from importlib import import_module
 from pathlib import Path
+from typing import cast
 
 __all__ = ["generate_stubs"]
 
 
 def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     """Write the compiler-derived stub projection for ``package`` to its package directory."""
+    sage_bin = os.environ.get("SAGE_BIN")
+    output = str(output_directory.resolve())
+    if sage_bin is not None:
+        subprocess.run(
+            [
+                sage_bin,
+                "-c",
+                (
+                    "from pathlib import Path; "
+                    "from sage_categories.kernel.stub_generator import _generate_stubs; "
+                    f"_generate_stubs({package!r}, Path({output!r}))"
+                ),
+            ],
+            check=True,
+        )
+        return tuple(sorted(output_directory.rglob("*.pyi")))
     subprocess.run(
         [
             sys.executable,
@@ -27,7 +45,7 @@ def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
                 "import sys; from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs(sys.argv[1], Path(sys.argv[2]))"
             ),
             package,
-            str(output_directory.resolve()),
+            output,
         ],
         check=True,
     )
@@ -42,7 +60,8 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
 
     sources = tuple(sorted(output_directory.rglob("*.py")))
     for source in sources:
-        import_module(_module_name(package, output_directory, source))
+        if _bootstrap_source(output_directory, source):
+            import_module(_module_name(package, output_directory, source))
     canonical_exports = _canonical_exports(package, output_directory, sources)
     stubgen_main(
         [
@@ -63,21 +82,34 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         module = _module_name(package, output_directory, stub_path)
         providers = _providers_in_module(inheritance, module)
         source_path = stub_path.with_suffix(".py")
-        source = ast.parse(
+        source_tree = ast.parse(
             source_path.read_text(encoding="utf-8"), filename=str(source_path)
         )
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
         _canonicalize_imports(tree, package, canonical_exports)
-        _project_class_aliases(tree, source)
+        _project_class_aliases(tree, source_tree)
         _project_runtime_class_aliases(
             tree, runtime_aliases.get(module, {}), source_modules
         )
         if providers:
             _project_provider_bases(tree, module, providers, source_modules)
+        _hoist_lexically_cyclic_nested_classes(tree, module)
         stub_path.write_text(
             ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8"
         )
     return tuple(sorted(output_directory.rglob("*.pyi")))
+
+
+def _bootstrap_source(output_directory: Path, source: Path) -> bool:
+    """Whether ``source`` participates in the compiler-declaration bootstrap.
+
+    Engine modules own private computation, not category declarations.  Importing
+    them while constructing the static category graph is both unnecessary and can
+    initialize mutually incompatible native runtimes in the generator process.
+    They remain in ``sources`` and are still passed to ``stubgen --no-import``.
+    """
+    relative = source.relative_to(output_directory)
+    return not relative.parts or relative.parts[0] != "engines"
 
 
 def _module_name(package: str, output_directory: Path, stub_path: Path) -> str:
@@ -235,8 +267,8 @@ def _project_class_aliases(
         return result
 
     def type_alias(alias_name: str, declaration: ast.ClassDef) -> ast.TypeAlias:
-        parameters = declaration.type_params
-        parameter_names = [
+        parameters = cast(list[ast.ParamSpec], declaration.type_params)
+        parameter_names: list[ast.expr] = [
             ast.Name(id=parameter.name, ctx=ast.Load()) for parameter in parameters
         ]
         value: ast.expr = ast.Name(id=declaration.name, ctx=ast.Load())
@@ -493,6 +525,7 @@ def _project_runtime_class_aliases(
         if target is None:
             rewritten.append(statement)
             continue
+        assert name is not None
         rewritten.append(
             ast.TypeAlias(
                 name=ast.Name(id=name, ctx=ast.Store()),
@@ -525,6 +558,156 @@ def _project_provider_bases(
             _qualified_module(base, source_modules) for base in bases
         )
     _ensure_module_imports(tree, required_modules)
+
+
+def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> None:
+    """Hoist nested classes whose provider ancestry is lexically cyclic.
+
+    A nested class does not exist until Python has executed the body of its owner.
+    Thus a generated base relation such as ``Declaration -> Owner.Element`` and
+    ``Owner -> Declaration`` is cyclic even though the nominal class graph itself
+    contains no edge from ``Owner.Element`` back to ``Owner``.  Model that lexical
+    availability edge explicitly.  For every nested class in such a cycle, move its
+    class body to a private owner base and make the public owner inherit that base.
+    ``Owner.Element`` then resolves to the *same* inherited class object; no assignment
+    alias or second declaration is introduced (PLAN-native-engine-remediation 18.1).
+    """
+    classes = {entry.name: entry.node for entry in _classes(tree.body, module)}
+    if not classes:
+        return
+
+    top_level = {
+        f"{module}.{statement.name}": statement
+        for statement in tree.body
+        if isinstance(statement, ast.ClassDef)
+    }
+
+    def base_name(expression: ast.expr) -> str | None:
+        while isinstance(expression, ast.Subscript):
+            expression = expression.value
+        parts: list[str] = []
+        while isinstance(expression, ast.Attribute):
+            parts.append(expression.attr)
+            expression = expression.value
+        if not isinstance(expression, ast.Name):
+            return None
+        parts.append(expression.id)
+        name = ".".join(reversed(parts))
+        if name in classes:
+            return name
+        local = f"{module}.{name}"
+        return local if local in classes else None
+
+    dependencies: dict[str, set[str]] = {name: set() for name in classes}
+    for name, node in classes.items():
+        for base in node.bases:
+            dependency = base_name(base)
+            if dependency is not None:
+                dependencies[name].add(dependency)
+        relative = name.removeprefix(f"{module}.")
+        if "." in relative:
+            owner = f"{module}.{relative.split('.', 1)[0]}"
+            if owner in top_level:
+                dependencies[name].add(owner)
+
+    def reaches(start: str, target: str) -> bool:
+        frontier = list(dependencies[start])
+        seen: set[str] = set()
+        while frontier:
+            current = frontier.pop()
+            if current == target:
+                return True
+            if current in seen:
+                continue
+            seen.add(current)
+            frontier.extend(dependencies[current] - seen)
+        return False
+
+    cyclic = {name for name in classes if reaches(name, name)}
+    owners: dict[str, list[ast.ClassDef]] = {}
+    for name in cyclic:
+        relative = name.removeprefix(f"{module}.")
+        if relative.count(".") != 1:
+            continue
+        owner_name, nested_name = relative.split(".")
+        owner = top_level.get(f"{module}.{owner_name}")
+        if owner is None:
+            continue
+        nested = next(
+            (
+                statement
+                for statement in owner.body
+                if isinstance(statement, ast.ClassDef)
+                and statement.name == nested_name
+            ),
+            None,
+        )
+        if nested is not None:
+            owners.setdefault(owner_name, []).append(nested)
+
+    if not owners:
+        return
+
+    replacements: dict[str, ast.expr] = {}
+    helpers: list[ast.ClassDef] = []
+    for owner_name, nested_classes in sorted(owners.items()):
+        owner = top_level[f"{module}.{owner_name}"]
+        nested_names = {nested.name for nested in nested_classes}
+        owner.body[:] = [
+            statement
+            for statement in owner.body
+            if not (
+                isinstance(statement, ast.ClassDef)
+                and statement.name in nested_names
+            )
+        ]
+        helper_name = f"_StaticRoles_{owner_name}"
+        helper = ast.ClassDef(
+            name=helper_name,
+            bases=[],
+            keywords=[],
+            body=nested_classes,
+            decorator_list=[],
+            type_params=[],
+        )
+        helpers.append(helper)
+        owner.bases.append(ast.Name(id=helper_name, ctx=ast.Load()))
+        for nested in nested_classes:
+            replacements[f"{module}.{owner_name}.{nested.name}"] = ast.Attribute(
+                value=ast.Name(id=helper_name, ctx=ast.Load()),
+                attr=nested.name,
+                ctx=ast.Load(),
+            )
+
+    for entry in _classes(tree.body, module):
+        rewritten: list[ast.expr] = []
+        for base in entry.node.bases:
+            name = base_name(base)
+            replacement = replacements.get(name) if name is not None else None
+            if replacement is None:
+                rewritten.append(base)
+                continue
+            if isinstance(base, ast.Subscript):
+                rewritten.append(
+                    ast.Subscript(
+                        value=replacement,
+                        slice=base.slice,
+                        ctx=ast.Load(),
+                    )
+                )
+            else:
+                rewritten.append(replacement)
+        entry.node.bases = rewritten
+
+    insertion = next(
+        (
+            index
+            for index, statement in enumerate(tree.body)
+            if isinstance(statement, ast.ClassDef)
+        ),
+        len(tree.body),
+    )
+    tree.body[insertion:insertion] = helpers
 
 
 class _QualifiedClass:

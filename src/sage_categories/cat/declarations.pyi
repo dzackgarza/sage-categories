@@ -1,4 +1,6 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
@@ -6,13 +8,13 @@ __all__ = ['DeclaredCategory', 'CategoryFamily', 'Sets', 'Posets', 'Groupoids', 
 
 class DeclaredCategory(Category[[], []]):
 
-    class ObjectType(sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def __init__(self, name: str) -> None:

@@ -1,0 +1,59 @@
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.functors import Functor, NaturalTransformation
+from sage_categories.cat.monoidal import ActionsCategory
+from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.structured_objects import EquifierCategory, InserterCategory, MonoidCategory
+from sage_categories.kernel.sage_runtime import cached_method
+__all__ = ['ModuleCategory', 'Modules']
+
+class ModuleCategory(EquifierCategory):
+
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+
+        def action(self) -> MorphismCategory.ObjectType:
+            ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        ...
+
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+        ...
+
+    def __init__(self, first: NaturalTransformation, second: NaturalTransformation, scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.ObjectType, algebras: InserterCategory) -> None:
+        ...
+
+    def scalars(self) -> MonoidCategory.ObjectType:
+        ...
+
+    def actegory(self) -> ActionsCategory.ObjectType:
+        ...
+
+    def underlying_category(self) -> Category:
+        ...
+
+    def scalar_endofunctor(self) -> Functor:
+        ...
+
+    def carrier(self) -> CategoryOfCategories.ElementType:
+        ...
+
+    @cached_method
+    def forgetful(self) -> Functor:
+        ...
+
+    def __call__(self, action_morphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
+        ...
+
+    def homomorphism(self, source: ModuleCategory.ObjectType, target: ModuleCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> ModuleCategory.MorphismType:
+        ...
+
+    def transport(self, module: ModuleCategory.ObjectType, isomorphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
+        ...
+
+    def restriction(self, scalar_morphism: MorphismCategory.ObjectType) -> Functor:
+        ...
+
+def Modules(scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.ObjectType) -> ModuleCategory:
+    ...

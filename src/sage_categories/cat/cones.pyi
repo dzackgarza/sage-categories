@@ -1,4 +1,8 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.comma
+import sage_categories.cat.cones
+import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from _typeshed import Incomplete
 from collections.abc import Callable, Hashable
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -30,7 +34,7 @@ class ConeCategory(CommaSpecialization):
     LimitCones: Incomplete
     ColimitCocones: Incomplete
 
-    class ObjectType(sage_categories.cat.comma.CommaCategory.ObjectType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.comma.CommaCategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def diagram(self) -> Functor:
             ...
@@ -44,10 +48,10 @@ class ConeCategory(CommaSpecialization):
         def transformation(self) -> NaturalTransformation:
             ...
 
-    class ElementType(sage_categories.cat.comma.CommaCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.comma.CommaCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.comma.CommaCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.comma.CommaCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def apex_morphism(self) -> MorphismCategory.ObjectType:
             ...
@@ -73,15 +77,15 @@ class ConeCategory(CommaSpecialization):
 
 class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.cat.cones.ConeCategory.ObjectType, sage_categories.cat.comma.CommaCategory.ObjectType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.cones.ConeCategory.ObjectType, sage_categories.cat.comma.CommaCategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def lift(self, candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.cones.ConeCategory.ElementType, sage_categories.cat.comma.CommaCategory.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.cones.ConeCategory.ElementType, sage_categories.cat.comma.CommaCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.cones.ConeCategory.MorphismType, sage_categories.cat.comma.CommaCategory.MorphismType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.cones.ConeCategory.MorphismType, sage_categories.cat.comma.CommaCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
     def with_universal_data(self, transformation: NaturalTransformation, lift: Lift) -> LimitConesCategory.ObjectType:

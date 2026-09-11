@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from enum import Enum
 from sage_categories.cat.category import Category
+from typing import Protocol
 __all__ = ['Role', 'building_role_classes', 'CategoryPoint', 'prepare_category_subclass', 'ObjectOfCategory', 'ElementOfObject', 'MorphismOfCategory', 'install_category_object_class', 'is_category', 'category_universal_class', 'kernel_base', 'install_cat_element_root', 'RoleCandidate', 'role_of', 'category_of']
 
 class Role(Enum):
@@ -13,10 +14,12 @@ class Role(Enum):
 def building_role_classes() -> Iterator[None]:
     ...
 
-class CategoryPoint:
+class _AttributeWriteTracked:
 
     def __setattr__[State](self, name: str, value: State) -> None:
         ...
+
+class CategoryPoint(_AttributeWriteTracked):
 
     def __hash__(self) -> int:
         ...
@@ -59,6 +62,16 @@ def kernel_base(role: Role) -> type[CategoryPoint]:
 def install_cat_element_root(root: type[CategoryPoint]) -> None:
     ...
 type RoleCandidate = CategoryPoint | int
+
+class _PlacedValue(Protocol):
+
+    def category(self) -> Category:
+        ...
+
+class _ElementValue(Protocol):
+
+    def parent(self) -> _PlacedValue:
+        ...
 
 def role_of(candidate: RoleCandidate) -> Role | None:
     ...

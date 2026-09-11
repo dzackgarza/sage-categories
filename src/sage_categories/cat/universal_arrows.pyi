@@ -1,4 +1,5 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
 from collections.abc import Callable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories

@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
     from sage_categories.cat.properties import FixedEndpointProperty
 
-__all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "hom_inhabitation"]
+__all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "endpoints", "endpoints_in", "hom_inhabitation"]
 
 
 @overload

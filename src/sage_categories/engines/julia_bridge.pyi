@@ -1,4 +1,11 @@
+from functools import cache
 from typing import Any
+__all__ = ['catlab_bridge', 'oscar_bridge']
 
-def catlab_bridge() -> Any: ...
-def oscar_bridge() -> Any: ...
+@cache
+def catlab_bridge() -> Any:
+    ...
+
+@cache
+def oscar_bridge() -> Any:
+    ...

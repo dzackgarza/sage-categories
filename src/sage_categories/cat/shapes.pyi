@@ -1,10 +1,14 @@
-import sage_categories
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
+import sage_categories.sets.finite
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition
-__all__ = ['DiscreteCategory', 'discrete_functor', 'Discrete', 'ThinCategory', 'Thin', 'omega']
+from sage_categories.kernel.sage_runtime import cached_method
+__all__ = ['DiscreteCategory', 'discrete_functor', 'Discrete', 'carrier_comparison', 'ThinCategory', 'Thin', 'omega']
 
 @dataclass(frozen=True, eq=False, slots=True)
 class DiscreteObjectData:
@@ -12,7 +16,7 @@ class DiscreteObjectData:
 
 class DiscreteCategory(Category[[], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: DiscreteObjectData) -> None:
             ...
@@ -20,10 +24,10 @@ class DiscreteCategory(Category[[], []]):
         def point(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self, index_set: CategoryOfCategories.ElementType) -> None:
@@ -66,6 +70,33 @@ def discrete_functor(sets: Category) -> Functor:
     ...
 Discrete: Functor
 
+class DiscreteObjectCategory(DiscreteCategory):
+
+    class ObjectType(sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+        ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+        ...
+
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+        ...
+
+    def __call__(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        ...
+
+    def object_at(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        ...
+
+    def object_point(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        ...
+
+    @cached_method
+    def point_comparison(self) -> Functor:
+        ...
+
+def carrier_comparison(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> Proposition | None:
+    ...
+
 @dataclass(frozen=True, eq=False, slots=True)
 class ThinObjectData:
     point: CategoryOfCategories.ElementType
@@ -89,7 +120,7 @@ class ThinMorphisms(MorphismCategory[[], []]):
 
 class ThinCategory(Category[[], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: ThinObjectData) -> None:
             ...
@@ -97,10 +128,10 @@ class ThinCategory(Category[[], []]):
         def point(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self, carrier: CategoryOfCategories.ElementType, order: Predicate) -> None:

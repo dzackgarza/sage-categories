@@ -1,10 +1,11 @@
 from collections.abc import Callable, Iterable
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.functors import Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, OwnedPredicate as Predicate
 from sage_categories.kernel.sage_runtime import Unknown as Unknown, UnknownClass as UnknownClass
 from sympy.logic.boolalg import Boolean
-__all__ = ['AppliedPredicate', 'Predicate', 'Unknown', 'UnknownClass', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'DecidingProposition', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'ask', 'established', 'assume', 'retract', 'Axiom', 'declared_axiom']
+__all__ = ['AppliedPredicate', 'Predicate', 'Unknown', 'UnknownClass', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'DecidingProposition', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'decide', 'unconditional', 'ask', 'established', 'assume', 'retract', 'Axiom', 'ConstructionFamily', 'declared_axiom']
 type Argument = CategoryOfCategories.ElementType | AppliedQuery | int
 type Decision = bool | UnknownClass
 type PredicateDecision = bool | None
@@ -85,6 +86,12 @@ def negation(proposition: bool | Proposition) -> Proposition:
 def implication(antecedent: bool | Proposition, consequent: bool | Proposition) -> Proposition:
     ...
 
+def decide(proposition: Decision | Proposition, assumptions: Proposition=True) -> bool | None:
+    ...
+
+def unconditional(assumptions: Proposition) -> bool:
+    ...
+
 def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
     ...
 
@@ -125,6 +132,17 @@ class Axiom:
 
     def is_constructed(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> bool:
         ...
+
+    def inverse_image(self, along: Callable[[Category], Functor]) -> Axiom:
+        ...
+
+class InverseImageAxiom(Axiom):
+
+    def __init__(self, target: Axiom, along: Callable[[Category], Functor]) -> None:
+        ...
+
+class ConstructionFamily(Axiom):
+    ...
 
 def declared_axiom(category: Category, name: str) -> Axiom | None:
     ...

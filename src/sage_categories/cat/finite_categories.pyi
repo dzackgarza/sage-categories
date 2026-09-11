@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from sage_categories.cat.canonical import FinitePresentedCategory as FinitePresentedCategory
 from sage_categories.cat.cat_constructions import LimitCategory as LimitCategory
-from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.comma import CommaCategory as CommaCategory
+from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.category import Cat as Cat
-from sage_categories.cat.functors import Fun as Fun, FunctorCategory as FunctorCategory
+from sage_categories.cat.functors import FunctorCategory as FunctorCategory
 from sage_categories.cat.morphisms import Mor as Mor, MorphismCategory as MorphismCategory
 from sage_categories.cat.opposites import OppositeCategory as OppositeCategory, opposite_morphism as opposite_morphism
 from sage_categories.cat.predicates import Unknown as Unknown, UnknownClass as UnknownClass, ask as ask
@@ -22,4 +23,7 @@ def equal(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.
     ...
 
 def finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
+    ...
+
+def finite_objects(category: Category) -> tuple[CategoryOfCategories.ElementType, ...] | UnknownClass:
     ...

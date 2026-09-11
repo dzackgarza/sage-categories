@@ -656,3 +656,46 @@ class Owner:
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "def domain(self) -> DomainCategory:" in projected
     assert "def codomain(self) -> CodomainCategory:" in projected
+
+
+def test_public_static_surface_keeps_export_signature_dependencies() -> None:
+    source = ast.parse(
+        """
+__all__ = ["public"]
+type Support = int
+def public(value: Support) -> Support: ...
+def hidden() -> str: ...
+"""
+    )
+    stub = ast.parse(ast.unparse(source))
+    generator = _stub_generator()
+
+    generator._project_public_static_surface(stub, source)
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "type Support = int" in projected
+    assert "def public(value: Support) -> Support:" in projected
+    assert "def hidden()" not in projected
+
+
+def test_source_value_alias_projection_restores_module_reexport() -> None:
+    source = ast.parse(
+        """
+from example import owner as _owner
+__all__ = ["Public"]
+Public = _owner.Public
+"""
+    )
+    stub = ast.parse(
+        """
+from _typeshed import Incomplete
+Public: Incomplete
+"""
+    )
+    generator = _stub_generator()
+
+    generator._project_source_value_aliases(stub, source)
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "from example.owner import Public as Public" in projected
+    assert "Public: Incomplete" not in projected

@@ -61,11 +61,21 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     stubgen_main(
         [
             "--no-import",
+            "--parse-only",
             "--output",
             str(output_directory.parent),
             *(str(source) for source in sources),
         ]
     )
+    for stub_path in output_directory.rglob("*.pyi"):
+        source_path = stub_path.with_suffix(".py")
+        if not source_path.exists():
+            continue
+        source_tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+        tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
+        _project_source_value_aliases(tree, source_tree)
+        _project_public_static_surface(tree, source_tree)
+        stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
     _refresh_internal_static_definitions(package, output_directory, sources)
     inheritance = compiler().declared_inheritance()
     runtime_aliases = _source_role_aliases(package, output_directory, sources, inheritance)
@@ -510,9 +520,9 @@ def _internal_static_names(
 ) -> dict[str, frozenset[str]]:
     """Return source names used explicitly across package-module boundaries.
 
-    ``stubgen`` respects ``__all__`` even for package-internal checking, so a
-    direct sibling import can disappear from the generated stub although the
-    runtime import is valid.  Keep runtime wildcard exports and the static
+    The public projection follows source ``__all__``, so a direct sibling import can
+    require a declaration omitted from that public surface although the runtime import
+    is valid.  Keep runtime wildcard exports and the static
     package-internal surface distinct: this relation comes from actual source
     imports, not from adding private machinery to ``__all__``.
     """
@@ -752,6 +762,87 @@ def _public_names(tree: ast.Module) -> tuple[str, ...]:
         if isinstance(statement.value, ast.List | ast.Tuple):
             return tuple(element.value for element in statement.value.elts if isinstance(element, ast.Constant) and isinstance(element.value, str))
     return ()
+
+
+def _project_source_value_aliases(tree: ast.Module, source: ast.Module) -> None:
+    """Restore exact re-exports that parse-only stubgen cannot infer.
+
+    A source assignment such as ``Cat = _category.Cat`` is an ordinary value alias,
+    not a new static declaration.  Resolve only aliases through an explicitly imported
+    module and represent them as explicit re-export imports in the stub.
+    """
+    module_aliases: dict[str, str] = {}
+    for statement in source.body:
+        if isinstance(statement, ast.Import):
+            for alias in statement.names:
+                module_aliases[alias.asname or alias.name.split(".", 1)[0]] = alias.name
+        elif isinstance(statement, ast.ImportFrom) and statement.module is not None and statement.level == 0:
+            for alias in statement.names:
+                module_aliases[alias.asname or alias.name] = f"{statement.module}.{alias.name}"
+
+    aliases: dict[str, tuple[str, str]] = {}
+    for statement in source.body:
+        if not isinstance(statement, ast.Assign) or len(statement.targets) != 1:
+            continue
+        target = statement.targets[0]
+        value = statement.value
+        if not isinstance(target, ast.Name) or not isinstance(value, ast.Attribute) or not isinstance(value.value, ast.Name):
+            continue
+        module = module_aliases.get(value.value.id)
+        if module is not None:
+            aliases[target.id] = (module, value.attr)
+    if not aliases:
+        return
+
+    tree.body[:] = [statement for statement in tree.body if not (_statement_names(statement) & aliases.keys())]
+    imports = [
+        ast.ImportFrom(
+            module=module,
+            names=[ast.alias(name=name, asname=target)],
+            level=0,
+        )
+        for target, (module, name) in sorted(aliases.items())
+    ]
+    insertion = next(
+        (index for index, statement in enumerate(tree.body) if not isinstance(statement, ast.Import | ast.ImportFrom)),
+        len(tree.body),
+    )
+    tree.body[insertion:insertion] = imports
+
+
+def _project_public_static_surface(tree: ast.Module, source: ast.Module) -> None:
+    """Keep the explicit public surface and declarations its signatures require.
+
+    Parse-only stubgen deliberately performs no semantic analysis, so it does not apply
+    source ``__all__``.  The source declaration is authoritative.  Starting from those
+    names, retain the transitive closure of top-level declarations referenced by their
+    generated signatures; package-internal cross-module declarations are added later by
+    ``_refresh_internal_static_definitions``.
+    """
+    public = frozenset(_public_names(source))
+    if not public:
+        return
+    declarations: dict[str, list[ast.stmt]] = {}
+    for statement in tree.body:
+        for name in _statement_names(statement):
+            declarations.setdefault(name, []).append(statement)
+
+    required = set(public)
+    while True:
+        selected = {id(statement): statement for name in required for statement in declarations.get(name, ())}
+        loaded = {
+            expression.id for statement in selected.values() for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
+        }
+        added = (loaded & declarations.keys()) - required
+        if not added:
+            break
+        required.update(added)
+
+    tree.body[:] = [
+        statement
+        for statement in tree.body
+        if isinstance(statement, ast.Import | ast.ImportFrom) or not _statement_names(statement) or bool(_statement_names(statement) & required)
+    ]
 
 
 def _project_public_exports(tree: ast.Module, source: ast.Module) -> None:

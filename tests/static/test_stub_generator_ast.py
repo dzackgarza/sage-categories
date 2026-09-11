@@ -719,6 +719,28 @@ class Owner[A=object, B=object](Category):
     assert "_StaticRoles_Owner.ObjectType[A, B]" in projected
 
 
+def test_hoisted_role_defaults_resolve_to_direct_typeinfo() -> None:
+    stub = ast.parse(
+        """
+import typing as _typing
+class Carrier[T = "Owner.ObjectType"]:
+    pass
+_AliasRole = _typing.TypeVar("_AliasRole", default="Owner.ObjectType")
+"""
+    )
+    generator = _stub_generator()
+    helper = "example._StaticRoles_Owner.ObjectType"
+
+    generator._project_hoisted_role_defaults(
+        stub,
+        {"example.Owner.ObjectType": helper},
+    )
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert f"class Carrier[T = {helper}]" in projected
+    assert f'default={helper}' in projected
+
+
 def test_generic_morphism_projection_uses_declared_endpoint_parameters() -> None:
     stub = ast.parse(
         """

@@ -115,6 +115,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
             source_class_parameters,
             source_modules,
         )
+        _project_hoisted_role_defaults(tree, hoisted_role_providers)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
     return tuple(sorted(output_directory.rglob("*.pyi")))
 
@@ -1368,6 +1369,58 @@ def _project_runtime_class_aliases(tree: ast.Module, aliases: dict[str, str], so
             tree,
             {_qualified_module(target, source_modules) for target in aliases.values()},
         )
+
+
+def _project_hoisted_role_defaults(
+    tree: ast.Module,
+    hoisted_role_providers: dict[str, str],
+) -> None:
+    """Resolve quoted role defaults to the direct generated role TypeInfo.
+
+    Source uses quoted forward references because the role owner may not exist yet at
+    runtime class-definition time.  In a completed stub the corresponding role has been
+    hoisted to ``_StaticRoles_<Owner>``.  Keeping the quoted public spelling makes mypy
+    traverse an inherited nested alias and can erase generic arguments; the direct helper
+    TypeInfo is the same nominal class and preserves those arguments.
+
+    Apply the rewrite both to PEP-695 class type parameters and to the legacy ``TypeVar``
+    declarations used by the public ``Category`` class alias.
+    """
+
+    def direct_role(expression: ast.expr | None) -> ast.expr | None:
+        if not isinstance(expression, ast.Constant) or not isinstance(expression.value, str):
+            return expression
+        spelling = expression.value
+        matches = [
+            helper
+            for public, helper in hoisted_role_providers.items()
+            if public.endswith(f".{spelling}") or public == spelling
+        ]
+        if not matches:
+            return expression
+        assert len(matches) == 1, f"ambiguous quoted role default {spelling!r}: {matches!r}"
+        return _base_expression(matches[0])
+
+    for declaration in _classes(tree.body, ""):
+        for parameter in declaration.node.type_params:
+            parameter.default_value = direct_role(parameter.default_value)
+            if isinstance(parameter, ast.TypeVar):
+                parameter.bound = direct_role(parameter.bound)
+
+    for statement in tree.body:
+        if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Call):
+            continue
+        call = statement.value
+        if not (
+            isinstance(call.func, ast.Attribute)
+            and isinstance(call.func.value, ast.Name)
+            and call.func.value.id == "_typing"
+            and call.func.attr == "TypeVar"
+        ):
+            continue
+        for keyword in call.keywords:
+            if keyword.arg == "default":
+                keyword.value = direct_role(keyword.value) or keyword.value
 
 
 def _project_exact_morphism_endpoints(tree: ast.Module) -> None:

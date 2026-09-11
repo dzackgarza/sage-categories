@@ -68,6 +68,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         ]
     )
     for stub_path in output_directory.rglob("*.pyi"):
+        module = _module_name(package, output_directory, stub_path)
         source_path = stub_path.with_suffix(".py")
         if not source_path.exists():
             continue
@@ -75,6 +76,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
         _project_source_value_aliases(tree, source_tree)
         _project_public_static_surface(tree, source_tree)
+        _project_quoted_type_parameter_references(tree, source_tree, module)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
     _refresh_internal_static_definitions(package, output_directory, sources)
     inheritance = compiler().declared_inheritance()
@@ -860,6 +862,39 @@ def _project_source_value_aliases(tree: ast.Module, source: ast.Module) -> None:
         len(tree.body),
     )
     tree.body[insertion:insertion] = imports
+
+
+def _project_quoted_type_parameter_references(
+    tree: ast.Module,
+    source: ast.Module,
+    module: str,
+) -> None:
+    """Preserve quoted PEP-695 bounds/defaults exactly as written in source.
+
+    ``stubgen --parse-only`` resolves a quoted forward reference such as
+    ``T: "Owner" = "Owner"`` into the eager spelling ``T: Owner = Owner``.
+    Under mypy 2.0 that can create placeholder types in a cyclic stub graph and force
+    semantic analysis to defer during its final iteration.  The source spelling is
+    already valid Python 3.14 typing syntax, so retain those quoted references as part
+    of the source-derived static projection rather than asking mypy to reconstruct them.
+    """
+    source_classes = {declaration.name: declaration.node for declaration in _classes(source.body, module)}
+    target_classes = {declaration.name: declaration.node for declaration in _classes(tree.body, module)}
+    for name, source_class in source_classes.items():
+        target_class = target_classes.get(name)
+        if target_class is None:
+            continue
+        source_parameters = {parameter.name: parameter for parameter in source_class.type_params}
+        for parameter in target_class.type_params:
+            source_parameter = source_parameters.get(parameter.name)
+            if source_parameter is None:
+                continue
+            if isinstance(parameter, ast.TypeVar) and isinstance(source_parameter, ast.TypeVar):
+                if isinstance(source_parameter.bound, ast.Constant) and isinstance(source_parameter.bound.value, str):
+                    parameter.bound = copy.deepcopy(source_parameter.bound)
+            source_default = source_parameter.default_value
+            if isinstance(source_default, ast.Constant) and isinstance(source_default.value, str):
+                parameter.default_value = copy.deepcopy(source_default)
 
 
 def _project_public_static_surface(tree: ast.Module, source: ast.Module) -> None:

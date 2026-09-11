@@ -799,3 +799,29 @@ __all__ = ["Public"]
 
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "from example.owner import public as Public" in projected
+
+
+def test_quoted_type_parameter_projection_preserves_forward_references() -> None:
+    source = ast.parse(
+        """
+class Owner:
+    class Role[T: "Owner" = "Owner"]: pass
+
+class Family[T = "Owner"]: pass
+"""
+    )
+    stub = ast.parse(
+        """
+class Owner:
+    class Role[T: Owner = Owner]: pass
+
+class Family[T = Owner]: pass
+"""
+    )
+    generator = _stub_generator()
+
+    generator._project_quoted_type_parameter_references(stub, source, "example")
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "class Role[T: 'Owner' = 'Owner']" in projected
+    assert "class Family[T = 'Owner']" in projected

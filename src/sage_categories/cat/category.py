@@ -204,9 +204,9 @@ def _declares_implementation(functor: MorphismCategory.ObjectType) -> Category |
 class CategoryDeclaration[
     **MorphismData,
     **TwoMorphismData,
-    _ObjectRole = object,
-    _ElementRole = object,
-    _MorphismRole = object,
+    _ObjectRole = "CategoryOfCategories.ElementType",
+    _ElementRole = "CategoryOfCategories.ElementType",
+    _MorphismRole = "MorphismCategory.ObjectType",
 ]:
     """The local ``Cat().ObjectType`` declaration."""
 

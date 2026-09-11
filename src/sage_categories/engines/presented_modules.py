@@ -63,7 +63,7 @@ _cokernel_differences: dict[int, tuple[object, GapElement]] = {}
 @cache
 def _ring() -> GapElement:
     load_packages(PRESENTED_MODULE_PACKAGES)
-    return libgap.HOMALG_MATRICES.ZZ
+    return libgap.HomalgRingOfIntegers()
 
 
 @cache

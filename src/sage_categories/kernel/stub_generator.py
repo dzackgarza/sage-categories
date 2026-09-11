@@ -817,9 +817,9 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
                 dependencies[name].add(dependency)
         relative = name.removeprefix(f"{module}.")
         if "." in relative:
-            owner = f"{module}.{relative.split('.', 1)[0]}"
-            if owner in top_level:
-                dependencies[name].add(owner)
+            lexical_owner_name = f"{module}.{relative.split('.', 1)[0]}"
+            if lexical_owner_name in top_level:
+                dependencies[name].add(lexical_owner_name)
 
     def reaches(start: str, target: str) -> bool:
         frontier = list(dependencies[start])
@@ -841,13 +841,13 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
         if relative.count(".") != 1:
             continue
         owner_name, nested_name = relative.split(".")
-        owner = top_level.get(f"{module}.{owner_name}")
-        if owner is None:
+        owner_class = top_level.get(f"{module}.{owner_name}")
+        if owner_class is None:
             continue
         nested = next(
             (
                 statement
-                for statement in owner.body
+                for statement in owner_class.body
                 if isinstance(statement, ast.ClassDef)
                 and statement.name == nested_name
             ),
@@ -862,27 +862,29 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
     replacements: dict[str, ast.expr] = {}
     helpers: list[ast.ClassDef] = []
     for owner_name, nested_classes in sorted(owners.items()):
-        owner = top_level[f"{module}.{owner_name}"]
+        owner_class = top_level[f"{module}.{owner_name}"]
         nested_names = {nested.name for nested in nested_classes}
-        owner.body[:] = [
+        owner_class.body[:] = [
             statement
-            for statement in owner.body
+            for statement in owner_class.body
             if not (
                 isinstance(statement, ast.ClassDef)
                 and statement.name in nested_names
             )
         ]
         helper_name = f"_StaticRoles_{owner_name}"
+        helper_body: list[ast.stmt] = []
+        helper_body.extend(nested_classes)
         helper = ast.ClassDef(
             name=helper_name,
             bases=[],
             keywords=[],
-            body=nested_classes,
+            body=helper_body,
             decorator_list=[],
             type_params=[],
         )
         helpers.append(helper)
-        owner.bases.append(ast.Name(id=helper_name, ctx=ast.Load()))
+        owner_class.bases.append(ast.Name(id=helper_name, ctx=ast.Load()))
         for nested in nested_classes:
             replacements[f"{module}.{owner_name}.{nested.name}"] = ast.Attribute(
                 value=ast.Name(id=helper_name, ctx=ast.Load()),
@@ -893,8 +895,12 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
     for entry in _classes(tree.body, module):
         rewritten: list[ast.expr] = []
         for base in entry.node.bases:
-            name = base_name(base)
-            replacement = replacements.get(name) if name is not None else None
+            qualified_base_name = base_name(base)
+            replacement = (
+                replacements.get(qualified_base_name)
+                if qualified_base_name is not None
+                else None
+            )
             if replacement is None:
                 rewritten.append(base)
                 continue

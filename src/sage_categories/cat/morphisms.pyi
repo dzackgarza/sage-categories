@@ -29,7 +29,7 @@ def Mor[**M, **T](level: Literal[2], category: Category[M, T]) -> MorphismCatego
     ...
 
 @overload
-def Mor(level: int | Integer, category: Category) -> MorphismCategory[[], []]:
+def Mor(level: int | Integer, category: Category) -> Category:
     ...
 
 class _EndpointsPredicate(Predicate):

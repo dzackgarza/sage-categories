@@ -1,14 +1,52 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from fractions import Fraction
-from sage_categories.algebra.local_fields import ExactLocalFieldPresentation, ExactLocalValue
-from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Predicate
-from sage_categories.geometry.spaces import TopologicalSpacesCategory
-from sage_categories.geometry.topological_rings import TopologicalRingsCategory
-from sage_categories.kernel.sage_runtime import cached_method
-__all__ = ['AdeleValue', 'AdeleOpen', 'AdelePresentation', 'adeles_of_rationals']
+
+from sage_categories.algebra._certified_commutative_ring import certified_commutative_ring as certified_commutative_ring
+from sage_categories.algebra.local_fields import (
+    ExactLocalFieldPresentation as ExactLocalFieldPresentation,
+)
+from sage_categories.algebra.local_fields import (
+    ExactLocalValue as ExactLocalValue,
+)
+from sage_categories.algebra.local_fields import (
+    exact_padic_field as exact_padic_field,
+)
+from sage_categories.algebra.local_fields import (
+    exact_rational_field as exact_rational_field,
+)
+from sage_categories.algebra.local_fields import (
+    exact_real_field as exact_real_field,
+)
+from sage_categories.algebra.local_fields import (
+    prime_indices as prime_indices,
+)
+from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.declarations import Sets as Sets
+from sage_categories.cat.morphisms import Mor as Mor
+from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
+from sage_categories.cat.predicates import Predicate as Predicate
+from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.cat.predicates import register_handler as register_handler
+from sage_categories.cat.shapes import Thin as Thin
+from sage_categories.cat.structured_objects import Rings as Rings
+from sage_categories.geometry.spaces import TopologicalSpaces as TopologicalSpaces
+from sage_categories.geometry.spaces import TopologicalSpacesCategory as TopologicalSpacesCategory
+from sage_categories.geometry.topological_rings import (
+    BinaryContinuity as BinaryContinuity,
+)
+from sage_categories.geometry.topological_rings import (
+    ProductTopologyOpen as ProductTopologyOpen,
+)
+from sage_categories.geometry.topological_rings import (
+    TopologicalRings as TopologicalRings,
+)
+from sage_categories.geometry.topological_rings import (
+    TopologicalRingsCategory as TopologicalRingsCategory,
+)
+from sage_categories.kernel.sage_runtime import cached_method as cached_method
+
+__all__ = ["AdeleOpen", "AdelePresentation", "AdeleValue", "adeles_of_rationals"]
 IntegralityCertificate = Callable[[int], bool]
 LocalComponentRule = Callable[[int], ExactLocalValue]
 LocalCondition = Callable[[ExactLocalValue], bool | None]
@@ -21,23 +59,12 @@ class AdeleValue:
     exceptional_primes: frozenset[int]
     integrality_certificate: IntegralityCertificate
 
-    def finite_component(self, prime: int) -> ExactLocalValue:
-        ...
-
-    def component(self, place: str | int) -> ExactLocalValue:
-        ...
-
-    def certifies_integral_at(self, prime: int) -> bool:
-        ...
-
-    def __neg__(self) -> AdeleValue:
-        ...
-
-    def __add__(self, other: AdeleValue) -> AdeleValue:
-        ...
-
-    def __mul__(self, other: AdeleValue) -> AdeleValue:
-        ...
+    def finite_component(self, prime: int) -> ExactLocalValue: ...
+    def component(self, place: str | int) -> ExactLocalValue: ...
+    def certifies_integral_at(self, prime: int) -> bool: ...
+    def __neg__(self) -> AdeleValue: ...
+    def __add__(self, other: AdeleValue) -> AdeleValue: ...
+    def __mul__(self, other: AdeleValue) -> AdeleValue: ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class AdeleOpen:
@@ -47,20 +74,10 @@ class AdeleOpen:
     finite_conditions: tuple[tuple[int, LocalCondition], ...]
 
     @property
-    def exceptional_primes(self) -> frozenset[int]:
-        ...
-
-    def uses_integral_condition(self, prime: int) -> bool:
-        ...
-
-    def contains(self, value: AdeleValue) -> bool | None:
-        ...
-
-    def included_in(self, other: AdeleOpen) -> bool | None:
-        ...
-
-class _AdeleOpenIncludedPredicate(Predicate):
-    name: str
+    def exceptional_primes(self) -> frozenset[int]: ...
+    def uses_integral_condition(self, prime: int) -> bool: ...
+    def contains(self, value: AdeleValue) -> bool | None: ...
+    def included_in(self, other: AdeleOpen) -> bool | None: ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class AdelePresentation:
@@ -74,37 +91,19 @@ class AdelePresentation:
     empty_open: AdeleOpen
     whole_open: AdeleOpen
 
-    def local_field(self, prime: int) -> ExactLocalFieldPresentation:
-        ...
-
-    def point(self, value: AdeleValue) -> CategoryOfCategories.ElementType:
-        ...
-
-    def value(self, real: ExactLocalValue, finite_components: LocalComponentRule, exceptional_primes: frozenset[int], integrality_certificate: IntegralityCertificate) -> AdeleValue:
-        ...
-
-    def zero_value(self) -> AdeleValue:
-        ...
-
-    def one_value(self) -> AdeleValue:
-        ...
-
-    def diagonal_value(self, value: Fraction | int) -> AdeleValue:
-        ...
-
+    def local_field(self, prime: int) -> ExactLocalFieldPresentation: ...
+    def point(self, value: AdeleValue) -> CategoryOfCategories.ElementType: ...
+    def value(
+        self, real: ExactLocalValue, finite_components: LocalComponentRule, exceptional_primes: frozenset[int], integrality_certificate: IntegralityCertificate
+    ) -> AdeleValue: ...
+    def zero_value(self) -> AdeleValue: ...
+    def one_value(self) -> AdeleValue: ...
+    def diagonal_value(self, value: Fraction | int) -> AdeleValue: ...
     @cached_method
-    def component_map(self, place: str | int) -> MorphismCategory.ObjectType:
-        ...
-
+    def component_map(self, place: str | int) -> MorphismCategory.ObjectType: ...
     @cached_method
-    def diagonal_map(self) -> MorphismCategory.ObjectType:
-        ...
+    def diagonal_map(self) -> MorphismCategory.ObjectType: ...
+    def basic_open(self, real_condition: LocalCondition, finite_conditions: dict[int, LocalCondition]) -> AdeleOpen: ...
+    def open_object(self, open_set: AdeleOpen) -> CategoryOfCategories.ElementType: ...
 
-    def basic_open(self, real_condition: LocalCondition, finite_conditions: dict[int, LocalCondition]) -> AdeleOpen:
-        ...
-
-    def open_object(self, open_set: AdeleOpen) -> CategoryOfCategories.ElementType:
-        ...
-
-def adeles_of_rationals() -> AdelePresentation:
-    ...
+def adeles_of_rationals() -> AdelePresentation: ...

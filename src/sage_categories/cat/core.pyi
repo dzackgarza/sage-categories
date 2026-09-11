@@ -1,130 +1,122 @@
+import sage_categories.cat.category
 import sage_categories.cat.morphisms
-from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
-from sage_categories.cat.functors import Functor, NaturalTransformation
-from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
-from sage_categories.cat.predicates import Proposition
-__all__ = ['GroupoidsCategory', 'CoreCategory', 'CoreMorphismCategory', 'CoreFixedEndpointCategory', 'Core', 'U', 'epsilon']
+import sage_categories.kernel.roles
+from sage_categories.cat.category import (
+    Assignment as Assignment,
+)
+from sage_categories.cat.category import Cat as Cat
+from sage_categories.cat.category import (
+    Category as Category,
+)
+from sage_categories.cat.category import (
+    CategoryOfCategories as CategoryOfCategories,
+)
+from sage_categories.cat.category import (
+    OnMorphism as OnMorphism,
+)
+from sage_categories.cat.category import (
+    OnObject as OnObject,
+)
+from sage_categories.cat.declarations import Groupoids as Groupoids
+from sage_categories.cat.functors import Fun as Fun
+from sage_categories.cat.functors import Functor as Functor
+from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
+from sage_categories.cat.morphisms import FixedEndpointCategory as FixedEndpointCategory
+from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
+from sage_categories.cat.predicates import Decision as Decision
+from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.cat.predicates import ask as ask
+from sage_categories.kernel.refinement import refine as refine
+
+__all__ = ["Core", "CoreCategory", "CoreFixedEndpointCategory", "CoreMorphismCategory", "GroupoidsCategory", "U", "epsilon"]
 
 class _StaticRoles_GroupoidsCategory:
+    class ObjectType(sage_categories.cat.category.CategoryDeclaration): ...
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
-    class ObjectType:
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType):
         ...
 
-    class ElementType:
-        ...
+        def domain(self) -> GroupoidsCategory.ObjectType: ...
+        def codomain(self) -> GroupoidsCategory.ObjectType: ...
 
-    class MorphismType:
-        ...
-
-        def domain(self) -> GroupoidsCategory.ObjectType:
-            ...
-
-        def codomain(self) -> GroupoidsCategory.ObjectType:
-            ...
-
-class GroupoidsCategory(_StaticRoles_GroupoidsCategory, Category[[OnObject, OnMorphism], [Assignment], _StaticRoles_GroupoidsCategory.ObjectType, _StaticRoles_GroupoidsCategory.ElementType, _StaticRoles_GroupoidsCategory.MorphismType]):
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        ...
+class GroupoidsCategory(
+    _StaticRoles_GroupoidsCategory,
+    Category[
+        [OnObject, OnMorphism], [Assignment], _StaticRoles_GroupoidsCategory.ObjectType, _StaticRoles_GroupoidsCategory.ElementType, _StaticRoles_GroupoidsCategory.MorphismType
+    ],
+):
+    def structure_functors(self) -> tuple[Functor, ...]: ...
 
 class _StaticRoles_CoreCategory:
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
-    class ObjectType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType:
-        ...
+        def domain(self) -> CoreCategory.ObjectType: ...
+        def codomain(self) -> CoreCategory.ObjectType: ...
 
-    class MorphismType:
-        ...
-
-        def domain(self) -> CoreCategory.ObjectType:
-            ...
-
-        def codomain(self) -> CoreCategory.ObjectType:
-            ...
-
-class CoreCategory[**MorphismData, **TwoMorphismData](_StaticRoles_CoreCategory, Category[MorphismData, TwoMorphismData, _StaticRoles_CoreCategory.ObjectType, _StaticRoles_CoreCategory.ElementType, _StaticRoles_CoreCategory.MorphismType]):
-
-    def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
-        ...
-
-    def isomorphisms(self) -> Category:
-        ...
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        ...
-
-    def morphism_category_type(self) -> type[CoreMorphismCategory]:
-        ...
-
-    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
-        ...
-
-    def construct_morphism(self, domain: CategoryOfCategories.ElementType, codomain: CategoryOfCategories.ElementType, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismCategory.ObjectType:
-        ...
-
-    def compose_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def inverse_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def retain_inverses(self, forward: MorphismCategory.ObjectType, backward: MorphismCategory.ObjectType) -> None:
-        ...
-
-    def retained_inverse(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | None:
-        ...
+class CoreCategory[**MorphismData, **TwoMorphismData](
+    _StaticRoles_CoreCategory,
+    Category[MorphismData, TwoMorphismData, _StaticRoles_CoreCategory.ObjectType, _StaticRoles_CoreCategory.ElementType, _StaticRoles_CoreCategory.MorphismType],
+):
+    def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None: ...
+    def isomorphisms(self) -> Category: ...
+    def structure_functors(self) -> tuple[Functor, ...]: ...
+    def morphism_category_type(self) -> type[CoreMorphismCategory]: ...
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...
+    def construct_morphism(
+        self, domain: CategoryOfCategories.ElementType, codomain: CategoryOfCategories.ElementType, *args: MorphismData.args, **kwargs: MorphismData.kwargs
+    ) -> MorphismCategory.ObjectType: ...
+    def compose_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType: ...
+    def inverse_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType: ...
+    def retain_inverses(self, forward: MorphismCategory.ObjectType, backward: MorphismCategory.ObjectType) -> None: ...
+    def retained_inverse(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | None: ...
 
 class _StaticRoles_CoreMorphismCategory(sage_categories.cat.morphisms._StaticRoles_MorphismCategory):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
-    class ObjectType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType:
-        ...
+        def domain(self) -> CoreMorphismCategory.ObjectType: ...
+        def codomain(self) -> CoreMorphismCategory.ObjectType: ...
 
-    class MorphismType:
-        ...
-
-        def domain(self) -> CoreMorphismCategory.ObjectType:
-            ...
-
-        def codomain(self) -> CoreMorphismCategory.ObjectType:
-            ...
-
-class CoreMorphismCategory(_StaticRoles_CoreMorphismCategory, MorphismCategory[..., ..., _StaticRoles_CoreMorphismCategory.ObjectType, _StaticRoles_CoreMorphismCategory.ElementType, _StaticRoles_CoreMorphismCategory.MorphismType]):
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        ...
-
-    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
-        ...
-
-    def fixed_endpoint_type(self) -> type[CoreFixedEndpointCategory]:
-        ...
+class CoreMorphismCategory(
+    _StaticRoles_CoreMorphismCategory,
+    MorphismCategory[..., ..., _StaticRoles_CoreMorphismCategory.ObjectType, _StaticRoles_CoreMorphismCategory.ElementType, _StaticRoles_CoreMorphismCategory.MorphismType],
+):
+    def structure_functors(self) -> tuple[Functor, ...]: ...
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...
+    def fixed_endpoint_type(self) -> type[CoreFixedEndpointCategory]: ...
 
 class _StaticRoles_CoreFixedEndpointCategory(sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
-    class ObjectType:
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType:
-        ...
+        def domain(self) -> CoreFixedEndpointCategory.ObjectType: ...
+        def codomain(self) -> CoreFixedEndpointCategory.ObjectType: ...
 
-    class MorphismType:
-        ...
+class CoreFixedEndpointCategory(
+    _StaticRoles_CoreFixedEndpointCategory,
+    FixedEndpointCategory[
+        ...,
+        ...,
+        ...,
+        ...,
+        _StaticRoles_CoreFixedEndpointCategory.ObjectType,
+        _StaticRoles_CoreFixedEndpointCategory.ElementType,
+        _StaticRoles_CoreFixedEndpointCategory.MorphismType,
+    ],
+):
+    def structure_functors(self) -> tuple[Functor, ...]: ...
 
-        def domain(self) -> CoreFixedEndpointCategory.ObjectType:
-            ...
-
-        def codomain(self) -> CoreFixedEndpointCategory.ObjectType:
-            ...
-
-class CoreFixedEndpointCategory(_StaticRoles_CoreFixedEndpointCategory, FixedEndpointCategory[..., ..., _StaticRoles_CoreFixedEndpointCategory.ObjectType, _StaticRoles_CoreFixedEndpointCategory.ElementType, _StaticRoles_CoreFixedEndpointCategory.MorphismType]):
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        ...
 Core: Functor
 U: Functor
 epsilon: NaturalTransformation

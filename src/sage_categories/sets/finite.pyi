@@ -1,114 +1,73 @@
-import sage_categories.cat.slices
-import sage_categories.cat.category
-import sage_categories.cat.morphisms
-import sage_categories.kernel.roles
-from _typeshed import Incomplete
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from functools import cache
-from sage.symbolic.expression import Expression as SageExpression
-from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.declarations import Sets as Sets
-from sage_categories.cat.functors import Functor
-from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Predicate, Proposition, UnknownClass
-from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
-from sympy import Lambda
-from sage_categories.kernel.type_aliases import ContainmentInput
 from typing import Literal, Protocol, overload
-__all__ = ['Sets', 'MapForm', 'ObjectForm', 'SetsCategory', 'FiniteSets']
+
+from _typeshed import Incomplete
+from sage.symbolic.expression import Expression as SageExpression
+from sympy import Lambda
+
+import sage_categories.cat.category
+import sage_categories.cat.morphisms
+import sage_categories.cat.slices
+import sage_categories.kernel.roles
+from sage_categories.cat.category import Cat as Cat
+from sage_categories.cat.category import Category as Category
+from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.cones import cocone as cocone
+from sage_categories.cat.cones import cocone_apex as cocone_apex
+from sage_categories.cat.cones import cone as cone
+from sage_categories.cat.cones import cone_apex as cone_apex
+from sage_categories.cat.declarations import NN as NN
+from sage_categories.cat.declarations import Sets as Sets
+from sage_categories.cat.declarations import omega as omega
+from sage_categories.cat.functors import Fun as Fun
+from sage_categories.cat.functors import Functor as Functor
+from sage_categories.cat.morphisms import Mor as Mor
+from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
+from sage_categories.cat.predicates import (
+    Axiom as Axiom,
+)
+from sage_categories.cat.predicates import (
+    Predicate as Predicate,
+)
+from sage_categories.cat.predicates import (
+    Proposition as Proposition,
+)
+from sage_categories.cat.predicates import (
+    Unknown as Unknown,
+)
+from sage_categories.cat.predicates import (
+    UnknownClass as UnknownClass,
+)
+from sage_categories.cat.predicates import (
+    ask as ask,
+)
+from sage_categories.cat.predicates import (
+    conjunction as conjunction,
+)
+from sage_categories.cat.predicates import (
+    register_handler as register_handler,
+)
+from sage_categories.cat.shapes import realize_discrete_object as realize_discrete_object
+from sage_categories.cat.slices import SliceLikeCategory as SliceLikeCategory
+from sage_categories.cat.slices import SliceProperty as SliceProperty
+from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
+from sage_categories.kernel.type_aliases import ContainmentInput as ContainmentInput
+
+__all__ = ["FiniteSets", "MapForm", "ObjectForm", "Sets", "SetsCategory"]
 type Map = Callable[[Hashable], Hashable]
 type MembershipRule = Callable[[Hashable], Proposition]
 type MapData = Map | Lambda | SageExpression | Mapping[Hashable, Hashable]
 
-class FinitePredicate(Predicate):
-    name: str
-
-class SetMembershipPredicate(Predicate):
-    name: str
-
-class _ProductRule:
-    factors: Incomplete
-
-    def __init__(self, factors: tuple[SetsCategory.ObjectType, ...]) -> None:
-        ...
-
-    def __call__(self, datum: Hashable) -> Proposition:
-        ...
-
-@dataclass(frozen=True, eq=False, slots=True)
-class _IndexedProductValue:
-    diagram: Functor
-    rule: Callable[[Hashable], Hashable]
-
-    def component(self, vertex: CategoryOfCategories.ElementType) -> Hashable:
-        ...
-
-class _IndexedProductRule:
-    diagram: Incomplete
-
-    def __init__(self, diagram: Functor) -> None:
-        ...
-
-    def __call__(self, datum: Hashable) -> Proposition:
-        ...
-
-@dataclass(frozen=True, eq=False, slots=True)
-class _IndexedCoproductValue:
-    diagram: Functor
-    index: Hashable
-    value: Hashable
-
-class _IndexedCoproductRule:
-    diagram: Incomplete
-
-    def __init__(self, diagram: Functor) -> None:
-        ...
-
-    def __call__(self, datum: Hashable) -> Proposition:
-        ...
-
-@dataclass(frozen=True, eq=False, slots=True)
-class _SequentialColimitValue:
-    diagram: Functor
-    stage: Hashable
-    value: Hashable
-
-class _SequentialColimitRule:
-    diagram: Incomplete
-
-    def __init__(self, diagram: Functor) -> None:
-        ...
-
-    def __call__(self, datum: Hashable) -> Proposition:
-        ...
-
-class _PredicateRule:
-
-    def __init__(self, ambient: SetsCategory.ObjectType, predicate: Callable[[SetsCategory.ElementType], Proposition]) -> None:
-        ...
-
-    def __call__(self, datum: Hashable) -> Proposition:
-        ...
-
 class MapForm(Protocol):
-
-    def evaluate(self, datum: Hashable) -> Hashable:
-        ...
-
-    def compose(self, first: MapForm) -> MapForm | None:
-        ...
-
-    def equals(self, other: MapForm) -> bool | None:
-        ...
-
-    def inverse(self) -> MapForm | None:
-        ...
+    def evaluate(self, datum: Hashable) -> Hashable: ...
+    def compose(self, first: MapForm) -> MapForm | None: ...
+    def equals(self, other: MapForm) -> bool | None: ...
+    def inverse(self) -> MapForm | None: ...
 
 class ObjectForm(Protocol):
-
-    def identity(self) -> MapForm:
-        ...
+    def identity(self) -> MapForm: ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _SetMap:
@@ -117,165 +76,80 @@ class _SetMap:
     form: MapForm | None = ...
 
 class _StaticRoles_SetsCategory:
-
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
-
-        def __init__(self, presentation: tuple[Hashable, ...] | MembershipRule) -> None:
-            ...
-
-        def set_presentation(self) -> tuple[Hashable, ...] | MembershipRule:
-            ...
-
-        def representative(self, datum: Hashable) -> Hashable:
-            ...
-
+        def __init__(self, presentation: tuple[Hashable, ...] | MembershipRule) -> None: ...
+        def set_presentation(self) -> tuple[Hashable, ...] | MembershipRule: ...
+        def representative(self, datum: Hashable) -> Hashable: ...
         @cache
-        def point(self, datum: Hashable) -> SetsCategory.ElementType:
-            ...
-
-        def __iter__(self) -> Iterator[SetsCategory.ElementType]:
-            ...
-
-        def __len__(self) -> int:
-            ...
-
-        def __contains__(self, point: ContainmentInput) -> bool:
-            ...
-
-        def membership_proposition(self, point: CategoryOfCategories.ElementType) -> Proposition:
-            ...
+        def point(self, datum: Hashable) -> SetsCategory.ElementType: ...
+        def __iter__(self) -> Iterator[SetsCategory.ElementType]: ...
+        def __len__(self) -> int: ...
+        def __contains__(self, point: ContainmentInput) -> bool: ...
+        def membership_proposition(self, point: CategoryOfCategories.ElementType) -> Proposition: ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
-
-        def __init__(self, datum: Hashable) -> None:
-            ...
-
-        def datum(self) -> Hashable:
-            ...
+        def __init__(self, datum: Hashable) -> None: ...
+        def datum(self) -> Hashable: ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+        def __init__(self, data: Map | _SetMap) -> None: ...
+        def __call__(self, point: CategoryOfCategories.ElementType) -> SetsCategory.ElementType: ...
+        def domain(self) -> SetsCategory.ObjectType: ...
+        def codomain(self) -> SetsCategory.ObjectType: ...
 
-        def __init__(self, data: Map | _SetMap) -> None:
-            ...
-
-        def __call__(self, point: CategoryOfCategories.ElementType) -> SetsCategory.ElementType:
-            ...
-
-        def domain(self) -> SetsCategory.ObjectType:
-            ...
-
-        def codomain(self) -> SetsCategory.ObjectType:
-            ...
-
-class SetsCategory(_StaticRoles_SetsCategory, Category[[Map], [], _StaticRoles_SetsCategory.ObjectType, _StaticRoles_SetsCategory.ElementType, _StaticRoles_SetsCategory.MorphismType]):
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        ...
+class SetsCategory(
+    _StaticRoles_SetsCategory, Category[[Map], [], _StaticRoles_SetsCategory.ObjectType, _StaticRoles_SetsCategory.ElementType, _StaticRoles_SetsCategory.MorphismType]
+):
+    def structure_functors(self) -> tuple[Functor, ...]: ...
     Finite: Incomplete
 
-    def inverse_morphism(self, morphism: SetsCategory.MorphismType) -> SetsCategory.MorphismType:
-        ...
-
+    def inverse_morphism(self, morphism: SetsCategory.MorphismType) -> SetsCategory.MorphismType: ...
     @overload
-    def __call__(self) -> SetsCategory:
-        ...
-
+    def __call__(self) -> SetsCategory: ...
     @overload
-    def __call__(self, values: Iterable[Hashable]) -> SetsCategory.ObjectType:
-        ...
-
-    def from_membership(self, rule: MembershipRule) -> SetsCategory.ObjectType:
-        ...
-
-    def has_chosen_enumeration(self, value: SetsCategory.ObjectType) -> bool:
-        ...
-
-    def chosen_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass:
-        ...
-
-    def finite_points(self, value: SetsCategory.ObjectType) -> tuple[SetsCategory.ElementType, ...] | UnknownClass:
-        ...
-
-    def enumeration_index_inclusion(self, enumeration: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def retain_enumeration(self, enumeration: MorphismCategory.ObjectType, inclusion: MorphismCategory.ObjectType) -> None:
-        ...
-
-    def constant(self, source: SetsCategory.ObjectType, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
-        ...
-
-    def retain_form(self, value: SetsCategory.ObjectType, form: ObjectForm) -> None:
-        ...
-
-    def form_of(self, value: SetsCategory.ObjectType) -> ObjectForm | None:
-        ...
-
-    def map_form(self, arrow: SetsCategory.MorphismType) -> MapForm | None:
-        ...
-
-    def Initial(self) -> SetsCategory.ObjectType:
-        ...
-
-    def subobjects_type(self) -> type[SetSubobjects]:
-        ...
-
-    def Terminal(self) -> SetsCategory.ObjectType:
-        ...
-
-    def point_morphism(self, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
-        ...
-
-    def element_from_defining_morphism(self, arrow: MorphismCategory.ObjectType) -> SetsCategory.ElementType:
-        ...
-
-    def construct_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, action: MapData | _SetMap) -> MorphismCategory.ObjectType:
-        ...
-
-    def construct_identity(self, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        ...
-
-    def composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        ...
-
-    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        ...
-
-    def image_factorization(self, arrow: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-        ...
-
-    def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False]:
-        ...
-
+    def __call__(self, values: Iterable[Hashable]) -> SetsCategory.ObjectType: ...
+    def from_membership(self, rule: MembershipRule) -> SetsCategory.ObjectType: ...
+    def has_chosen_enumeration(self, value: SetsCategory.ObjectType) -> bool: ...
+    def chosen_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass: ...
+    def finite_points(self, value: SetsCategory.ObjectType) -> tuple[SetsCategory.ElementType, ...] | UnknownClass: ...
+    def enumeration_index_inclusion(self, enumeration: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType: ...
+    def retain_enumeration(self, enumeration: MorphismCategory.ObjectType, inclusion: MorphismCategory.ObjectType) -> None: ...
+    def constant(self, source: SetsCategory.ObjectType, point: SetsCategory.ElementType) -> SetsCategory.MorphismType: ...
+    def retain_form(self, value: SetsCategory.ObjectType, form: ObjectForm) -> None: ...
+    def form_of(self, value: SetsCategory.ObjectType) -> ObjectForm | None: ...
+    def map_form(self, arrow: SetsCategory.MorphismType) -> MapForm | None: ...
+    def Initial(self) -> SetsCategory.ObjectType: ...
+    def subobjects_type(self) -> type[SetSubobjects]: ...
+    def Terminal(self) -> SetsCategory.ObjectType: ...
+    def point_morphism(self, point: SetsCategory.ElementType) -> SetsCategory.MorphismType: ...
+    def element_from_defining_morphism(self, arrow: MorphismCategory.ObjectType) -> SetsCategory.ElementType: ...
+    def construct_morphism(
+        self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, action: MapData | _SetMap
+    ) -> MorphismCategory.ObjectType: ...
+    def construct_identity(self, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType: ...
+    def composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType: ...
+    def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]: ...
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]: ...
+    def image_factorization(self, arrow: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
+    def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False]: ...
     @cache
-    def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...]:
-        ...
+    def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...]: ...
 
 class _StaticRoles_SetSubobjects(sage_categories.cat.slices._StaticRoles_SliceProperty):
-
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
-        ...
-
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
-        ...
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-        def domain(self) -> SetSubobjects.ObjectType:
-            ...
+        def domain(self) -> SetSubobjects.ObjectType: ...
+        def codomain(self) -> SetSubobjects.ObjectType: ...
 
-        def codomain(self) -> SetSubobjects.ObjectType:
-            ...
+class SetSubobjects(
+    _StaticRoles_SetSubobjects, SliceProperty[_StaticRoles_SetSubobjects.ObjectType, _StaticRoles_SetSubobjects.ElementType, _StaticRoles_SetSubobjects.MorphismType]
+):
+    def from_predicate(self, predicate: Callable[[SetsCategory.ElementType], Proposition]) -> SliceLikeCategory.ObjectType: ...
 
-class SetSubobjects(_StaticRoles_SetSubobjects, SliceProperty[_StaticRoles_SetSubobjects.ObjectType, _StaticRoles_SetSubobjects.ElementType, _StaticRoles_SetSubobjects.MorphismType]):
-
-    def from_predicate(self, predicate: Callable[[SetsCategory.ElementType], Proposition]) -> SliceLikeCategory.ObjectType:
-        ...
 FiniteSets: Incomplete
 
-def _finite_data(value: SetsCategory.ObjectType) -> tuple[Hashable, ...] | UnknownClass:
-    ...
+def _finite_data(value: SetsCategory.ObjectType) -> tuple[Hashable, ...] | UnknownClass: ...

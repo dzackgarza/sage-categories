@@ -1,109 +1,177 @@
-from _typeshed import Incomplete
 from collections.abc import Callable
-from sage_categories.cat.category import Category
-from sage_categories.cat.functors import Functor
-from sage_categories.kernel.roles import CategoryPoint, ObjectOfCategory, Role
-from sage_categories.kernel.sage_runtime import SageCategory, lazy_attribute
-from typing import Concatenate, NamedTuple
-__all__ = ['SemanticCollisionError', 'Node', 'node', 'same_node', 'inheriting_functors', 'declared_inheritance', 'declared_subtyping', 'compiler', 'install_on_declaration', 'realize_implementation_class', 'construct_category_value', 'compile_category', 'recompile_category', 'implement_category', 'apply_level_shift']
+from typing import Concatenate
 
-class SemanticCollisionError(Exception):
-    ...
+from sage_categories.cat.category import Category as Category
+from sage_categories.cat.functors import Functor as Functor
+from sage_categories.kernel.construction import (
+    CategoryPointIdentity as CategoryPointIdentity,
+)
+from sage_categories.kernel.construction import (
+    ElementConstructionContext as ElementConstructionContext,
+)
+from sage_categories.kernel.construction import (
+    ElementConstructionInput as ElementConstructionInput,
+)
+from sage_categories.kernel.construction import (
+    ElementRoleIdentity as ElementRoleIdentity,
+)
+from sage_categories.kernel.construction import (
+    MorphismConstructionContext as MorphismConstructionContext,
+)
+from sage_categories.kernel.construction import (
+    MorphismConstructionInput as MorphismConstructionInput,
+)
+from sage_categories.kernel.construction import (
+    MorphismRoleIdentity as MorphismRoleIdentity,
+)
+from sage_categories.kernel.construction import (
+    Node as Node,
+)
+from sage_categories.kernel.construction import (
+    ObjectConstructionContext as ObjectConstructionContext,
+)
+from sage_categories.kernel.construction import (
+    ObjectConstructionInput as ObjectConstructionInput,
+)
+from sage_categories.kernel.construction import (
+    ObjectRoleIdentity as ObjectRoleIdentity,
+)
+from sage_categories.kernel.construction import (
+    activate_element_context as activate_element_context,
+)
+from sage_categories.kernel.construction import (
+    activate_morphism_context as activate_morphism_context,
+)
+from sage_categories.kernel.construction import (
+    activate_object_context as activate_object_context,
+)
+from sage_categories.kernel.construction import (
+    active_construction_context as active_construction_context,
+)
+from sage_categories.kernel.construction import (
+    deactivate_element_context as deactivate_element_context,
+)
+from sage_categories.kernel.construction import (
+    deactivate_morphism_context as deactivate_morphism_context,
+)
+from sage_categories.kernel.construction import (
+    deactivate_object_context as deactivate_object_context,
+)
+from sage_categories.kernel.construction import (
+    is_constructed as is_constructed,
+)
+from sage_categories.kernel.construction import (
+    retain_element_input as retain_element_input,
+)
+from sage_categories.kernel.construction import (
+    retain_morphism_input as retain_morphism_input,
+)
+from sage_categories.kernel.construction import (
+    retain_object_by_datum as retain_object_by_datum,
+)
+from sage_categories.kernel.construction import (
+    retain_object_input as retain_object_input,
+)
+from sage_categories.kernel.construction import (
+    retained_element_input as retained_element_input,
+)
+from sage_categories.kernel.construction import (
+    retained_input as retained_input,
+)
+from sage_categories.kernel.construction import (
+    retained_morphism_input as retained_morphism_input,
+)
+from sage_categories.kernel.construction import (
+    retained_object_by_datum as retained_object_by_datum,
+)
+from sage_categories.kernel.construction import (
+    retained_object_input as retained_object_input,
+)
+from sage_categories.kernel.construction import (
+    retained_values as retained_values,
+)
+from sage_categories.kernel.roles import (
+    CategoryPoint as CategoryPoint,
+)
+from sage_categories.kernel.roles import (
+    MorphismOfCategory as MorphismOfCategory,
+)
+from sage_categories.kernel.roles import (
+    ObjectOfCategory as ObjectOfCategory,
+)
+from sage_categories.kernel.roles import (
+    Role as Role,
+)
+from sage_categories.kernel.roles import (
+    building_role_classes as building_role_classes,
+)
+from sage_categories.kernel.roles import (
+    declaration_role as declaration_role,
+)
+from sage_categories.kernel.roles import (
+    install_cat_element_root as install_cat_element_root,
+)
+from sage_categories.kernel.roles import (
+    install_category_declaration_root as install_category_declaration_root,
+)
+from sage_categories.kernel.roles import (
+    install_category_object_class as install_category_object_class,
+)
+from sage_categories.kernel.roles import (
+    kernel_base as kernel_base,
+)
+from sage_categories.kernel.roles import (
+    record_attribute_writes as record_attribute_writes,
+)
+from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
+from sage_categories.kernel.sage_runtime import SageCategory as SageCategory
+from sage_categories.kernel.sage_runtime import dynamic_class as dynamic_class
+from sage_categories.kernel.sage_runtime import lazy_attribute as lazy_attribute
 
-class _KernelRoleRootCategory(SageCategory):
+__all__ = [
+    "Node",
+    "SemanticCollisionError",
+    "apply_level_shift",
+    "compile_category",
+    "compiler",
+    "construct_category_value",
+    "declared_inheritance",
+    "declared_subtyping",
+    "implement_category",
+    "inheriting_functors",
+    "install_method_result_projection_reader",
+    "install_on_declaration",
+    "node",
+    "realize_implementation_class",
+    "recompile_category",
+    "same_node",
+]
+type MethodResultProjection = tuple[str, tuple[tuple[int, int], ...]]
+type MethodResultProjectionReader = Callable[[], dict[str, MethodResultProjection]]
 
-    def __init__(self, role: Role, root: type[CategoryPoint]) -> None:
-        ...
+def install_method_result_projection_reader(reader: MethodResultProjectionReader) -> None: ...
 
-    def super_categories(self) -> list[SageCategory]:
-        ...
+class SemanticCollisionError(Exception): ...
 
-    @lazy_attribute
-    def parent_class(self) -> type[CategoryPoint]:
-        ...
-
-class _RuntimeImplementationCategory(SageCategory):
-    ParentMethods: Incomplete
-
-    def __init__(self, current: Node, targets: tuple[SageCategory, ...], declaration: type[CategoryPoint]) -> None:
-        ...
-
-    def super_categories(self) -> list[SageCategory]:
-        ...
-
-    @lazy_attribute
-    def parent_class(self) -> type[CategoryPoint]:
-        ...
-
-class Node(NamedTuple):
-    category: Category
-    role: Role
-
-def node(category: Category, role: Role) -> Node:
-    ...
-
-def same_node(first: Node, second: Node) -> bool:
-    ...
-
-def inheriting_functors(category: Category) -> tuple[Functor, ...]:
-    ...
-
-def declared_inheritance(category: Category, role: Role) -> tuple[type[CategoryPoint], ...]:
-    ...
-
-def declared_subtyping(category: Category, role: Role) -> tuple[Category, ...]:
-    ...
+def node(category: Category, role: Role) -> Node: ...
+def same_node(first: Node, second: Node) -> bool: ...
+def inheriting_functors(category: Category) -> tuple[Functor, ...]: ...
+def declared_inheritance(category: Category, role: Role) -> tuple[type[CategoryPoint], ...]: ...
+def declared_subtyping(category: Category, role: Role) -> tuple[Category, ...]: ...
 
 class _CompilerProjection:
+    def declared_inheritance(self) -> dict[str, dict[str, tuple[str, ...]]]: ...
+    def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]: ...
+    def declared_method_result_projections(self) -> dict[str, MethodResultProjection]: ...
 
-    def declared_inheritance(self) -> dict[str, dict[str, tuple[str, ...]]]:
-        ...
-
-    def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:
-        ...
-
-def compiler() -> _CompilerProjection:
-    ...
-
-def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member: Callable[Concatenate[CategoryPoint, P], R]) -> None:
-    ...
-
-def realize_implementation_class(value: CategoryPoint, category_type: type[CategoryPoint]) -> None:
-    ...
-
-class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
-    initializer: Callable[[Value, Datum], None]
-    owner: type[Value]
-    written: bool
-type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[Node, object]]
-
-class _SelectedAction(NamedTuple):
-    functor: Functor
-    owner: Node
-    target: Node
-    datum: object
-    representative: CategoryPoint
-
-def construct_category_value(instance: ObjectOfCategory) -> None:
-    ...
-
-def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
-    ...
-
-def recompile_category(category: Category, functors: tuple[Functor, ...]) -> None:
-    ...
-
-def implement_category(category: Category, implementation: type[Category], selected_functors: tuple[Functor, ...], *, augment: bool) -> None:
-    ...
-
-def apply_level_shift(member: Category, placement: Category) -> None:
-    ...
-
-def _refine_implementation_class(value: CategoryPoint, role_class: type[CategoryPoint]) -> None:
-    ...
-
-def runtime_semantic_bases(runtime_class: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...] | None:
-    ...
-
-def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Value]) -> Value:
-    ...
+def compiler() -> _CompilerProjection: ...
+def install_on_declaration[**P, R](local: type[CategoryPoint], name: str, member: Callable[Concatenate[CategoryPoint, P], R]) -> None: ...
+def realize_implementation_class(value: CategoryPoint, category_type: type[CategoryPoint]) -> None: ...
+def construct_category_value(instance: ObjectOfCategory) -> None: ...
+def compile_category(category: Category, functors: tuple[Functor, ...]) -> None: ...
+def recompile_category(category: Category, functors: tuple[Functor, ...]) -> None: ...
+def implement_category(category: Category, implementation: type[Category], selected_functors: tuple[Functor, ...], *, augment: bool) -> None: ...
+def apply_level_shift(member: Category, placement: Category) -> None: ...
+def _refine_implementation_class(value: CategoryPoint, role_class: type[CategoryPoint]) -> None: ...
+def runtime_semantic_bases(runtime_class: type[CategoryPoint]) -> tuple[type[CategoryPoint], ...] | None: ...
+def construct_category_singleton[Value: ObjectOfCategory](category_type: type[Value]) -> Value: ...

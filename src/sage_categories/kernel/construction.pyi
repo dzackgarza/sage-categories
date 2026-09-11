@@ -1,12 +1,66 @@
 from collections.abc import Callable
 from contextvars import Token
 from dataclasses import dataclass, field
-from sage_categories.cat.category import Category
-from sage_categories.kernel.compiler import Node
-from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
-from sage_categories.kernel.roles import Role as Role
-__all__ = ['ObjectRoleIdentity', 'ElementRoleIdentity', 'CategoryPointIdentity', 'CatElementRoleIdentity', 'MorphismRoleIdentity', 'ObjectConstructionInput', 'ElementConstructionInput', 'MorphismConstructionInput', 'retain_object_input', 'retain_element_input', 'retain_morphism_input', 'retained_objects', 'retained_values', 'is_constructed', 'retained_object_input', 'retained_element_input', 'retained_morphism_input', 'retained_object_by_datum', 'retain_object_by_datum', 'retained_input', 'ObjectConstructionContext', 'ElementConstructionContext', 'MorphismConstructionContext', 'active_object_context', 'active_element_context', 'active_morphism_context', 'active_construction_context', 'activate_object_context', 'activate_element_context', 'activate_morphism_context', 'deactivate_object_context', 'deactivate_element_context', 'deactivate_morphism_context']
-type ObjectRealization = Callable[[ObjectOfCategory, type[ObjectOfCategory]], None]
+from typing import NamedTuple
+
+from sage_categories.cat.category import Category as Category
+from sage_categories.kernel.roles import (
+    CategoryPoint as CategoryPoint,
+)
+from sage_categories.kernel.roles import (
+    MorphismOfCategory as MorphismOfCategory,
+)
+from sage_categories.kernel.roles import (
+    ObjectOfCategory as ObjectOfCategory,
+)
+from sage_categories.kernel.roles import (
+    Role as Role,
+)
+from sage_categories.kernel.roles import (
+    role_of as role_of,
+)
+from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
+
+__all__ = [
+    "CatElementRoleIdentity",
+    "CategoryPointIdentity",
+    "ElementConstructionContext",
+    "ElementConstructionInput",
+    "ElementRoleIdentity",
+    "MorphismConstructionContext",
+    "MorphismConstructionInput",
+    "MorphismRoleIdentity",
+    "Node",
+    "ObjectConstructionContext",
+    "ObjectConstructionInput",
+    "ObjectRoleIdentity",
+    "activate_element_context",
+    "activate_morphism_context",
+    "activate_object_context",
+    "active_construction_context",
+    "active_element_context",
+    "active_morphism_context",
+    "active_object_context",
+    "deactivate_element_context",
+    "deactivate_morphism_context",
+    "deactivate_object_context",
+    "is_constructed",
+    "retain_element_input",
+    "retain_morphism_input",
+    "retain_object_input",
+    "retain_object_by_datum",
+    "retained_element_input",
+    "retained_input",
+    "retained_morphism_input",
+    "retained_object_by_datum",
+    "retained_object_input",
+    "retained_objects",
+    "retained_values",
+]
+
+class Node(NamedTuple):
+    category: Category
+    role: Role
 
 @dataclass(slots=True, eq=False)
 class ObjectRoleIdentity:
@@ -20,6 +74,7 @@ class ElementRoleIdentity:
 @dataclass(frozen=True, slots=True, eq=False)
 class CategoryPointIdentity:
     parent: Category
+
 type CatElementRoleIdentity = ElementRoleIdentity | CategoryPointIdentity
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -46,41 +101,20 @@ class MorphismConstructionInput[Value: MorphismOfCategory, Datum]:
     identity: MorphismRoleIdentity
     datum: Datum
 
-def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: ObjectConstructionInput[Value, Datum]) -> None:
-    ...
-
-def retain_element_input[Value: CategoryPoint, Datum](construction_input: ElementConstructionInput[Value, Datum]) -> None:
-    ...
-
-def retain_morphism_input[Value: MorphismOfCategory, Datum](construction_input: MorphismConstructionInput[Value, Datum]) -> None:
-    ...
-
-def retained_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
-    ...
-
-def retained_values() -> tuple[CategoryPoint, ...]:
-    ...
-
-def is_constructed(value: ObjectOfCategory) -> bool:
-    ...
-
-def retained_object_input[Value: ObjectOfCategory, Datum](value: Value) -> ObjectConstructionInput[Value, Datum]:
-    ...
-
-def retained_element_input[Value: CategoryPoint, Datum](value: Value) -> ElementConstructionInput[Value, Datum]:
-    ...
-
-def retained_morphism_input[Value: MorphismOfCategory, Datum](value: Value) -> MorphismConstructionInput[Value, Datum]:
-    ...
-
-def retained_object_by_datum[Datum](category: Category, datum: Datum) -> ObjectOfCategory | None:
-    ...
-
-def retain_object_by_datum[Value: ObjectOfCategory, Datum](category: Category, datum: Datum, value: Value) -> None:
-    ...
-
-def retained_input[Value: CategoryPoint, Datum](value: Value) -> ObjectConstructionInput[Value, Datum] | ElementConstructionInput[Value, Datum] | MorphismConstructionInput[Value, Datum]:
-    ...
+def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: ObjectConstructionInput[Value, Datum]) -> None: ...
+def retain_element_input[Value: CategoryPoint, Datum](construction_input: ElementConstructionInput[Value, Datum]) -> None: ...
+def retain_morphism_input[Value: MorphismOfCategory, Datum](construction_input: MorphismConstructionInput[Value, Datum]) -> None: ...
+def retained_objects(category: Category) -> tuple[ObjectOfCategory, ...]: ...
+def retained_values() -> tuple[CategoryPoint, ...]: ...
+def is_constructed(value: ObjectOfCategory) -> bool: ...
+def retained_object_input[Value: ObjectOfCategory, Datum](value: Value) -> ObjectConstructionInput[Value, Datum]: ...
+def retained_element_input[Value: CategoryPoint, Datum](value: Value) -> ElementConstructionInput[Value, Datum]: ...
+def retained_morphism_input[Value: MorphismOfCategory, Datum](value: Value) -> MorphismConstructionInput[Value, Datum]: ...
+def retained_object_by_datum[Datum](category: Category, datum: Datum) -> ObjectOfCategory | None: ...
+def retain_object_by_datum[Value: ObjectOfCategory, Datum](category: Category, datum: Datum, value: Value) -> None: ...
+def retained_input[Value: CategoryPoint, Datum](
+    value: Value,
+) -> ObjectConstructionInput[Value, Datum] | ElementConstructionInput[Value, Datum] | MorphismConstructionInput[Value, Datum]: ...
 
 @dataclass(slots=True)
 class ObjectConstructionContext:
@@ -91,11 +125,8 @@ class ObjectConstructionContext:
     initialized: list[Node] = field(default_factory=list)
     initializing_image: ObjectOfCategory | None = ...
 
-    def run(self, node: Node, initialize: Callable[[], None]) -> None:
-        ...
-
-    def assert_complete(self) -> None:
-        ...
+    def run(self, node: Node, initialize: Callable[[], None]) -> None: ...
+    def assert_complete(self) -> None: ...
 
 @dataclass(slots=True)
 class ElementConstructionContext:
@@ -105,11 +136,8 @@ class ElementConstructionContext:
     nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
 
-    def run(self, node: Node, initialize: Callable[[], None]) -> None:
-        ...
-
-    def assert_complete(self) -> None:
-        ...
+    def run(self, node: Node, initialize: Callable[[], None]) -> None: ...
+    def assert_complete(self) -> None: ...
 
 @dataclass(slots=True)
 class MorphismConstructionContext:
@@ -119,50 +147,23 @@ class MorphismConstructionContext:
     nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
 
-    def run(self, node: Node, initialize: Callable[[], None]) -> None:
-        ...
+    def run(self, node: Node, initialize: Callable[[], None]) -> None: ...
+    def assert_complete(self) -> None: ...
 
-    def assert_complete(self) -> None:
-        ...
+def active_object_context() -> ObjectConstructionContext | None: ...
+def active_element_context() -> ElementConstructionContext | None: ...
+def active_morphism_context() -> MorphismConstructionContext | None: ...
+def active_construction_context(value: CategoryPoint) -> ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext | None: ...
+def activate_object_context(context: ObjectConstructionContext) -> Token[ObjectConstructionContext | None]: ...
+def activate_element_context(context: ElementConstructionContext) -> Token[ElementConstructionContext | None]: ...
+def activate_morphism_context(context: MorphismConstructionContext) -> Token[MorphismConstructionContext | None]: ...
+def deactivate_object_context(token: Token[ObjectConstructionContext | None]) -> None: ...
+def deactivate_element_context(token: Token[ElementConstructionContext | None]) -> None: ...
+def deactivate_morphism_context(token: Token[MorphismConstructionContext | None]) -> None: ...
 
-def active_object_context() -> ObjectConstructionContext | None:
-    ...
+type ObjectRealization = Callable[[ObjectOfCategory, type[ObjectOfCategory]], None]
 
-def active_element_context() -> ElementConstructionContext | None:
-    ...
-
-def active_morphism_context() -> MorphismConstructionContext | None:
-    ...
-
-def active_construction_context(value: CategoryPoint) -> ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext | None:
-    ...
-
-def activate_object_context(context: ObjectConstructionContext) -> Token[ObjectConstructionContext | None]:
-    ...
-
-def activate_element_context(context: ElementConstructionContext) -> Token[ElementConstructionContext | None]:
-    ...
-
-def activate_morphism_context(context: MorphismConstructionContext) -> Token[MorphismConstructionContext | None]:
-    ...
-
-def deactivate_object_context(token: Token[ObjectConstructionContext | None]) -> None:
-    ...
-
-def deactivate_element_context(token: Token[ElementConstructionContext | None]) -> None:
-    ...
-
-def deactivate_morphism_context(token: Token[MorphismConstructionContext | None]) -> None:
-    ...
-
-def install_object_realization(realization: ObjectRealization) -> None:
-    ...
-
-def realize_object(value: ObjectOfCategory, category_type: type[ObjectOfCategory]) -> None:
-    ...
-
-def construction_role(value: CategoryPoint) -> Role | None:
-    ...
-
-def retain_category_universe(value: ObjectOfCategory, universe: Category) -> None:
-    ...
+def install_object_realization(realization: ObjectRealization) -> None: ...
+def realize_object(value: ObjectOfCategory, category_type: type[ObjectOfCategory]) -> None: ...
+def construction_role(value: CategoryPoint) -> Role | None: ...
+def retain_category_universe(value: ObjectOfCategory, universe: Category) -> None: ...

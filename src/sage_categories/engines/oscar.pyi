@@ -1,6 +1,52 @@
-from sage_categories.engines.julia_bridge import OscarHandle
+from sage_categories.engines.julia_bridge import OscarHandle as OscarHandle
 
-__all__ = ['version', 'prime_field', 'polynomial_ring', 'quotient', 'localization_at_element', 'prime_ideal', 'prime_ideal_preimage', 'localization_at_prime', 'stalk_map', 'hom', 'localization_hom', 'map_apply', 'domain', 'codomain', 'generators', 'ring_contains', 'ring_zero', 'ring_one', 'ring_add', 'ring_multiply', 'ring_negate', 'ring_coerce', 'ring_inverse', 'same_native', 'affine_spec', 'affine_morphism', 'affine_morphism_direct', 'affine_pullback', 'affine_domain', 'affine_codomain', 'covered_scheme', 'simple_gluing', 'glued_covered_scheme', 'covered_patches', 'covered_chart_inclusion', 'covered_chart_map', 'gluing_mediator', 'covered_domain', 'covered_codomain', 'structure_sheaf', 'sheaf_value', 'sheaf_restriction', 'principal_open', 'principal_open_ambient', 'principal_open_inclusion']
+__all__ = [
+    "affine_codomain",
+    "affine_domain",
+    "affine_morphism",
+    "affine_morphism_direct",
+    "affine_pullback",
+    "affine_spec",
+    "codomain",
+    "covered_chart_inclusion",
+    "covered_chart_map",
+    "covered_codomain",
+    "covered_domain",
+    "covered_patches",
+    "covered_scheme",
+    "domain",
+    "generators",
+    "glued_covered_scheme",
+    "gluing_mediator",
+    "hom",
+    "localization_at_element",
+    "localization_at_prime",
+    "localization_hom",
+    "map_apply",
+    "polynomial_ring",
+    "prime_field",
+    "prime_ideal",
+    "prime_ideal_preimage",
+    "principal_open",
+    "principal_open_ambient",
+    "principal_open_inclusion",
+    "quotient",
+    "ring_add",
+    "ring_coerce",
+    "ring_contains",
+    "ring_inverse",
+    "ring_multiply",
+    "ring_negate",
+    "ring_one",
+    "ring_zero",
+    "same_native",
+    "sheaf_restriction",
+    "sheaf_value",
+    "simple_gluing",
+    "stalk_map",
+    "structure_sheaf",
+    "version",
+]
 
 def version() -> str: ...
 def prime_field(characteristic: int) -> OscarHandle: ...
@@ -38,7 +84,9 @@ def glued_covered_scheme(left_chart: OscarHandle, right_chart: OscarHandle, glui
 def covered_patches(scheme: OscarHandle) -> tuple[OscarHandle, ...]: ...
 def covered_chart_inclusion(source: OscarHandle, chart: OscarHandle, glued: OscarHandle) -> OscarHandle: ...
 def covered_chart_map(source: OscarHandle, source_chart: OscarHandle, target: OscarHandle, affine_map: OscarHandle) -> OscarHandle: ...
-def gluing_mediator(glued: OscarHandle, target: OscarHandle, left_chart: OscarHandle, right_chart: OscarHandle, left_map: OscarHandle, right_map: OscarHandle) -> OscarHandle: ...
+def gluing_mediator(
+    glued: OscarHandle, target: OscarHandle, left_chart: OscarHandle, right_chart: OscarHandle, left_map: OscarHandle, right_map: OscarHandle
+) -> OscarHandle: ...
 def covered_domain(mapping: OscarHandle) -> OscarHandle: ...
 def covered_codomain(mapping: OscarHandle) -> OscarHandle: ...
 def structure_sheaf(scheme: OscarHandle) -> OscarHandle: ...

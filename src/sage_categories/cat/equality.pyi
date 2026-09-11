@@ -1,5 +1,5 @@
-from sage_categories.cat.predicates import Predicate
-__all__ = ['equality_predicate', '_EqualityPredicate@24']
+from sage_categories.cat.predicates import Predicate as Predicate
 
-def equality_predicate() -> Predicate:
-    ...
+__all__ = ["equality_predicate"]
+
+def equality_predicate() -> Predicate: ...

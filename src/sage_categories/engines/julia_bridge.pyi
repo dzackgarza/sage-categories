@@ -2,7 +2,9 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Any
 
-__all__ = ['catlab_bridge', 'oscar_bridge']
+from _typeshed import Incomplete
+
+__all__ = ["catlab_bridge", "oscar_bridge"]
 
 @cache
 def catlab_bridge() -> Any: ...
@@ -10,11 +12,6 @@ def catlab_bridge() -> Any: ...
 @dataclass(frozen=True, eq=False, slots=True)
 class OscarHandle:
     index: int
-
-class _OscarWorker:
-    def __init__(self) -> None: ...
-    def close(self) -> None: ...
-    def request(self, operation: str, *arguments: object) -> object: ...
 
 class _OscarBridge:
     def __init__(self) -> None: ...
@@ -27,3 +24,15 @@ class _OscarBridge:
 
 @cache
 def oscar_bridge() -> _OscarBridge: ...
+
+class _OscarWorker:
+    _stderr_path: Incomplete
+    _stderr: Incomplete
+    _process: Incomplete
+    _stdin: Incomplete
+    _stdout: Incomplete
+    _lock: Incomplete
+
+    def __init__(self) -> None: ...
+    def close(self) -> None: ...
+    def request(self, operation: str, *arguments: object) -> object: ...

@@ -1,4 +1,3 @@
-__all__ = ['install']
+__all__ = ["install"]
 
-def install() -> None:
-    ...
+def install() -> None: ...

@@ -61,6 +61,18 @@ Twelve are `docs: record ...` write-ups into COMPLAINTS, which grew by 250 lines
 Eight are feature work.
 The tree gained 3,628 lines and 71 methods, five new classes — roughly one node's worth of surface for a day of a worker's whole attention.
 
+**Before repairing the gate, move it to the tier it belongs on.** The three tiers already exist here and one of them is already right: `architecture` and `plan-state` run on `test-push`, described in the justfile as "a hard stop before push", which is exactly where a hard stop belongs. `test-commit` is the problem — it delegates to the shared Sage QC commit tier, which runs the static and type projection over the project, and that is a quality gate standing where a sanity check should be. That is why twenty-five commit subjects in a day end in `[known red: ...]`: the gate is being asked a question it cannot answer yet, on every single commit, while the mathematics it is guarding has not been written.
+
+What belongs on each tier here:
+
+- **Commit** — does the module import, does it parse, does it satisfy the repository's own cheap invariants, is the node it claims real. The things a worker forgot, caught while the fix is seconds. Not mypy over the project, and not a static projection that depends on stubs which do not yet exist.
+- **Push** — the static projection, the architecture invariants, the import contracts, the Sage suite. `test-push` already carries two of those; the static projection joins them.
+- **Contribution** — the promise to anyone outside: coherent, installable, defensible. That one does not move.
+
+Choose this in *this* repository's justfile, which is what selects the tier each check runs on. If the shared `ai-review-ci` Sage tier cannot express the split, that is a defect to file against that repository with the exact recipe and diagnostic — not something to route around with a local reimplementation of the checks.
+
+The point is not a lighter standard. It is that the standard is currently applied where it can only be failed, so it produces a red subject line instead of a repair, and the worker spends its day answering the gate rather than writing the mathematics the gate exists to protect.
+
 Those three nodes each carry `Needs: none` and all three are prerequisites of `acceptance`, so nothing downstream can be accepted while they are open.
 That is the ordinary consequence of the graph; what makes them urgent rather than merely required is that every other node is currently being delivered *through* them, at the cost above.
 A repository where the majority of commits announce a red gate is not deferring verification by policy — it is paying for verification it does not get.

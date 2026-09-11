@@ -10,8 +10,8 @@ from sage.misc.cachefunc import cached_function, cached_method
 from sage.misc.lazy_attribute import lazy_attribute
 from sage.misc.unknown import Unknown, UnknownClass
 from sage.rings.integer import Integer
-from sage.sets.family import LazyFamily
 from sage.sets.disjoint_set import DisjointSet
+from sage.sets.family import LazyFamily
 from sage.structure.coerce_dict import MonoDict, TripleDict
 from sage.structure.dynamic_class import dynamic_class
 

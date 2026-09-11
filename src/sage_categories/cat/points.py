@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Decision, Unknown
 from sage_categories.cat.predicates import Predicate, Proposition, register_handler
 
 if TYPE_CHECKING:

@@ -31,14 +31,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from sympy import ask as sympy_ask, false
+from sympy import ask as sympy_ask
+from sympy import false
 
 from sage_categories.cat.category import Category, member
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
+from sage_categories.cat.predicates import Decision, Predicate, Proposition, UnknownClass, ask, register_handler
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 

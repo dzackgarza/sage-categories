@@ -25,8 +25,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sage_categories.cat.constructions import UniversalPresentation, constructed_data
 from sage_categories.cat.cones import cocone, cocones, cone, cones
+from sage_categories.cat.constructions import UniversalPresentation, constructed_data
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.slices import CommaCategory, comma_category
 from sage_categories.kernel.retention import identity_key
@@ -62,22 +62,14 @@ def _kan_presentation(
     point = along.codomain().point_functor(value)
     if left:
         comma = comma_category(along, point)
-        return constructed_data(
-            functor.codomain().Colimits(comma), functor * comma.first_projection()
-        )
+        return constructed_data(functor.codomain().Colimits(comma), functor * comma.first_projection())
     comma = comma_category(point, along)
-    return constructed_data(
-        functor.codomain().Limits(comma), functor * comma.second_projection()
-    )
+    return constructed_data(functor.codomain().Limits(comma), functor * comma.second_projection())
 
 
 @cached_function(key=identity_key)
-def _left_retained(
-    along: Functor, functor: Functor
-) -> tuple[Functor, NaturalTransformation]:
-    assert along.domain() is functor.domain(), (
-        f"{along!r} and {functor!r} have different domains"
-    )
+def _left_retained(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransformation]:
+    assert along.domain() is functor.domain(), f"{along!r} and {functor!r} have different domains"
     source, target, values = along.domain(), along.codomain(), functor.codomain()
 
     def comma(member_object: CategoryOfCategories.ElementType) -> CommaCategory:
@@ -96,11 +88,7 @@ def _left_retained(
         induced = cocone(
             lower.diagram(),
             upper.apex(),
-            lambda vertex: upper.leg(
-                destination.from_arrow(
-                    vertex.first(), vertex.second(), morphism * vertex.arrow()
-                )
-            ),
+            lambda vertex: upper.leg(destination.from_arrow(vertex.first(), vertex.second(), morphism * vertex.arrow())),
         )
         return lower.lift(cocones(lower.diagram())(induced))
 
@@ -113,19 +101,13 @@ def _left_retained(
         identity = target.morphism_category(1)(image, image).one()
         return at(image).leg(comma(image).from_arrow(member_object, _star(), identity))
 
-    unit = Fun(source, values).morphism_category(1)(functor, extension * along)(
-        unit_component
-    )
+    unit = Fun(source, values).morphism_category(1)(functor, extension * along)(unit_component)
     return extension, unit
 
 
 @cached_function(key=identity_key)
-def _right_retained(
-    along: Functor, functor: Functor
-) -> tuple[Functor, NaturalTransformation]:
-    assert along.domain() is functor.domain(), (
-        f"{along!r} and {functor!r} have different domains"
-    )
+def _right_retained(along: Functor, functor: Functor) -> tuple[Functor, NaturalTransformation]:
+    assert along.domain() is functor.domain(), f"{along!r} and {functor!r} have different domains"
     source, target, values = along.domain(), along.codomain(), functor.codomain()
 
     def comma(member_object: CategoryOfCategories.ElementType) -> CommaCategory:
@@ -144,11 +126,7 @@ def _right_retained(
         induced = cone(
             upper.diagram(),
             lower.apex(),
-            lambda vertex: lower.leg(
-                origin.from_arrow(
-                    vertex.first(), vertex.second(), vertex.arrow() * morphism
-                )
-            ),
+            lambda vertex: lower.leg(origin.from_arrow(vertex.first(), vertex.second(), vertex.arrow() * morphism)),
         )
         return upper.lift(cones(upper.diagram())(induced))
 
@@ -161,9 +139,7 @@ def _right_retained(
         identity = target.morphism_category(1)(image, image).one()
         return at(image).leg(comma(image).from_arrow(_star(), member_object, identity))
 
-    counit = Fun(source, values).morphism_category(1)(extension * along, functor)(
-        counit_component
-    )
+    counit = Fun(source, values).morphism_category(1)(extension * along, functor)(counit_component)
     return extension, counit
 
 
@@ -197,9 +173,7 @@ def right_kan_lift(
     """The unique ``H => Ran_K(F)`` induced by ``H K => F``."""
     extension = right_kan_extension(along, functor)
     assert candidate in Fun(along.codomain(), functor.codomain())
-    assert transformation in Fun(along.domain(), functor.codomain()).morphism_category(
-        1
-    )(candidate * along, functor)
+    assert transformation in Fun(along.domain(), functor.codomain()).morphism_category(1)(candidate * along, functor)
 
     def component(
         value: CategoryOfCategories.ElementType,
@@ -210,17 +184,12 @@ def right_kan_lift(
                 cone(
                     limit.diagram(),
                     candidate.on_object(value),
-                    lambda vertex: (
-                        transformation.component(vertex.second())
-                        * candidate.on_morphism(vertex.arrow())
-                    ),
+                    lambda vertex: transformation.component(vertex.second()) * candidate.on_morphism(vertex.arrow()),
                 )
             )
         )
 
-    return Fun(along.codomain(), functor.codomain()).morphism_category(1)(
-        candidate, extension
-    )(component)
+    return Fun(along.codomain(), functor.codomain()).morphism_category(1)(candidate, extension)(component)
 
 
 @cached_function(key=identity_key)
@@ -233,9 +202,7 @@ def left_kan_desc(
     """The unique ``Lan_K(F) => H`` induced by ``F => H K``."""
     extension = left_kan_extension(along, functor)
     assert candidate in Fun(along.codomain(), functor.codomain())
-    assert transformation in Fun(along.domain(), functor.codomain()).morphism_category(
-        1
-    )(functor, candidate * along)
+    assert transformation in Fun(along.domain(), functor.codomain()).morphism_category(1)(functor, candidate * along)
 
     def component(
         value: CategoryOfCategories.ElementType,
@@ -246,43 +213,32 @@ def left_kan_desc(
                 cocone(
                     colimit.diagram(),
                     candidate.on_object(value),
-                    lambda vertex: (
-                        candidate.on_morphism(vertex.arrow())
-                        * transformation.component(vertex.first())
-                    ),
+                    lambda vertex: candidate.on_morphism(vertex.arrow()) * transformation.component(vertex.first()),
                 )
             )
         )
 
-    return Fun(along.codomain(), functor.codomain()).morphism_category(1)(
-        extension, candidate
-    )(component)
+    return Fun(along.codomain(), functor.codomain()).morphism_category(1)(extension, candidate)(component)
 
 
 @cached_function(key=identity_key)
-def right_kan_adjunction(
-    along: Functor, values: Category
-) -> CategoryOfCategories.ElementType:
+def right_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategories.ElementType:
     """The adjunction ``K* ⊣ Ran_K``, including the action on transformations."""
     from sage_categories.cat.calculus import precompose
     from sage_categories.cat.comma import comma_objects
+    from sage_categories.cat.morphisms import Mor
     from sage_categories.cat.universal_arrows import (
         RightUniversalArrows,
         TerminalObjects,
     )
-    from sage_categories.cat.morphisms import Mor
 
     restriction = precompose(along, values)
     star = _star()
     identity = Mor(Cat().Terminal())(star, star).one()
 
     def choose(functor: Functor) -> CategoryOfCategories.ElementType:
-        comma = comma_objects(
-            restriction, restriction.codomain().point_functor(functor)
-        )
-        value = comma.from_arrow(
-            right_kan_extension(along, functor), star, right_kan_counit(along, functor)
-        )
+        comma = comma_objects(restriction, restriction.codomain().point_functor(functor))
+        value = comma.from_arrow(right_kan_extension(along, functor), star, right_kan_counit(along, functor))
         return TerminalObjects(comma)(
             value,
             lambda candidate: comma.morphism_from_pair(
@@ -297,26 +253,20 @@ def right_kan_adjunction(
 
 
 @cached_function(key=identity_key)
-def left_kan_adjunction(
-    along: Functor, values: Category
-) -> CategoryOfCategories.ElementType:
+def left_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategories.ElementType:
     """The adjunction ``Lan_K ⊣ K*``, including the action on transformations."""
     from sage_categories.cat.calculus import precompose
     from sage_categories.cat.comma import comma_objects
-    from sage_categories.cat.universal_arrows import InitialObjects, LeftUniversalArrows
     from sage_categories.cat.morphisms import Mor
+    from sage_categories.cat.universal_arrows import InitialObjects, LeftUniversalArrows
 
     restriction = precompose(along, values)
     star = _star()
     identity = Mor(Cat().Terminal())(star, star).one()
 
     def choose(functor: Functor) -> CategoryOfCategories.ElementType:
-        comma = comma_objects(
-            restriction.codomain().point_functor(functor), restriction
-        )
-        value = comma.from_arrow(
-            star, left_kan_extension(along, functor), left_kan_unit(along, functor)
-        )
+        comma = comma_objects(restriction.codomain().point_functor(functor), restriction)
+        value = comma.from_arrow(star, left_kan_extension(along, functor), left_kan_unit(along, functor))
         return InitialObjects(comma)(
             value,
             lambda candidate: comma.morphism_from_pair(

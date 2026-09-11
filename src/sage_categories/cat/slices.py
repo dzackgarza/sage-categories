@@ -29,8 +29,8 @@ from sage_categories.cat.constructions import cone
 from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.properties import FullSubcategory
 from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
+from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.sage_runtime import MonoDict
 
@@ -226,11 +226,7 @@ class SliceLikeCategory(CommaSpecialization):
         """The pullback of a property subcategory of ``Mor(C)`` along the defining-arrow functor, retained per property."""
         if property_category not in self._properties:
             family = self.property_type(property_category)(self, property_category)
-            if (
-                self._fixed_label == 1
-                and property_category is self._base_of_slice.morphism_category(1).Monomorphisms()
-                and self._fixed in self._base_of_slice.Products()
-            ):
+            if self._fixed_label == 1 and property_category is self._base_of_slice.morphism_category(1).Monomorphisms() and self._fixed in self._base_of_slice.Products():
                 family._product_subobjects = SubobjectsOfProduct(family, property_category)
             self._properties[property_category] = family
         return self._properties[property_category]
@@ -258,7 +254,12 @@ class SliceLikeCategory(CommaSpecialization):
         varying = self.varying_end(morphism)
         return self.from_arrow(varying if self._fixed_label == 1 else _star(), _star() if self._fixed_label == 1 else varying, morphism)
 
-    def construct_morphism(self, domain: SliceLikeCategory.ObjectType, codomain: SliceLikeCategory.ObjectType, varying: MorphismCategory.ObjectType) -> SliceLikeCategory.MorphismType:
+    def construct_morphism(
+        self,
+        domain: SliceLikeCategory.ObjectType,
+        codomain: SliceLikeCategory.ObjectType,
+        varying: MorphismCategory.ObjectType,
+    ) -> SliceLikeCategory.MorphismType:
         return self.morphism_from_pair(domain, codomain, varying if self._fixed_label == 1 else _star_identity(), _star_identity() if self._fixed_label == 1 else varying)
 
     def _square(self, triangle: SliceLikeCategory.MorphismType) -> NaturalTransformation:
@@ -348,19 +349,25 @@ def _construct_comma_category(
 
     def mediator(candidate: NaturalTransformation) -> Functor:
         pair, arrow = candidate.component(diagram.domain()(0)), candidate.component(diagram.domain()(1))
+
         def on_object(value: CategoryOfCategories.ElementType) -> CommaCategory.ObjectType:
             components = pair.on_object(value)
             image = arrow.on_object(value)
             defining = arrow.codomain().diagram(image).on_morphism(_walking_arrow().generator("0->1"))
             return result.from_arrow(components.family_component(0), components.family_component(1), defining)
-        return Fun(pair.domain(), result)(on_object, lambda morphism: result.morphism_from_pair(
-            on_object(morphism.domain()), on_object(morphism.codomain()),
-            pair.on_morphism(morphism).family_component(0), pair.on_morphism(morphism).family_component(1)))
+
+        return Fun(pair.domain(), result)(
+            on_object,
+            lambda morphism: result.morphism_from_pair(
+                on_object(morphism.domain()), on_object(morphism.codomain()), pair.on_morphism(morphism).family_component(0), pair.on_morphism(morphism).family_component(1)
+            ),
+        )
 
     return Cat().Pullbacks().with_universal_data(diagram, result, cone(diagram, result, lambda vertex: legs[diagram.domain().label(vertex)]), mediator)
 
 
 # -- the fixed-object construction categories (POL-CAT-092/094, POL-CAT-026, POL-FUN-013) ----
+
 
 # ``has_morphism_property(x, S)``: the defining arrow of ``x`` is an object of the
 # property subcategory of ``Mor(C)`` that ``S`` pulls back.

@@ -43,9 +43,8 @@ from sage_categories.cat.dual_functor_categories import dual_functor_category_eq
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import endpoints
 from sage_categories.cat.opposites import opposite_morphism
-from sage_categories.cat.shapes import Discrete, DiscreteCategory
-from sage_categories.cat.predicates import Decision, Unknown
-from sage_categories.cat.predicates import ask
+from sage_categories.cat.predicates import Decision, Unknown, ask
+from sage_categories.cat.shapes import DiscreteCategory
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
@@ -125,6 +124,7 @@ def from_object_rule(functors: FunctorCategory, rule: Callable[[DiscreteCategory
 @cached_function(key=lambda functors, rule: identity_key(functors.domain(), rule))
 def _discrete_diagram(functors: FunctorCategory, rule: Callable[[DiscreteCategory.ObjectType], CategoryOfCategories.ElementType]) -> Functor:
     """A discrete diagram sends each identity to the identity of its image."""
+
     def image_identity(identity: DiscreteCategory.MorphismType) -> MorphismCategory.ObjectType:
         image = rule(identity.domain())
         return image.category().morphism_category(1)(image, image).one()

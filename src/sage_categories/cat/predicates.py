@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
+import operator
 from collections.abc import Callable, Iterable
 from functools import partial
-import operator
 from typing import TYPE_CHECKING
 
-from sympy import And, Implies, Not, Or, ask as sympy_ask
+from sympy import And, Implies, Not, Or
+from sympy import ask as sympy_ask
 from sympy.logic.boolalg import Boolean, BooleanAtom
 
 from sage_categories.kernel.predicates import (
     AppliedPredicate,
-    OwnedPredicate as Predicate,
     ask_query,
     assume_property,
     axiom_layer,
@@ -22,7 +22,10 @@ from sage_categories.kernel.predicates import (
     register_predicate_handler,
     register_query_handler,
 )
-from sage_categories.kernel.sage_runtime import MonoDict, Unknown, UnknownClass, cached_method, uncamelcase
+from sage_categories.kernel.predicates import (
+    OwnedPredicate as Predicate,
+)
+from sage_categories.kernel.sage_runtime import Unknown, UnknownClass, uncamelcase
 from sage_categories.kernel.type_aliases import EqualityInput
 
 if TYPE_CHECKING:

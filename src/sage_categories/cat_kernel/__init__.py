@@ -6,8 +6,8 @@ declared properties to decide placement and inheritance, and generating each axi
 property subcategory with its inclusion ``C.P() -> C`` and its predicate ``is_p()``.
 
 This layer imports from the kernel and from ``Cat``; neither imports it, and no leaf
-imports it.  So it hands its work down to the two layers below, and ``sage_categories``
-calls ``install`` once ``Cat`` is loaded and before any category is declared.
+imports it.  So it hands its work down to the two layers below, and the root package's
+private bootstrap module calls ``install`` before ``Cat`` is loaded.
 """
 
 from sage_categories.cat_kernel import axioms as _axioms

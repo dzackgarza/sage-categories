@@ -10,17 +10,19 @@ domain, paths of a finitely presented category).  Everything else is ``Unknown``
 
 from __future__ import annotations
 
-from sage_categories.cat.predicates import Predicate
 from typing import TYPE_CHECKING
 
+from sage_categories.cat.predicates import Predicate
+
 if TYPE_CHECKING:
-    from sage_categories.cat.category import CategoryOfCategories
+    pass
 
 __all__ = ["equality_predicate"]
 
 
 def equality_predicate() -> Predicate:
     """A fresh equality predicate whose first handler is identity."""
+
     class _EqualityPredicate(Predicate):
         name = "equal"
 

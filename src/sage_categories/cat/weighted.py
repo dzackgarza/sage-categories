@@ -33,7 +33,7 @@ __all__ = [
 from collections.abc import Callable
 
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.cones import cone, cocone, cones, cocones
+from sage_categories.cat.cones import cocone, cocones, cone, cones
 from sage_categories.cat.constructions import constructed_data
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.indexed import Grothendieck, IndexedCategories
@@ -82,16 +82,12 @@ def _weighted_diagram(weight: Functor, diagram: Functor, dual: bool) -> Functor:
     return diagram * projection
 
 
-def weighted_limit(
-    weight: Functor, diagram: Functor
-) -> CategoryOfCategories.ElementType:
+def weighted_limit(weight: Functor, diagram: Functor) -> CategoryOfCategories.ElementType:
     ordinary = _weighted_diagram(weight, diagram, False)
     return diagram.codomain().Limits(ordinary.domain())(ordinary)
 
 
-def weighted_colimit(
-    weight: Functor, diagram: Functor
-) -> CategoryOfCategories.ElementType:
+def weighted_colimit(weight: Functor, diagram: Functor) -> CategoryOfCategories.ElementType:
     ordinary = _weighted_diagram(weight, diagram, True)
     return diagram.codomain().Colimits(ordinary.domain())(ordinary)
 
@@ -103,9 +99,7 @@ def weighted_projection(
     point: CategoryOfCategories.ElementType,
 ) -> MorphismCategory.ObjectType:
     ordinary = _weighted_diagram(weight, diagram, False)
-    return constructed_data(diagram.codomain().Limits(ordinary.domain()), ordinary).leg(
-        element(weight, vertex, point)
-    )
+    return constructed_data(diagram.codomain().Limits(ordinary.domain()), ordinary).leg(element(weight, vertex, point))
 
 
 def weighted_injection(
@@ -115,9 +109,7 @@ def weighted_injection(
     point: CategoryOfCategories.ElementType,
 ) -> MorphismCategory.ObjectType:
     ordinary = _weighted_diagram(weight, diagram, True)
-    return constructed_data(
-        diagram.codomain().Colimits(ordinary.domain()), ordinary
-    ).leg(element(weight, vertex, point))
+    return constructed_data(diagram.codomain().Colimits(ordinary.domain()), ordinary).leg(element(weight, vertex, point))
 
 
 def weighted_limit_lift(
@@ -133,9 +125,7 @@ def weighted_limit_lift(
             cone(
                 ordinary,
                 apex,
-                lambda value: components(
-                    value.base_object(), value.fiber_object().point()
-                ),
+                lambda value: components(value.base_object(), value.fiber_object().point()),
             )
         )
     )
@@ -154,41 +144,29 @@ def weighted_colimit_desc(
             cocone(
                 ordinary,
                 apex,
-                lambda value: components(
-                    value.base_object(), value.fiber_object().point()
-                ),
+                lambda value: components(value.base_object(), value.fiber_object().point()),
             )
         )
     )
 
 
-def weighted_limit_map(
-    weight: Functor, transformation: NaturalTransformation
-) -> MorphismCategory.ObjectType:
+def weighted_limit_map(weight: Functor, transformation: NaturalTransformation) -> MorphismCategory.ObjectType:
     source, target = transformation.domain(), transformation.codomain()
     return weighted_limit_lift(
         weight,
         target,
         weighted_limit(weight, source),
-        lambda vertex, point: (
-            transformation.component(vertex)
-            * weighted_projection(weight, source, vertex, point)
-        ),
+        lambda vertex, point: transformation.component(vertex) * weighted_projection(weight, source, vertex, point),
     )
 
 
-def weighted_colimit_map(
-    weight: Functor, transformation: NaturalTransformation
-) -> MorphismCategory.ObjectType:
+def weighted_colimit_map(weight: Functor, transformation: NaturalTransformation) -> MorphismCategory.ObjectType:
     source, target = transformation.domain(), transformation.codomain()
     return weighted_colimit_desc(
         weight,
         source,
         weighted_colimit(weight, target),
-        lambda vertex, point: (
-            weighted_injection(weight, target, vertex, point)
-            * transformation.component(vertex)
-        ),
+        lambda vertex, point: weighted_injection(weight, target, vertex, point) * transformation.component(vertex),
     )
 
 
@@ -204,12 +182,8 @@ def hom_functor(category: Category, sets: Category) -> Functor:
 
     result = Fun(pairs, sets)(
         at,
-        lambda arrow: Mor(sets)(
-            result.on_object(arrow.domain()), result.on_object(arrow.codomain())
-        )(
-            lambda value: (
-                arrow.family_component(1) * value * opposite_morphism(arrow.family_component(0))
-            )
+        lambda arrow: Mor(sets)(result.on_object(arrow.domain()), result.on_object(arrow.codomain()))(
+            lambda value: arrow.family_component(1) * value * opposite_morphism(arrow.family_component(0))
         ),
     )
     return result
@@ -219,7 +193,6 @@ def hom_functor(category: Category, sets: Category) -> Functor:
 def yoneda(category: Category, sets: Category) -> Functor:
     """The covariant Yoneda embedding ``C -> Fun(C.op(), Sets)``."""
     from sage_categories.cat.calculus import curry, transpose
-
     from sage_categories.kernel.refinement import refine
 
     result = transpose(curry(hom_functor(category, sets)))
@@ -260,9 +233,7 @@ def coend_weight(hom: Functor) -> Functor:
             )
         )
 
-    return Fun(pairs.op(), hom.codomain())(
-        lambda pair: hom.on_object(swapped(pair)), on_morphism
-    )
+    return Fun(pairs.op(), hom.codomain())(lambda pair: hom.on_object(swapped(pair)), on_morphism)
 
 
 def end(diagram: Functor, hom: Functor) -> CategoryOfCategories.ElementType:
@@ -278,17 +249,13 @@ def coend(diagram: Functor, hom: Functor) -> CategoryOfCategories.ElementType:
 
 
 @cached_function(key=identity_key)
-def natural_transformation_diagram(
-    first: Functor, second: Functor, hom: Functor
-) -> Functor:
+def natural_transformation_diagram(first: Functor, second: Functor, hom: Functor) -> Functor:
     """The bifunctor ``(i,j) |-> Hom(F(i),G(j))``."""
     assert first.domain() is second.domain() and first.codomain() is second.codomain()
     source = Cat().Products()((first.domain().op(), first.domain()))
     target = hom.domain()
     images = Fun(source, target)(
-        lambda pair: target(
-            (first.on_object(pair.family_component(0)), second.on_object(pair.family_component(1)))
-        ),
+        lambda pair: target((first.on_object(pair.family_component(0)), second.on_object(pair.family_component(1)))),
         lambda arrow: target.construct_morphism(
             target(
                 (
@@ -311,9 +278,7 @@ def natural_transformation_diagram(
     return hom * images
 
 
-def natural_transformation_to_end(
-    transformation: NaturalTransformation, source_hom: Functor, target_hom: Functor
-) -> CategoryOfCategories.ElementType:
+def natural_transformation_to_end(transformation: NaturalTransformation, source_hom: Functor, target_hom: Functor) -> CategoryOfCategories.ElementType:
     """The point of the Hom end specified by a natural transformation."""
     first, second = transformation.domain(), transformation.codomain()
     diagram = natural_transformation_diagram(first, second, target_hom)
@@ -323,12 +288,7 @@ def natural_transformation_to_end(
         source_hom,
         diagram,
         terminal,
-        lambda pair, point: Mor(sets)(terminal, diagram.on_object(pair))(
-            lambda datum: (
-                second.on_morphism(point.datum())
-                * transformation.component(pair.family_component(0))
-            )
-        ),
+        lambda pair, point: Mor(sets)(terminal, diagram.on_object(pair))(lambda datum: second.on_morphism(point.datum()) * transformation.component(pair.family_component(0))),
     )
     return sets.element_from_defining_morphism(arrow)
 

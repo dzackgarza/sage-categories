@@ -13,15 +13,8 @@ The four layers, in the order of dependence D173 and D175 fix: the kernel
 
 from importlib.metadata import version as _distribution_version
 
-from sage_categories import cat_kernel as _cat_kernel
-
-# ``cat_kernel`` is downstream of both layers below it (D175), so neither imports it and
-# this package installs it.  Before ``Cat`` is loaded: the kernel asks whether a functor
-# carries placement and inheritance while ``Fun`` is still building its own property
-# categories, and each reader reaches ``Fun`` when it is called.
-_cat_kernel.install()
-del _cat_kernel
-
+from sage_categories import _bootstrap as _bootstrap
+from sage_categories.algebra import AbelianGroups, AbelianTensor
 from sage_categories.cat.adjunctions import Adjunctions, Equivalences
 from sage_categories.cat.calculus import (
     binary_product_data,
@@ -37,6 +30,7 @@ from sage_categories.cat.calculus import (
     uncurry,
 )
 from sage_categories.cat.category import Category
+from sage_categories.cat.concrete import ConcreteCategory
 from sage_categories.cat.cones import (
     cocones as Cocones,
 )
@@ -80,6 +74,8 @@ from sage_categories.cat.limit_basis import (
     limit_from_products_equalizers,
     parallel_pair,
 )
+from sage_categories.cat.modules import Modules
+from sage_categories.cat.monoidal import Actions, Cartesian, Composition, MonoidalStructures, SelfAction, TrivialAction
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.opposites import Op
 from sage_categories.cat.predicates import (
@@ -102,19 +98,15 @@ from sage_categories.cat.profunctors import (
 )
 from sage_categories.cat.relations import Relations
 from sage_categories.cat.shapes import Discrete, Thin
-from sage_categories.cat.monoidal import Actions, Cartesian, Composition, MonoidalStructures, SelfAction, TrivialAction
-from sage_categories.cat.modules import Modules
-from sage_categories.cat.concrete import ConcreteCategory
-from sage_categories.algebra import AbelianGroups, AbelianTensor
 from sage_categories.cat.structured_objects import (
-    EndofunctorAlgebras,
-    Groups,
-    EilenbergMoore,
-    Equifier,
-    Inserter,
     AdditiveGroups,
     AdditiveMagmas,
     AdditiveMonoids,
+    EilenbergMoore,
+    EndofunctorAlgebras,
+    Equifier,
+    Groups,
+    Inserter,
     Magmas,
     Monoids,
     MultiplicativeMagmas,
@@ -154,8 +146,15 @@ from sage_categories.cat.weighted import (
     yoneda,
 )
 
+del _bootstrap
+
 __all__ = [
-    "Actions", "Cartesian", "Composition", "MonoidalStructures", "SelfAction", "TrivialAction",
+    "Actions",
+    "Cartesian",
+    "Composition",
+    "MonoidalStructures",
+    "SelfAction",
+    "TrivialAction",
     "Adjunctions",
     "Axiom",
     "NN",

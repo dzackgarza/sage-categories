@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from sage_categories.cat.comma import CommaSpecialization
 from sage_categories.cat.cones import ConeCategory, cones, limit_cones
-from sage_categories.cat.functors import Cat, Fun, Functor, FunctorCategory, NaturalTransformation
+from sage_categories.cat.functors import Fun, Functor, FunctorCategory, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Axiom
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.cat.slices import CommaCategory, _construct_comma_category
-from sage_categories.cat.comma import CommaSpecialization
+from sage_categories.cat.slices import _construct_comma_category
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
@@ -82,9 +82,7 @@ class TotalConesCategory(CommaSpecialization):
         return f"TotalCones({self.diagrams()!r})"
 
 
-class TotalLimitConesCategory(
-    PropertySubcategory[[MorphismCategory.ObjectType, NaturalTransformation], []]
-):
+class TotalLimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType, NaturalTransformation], []]):
     """The selected limiting presentations in a fixed-shape total cone category."""
 
     _base_category_class_and_axiom = (TotalConesCategory, "LimitCones")

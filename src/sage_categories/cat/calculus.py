@@ -70,9 +70,7 @@ def binary_product_data(
     return constructed_data(base.Limits(diagram.domain()), diagram)
 
 
-def power_data(
-    base: Category, value: CategoryOfCategories.ElementType, degree: int
-) -> LimitConesCategory.ObjectType:
+def power_data(base: Category, value: CategoryOfCategories.ElementType, degree: int) -> LimitConesCategory.ObjectType:
     from sage_categories.cat.constructions import constructed_data
     from sage_categories.cat.diagrams import from_sequence
 
@@ -80,9 +78,7 @@ def power_data(
     return constructed_data(base.Limits(diagram.domain()), diagram)
 
 
-def terminal_map(
-    base: Category, value: CategoryOfCategories.ElementType
-) -> MorphismCategory.ObjectType:
+def terminal_map(base: Category, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
     from sage_categories.cat.cones import cone, cones
 
     data = power_data(base, value, 0)
@@ -119,14 +115,8 @@ def product_functor(base: Category) -> Functor:
         lambda pair: base.Products()((pair.family_component(0), pair.family_component(1))),
         lambda arrow: pair_maps(
             base,
-            arrow.family_component(0)
-            * binary_product_data(
-                base, arrow.domain().family_component(0), arrow.domain().family_component(1)
-            ).leg(0),
-            arrow.family_component(1)
-            * binary_product_data(
-                base, arrow.domain().family_component(0), arrow.domain().family_component(1)
-            ).leg(1),
+            arrow.family_component(0) * binary_product_data(base, arrow.domain().family_component(0), arrow.domain().family_component(1)).leg(0),
+            arrow.family_component(1) * binary_product_data(base, arrow.domain().family_component(0), arrow.domain().family_component(1)).leg(1),
         ),
     )
     return result
@@ -164,9 +154,7 @@ def curry(functor: Functor) -> Functor:
         )
 
     def on_morphism(arrow: MorphismCategory.ObjectType) -> NaturalTransformation:
-        return Mor(Fun(second, target))(
-            result.on_object(arrow.domain()), result.on_object(arrow.codomain())
-        )(
+        return Mor(Fun(second, target))(result.on_object(arrow.domain()), result.on_object(arrow.codomain()))(
             lambda value: functor.on_morphism(
                 pairs.construct_morphism(
                     pairs((arrow.domain(), value)),
@@ -189,14 +177,10 @@ def uncurry(functor: Functor) -> Functor:
 
     def on_morphism(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         left, right = arrow.family_component(0), arrow.family_component(1)
-        return functor.on_morphism(left).component(right.codomain()) * functors.diagram(
-            functor.on_object(left.domain())
-        ).on_morphism(right)
+        return functor.on_morphism(left).component(right.codomain()) * functors.diagram(functor.on_object(left.domain())).on_morphism(right)
 
     return Fun(pairs, target)(
-        lambda value: functors.diagram(functor.on_object(value.family_component(0))).on_object(
-            value.family_component(1)
-        ),
+        lambda value: functors.diagram(functor.on_object(value.family_component(0))).on_object(value.family_component(1)),
         on_morphism,
     )
 
@@ -215,9 +199,9 @@ def transpose(functor: Functor) -> Functor:
 
     result = Fun(second, Fun(first, target))(
         at,
-        lambda arrow: Mor(Fun(first, target))(
-            result.on_object(arrow.domain()), result.on_object(arrow.codomain())
-        )(lambda value: functors.diagram(functor.on_object(value)).on_morphism(arrow)),
+        lambda arrow: Mor(Fun(first, target))(result.on_object(arrow.domain()), result.on_object(arrow.codomain()))(
+            lambda value: functors.diagram(functor.on_object(value)).on_morphism(arrow)
+        ),
     )
     return result
 
@@ -230,9 +214,7 @@ def evaluation(first: Category, target: Category) -> Functor:
 
 
 @cached_function(key=identity_key)
-def currying(
-    first: Category, second: Category, target: Category
-) -> CategoryOfCategories.ElementType:
+def currying(first: Category, second: Category, target: Category) -> CategoryOfCategories.ElementType:
     """The selected equivalence of functor categories given by currying."""
     from sage_categories.cat.adjunctions import Equivalences
 
@@ -240,9 +222,7 @@ def currying(
     source, destination = Fun(pairs, target), Fun(first, Fun(second, target))
     forward = Fun(source, destination)(
         curry,
-        lambda transformation: Mor(destination)(
-            curry(transformation.domain()), curry(transformation.codomain())
-        )(
+        lambda transformation: Mor(destination)(curry(transformation.domain()), curry(transformation.codomain()))(
             lambda value: Mor(Fun(second, target))(
                 curry(transformation.domain()).on_object(value),
                 curry(transformation.codomain()).on_object(value),
@@ -256,19 +236,16 @@ def currying(
         lambda transformation: Mor(source)(
             uncurry(destination.diagram(transformation.domain())),
             uncurry(destination.diagram(transformation.codomain())),
-        )(
-            lambda pair: transformation.component(pair.family_component(0)).component(
-                pair.family_component(1)
-            )
-        ),
+        )(lambda pair: transformation.component(pair.family_component(0)).component(pair.family_component(1))),
     )
 
     @cached_function(key=identity_key)
     def unit_component(functor: Functor) -> NaturalTransformation:
         roundtrip = uncurry(curry(functor))
-        identity = lambda pair: Mor(target)(
-            functor.on_object(pair), functor.on_object(pair)
-        ).one()
+
+        def identity(pair: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            return Mor(target)(functor.on_object(pair), functor.on_object(pair)).one()
+
         return natural_isomorphism(functor, roundtrip, identity, identity)
 
     @cached_function(key=identity_key)
@@ -280,16 +257,13 @@ def currying(
         def component(other: CategoryOfCategories.ElementType) -> NaturalTransformation:
             original = functor.on_object(other)
             image = Fun(second, target).diagram(original)
-            identity = lambda third: Mor(target)(
-                image.on_object(third), image.on_object(third)
-            ).one()
-            return natural_isomorphism(
-                roundtrip.on_object(other), original, identity, identity
-            )
 
-        return natural_isomorphism(
-            roundtrip, value, component, lambda other: component(other).inverse()
-        )
+            def identity(third: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+                return Mor(target)(image.on_object(third), image.on_object(third)).one()
+
+            return natural_isomorphism(roundtrip.on_object(other), original, identity, identity)
+
+        return natural_isomorphism(roundtrip, value, component, lambda other: component(other).inverse())
 
     unit = natural_isomorphism(
         Fun(source, source).one(),
@@ -309,9 +283,7 @@ def currying(
 def natural_isomorphism(
     first: Functor,
     second: Functor,
-    components: Callable[
-        [CategoryOfCategories.ElementType], MorphismCategory.ObjectType
-    ],
+    components: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType],
     inverses: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType],
 ) -> NaturalTransformation:
     """Retain a natural isomorphism with both executable component assignments."""

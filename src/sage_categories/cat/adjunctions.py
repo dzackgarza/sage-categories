@@ -91,14 +91,24 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
             """``F G => Id_D``."""
             return self._adjunction_counit
 
-        def transpose(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        def transpose(
+            self,
+            source: CategoryOfCategories.ElementType,
+            target: CategoryOfCategories.ElementType,
+            arrow: MorphismCategory.ObjectType,
+        ) -> MorphismCategory.ObjectType:
             """Transpose ``F(source) -> target`` to ``source -> G(target)``."""
             from sage_categories.cat.morphisms import Mor
 
             assert arrow in Mor(self.forward().codomain())(self.forward().on_object(source), target)
             return self.inverse().on_morphism(arrow) * self.unit().component(source)
 
-        def untranspose(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        def untranspose(
+            self,
+            source: CategoryOfCategories.ElementType,
+            target: CategoryOfCategories.ElementType,
+            arrow: MorphismCategory.ObjectType,
+        ) -> MorphismCategory.ObjectType:
             """Transpose ``source -> G(target)`` to ``F(source) -> target``."""
             from sage_categories.cat.morphisms import Mor
 
@@ -126,9 +136,7 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
 
     def __init__(self, forward: Functor, inverse: Functor) -> None:
         assert forward in Fun and inverse in Fun
-        assert forward.domain() is inverse.codomain() and forward.codomain() is inverse.domain(), (
-            f"{forward!r} and {inverse!r} do not have opposite endpoints"
-        )
+        assert forward.domain() is inverse.codomain() and forward.codomain() is inverse.domain(), f"{forward!r} and {inverse!r} do not have opposite endpoints"
         self._forward = forward
         self._inverse = inverse
         super().__init__()
@@ -154,15 +162,13 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
     ) -> bool | None:
         if first in self and candidate in self:
             return sympy_ask(
-                (first.unit() == candidate.unit())
-                & (first.counit() == candidate.counit()),
+                (first.unit() == candidate.unit()) & (first.counit() == candidate.counit()),
                 assumptions,
             )
         morphisms = self.morphism_category(1)
         if first in morphisms and candidate in morphisms:
             return sympy_ask(
-                (first.forward_transformation() == candidate.forward_transformation())
-                & (first.inverse_transformation() == candidate.inverse_transformation()),
+                (first.forward_transformation() == candidate.forward_transformation()) & (first.inverse_transformation() == candidate.inverse_transformation()),
                 assumptions,
             )
         return None
@@ -187,14 +193,12 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
 
         forward_triangle = counit.whisker_right(self._forward) * unit.whisker_left(self._forward)
         inverse_triangle = counit.whisker_left(self._inverse) * unit.whisker_right(self._inverse)
-        assert ask(
-            forward_triangle
-            == forward_functors.morphism_category(1)(self._forward, self._forward).one()
-        ) is not False, "the unit and counit fail the triangle identity on the forward functor"
-        assert ask(
-            inverse_triangle
-            == inverse_functors.morphism_category(1)(self._inverse, self._inverse).one()
-        ) is not False, "the unit and counit fail the triangle identity on the inverse functor"
+        assert ask(forward_triangle == forward_functors.morphism_category(1)(self._forward, self._forward).one()) is not False, (
+            "the unit and counit fail the triangle identity on the forward functor"
+        )
+        assert ask(inverse_triangle == inverse_functors.morphism_category(1)(self._inverse, self._inverse).one()) is not False, (
+            "the unit and counit fail the triangle identity on the inverse functor"
+        )
 
         return self.ObjectType(data=AdjunctionData(self._forward, self._inverse, unit, counit))
 
@@ -214,12 +218,8 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
 
         unit_transport = Cat().horizontal_composite(inverse, forward) * source.unit()
         counit_transport = target.counit() * Cat().horizontal_composite(forward, inverse)
-        assert ask(unit_transport == target.unit()) is not False, (
-            "the endotransformations are not compatible with the units"
-        )
-        assert ask(counit_transport == source.counit()) is not False, (
-            "the endotransformations are not compatible with the counits"
-        )
+        assert ask(unit_transport == target.unit()) is not False, "the endotransformations are not compatible with the units"
+        assert ask(counit_transport == source.counit()) is not False, "the endotransformations are not compatible with the counits"
         return self.MorphismType(
             domain=source,
             codomain=target,
@@ -230,14 +230,22 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         self,
         member_object: AdjunctionsCategory.ObjectType,
     ) -> AdjunctionsCategory.MorphismType:
-        forward_identity = Fun(self.source_category(), self.target_category()).morphism_category(1)(
-            self._forward,
-            self._forward,
-        ).one()
-        inverse_identity = Fun(self.target_category(), self.source_category()).morphism_category(1)(
-            self._inverse,
-            self._inverse,
-        ).one()
+        forward_identity = (
+            Fun(self.source_category(), self.target_category())
+            .morphism_category(1)(
+                self._forward,
+                self._forward,
+            )
+            .one()
+        )
+        inverse_identity = (
+            Fun(self.target_category(), self.source_category())
+            .morphism_category(1)(
+                self._inverse,
+                self._inverse,
+            )
+            .one()
+        )
         return self.construct_morphism(
             member_object,
             member_object,
@@ -387,10 +395,14 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
         self,
         member_object: EquivalencesCategory.ObjectType,
     ) -> EquivalencesCategory.MorphismType:
-        identity = Fun(self._source, self._target).morphism_category(1)(
-            member_object.forward(),
-            member_object.forward(),
-        ).one()
+        identity = (
+            Fun(self._source, self._target)
+            .morphism_category(1)(
+                member_object.forward(),
+                member_object.forward(),
+            )
+            .one()
+        )
         return self.construct_morphism(member_object, member_object, identity)
 
     def composite(

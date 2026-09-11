@@ -21,7 +21,7 @@ from sage_categories.cat.cones import LimitConesCategory
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask, conjunction, register_handler
+from sage_categories.cat.predicates import Axiom, Predicate, Proposition, conjunction, register_handler
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete, ThinCategory
 from sage_categories.kernel.sage_runtime import cached_function
@@ -54,9 +54,7 @@ def _square_factor(square: CategoryOfCategories.ElementType) -> CategoryOfCatego
     both and directs the caller to the diagrams themselves (``cat/constructions.py``).
     """
     family = Sets.Products().presenting_family(square)
-    factors = tuple(
-        diagram.on_object(diagram.domain()(0)) for diagram in family.presenting_diagrams(square)
-    )
+    factors = tuple(diagram.on_object(diagram.domain()(0)) for diagram in family.presenting_diagrams(square))
     assert all(factor is factors[0] for factor in factors), f"{square!r} presents products of unequal sets"
     return factors[0]
 
@@ -84,19 +82,8 @@ def _decide_partial_order(
     data = tuple(point.datum() for point in carrier)
     pairs = _related_pairs(relation_object)
     reflexive = all((value, value) in pairs for value in data)
-    antisymmetric = all(
-        first == second
-        for first in data
-        for second in data
-        if (first, second) in pairs and (second, first) in pairs
-    )
-    transitive = all(
-        (first, third) in pairs
-        for first in data
-        for second in data
-        for third in data
-        if (first, second) in pairs and (second, third) in pairs
-    )
+    antisymmetric = all(first == second for first in data for second in data if (first, second) in pairs and (second, first) in pairs)
+    transitive = all((first, third) in pairs for first in data for second in data for third in data if (first, second) in pairs and (second, third) in pairs)
     return reflexive and antisymmetric and transitive
 
 
@@ -236,10 +223,15 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         the selected set apex (D183, ``specs/ordered-sets.md``, "Products").
         """
         if self._forgetful is None:
-            self._forgetful = Fun(self, Sets).Faithful().Isofibrations()(
-                lambda relation_object: relation_object._carrier,
-                lambda arrow: arrow._underlying_map,
-            ).with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
+            self._forgetful = (
+                Fun(self, Sets)
+                .Faithful()
+                .Isofibrations()(
+                    lambda relation_object: relation_object._carrier,
+                    lambda arrow: arrow._underlying_map,
+                )
+                .with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
+            )
         return self._forgetful
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -254,9 +246,7 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         assert underlying.domain() is source._carrier and underlying.codomain() is target._carrier
         images = {value: underlying._action(value) for value in (point.datum() for point in source._carrier)}
         target_pairs = _related_pairs(target)
-        assert all(
-            (images[first], images[second]) in target_pairs for first, second in _related_pairs(source)
-        ), f"{underlying!r} does not preserve the relation of {source!r}"
+        assert all((images[first], images[second]) in target_pairs for first, second in _related_pairs(source)), f"{underlying!r} does not preserve the relation of {source!r}"
         return self.MorphismType(domain=source, codomain=target, data=underlying)
 
     def construct_identity(self, relation_object: BinaryRelationsCategory.ObjectType) -> BinaryRelationsCategory.MorphismType:

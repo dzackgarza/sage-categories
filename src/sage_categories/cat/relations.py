@@ -15,8 +15,8 @@ __all__ = [
 
 from sympy import ask as sympy_ask
 
-from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.calculus import binary_product_data, pair_maps
+from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.constructions import constructed_data
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Fun, Functor
@@ -40,9 +40,7 @@ class _RelationInclusion(Predicate):
 relation_inclusion: Predicate = _RelationInclusion()
 
 
-class RelationsCategory(
-    Category[[MorphismCategory.ObjectType], [MorphismCategory.ObjectType]]
-):
+class RelationsCategory(Category[[MorphismCategory.ObjectType], [MorphismCategory.ObjectType]]):
     class ObjectType:
         def __init__(self, carrier: CategoryOfCategories.ElementType) -> None:
             self._relation_carrier = carrier
@@ -87,18 +85,14 @@ class RelationsCategory(
             base = self.base_category().regular_category()
             mono = pair_maps(base, self.right(), self.left())
             refine(mono, Mor(base).Monomorphisms())
-            return self.base_category().construct_morphism(
-                self.codomain(), self.domain(), mono
-            )
+            return self.base_category().construct_morphism(self.codomain(), self.domain(), mono)
 
         def leq(self, other: MorphismCategory.ObjectType) -> Proposition:
             return relation_inclusion(self, other)
 
         def is_reflexive(self) -> Proposition:
             assert self.domain() is self.codomain()
-            return (
-                Mor(self.base_category())(self.domain(), self.domain()).one().leq(self)
-            )
+            return Mor(self.base_category())(self.domain(), self.domain()).one().leq(self)
 
         def is_transitive(self) -> Proposition:
             assert self.domain() is self.codomain()
@@ -106,11 +100,7 @@ class RelationsCategory(
 
         def is_antisymmetric(self) -> Proposition:
             assert self.domain() is self.codomain()
-            return (
-                self.base_category()
-                .meet(self, self.converse())
-                .leq(Mor(self.base_category())(self.domain(), self.domain()).one())
-            )
+            return self.base_category().meet(self, self.converse()).leq(Mor(self.base_category())(self.domain(), self.domain()).one())
 
     def __init__(self, base: Category) -> None:
         self._regular_category = base
@@ -121,9 +111,7 @@ class RelationsCategory(
         return self._regular_category
 
     @cached_method(key=identity_key)
-    def __call__(
-        self, carrier: CategoryOfCategories.ElementType
-    ) -> RelationsCategory.ObjectType:
+    def __call__(self, carrier: CategoryOfCategories.ElementType) -> RelationsCategory.ObjectType:
         assert carrier in self._regular_category
         return self.ObjectType(carrier)
 
@@ -139,45 +127,27 @@ class RelationsCategory(
         base = self._regular_category
         product = base.Products()((source.carrier(), target.carrier()))
         assert mono.codomain() is product and mono in Mor(base).Monomorphisms()
-        return self.MorphismType(
-            domain=source, codomain=target, data=base.Subobjects(product)(mono)
-        )
+        return self.MorphismType(domain=source, codomain=target, data=base.Subobjects(product)(mono))
 
     def graph(self, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         base = self._regular_category
         mono = pair_maps(base, Mor(base)(arrow.domain(), arrow.domain()).one(), arrow)
         refine(mono, Mor(base).Monomorphisms())
-        return self.construct_morphism(
-            self(arrow.domain()), self(arrow.codomain()), mono
-        )
+        return self.construct_morphism(self(arrow.domain()), self(arrow.codomain()), mono)
 
-    def construct_identity(
-        self, value: CategoryOfCategories.ElementType
-    ) -> MorphismCategory.ObjectType:
-        return self.graph(
-            Mor(self._regular_category)(value.carrier(), value.carrier()).one()
-        )
+    def construct_identity(self, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        return self.graph(Mor(self._regular_category)(value.carrier(), value.carrier()).one())
 
     @cached_method(key=identity_key)
-    def composite(
-        self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
+    def composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         base = self._regular_category
-        pullback = constructed_data(
-            base.Pullbacks(), cospan_diagram(base, first.right(), second.left())
-        )
-        arrow = pair_maps(
-            base, first.left() * pullback.leg(0), second.right() * pullback.leg(1)
-        )
+        pullback = constructed_data(base.Pullbacks(), cospan_diagram(base, first.right(), second.left()))
+        arrow = pair_maps(base, first.left() * pullback.leg(0), second.right() * pullback.leg(1))
         surjection, mono = base.image_factorization(arrow)
         return self.construct_morphism(first.domain(), second.codomain(), mono)
 
-    def meet(
-        self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
-        assert (
-            first.domain() is second.domain() and first.codomain() is second.codomain()
-        )
+    def meet(self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        assert first.domain() is second.domain() and first.codomain() is second.codomain()
         base = self._regular_category
         pullback = constructed_data(
             base.Pullbacks(),
@@ -201,48 +171,26 @@ class RelationsCategory(
         second: MorphismCategory.ObjectType,
         factor: MorphismCategory.ObjectType,
     ) -> MorphismCategory.ObjectType:
-        assert (
-            first.domain() is second.domain() and first.codomain() is second.codomain()
-        )
-        assert factor in Mor(self._regular_category)(
-            first.monomorphism().domain(), second.monomorphism().domain()
-        )
+        assert first.domain() is second.domain() and first.codomain() is second.codomain()
+        assert factor in Mor(self._regular_category)(first.monomorphism().domain(), second.monomorphism().domain())
         assert ask(second.monomorphism() * factor == first.monomorphism()) is True
-        return self.morphism_category(2).ObjectType(
-            domain=first, codomain=second, data=factor
-        )
+        return self.morphism_category(2).ObjectType(domain=first, codomain=second, data=factor)
 
-    def identity_two_morphism(
-        self, arrow: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
+    def identity_two_morphism(self, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         carrier = arrow.monomorphism().domain()
-        return self.construct_two_morphism(
-            arrow, arrow, Mor(self._regular_category)(carrier, carrier).one()
-        )
+        return self.construct_two_morphism(arrow, arrow, Mor(self._regular_category)(carrier, carrier).one())
 
-    def compose_two_morphisms(
-        self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
-        return self.construct_two_morphism(
-            first.domain(), second.codomain(), second.factor() * first.factor()
-        )
+    def compose_two_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        return self.construct_two_morphism(first.domain(), second.codomain(), second.factor() * first.factor())
 
-    def inclusion(
-        self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
-        factor = self._regular_category.factor_through_monomorphism(
-            second.monomorphism(), first.monomorphism()
-        )
+    def inclusion(self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        factor = self._regular_category.factor_through_monomorphism(second.monomorphism(), first.monomorphism())
         assert factor is not False and factor is not Unknown
         return self.construct_two_morphism(first, second, factor)
 
-    def horizontal_composite(
-        self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType:
+    def horizontal_composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         """Monotonicity of relational composition, as a horizontal composite of inclusions."""
-        return self.inclusion(
-            second.domain() * first.domain(), second.codomain() * first.codomain()
-        )
+        return self.inclusion(second.domain() * first.domain(), second.codomain() * first.codomain())
 
     def associator(
         self,
@@ -282,16 +230,9 @@ def _included(
     second: RelationsCategory.MorphismType,
     assumptions: Proposition,
 ) -> bool | None:
-    if (
-        first.domain() is not second.domain()
-        or first.codomain() is not second.codomain()
-    ):
+    if first.domain() is not second.domain() or first.codomain() is not second.codomain():
         return False
-    factor = (
-        first.base_category()
-        .regular_category()
-        .factor_through_monomorphism(second.monomorphism(), first.monomorphism())
-    )
+    factor = first.base_category().regular_category().factor_through_monomorphism(second.monomorphism(), first.monomorphism())
     return None if factor is Unknown else factor is not False
 
 

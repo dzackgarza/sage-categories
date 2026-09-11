@@ -16,7 +16,20 @@ import sage_categories_homotopy as homotopy
 from sage_categories.cat.category import Category, composite_factors, is_composite
 from sage_categories.cat.morphisms import MorphismCategory
 
-__all__ = ["boundary", "dimension", "native_cell", "native_object", "native_signature", "retain_composite", "retain_generator", "retain_identity", "retain_inverses", "retain_whisker_left", "retain_whisker_right", "typecheck"]
+__all__ = [
+    "boundary",
+    "dimension",
+    "native_cell",
+    "native_object",
+    "native_signature",
+    "retain_composite",
+    "retain_generator",
+    "retain_identity",
+    "retain_inverses",
+    "retain_whisker_left",
+    "retain_whisker_right",
+    "typecheck",
+]
 
 
 @dataclass(slots=True)
@@ -29,7 +42,6 @@ class _CellState:
 
 _states: dict[int, tuple[Category, _CellState]] = {}
 _cell_owners: dict[int, tuple[object, Category]] = {}
-
 
 
 def _cell_owner(value: object, proposed: Category) -> Category:
@@ -143,9 +155,7 @@ def retain_composite(
     native = first_native.attach(second_native, "target", [])
     match cached is None:
         case False:
-            assert cached.same_as(native), (
-                f"{value!r} is not the native top-boundary composite of its retained factors"
-            )
+            assert cached.same_as(native), f"{value!r} is not the native top-boundary composite of its retained factors"
             return cached
         case True:
             return _retain_morphism(state, value, native)
@@ -266,7 +276,6 @@ def native_cell(owner: Category, value: MorphismCategory.ObjectType) -> homotopy
     return state.morphisms[id(value)][1]
 
 
-
 def retain_inverses(
     owner: Category,
     forward: MorphismCategory.ObjectType,
@@ -296,9 +305,7 @@ def retain_inverses(
             _retain_morphism(state, backward, inverse_native)
         case False:
             try:
-                state.signature.strengthen_invertibility(
-                    backward_cached, invertibility="invertible"
-                )
+                state.signature.strengthen_invertibility(backward_cached, invertibility="invertible")
             except ValueError as error:
                 if "only generator cells" not in str(error):
                     raise
@@ -346,15 +353,10 @@ def boundary(
         match level == depth:
             case True:
                 expected = native_object(current_owner, candidate)
-                assert native.same_as(expected), (
-                    f"native {side} boundary at depth {depth} does not reconstruct to "
-                    f"the retained owned boundary {candidate!r}"
-                )
+                assert native.same_as(expected), f"native {side} boundary at depth {depth} does not reconstruct to the retained owned boundary {candidate!r}"
                 return candidate
             case False:
-                assert isinstance(current_owner, MorphismCategory), (
-                    f"{value!r} has no owned boundary at depth {depth}"
-                )
+                assert isinstance(current_owner, MorphismCategory), f"{value!r} has no owned boundary at depth {depth}"
                 current_owner = current_owner.base_category()
                 current_value = candidate
     raise AssertionError("unreachable boundary reconstruction")

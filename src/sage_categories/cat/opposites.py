@@ -19,8 +19,8 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Proposition, UnknownClass
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.retention import deferred_category, identity_key, retained_involution
-from sage_categories.kernel.sage_runtime import cached_function
 from sage_categories.kernel.roles import Role
+from sage_categories.kernel.sage_runtime import cached_function
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -41,9 +41,7 @@ class _OppositeMorphismData:
     original: MorphismCategory.ObjectType
 
 
-class OppositeCategory[**MorphismData, **TwoMorphismData](
-    Category[[MorphismCategory.ObjectType], []]
-):
+class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCategory.ObjectType], []]):
     """``C.op()``: the objects of ``C`` with every morphism reversed."""
 
     class ObjectType:
@@ -248,9 +246,7 @@ def opposite_transformation(transformation: NaturalTransformation) -> NaturalTra
     source_op = opposite_functor(source)
     target_op = opposite_functor(target)
     functors = Fun(source_op.domain(), source_op.codomain())
-    return functors.morphism_category(1)(target_op, source_op)(
-        lambda value: _opposite_morphism(source.codomain(), transformation.component(value))
-    )
+    return functors.morphism_category(1)(target_op, source_op)(lambda value: _opposite_morphism(source.codomain(), transformation.component(value)))
 
 
 def _construct_op_squared_isomorphism() -> NaturalTransformation:

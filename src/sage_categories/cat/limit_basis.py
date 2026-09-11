@@ -19,8 +19,8 @@ __all__ = [
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.canonical import FinitePresentedCategory, _finite_discrete
+from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import (
     ConeCategory,
     LimitConesCategory,
@@ -54,36 +54,23 @@ def diagram_presentation(shape: Category) -> DiagramPresentation:
     from sage_categories.cat.finite_categories import finite_category
 
     original = shape.original() if isinstance(shape, OppositeCategory) else shape
-    finite = (
-        finite_category(shape)
-        if not isinstance(original, FinitePresentedCategory)
-        else Unknown
-    )
+    finite = finite_category(shape) if not isinstance(original, FinitePresentedCategory) else Unknown
     if isinstance(original, FinitePresentedCategory) or finite is not Unknown:
-        values = (
-            tuple(original(label) for label in original.labels())
-            if finite is Unknown
-            else finite.objects
-        )
-        generators = (
-            shape.generating_morphisms() if finite is Unknown else finite.morphisms
-        )
+        values = tuple(original(label) for label in original.labels()) if finite is Unknown else finite.objects
+        generators = shape.generating_morphisms() if finite is Unknown else finite.morphisms
         generators = tuple(
-            arrow
-            for arrow in generators
-            if arrow.domain() is not arrow.codomain()
-            or ask(arrow == Mor(shape)(arrow.domain(), arrow.domain()).one())
-            is not True
+            arrow for arrow in generators if arrow.domain() is not arrow.codomain() or ask(arrow == Mor(shape)(arrow.domain(), arrow.domain()).one()) is not True
         )
         vertices, edges = (
             _finite_discrete(len(values)),
             _finite_discrete(len(generators)),
         )
         positions = {id(value): index for index, value in enumerate(values)}
-        inclusion = from_object_rule(
-            Fun(vertices, shape), lambda index: values[vertices.label(index)]
-        )
-        arrow_at = lambda index: generators[edges.label(index)]
+        inclusion = from_object_rule(Fun(vertices, shape), lambda index: values[vertices.label(index)])
+
+        def arrow_at(index: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            return generators[edges.label(index)]
+
         source = from_object_rule(
             Fun(edges, vertices),
             lambda index: vertices(positions[id(arrow_at(index).domain())]),
@@ -96,10 +83,11 @@ def diagram_presentation(shape: Category) -> DiagramPresentation:
         objects, morphisms = shape.object_set(), ask(shape.morphism_set())
         assert morphisms is not Unknown, "a small diagram requires its set of arrows"
         vertices, edges = Discrete(objects), Discrete(morphisms)
-        inclusion = from_object_rule(
-            Fun(vertices, shape), lambda index: shape.object_at(index.point())
-        )
-        arrow_at = lambda index: shape.morphism_at(index.point())
+        inclusion = from_object_rule(Fun(vertices, shape), lambda index: shape.object_at(index.point()))
+
+        def arrow_at(index: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            return shape.morphism_at(index.point())
+
         source = from_object_rule(
             Fun(edges, vertices),
             lambda index: vertices(shape.object_point(arrow_at(index).domain())),
@@ -113,9 +101,7 @@ def diagram_presentation(shape: Category) -> DiagramPresentation:
 
 
 @cached_function(key=identity_key)
-def parallel_pair(
-    first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType
-) -> Functor:
+def parallel_pair(first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> Functor:
     """The parallel pair with its given common source and target."""
     assert first.domain() is second.domain() and first.codomain() is second.codomain()
     base, shape = first.base_category(), Cat().WalkingParallelPair()
@@ -137,10 +123,7 @@ def parallel_pair(
 type LimitChoice = Callable[[Functor], LimitConesCategory.ObjectType]
 
 
-def _basis_data(
-    diagram: Functor, choose: LimitChoice, indexing: DiagramPresentation
-) -> LimitConesCategory.ObjectType:
-    base = diagram.codomain()
+def _basis_data(diagram: Functor, choose: LimitChoice, indexing: DiagramPresentation) -> LimitConesCategory.ObjectType:
     objects = choose(diagram * indexing.vertices)
     targets = choose(diagram * indexing.vertices * indexing.target)
     source_map = targets.lift(
@@ -148,10 +131,7 @@ def _basis_data(
             cone(
                 targets.diagram(),
                 objects.apex(),
-                lambda edge: (
-                    diagram.on_morphism(indexing.arrows.component(edge))
-                    * objects.leg(indexing.source.on_object(edge))
-                ),
+                lambda edge: diagram.on_morphism(indexing.arrows.component(edge)) * objects.leg(indexing.source.on_object(edge)),
             )
         )
     )
@@ -172,11 +152,7 @@ def _basis_data(
     ) -> CategoryOfCategories.ElementType:
         indices = indexing.vertices.domain()
         if isinstance(indices, FinitePresentedCategory):
-            return next(
-                indices(label)
-                for label in indices.labels()
-                if ask(indexing.vertices.on_object(indices(label)) == vertex) is True
-            )
+            return next(indices(label) for label in indices.labels() if ask(indexing.vertices.on_object(indices(label)) == vertex) is True)
         return indices(diagram.domain().object_point(vertex))
 
     presentation = cone(

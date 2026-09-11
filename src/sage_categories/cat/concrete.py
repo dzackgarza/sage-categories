@@ -23,7 +23,7 @@ __all__ = ["ConcreteCategory"]
 from sage_categories.cat.category import Category, CategoryDeclaration, CategoryOfCategories, concrete_category
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.cat.predicates import Proposition, ask, register_handler
+from sage_categories.cat.predicates import Proposition, register_handler
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.sage_runtime import cached_method
 
@@ -84,9 +84,7 @@ class ConcreteCategory(PropertySubcategory):
             declarations already state rather than a second functor beside them.
             """
             route = _faithful_route(self)
-            assert route is not None, (
-                f"{self!r} is placed among the concrete categories but declares no faithful route to {Sets!r}"
-            )
+            assert route is not None, f"{self!r} is placed among the concrete categories but declares no faithful route to {Sets!r}"
             composite = Fun(Sets, Sets).one()
             for functor in reversed(route):
                 composite = composite * functor

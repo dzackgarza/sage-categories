@@ -98,10 +98,10 @@ from sage_categories.cat.structured_objects import (
     Monoids,
     PointedMagmas,
 )
-from sage_categories.kernel.type_aliases import ContainmentInput
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
+from sage_categories.kernel.type_aliases import ContainmentInput
 from sage_categories.sets.finite import Sets
 
 type Engine = AdditiveAbelianGroup_class | FGP_Module_class
@@ -373,7 +373,7 @@ class _OwnedIndexFacade(Parent):
     def __contains__(self, datum: ContainmentInput) -> bool:
         try:
             self._owned_index_set.representative(datum)
-        except (AssertionError, TypeError, ValueError):
+        except AssertionError, TypeError, ValueError:
             return False
         return True
 
@@ -1002,9 +1002,7 @@ def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategor
     """``f ⊗ g``: the mediator of ``(a, b) ↦ f(a) ⊗ g(b)``."""
     source = _tensor_object(first.domain(), second.domain())
     target = _tensor_object(first.codomain(), second.codomain())
-    if isinstance(_tensor_data[source], _TensorData) and isinstance(
-        _tensor_data[target], _TensorData
-    ):
+    if isinstance(_tensor_data[source], _TensorData) and isinstance(_tensor_data[target], _TensorData):
         from sage_categories.engines.presented_modules import tensor_morphism
 
         return tensor_morphism(first, second, source, target)

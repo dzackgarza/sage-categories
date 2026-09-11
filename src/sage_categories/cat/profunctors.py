@@ -20,14 +20,15 @@ from sage_categories.cat.calculus import binary_product_data, pair_maps, product
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
+from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.weighted import (
     coend,
     coend_weight,
     hom_functor,
+    weighted_colimit_desc,
     weighted_colimit_map,
+    weighted_injection,
 )
-from sage_categories.cat.weighted import weighted_colimit_desc, weighted_injection
-from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
@@ -37,9 +38,7 @@ def Profunctors(first: Category, second: Category, sets: Category) -> Category:
 
 
 @cached_function(key=identity_key)
-def _integrand(
-    first: Functor, second: Functor, outer: CategoryOfCategories.ElementType
-) -> Functor:
+def _integrand(first: Functor, second: Functor, outer: CategoryOfCategories.ElementType) -> Functor:
     middle = first.domain().product_projection(1).codomain()
     middle_pairs = Cat().Products()((middle.op(), middle))
     sets = first.codomain()
@@ -77,9 +76,7 @@ def _integrand(
             )
         )
 
-    return Fun(middle_pairs, sets)(
-        lambda value: tensor.on_object(factors(value)), on_morphism
-    )
+    return Fun(middle_pairs, sets)(lambda value: tensor.on_object(factors(value)), on_morphism)
 
 
 @cached_function(key=identity_key)
@@ -121,12 +118,8 @@ def compose_profunctors(first: Functor, second: Functor, hom: Functor) -> Functo
             factors = tensor.domain()
             return tensor.on_morphism(
                 factors.construct_morphism(
-                    factors(
-                        (first.on_object(p.domain()), second.on_object(q.domain()))
-                    ),
-                    factors(
-                        (first.on_object(p.codomain()), second.on_object(q.codomain()))
-                    ),
+                    factors((first.on_object(p.domain()), second.on_object(q.domain()))),
+                    factors((first.on_object(p.codomain()), second.on_object(q.codomain()))),
                     (first.on_morphism(p), second.on_morphism(q)),
                 )
             )
@@ -134,14 +127,10 @@ def compose_profunctors(first: Functor, second: Functor, hom: Functor) -> Functo
         transformation = Mor(Fun(hom.domain(), sets))(start, end)(component)
         return weighted_colimit_map(coend_weight(hom), transformation)
 
-    return Fun(source, sets)(
-        lambda value: coend(_integrand(first, second, value), hom), on_morphism
-    )
+    return Fun(source, sets)(lambda value: coend(_integrand(first, second, value), hom), on_morphism)
 
 
-def compose_profunctor_transformations(
-    first: NaturalTransformation, second: NaturalTransformation, hom: Functor
-) -> NaturalTransformation:
+def compose_profunctor_transformations(first: NaturalTransformation, second: NaturalTransformation, hom: Functor) -> NaturalTransformation:
     """Horizontal composition of transformations of profunctors."""
     source = compose_profunctors(first.domain(), second.domain(), hom)
     target = compose_profunctors(first.codomain(), second.codomain(), hom)
@@ -156,12 +145,8 @@ def compose_profunctor_transformations(
         )
 
         def at(value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-            p = first.component(
-                first.domain().domain()((outer.family_component(0), value.family_component(1)))
-            )
-            q = second.component(
-                second.domain().domain()((value.family_component(0), outer.family_component(1)))
-            )
+            p = first.component(first.domain().domain()((outer.family_component(0), value.family_component(1))))
+            q = second.component(second.domain().domain()((value.family_component(0), outer.family_component(1))))
             pairs = tensor.domain()
             return tensor.on_morphism(
                 pairs.construct_morphism(
@@ -171,9 +156,7 @@ def compose_profunctor_transformations(
                 )
             )
 
-        return weighted_colimit_map(
-            coend_weight(hom), Mor(Fun(hom.domain(), hom.codomain()))(start, end)(at)
-        )
+        return weighted_colimit_map(coend_weight(hom), Mor(Fun(hom.domain(), hom.codomain()))(start, end)(at))
 
     return Mor(Fun(source.domain(), source.codomain()))(source, target)(component)
 
@@ -197,9 +180,7 @@ def _unitor_components(
     a, c = outer.family_component(0), outer.family_component(1)
     middle = hom.domain().factor(1)
 
-    def component(
-        index: CategoryOfCategories.ElementType, point: CategoryOfCategories.ElementType
-    ) -> MorphismCategory.ObjectType:
+    def component(index: CategoryOfCategories.ElementType, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         p = first.on_object(first.domain()((a, index.family_component(1))))
         q = second.on_object(second.domain()((index.family_component(0), c)))
         product = binary_product_data(sets, p, q)
@@ -254,21 +235,11 @@ def _unitor_components(
 
 
 @cached_function(key=identity_key)
-def profunctor_unitor(
-    profunctor: Functor, hom: Functor, left: bool = True
-) -> NaturalTransformation:
+def profunctor_unitor(profunctor: Functor, hom: Functor, left: bool = True) -> NaturalTransformation:
     """The co-Yoneda isomorphism for composition with the identity profunctor."""
-    composite = (
-        compose_profunctors(hom, profunctor, hom)
-        if left
-        else compose_profunctors(profunctor, hom, hom)
-    )
+    composite = compose_profunctors(hom, profunctor, hom) if left else compose_profunctors(profunctor, hom, hom)
     functors = Fun(profunctor.domain(), profunctor.codomain())
-    forward = Mor(functors)(composite, profunctor)(
-        lambda value: _unitor_components(profunctor, hom, left, value)[0]
-    )
-    inverse = Mor(functors)(profunctor, composite)(
-        lambda value: _unitor_components(profunctor, hom, left, value)[1]
-    )
+    forward = Mor(functors)(composite, profunctor)(lambda value: _unitor_components(profunctor, hom, left, value)[0])
+    inverse = Mor(functors)(profunctor, composite)(lambda value: _unitor_components(profunctor, hom, left, value)[1])
     functors.retain_inverses(forward, inverse)
     return forward

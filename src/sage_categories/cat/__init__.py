@@ -1,18 +1,7 @@
 """The theory of ``Cat()``: categories, functors, morphism categories, properties, shapes."""
 
-from sage_categories.cat import category as _category
-
-_category.bootstrap()
-del _category
-
-from sage_categories.cat.functors import Cat, Fun
-from sage_categories.cat.morphisms import Mor
+from sage_categories.cat import _bootstrap as _bootstrap
 from sage_categories.cat.adjunctions import Adjunctions, Equivalences
-from sage_categories.cat.cones import cones as Cones
-from sage_categories.cat.cones import limit_cones as LimitCones
-from sage_categories.cat.opposites import Op
-from sage_categories.cat.total_cones import total_cones as TotalCones
-
 from sage_categories.cat.calculus import (
     binary_product_data,
     curry,
@@ -26,6 +15,10 @@ from sage_categories.cat.calculus import (
     transpose,
     uncurry,
 )
+from sage_categories.cat.concrete import ConcreteCategory
+from sage_categories.cat.cones import cones as Cones
+from sage_categories.cat.cones import limit_cones as LimitCones
+from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.kan import left_kan_adjunction, right_kan_adjunction
 from sage_categories.cat.limit_basis import (
     DiagramPresentation,
@@ -34,6 +27,10 @@ from sage_categories.cat.limit_basis import (
     limit_from_products_equalizers,
     parallel_pair,
 )
+from sage_categories.cat.modules import Modules
+from sage_categories.cat.monoidal import Actions, Cartesian, Composition, MonoidalStructures, SelfAction, TrivialAction
+from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.opposites import Op
 from sage_categories.cat.profunctors import (
     Profunctors,
     compose_profunctor_transformations,
@@ -42,18 +39,15 @@ from sage_categories.cat.profunctors import (
     profunctor_unitor,
 )
 from sage_categories.cat.relations import Relations
-from sage_categories.cat.monoidal import Actions, Cartesian, Composition, MonoidalStructures, SelfAction, TrivialAction
-from sage_categories.cat.modules import Modules
-from sage_categories.cat.concrete import ConcreteCategory
 from sage_categories.cat.structured_objects import (
-    EndofunctorAlgebras,
-    Groups,
-    EilenbergMoore,
-    Equifier,
-    Inserter,
     AdditiveGroups,
     AdditiveMagmas,
     AdditiveMonoids,
+    EilenbergMoore,
+    EndofunctorAlgebras,
+    Equifier,
+    Groups,
+    Inserter,
     Magmas,
     Monoids,
     MultiplicativeMagmas,
@@ -62,6 +56,7 @@ from sage_categories.cat.structured_objects import (
     Rings,
     Semirings,
 )
+from sage_categories.cat.total_cones import total_cones as TotalCones
 from sage_categories.cat.universal_arrows import (
     InitialObjects,
     LeftUniversalArrows,
@@ -92,8 +87,15 @@ from sage_categories.cat.weighted import (
     yoneda,
 )
 
+del _bootstrap
+
 __all__ = [
-    "Actions", "Cartesian", "Composition", "MonoidalStructures", "SelfAction", "TrivialAction",
+    "Actions",
+    "Cartesian",
+    "Composition",
+    "MonoidalStructures",
+    "SelfAction",
+    "TrivialAction",
     "Adjunctions",
     "Cat",
     "Cones",

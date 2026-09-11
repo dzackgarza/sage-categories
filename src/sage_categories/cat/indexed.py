@@ -153,9 +153,7 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
             fiber = functor.on_object(value)
             identity = Fun(fiber, fiber).one()
             target = reindexing(Mor(self._base)(value, value).one())
-            return Mor(Fun(fiber, fiber))(identity, target).Isomorphisms()(
-                lambda member: Mor(fiber)(member, member).one()
-            )
+            return Mor(Fun(fiber, fiber))(identity, target).Isomorphisms()(lambda member: Mor(fiber)(member, member).one())
 
         def composition(second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> NaturalTransformation:
             source = reindexing(first) * reindexing(second)
@@ -166,7 +164,13 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
 
         return self(functor.on_object, reindexing, unit, composition)
 
-    def construct_morphism(self, source: IndexedCategoriesCategory.ObjectType, target: IndexedCategoriesCategory.ObjectType, components: ComponentRule, comparisons: ComparisonRule) -> IndexedCategoriesCategory.MorphismType:
+    def construct_morphism(
+        self,
+        source: IndexedCategoriesCategory.ObjectType,
+        target: IndexedCategoriesCategory.ObjectType,
+        components: ComponentRule,
+        comparisons: ComparisonRule,
+    ) -> IndexedCategoriesCategory.MorphismType:
         assert source in self and target in self
         return self.MorphismType(domain=source, codomain=target, data=_IndexedTransformationData(components, comparisons))
 
@@ -180,10 +184,12 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
     def composite(self, second: IndexedCategoriesCategory.MorphismType, first: IndexedCategoriesCategory.MorphismType) -> IndexedCategoriesCategory.MorphismType:
         assert first.codomain() is second.domain()
         return self.construct_morphism(
-            first.domain(), second.codomain(),
+            first.domain(),
+            second.codomain(),
             lambda value: second.component(value) * first.component(value),
-            lambda morphism: second.comparison(morphism).whisker_right(first.component(morphism.codomain()))
-            * first.comparison(morphism).whisker_left(second.component(morphism.domain())),
+            lambda morphism: (
+                second.comparison(morphism).whisker_right(first.component(morphism.codomain())) * first.comparison(morphism).whisker_left(second.component(morphism.domain()))
+            ),
         )
 
     def grothendieck_functor(self) -> Functor:
@@ -254,7 +260,13 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
             self._objects[key] = self.ObjectType(_TotalObject(base, fiber))
         return self._objects[key]
 
-    def construct_morphism(self, source: GrothendieckCategory.ObjectType, target: GrothendieckCategory.ObjectType, base: MorphismCategory.ObjectType, fiber: MorphismCategory.ObjectType) -> GrothendieckCategory.MorphismType:
+    def construct_morphism(
+        self,
+        source: GrothendieckCategory.ObjectType,
+        target: GrothendieckCategory.ObjectType,
+        base: MorphismCategory.ObjectType,
+        fiber: MorphismCategory.ObjectType,
+    ) -> GrothendieckCategory.MorphismType:
         assert source in self and target in self
         assert base in Mor(self._indexed.domain().op())(source.base_object(), target.base_object())
         reindex = self._indexed.reindex(base)
@@ -275,7 +287,8 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
     def projection(self) -> Functor:
         if self._projection is None:
             self._projection = Fun(self, self._indexed.domain().op()).Fibrations()(
-                lambda value: value.base_object(), lambda morphism: morphism.base_morphism(),
+                lambda value: value.base_object(),
+                lambda morphism: morphism.base_morphism(),
             )
             self._projection.retain_cartesian_lifts(self._cartesian_lift)
         return self._projection
@@ -290,7 +303,12 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
         source = self(morphism.domain(), image)
         return self.construct_morphism(source, target, morphism, Mor(reindex.codomain())(image, image).one())
 
-    def factor_cartesian(self, lift: GrothendieckCategory.MorphismType, arrow: GrothendieckCategory.MorphismType, base: MorphismCategory.ObjectType) -> GrothendieckCategory.MorphismType:
+    def factor_cartesian(
+        self,
+        lift: GrothendieckCategory.MorphismType,
+        arrow: GrothendieckCategory.MorphismType,
+        base: MorphismCategory.ObjectType,
+    ) -> GrothendieckCategory.MorphismType:
         """Factor an arrow through the selected cartesian lift over a specified base arrow."""
         assert arrow.codomain() is lift.codomain()
         assert ask(lift.base_morphism() * base == arrow.base_morphism()) is True

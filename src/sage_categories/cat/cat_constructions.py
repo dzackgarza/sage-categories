@@ -55,9 +55,8 @@ from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
+from sage_categories.cat.predicates import Predicate, Proposition, Unknown, UnknownClass, ask, conjunction, decide, register_handler, unconditional
 from sage_categories.cat.shapes import Discrete, DiscreteCategory, DiscreteObjectCategory, carrier_comparison
-from sage_categories.cat.predicates import Decision, Unknown, UnknownClass
-from sage_categories.cat.predicates import Predicate, Proposition, ask, conjunction, decide, register_handler, unconditional
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.retention import complete_constructions, deferred_category
 from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
@@ -172,7 +171,8 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
             vertex = vertex_of(self._family_data.diagram.domain(), index)
             result = self._family_data.component(vertex)
             expected = self._family_data.diagram.on_object(vertex).morphism_category(1)(
-                self.domain().family_component(vertex), self.codomain().family_component(vertex),
+                self.domain().family_component(vertex),
+                self.codomain().family_component(vertex),
             )
             assert result in expected
             return result
@@ -502,15 +502,17 @@ def pullback_of_categories(diagram: Functor) -> CategoryOfCategories.ElementType
         def mediator(candidate_cone: NaturalTransformation) -> Functor:
             return Fun(cone_apex(candidate_cone), terminal).constant(terminal(0))
 
-        return Cat().Pullbacks().with_universal_data(
-            diagram,
-            terminal,
-            cone(diagram, terminal, lambda vertex: identity),
-            mediator,
+        return (
+            Cat()
+            .Pullbacks()
+            .with_universal_data(
+                diagram,
+                terminal,
+                cone(diagram, terminal, lambda vertex: identity),
+                mediator,
+            )
         )
     return limit_of_categories(diagram, Cat().Pullbacks())
-
-
 
 
 # -- discrete limits in the opposite category ---------------------------------------------
@@ -599,8 +601,7 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
         morphisms = self.morphism_category(1)
         if first in morphisms and candidate in morphisms:
             return sympy_ask(
-                (first.domain().tag() == candidate.domain().tag())
-                & (first.morphism() == candidate.morphism()),
+                (first.domain().tag() == candidate.domain().tag()) & (first.morphism() == candidate.morphism()),
                 assumptions,
             )
         return None

@@ -44,6 +44,7 @@ from sage_categories.cat.properties import (
 from sage_categories.kernel.refinement import common_ancestor, is_placed
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import Integer, TripleDict, Unknown
+from sage_categories.kernel.type_aliases import EqualityInput
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -275,10 +276,10 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             )
             return shared.base_category().compose_morphisms(self, first)
 
-        def __eq__(self, candidate: MorphismCategory.ObjectType | int) -> Predicate:
+        def __eq__(self, candidate: EqualityInput) -> Predicate:
             return self._deciding_category().equality()(self, candidate)
 
-        def __ne__(self, candidate: MorphismCategory.ObjectType | int) -> Proposition:
+        def __ne__(self, candidate: EqualityInput) -> Proposition:
             return ~self._deciding_category().equality()(self, candidate)
 
         def __hash__(self) -> int:

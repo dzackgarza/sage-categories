@@ -98,6 +98,7 @@ from sage_categories.cat.structured_objects import (
     Monoids,
     PointedMagmas,
 )
+from sage_categories.kernel.type_aliases import ContainmentInput
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
@@ -369,7 +370,7 @@ class _OwnedIndexFacade(Parent):
         self._owned_index_set = index_set
         Parent.__init__(self, facade=True, category=SageSets())
 
-    def __contains__(self, datum: object) -> bool:
+    def __contains__(self, datum: ContainmentInput) -> bool:
         try:
             self._owned_index_set.representative(datum)
         except (AssertionError, TypeError, ValueError):

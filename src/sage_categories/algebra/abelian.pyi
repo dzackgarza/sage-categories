@@ -1,3 +1,4 @@
+from sage_categories.kernel.type_aliases import ContainmentInput
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from sage.combinat.free_module import CombinatorialFreeModule
@@ -93,7 +94,7 @@ class _OwnedIndexFacade(Parent):
     def __init__(self, index_set: CategoryOfCategories.ElementType) -> None:
         ...
 
-    def __contains__(self, datum: object) -> bool:
+    def __contains__(self, datum: ContainmentInput) -> bool:
         ...
 
 @dataclass(frozen=True, eq=False, slots=True)

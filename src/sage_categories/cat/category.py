@@ -29,6 +29,7 @@ from sage_categories.kernel.retention import (
     identity_key,
 )
 from sage_categories.kernel.roles import prepare_category_subclass
+from sage_categories.kernel.type_aliases import ContainmentInput, EqualityInput
 from sage_categories.kernel.sage_runtime import (
     Integer,
     MonoDict,
@@ -521,7 +522,7 @@ class CategoryDeclaration[
     ) -> Proposition:
         return member(candidate, self)
 
-    def __contains__(self, candidate: CategoryOfCategories.ElementType | int) -> bool:
+    def __contains__(self, candidate: ContainmentInput) -> bool:
         """``x in C``: established placement, which is two-valued (POL-CAT-068).
 
         A value entered ``C`` or it did not, so ``member`` never returns ``Unknown``.  A
@@ -1660,12 +1661,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return self._category
 
         def __eq__(
-            self, candidate: CategoryOfCategories.ElementType | int
+            self, candidate: EqualityInput
         ) -> Predicate:
             return self._deciding_category().equality()(self, candidate)
 
         def __ne__(
-            self, candidate: CategoryOfCategories.ElementType | int
+            self, candidate: EqualityInput
         ) -> Proposition:
             return ~self._deciding_category().equality()(self, candidate)
 

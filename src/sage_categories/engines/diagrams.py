@@ -14,6 +14,8 @@ from functools import cache
 from importlib import import_module
 from typing import Any, Protocol, cast, overload
 
+from sage_categories.kernel.type_aliases import EqualityInput
+
 
 @cache
 def _discopy_cat() -> Any:
@@ -55,7 +57,7 @@ class _ObjectValue:
 
     __add__ = __matmul__
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: EqualityInput) -> bool:
         return (
             isinstance(other, _ObjectValue)
             and self.model is other.model
@@ -225,7 +227,7 @@ def evaluate_path(
         def __init__(self, value: object) -> None:
             self.value = value
 
-        def __eq__(self, other: object) -> bool:
+        def __eq__(self, other: EqualityInput) -> bool:
             return isinstance(other, ObjectValue) and self.value is other.value
 
         def __hash__(self) -> int:

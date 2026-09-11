@@ -14,6 +14,7 @@ from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import AppliedQuery, Predicate, Proposition, UnknownClass
 from sage_categories.cat.comma import CommaCategory
 from sage_categories.kernel.sage_runtime import Integer
+from sage_categories.kernel.type_aliases import ContainmentInput, EqualityInput
 from typing import Literal, overload
 __all__ = ['OnObject', 'OnMorphism', 'Assignment', 'member', 'Category', 'CategoryOfCategories', 'Cat']
 type OnObject = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
@@ -33,10 +34,10 @@ class _StaticRoles_CategoryOfCategories:
         def category(self) -> Category:
             ...
 
-        def __eq__(self, candidate: CategoryOfCategories.ElementType | int) -> Predicate:
+        def __eq__(self, candidate: EqualityInput) -> Predicate:
             ...
 
-        def __ne__(self, candidate: CategoryOfCategories.ElementType | int) -> Proposition:
+        def __ne__(self, candidate: EqualityInput) -> Proposition:
             ...
 
         def __hash__(self) -> int:
@@ -138,7 +139,7 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](_StaticRoles_Catego
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
-    def __contains__(self, candidate: CategoryOfCategories.ElementType | int) -> bool:
+    def __contains__(self, candidate: ContainmentInput) -> bool:
         ...
 
     @overload

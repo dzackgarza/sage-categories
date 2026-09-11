@@ -23,6 +23,7 @@ from sage_categories.kernel.predicates import (
     register_query_handler,
 )
 from sage_categories.kernel.sage_runtime import MonoDict, Unknown, UnknownClass, cached_method, uncamelcase
+from sage_categories.kernel.type_aliases import EqualityInput
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category, CategoryOfCategories
@@ -157,10 +158,10 @@ class AppliedQuery:
     def __hash__(self) -> int:
         return object.__hash__(self)
 
-    def __eq__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+    def __eq__(self, other: EqualityInput) -> Proposition:
         return _query_comparison("eq")(self, other)
 
-    def __ne__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+    def __ne__(self, other: EqualityInput) -> Proposition:
         return ~self.__eq__(other)
 
     def __lt__(self, other: CategoryOfCategories.ElementType) -> Proposition:

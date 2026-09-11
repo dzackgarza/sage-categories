@@ -52,6 +52,7 @@ from sage_categories.cat.predicates import (
 from sage_categories.cat.shapes import realize_discrete_object
 from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
 from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.type_aliases import ContainmentInput
 
 type Map = Callable[[Hashable], Hashable]
 type MembershipRule = Callable[[Hashable], Proposition]
@@ -520,7 +521,7 @@ class SetsCategory(Category[[Map], []]):
         def __len__(self) -> int:
             return len(self._values)
 
-        def __contains__(self, point: CategoryOfCategories.ElementType) -> bool:
+        def __contains__(self, point: ContainmentInput) -> bool:
             return ask(self.membership_proposition(point)) is True
 
         def membership_proposition(

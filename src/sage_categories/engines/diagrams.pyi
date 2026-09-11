@@ -1,3 +1,4 @@
+from sage_categories.kernel.type_aliases import EqualityInput
 from _typeshed import Incomplete
 from collections.abc import Callable
 from typing import Any, Protocol, overload
@@ -21,7 +22,7 @@ class _ObjectValue:
         ...
     __add__ = __matmul__
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: EqualityInput) -> bool:
         ...
 
     def __hash__(self) -> int:

@@ -4,6 +4,7 @@ from sage_categories.cat.functors import Functor
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.predicates import AppliedPredicate as AppliedPredicate, OwnedPredicate as Predicate
 from sage_categories.kernel.sage_runtime import Unknown as Unknown, UnknownClass as UnknownClass
+from sage_categories.kernel.type_aliases import EqualityInput
 from sympy.logic.boolalg import Boolean
 __all__ = ['AppliedPredicate', 'Predicate', 'Unknown', 'UnknownClass', 'Argument', 'Decision', 'QueryAnswer', 'Answer', 'PredicateHandler', 'QueryHandler', 'Proposition', 'DecidingProposition', 'property_predicate', 'register_handler', 'Query', 'AppliedQuery', 'conjunction', 'disjunction', 'negation', 'implication', 'decide', 'unconditional', 'ask', 'established', 'assume', 'retract', 'Axiom', 'ConstructionFamily', 'declared_axiom']
 type Argument = CategoryOfCategories.ElementType | AppliedQuery | int
@@ -56,10 +57,10 @@ class AppliedQuery:
     def __hash__(self) -> int:
         ...
 
-    def __eq__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+    def __eq__(self, other: EqualityInput) -> Proposition:
         ...
 
-    def __ne__(self, other: CategoryOfCategories.ElementType) -> Proposition:
+    def __ne__(self, other: EqualityInput) -> Proposition:
         ...
 
     def __lt__(self, other: CategoryOfCategories.ElementType) -> Proposition:

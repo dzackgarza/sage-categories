@@ -13,6 +13,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition, UnknownClass
 from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
 from sympy import Lambda
+from sage_categories.kernel.type_aliases import ContainmentInput
 from typing import Literal, Protocol, overload
 __all__ = ['Sets', 'MapForm', 'ObjectForm', 'SetsCategory', 'FiniteSets']
 type Map = Callable[[Hashable], Hashable]
@@ -141,7 +142,7 @@ class SetsCategory(Category[[Map], []]):
         def __len__(self) -> int:
             ...
 
-        def __contains__(self, point: CategoryOfCategories.ElementType) -> bool:
+        def __contains__(self, point: ContainmentInput) -> bool:
             ...
 
         def membership_proposition(self, point: CategoryOfCategories.ElementType) -> Proposition:

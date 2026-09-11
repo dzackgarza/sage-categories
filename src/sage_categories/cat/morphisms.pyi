@@ -9,6 +9,7 @@ from sage_categories.cat.functors import Functor
 from sage_categories.cat.properties import FixedEndpointProperty, FullSubcategory, PredicateSubcategory, PropertySubcategory
 from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import Integer
+from sage_categories.kernel.type_aliases import EqualityInput
 from typing import Literal, overload
 __all__ = ['Mor', 'endpoints', 'endpoints_in', 'hom_inhabitation', 'MorphismCategory', 'IsomorphismsCategory', 'EndomorphismsCategory', 'FixedEndpointCategory']
 
@@ -83,10 +84,10 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         def __mul__(self, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             ...
 
-        def __eq__(self, candidate: MorphismCategory.ObjectType | int) -> Predicate:
+        def __eq__(self, candidate: EqualityInput) -> Predicate:
             ...
 
-        def __ne__(self, candidate: MorphismCategory.ObjectType | int) -> Proposition:
+        def __ne__(self, candidate: EqualityInput) -> Proposition:
             ...
 
         def __hash__(self) -> int:

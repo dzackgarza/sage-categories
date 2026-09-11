@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from _typeshed import Incomplete
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import CommaSpecialization
@@ -12,12 +13,12 @@ __all__ = ['TotalConesCategory', 'TotalLimitConesCategory', 'total_cones']
 class TotalConesCategory(CommaSpecialization):
     LimitCones: Incomplete
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def presentation(self) -> ConeCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -26,6 +27,12 @@ class TotalConesCategory(CommaSpecialization):
             ...
 
         def diagram_transformation(self) -> NaturalTransformation:
+            ...
+
+        def domain(self) -> TotalConesCategory.ObjectType:
+            ...
+
+        def codomain(self) -> TotalConesCategory.ObjectType:
             ...
 
     def diagrams(self) -> FunctorCategory:
@@ -51,14 +58,20 @@ class TotalConesCategory(CommaSpecialization):
 
 class TotalLimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType, NaturalTransformation], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> TotalLimitConesCategory.ObjectType:
+            ...
+
+        def codomain(self) -> TotalLimitConesCategory.ObjectType:
+            ...
 
 def total_cones(diagrams: FunctorCategory) -> TotalConesCategory:
     ...

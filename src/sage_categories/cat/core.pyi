@@ -1,6 +1,3 @@
-import sage_categories.cat.category
-import sage_categories.cat.morphisms
-import sage_categories.kernel.roles
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
@@ -9,28 +6,40 @@ __all__ = ['GroupoidsCategory', 'CoreCategory', 'CoreMorphismCategory', 'CoreFix
 
 class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
 
-    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType:
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType:
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType:
         ...
+
+        def domain(self) -> GroupoidsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> GroupoidsCategory.ObjectType:
+            ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
 class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType:
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType:
         ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType:
         ...
+
+        def domain(self) -> CoreCategory.ObjectType:
+            ...
+
+        def codomain(self) -> CoreCategory.ObjectType:
+            ...
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         ...
@@ -64,14 +73,20 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
 
 class CoreMorphismCategory(MorphismCategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType:
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType:
         ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType:
         ...
+
+        def domain(self) -> CoreMorphismCategory.ObjectType:
+            ...
+
+        def codomain(self) -> CoreMorphismCategory.ObjectType:
+            ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
         ...
@@ -84,14 +99,20 @@ class CoreMorphismCategory(MorphismCategory):
 
 class CoreFixedEndpointCategory(FixedEndpointCategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType:
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType:
         ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType:
         ...
+
+        def domain(self) -> CoreFixedEndpointCategory.ObjectType:
+            ...
+
+        def codomain(self) -> CoreFixedEndpointCategory.ObjectType:
+            ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
         ...

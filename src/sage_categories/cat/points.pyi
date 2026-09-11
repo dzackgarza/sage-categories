@@ -1,5 +1,3 @@
-import sage_categories.cat.category
-import sage_categories.cat.morphisms
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition
@@ -13,28 +11,40 @@ class _PointIdentityPredicate(Predicate):
 
 class PointMorphismCategory(MorphismCategory[[], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType:
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType:
         ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType:
         ...
+
+        def domain(self) -> PointMorphismCategory.ObjectType:
+            ...
+
+        def codomain(self) -> PointMorphismCategory.ObjectType:
+            ...
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
 class PointCategory(Category[[], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType:
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType:
         ...
 
-    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType:
         ...
+
+        def domain(self) -> PointCategory.ObjectType:
+            ...
+
+        def codomain(self) -> PointCategory.ObjectType:
+            ...
 
     def __init__(self, member: CategoryOfCategories.ElementType) -> None:
         ...

@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from sage_categories.cat.cat_constructions import LimitSubcategory
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor, NaturalTransformation
@@ -12,14 +13,20 @@ __all__ = ['ActionPairsCategory', 'BimoduleCategory', 'Bimodules']
 
 class ActionPairsCategory(LimitSubcategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> ActionPairsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> ActionPairsCategory.ObjectType:
+            ...
 
     @cached_method
     def to_left(self) -> Functor:
@@ -37,7 +44,7 @@ class ActionPairsCategory(LimitSubcategory):
 
 class BimoduleCategory(EquifierCategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def left_action(self) -> MorphismCategory.ObjectType:
             ...
@@ -45,11 +52,17 @@ class BimoduleCategory(EquifierCategory):
         def right_action(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> BimoduleCategory.ObjectType:
+            ...
+
+        def codomain(self) -> BimoduleCategory.ObjectType:
+            ...
 
     def __init__(self, first: NaturalTransformation, second: NaturalTransformation, left: ModuleCategory, right: ModuleCategory, pairs: ActionPairsCategory) -> None:
         ...

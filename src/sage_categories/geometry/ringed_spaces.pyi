@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category
@@ -18,7 +19,7 @@ class _RingedSpaceData:
 
 class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: _RingedSpaceData) -> None:
             ...
@@ -29,7 +30,7 @@ class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         def sheaf(self) -> RingSheaf:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -41,6 +42,12 @@ class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
             ...
 
         def sheaf_map(self) -> NaturalTransformation:
+            ...
+
+        def domain(self) -> RingedSpacesCategory.ObjectType:
+            ...
+
+        def codomain(self) -> RingedSpacesCategory.ObjectType:
             ...
 
     @cached_method

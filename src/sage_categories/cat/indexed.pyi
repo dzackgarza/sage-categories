@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from collections.abc import Callable
 from dataclasses import dataclass
 from sage_categories.cat.adjunctions import EquivalencesCategory
@@ -28,7 +29,7 @@ class _IndexedTransformationData:
 
 class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: _IndexedData) -> None:
             ...
@@ -57,7 +58,7 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
         def total_category(self) -> GrothendieckCategory:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -72,6 +73,12 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
             ...
 
         def induced_functor(self) -> Functor:
+            ...
+
+        def domain(self) -> IndexedCategoriesCategory.ObjectType:
+            ...
+
+        def codomain(self) -> IndexedCategoriesCategory.ObjectType:
             ...
 
     def __init__(self, base: Category) -> None:
@@ -110,7 +117,7 @@ class _TotalMorphism:
 
 class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: _TotalObject) -> None:
             ...
@@ -121,7 +128,7 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
         def fiber_object(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -133,6 +140,12 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
             ...
 
         def fiber_morphism(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> GrothendieckCategory.ObjectType:
+            ...
+
+        def codomain(self) -> GrothendieckCategory.ObjectType:
             ...
 
     def __init__(self, indexed: IndexedCategoriesCategory.ObjectType) -> None:

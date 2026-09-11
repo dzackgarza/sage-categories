@@ -64,8 +64,14 @@ class MonoidalStructuresCategory(Category[[], []]):
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> MonoidalStructuresCategory.ObjectType:
+            ...
+
+        def codomain(self) -> MonoidalStructuresCategory.ObjectType:
+            ...
 
     def __init__(self, base: Category) -> None:
         ...
@@ -95,7 +101,7 @@ class _ActionData(NamedTuple):
 
 class ActionsCategory(Category[[], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: _ActionData) -> None:
             ...
@@ -121,11 +127,17 @@ class ActionsCategory(Category[[], []]):
         def triangle(self, m: CategoryOfCategories.ElementType, x: CategoryOfCategories.ElementType) -> Proposition:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> ActionsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> ActionsCategory.ObjectType:
+            ...
 
     def __init__(self, monoidal: MonoidalStructuresCategory.ObjectType, base: Category) -> None:
         ...

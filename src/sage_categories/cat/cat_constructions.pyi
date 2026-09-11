@@ -41,12 +41,18 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         def family_component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: FamilyMorphismData) -> None:
             ...
 
         def family_component(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> LimitCategory.ObjectType:
+            ...
+
+        def codomain(self) -> LimitCategory.ObjectType:
             ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
@@ -96,14 +102,20 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
 class LimitSubcategory(LimitCategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> LimitSubcategory.ObjectType:
+            ...
+
+        def codomain(self) -> LimitSubcategory.ObjectType:
+            ...
 
     def __init__(self, diagram: Functor) -> None:
         ...
@@ -134,7 +146,7 @@ class _TaggedMorphismData:
 
 class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: _TaggedObjectData) -> None:
             ...
@@ -153,7 +165,13 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
         def morphism(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        def domain(self) -> _TaggedCategory.ObjectType:
+            ...
+
+        def codomain(self) -> _TaggedCategory.ObjectType:
+            ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     def __init__(self, diagram: Functor) -> None:

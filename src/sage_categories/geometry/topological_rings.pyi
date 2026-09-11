@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from collections.abc import Callable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -36,7 +37,7 @@ class _TopologicalRingData:
 
 class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: _TopologicalRingData) -> None:
             ...
@@ -59,7 +60,7 @@ class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
         def multiplication_preimage(self, open_object: CategoryOfCategories.ElementType) -> ProductTopologyOpen:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -71,6 +72,12 @@ class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
             ...
 
         def continuous_map(self) -> TopologicalSpacesCategory.MorphismType:
+            ...
+
+        def domain(self) -> TopologicalRingsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> TopologicalRingsCategory.ObjectType:
             ...
 
     @cached_method

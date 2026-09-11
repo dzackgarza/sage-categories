@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from collections.abc import Callable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -13,16 +14,22 @@ type Choice = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.
 
 class TerminalObjectsCategory(FullSubcategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def unique_from(self, source: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> TerminalObjectsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> TerminalObjectsCategory.ObjectType:
+            ...
 
     def __call__(self, value: CategoryOfCategories.ElementType, factor: Factor) -> CategoryOfCategories.ElementType:
         ...
@@ -32,16 +39,22 @@ def TerminalObjects(category: Category) -> TerminalObjectsCategory:
 
 class InitialObjectsCategory(FullSubcategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def unique_to(self, target: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> InitialObjectsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> InitialObjectsCategory.ObjectType:
+            ...
 
     def __call__(self, value: CategoryOfCategories.ElementType, factor: Factor) -> CategoryOfCategories.ElementType:
         ...

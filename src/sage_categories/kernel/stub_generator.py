@@ -360,13 +360,28 @@ def _providers_in_module(
     inheritance: dict[str, dict[str, tuple[str, ...]]],
     module: str,
 ) -> dict[str, tuple[str, ...]]:
-    providers: dict[str, tuple[str, ...]] = {}
-    prefix = f"{module}."
+    """Return direct provider bases, pruning ancestry across every role surface.
+
+    One nominal provider has one Python MRO even when an ancestry edge crosses the
+    compiler's object/element/arrow reporting surfaces.  In particular a functor is
+    an object whose base ``Cat().MorphismType`` is reported on the arrow surface.
+    Provider names are therefore global in the projection; reject a duplicate rather
+    than silently selecting one surface, then prune against the complete relation.
+    """
+    all_relations: dict[str, tuple[str, ...]] = {}
     for relations in inheritance.values():
         for provider, bases in relations.items():
-            if provider.startswith(prefix):
-                providers[provider] = _direct_provider_bases(bases, relations)
-    return providers
+            assert provider not in all_relations, (
+                f"provider {provider!r} is projected on more than one role surface"
+            )
+            all_relations[provider] = bases
+
+    prefix = f"{module}."
+    return {
+        provider: _direct_provider_bases(bases, all_relations)
+        for provider, bases in all_relations.items()
+        if provider.startswith(prefix)
+    }
 
 
 def _canonical_exports(

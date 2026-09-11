@@ -20,7 +20,7 @@ __all__ = ['InserterCategory', 'Inserter', 'EquifierCategory', 'Equifier', 'Endo
 
 class InserterCategory(LimitSubcategory):
 
-    class ObjectType(sage_categories.cat.structured_objects.MagmaCategory.ObjectType, sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.structured_objects.MagmaCategory.ObjectType):
 
         def carrier(self) -> CategoryOfCategories.ElementType:
             ...
@@ -28,12 +28,18 @@ class InserterCategory(LimitSubcategory):
         def structure(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.structured_objects.MagmaCategory.ElementType, sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.structured_objects.MagmaCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.structured_objects.MagmaCategory.MorphismType, sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.structured_objects.MagmaCategory.MorphismType):
 
         def underlying_morphism(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> InserterCategory.ObjectType:
+            ...
+
+        def codomain(self) -> InserterCategory.ObjectType:
             ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -58,14 +64,20 @@ def Inserter(first: Functor, second: Functor, category_type: type[InserterCatego
 
 class EquifierCategory(FullSubcategory):
 
-    class ObjectType(sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType):
         ...
 
-    class ElementType(sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType):
         ...
+
+        def domain(self) -> EquifierCategory.ObjectType:
+            ...
+
+        def codomain(self) -> EquifierCategory.ObjectType:
+            ...
 
     def __init__(self, first: NaturalTransformation, second: NaturalTransformation) -> None:
         ...
@@ -87,7 +99,7 @@ class _GroupPredicate(Predicate):
 
 class MagmaCategory(InserterCategory):
 
-    class ObjectType(sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType):
 
         def carrier(self) -> CategoryOfCategories.ElementType:
             ...
@@ -98,12 +110,18 @@ class MagmaCategory(InserterCategory):
         def operation(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType):
 
         def underlying_morphism(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> MagmaCategory.ObjectType:
+            ...
+
+        def codomain(self) -> MagmaCategory.ObjectType:
             ...
 
     def __init__(self, diagram: Functor, tensor: Functor) -> None:
@@ -121,7 +139,7 @@ def PointedMagmas(tensor: Functor, unit: CategoryOfCategories.ElementType) -> In
 
 class MonoidCategory(EquifierCategory):
 
-    class ObjectType(sage_categories.cat.structured_objects.EquifierCategory.ObjectType, sage_categories.cat.structured_objects.InserterCategory.ObjectType, sage_categories.cat.structured_objects.MagmaCategory.ObjectType, sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.structured_objects.EquifierCategory.ObjectType, sage_categories.cat.structured_objects.InserterCategory.ObjectType):
 
         def operation(self) -> MorphismCategory.ObjectType:
             ...
@@ -129,11 +147,17 @@ class MonoidCategory(EquifierCategory):
         def unit_morphism(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.structured_objects.EquifierCategory.ElementType, sage_categories.cat.structured_objects.InserterCategory.ElementType, sage_categories.cat.structured_objects.MagmaCategory.ElementType, sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.structured_objects.EquifierCategory.ElementType, sage_categories.cat.structured_objects.InserterCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.structured_objects.EquifierCategory.MorphismType, sage_categories.cat.structured_objects.InserterCategory.MorphismType, sage_categories.cat.structured_objects.MagmaCategory.MorphismType, sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.structured_objects.EquifierCategory.MorphismType, sage_categories.cat.structured_objects.InserterCategory.MorphismType):
         ...
+
+        def domain(self) -> MonoidCategory.ObjectType:
+            ...
+
+        def codomain(self) -> MonoidCategory.ObjectType:
+            ...
 
     def __init__(self, first: NaturalTransformation, second: NaturalTransformation, monoidal: MonoidalStructuresCategory.ObjectType) -> None:
         ...
@@ -157,31 +181,43 @@ def Monoids(structure: Category | MonoidalStructuresCategory.ObjectType) -> Mono
 
 class GroupsCategory(PropertySubcategory):
 
-    class ObjectType(sage_categories.cat.structured_objects.MonoidCategory.ObjectType, sage_categories.cat.structured_objects.EquifierCategory.ObjectType, sage_categories.cat.structured_objects.InserterCategory.ObjectType, sage_categories.cat.structured_objects.MagmaCategory.ObjectType, sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.structured_objects.MonoidCategory.ObjectType):
 
         @cache
         def inversion(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.structured_objects.MonoidCategory.ElementType, sage_categories.cat.structured_objects.EquifierCategory.ElementType, sage_categories.cat.structured_objects.InserterCategory.ElementType, sage_categories.cat.structured_objects.MagmaCategory.ElementType, sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.structured_objects.MonoidCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.structured_objects.MonoidCategory.MorphismType, sage_categories.cat.structured_objects.EquifierCategory.MorphismType, sage_categories.cat.structured_objects.InserterCategory.MorphismType, sage_categories.cat.structured_objects.MagmaCategory.MorphismType, sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.structured_objects.MonoidCategory.MorphismType):
         ...
+
+        def domain(self) -> GroupsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> GroupsCategory.ObjectType:
+            ...
 
 def Groups(structure: Category | MonoidalStructuresCategory.ObjectType) -> GroupsCategory:
     ...
 
 class NamedOperationCategory(LimitSubcategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> NamedOperationCategory.ObjectType:
+            ...
+
+        def codomain(self) -> NamedOperationCategory.ObjectType:
+            ...
     Commutative: Incomplete
 
     def neutral_category(self) -> Category:
@@ -219,7 +255,7 @@ class NamedOperationCategory(LimitSubcategory):
 
 class AdditiveMagmasCategory(NamedOperationCategory):
 
-    class ObjectType(sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType):
 
         def __init__(self, data: FamilyObjectData) -> None:
             ...
@@ -227,20 +263,26 @@ class AdditiveMagmasCategory(NamedOperationCategory):
         def addition(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType):
 
         def __add__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType):
         ...
+
+        def domain(self) -> AdditiveMagmasCategory.ObjectType:
+            ...
+
+        def codomain(self) -> AdditiveMagmasCategory.ObjectType:
+            ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
 class MultiplicativeMagmasCategory(NamedOperationCategory):
 
-    class ObjectType(sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType):
 
         def __init__(self, data: FamilyObjectData) -> None:
             ...
@@ -248,32 +290,44 @@ class MultiplicativeMagmasCategory(NamedOperationCategory):
         def multiplication(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType):
 
         def __mul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType):
         ...
+
+        def domain(self) -> MultiplicativeMagmasCategory.ObjectType:
+            ...
+
+        def codomain(self) -> MultiplicativeMagmasCategory.ObjectType:
+            ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
 class NamedMonoidsCategory(NamedOperationCategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> NamedMonoidsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> NamedMonoidsCategory.ObjectType:
+            ...
     Group: Incomplete
 
 class AdditiveMonoidsCategory(NamedMonoidsCategory):
 
-    class ObjectType(sage_categories.cat.structured_objects.AdditiveMagmasCategory.ObjectType, sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.structured_objects.AdditiveMagmasCategory.ObjectType):
 
         def __init__(self, data: FamilyObjectData) -> None:
             ...
@@ -281,11 +335,17 @@ class AdditiveMonoidsCategory(NamedMonoidsCategory):
         def zero(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class ElementType(sage_categories.cat.structured_objects.AdditiveMagmasCategory.ElementType, sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.structured_objects.AdditiveMagmasCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.structured_objects.AdditiveMagmasCategory.MorphismType, sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.structured_objects.AdditiveMagmasCategory.MorphismType):
         ...
+
+        def domain(self) -> AdditiveMonoidsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> AdditiveMonoidsCategory.ObjectType:
+            ...
 
     def named_magmas(self) -> AdditiveMagmasCategory:
         ...
@@ -295,7 +355,7 @@ class AdditiveMonoidsCategory(NamedMonoidsCategory):
 
 class MultiplicativeMonoidsCategory(NamedMonoidsCategory):
 
-    class ObjectType(sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ObjectType, sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ObjectType):
 
         def __init__(self, data: FamilyObjectData) -> None:
             ...
@@ -303,11 +363,17 @@ class MultiplicativeMonoidsCategory(NamedMonoidsCategory):
         def one(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class ElementType(sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ElementType, sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.MorphismType, sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.MorphismType):
         ...
+
+        def domain(self) -> MultiplicativeMonoidsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> MultiplicativeMonoidsCategory.ObjectType:
+            ...
 
     def named_magmas(self) -> MultiplicativeMagmasCategory:
         ...
@@ -317,7 +383,7 @@ class MultiplicativeMonoidsCategory(NamedMonoidsCategory):
 
 class AdditiveGroupsCategory(NamedOperationCategory):
 
-    class ObjectType(sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ObjectType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.ObjectType, sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ObjectType):
 
         def __init__(self, data: FamilyObjectData) -> None:
             ...
@@ -325,7 +391,7 @@ class AdditiveGroupsCategory(NamedOperationCategory):
         def negation(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ElementType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.ElementType, sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ElementType):
 
         def __neg__(self) -> CategoryOfCategories.ElementType:
             ...
@@ -333,8 +399,14 @@ class AdditiveGroupsCategory(NamedOperationCategory):
         def __sub__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.cat.structured_objects.AdditiveMonoidsCategory.MorphismType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.MorphismType, sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.structured_objects.AdditiveMonoidsCategory.MorphismType):
         ...
+
+        def domain(self) -> AdditiveGroupsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> AdditiveGroupsCategory.ObjectType:
+            ...
 
     def named_monoids(self) -> AdditiveMonoidsCategory:
         ...
@@ -359,14 +431,20 @@ def MultiplicativeMonoids(structure: Category | MonoidalStructuresCategory.Objec
 
 class MonoidPairsCategory(LimitSubcategory):
 
-    class ObjectType(sage_categories.cat.properties.InverseImageSubcategory.ObjectType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.ObjectType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ObjectType, sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ObjectType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.ObjectType, sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.properties.InverseImageSubcategory.ObjectType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.ObjectType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.properties.InverseImageSubcategory.ElementType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.ElementType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ElementType, sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ElementType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.ElementType, sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.properties.InverseImageSubcategory.ElementType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.ElementType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.properties.InverseImageSubcategory.MorphismType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.MorphismType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.MorphismType, sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.MorphismType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.MorphismType, sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.properties.InverseImageSubcategory.MorphismType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.MorphismType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.MorphismType):
         ...
+
+        def domain(self) -> MonoidPairsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> MonoidPairsCategory.ObjectType:
+            ...
 
     @cached_method
     def to_additive(self) -> Functor:
@@ -388,14 +466,20 @@ class MonoidPairsCategory(LimitSubcategory):
 
 class SemiringCategory(EquifierCategory):
 
-    class ObjectType(sage_categories.cat.structured_objects.EquifierCategory.ObjectType, sage_categories.cat.structured_objects.MonoidPairsCategory.ObjectType, sage_categories.cat.properties.InverseImageSubcategory.ObjectType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.ObjectType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ObjectType, sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ObjectType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.ObjectType, sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.structured_objects.EquifierCategory.ObjectType, sage_categories.cat.structured_objects.MonoidPairsCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.structured_objects.EquifierCategory.ElementType, sage_categories.cat.structured_objects.MonoidPairsCategory.ElementType, sage_categories.cat.properties.InverseImageSubcategory.ElementType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.ElementType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ElementType, sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ElementType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.ElementType, sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.structured_objects.EquifierCategory.ElementType, sage_categories.cat.structured_objects.MonoidPairsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.structured_objects.EquifierCategory.MorphismType, sage_categories.cat.structured_objects.MonoidPairsCategory.MorphismType, sage_categories.cat.properties.InverseImageSubcategory.MorphismType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.MorphismType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.MorphismType, sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.MorphismType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.MorphismType, sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.structured_objects.EquifierCategory.MorphismType, sage_categories.cat.structured_objects.MonoidPairsCategory.MorphismType):
         ...
+
+        def domain(self) -> SemiringCategory.ObjectType:
+            ...
+
+        def codomain(self) -> SemiringCategory.ObjectType:
+            ...
 
     def __init__(self, first: NaturalTransformation, second: NaturalTransformation, monoidal: MonoidalStructuresCategory.ObjectType, pairs: MonoidPairsCategory) -> None:
         ...
@@ -426,14 +510,20 @@ def Semirings(base: Category) -> SemiringCategory:
 
 class RingCategory(LimitSubcategory):
 
-    class ObjectType(sage_categories.cat.structured_objects.SemiringCategory.ObjectType, sage_categories.cat.structured_objects.EquifierCategory.ObjectType, sage_categories.cat.structured_objects.MonoidPairsCategory.ObjectType, sage_categories.cat.properties.InverseImageSubcategory.ObjectType, sage_categories.cat.structured_objects.AdditiveGroupsCategory.ObjectType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.ObjectType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ObjectType, sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ObjectType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.ObjectType, sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType, sage_categories.cat.constructions.ProductsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.structured_objects.SemiringCategory.ObjectType, sage_categories.cat.structured_objects.AdditiveGroupsCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.structured_objects.SemiringCategory.ElementType, sage_categories.cat.structured_objects.EquifierCategory.ElementType, sage_categories.cat.structured_objects.MonoidPairsCategory.ElementType, sage_categories.cat.properties.InverseImageSubcategory.ElementType, sage_categories.cat.structured_objects.AdditiveGroupsCategory.ElementType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.ElementType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.ElementType, sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.ElementType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.ElementType, sage_categories.cat.cat_constructions.LimitCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.structured_objects.SemiringCategory.ElementType, sage_categories.cat.structured_objects.AdditiveGroupsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.structured_objects.SemiringCategory.MorphismType, sage_categories.cat.structured_objects.EquifierCategory.MorphismType, sage_categories.cat.structured_objects.MonoidPairsCategory.MorphismType, sage_categories.cat.properties.InverseImageSubcategory.MorphismType, sage_categories.cat.structured_objects.AdditiveGroupsCategory.MorphismType, sage_categories.cat.structured_objects.MultiplicativeMonoidsCategory.MorphismType, sage_categories.cat.structured_objects.AdditiveMonoidsCategory.MorphismType, sage_categories.cat.structured_objects.MultiplicativeMagmasCategory.MorphismType, sage_categories.cat.structured_objects.AdditiveMagmasCategory.MorphismType, sage_categories.cat.cat_constructions.LimitCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.structured_objects.SemiringCategory.MorphismType, sage_categories.cat.structured_objects.AdditiveGroupsCategory.MorphismType):
         ...
+
+        def domain(self) -> RingCategory.ObjectType:
+            ...
+
+        def codomain(self) -> RingCategory.ObjectType:
+            ...
 
     def __init__(self, diagram: Functor, monoidal: MonoidalStructuresCategory.ObjectType) -> None:
         ...

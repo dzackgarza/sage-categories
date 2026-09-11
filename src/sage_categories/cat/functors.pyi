@@ -31,14 +31,20 @@ class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [A
 
 class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
 
-    class ObjectType(sage_categories.cat.functors.FunctorCategory.ObjectType, sage_categories.cat.properties.PropertySubcategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.functors.FunctorCategory.ObjectType, sage_categories.cat.properties.PropertySubcategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.functors.FunctorCategory.ElementType, sage_categories.cat.properties.PropertySubcategory.ElementType, sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.functors.FunctorCategory.ElementType, sage_categories.cat.properties.PropertySubcategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.properties.PropertySubcategory.MorphismType, sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.properties.PropertySubcategory.MorphismType):
         ...
+
+        def domain(self) -> FunctorProperty.ObjectType:
+            ...
+
+        def codomain(self) -> FunctorProperty.ObjectType:
+            ...
 
     def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
         ...
@@ -51,14 +57,20 @@ class _DenotesFunctorPredicate(Predicate):
 
 class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.functors.FunctorsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.cat.functors.FunctorsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.functors.FunctorsCategory.MorphismType):
         ...
+
+        def domain(self) -> FunctorCategory.ObjectType:
+            ...
+
+        def codomain(self) -> FunctorCategory.ObjectType:
+            ...
 
     def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
         ...
@@ -120,7 +132,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: NaturalTransformationData) -> None:
             ...
@@ -144,6 +156,12 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             ...
 
         def horizontal(self, transformation: NaturalTransformation) -> NaturalTransformation:
+            ...
+
+        def domain(self) -> FunctorsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> FunctorsCategory.ObjectType:
             ...
 
     def __init__(self, base: CategoryOfCategories) -> None:

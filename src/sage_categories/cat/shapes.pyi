@@ -24,8 +24,14 @@ class DiscreteCategory(Category[[], []]):
         def point(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> DiscreteCategory.ObjectType:
+            ...
+
+        def codomain(self) -> DiscreteCategory.ObjectType:
+            ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
@@ -72,14 +78,20 @@ Discrete: Functor
 
 class DiscreteObjectCategory(DiscreteCategory):
 
-    class ObjectType(sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> DiscreteObjectCategory.ObjectType:
+            ...
+
+        def codomain(self) -> DiscreteObjectCategory.ObjectType:
+            ...
 
     def __call__(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         ...
@@ -106,14 +118,20 @@ class _ComparablePredicate(Predicate):
 
 class ThinMorphisms(MorphismCategory[[], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> ThinMorphisms.ObjectType:
+            ...
+
+        def codomain(self) -> ThinMorphisms.ObjectType:
+            ...
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
@@ -128,8 +146,14 @@ class ThinCategory(Category[[], []]):
         def point(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> ThinCategory.ObjectType:
+            ...
+
+        def codomain(self) -> ThinCategory.ObjectType:
+            ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...

@@ -38,7 +38,7 @@ class CommaCategory(Category[[MorphismCategory.ObjectType, MorphismCategory.Obje
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: CommaMorphism) -> None:
             ...
@@ -47,6 +47,12 @@ class CommaCategory(Category[[MorphismCategory.ObjectType, MorphismCategory.Obje
             ...
 
         def second(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> CommaCategory.ObjectType:
+            ...
+
+        def codomain(self) -> CommaCategory.ObjectType:
             ...
 
     def __init__(self, first: Functor, second: Functor) -> None:
@@ -95,14 +101,20 @@ def comma_objects(first: Functor, second: Functor) -> CommaCategory:
 
 class CommaSpecialization(CommaCategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> CommaSpecialization.ObjectType:
+            ...
+
+        def codomain(self) -> CommaSpecialization.ObjectType:
+            ...
 
     def structure_functors(self) -> tuple[Functor, ...]:
         ...

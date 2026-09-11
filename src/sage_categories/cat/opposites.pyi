@@ -17,18 +17,24 @@ class _OppositeMorphismData:
 
 class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: _OppositeMorphismData) -> None:
             ...
 
         def original(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> OppositeCategory.ObjectType:
+            ...
+
+        def codomain(self) -> OppositeCategory.ObjectType:
             ...
 
     def __init__(self, original: Category[MorphismData, TwoMorphismData]) -> None:

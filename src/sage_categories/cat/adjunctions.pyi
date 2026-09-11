@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
@@ -32,7 +33,7 @@ class EquivalenceMorphismData:
 
 class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: AdjunctionData) -> None:
             ...
@@ -55,7 +56,7 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         def untranspose(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -67,6 +68,12 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
             ...
 
         def inverse_transformation(self) -> NaturalTransformation:
+            ...
+
+        def domain(self) -> AdjunctionsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> AdjunctionsCategory.ObjectType:
             ...
 
     def __init__(self, forward: Functor, inverse: Functor) -> None:
@@ -98,7 +105,7 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
 
 class EquivalencesCategory(Category[[NaturalTransformation], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: EquivalenceData) -> None:
             ...
@@ -118,7 +125,7 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
         def adjunction(self) -> AdjunctionsCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -127,6 +134,12 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
             ...
 
         def transformation(self) -> NaturalTransformation:
+            ...
+
+        def domain(self) -> EquivalencesCategory.ObjectType:
+            ...
+
+        def codomain(self) -> EquivalencesCategory.ObjectType:
             ...
 
     def __init__(self, source: Category, target: Category) -> None:

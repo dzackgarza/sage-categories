@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from dataclasses import dataclass
 from functools import cache
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -40,7 +41,7 @@ class ProjectiveLinePresentation:
 
 class SchemesCategory(Category[Any, Any]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, construction: object) -> None:
             ...
@@ -48,11 +49,17 @@ class SchemesCategory(Category[Any, Any]):
         def construction(self) -> object:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> SchemesCategory.ObjectType:
+            ...
+
+        def codomain(self) -> SchemesCategory.ObjectType:
+            ...
 
     def __init__(self) -> None:
         ...

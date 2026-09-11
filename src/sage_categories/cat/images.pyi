@@ -12,28 +12,40 @@ __all__ = ['StrictImageCategory', 'FullImageCategory', 'EssentialImageCategory',
 
 class ImageMorphismCategory[**MorphismData, **TwoMorphismData](MorphismCategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> ImageMorphismCategory.ObjectType:
+            ...
+
+        def codomain(self) -> ImageMorphismCategory.ObjectType:
+            ...
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
 class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData], metaclass=abc.ABCMeta):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> ImageCategory.ObjectType:
+            ...
+
+        def codomain(self) -> ImageCategory.ObjectType:
+            ...
 
     def __init__(self, defining_functor: Functor) -> None:
         ...
@@ -85,36 +97,54 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
 
 class StrictImageCategory[**MorphismData, **TwoMorphismData](ImageCategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> StrictImageCategory.ObjectType:
+            ...
+
+        def codomain(self) -> StrictImageCategory.ObjectType:
+            ...
 
 class FullImageCategory[**MorphismData, **TwoMorphismData](ImageCategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
+        def domain(self) -> FullImageCategory.ObjectType:
+            ...
+
+        def codomain(self) -> FullImageCategory.ObjectType:
+            ...
+
 class EssentialImageCategory[**MorphismData, **TwoMorphismData](PredicateSubcategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.sets.finite.SetsCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.sets.finite.SetsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.sets.finite.SetsCategory.MorphismType):
         ...
+
+        def domain(self) -> EssentialImageCategory.ObjectType:
+            ...
+
+        def codomain(self) -> EssentialImageCategory.ObjectType:
+            ...
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...], defining_functor: Functor) -> None:
         ...

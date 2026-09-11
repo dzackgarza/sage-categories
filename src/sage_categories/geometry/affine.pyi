@@ -33,7 +33,7 @@ class _AffineOpenData:
 
 class AffineOpenCategory(Category[Any, Any]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: _AffineOpenData) -> None:
             ...
@@ -47,11 +47,17 @@ class AffineOpenCategory(Category[Any, Any]):
         def restriction_to(self, ancestor: AffineOpenCategory.ObjectType) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> AffineOpenCategory.ObjectType:
+            ...
+
+        def codomain(self) -> AffineOpenCategory.ObjectType:
+            ...
 
     def __init__(self, scheme: AffineSchemesCategory.ObjectType) -> None:
         ...
@@ -88,12 +94,18 @@ class AffineSchemesCategory(Category[Any, Any]):
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, pullback: MorphismCategory.ObjectType) -> None:
             ...
 
         def pullback(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> AffineSchemesCategory.ObjectType:
+            ...
+
+        def codomain(self) -> AffineSchemesCategory.ObjectType:
             ...
 
     def from_native(self, coordinate_ring: CategoryOfCategories.ElementType, native: object) -> AffineSchemesCategory.ObjectType:

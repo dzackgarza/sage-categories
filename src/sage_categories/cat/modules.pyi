@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.monoidal import ActionsCategory
@@ -10,16 +11,22 @@ __all__ = ['ModuleCategory', 'Modules']
 
 class ModuleCategory(EquifierCategory):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def action(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> ModuleCategory.ObjectType:
+            ...
+
+        def codomain(self) -> ModuleCategory.ObjectType:
+            ...
 
     def __init__(self, first: NaturalTransformation, second: NaturalTransformation, scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.ObjectType, algebras: InserterCategory) -> None:
         ...

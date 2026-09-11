@@ -155,12 +155,18 @@ class SetsCategory(Category[[Map], []]):
         def datum(self) -> Hashable:
             ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: Map | _SetMap) -> None:
             ...
 
         def __call__(self, point: CategoryOfCategories.ElementType) -> SetsCategory.ElementType:
+            ...
+
+        def domain(self) -> SetsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> SetsCategory.ObjectType:
             ...
 
     def inverse_morphism(self, morphism: SetsCategory.MorphismType) -> SetsCategory.MorphismType:
@@ -246,14 +252,20 @@ class SetsCategory(Category[[Map], []]):
 
 class SetSubobjects(SliceProperty):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> SetSubobjects.ObjectType:
+            ...
+
+        def codomain(self) -> SetSubobjects.ObjectType:
+            ...
 
     def from_predicate(self, predicate: Callable[[SetsCategory.ElementType], Proposition]) -> SliceLikeCategory.ObjectType:
         ...

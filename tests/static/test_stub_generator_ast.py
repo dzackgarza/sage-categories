@@ -391,6 +391,42 @@ def test_provider_projection_uses_direct_branches_not_transitive_c3_ancestry() -
     )
 
 
+
+def test_provider_projection_prunes_ancestry_across_role_surfaces() -> None:
+    generator = _stub_generator()
+    inheritance = {
+        "object": {
+            "example.FunctorObject": (
+                "example.CatMorphism",
+                "example.CatElement",
+                "example.ObjectRole",
+            ),
+        },
+        "arrow": {
+            "example.CatMorphism": (
+                "example.GenericMorphism",
+                "example.CatElement",
+                "example.MorphismRole",
+                "example.ObjectRole",
+            ),
+            "example.GenericMorphism": (
+                "example.CatElement",
+                "example.MorphismRole",
+                "example.ObjectRole",
+            ),
+            "example.MorphismRole": ("example.ObjectRole",),
+        },
+        "element": {
+            "example.CatElement": (),
+        },
+    }
+    assert generator._providers_in_module(inheritance, "example")[
+        "example.FunctorObject"
+    ] == ("example.CatMorphism",)
+
+
+test_provider_projection_prunes_ancestry_across_role_surfaces()
+
 def test_concrete_morphism_projection_has_exact_owner_object_endpoints() -> None:
     stub = ast.parse(
         """

@@ -1,6 +1,3 @@
-import sage_categories.cat.category
-import sage_categories.cat.morphisms
-import sage_categories.kernel.roles
 import sage_categories.order.posets
 import sage_categories.sets.finite
 from _typeshed import Incomplete
@@ -25,7 +22,7 @@ class _TotalOrderPredicate(Predicate):
 
 class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.sets.finite.SetsCategory.ObjectType):
 
         def __init__(self, relation: CategoryOfCategories.ElementType) -> None:
             ...
@@ -39,15 +36,21 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         def related(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> Proposition:
             ...
 
-    class ElementType(sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.sets.finite.SetsCategory.ElementType):
         ...
 
-    class MorphismType(sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.sets.finite.SetsCategory.MorphismType):
 
         def __init__(self, underlying: MorphismCategory.ObjectType) -> None:
             ...
 
         def underlying_map(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> BinaryRelationsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> BinaryRelationsCategory.ObjectType:
             ...
     PartialOrder: Incomplete
 
@@ -80,16 +83,22 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
 
 class PosetsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.order.posets.BinaryRelationsCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.order.posets.BinaryRelationsCategory.ObjectType):
         ...
 
-    class ElementType(sage_categories.order.posets.BinaryRelationsCategory.ElementType, sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+    class ElementType(sage_categories.order.posets.BinaryRelationsCategory.ElementType):
 
         def __le__(self, other: CategoryOfCategories.ElementType) -> Proposition:
             ...
 
-    class MorphismType(sage_categories.order.posets.BinaryRelationsCategory.MorphismType, sage_categories.sets.finite.SetsCategory.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.order.posets.BinaryRelationsCategory.MorphismType):
         ...
+
+        def domain(self) -> PosetsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> PosetsCategory.ObjectType:
+            ...
     Total: Incomplete
 
 def BinaryRelations() -> BinaryRelationsCategory:

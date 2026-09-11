@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -18,7 +19,7 @@ class _TopologyData:
 
 class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: _TopologyData) -> None:
             ...
@@ -38,7 +39,7 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         def open_object(self, key: object) -> CategoryOfCategories.ElementType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -50,6 +51,12 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
             ...
 
         def inverse_image(self) -> Functor:
+            ...
+
+        def domain(self) -> TopologicalSpacesCategory.ObjectType:
+            ...
+
+        def codomain(self) -> TopologicalSpacesCategory.ObjectType:
             ...
 
     @cached_method

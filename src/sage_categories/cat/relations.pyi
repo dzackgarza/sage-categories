@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
@@ -13,7 +14,7 @@ relation_inclusion: Predicate
 
 class RelationsCategory(Category[[MorphismCategory.ObjectType], [MorphismCategory.ObjectType]]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, carrier: CategoryOfCategories.ElementType) -> None:
             ...
@@ -21,7 +22,7 @@ class RelationsCategory(Category[[MorphismCategory.ObjectType], [MorphismCategor
         def carrier(self) -> CategoryOfCategories.ElementType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -54,6 +55,12 @@ class RelationsCategory(Category[[MorphismCategory.ObjectType], [MorphismCategor
             ...
 
         def is_antisymmetric(self) -> Proposition:
+            ...
+
+        def domain(self) -> RelationsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> RelationsCategory.ObjectType:
             ...
 
     def __init__(self, base: Category) -> None:
@@ -108,7 +115,7 @@ class RelationsCategory(Category[[MorphismCategory.ObjectType], [MorphismCategor
 class RelationMorphismsCategory(MorphismCategory):
     ObjectType = RelationsCategory.MorphismType
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
@@ -117,6 +124,12 @@ class RelationMorphismsCategory(MorphismCategory):
             ...
 
         def factor(self) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> RelationMorphismsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> RelationMorphismsCategory.ObjectType:
             ...
 
 def Relations(base: Category) -> RelationsCategory:

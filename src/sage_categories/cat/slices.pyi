@@ -1,5 +1,6 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.kernel.roles
 from collections.abc import Hashable
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import CommaCategory as CommaCategory, CommaSpecialization
@@ -14,14 +15,20 @@ class _SliceMemberPredicate(Predicate):
 
 class SliceLikeCategory(CommaSpecialization):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> SliceLikeCategory.ObjectType:
+            ...
+
+        def codomain(self) -> SliceLikeCategory.ObjectType:
+            ...
 
     def __init__(self, base: Category, fixed: CategoryOfCategories.ElementType, fixed_label: int) -> None:
         ...
@@ -94,14 +101,20 @@ class _HasMorphismPropertyPredicate(Predicate):
 
 class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> SliceProperty.ObjectType:
+            ...
+
+        def codomain(self) -> SliceProperty.ObjectType:
+            ...
 
     def __init__(self, ambient: SliceLikeCategory | SliceProperty, property_category: Category) -> None:
         ...
@@ -129,22 +142,28 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
 class SubobjectsOfProduct(SliceProperty):
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        def domain(self) -> SubobjectsOfProduct.ObjectType:
+            ...
+
+        def codomain(self) -> SubobjectsOfProduct.ObjectType:
+            ...
+
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def product_projection(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
             ...
-
-def _construct_comma_category(first: Functor, second: Functor, category_type: type[CommaCategory]=...) -> CommaCategory:
-    ...
 
 def _pair_functor(first: Functor, second: Functor) -> Functor:
     ...
 
 def _endpoint_functor(base: Category) -> Functor:
+    ...
+
+def _construct_comma_category(first: Functor, second: Functor, category_type: type[CommaCategory]=...) -> CommaCategory:
     ...

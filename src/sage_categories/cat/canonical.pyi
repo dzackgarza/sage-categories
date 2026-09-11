@@ -26,12 +26,18 @@ class FinitePresentedCategory(Category[[Word], []]):
         def __init__(self, data: VertexData) -> None:
             ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: PathData) -> None:
             ...
 
         def word(self) -> Word:
+            ...
+
+        def domain(self) -> FinitePresentedCategory.ObjectType:
+            ...
+
+        def codomain(self) -> FinitePresentedCategory.ObjectType:
             ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):

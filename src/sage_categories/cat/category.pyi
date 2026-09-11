@@ -1,7 +1,7 @@
-import typing as _typing
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
+import typing as _typing
 from _typeshed import Incomplete
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
@@ -354,7 +354,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     Empty: Incomplete
     Concrete: Incomplete
 
-    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: FunctorData) -> None:
             ...

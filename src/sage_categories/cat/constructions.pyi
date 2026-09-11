@@ -18,14 +18,20 @@ def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category
 
 class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> ApexCategory.ObjectType:
+            ...
+
+        def codomain(self) -> ApexCategory.ObjectType:
+            ...
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         ...
@@ -67,10 +73,16 @@ class LimitsCategory(ApexCategory):
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType):
         ...
 
-    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+        def domain(self) -> LimitsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> LimitsCategory.ObjectType:
+            ...
+
+    class ObjectType(sage_categories.cat.category.CategoryDeclaration):
         ...
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...], shape: Category) -> None:
@@ -108,10 +120,16 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.category.CategoryOfCategories.MorphismType):
         ...
 
-    class ObjectType(sage_categories.cat.category.CategoryDeclaration, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+        def domain(self) -> ProductsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> ProductsCategory.ObjectType:
+            ...
+
+    class ObjectType(sage_categories.cat.category.CategoryDeclaration):
 
         def product_factors(self) -> Functor:
             ...
@@ -145,13 +163,19 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
 
 class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        def domain(self) -> ColimitsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> ColimitsCategory.ObjectType:
+            ...
+
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def cocone(self) -> NaturalTransformation:
             ...
@@ -209,13 +233,19 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
 class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType):
+        def domain(self) -> CoproductsCategory.ObjectType:
+            ...
+
+        def codomain(self) -> CoproductsCategory.ObjectType:
+            ...
+
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def coproduct_summands(self) -> Functor:
             ...

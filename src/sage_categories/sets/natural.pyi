@@ -17,14 +17,20 @@ def positive_integer(value: Hashable) -> Proposition:
 
 class PositiveIntegersCategory(Category):
 
-    class ObjectType(sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
 
-    class MorphismType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
+
+        def domain(self) -> PositiveIntegersCategory.ObjectType:
+            ...
+
+        def codomain(self) -> PositiveIntegersCategory.ObjectType:
+            ...
 
     def set_presentation(self) -> MembershipRule:
         ...

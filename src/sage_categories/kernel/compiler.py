@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable, Iterator
 from itertools import count
 from types import FunctionType, GenericAlias
-from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple
+from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple, cast
 
 from sage_categories.kernel.construction import (
     CategoryPointIdentity,
@@ -411,16 +411,36 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
         relations[provider_name] = tuple(name for name in current if name in entry)
     from sage_categories.kernel.roles import category_universal_class, declared_roles
 
-    for provider, role in declared_roles():
+    universal = cast(
+        type[CategoryPoint],
+        vars(category_universal_class())[Role.ELEMENT.value],
+    )
+    for provider, declared_role in declared_roles():
+        role = next(
+            (
+                candidate
+                for candidate in Role
+                if _installed_root_declarations.get(kernel_base(candidate)) is provider
+            ),
+            declared_role,
+        )
         provider_name = _declaration_name(provider)
         relations = result.setdefault(_projection_surface(role), {})
         if provider_name in relations:
             continue
-        base = _installed_root_declarations.get(
-            kernel_base(role), category_universal_class().ElementType
-        )
-        relations[provider_name] = (
-            () if provider is base else (_declaration_name(base),)
+        stable_role = kernel_base(role)
+        installed = _installed_root_declarations.get(stable_role)
+        bases: tuple[type[CategoryPoint], ...]
+        if installed is not None and installed is not provider:
+            bases = (installed,)
+        else:
+            bases = tuple(
+                declaration
+                for declaration in (universal, stable_role)
+                if declaration is not provider
+            )
+        relations[provider_name] = tuple(
+            _declaration_name(declaration) for declaration in bases
         )
     return result
 

@@ -22,6 +22,7 @@ from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import (
     Category,
+    CategoryDeclaration,
     composite_factors,
     is_composite,
     refine,
@@ -56,28 +57,28 @@ __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCatego
 
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
-    category: Category[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
 ) -> MorphismCategory[M, T, _MorphismRole]: ...
 
 
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
     level: Literal[0],
-    category: Category[M, T, _ObjectRole, _ElementRole, _MorphismRole],
-) -> Category[M, T, _ObjectRole, _ElementRole, _MorphismRole]: ...
+    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+) -> CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]: ...
 
 
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
     level: Literal[1],
-    category: Category[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
 ) -> MorphismCategory[M, T, _MorphismRole]: ...
 
 
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
     level: Literal[2],
-    category: Category[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
 ) -> MorphismCategory[T, []]: ...
 
 

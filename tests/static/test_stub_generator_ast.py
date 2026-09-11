@@ -57,9 +57,45 @@ class Owner:
     generator = _stub_generator()
     generator._project_class_aliases(stub, source)
     projected = ast.unparse(ast.fix_missing_locations(stub))
-    assert "type Category[**P, **Q] = Declaration[P, Q]" in projected
-    assert "type ObjectType[**P, **Q] = Declaration[P, Q]" in projected
+    assert "Category = Declaration[_Declaration_P, _Declaration_Q]" in projected
+    assert "ObjectType = Declaration[_Declaration_P, _Declaration_Q]" in projected
+    assert "_Declaration_P = _typing.ParamSpec('_Declaration_P')" in projected
+    assert "_Declaration_Q = _typing.ParamSpec('_Declaration_Q')" in projected
     assert "ordinary = 3" in projected
+    generator._project_class_aliases(stub, source)
+    assert ast.unparse(ast.fix_missing_locations(stub)) == projected
+
+
+def test_class_aliases_convert_existing_pep695_projection() -> None:
+    source = ast.parse(
+        """
+class Declaration[**P, **Q]:
+    pass
+
+Category = Declaration
+
+class Owner:
+    ObjectType = Declaration
+"""
+    )
+    stub = ast.parse(
+        """
+class Declaration[**P, **Q]:
+    pass
+
+type Category[**P, **Q] = Declaration[P, Q]
+
+class Owner:
+    type ObjectType[**P, **Q] = Declaration[P, Q]
+"""
+    )
+    generator = _stub_generator()
+    generator._project_class_aliases(stub, source)
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "type Category" not in projected
+    assert "type ObjectType" not in projected
+    assert "Category = Declaration[_Declaration_P, _Declaration_Q]" in projected
+    assert "ObjectType = Declaration[_Declaration_P, _Declaration_Q]" in projected
 
 
 test_class_aliases_bind_declared_parameters()

@@ -1,3 +1,4 @@
+import typing as _typing
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -337,7 +338,9 @@ class CategoryDeclaration[**MorphismData, **TwoMorphismData](_StaticRoles_Catego
 
     def narrowing_type(self) -> type[Category[MorphismData, TwoMorphismData]]:
         ...
-type Category[**MorphismData, **TwoMorphismData] = CategoryDeclaration[MorphismData, TwoMorphismData]
+_CategoryDeclaration_MorphismData = _typing.ParamSpec('_CategoryDeclaration_MorphismData')
+_CategoryDeclaration_TwoMorphismData = _typing.ParamSpec('_CategoryDeclaration_TwoMorphismData')
+Category = CategoryDeclaration[_CategoryDeclaration_MorphismData, _CategoryDeclaration_TwoMorphismData]
 type LiftRule = Callable[[MorphismCategory.ObjectType, CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -346,7 +349,7 @@ class FunctorData:
     on_morphism: OnMorphism
 
 class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignment]], _StaticRoles_CategoryOfCategories):
-    type ObjectType[**MorphismData, **TwoMorphismData] = CategoryDeclaration[MorphismData, TwoMorphismData]
+    ObjectType = CategoryDeclaration[_CategoryDeclaration_MorphismData, _CategoryDeclaration_TwoMorphismData]
     Inhabited: Incomplete
     Empty: Incomplete
     Concrete: Incomplete

@@ -81,7 +81,9 @@ def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
     level: Literal[2], category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
 ) -> MorphismCategory[T, []]: ...
 @overload
-def Mor(level: int | Integer, category: _category.CategoryDeclaration) -> _category.CategoryDeclaration: ...
+def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
+    level: int | Integer, category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]
+) -> _category.CategoryDeclaration: ...
 
 endpoints: Incomplete
 endpoints_in: Incomplete

@@ -12,8 +12,10 @@ def functor_action_parameters(
     target: SetsCategory,
     member_object: PositiveIntegersCategory.ObjectType,
     morphism: PositiveIntegersCategory.MorphismType,
+    target_object: SetsCategory.ObjectType,
+    target_morphism: SetsCategory.MorphismType,
 ) -> None:
-    functor = Fun(source, target)(lambda value: target(value), lambda arrow: arrow)
+    functor = Fun(source, target)(lambda _value: target_object, lambda _arrow: target_morphism)
     assert_type(functor.domain(), PositiveIntegersCategory)
     assert_type(functor.codomain(), SetsCategory)
     assert_type(functor.on_object(member_object), SetsCategory.ObjectType)

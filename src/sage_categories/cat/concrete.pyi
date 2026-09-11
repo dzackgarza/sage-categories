@@ -1,3 +1,4 @@
+import sage_categories.cat.properties
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -7,7 +8,7 @@ from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.sage_runtime import cached_method
 __all__ = ['ConcreteCategory']
 
-class ConcreteCategory(PropertySubcategory):
+class _StaticRoles_ConcreteCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -32,3 +33,6 @@ class ConcreteCategory(PropertySubcategory):
 
         def codomain(self) -> ConcreteCategory.ObjectType:
             ...
+
+class ConcreteCategory(_StaticRoles_ConcreteCategory, PropertySubcategory[..., ..., _StaticRoles_ConcreteCategory.ObjectType, _StaticRoles_ConcreteCategory.ElementType, _StaticRoles_ConcreteCategory.MorphismType]):
+    pass

@@ -1,3 +1,5 @@
+import sage_categories.cat.comma
+import sage_categories.cat.properties
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -10,8 +12,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.properties import PropertySubcategory
 __all__ = ['TotalConesCategory', 'TotalLimitConesCategory', 'total_cones']
 
-class TotalConesCategory(CommaSpecialization):
-    LimitCones: Incomplete
+class _StaticRoles_TotalConesCategory(sage_categories.cat.comma._StaticRoles_CommaSpecialization):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -35,6 +36,9 @@ class TotalConesCategory(CommaSpecialization):
         def codomain(self) -> TotalConesCategory.ObjectType:
             ...
 
+class TotalConesCategory(_StaticRoles_TotalConesCategory, CommaSpecialization[_StaticRoles_TotalConesCategory.ObjectType, _StaticRoles_TotalConesCategory.ElementType, _StaticRoles_TotalConesCategory.MorphismType]):
+    LimitCones: Incomplete
+
     def diagrams(self) -> FunctorCategory:
         ...
 
@@ -56,7 +60,7 @@ class TotalConesCategory(CommaSpecialization):
     def __call__(self, presentation: ConeCategory.ObjectType) -> TotalConesCategory.ObjectType:
         ...
 
-class TotalLimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType, NaturalTransformation], []]):
+class _StaticRoles_TotalLimitConesCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -72,6 +76,9 @@ class TotalLimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType, 
 
         def codomain(self) -> TotalLimitConesCategory.ObjectType:
             ...
+
+class TotalLimitConesCategory(_StaticRoles_TotalLimitConesCategory, PropertySubcategory[[MorphismCategory.ObjectType, NaturalTransformation], [], _StaticRoles_TotalLimitConesCategory.ObjectType, _StaticRoles_TotalLimitConesCategory.ElementType, _StaticRoles_TotalLimitConesCategory.MorphismType]):
+    pass
 
 def total_cones(diagrams: FunctorCategory) -> TotalConesCategory:
     ...

@@ -14,7 +14,7 @@ __all__ = ['DiscreteCategory', 'discrete_functor', 'Discrete', 'carrier_comparis
 class DiscreteObjectData:
     point: CategoryOfCategories.ElementType
 
-class DiscreteCategory(Category[[], []]):
+class _StaticRoles_DiscreteCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -23,6 +23,9 @@ class DiscreteCategory(Category[[], []]):
 
         def point(self) -> CategoryOfCategories.ElementType:
             ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+        ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
@@ -33,8 +36,7 @@ class DiscreteCategory(Category[[], []]):
         def codomain(self) -> DiscreteCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
-        ...
+class DiscreteCategory[_ObjectRole = _StaticRoles_DiscreteCategory.ObjectType, _ElementRole = _StaticRoles_DiscreteCategory.ElementType, _MorphismRole = _StaticRoles_DiscreteCategory.MorphismType](_StaticRoles_DiscreteCategory, Category[[], [], _ObjectRole, _ElementRole, _MorphismRole]):
 
     def __init__(self, index_set: CategoryOfCategories.ElementType) -> None:
         ...
@@ -48,35 +50,35 @@ class DiscreteCategory(Category[[], []]):
     def object_set(self) -> CategoryOfCategories.ElementType:
         ...
 
-    def object_at(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.ObjectType:
+    def object_at(self, point: CategoryOfCategories.ElementType) -> _ObjectRole:
         ...
 
-    def object_point(self, member_object: DiscreteCategory.ObjectType) -> CategoryOfCategories.ElementType:
+    def object_point(self, member_object: _ObjectRole) -> CategoryOfCategories.ElementType:
         ...
 
-    def morphism_at(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.MorphismType:
+    def morphism_at(self, point: CategoryOfCategories.ElementType) -> _MorphismRole:
         ...
 
-    def generating_morphisms(self) -> tuple[DiscreteCategory.MorphismType, ...]:
+    def generating_morphisms(self) -> tuple[_MorphismRole, ...]:
         ...
 
-    def __call__(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.ObjectType:
+    def __call__(self, point: CategoryOfCategories.ElementType) -> _ObjectRole:
         ...
 
-    def construct_morphism(self, domain: DiscreteCategory.ObjectType, codomain: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
+    def construct_morphism(self, domain: _ObjectRole, codomain: _ObjectRole) -> _MorphismRole:
         ...
 
-    def construct_identity(self, member_object: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
+    def construct_identity(self, member_object: _ObjectRole) -> _MorphismRole:
         ...
 
-    def composite(self, second: DiscreteCategory.MorphismType, first: DiscreteCategory.MorphismType) -> DiscreteCategory.MorphismType:
+    def composite(self, second: _MorphismRole, first: _MorphismRole) -> _MorphismRole:
         ...
 
 def discrete_functor(sets: Category) -> Functor:
     ...
 Discrete: Functor
 
-class DiscreteObjectCategory(DiscreteCategory):
+class _StaticRoles_DiscreteObjectCategory(_StaticRoles_DiscreteCategory):
 
     class ObjectType(sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -92,6 +94,8 @@ class DiscreteObjectCategory(DiscreteCategory):
 
         def codomain(self) -> DiscreteObjectCategory.ObjectType:
             ...
+
+class DiscreteObjectCategory(_StaticRoles_DiscreteObjectCategory, DiscreteCategory[_StaticRoles_DiscreteObjectCategory.ObjectType, _StaticRoles_DiscreteObjectCategory.ElementType, _StaticRoles_DiscreteObjectCategory.MorphismType]):
 
     def __call__(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         ...
@@ -116,7 +120,7 @@ class ThinObjectData:
 class _ComparablePredicate(Predicate):
     name: str
 
-class ThinMorphisms(MorphismCategory[[], []]):
+class _StaticRoles_ThinMorphisms(sage_categories.cat.morphisms._StaticRoles_MorphismCategory):
 
     class ObjectType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
@@ -133,10 +137,12 @@ class ThinMorphisms(MorphismCategory[[], []]):
         def codomain(self) -> ThinMorphisms.ObjectType:
             ...
 
+class ThinMorphisms(_StaticRoles_ThinMorphisms, MorphismCategory[[], [], _StaticRoles_ThinMorphisms.ObjectType, _StaticRoles_ThinMorphisms.ElementType, _StaticRoles_ThinMorphisms.MorphismType]):
+
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
-class ThinCategory(Category[[], []]):
+class _StaticRoles_ThinCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -145,6 +151,9 @@ class ThinCategory(Category[[], []]):
 
         def point(self) -> CategoryOfCategories.ElementType:
             ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+        ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
@@ -155,8 +164,7 @@ class ThinCategory(Category[[], []]):
         def codomain(self) -> ThinCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
-        ...
+class ThinCategory(_StaticRoles_ThinCategory, Category[[], [], _StaticRoles_ThinCategory.ObjectType, _StaticRoles_ThinCategory.ElementType, _StaticRoles_ThinCategory.MorphismType]):
 
     def __init__(self, carrier: CategoryOfCategories.ElementType, order: Predicate) -> None:
         ...

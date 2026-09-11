@@ -15,7 +15,7 @@ from sage_categories.cat.predicates import Predicate, Proposition, UnknownClass
 from typing import Literal
 __all__ = ['FullSubcategory', 'InverseImageSubcategory', 'inverse_image', 'retain_inverse_image', 'PropertySubcategory', 'PredicateSubcategory', 'NarrowedProperty', 'FixedEndpointProperty']
 
-class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
+class _StaticRoles_FullSubcategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -31,6 +31,8 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
 
         def codomain(self) -> FullSubcategory.ObjectType:
             ...
+
+class FullSubcategory[**MorphismData, **TwoMorphismData, _ObjectRole = _StaticRoles_FullSubcategory.ObjectType, _ElementRole = _StaticRoles_FullSubcategory.ElementType, _MorphismRole = _StaticRoles_FullSubcategory.MorphismType](_StaticRoles_FullSubcategory, Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]):
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         ...
@@ -74,7 +76,7 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
         ...
 
-class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
+class _StaticRoles_InverseImageSubcategory(_StaticRoles_FullSubcategory):
 
     class ObjectType(sage_categories.cat.cat_constructions.LimitCategory.ObjectType, sage_categories.sets.finite.SetsCategory.ObjectType, sage_categories.cat.constructions.LimitsCategory.ElementType):
         ...
@@ -90,6 +92,8 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
 
         def codomain(self) -> InverseImageSubcategory.ObjectType:
             ...
+
+class InverseImageSubcategory[**MorphismData, **TwoMorphismData](_StaticRoles_InverseImageSubcategory, FullSubcategory[MorphismData, TwoMorphismData, _StaticRoles_InverseImageSubcategory.ObjectType, _StaticRoles_InverseImageSubcategory.ElementType, _StaticRoles_InverseImageSubcategory.MorphismType]):
 
     def __init__(self, functor: Functor, target_subcategory: Category) -> None:
         ...
@@ -121,7 +125,7 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
 def retain_inverse_image(functor: Functor, target_subcategory: Category, realization: Category, source_projection: Functor, target_projection: Functor) -> None:
     ...
 
-class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
+class _StaticRoles_PropertySubcategory(_StaticRoles_FullSubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -137,6 +141,8 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
 
         def codomain(self) -> PropertySubcategory.ObjectType:
             ...
+
+class PropertySubcategory[**MorphismData, **TwoMorphismData, _ObjectRole = _StaticRoles_PropertySubcategory.ObjectType, _ElementRole = _StaticRoles_PropertySubcategory.ElementType, _MorphismRole = _StaticRoles_PropertySubcategory.MorphismType](_StaticRoles_PropertySubcategory, FullSubcategory[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]):
 
     def __init_subclass__(cls) -> None:
         ...
@@ -165,7 +171,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
     def __call__[Datum](self, *construction_data: Datum, **keywords: Datum) -> CategoryOfCategories.ElementType | Category[MorphismData, TwoMorphismData]:
         ...
 
-class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData], metaclass=abc.ABCMeta):
+class _StaticRoles_PredicateSubcategory(_StaticRoles_PropertySubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -182,10 +188,12 @@ class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategor
         def codomain(self) -> PredicateSubcategory.ObjectType:
             ...
 
+class PredicateSubcategory[**MorphismData, **TwoMorphismData](_StaticRoles_PredicateSubcategory, PropertySubcategory[MorphismData, TwoMorphismData, _StaticRoles_PredicateSubcategory.ObjectType, _StaticRoles_PredicateSubcategory.ElementType, _StaticRoles_PredicateSubcategory.MorphismType], metaclass=abc.ABCMeta):
+
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], name: str, full_subcategory_of: tuple[Category, ...]) -> None:
         ...
 
-class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
+class _StaticRoles_NarrowedProperty(_StaticRoles_FullSubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -201,6 +209,8 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
 
         def codomain(self) -> NarrowedProperty.ObjectType:
             ...
+
+class NarrowedProperty[**MorphismData, **TwoMorphismData, _ObjectRole = _StaticRoles_NarrowedProperty.ObjectType, _ElementRole = _StaticRoles_NarrowedProperty.ElementType, _MorphismRole = _StaticRoles_NarrowedProperty.MorphismType](_StaticRoles_NarrowedProperty, FullSubcategory[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]):
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], roots: tuple[FullSubcategory, ...]) -> None:
         ...
@@ -220,7 +230,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
     def __call__[Datum](self, *construction_data: Datum, **keywords: Datum) -> CategoryOfCategories.ElementType:
         ...
 
-class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[TwoMorphismData, []]):
+class _StaticRoles_FixedEndpointProperty(_StaticRoles_NarrowedProperty):
 
     class ObjectType(sage_categories.cat.properties.NarrowedProperty.ObjectType, sage_categories.cat.morphisms.IsomorphismsCategory.ObjectType, sage_categories.cat.morphisms.FixedEndpointCategory.ObjectType, sage_categories.cat.functors.FunctorCategory.MorphismType, sage_categories.cat.constructions.LimitsCategory.ElementType):
         ...
@@ -236,6 +246,8 @@ class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[
 
         def codomain(self) -> FixedEndpointProperty.ObjectType:
             ...
+
+class FixedEndpointProperty[**MorphismData, **TwoMorphismData](_StaticRoles_FixedEndpointProperty, NarrowedProperty[TwoMorphismData, [], _StaticRoles_FixedEndpointProperty.ObjectType, _StaticRoles_FixedEndpointProperty.ElementType, _StaticRoles_FixedEndpointProperty.MorphismType]):
 
     def domain(self) -> CategoryOfCategories.ElementType:
         ...

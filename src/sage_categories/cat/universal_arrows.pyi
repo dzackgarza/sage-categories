@@ -1,3 +1,4 @@
+import sage_categories.cat.properties
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -12,7 +13,7 @@ __all__ = ['TerminalObjectsCategory', 'TerminalObjects', 'InitialObjectsCategory
 type Factor = Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
 type Choice = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
 
-class TerminalObjectsCategory(FullSubcategory):
+class _StaticRoles_TerminalObjectsCategory(sage_categories.cat.properties._StaticRoles_FullSubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -31,13 +32,15 @@ class TerminalObjectsCategory(FullSubcategory):
         def codomain(self) -> TerminalObjectsCategory.ObjectType:
             ...
 
+class TerminalObjectsCategory(_StaticRoles_TerminalObjectsCategory, FullSubcategory[..., ..., _StaticRoles_TerminalObjectsCategory.ObjectType, _StaticRoles_TerminalObjectsCategory.ElementType, _StaticRoles_TerminalObjectsCategory.MorphismType]):
+
     def __call__(self, value: CategoryOfCategories.ElementType, factor: Factor) -> CategoryOfCategories.ElementType:
         ...
 
 def TerminalObjects(category: Category) -> TerminalObjectsCategory:
     ...
 
-class InitialObjectsCategory(FullSubcategory):
+class _StaticRoles_InitialObjectsCategory(sage_categories.cat.properties._StaticRoles_FullSubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -55,6 +58,8 @@ class InitialObjectsCategory(FullSubcategory):
 
         def codomain(self) -> InitialObjectsCategory.ObjectType:
             ...
+
+class InitialObjectsCategory(_StaticRoles_InitialObjectsCategory, FullSubcategory[..., ..., _StaticRoles_InitialObjectsCategory.ObjectType, _StaticRoles_InitialObjectsCategory.ElementType, _StaticRoles_InitialObjectsCategory.MorphismType]):
 
     def __call__(self, value: CategoryOfCategories.ElementType, factor: Factor) -> CategoryOfCategories.ElementType:
         ...

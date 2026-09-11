@@ -1,3 +1,5 @@
+import sage_categories.cat.cat_constructions
+import sage_categories.cat.structured_objects
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -11,7 +13,7 @@ from sage_categories.cat.structured_objects import EquifierCategory, MonoidCateg
 from sage_categories.kernel.sage_runtime import cached_method
 __all__ = ['ActionPairsCategory', 'BimoduleCategory', 'Bimodules']
 
-class ActionPairsCategory(LimitSubcategory):
+class _StaticRoles_ActionPairsCategory(sage_categories.cat.cat_constructions._StaticRoles_LimitSubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -28,6 +30,8 @@ class ActionPairsCategory(LimitSubcategory):
         def codomain(self) -> ActionPairsCategory.ObjectType:
             ...
 
+class ActionPairsCategory(_StaticRoles_ActionPairsCategory, LimitSubcategory[_StaticRoles_ActionPairsCategory.ObjectType, _StaticRoles_ActionPairsCategory.ElementType, _StaticRoles_ActionPairsCategory.MorphismType]):
+
     @cached_method
     def to_left(self) -> Functor:
         ...
@@ -42,7 +46,7 @@ class ActionPairsCategory(LimitSubcategory):
     def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
-class BimoduleCategory(EquifierCategory):
+class _StaticRoles_BimoduleCategory(sage_categories.cat.structured_objects._StaticRoles_EquifierCategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -63,6 +67,8 @@ class BimoduleCategory(EquifierCategory):
 
         def codomain(self) -> BimoduleCategory.ObjectType:
             ...
+
+class BimoduleCategory(_StaticRoles_BimoduleCategory, EquifierCategory[_StaticRoles_BimoduleCategory.ObjectType, _StaticRoles_BimoduleCategory.ElementType, _StaticRoles_BimoduleCategory.MorphismType]):
 
     def __init__(self, first: NaturalTransformation, second: NaturalTransformation, left: ModuleCategory, right: ModuleCategory, pairs: ActionPairsCategory) -> None:
         ...

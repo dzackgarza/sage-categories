@@ -1,3 +1,4 @@
+import sage_categories.cat.properties
 import sage_categories.cat.comma
 import sage_categories.cat.cones
 from _typeshed import Incomplete
@@ -27,9 +28,7 @@ def cocone_apex(transformation: NaturalTransformation) -> CategoryOfCategories.E
 def vertex_of(shape: Category, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
     ...
 
-class ConeCategory(CommaSpecialization):
-    LimitCones: Incomplete
-    ColimitCocones: Incomplete
+class _StaticRoles_ConeCategory(sage_categories.cat.comma._StaticRoles_CommaSpecialization):
 
     class ObjectType(sage_categories.cat.comma.CommaCategory.ObjectType):
 
@@ -59,6 +58,10 @@ class ConeCategory(CommaSpecialization):
         def codomain(self) -> ConeCategory.ObjectType:
             ...
 
+class ConeCategory(_StaticRoles_ConeCategory, CommaSpecialization[_StaticRoles_ConeCategory.ObjectType, _StaticRoles_ConeCategory.ElementType, _StaticRoles_ConeCategory.MorphismType]):
+    LimitCones: Incomplete
+    ColimitCocones: Incomplete
+
     def __init__(self, diagram: Functor, dual: bool=False) -> None:
         ...
 
@@ -78,7 +81,7 @@ class ConeCategory(CommaSpecialization):
     def apex_functor(self) -> Functor:
         ...
 
-class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
+class _StaticRoles_LimitConesCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
 
     class ObjectType(sage_categories.cat.cones.ConeCategory.ObjectType):
 
@@ -96,6 +99,8 @@ class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []])
 
         def codomain(self) -> LimitConesCategory.ObjectType:
             ...
+
+class LimitConesCategory(_StaticRoles_LimitConesCategory, PropertySubcategory[[MorphismCategory.ObjectType], [], _StaticRoles_LimitConesCategory.ObjectType, _StaticRoles_LimitConesCategory.ElementType, _StaticRoles_LimitConesCategory.MorphismType]):
 
     def with_universal_data(self, transformation: NaturalTransformation, lift: Lift) -> LimitConesCategory.ObjectType:
         ...

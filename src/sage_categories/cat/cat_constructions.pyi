@@ -31,7 +31,7 @@ class FamilyMorphismData:
 class _ComponentsAgreePredicate(Predicate):
     name: str
 
-class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, ...]], []]):
+class _StaticRoles_LimitCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -40,6 +40,9 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
         def family_component(self, index: CategoryOfCategories.ElementType | Hashable) -> CategoryOfCategories.ElementType:
             ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+        ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
@@ -55,8 +58,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         def codomain(self) -> LimitCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
-        ...
+class LimitCategory[_ObjectRole = _StaticRoles_LimitCategory.ObjectType, _ElementRole = _StaticRoles_LimitCategory.ElementType, _MorphismRole = _StaticRoles_LimitCategory.MorphismType](_StaticRoles_LimitCategory, Category[[MorphismRule | tuple[MorphismCategory.ObjectType, ...]], [], _ObjectRole, _ElementRole, _MorphismRole]):
 
     def __init__(self, diagram: Functor) -> None:
         ...
@@ -76,31 +78,31 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     def object_set(self) -> CategoryOfCategories.ElementType:
         ...
 
-    def object_at(self, point: CategoryOfCategories.ElementType) -> LimitCategory.ObjectType:
+    def object_at(self, point: CategoryOfCategories.ElementType) -> _ObjectRole:
         ...
 
-    def morphism_at(self, point: CategoryOfCategories.ElementType) -> LimitCategory.MorphismType:
+    def morphism_at(self, point: CategoryOfCategories.ElementType) -> _MorphismRole:
         ...
 
-    def __call__(self, family: ObjectRule | CategoryOfCategories.ElementType | tuple[CategoryOfCategories.ElementType, ...], *components: CategoryOfCategories.ElementType) -> LimitCategory.ObjectType:
+    def __call__(self, family: ObjectRule | CategoryOfCategories.ElementType | tuple[CategoryOfCategories.ElementType, ...], *components: CategoryOfCategories.ElementType) -> _ObjectRole:
         ...
 
-    def from_components(self, rule: ObjectRule) -> LimitCategory.ObjectType:
+    def from_components(self, rule: ObjectRule) -> _ObjectRole:
         ...
 
-    def construct_morphism(self, domain: LimitCategory.ObjectType, codomain: LimitCategory.ObjectType, family: MorphismRule | tuple[MorphismCategory.ObjectType, ...]) -> LimitCategory.MorphismType:
+    def construct_morphism(self, domain: _ObjectRole, codomain: _ObjectRole, family: MorphismRule | tuple[MorphismCategory.ObjectType, ...]) -> _MorphismRole:
         ...
 
-    def morphism_from_components(self, domain: LimitCategory.ObjectType, codomain: LimitCategory.ObjectType, rule: MorphismRule) -> LimitCategory.MorphismType:
+    def morphism_from_components(self, domain: _ObjectRole, codomain: _ObjectRole, rule: MorphismRule) -> _MorphismRole:
         ...
 
-    def construct_identity(self, member_object: LimitCategory.ObjectType) -> LimitCategory.MorphismType:
+    def construct_identity(self, member_object: _ObjectRole) -> _MorphismRole:
         ...
 
-    def composite(self, second: LimitCategory.MorphismType, first: LimitCategory.MorphismType) -> LimitCategory.MorphismType:
+    def composite(self, second: _MorphismRole, first: _MorphismRole) -> _MorphismRole:
         ...
 
-class LimitSubcategory(LimitCategory):
+class _StaticRoles_LimitSubcategory(_StaticRoles_LimitCategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -116,6 +118,8 @@ class LimitSubcategory(LimitCategory):
 
         def codomain(self) -> LimitSubcategory.ObjectType:
             ...
+
+class LimitSubcategory(_StaticRoles_LimitSubcategory, LimitCategory[_StaticRoles_LimitSubcategory.ObjectType, _StaticRoles_LimitSubcategory.ElementType, _StaticRoles_LimitSubcategory.MorphismType]):
 
     def __init__(self, diagram: Functor) -> None:
         ...
@@ -144,7 +148,7 @@ class _TaggedObjectData:
 class _TaggedMorphismData:
     morphism: MorphismCategory.ObjectType
 
-class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
+class _StaticRoles__TaggedCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -156,6 +160,9 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def member(self) -> CategoryOfCategories.ElementType:
             ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+        ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
@@ -171,8 +178,7 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
         def codomain(self) -> _TaggedCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
-        ...
+class _TaggedCategory(_StaticRoles__TaggedCategory, Category[[MorphismCategory.ObjectType], [], _StaticRoles__TaggedCategory.ObjectType, _StaticRoles__TaggedCategory.ElementType, _StaticRoles__TaggedCategory.MorphismType]):
 
     def __init__(self, diagram: Functor) -> None:
         ...

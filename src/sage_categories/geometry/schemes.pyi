@@ -40,7 +40,7 @@ class ProjectiveLinePresentation:
     structure_sheaf: RingPresheaf
     overlap_swap: MorphismCategory.ObjectType
 
-class SchemesCategory(Category[Any, Any]):
+class _StaticRoles_SchemesCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -61,6 +61,8 @@ class SchemesCategory(Category[Any, Any]):
 
         def codomain(self) -> SchemesCategory.ObjectType:
             ...
+
+class SchemesCategory(_StaticRoles_SchemesCategory, Category[Any, Any, _StaticRoles_SchemesCategory.ObjectType, _StaticRoles_SchemesCategory.ElementType, _StaticRoles_SchemesCategory.MorphismType]):
 
     def __init__(self) -> None:
         ...

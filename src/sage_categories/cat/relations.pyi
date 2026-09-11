@@ -12,7 +12,7 @@ class _RelationInclusion(Predicate):
     name: str
 relation_inclusion: Predicate
 
-class RelationsCategory(Category[[MorphismCategory.ObjectType], [MorphismCategory.ObjectType]]):
+class _StaticRoles_RelationsCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -63,6 +63,8 @@ class RelationsCategory(Category[[MorphismCategory.ObjectType], [MorphismCategor
         def codomain(self) -> RelationsCategory.ObjectType:
             ...
 
+class RelationsCategory(_StaticRoles_RelationsCategory, Category[[MorphismCategory.ObjectType], [MorphismCategory.ObjectType], _StaticRoles_RelationsCategory.ObjectType, _StaticRoles_RelationsCategory.ElementType, _StaticRoles_RelationsCategory.MorphismType]):
+
     def __init__(self, base: Category) -> None:
         ...
 
@@ -112,8 +114,7 @@ class RelationsCategory(Category[[MorphismCategory.ObjectType], [MorphismCategor
     def graph_functor(self) -> Functor:
         ...
 
-class RelationMorphismsCategory(MorphismCategory):
-    ObjectType = RelationsCategory.MorphismType
+class _StaticRoles_RelationMorphismsCategory(sage_categories.cat.morphisms._StaticRoles_MorphismCategory):
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
@@ -131,6 +132,9 @@ class RelationMorphismsCategory(MorphismCategory):
 
         def codomain(self) -> RelationMorphismsCategory.ObjectType:
             ...
+
+class RelationMorphismsCategory(_StaticRoles_RelationMorphismsCategory, MorphismCategory[..., ..., RelationsCategory.MorphismType, _StaticRoles_RelationMorphismsCategory.ElementType, _StaticRoles_RelationMorphismsCategory.MorphismType]):
+    ObjectType = RelationsCategory.MorphismType
 
 def Relations(base: Category) -> RelationsCategory:
     ...

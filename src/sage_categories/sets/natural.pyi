@@ -15,7 +15,7 @@ from sage_categories.cat.declarations import Sets as Sets
 def positive_integer(value: Hashable) -> Proposition:
     ...
 
-class PositiveIntegersCategory(Category):
+class _StaticRoles_PositiveIntegersCategory:
 
     class ObjectType(sage_categories.sets.finite.SetsCategory.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -31,6 +31,8 @@ class PositiveIntegersCategory(Category):
 
         def codomain(self) -> PositiveIntegersCategory.ObjectType:
             ...
+
+class PositiveIntegersCategory(_StaticRoles_PositiveIntegersCategory, Category[..., ..., _StaticRoles_PositiveIntegersCategory.ObjectType, _StaticRoles_PositiveIntegersCategory.ElementType, _StaticRoles_PositiveIntegersCategory.MorphismType]):
 
     def set_presentation(self) -> MembershipRule:
         ...

@@ -15,7 +15,7 @@ __all__ = ['OppositeCategory', 'opposite_category', 'opposite_morphism', 'Op', '
 class _OppositeMorphismData:
     original: MorphismCategory.ObjectType
 
-class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCategory.ObjectType], []]):
+class _StaticRoles_OppositeCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -36,6 +36,8 @@ class OppositeCategory[**MorphismData, **TwoMorphismData](Category[[MorphismCate
 
         def codomain(self) -> OppositeCategory.ObjectType:
             ...
+
+class OppositeCategory[**MorphismData, **TwoMorphismData](_StaticRoles_OppositeCategory, Category[[MorphismCategory.ObjectType], [], _StaticRoles_OppositeCategory.ObjectType, _StaticRoles_OppositeCategory.ElementType, _StaticRoles_OppositeCategory.MorphismType]):
 
     def __init__(self, original: Category[MorphismData, TwoMorphismData]) -> None:
         ...

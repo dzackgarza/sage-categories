@@ -1,3 +1,4 @@
+import sage_categories.cat.properties
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -10,7 +11,7 @@ from sage_categories.cat.predicates import Predicate, Proposition
 from sage_categories.cat.properties import PredicateSubcategory
 __all__ = ['StrictImageCategory', 'FullImageCategory', 'EssentialImageCategory', 'retain_object_image', 'retain_morphism_image', 'strict_image', 'register_full_image', 'full_image', '_ImageObjectPredicate@67', '_ImageMorphismPredicate@70']
 
-class ImageMorphismCategory[**MorphismData, **TwoMorphismData](MorphismCategory[MorphismData, TwoMorphismData]):
+class _StaticRoles_ImageMorphismCategory(sage_categories.cat.morphisms._StaticRoles_MorphismCategory):
 
     class ObjectType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
@@ -27,10 +28,12 @@ class ImageMorphismCategory[**MorphismData, **TwoMorphismData](MorphismCategory[
         def codomain(self) -> ImageMorphismCategory.ObjectType:
             ...
 
+class ImageMorphismCategory[**MorphismData, **TwoMorphismData](_StaticRoles_ImageMorphismCategory, MorphismCategory[MorphismData, TwoMorphismData, _StaticRoles_ImageMorphismCategory.ObjectType, _StaticRoles_ImageMorphismCategory.ElementType, _StaticRoles_ImageMorphismCategory.MorphismType]):
+
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         ...
 
-class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData], metaclass=abc.ABCMeta):
+class _StaticRoles_ImageCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -46,6 +49,8 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
 
         def codomain(self) -> ImageCategory.ObjectType:
             ...
+
+class ImageCategory[**MorphismData, **TwoMorphismData, _ObjectRole = _StaticRoles_ImageCategory.ObjectType, _ElementRole = _StaticRoles_ImageCategory.ElementType, _MorphismRole = _StaticRoles_ImageCategory.MorphismType](_StaticRoles_ImageCategory, Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole], metaclass=abc.ABCMeta):
 
     def __init__(self, defining_functor: Functor) -> None:
         ...
@@ -95,7 +100,7 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
     def compose_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         ...
 
-class StrictImageCategory[**MorphismData, **TwoMorphismData](ImageCategory[MorphismData, TwoMorphismData]):
+class _StaticRoles_StrictImageCategory(_StaticRoles_ImageCategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -112,7 +117,10 @@ class StrictImageCategory[**MorphismData, **TwoMorphismData](ImageCategory[Morph
         def codomain(self) -> StrictImageCategory.ObjectType:
             ...
 
-class FullImageCategory[**MorphismData, **TwoMorphismData](ImageCategory[MorphismData, TwoMorphismData]):
+class StrictImageCategory[**MorphismData, **TwoMorphismData](_StaticRoles_StrictImageCategory, ImageCategory[MorphismData, TwoMorphismData, _StaticRoles_StrictImageCategory.ObjectType, _StaticRoles_StrictImageCategory.ElementType, _StaticRoles_StrictImageCategory.MorphismType]):
+    pass
+
+class _StaticRoles_FullImageCategory(_StaticRoles_ImageCategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -129,7 +137,10 @@ class FullImageCategory[**MorphismData, **TwoMorphismData](ImageCategory[Morphis
         def codomain(self) -> FullImageCategory.ObjectType:
             ...
 
-class EssentialImageCategory[**MorphismData, **TwoMorphismData](PredicateSubcategory[MorphismData, TwoMorphismData]):
+class FullImageCategory[**MorphismData, **TwoMorphismData](_StaticRoles_FullImageCategory, ImageCategory[MorphismData, TwoMorphismData, _StaticRoles_FullImageCategory.ObjectType, _StaticRoles_FullImageCategory.ElementType, _StaticRoles_FullImageCategory.MorphismType]):
+    pass
+
+class _StaticRoles_EssentialImageCategory(sage_categories.cat.properties._StaticRoles_PredicateSubcategory):
 
     class ObjectType(sage_categories.sets.finite.SetsCategory.ObjectType):
         ...
@@ -145,6 +156,8 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](PredicateSubcate
 
         def codomain(self) -> EssentialImageCategory.ObjectType:
             ...
+
+class EssentialImageCategory[**MorphismData, **TwoMorphismData](_StaticRoles_EssentialImageCategory, PredicateSubcategory[MorphismData, TwoMorphismData, _StaticRoles_EssentialImageCategory.ObjectType, _StaticRoles_EssentialImageCategory.ElementType, _StaticRoles_EssentialImageCategory.MorphismType]):
 
     def __init__(self, ambient: Category, name: str, full_subcategory_of: tuple[Category, ...], defining_functor: Functor) -> None:
         ...

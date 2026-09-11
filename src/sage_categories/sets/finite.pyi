@@ -1,3 +1,4 @@
+import sage_categories.cat.slices
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -115,11 +116,7 @@ class _SetMap:
     rule: Lambda | None
     form: MapForm | None = ...
 
-class SetsCategory(Category[[Map], []]):
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        ...
-    Finite: Incomplete
+class _StaticRoles_SetsCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -169,6 +166,12 @@ class SetsCategory(Category[[Map], []]):
 
         def codomain(self) -> SetsCategory.ObjectType:
             ...
+
+class SetsCategory(_StaticRoles_SetsCategory, Category[[Map], [], _StaticRoles_SetsCategory.ObjectType, _StaticRoles_SetsCategory.ElementType, _StaticRoles_SetsCategory.MorphismType]):
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        ...
+    Finite: Incomplete
 
     def inverse_morphism(self, morphism: SetsCategory.MorphismType) -> SetsCategory.MorphismType:
         ...
@@ -251,7 +254,7 @@ class SetsCategory(Category[[Map], []]):
     def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...]:
         ...
 
-class SetSubobjects(SliceProperty):
+class _StaticRoles_SetSubobjects(sage_categories.cat.slices._StaticRoles_SliceProperty):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -267,6 +270,8 @@ class SetSubobjects(SliceProperty):
 
         def codomain(self) -> SetSubobjects.ObjectType:
             ...
+
+class SetSubobjects(_StaticRoles_SetSubobjects, SliceProperty[_StaticRoles_SetSubobjects.ObjectType, _StaticRoles_SetSubobjects.ElementType, _StaticRoles_SetSubobjects.MorphismType]):
 
     def from_predicate(self, predicate: Callable[[SetsCategory.ElementType], Proposition]) -> SliceLikeCategory.ObjectType:
         ...

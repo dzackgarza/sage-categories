@@ -19,12 +19,15 @@ class VertexData:
 class PathData:
     word: Word
 
-class FinitePresentedCategory(Category[[Word], []]):
+class _StaticRoles_FinitePresentedCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
         def __init__(self, data: VertexData) -> None:
             ...
+
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+        ...
 
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
@@ -40,8 +43,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         def codomain(self) -> FinitePresentedCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
-        ...
+class FinitePresentedCategory(_StaticRoles_FinitePresentedCategory, Category[[Word], [], _StaticRoles_FinitePresentedCategory.ObjectType, _StaticRoles_FinitePresentedCategory.ElementType, _StaticRoles_FinitePresentedCategory.MorphismType]):
 
     def __init__(self, name: str, labels: tuple[Hashable, ...], generators: tuple[Generator, ...], relations: tuple[Relation, ...]) -> None:
         ...

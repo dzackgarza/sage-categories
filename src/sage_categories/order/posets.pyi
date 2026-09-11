@@ -1,3 +1,4 @@
+import sage_categories.cat.properties
 import sage_categories.order.posets
 import sage_categories.sets.finite
 from _typeshed import Incomplete
@@ -20,7 +21,7 @@ class _PartialOrderPredicate(Predicate):
 class _TotalOrderPredicate(Predicate):
     name: str
 
-class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
+class _StaticRoles_BinaryRelationsCategory:
 
     class ObjectType(sage_categories.sets.finite.SetsCategory.ObjectType):
 
@@ -52,6 +53,8 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def codomain(self) -> BinaryRelationsCategory.ObjectType:
             ...
+
+class BinaryRelationsCategory(_StaticRoles_BinaryRelationsCategory, Category[[MorphismCategory.ObjectType], [], _StaticRoles_BinaryRelationsCategory.ObjectType, _StaticRoles_BinaryRelationsCategory.ElementType, _StaticRoles_BinaryRelationsCategory.MorphismType]):
     PartialOrder: Incomplete
 
     def __call__(self, relation: CategoryOfCategories.ElementType) -> BinaryRelationsCategory.ObjectType:
@@ -81,7 +84,7 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
     def composite(self, second: BinaryRelationsCategory.MorphismType, first: BinaryRelationsCategory.MorphismType) -> BinaryRelationsCategory.MorphismType:
         ...
 
-class PosetsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
+class _StaticRoles_PosetsCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
 
     class ObjectType(sage_categories.order.posets.BinaryRelationsCategory.ObjectType):
         ...
@@ -99,6 +102,8 @@ class PosetsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
         def codomain(self) -> PosetsCategory.ObjectType:
             ...
+
+class PosetsCategory(_StaticRoles_PosetsCategory, PropertySubcategory[[MorphismCategory.ObjectType], [], _StaticRoles_PosetsCategory.ObjectType, _StaticRoles_PosetsCategory.ElementType, _StaticRoles_PosetsCategory.MorphismType]):
     Total: Incomplete
 
 def BinaryRelations() -> BinaryRelationsCategory:

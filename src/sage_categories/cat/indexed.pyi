@@ -27,7 +27,7 @@ class _IndexedTransformationData:
     components: ComponentRule
     comparisons: ComparisonRule
 
-class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
+class _StaticRoles_IndexedCategoriesCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -81,6 +81,8 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
         def codomain(self) -> IndexedCategoriesCategory.ObjectType:
             ...
 
+class IndexedCategoriesCategory(_StaticRoles_IndexedCategoriesCategory, Category[[ComponentRule, ComparisonRule], [], _StaticRoles_IndexedCategoriesCategory.ObjectType, _StaticRoles_IndexedCategoriesCategory.ElementType, _StaticRoles_IndexedCategoriesCategory.MorphismType]):
+
     def __init__(self, base: Category) -> None:
         ...
 
@@ -115,7 +117,7 @@ class _TotalMorphism:
     base: MorphismCategory.ObjectType
     fiber: MorphismCategory.ObjectType
 
-class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCategory.ObjectType], []]):
+class _StaticRoles_GrothendieckCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -147,6 +149,8 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
 
         def codomain(self) -> GrothendieckCategory.ObjectType:
             ...
+
+class GrothendieckCategory(_StaticRoles_GrothendieckCategory, Category[[MorphismCategory.ObjectType, MorphismCategory.ObjectType], [], _StaticRoles_GrothendieckCategory.ObjectType, _StaticRoles_GrothendieckCategory.ElementType, _StaticRoles_GrothendieckCategory.MorphismType]):
 
     def __init__(self, indexed: IndexedCategoriesCategory.ObjectType) -> None:
         ...

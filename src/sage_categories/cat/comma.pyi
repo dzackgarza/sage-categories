@@ -19,7 +19,7 @@ class CommaMorphism:
     first: MorphismCategory.ObjectType
     second: MorphismCategory.ObjectType
 
-class CommaCategory(Category[[MorphismCategory.ObjectType, MorphismCategory.ObjectType], []]):
+class _StaticRoles_CommaCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -55,25 +55,27 @@ class CommaCategory(Category[[MorphismCategory.ObjectType, MorphismCategory.Obje
         def codomain(self) -> CommaCategory.ObjectType:
             ...
 
+class CommaCategory[_ObjectRole = _StaticRoles_CommaCategory.ObjectType, _ElementRole = _StaticRoles_CommaCategory.ElementType, _MorphismRole = _StaticRoles_CommaCategory.MorphismType](_StaticRoles_CommaCategory, Category[[MorphismCategory.ObjectType, MorphismCategory.ObjectType], [], _ObjectRole, _ElementRole, _MorphismRole]):
+
     def __init__(self, first: Functor, second: Functor) -> None:
         ...
 
     def comma_functors(self) -> tuple[Functor, Functor]:
         ...
 
-    def from_arrow(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> CommaCategory.ObjectType:
+    def from_arrow(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> _ObjectRole:
         ...
 
-    def morphism_from_pair(self, source: CommaCategory.ObjectType, target: CommaCategory.ObjectType, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> CommaCategory.MorphismType:
+    def morphism_from_pair(self, source: _ObjectRole, target: _ObjectRole, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> _MorphismRole:
         ...
 
-    def construct_morphism(self, source: CommaCategory.ObjectType, target: CommaCategory.ObjectType, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> CommaCategory.MorphismType:
+    def construct_morphism(self, source: _ObjectRole, target: _ObjectRole, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> _MorphismRole:
         ...
 
-    def construct_identity(self, value: CommaCategory.ObjectType) -> CommaCategory.MorphismType:
+    def construct_identity(self, value: _ObjectRole) -> _MorphismRole:
         ...
 
-    def composite(self, second: CommaCategory.MorphismType, first: CommaCategory.MorphismType) -> CommaCategory.MorphismType:
+    def composite(self, second: _MorphismRole, first: _MorphismRole) -> _MorphismRole:
         ...
 
     @cached_method
@@ -99,7 +101,7 @@ class CommaCategory(Category[[MorphismCategory.ObjectType, MorphismCategory.Obje
 def comma_objects(first: Functor, second: Functor) -> CommaCategory:
     ...
 
-class CommaSpecialization(CommaCategory):
+class _StaticRoles_CommaSpecialization(_StaticRoles_CommaCategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -115,6 +117,8 @@ class CommaSpecialization(CommaCategory):
 
         def codomain(self) -> CommaSpecialization.ObjectType:
             ...
+
+class CommaSpecialization(_StaticRoles_CommaSpecialization, CommaCategory[_StaticRoles_CommaSpecialization.ObjectType, _StaticRoles_CommaSpecialization.ElementType, _StaticRoles_CommaSpecialization.MorphismType]):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         ...

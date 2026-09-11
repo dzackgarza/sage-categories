@@ -29,7 +29,7 @@ class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [A
     def shape(self) -> Category | Functor:
         ...
 
-class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]]):
+class _StaticRoles_FunctorProperty(sage_categories.cat.properties._StaticRoles_FixedEndpointProperty):
 
     class ObjectType(sage_categories.cat.functors.FunctorCategory.ObjectType, sage_categories.cat.properties.PropertySubcategory.ObjectType):
         ...
@@ -46,6 +46,8 @@ class FunctorProperty(FixedEndpointProperty[[OnObject, OnMorphism], [Assignment]
         def codomain(self) -> FunctorProperty.ObjectType:
             ...
 
+class FunctorProperty(_StaticRoles_FunctorProperty, FixedEndpointProperty[[OnObject, OnMorphism], [Assignment], _StaticRoles_FunctorProperty.ObjectType, _StaticRoles_FunctorProperty.ElementType, _StaticRoles_FunctorProperty.MorphismType]):
+
     def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor:
         ...
 
@@ -55,7 +57,7 @@ class _DenotesDiagramPredicate(Predicate):
 class _DenotesFunctorPredicate(Predicate):
     name: str
 
-class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]]):
+class _StaticRoles_FunctorCategory(sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.MorphismType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -71,6 +73,8 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
 
         def codomain(self) -> FunctorCategory.ObjectType:
             ...
+
+class FunctorCategory(_StaticRoles_FunctorCategory, FixedEndpointCategory[[OnObject, OnMorphism], [Assignment], _StaticRoles_FunctorCategory.ObjectType, _StaticRoles_FunctorCategory.ElementType, _StaticRoles_FunctorCategory.MorphismType]):
 
     def __init__(self, morphisms: MorphismCategory, domain: Category, codomain: Category) -> None:
         ...
@@ -126,8 +130,7 @@ class FunctorCategory(FixedEndpointCategory[[OnObject, OnMorphism], [Assignment]
     def narrowing_type(self) -> type[FunctorProperty]:
         ...
 
-class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
-    ObjectType = CategoryOfCategories.MorphismType
+class _StaticRoles_FunctorsCategory(sage_categories.cat.morphisms._StaticRoles_MorphismCategory):
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
@@ -163,6 +166,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
         def codomain(self) -> FunctorsCategory.ObjectType:
             ...
+
+class FunctorsCategory(_StaticRoles_FunctorsCategory, MorphismCategory[[OnObject, OnMorphism], [Assignment], CategoryOfCategories.MorphismType, _StaticRoles_FunctorsCategory.ElementType, _StaticRoles_FunctorsCategory.MorphismType]):
+    ObjectType = CategoryOfCategories.MorphismType
 
     def __init__(self, base: CategoryOfCategories) -> None:
         ...

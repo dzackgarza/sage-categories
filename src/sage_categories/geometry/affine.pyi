@@ -32,7 +32,7 @@ class _AffineOpenData:
     ancestors: tuple[AffineOpenCategory.ObjectType, ...]
     restrictions: tuple[tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType], ...]
 
-class AffineOpenCategory(Category[Any, Any]):
+class _StaticRoles_AffineOpenCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -60,6 +60,8 @@ class AffineOpenCategory(Category[Any, Any]):
         def codomain(self) -> AffineOpenCategory.ObjectType:
             ...
 
+class AffineOpenCategory(_StaticRoles_AffineOpenCategory, Category[Any, Any, _StaticRoles_AffineOpenCategory.ObjectType, _StaticRoles_AffineOpenCategory.ElementType, _StaticRoles_AffineOpenCategory.MorphismType]):
+
     def __init__(self, scheme: AffineSchemesCategory.ObjectType) -> None:
         ...
 
@@ -82,7 +84,7 @@ class AffineOpenCategory(Category[Any, Any]):
         ...
 AffineOpen = AffineOpenCategory.ObjectType
 
-class AffineSchemesCategory(Category[Any, Any]):
+class _StaticRoles_AffineSchemesCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -108,6 +110,8 @@ class AffineSchemesCategory(Category[Any, Any]):
 
         def codomain(self) -> AffineSchemesCategory.ObjectType:
             ...
+
+class AffineSchemesCategory(_StaticRoles_AffineSchemesCategory, Category[Any, Any, _StaticRoles_AffineSchemesCategory.ObjectType, _StaticRoles_AffineSchemesCategory.ElementType, _StaticRoles_AffineSchemesCategory.MorphismType]):
 
     def from_native(self, coordinate_ring: CategoryOfCategories.ElementType, native: OscarHandle) -> AffineSchemesCategory.ObjectType:
         ...

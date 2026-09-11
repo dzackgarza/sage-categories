@@ -17,7 +17,7 @@ class _RingedSpaceData:
     space: TopologicalSpacesCategory.ObjectType
     sheaf: RingSheaf
 
-class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
+class _StaticRoles_RingedSpacesCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -49,6 +49,8 @@ class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def codomain(self) -> RingedSpacesCategory.ObjectType:
             ...
+
+class RingedSpacesCategory(_StaticRoles_RingedSpacesCategory, Category[[MorphismCategory.ObjectType], [], _StaticRoles_RingedSpacesCategory.ObjectType, _StaticRoles_RingedSpacesCategory.ElementType, _StaticRoles_RingedSpacesCategory.MorphismType]):
 
     @cached_method
     def to_spaces(self) -> Functor:

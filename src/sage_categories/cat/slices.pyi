@@ -1,3 +1,5 @@
+import sage_categories.cat.comma
+import sage_categories.cat.properties
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -13,7 +15,7 @@ __all__ = ['CommaCategory', 'SliceLikeCategory', 'slice_over', 'coslice_under', 
 class _SliceMemberPredicate(Predicate):
     name: str
 
-class SliceLikeCategory(CommaSpecialization):
+class _StaticRoles_SliceLikeCategory(sage_categories.cat.comma._StaticRoles_CommaSpecialization):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -29,6 +31,8 @@ class SliceLikeCategory(CommaSpecialization):
 
         def codomain(self) -> SliceLikeCategory.ObjectType:
             ...
+
+class SliceLikeCategory(_StaticRoles_SliceLikeCategory, CommaSpecialization[_StaticRoles_SliceLikeCategory.ObjectType, _StaticRoles_SliceLikeCategory.ElementType, _StaticRoles_SliceLikeCategory.MorphismType]):
 
     def __init__(self, base: Category, fixed: CategoryOfCategories.ElementType, fixed_label: int) -> None:
         ...
@@ -99,7 +103,7 @@ def comma_category(first: Functor, second: Functor) -> CommaCategory:
 class _HasMorphismPropertyPredicate(Predicate):
     name: str
 
-class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
+class _StaticRoles_SliceProperty(sage_categories.cat.properties._StaticRoles_FullSubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -115,6 +119,8 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
         def codomain(self) -> SliceProperty.ObjectType:
             ...
+
+class SliceProperty[_ObjectRole = _StaticRoles_SliceProperty.ObjectType, _ElementRole = _StaticRoles_SliceProperty.ElementType, _MorphismRole = _StaticRoles_SliceProperty.MorphismType](_StaticRoles_SliceProperty, FullSubcategory[[MorphismCategory.ObjectType], [], _ObjectRole, _ElementRole, _MorphismRole]):
 
     def __init__(self, ambient: SliceLikeCategory | SliceProperty, property_category: Category) -> None:
         ...
@@ -140,7 +146,12 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
     def __call__(self, value: CategoryOfCategories.ElementType) -> SliceLikeCategory.ObjectType:
         ...
 
-class SubobjectsOfProduct(SliceProperty):
+class _StaticRoles_SubobjectsOfProduct(_StaticRoles_SliceProperty):
+
+    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+
+        def product_projection(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
+            ...
 
     class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
         ...
@@ -154,10 +165,8 @@ class SubobjectsOfProduct(SliceProperty):
         def codomain(self) -> SubobjectsOfProduct.ObjectType:
             ...
 
-    class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
-
-        def product_projection(self, index: CategoryOfCategories.ElementType | Hashable) -> MorphismCategory.ObjectType:
-            ...
+class SubobjectsOfProduct(_StaticRoles_SubobjectsOfProduct, SliceProperty[_StaticRoles_SubobjectsOfProduct.ObjectType, _StaticRoles_SubobjectsOfProduct.ElementType, _StaticRoles_SubobjectsOfProduct.MorphismType]):
+    pass
 
 def _pair_functor(first: Functor, second: Functor) -> Functor:
     ...

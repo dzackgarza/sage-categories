@@ -67,288 +67,6 @@ class _StaticRoles_CategoryOfCategories:
         def universal_morphism(self, candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
             ...
 
-class _MemberPredicate(Predicate):
-    name: str
-member: Predicate
-
-class _ConcretePredicate(Predicate):
-    name: str
-
-class CategoryDeclaration[**MorphismData, **TwoMorphismData](_StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
-
-    def __init__(self, data: None=None) -> None:
-        ...
-
-    def is_discrete(self) -> bool:
-        ...
-
-    def construction_owner(self) -> Category:
-        ...
-
-    def subobjects_type(self) -> type:
-        ...
-
-    def __init_subclass__(cls) -> None:
-        ...
-
-    def __mul__(self, other: Category) -> Category:
-        ...
-
-    def __add__(self, other: Category) -> Category:
-        ...
-
-    def __pow__(self, exponent: Category) -> Category:
-        ...
-
-    def op(self) -> Category:
-        ...
-
-    def universe(self) -> CategoryOfCategories:
-        ...
-
-    def ordinal(self) -> int:
-        ...
-
-    def recompile(self) -> None:
-        ...
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        ...
-
-    def selected_functors(self) -> tuple[Functor, ...]:
-        ...
-
-    def has_ambient(self) -> bool:
-        ...
-
-    def has_full_ambient(self) -> bool:
-        ...
-
-    def ambient(self) -> Category[MorphismData, TwoMorphismData]:
-        ...
-
-    def subcategory_monomorphism(self) -> Functor:
-        ...
-
-    def equality(self) -> Predicate:
-        ...
-
-    def owns_equality(self) -> bool:
-        ...
-
-    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
-        ...
-
-    def __contains__(self, candidate: ContainmentInput) -> bool:
-        ...
-
-    @overload
-    def morphism_category(self, level: Literal[0]) -> Category[MorphismData, TwoMorphismData]:
-        ...
-
-    @overload
-    def morphism_category(self, level: Literal[1]) -> MorphismCategory[MorphismData, TwoMorphismData]:
-        ...
-
-    @overload
-    def morphism_category(self, level: Literal[2]) -> MorphismCategory[TwoMorphismData, []]:
-        ...
-
-    @overload
-    def morphism_category(self, level: int | Integer) -> MorphismCategory[[], []]:
-        ...
-
-    def morphism_category_type(self) -> type[MorphismCategory[MorphismData, TwoMorphismData]]:
-        ...
-
-    def base_category(self) -> Category:
-        ...
-
-    def retained_inverse(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | None:
-        ...
-
-    def retain_inverses(self, forward: MorphismCategory.ObjectType, backward: MorphismCategory.ObjectType) -> None:
-        ...
-
-    def compose_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def inverse_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def element_from_defining_morphism(self, defining_morphism: MorphismCategory.ObjectType) -> CategoryOfCategories.ElementType:
-        ...
-
-    def construct_morphism(self, domain: CategoryOfCategories.ElementType, codomain: CategoryOfCategories.ElementType, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismCategory.ObjectType:
-        ...
-
-    def construct_identity(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        ...
-
-    def composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def identity_two_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def compose_two_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        ...
-
-    def construct_two_morphism(self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType, *args: TwoMorphismData.args, **kwargs: TwoMorphismData.kwargs) -> MorphismCategory.ObjectType:
-        ...
-
-    def Terminal(self) -> CategoryOfCategories.ElementType:
-        ...
-
-    def point_morphism(self, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        ...
-
-    def point_functor(self, member_object: CategoryOfCategories.ElementType) -> Functor:
-        ...
-
-    def Point(self) -> Functor:
-        ...
-
-    def arrow_functor(self, morphism: MorphismCategory.ObjectType) -> Functor:
-        ...
-    Products: Incomplete
-    Coproducts: Incomplete
-    Limits: Incomplete
-    Colimits: Incomplete
-    EssentialImage: Incomplete
-
-    def Pullbacks(self) -> Category:
-        ...
-
-    def Pushouts(self) -> Category:
-        ...
-
-    def Equalizers(self) -> Category:
-        ...
-
-    def Coequalizers(self) -> Category:
-        ...
-
-    def StrictImage(self, functor: Functor) -> Category:
-        ...
-
-    def FullImage(self, functor: Functor) -> Category:
-        ...
-
-    def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        ...
-
-    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        ...
-
-    def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
-        ...
-
-    def SliceOver(self, member_object: CategoryOfCategories.ElementType) -> Category:
-        ...
-
-    def CosliceUnder(self, member_object: CategoryOfCategories.ElementType) -> Category:
-        ...
-
-    def Subobjects(self, member_object: CategoryOfCategories.ElementType) -> Category:
-        ...
-
-    def Superobjects(self, member_object: CategoryOfCategories.ElementType) -> Category:
-        ...
-
-    def CoveringObjects(self, member_object: CategoryOfCategories.ElementType) -> Category:
-        ...
-
-    def CoveredObjects(self, member_object: CategoryOfCategories.ElementType) -> Category:
-        ...
-
-    def Core(self) -> Category:
-        ...
-
-    def object_set(self) -> CategoryOfCategories.ElementType:
-        ...
-
-    def object_at(self, point: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        ...
-
-    def object_point(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        ...
-
-    def morphism_set(self) -> AppliedQuery:
-        ...
-
-    def morphism_at(self, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        ...
-
-    def generating_morphisms(self) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
-        ...
-
-    def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass:
-        ...
-
-    def image_factorization(self, arrow: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-        ...
-
-    def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False] | UnknownClass:
-        ...
-
-    def retain_biproduct_operations(self, biproduct: Callable[[object, object], object], zero_morphism: Callable[[object, object], object]) -> None:
-        ...
-
-    def retain_colimit_construction(self, shape: Category, construction: Callable[[Functor], CategoryOfCategories.ElementType]) -> None:
-        ...
-
-    def biproduct(self, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        ...
-
-    def zero_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        ...
-
-    def exponential(self, exponent: CategoryOfCategories.ElementType, base: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        ...
-
-    def name(self) -> str:
-        ...
-
-    def narrowing_base(self) -> Category[MorphismData, TwoMorphismData]:
-        ...
-
-    def narrowing_roots(self) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
-        ...
-
-    def intersection(self, roots: tuple[Category[MorphismData, TwoMorphismData], ...]) -> Category[MorphismData, TwoMorphismData]:
-        ...
-
-    def closed_roots(self, roots: tuple[Category[MorphismData, TwoMorphismData], ...]) -> tuple[Category[MorphismData, TwoMorphismData], ...]:
-        ...
-
-    def property_subcategory(self, property_category: Category[MorphismData, TwoMorphismData]) -> Category[MorphismData, TwoMorphismData]:
-        ...
-
-    def retain_intersection(self, roots: tuple[Category, ...], intersection: Category) -> None:
-        ...
-
-    def __getattr__(self, name: str) -> Callable[..., Category[MorphismData, TwoMorphismData]]:
-        ...
-
-    def narrowing_type(self) -> type[Category[MorphismData, TwoMorphismData]]:
-        ...
-_CategoryDeclaration_MorphismData = _typing.ParamSpec('_CategoryDeclaration_MorphismData')
-_CategoryDeclaration_TwoMorphismData = _typing.ParamSpec('_CategoryDeclaration_TwoMorphismData')
-Category = CategoryDeclaration[_CategoryDeclaration_MorphismData, _CategoryDeclaration_TwoMorphismData]
-type LiftRule = Callable[[MorphismCategory.ObjectType, CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
-
-@dataclass(frozen=True, eq=False, slots=True)
-class FunctorData:
-    on_object: OnObject
-    on_morphism: OnMorphism
-
-class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignment]], _StaticRoles_CategoryOfCategories):
-    ObjectType = CategoryDeclaration[_CategoryDeclaration_MorphismData, _CategoryDeclaration_TwoMorphismData]
-    Inhabited: Incomplete
-    Empty: Incomplete
-    Concrete: Incomplete
-
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: FunctorData) -> None:
@@ -405,6 +123,291 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def codomain(self) -> CategoryOfCategories.ObjectType:
             ...
 
+class _MemberPredicate(Predicate):
+    name: str
+member: Predicate
+
+class _ConcretePredicate(Predicate):
+    name: str
+
+class CategoryDeclaration[**MorphismData, **TwoMorphismData, _ObjectRole = sage_categories.kernel.roles.ObjectOfCategory, _ElementRole = sage_categories.kernel.roles.ElementOfObject, _MorphismRole = sage_categories.kernel.roles.MorphismOfCategory](_StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+
+    def __init__(self, data: None=None) -> None:
+        ...
+
+    def is_discrete(self) -> bool:
+        ...
+
+    def construction_owner(self) -> Category:
+        ...
+
+    def subobjects_type(self) -> type:
+        ...
+
+    def __init_subclass__(cls) -> None:
+        ...
+
+    def __mul__(self, other: Category) -> Category:
+        ...
+
+    def __add__(self, other: Category) -> Category:
+        ...
+
+    def __pow__(self, exponent: Category) -> Category:
+        ...
+
+    def op(self) -> Category:
+        ...
+
+    def universe(self) -> CategoryOfCategories:
+        ...
+
+    def ordinal(self) -> int:
+        ...
+
+    def recompile(self) -> None:
+        ...
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        ...
+
+    def selected_functors(self) -> tuple[Functor, ...]:
+        ...
+
+    def has_ambient(self) -> bool:
+        ...
+
+    def has_full_ambient(self) -> bool:
+        ...
+
+    def ambient(self) -> Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]:
+        ...
+
+    def subcategory_monomorphism(self) -> Functor:
+        ...
+
+    def equality(self) -> Predicate:
+        ...
+
+    def owns_equality(self) -> bool:
+        ...
+
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
+        ...
+
+    def __contains__(self, candidate: ContainmentInput) -> bool:
+        ...
+
+    @overload
+    def morphism_category(self, level: Literal[0]) -> Category[MorphismData, TwoMorphismData]:
+        ...
+
+    @overload
+    def morphism_category(self, level: Literal[1]) -> MorphismCategory[MorphismData, TwoMorphismData]:
+        ...
+
+    @overload
+    def morphism_category(self, level: Literal[2]) -> MorphismCategory[TwoMorphismData, []]:
+        ...
+
+    @overload
+    def morphism_category(self, level: int | Integer) -> MorphismCategory[[], []]:
+        ...
+
+    def morphism_category_type(self) -> type[MorphismCategory[MorphismData, TwoMorphismData]]:
+        ...
+
+    def base_category(self) -> Category:
+        ...
+
+    def retained_inverse(self, morphism: _MorphismRole) -> _MorphismRole | None:
+        ...
+
+    def retain_inverses(self, forward: _MorphismRole, backward: _MorphismRole) -> None:
+        ...
+
+    def compose_morphisms(self, second: _MorphismRole, first: _MorphismRole) -> _MorphismRole:
+        ...
+
+    def inverse_morphism(self, morphism: _MorphismRole) -> _MorphismRole:
+        ...
+
+    def element_from_defining_morphism(self, defining_morphism: _MorphismRole) -> _ElementRole:
+        ...
+
+    def construct_morphism(self, domain: _ObjectRole, codomain: _ObjectRole, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> _MorphismRole:
+        ...
+
+    def construct_identity(self, member_object: _ObjectRole) -> _MorphismRole:
+        ...
+
+    def composite(self, second: _MorphismRole, first: _MorphismRole) -> _MorphismRole:
+        ...
+
+    def identity_two_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        ...
+
+    def compose_two_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        ...
+
+    def construct_two_morphism(self, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType, *args: TwoMorphismData.args, **kwargs: TwoMorphismData.kwargs) -> MorphismCategory.ObjectType:
+        ...
+
+    def Terminal(self) -> _ObjectRole:
+        ...
+
+    def point_morphism(self, point: _ElementRole) -> _MorphismRole:
+        ...
+
+    def point_functor(self, member_object: _ObjectRole) -> Functor:
+        ...
+
+    def Point(self) -> Functor:
+        ...
+
+    def arrow_functor(self, morphism: _MorphismRole) -> Functor:
+        ...
+    Products: Incomplete
+    Coproducts: Incomplete
+    Limits: Incomplete
+    Colimits: Incomplete
+    EssentialImage: Incomplete
+
+    def Pullbacks(self) -> Category:
+        ...
+
+    def Pushouts(self) -> Category:
+        ...
+
+    def Equalizers(self) -> Category:
+        ...
+
+    def Coequalizers(self) -> Category:
+        ...
+
+    def StrictImage(self, functor: Functor) -> Category:
+        ...
+
+    def FullImage(self, functor: Functor) -> Category:
+        ...
+
+    def limit_construction(self, shape: Category) -> Callable[[Functor], _ObjectRole]:
+        ...
+
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], _ObjectRole]:
+        ...
+
+    def presenting_diagrams(self, constructed: _ObjectRole) -> tuple[Functor, ...]:
+        ...
+
+    def SliceOver(self, member_object: _ObjectRole) -> Category:
+        ...
+
+    def CosliceUnder(self, member_object: _ObjectRole) -> Category:
+        ...
+
+    def Subobjects(self, member_object: _ObjectRole) -> Category:
+        ...
+
+    def Superobjects(self, member_object: _ObjectRole) -> Category:
+        ...
+
+    def CoveringObjects(self, member_object: _ObjectRole) -> Category:
+        ...
+
+    def CoveredObjects(self, member_object: _ObjectRole) -> Category:
+        ...
+
+    def Core(self) -> Category:
+        ...
+
+    def object_set(self) -> CategoryOfCategories.ElementType:
+        ...
+
+    def object_at(self, point: CategoryOfCategories.ElementType) -> _ObjectRole:
+        ...
+
+    def object_point(self, member_object: _ObjectRole) -> CategoryOfCategories.ElementType:
+        ...
+
+    def morphism_set(self) -> AppliedQuery:
+        ...
+
+    def morphism_at(self, point: CategoryOfCategories.ElementType) -> _MorphismRole:
+        ...
+
+    def generating_morphisms(self) -> tuple[_MorphismRole, ...] | UnknownClass:
+        ...
+
+    def hom_morphisms(self, source: _ObjectRole, target: _ObjectRole) -> tuple[_MorphismRole, ...] | UnknownClass:
+        ...
+
+    def image_factorization(self, arrow: _MorphismRole) -> tuple[_MorphismRole, _MorphismRole]:
+        ...
+
+    def factor_through_monomorphism(self, mono: _MorphismRole, arrow: _MorphismRole) -> _MorphismRole | Literal[False] | UnknownClass:
+        ...
+
+    def retain_biproduct_operations(self, biproduct: Callable[[object, object], object], zero_morphism: Callable[[object, object], object]) -> None:
+        ...
+
+    def retain_colimit_construction(self, shape: Category, construction: Callable[[Functor], _ObjectRole]) -> None:
+        ...
+
+    def biproduct(self, first: _ObjectRole, second: _ObjectRole) -> _ObjectRole:
+        ...
+
+    def zero_morphism(self, source: _ObjectRole, target: _ObjectRole) -> _MorphismRole:
+        ...
+
+    def exponential(self, exponent: _ObjectRole, base: _ObjectRole) -> _ObjectRole:
+        ...
+
+    def name(self) -> str:
+        ...
+
+    def narrowing_base(self) -> Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]:
+        ...
+
+    def narrowing_roots(self) -> tuple[Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole], ...]:
+        ...
+
+    def intersection(self, roots: tuple[Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole], ...]) -> Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]:
+        ...
+
+    def closed_roots(self, roots: tuple[Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole], ...]) -> tuple[Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole], ...]:
+        ...
+
+    def property_subcategory(self, property_category: Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]) -> Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]:
+        ...
+
+    def retain_intersection(self, roots: tuple[Category, ...], intersection: Category) -> None:
+        ...
+
+    def __getattr__(self, name: str) -> Callable[..., Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]]:
+        ...
+
+    def narrowing_type(self) -> type[Category[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]]:
+        ...
+_CategoryDeclaration_MorphismData = _typing.ParamSpec('_CategoryDeclaration_MorphismData')
+_CategoryDeclaration_TwoMorphismData = _typing.ParamSpec('_CategoryDeclaration_TwoMorphismData')
+_CategoryDeclaration_ObjectRole = _typing.TypeVar('_CategoryDeclaration_ObjectRole', default=sage_categories.kernel.roles.ObjectOfCategory)
+_CategoryDeclaration_ElementRole = _typing.TypeVar('_CategoryDeclaration_ElementRole', default=sage_categories.kernel.roles.ElementOfObject)
+_CategoryDeclaration_MorphismRole = _typing.TypeVar('_CategoryDeclaration_MorphismRole', default=sage_categories.kernel.roles.MorphismOfCategory)
+Category = CategoryDeclaration[_CategoryDeclaration_MorphismData, _CategoryDeclaration_TwoMorphismData, _CategoryDeclaration_ObjectRole, _CategoryDeclaration_ElementRole, _CategoryDeclaration_MorphismRole]
+type LiftRule = Callable[[MorphismCategory.ObjectType, CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
+
+@dataclass(frozen=True, eq=False, slots=True)
+class FunctorData:
+    on_object: OnObject
+    on_morphism: OnMorphism
+
+class CategoryOfCategories(_StaticRoles_CategoryOfCategories, CategoryDeclaration[[OnObject, OnMorphism], [Assignment], Category[..., ...], _StaticRoles_CategoryOfCategories.ElementType, _StaticRoles_CategoryOfCategories.MorphismType]):
+    ObjectType = CategoryDeclaration[_CategoryDeclaration_MorphismData, _CategoryDeclaration_TwoMorphismData]
+    Inhabited: Incomplete
+    Empty: Incomplete
+    Concrete: Incomplete
+
     def __init__(self) -> None:
         ...
 
@@ -429,13 +432,13 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def morphism_category_type(self) -> type[FunctorsCategory]:
         ...
 
-    def construct_morphism(self, domain: Category, codomain: Category, on_object: OnObject, on_morphism: OnMorphism) -> Functor:
+    def construct_morphism(self, domain: CategoryOfCategories.ObjectType, codomain: CategoryOfCategories.ObjectType, on_object: OnObject, on_morphism: OnMorphism) -> CategoryOfCategories.MorphismType:
         ...
 
-    def construct_identity(self, category: Category) -> Functor:
+    def construct_identity(self, category: CategoryOfCategories.ObjectType) -> CategoryOfCategories.MorphismType:
         ...
 
-    def composite(self, second: Functor, first: Functor) -> Functor:
+    def composite(self, second: CategoryOfCategories.MorphismType, first: CategoryOfCategories.MorphismType) -> CategoryOfCategories.MorphismType:
         ...
 
     def construct_two_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, assignment: Assignment, source_functor: Functor | None=None, target_functor: Functor | None=None) -> NaturalTransformation:
@@ -456,10 +459,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def horizontal_composite(self, second: NaturalTransformation, first: NaturalTransformation) -> NaturalTransformation:
         ...
 
-    def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+    def limit_construction(self, shape: Category) -> Callable[[CategoryOfCategories.MorphismType], CategoryOfCategories.ObjectType]:
         ...
 
-    def exponential(self, exponent: Category, base: Category) -> Category:
+    def exponential(self, exponent: CategoryOfCategories.ObjectType, base: CategoryOfCategories.ObjectType) -> CategoryOfCategories.ObjectType:
         ...
 
     def Comma(self, first: Functor, second: Functor) -> CommaCategory:
@@ -480,6 +483,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def Terminal(self) -> FinitePresentedCategory:
         ...
 
+    @overload
+    def Point(self) -> CategoryOfCategories.MorphismType:
+        ...
+
+    @overload
     def Point(self, member: CategoryOfCategories.ElementType) -> PointCategory:
         ...
 

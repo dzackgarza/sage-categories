@@ -1,10 +1,11 @@
+import sage_categories.cat.morphisms
 from sage_categories.cat.category import Assignment, Category, CategoryOfCategories, OnMorphism, OnObject
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.cat.predicates import Proposition
 __all__ = ['GroupoidsCategory', 'CoreCategory', 'CoreMorphismCategory', 'CoreFixedEndpointCategory', 'Core', 'U', 'epsilon']
 
-class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
+class _StaticRoles_GroupoidsCategory:
 
     class ObjectType:
         ...
@@ -21,10 +22,12 @@ class GroupoidsCategory(Category[[OnObject, OnMorphism], [Assignment]]):
         def codomain(self) -> GroupoidsCategory.ObjectType:
             ...
 
+class GroupoidsCategory(_StaticRoles_GroupoidsCategory, Category[[OnObject, OnMorphism], [Assignment], _StaticRoles_GroupoidsCategory.ObjectType, _StaticRoles_GroupoidsCategory.ElementType, _StaticRoles_GroupoidsCategory.MorphismType]):
+
     def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
-class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
+class _StaticRoles_CoreCategory:
 
     class ObjectType:
         ...
@@ -40,6 +43,8 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
 
         def codomain(self) -> CoreCategory.ObjectType:
             ...
+
+class CoreCategory[**MorphismData, **TwoMorphismData](_StaticRoles_CoreCategory, Category[MorphismData, TwoMorphismData, _StaticRoles_CoreCategory.ObjectType, _StaticRoles_CoreCategory.ElementType, _StaticRoles_CoreCategory.MorphismType]):
 
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None:
         ...
@@ -71,7 +76,7 @@ class CoreCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Two
     def retained_inverse(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | None:
         ...
 
-class CoreMorphismCategory(MorphismCategory):
+class _StaticRoles_CoreMorphismCategory(sage_categories.cat.morphisms._StaticRoles_MorphismCategory):
 
     class ObjectType:
         ...
@@ -88,6 +93,8 @@ class CoreMorphismCategory(MorphismCategory):
         def codomain(self) -> CoreMorphismCategory.ObjectType:
             ...
 
+class CoreMorphismCategory(_StaticRoles_CoreMorphismCategory, MorphismCategory[..., ..., _StaticRoles_CoreMorphismCategory.ObjectType, _StaticRoles_CoreMorphismCategory.ElementType, _StaticRoles_CoreMorphismCategory.MorphismType]):
+
     def structure_functors(self) -> tuple[Functor, ...]:
         ...
 
@@ -97,7 +104,7 @@ class CoreMorphismCategory(MorphismCategory):
     def fixed_endpoint_type(self) -> type[CoreFixedEndpointCategory]:
         ...
 
-class CoreFixedEndpointCategory(FixedEndpointCategory):
+class _StaticRoles_CoreFixedEndpointCategory(sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory):
 
     class ObjectType:
         ...
@@ -113,6 +120,8 @@ class CoreFixedEndpointCategory(FixedEndpointCategory):
 
         def codomain(self) -> CoreFixedEndpointCategory.ObjectType:
             ...
+
+class CoreFixedEndpointCategory(_StaticRoles_CoreFixedEndpointCategory, FixedEndpointCategory[..., ..., _StaticRoles_CoreFixedEndpointCategory.ObjectType, _StaticRoles_CoreFixedEndpointCategory.ElementType, _StaticRoles_CoreFixedEndpointCategory.MorphismType]):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         ...

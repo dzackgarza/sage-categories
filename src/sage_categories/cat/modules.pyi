@@ -1,3 +1,4 @@
+import sage_categories.cat.structured_objects
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -9,7 +10,7 @@ from sage_categories.cat.structured_objects import EquifierCategory, InserterCat
 from sage_categories.kernel.sage_runtime import cached_method
 __all__ = ['ModuleCategory', 'Modules']
 
-class ModuleCategory(EquifierCategory):
+class _StaticRoles_ModuleCategory(sage_categories.cat.structured_objects._StaticRoles_EquifierCategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -27,6 +28,8 @@ class ModuleCategory(EquifierCategory):
 
         def codomain(self) -> ModuleCategory.ObjectType:
             ...
+
+class ModuleCategory(_StaticRoles_ModuleCategory, EquifierCategory[_StaticRoles_ModuleCategory.ObjectType, _StaticRoles_ModuleCategory.ElementType, _StaticRoles_ModuleCategory.MorphismType]):
 
     def __init__(self, first: NaturalTransformation, second: NaturalTransformation, scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.ObjectType, algebras: InserterCategory) -> None:
         ...

@@ -6,7 +6,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
 __all__ = ['DeclaredCategory', 'CategoryFamily', 'Sets', 'Posets', 'Groupoids', 'TotallyOrderedSets', 'NN', 'ZZ', 'omega', 'MagmaObjects', 'MonoidObjects', 'SemiringObjects', 'RingObjects']
 
-class DeclaredCategory(Category[[], []]):
+class _StaticRoles_DeclaredCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -22,6 +22,8 @@ class DeclaredCategory(Category[[], []]):
 
         def codomain(self) -> DeclaredCategory.ObjectType:
             ...
+
+class DeclaredCategory(_StaticRoles_DeclaredCategory, Category[[], [], _StaticRoles_DeclaredCategory.ObjectType, _StaticRoles_DeclaredCategory.ElementType, _StaticRoles_DeclaredCategory.MorphismType]):
 
     def __init__(self, name: str) -> None:
         ...

@@ -17,7 +17,7 @@ class _TopologyData:
     open_point_rule: Callable[[object], CategoryOfCategories.ElementType]
     open_object_rule: Callable[[object], CategoryOfCategories.ElementType]
 
-class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
+class _StaticRoles_TopologicalSpacesCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -58,6 +58,8 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def codomain(self) -> TopologicalSpacesCategory.ObjectType:
             ...
+
+class TopologicalSpacesCategory(_StaticRoles_TopologicalSpacesCategory, Category[[MorphismCategory.ObjectType], [], _StaticRoles_TopologicalSpacesCategory.ObjectType, _StaticRoles_TopologicalSpacesCategory.ElementType, _StaticRoles_TopologicalSpacesCategory.MorphismType]):
 
     @cached_method
     def to_sets(self) -> Functor:

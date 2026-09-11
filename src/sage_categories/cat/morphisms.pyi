@@ -44,7 +44,7 @@ endpoints_in: Incomplete
 def hom_inhabitation(hom_category: Category) -> Decision:
     ...
 
-class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismData, []]):
+class _StaticRoles_MorphismCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory):
 
@@ -93,6 +93,9 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         def __hash__(self) -> int:
             ...
 
+    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
+        ...
+
     class MorphismType(sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         ...
 
@@ -102,8 +105,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         def codomain(self) -> MorphismCategory.ObjectType:
             ...
 
-    class ElementType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
-        ...
+class MorphismCategory[**MorphismData, **TwoMorphismData](_StaticRoles_MorphismCategory, Category[TwoMorphismData, [], _StaticRoles_MorphismCategory.ObjectType, _StaticRoles_MorphismCategory.ElementType, _StaticRoles_MorphismCategory.MorphismType]):
 
     def __init__(self, base: Category[MorphismData, TwoMorphismData]) -> None:
         ...
@@ -164,7 +166,12 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
     def Automorphisms(self) -> Category:
         ...
 
-class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
+class _StaticRoles_IsomorphismsCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
+
+    class ObjectType(sage_categories.cat.properties.PropertySubcategory.ObjectType):
+
+        def inverse(self) -> MorphismCategory.ObjectType:
+            ...
 
     class ElementType(sage_categories.cat.properties.PropertySubcategory.ElementType):
         ...
@@ -178,12 +185,10 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
         def codomain(self) -> IsomorphismsCategory.ObjectType:
             ...
 
-    class ObjectType(sage_categories.cat.properties.PropertySubcategory.ObjectType):
+class IsomorphismsCategory[**MorphismData, **TwoMorphismData](_StaticRoles_IsomorphismsCategory, PropertySubcategory[MorphismData, TwoMorphismData, _StaticRoles_IsomorphismsCategory.ObjectType, _StaticRoles_IsomorphismsCategory.ElementType, _StaticRoles_IsomorphismsCategory.MorphismType]):
+    pass
 
-        def inverse(self) -> MorphismCategory.ObjectType:
-            ...
-
-class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcategory[MorphismData, TwoMorphismData]):
+class _StaticRoles_EndomorphismsCategory(sage_categories.cat.properties._StaticRoles_PredicateSubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -200,7 +205,10 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
         def codomain(self) -> EndomorphismsCategory.ObjectType:
             ...
 
-class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[TwoMorphismData, []]):
+class EndomorphismsCategory[**MorphismData, **TwoMorphismData](_StaticRoles_EndomorphismsCategory, PredicateSubcategory[MorphismData, TwoMorphismData, _StaticRoles_EndomorphismsCategory.ObjectType, _StaticRoles_EndomorphismsCategory.ElementType, _StaticRoles_EndomorphismsCategory.MorphismType]):
+    pass
+
+class _StaticRoles_FixedEndpointCategory(sage_categories.cat.properties._StaticRoles_FullSubcategory):
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         ...
@@ -216,6 +224,8 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
 
         def codomain(self) -> FixedEndpointCategory.ObjectType:
             ...
+
+class FixedEndpointCategory[**MorphismData, **TwoMorphismData](_StaticRoles_FixedEndpointCategory, FullSubcategory[TwoMorphismData, [], _StaticRoles_FixedEndpointCategory.ObjectType, _StaticRoles_FixedEndpointCategory.ElementType, _StaticRoles_FixedEndpointCategory.MorphismType]):
 
     def __init__(self, morphisms: MorphismCategory[MorphismData, TwoMorphismData], domain: CategoryOfCategories.ElementType, codomain: CategoryOfCategories.ElementType) -> None:
         ...

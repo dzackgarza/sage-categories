@@ -21,7 +21,7 @@ class _MonoidalData(NamedTuple):
     left_unitor: NaturalTransformation
     right_unitor: NaturalTransformation
 
-class MonoidalStructuresCategory(Category[[], []]):
+class _StaticRoles_MonoidalStructuresCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -73,6 +73,8 @@ class MonoidalStructuresCategory(Category[[], []]):
         def codomain(self) -> MonoidalStructuresCategory.ObjectType:
             ...
 
+class MonoidalStructuresCategory(_StaticRoles_MonoidalStructuresCategory, Category[[], [], _StaticRoles_MonoidalStructuresCategory.ObjectType, _StaticRoles_MonoidalStructuresCategory.ElementType, _StaticRoles_MonoidalStructuresCategory.MorphismType]):
+
     def __init__(self, base: Category) -> None:
         ...
 
@@ -99,7 +101,7 @@ class _ActionData(NamedTuple):
     associator: NaturalTransformation
     unitor: NaturalTransformation
 
-class ActionsCategory(Category[[], []]):
+class _StaticRoles_ActionsCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -138,6 +140,8 @@ class ActionsCategory(Category[[], []]):
 
         def codomain(self) -> ActionsCategory.ObjectType:
             ...
+
+class ActionsCategory(_StaticRoles_ActionsCategory, Category[[], [], _StaticRoles_ActionsCategory.ObjectType, _StaticRoles_ActionsCategory.ElementType, _StaticRoles_ActionsCategory.MorphismType]):
 
     def __init__(self, monoidal: MonoidalStructuresCategory.ObjectType, base: Category) -> None:
         ...

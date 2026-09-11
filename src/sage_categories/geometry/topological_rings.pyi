@@ -35,7 +35,7 @@ class _TopologicalRingData:
     addition: BinaryContinuity
     multiplication: BinaryContinuity
 
-class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
+class _StaticRoles_TopologicalRingsCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -79,6 +79,8 @@ class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def codomain(self) -> TopologicalRingsCategory.ObjectType:
             ...
+
+class TopologicalRingsCategory(_StaticRoles_TopologicalRingsCategory, Category[[MorphismCategory.ObjectType], [], _StaticRoles_TopologicalRingsCategory.ObjectType, _StaticRoles_TopologicalRingsCategory.ElementType, _StaticRoles_TopologicalRingsCategory.MorphismType]):
 
     @cached_method
     def to_rings(self) -> Functor:

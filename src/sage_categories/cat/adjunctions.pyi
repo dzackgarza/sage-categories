@@ -31,7 +31,7 @@ class EquivalenceData:
 class EquivalenceMorphismData:
     transformation: NaturalTransformation
 
-class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation], []]):
+class _StaticRoles_AdjunctionsCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -76,6 +76,8 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         def codomain(self) -> AdjunctionsCategory.ObjectType:
             ...
 
+class AdjunctionsCategory(_StaticRoles_AdjunctionsCategory, Category[[NaturalTransformation, NaturalTransformation], [], _StaticRoles_AdjunctionsCategory.ObjectType, _StaticRoles_AdjunctionsCategory.ElementType, _StaticRoles_AdjunctionsCategory.MorphismType]):
+
     def __init__(self, forward: Functor, inverse: Functor) -> None:
         ...
 
@@ -103,7 +105,7 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
     def composite(self, second: AdjunctionsCategory.MorphismType, first: AdjunctionsCategory.MorphismType) -> AdjunctionsCategory.MorphismType:
         ...
 
-class EquivalencesCategory(Category[[NaturalTransformation], []]):
+class _StaticRoles_EquivalencesCategory:
 
     class ObjectType(sage_categories.cat.category.CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
 
@@ -141,6 +143,8 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
 
         def codomain(self) -> EquivalencesCategory.ObjectType:
             ...
+
+class EquivalencesCategory(_StaticRoles_EquivalencesCategory, Category[[NaturalTransformation], [], _StaticRoles_EquivalencesCategory.ObjectType, _StaticRoles_EquivalencesCategory.ElementType, _StaticRoles_EquivalencesCategory.MorphismType]):
 
     def __init__(self, source: Category, target: Category) -> None:
         ...

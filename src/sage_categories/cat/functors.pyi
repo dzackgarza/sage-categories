@@ -96,14 +96,14 @@ class FunctorProperty(
 
 class _StaticRoles_FunctorCategory(sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory):
     class ObjectType[
-        DomainCategory = Category[..., ...],
-        CodomainCategory = Category[..., ...],
-        DomainObject = CategoryOfCategories.ElementType,
-        DomainElement = CategoryOfCategories.ElementType,
-        DomainMorphism = MorphismCategory.ObjectType,
-        CodomainObject = CategoryOfCategories.ElementType,
-        CodomainElement = CategoryOfCategories.ElementType,
-        CodomainMorphism = MorphismCategory.ObjectType,
+        DomainCategory = "Category[..., ...]",
+        CodomainCategory = "Category[..., ...]",
+        DomainObject = "CategoryOfCategories.ElementType",
+        DomainElement = "CategoryOfCategories.ElementType",
+        DomainMorphism = "MorphismCategory.ObjectType",
+        CodomainObject = "CategoryOfCategories.ElementType",
+        CodomainElement = "CategoryOfCategories.ElementType",
+        CodomainMorphism = "MorphismCategory.ObjectType",
     ](
         sage_categories.cat.category.CategoryOfCategories.MorphismType[
             DomainCategory, CodomainCategory, DomainObject, DomainElement, DomainMorphism, CodomainObject, CodomainElement, CodomainMorphism
@@ -119,14 +119,14 @@ class _StaticRoles_FunctorCategory(sage_categories.cat.morphisms._StaticRoles_Fi
         def codomain(self) -> FunctorCategory.ObjectType: ...
 
 class FunctorCategory[
-    DomainCategory = Category[..., ...],
-    CodomainCategory = Category[..., ...],
-    DomainObject = CategoryOfCategories.ElementType,
-    DomainElement = CategoryOfCategories.ElementType,
-    DomainMorphism = MorphismCategory.ObjectType,
-    CodomainObject = CategoryOfCategories.ElementType,
-    CodomainElement = CategoryOfCategories.ElementType,
-    CodomainMorphism = MorphismCategory.ObjectType,
+    DomainCategory = "Category[..., ...]",
+    CodomainCategory = "Category[..., ...]",
+    DomainObject = "CategoryOfCategories.ElementType",
+    DomainElement = "CategoryOfCategories.ElementType",
+    DomainMorphism = "MorphismCategory.ObjectType",
+    CodomainObject = "CategoryOfCategories.ElementType",
+    CodomainElement = "CategoryOfCategories.ElementType",
+    CodomainMorphism = "MorphismCategory.ObjectType",
 ](
     _StaticRoles_FunctorCategory,
     FixedEndpointCategory[

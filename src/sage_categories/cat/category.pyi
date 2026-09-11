@@ -91,14 +91,14 @@ class _StaticRoles_CategoryOfCategories:
         def universal_morphism(self, candidate: NaturalTransformation) -> MorphismCategory.ObjectType: ...
 
     class MorphismType[
-        DomainCategory: Category[..., ...] = Category[..., ...],
-        CodomainCategory: Category[..., ...] = Category[..., ...],
-        DomainObject: CategoryOfCategories.ElementType = CategoryOfCategories.ElementType,
-        DomainElement: CategoryOfCategories.ElementType = CategoryOfCategories.ElementType,
-        DomainMorphism: MorphismCategory.ObjectType = MorphismCategory.ObjectType,
-        CodomainObject: CategoryOfCategories.ElementType = CategoryOfCategories.ElementType,
-        CodomainElement: CategoryOfCategories.ElementType = CategoryOfCategories.ElementType,
-        CodomainMorphism: MorphismCategory.ObjectType = MorphismCategory.ObjectType,
+        DomainCategory: "Category[..., ...]" = "Category[..., ...]",
+        CodomainCategory: "Category[..., ...]" = "Category[..., ...]",
+        DomainObject: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
+        DomainElement: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
+        DomainMorphism: "MorphismCategory.ObjectType" = "MorphismCategory.ObjectType",
+        CodomainObject: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
+        CodomainElement: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
+        CodomainMorphism: "MorphismCategory.ObjectType" = "MorphismCategory.ObjectType",
     ](sage_categories.cat.morphisms.MorphismCategory.ObjectType):
         def __init__(self, data: FunctorData) -> None: ...
         def on_object(self, member_object: DomainObject) -> CodomainObject: ...

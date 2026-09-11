@@ -199,8 +199,8 @@ class _StaticRoles_FixedEndpointCategory(sage_categories.cat.properties._StaticR
 class FixedEndpointCategory[
     **MorphismData,
     **TwoMorphismData,
-    DomainType = CategoryOfCategories.ElementType,
-    CodomainType = CategoryOfCategories.ElementType,
+    DomainType = "CategoryOfCategories.ElementType",
+    CodomainType = "CategoryOfCategories.ElementType",
     _ObjectRole = _StaticRoles_FixedEndpointCategory.ObjectType,
     _ElementRole = _StaticRoles_FixedEndpointCategory.ElementType,
     _MorphismRole = _StaticRoles_FixedEndpointCategory.MorphismType,

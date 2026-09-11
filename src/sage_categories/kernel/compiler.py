@@ -17,6 +17,7 @@ from sage_categories.kernel.construction import (
     MorphismConstructionContext,
     MorphismConstructionInput,
     MorphismRoleIdentity,
+    Node,
     ObjectConstructionContext,
     ObjectConstructionInput,
     ObjectRoleIdentity,
@@ -170,11 +171,6 @@ class _RuntimeImplementationCategory(SageCategory):
     @lazy_attribute
     def parent_class(self) -> type[CategoryPoint]:
         return self._make_named_class("parent_class", "ParentMethods", cache=True)
-
-
-class Node(NamedTuple):
-    category: Category
-    role: Role
 
 
 _runtime_categories: dict[Role, MonoDict] = {role: MonoDict() for role in Role}

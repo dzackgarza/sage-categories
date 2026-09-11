@@ -5,14 +5,20 @@ from __future__ import annotations
 from collections.abc import Callable
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory, Role, role_of
 from sage_categories.kernel.sage_runtime import MonoDict
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
-    from sage_categories.kernel.compiler import Node
+
+
+class Node(NamedTuple):
+    """One category-role node in the compiler and construction DAG."""
+
+    category: Category
+    role: Role
 
 
 type ObjectRealization = Callable[[ObjectOfCategory, type[ObjectOfCategory]], None]
@@ -30,6 +36,7 @@ def realize_object(value: ObjectOfCategory, category_type: type[ObjectOfCategory
     assert _object_realization is not None
     _object_realization(value, category_type)
 
+
 __all__ = [
     "CatElementRoleIdentity",
     "CategoryPointIdentity",
@@ -39,6 +46,7 @@ __all__ = [
     "MorphismConstructionContext",
     "MorphismConstructionInput",
     "MorphismRoleIdentity",
+    "Node",
     "ObjectConstructionContext",
     "ObjectConstructionInput",
     "ObjectRoleIdentity",
@@ -146,7 +154,6 @@ def construction_role(value: CategoryPoint) -> Role | None:
     return None
 
 
-
 def retain_object_input[Value: ObjectOfCategory, Datum](construction_input: ObjectConstructionInput[Value, Datum]) -> None:
     value = construction_input.canonical_image
     if value in _object_inputs:
@@ -173,11 +180,7 @@ def retain_morphism_input[Value: MorphismOfCategory, Datum](construction_input: 
 
 def retained_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
     """The live objects whose retained construction input names ``category``."""
-    return tuple(
-        construction_input.canonical_image
-        for _, construction_input in _object_inputs.items()
-        if construction_input.identity.category is category
-    )
+    return tuple(construction_input.canonical_image for _, construction_input in _object_inputs.items() if construction_input.identity.category is category)
 
 
 def retained_values() -> tuple[CategoryPoint, ...]:
@@ -232,9 +235,7 @@ _objects_by_datum: MonoDict = MonoDict()
 
 def _objects_by[Datum](category: Category, datum: Datum) -> MonoDict | dict[Datum, ObjectOfCategory]:
     """The table ``category`` retains its objects in for a datum of this equality (D111)."""
-    tables, empty = (
-        (_objects_by_owned_datum, MonoDict) if isinstance(datum, CategoryPoint) else (_objects_by_datum, dict)
-    )
+    tables, empty = (_objects_by_owned_datum, MonoDict) if isinstance(datum, CategoryPoint) else (_objects_by_datum, dict)
     if category not in tables:
         tables[category] = empty()
     return tables[category]
@@ -297,11 +298,7 @@ class ObjectConstructionContext:
         initialize()
 
     def assert_complete(self) -> None:
-        missing = [
-            owner
-            for owner in self.nodes
-            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
-        ]
+        missing = [owner for owner in self.nodes if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)]
         assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
 
 
@@ -326,11 +323,7 @@ class ElementConstructionContext:
         initialize()
 
     def assert_complete(self) -> None:
-        missing = [
-            owner
-            for owner in self.nodes
-            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
-        ]
+        missing = [owner for owner in self.nodes if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)]
         assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
 
 
@@ -355,11 +348,7 @@ class MorphismConstructionContext:
         initialize()
 
     def assert_complete(self) -> None:
-        missing = [
-            owner
-            for owner in self.nodes
-            if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)
-        ]
+        missing = [owner for owner in self.nodes if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)]
         assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
 
 
@@ -385,9 +374,7 @@ def active_construction_context(
 ) -> ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext | None:
     """The active role-construction context for ``value``."""
     contexts = tuple(
-        context
-        for context in (active_object_context(), active_element_context(), active_morphism_context())
-        if context is not None and context.canonical_image is value
+        context for context in (active_object_context(), active_element_context(), active_morphism_context()) if context is not None and context.canonical_image is value
     )
     assert len(contexts) <= 1, f"{value!r} cannot have two active construction contexts"
     return contexts[0] if contexts else None

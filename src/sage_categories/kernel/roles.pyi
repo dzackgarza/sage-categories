@@ -24,7 +24,7 @@ class CategoryPoint(_AttributeWriteTracked):
     def __hash__(self) -> int:
         ...
 
-def prepare_category_subclass(cls) -> None:
+def prepare_category_subclass(category_class: type[CategoryPoint]) -> None:
     ...
 
 class ObjectOfCategory(CategoryPoint):

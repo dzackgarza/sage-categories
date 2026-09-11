@@ -135,7 +135,7 @@ def _install_category_initializer(category_class: type[CategoryPoint]) -> None:
     cast(Any, category_class).__init__ = kernel_initializer
 
 
-def prepare_category_subclass(cls: type[CategoryPoint]) -> None:
+def prepare_category_subclass(category_class: type[CategoryPoint]) -> None:
     """Install the kernel's initializer on a newly written category class.
 
     A declaration calls no base initializer and no base hook (D110), so the theory's
@@ -146,10 +146,10 @@ def prepare_category_subclass(cls: type[CategoryPoint]) -> None:
     if _building_role_class:
         return
     for role in Role:
-        declared = vars(cls).get(role.value)
+        declared = vars(category_class).get(role.value)
         if isinstance(declared, type):
-            _declaration_owners.setdefault(declared, (cls, role))
-    _install_category_initializer(cls)
+            _declaration_owners.setdefault(declared, (category_class, role))
+    _install_category_initializer(category_class)
 
 
 class ObjectOfCategory(CategoryPoint):

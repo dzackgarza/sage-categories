@@ -319,19 +319,28 @@ def _project_category_role_parameters(
     top_level = {statement.name: statement for statement in tree.body if isinstance(statement, ast.ClassDef)}
     category_declaration = top_level.get("CategoryDeclaration")
     if category_declaration is not None:
-        defaults = (
-            "sage_categories.kernel.roles.ObjectOfCategory",
-            "sage_categories.kernel.roles.ElementOfObject",
-            "sage_categories.kernel.roles.MorphismOfCategory",
+        source_category_declaration = next(
+            (statement for statement in source.body if isinstance(statement, ast.ClassDef) and statement.name == "CategoryDeclaration"),
+            None,
         )
+        assert source_category_declaration is not None, "source has no CategoryDeclaration"
+        source_parameters = {parameter.name: parameter for parameter in source_category_declaration.type_params}
         existing = {parameter.name: parameter for parameter in category_declaration.type_params}
-        for hidden, default in zip(_HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True):
-            if hidden in existing:
-                parameter = existing[hidden]
-                assert isinstance(parameter, ast.TypeVar), f"CategoryDeclaration parameter {hidden!r} is not a TypeVar"
-                parameter.default_value = _base_expression(default)
+        defaults: list[ast.expr] = []
+        for hidden in _HIDDEN_CATEGORY_ROLES.values():
+            source_parameter = source_parameters.get(hidden)
+            assert isinstance(source_parameter, ast.TypeVar), f"source CategoryDeclaration parameter {hidden!r} is not a TypeVar"
+            assert source_parameter.default_value is not None, f"source CategoryDeclaration parameter {hidden!r} has no default"
+            default = copy.deepcopy(source_parameter.default_value)
+            parameter = existing.get(hidden)
+            if parameter is None:
+                parameter = ast.TypeVar(name=hidden, default_value=copy.deepcopy(default))
+                category_declaration.type_params.append(parameter)
+                existing[hidden] = parameter
             else:
-                category_declaration.type_params.append(ast.TypeVar(name=hidden, default_value=_base_expression(default)))
+                assert isinstance(parameter, ast.TypeVar), f"CategoryDeclaration parameter {hidden!r} is not a TypeVar"
+                parameter.default_value = copy.deepcopy(default)
+            defaults.append(default)
 
         category_alias = next(
             (
@@ -360,7 +369,7 @@ def _project_category_role_parameters(
                                     ctx=ast.Load(),
                                 ),
                                 args=[ast.Constant(value=name)],
-                                keywords=[ast.keyword(arg="default", value=_base_expression(default))],
+                                keywords=[ast.keyword(arg="default", value=copy.deepcopy(default))],
                             ),
                         )
                     )

@@ -55,19 +55,30 @@ __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCatego
 
 
 @overload
-def Mor[**M, **T](category: Category[M, T]) -> MorphismCategory[M, T]: ...
+def Mor[**M, **T, ObjectRole, ElementRole, MorphismRole](
+    category: Category[M, T, ObjectRole, ElementRole, MorphismRole],
+) -> MorphismCategory[M, T, MorphismRole]: ...
 
 
 @overload
-def Mor[**M, **T](level: Literal[0], category: Category[M, T]) -> Category[M, T]: ...
+def Mor[**M, **T, ObjectRole, ElementRole, MorphismRole](
+    level: Literal[0],
+    category: Category[M, T, ObjectRole, ElementRole, MorphismRole],
+) -> Category[M, T, ObjectRole, ElementRole, MorphismRole]: ...
 
 
 @overload
-def Mor[**M, **T](level: Literal[1], category: Category[M, T]) -> MorphismCategory[M, T]: ...
+def Mor[**M, **T, ObjectRole, ElementRole, MorphismRole](
+    level: Literal[1],
+    category: Category[M, T, ObjectRole, ElementRole, MorphismRole],
+) -> MorphismCategory[M, T, MorphismRole]: ...
 
 
 @overload
-def Mor[**M, **T](level: Literal[2], category: Category[M, T]) -> MorphismCategory[T, []]: ...
+def Mor[**M, **T, ObjectRole, ElementRole, MorphismRole](
+    level: Literal[2],
+    category: Category[M, T, ObjectRole, ElementRole, MorphismRole],
+) -> MorphismCategory[T, []]: ...
 
 
 @overload
@@ -155,7 +166,13 @@ def _equal_words(
     return True if equations.equal_morphisms(first, second) else Unknown
 
 
-class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismData, []]):
+class MorphismCategory[
+    **MorphismData,
+    **TwoMorphismData,
+    _ObjectRole = "MorphismCategory.ObjectType",
+    _ElementRole = "MorphismCategory.ElementType",
+    _MorphismRole = "MorphismCategory.MorphismType",
+](Category[TwoMorphismData, [], _ObjectRole, _ElementRole, _MorphismRole]):
     """``Mor(C)``: objects are the morphisms of ``C``, morphisms its 2-morphisms."""
 
     # An object of ``Mor(C)`` is a morphism of ``C``, and ``C`` is arbitrary, so the
@@ -371,7 +388,19 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
 
     # -- fixed endpoints ---------------------------------------------------------
 
-    def __call__[DomainType, CodomainType](self, domain: DomainType, codomain: CodomainType) -> FixedEndpointCategory[MorphismData, TwoMorphismData, DomainType, CodomainType]:
+    def __call__[DomainType, CodomainType](
+        self,
+        domain: DomainType,
+        codomain: CodomainType,
+    ) -> FixedEndpointCategory[
+        MorphismData,
+        TwoMorphismData,
+        DomainType,
+        CodomainType,
+        _ObjectRole,
+        _ElementRole,
+        _MorphismRole,
+    ]:
         """``Mor(C)(A, B)``: the full subcategory on morphisms ``A -> B``, one object per pair."""
         assert domain in self._base and codomain in self._base
         key = (domain, codomain, self)
@@ -495,6 +524,9 @@ class FixedEndpointCategory[
     **TwoMorphismData,
     DomainType = "CategoryOfCategories.ElementType",
     CodomainType = "CategoryOfCategories.ElementType",
+    _ObjectRole = "MorphismCategory.ObjectType",
+    _ElementRole = "MorphismCategory.ElementType",
+    _MorphismRole = "MorphismCategory.MorphismType",
 ](FullSubcategory[TwoMorphismData, []]):
     """``Mor(C)(A, B)``: the full subcategory of ``Mor(C)`` on the morphisms ``A -> B``."""
 
@@ -544,7 +576,7 @@ class FixedEndpointCategory[
     def _chosen_inhabitation(self) -> Decision:
         return hom_inhabitation(self)
 
-    def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> FixedEndpointCategory.ObjectType:
+    def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> _ObjectRole:
         """``Mor(C)(A, B)(data)``: a morphism ``A -> B`` through ``C``'s constructor, placed here.
 
         Calling a category constructs a value in it, so the result enters ``Mor(C)(A, B)``
@@ -560,7 +592,7 @@ class FixedEndpointCategory[
         refine(morphism, self)
         return morphism
 
-    def one(self) -> FixedEndpointCategory.ObjectType:
+    def one(self) -> _ObjectRole:
         """``1_X``, the unit of the endomorphism monoid ``End_C(X) = Mor(C)(X, X)`` (POL-CAT-023, D84).
 
         Composition makes ``Mor(C)(X, X)`` a monoid, ``compose`` is its multiplication,
@@ -576,7 +608,7 @@ class FixedEndpointCategory[
         self,
         second: MorphismCategory.ObjectType,
         first: MorphismCategory.ObjectType,
-    ) -> FixedEndpointCategory.ObjectType:
+    ) -> _ObjectRole:
         """``Mor(C)(A, C).compose(g, f)`` for ``f: A -> B`` and ``g: B -> C``."""
         assert first.domain() is self._domain_object and second.codomain() is self._codomain_object
         return self.base_category().compose_morphisms(second, first)

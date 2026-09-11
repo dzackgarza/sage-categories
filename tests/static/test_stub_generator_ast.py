@@ -507,9 +507,9 @@ class Derived(Base):
         frozenset({"example", "sage_categories.kernel.roles"}),
     )
     projected = ast.unparse(ast.fix_missing_locations(stub))
-    assert "_ObjectRole = sage_categories.kernel.roles.ObjectOfCategory" in projected
-    assert "_ElementRole = sage_categories.kernel.roles.ElementOfObject" in projected
-    assert "_MorphismRole = sage_categories.kernel.roles.MorphismOfCategory" in projected
+    assert "_ObjectRole = object" in projected
+    assert "_ElementRole = object" in projected
+    assert "_MorphismRole = object" in projected
     assert "class _StaticRoles_Base:" in projected
     assert "Category[P, Q, _ObjectRole, _ElementRole, _MorphismRole]" in projected
     assert "_CategoryDeclaration_ObjectRole = _typing.TypeVar" in projected

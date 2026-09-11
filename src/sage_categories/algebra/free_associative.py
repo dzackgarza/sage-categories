@@ -24,9 +24,11 @@ from sage_categories.algebra.indexed_modules import (
 )
 from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.modules import ModuleCategory
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.monoidal import tensor_object
 from sage_categories.cat.native import NativeObjectRealizations
-from sage_categories.cat.structured_objects import Magmas, Monoids
+from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoids
 from sage_categories.engines import free_algebras
 from sage_categories.sets.finite import Sets
 
@@ -78,7 +80,7 @@ def _datum(record, terms: Mapping[Word, int]):
 
 def integer_free_associative_algebra(
     names: Sequence[str] = ("x", "y"),
-):
+) -> MonoidCategory.ObjectType:
     r"""Return the native free associative algebra ``ZZ<names>`` as a monoid object.
 
     The carrier is the free ``ZZ``-module on the owned set of *all* finite
@@ -136,7 +138,7 @@ def integer_free_associative_algebra(
     return algebra
 
 
-def free_associative_underlying_module(algebra):
+def free_associative_underlying_module(algebra: MonoidCategory.ObjectType) -> ModuleCategory.ObjectType:
     """Return the actual left ``ZZ``-module obtained from the algebra forgetful chain."""
     return _underlying_module_functor(algebra).on_object(algebra)
 
@@ -153,21 +155,21 @@ def _underlying_module_functor(algebra):
     )
 
 
-def free_associative_element(algebra, terms: Mapping[Word, int]):
+def free_associative_element(algebra: MonoidCategory.ObjectType, terms: Mapping[Word, int]) -> ModuleCategory.ElementType:
     """Return the underlying-module element with the supplied finite word coefficients."""
     record = _record(algebra)
     source_point = _source_module_point(record, terms)
     return free_associative_underlying_module(algebra).point(source_point.datum())
 
 
-def free_associative_generator(algebra, position: int):
+def free_associative_generator(algebra: MonoidCategory.ObjectType, position: int) -> ModuleCategory.ElementType:
     """Return generator ``x_position`` as a point of the genuine underlying module."""
     record = _record(algebra)
     terms = free_algebras.generator(record.native, int(position))
     return free_associative_element(algebra, terms)
 
 
-def free_associative_coefficients(algebra, element) -> dict[Word, int]:
+def free_associative_coefficients(algebra: MonoidCategory.ObjectType, element: ModuleCategory.ElementType) -> dict[Word, int]:
     """Return the finite word-basis coefficient map of an underlying element."""
     record = _record(algebra)
     module = free_associative_underlying_module(algebra)
@@ -177,7 +179,11 @@ def free_associative_coefficients(algebra, element) -> dict[Word, int]:
     return indexed_free_integer_coefficients(record.construction.word_module, source_point)
 
 
-def free_associative_product(algebra, left, right):
+def free_associative_product(
+    algebra: MonoidCategory.ObjectType,
+    left: ModuleCategory.ElementType,
+    right: ModuleCategory.ElementType,
+) -> ModuleCategory.ElementType:
     """Multiply two elements through the algebra's retained multiplication morphism."""
     module = free_associative_underlying_module(algebra)
     if left.parent() is not module or right.parent() is not module:
@@ -194,7 +200,10 @@ def free_associative_product(algebra, left, right):
     return module.point(operation(balanced).datum())
 
 
-def free_associative_substitution(algebra, images: Sequence[CategoryOfCategories.ElementType]):
+def free_associative_substitution(
+    algebra: MonoidCategory.ObjectType,
+    images: Sequence[ModuleCategory.ElementType],
+) -> MorphismCategory.ObjectType:
     r"""Return the algebra endomorphism with the supplied generator images.
 
     Sage evaluates every basis word at the selected images.  The resulting
@@ -230,7 +239,9 @@ def free_associative_substitution(algebra, images: Sequence[CategoryOfCategories
     return monoids.homomorphism(algebra, algebra, bimodule_map)
 
 
-def free_associative_underlying_morphism(algebra_morphism):
+def free_associative_underlying_morphism(
+    algebra_morphism: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
     """Forget a retained free-algebra morphism to its actual left-module map."""
     return _underlying_module_functor(algebra_morphism.domain()).on_morphism(
         algebra_morphism

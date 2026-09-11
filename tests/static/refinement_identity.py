@@ -12,7 +12,7 @@ class RefinableObject(ObjectOfCategory):
         return 1
 
 
-def same_object(value: RefinableObject, target: Category) -> None:
+def same_object(value: RefinableObject, target: Category[..., ...]) -> None:
     refined = refine(value, target)
     assert_type(refined, RefinableObject)
     assert_type(refined.marker(), int)

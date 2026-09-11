@@ -194,7 +194,8 @@ def retained_values() -> tuple[CategoryPoint, ...]:
     values: list[CategoryPoint] = []
     seen: set[int] = set()
     for table in (_object_inputs, _element_inputs, _morphism_inputs):
-        for construction_input in table.values():
+        for item in table.items():
+            construction_input = item[1]
             value = construction_input.canonical_image
             if id(value) in seen:
                 continue
@@ -250,7 +251,7 @@ def _objects_by[Datum](category: Category, datum: Datum) -> MonoDict | dict[Datu
 def retained_object_by_datum[Datum](category: Category, datum: Datum) -> ObjectOfCategory | None:
     """The object ``category`` retains for ``datum``, or ``None`` if it retains none yet."""
     table = _objects_by(category, datum)
-    return table.get(datum, None)
+    return table[datum] if datum in table else None
 
 
 def retain_object_by_datum[Value: ObjectOfCategory, Datum](category: Category, datum: Datum, value: Value) -> None:

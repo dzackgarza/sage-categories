@@ -473,7 +473,8 @@ def install_on_declaration[**P, R](
     """
     setattr(local, name, member)
     for table in _runtime_categories.values():
-        for runtime in table.values():
+        for item in table.items():
+            runtime = item[1]
             if runtime._current.category.local_role_class(runtime._current.role) is local:
                 compiled = runtime.parent_class
                 setattr(compiled, name, member)
@@ -622,7 +623,8 @@ def runtime_implementation_class(
 ) -> type[CategoryPoint]:
     """Return the compiled runtime class for a local semantic declaration, if installed."""
     for table in _node_runtimes.values():
-        for runtime in table.values():
+        for item in table.items():
+            runtime = item[1]
             if runtime_declaration(runtime.owner) is declaration:
                 return runtime.owner
     return declaration
@@ -665,7 +667,8 @@ def runtime_semantic_bases(
     current = _runtime_node(runtime_class)
     if current is None:
         for role, table in _node_runtimes.items():
-            for category in table:
+            for item in table.items():
+                category = item[0]
                 if category.local_role_class(role) is runtime_class:
                     installed = _installed_root_declarations.get(kernel_base(role))
                     if installed is not None and installed is not runtime_class:

@@ -276,7 +276,7 @@ class _SetMap:
 
 
 def _form_of(value: SetsCategory.ObjectType) -> ObjectForm | None:
-    return _object_forms.get(value, None)
+    return _object_forms[value] if value in _object_forms else None
 
 
 def _composed_form(

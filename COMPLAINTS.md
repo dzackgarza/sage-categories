@@ -552,3 +552,13 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** Runtime/gate owner.
   Resolve when the declared runtime is provisioned with enough persistent disk and memory headroom that the public consumer suite can run without swap-thrashing or filesystem exhaustion.
+
+## Ruff unsafe dict autofixes are invalid for Sage MonoDict
+
+- **Area:** commit-tier Python normalization over Sage-backed runtime tables.
+
+- **Observed:** commit `2f1578e` applied dict-oriented simplifications to values whose declared runtime type is `sage.structure.coerce_dict.MonoDict`: `.items()` loops became `.values()` or direct iteration, and membership-plus-index lookups became `.get(...)`. A Sage 10.9 / Python 3.14.7 probe proves `MonoDict` exposes `.items()` but neither `.values()` nor normal iterator semantics (`list(d)` attempts integer-key lookup and raises `KeyError: 0`). The resulting branch failed during plain `import sage_categories`: first at `install_on_declaration()` on `table.values()`, then at `Cat().open_declaration()` on `_open_declarations.get(...)`.
+
+- **Impact:** The normalizer can turn previously working bootstrap code into runtime-invalid code while still treating the change as a lint cleanup. The same autofix class affected compiler runtime tables, construction-input retention, construction-family source-diagram retention, retained inverse lookup, and finite-set form retention.
+
+- **Required resolution:** Treat Sage `MonoDict` as its actual mapping API, not as `dict`. Preserve membership/indexing and `.items()` forms at these owners, and keep a root-package Sage bootstrap regression so any future autofix that reintroduces dict-only operations fails before static/plugin work proceeds.

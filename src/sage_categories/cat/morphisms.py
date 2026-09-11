@@ -123,8 +123,7 @@ def _endpoints_in_by_membership(
     assumptions: Proposition,
 ) -> bool | None:
     return sympy_ask(
-        subcategory.membership_proposition(morphism.domain())
-        & subcategory.membership_proposition(morphism.codomain()),
+        subcategory.membership_proposition(morphism.domain()) & subcategory.membership_proposition(morphism.codomain()),
         assumptions,
     )
 
@@ -270,10 +269,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
             POL-CAT-074).
             """
             shared = common_ancestor(self.category(), first.category())
-            assert shared is not None, (
-                f"{self!r} in {self.category()!r} and {first!r} in {first.category()!r} "
-                f"have no least common category along subcategory monomorphisms"
-            )
+            assert shared is not None, f"{self!r} in {self.category()!r} and {first!r} in {first.category()!r} have no least common category along subcategory monomorphisms"
             return shared.base_category().compose_morphisms(self, first)
 
         def __eq__(self, candidate: EqualityInput) -> Predicate:
@@ -370,9 +366,7 @@ class MorphismCategory[**MorphismData, **TwoMorphismData](Category[TwoMorphismDa
         if is_placed(candidate, self):
             return True
         if self._base.has_full_ambient():
-            return decide(
-                self.ambient().membership_proposition(candidate) & endpoints_in(candidate, self._base), assumptions
-            )
+            return decide(self.ambient().membership_proposition(candidate) & endpoints_in(candidate, self._base), assumptions)
         return False
 
     # -- fixed endpoints ---------------------------------------------------------
@@ -549,7 +543,7 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
     def _chosen_inhabitation(self) -> Decision:
         return hom_inhabitation(self)
 
-    def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> MorphismCategory.ObjectType:
+    def __call__(self, *args: MorphismData.args, **kwargs: MorphismData.kwargs) -> FixedEndpointCategory.ObjectType:
         """``Mor(C)(A, B)(data)``: a morphism ``A -> B`` through ``C``'s constructor, placed here.
 
         Calling a category constructs a value in it, so the result enters ``Mor(C)(A, B)``
@@ -565,7 +559,7 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         refine(morphism, self)
         return morphism
 
-    def one(self) -> MorphismCategory.ObjectType:
+    def one(self) -> FixedEndpointCategory.ObjectType:
         """``1_X``, the unit of the endomorphism monoid ``End_C(X) = Mor(C)(X, X)`` (POL-CAT-023, D84).
 
         Composition makes ``Mor(C)(X, X)`` a monoid, ``compose`` is its multiplication,
@@ -574,16 +568,14 @@ class FixedEndpointCategory[**MorphismData, **TwoMorphismData](FullSubcategory[T
         spelling of the identity morphism: an identity is named by the operation it is an
         identity for, and this monoid is that operation (D86).
         """
-        assert self._domain_object is self._codomain_object, (
-            f"{self!r} is not an endomorphism monoid: its endpoints differ, so it has no multiplication"
-        )
+        assert self._domain_object is self._codomain_object, f"{self!r} is not an endomorphism monoid: its endpoints differ, so it has no multiplication"
         return self.base_category()._identity_morphism_(self._domain_object)
 
     def compose(
         self,
         second: MorphismCategory.ObjectType,
         first: MorphismCategory.ObjectType,
-    ) -> MorphismCategory.ObjectType:
+    ) -> FixedEndpointCategory.ObjectType:
         """``Mor(C)(A, C).compose(g, f)`` for ``f: A -> B`` and ``g: B -> C``."""
         assert first.domain() is self._domain_object and second.codomain() is self._codomain_object
         return self.base_category().compose_morphisms(second, first)

@@ -424,7 +424,15 @@ def test_category_role_projection_is_noop_without_category_declarations() -> Non
     stub = ast.parse("def helper(value: int) -> int: ...\n")
     before = ast.dump(stub, include_attributes=False)
     generator = _stub_generator()
-    generator._project_category_role_parameters(stub, source, "example", {}, {}, frozenset({"example", "sage_categories.kernel.roles"}))
+    generator._project_category_role_parameters(
+        stub,
+        source,
+        "example",
+        {},
+        {},
+        frozenset(),
+        frozenset({"example", "sage_categories.kernel.roles"}),
+    )
     assert ast.dump(stub, include_attributes=False) == before
 
 
@@ -445,7 +453,15 @@ class RoleOnly(Category):
     generator = _stub_generator()
     counts = {"CategoryDeclaration": 2, "Category": 2, "RoleOnly": 0}
     generator._project_class_aliases(stub, source)
-    generator._project_category_role_parameters(stub, source, "example", counts, {"RoleOnly": "example"}, frozenset({"example", "sage_categories.kernel.roles"}))
+    generator._project_category_role_parameters(
+        stub,
+        source,
+        "example",
+        counts,
+        {"RoleOnly": "example"},
+        frozenset(),
+        frozenset({"example", "sage_categories.kernel.roles"}),
+    )
     projected = ast.unparse(ast.fix_missing_locations(stub))
     ast.parse(projected)
     assert "class RoleOnly" in projected
@@ -477,7 +493,13 @@ class Derived(Base):
     counts = {"CategoryDeclaration": 2, "Category": 2, "Base": 2, "Derived": 0}
     generator._project_class_aliases(stub, source)
     generator._project_category_role_parameters(
-        stub, source, "example", counts, {"Base": "example", "Derived": "example"}, frozenset({"example", "sage_categories.kernel.roles"})
+        stub,
+        source,
+        "example",
+        counts,
+        {"Base": "example", "Derived": "example"},
+        frozenset({"Base"}),
+        frozenset({"example", "sage_categories.kernel.roles"}),
     )
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "_ObjectRole = sage_categories.kernel.roles.ObjectOfCategory" in projected
@@ -518,3 +540,31 @@ def public() -> None: ...
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "__all__ = ['public']" in projected
     assert "_Local@5" not in projected
+
+
+def test_category_role_genericity_crosses_module_boundaries(tmp_path: Path) -> None:
+    base = tmp_path / "base.py"
+    derived = tmp_path / "derived.py"
+    base.write_text(
+        """
+class Base:
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    derived.write_text(
+        """
+from base import Base
+
+class Derived(Base):
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    generator = _stub_generator()
+
+    generic_bases = generator._source_generic_category_bases((base, derived), {"Base": 0, "Derived": 0})
+
+    assert generic_bases == frozenset({"Base"})

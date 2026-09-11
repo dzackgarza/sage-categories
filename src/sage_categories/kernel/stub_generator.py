@@ -72,6 +72,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
     source_modules = frozenset(_module_name(package, output_directory, source) for source in sources)
     category_parameter_counts = _source_category_parameter_counts(sources)
     category_modules = _source_category_modules(package, output_directory, sources)
+    generic_category_bases = _source_generic_category_bases(sources, category_parameter_counts)
     for stub_path in output_directory.rglob("*.pyi"):
         module = _module_name(package, output_directory, stub_path)
         providers = _providers_in_module(inheritance, module)
@@ -86,7 +87,15 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
             _project_provider_bases(tree, module, providers, source_modules)
         _project_exact_morphism_endpoints(tree)
         _hoist_lexically_cyclic_nested_classes(tree, module)
-        _project_category_role_parameters(tree, source_tree, module, category_parameter_counts, category_modules, source_modules)
+        _project_category_role_parameters(
+            tree,
+            source_tree,
+            module,
+            category_parameter_counts,
+            category_modules,
+            generic_category_bases,
+            source_modules,
+        )
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
     return tuple(sorted(output_directory.rglob("*.pyi")))
 
@@ -123,6 +132,38 @@ def _source_category_parameter_counts(sources: tuple[Path, ...]) -> dict[str, in
     return result
 
 
+def _source_generic_category_bases(sources: tuple[Path, ...], category_parameter_counts: dict[str, int]) -> frozenset[str]:
+    """Return category declarations used as bases anywhere in the package.
+
+    A base can be declared in one module and subclassed in another. Generic role
+    parameters therefore belong to the package-wide source graph, not to the module
+    currently being projected.
+    """
+
+    def base_name(expression: ast.expr) -> str | None:
+        while isinstance(expression, ast.Subscript):
+            expression = expression.value
+        if isinstance(expression, ast.Name):
+            return expression.id
+        if isinstance(expression, ast.Attribute):
+            return expression.attr
+        return None
+
+    result: set[str] = set()
+    for source in sources:
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        for statement in tree.body:
+            if not isinstance(statement, ast.ClassDef) or not statement.bases:
+                continue
+            bound = {name for local in statement.body for name in _statement_names(local)}
+            if not set(_CATEGORY_ROLES).issubset(bound):
+                continue
+            name = base_name(statement.bases[0])
+            if name in category_parameter_counts:
+                result.add(name)
+    return frozenset(result)
+
+
 def _source_category_modules(package: str, output_directory: Path, sources: tuple[Path, ...]) -> dict[str, str]:
     """Map each uniquely named category declaration class to its source module."""
     result: dict[str, str] = {}
@@ -146,6 +187,7 @@ def _project_category_role_parameters(
     module: str,
     category_parameter_counts: dict[str, int],
     category_modules: dict[str, str],
+    generic_category_bases: frozenset[str],
     source_modules: frozenset[str],
 ) -> None:
     """Thread each category's exact three roles through its static inheritance.
@@ -186,9 +228,6 @@ def _project_category_role_parameters(
         return list(expression.slice.elts) if isinstance(expression.slice, ast.Tuple) else [expression.slice]
 
     source_owners = source_role_owners()
-    generic_category_bases = {
-        name for owner in source_owners.values() if owner.bases for name in (base_name(owner.bases[0]),) if name is not None and name in category_parameter_counts
-    }
 
     def role_alias(owner: ast.ClassDef, role: str) -> ast.expr | None:
         for local in owner.body:

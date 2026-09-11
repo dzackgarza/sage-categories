@@ -20,9 +20,9 @@ from typing import TYPE_CHECKING, Literal, overload
 
 from sympy import ask as sympy_ask
 
+import sage_categories.cat.category as _category
 from sage_categories.cat.category import (
     Category,
-    CategoryDeclaration,
     composite_factors,
     is_composite,
     refine,
@@ -57,33 +57,33 @@ __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCatego
 
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
-    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+    category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
 ) -> MorphismCategory[M, T, _MorphismRole]: ...
 
 
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
     level: Literal[0],
-    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
-) -> CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]: ...
+    category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+) -> _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole]: ...
 
 
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
     level: Literal[1],
-    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+    category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
 ) -> MorphismCategory[M, T, _MorphismRole]: ...
 
 
 @overload
 def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
     level: Literal[2],
-    category: CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+    category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
 ) -> MorphismCategory[T, []]: ...
 
 
 @overload
-def Mor(level: int | Integer, category: Category) -> Category: ...
+def Mor(level: int | Integer, category: _category.CategoryDeclaration) -> _category.CategoryDeclaration: ...
 
 
 def Mor(*arguments: int | Integer | Category) -> Category:

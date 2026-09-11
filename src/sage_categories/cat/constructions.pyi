@@ -243,3 +243,6 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
 
     def with_universal_data(self, diagram: Functor, apex: CategoryOfCategories.ElementType, colimiting_cocone: NaturalTransformation, mediator: Mediator) -> CategoryOfCategories.ElementType:
         ...
+
+def constructed_data(family: Category, diagram: Functor) -> UniversalPresentation:
+    ...

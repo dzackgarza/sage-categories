@@ -67,3 +67,6 @@ def localization_extension(localized: CategoryOfCategories.ElementType, target: 
 
 def inverse_unit(element: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     ...
+
+def _principal_localization_from_native(source: CategoryOfCategories.ElementType, element: CategoryOfCategories.ElementType, native_localized: object, native_map: object) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
+    ...

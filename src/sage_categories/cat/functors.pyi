@@ -197,3 +197,6 @@ class CreatesLimitsCategory(ShapeIndexedFunctorProperty):
     ...
 Fun: FunctorsCategory
 type NaturalTransformation = sage_categories.cat.functors.FunctorsCategory.MorphismType
+
+def diagram_of(value: CategoryOfCategories.ElementType) -> Functor:
+    ...

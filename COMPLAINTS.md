@@ -60,7 +60,7 @@ Read historical observations at their stated revisions before relying on them.
   No credits were purchased, and no permissions were broadened.
 
 - **Related friction:** Several `write_stdin` calls on existing benign sessions were blocked with “couldn't determine the safety status of the request.”
-  Retained process IDs and output files allowed the actual job result to be read without treating the blocked poll as a live job or restarting successful mathematical work. The same indeterminate safety response also affected benign command-result reads during this continuation; completed sessions remained recoverable through their original terminal results. A new bounded read-only delegation attempt again returned `UNIDENTIFIED_CALLER` and created no workers.
+  Retained process IDs and output files allowed the actual job result to be read without treating the blocked poll as a live job or restarting successful mathematical work. The same indeterminate safety response also affected benign command-result reads during this continuation; completed sessions remained recoverable through their original terminal results. On 2026-09-11 two further benign status/result reads for the retained static-stub generator were blocked by the same indeterminate safety response; later ordinary terminal reads succeeded, and the blocked calls were not treated as process evidence. A new bounded read-only delegation attempt again returned `UNIDENTIFIED_CALLER` and created no workers.
 
 - **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.
 
@@ -536,6 +536,7 @@ Ideas, to be weighed, not obligations.*
 
 - **Evidence:** A local Sage 10.9 / Python 3.14.7 environment was successfully provisioned at `/tmp/sage314` and is about 2.4 GiB. During 2026-09-10 public-consumer runs the root filesystem fell as low as about 55 MiB free and the host used about 11 GiB of swap.
   Single Sage/Julia/Catlab consumers repeatedly spent minutes in `folio_wait_bit_common` before reaching test bodies.
+  On 2026-09-11 a full static-stub regeneration process remained live for 2m15s but entered `folio_wait_bit_common`; its retained log stopped at 244 bytes after the Sage runtime warning and no projected stub write advanced during the observed interval. At that point the host had about 557 MiB free RAM, 10 GiB of 19 GiB swap in use, and 24 GiB free disk. The run was stopped under `POL-WORK-004`, and the raw `stubgen` files it had written before stalling were restored rather than mistaken for a completed compiler projection.
   The #31 residue construction nevertheless crossed the previously failing tensor/functor placement path after `5568f78`; subsequent cold-start diagnostics were stopped to avoid exhausting the host.
   The three #31 public consumers were then changed to import their actual owners directly instead of `sage_categories.all`, and primitive functor / natural-transformation actions were restored to their declared Python callbacks while retained composites remain Catlab-backed (`10243b9`, `3d6379c`, `4a55964`). Unrelated resident workloads were left untouched.
 

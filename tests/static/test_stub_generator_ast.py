@@ -237,3 +237,93 @@ NaturalTransformation = Fun.MorphismType
         "Functor": "example.category.CategoryOfCategories.MorphismType",
         "NaturalTransformation": "example.functors.FunctorsCategory.MorphismType",
     }
+
+
+def test_internal_static_names_follow_explicit_cross_module_use(tmp_path: Path) -> None:
+    package = tmp_path / "example"
+    package.mkdir()
+    (package / "__init__.py").write_text("from . import owner\n")
+    (package / "owner.py").write_text(
+        '''
+__all__ = ["public"]
+
+def public() -> int:
+    return 1
+
+def internal() -> str:
+    return "internal"
+
+def _private() -> bool:
+    return True
+'''
+    )
+    (package / "direct.py").write_text("from example.owner import internal\n")
+    (package / "qualified.py").write_text(
+        "from example import owner\nresult = owner._private()\n"
+    )
+    generator = _stub_generator()
+    sources = tuple(sorted(package.rglob("*.py")))
+    assert generator._internal_static_names("example", package, sources)[
+        "example.owner"
+    ] == frozenset({"internal", "_private"})
+
+
+def test_internal_static_projection_keeps_runtime_exports_separate() -> None:
+    stub = ast.parse(
+        '''
+from example.types import PublicType
+__all__ = ["public"]
+def public() -> PublicType: ...
+'''
+    )
+    private_stub = ast.parse(
+        '''
+from example.types import PublicType, InternalType
+__all__ = ["public"]
+def public() -> PublicType: ...
+def internal(value: InternalType) -> InternalType: ...
+def _private() -> bool: ...
+'''
+    )
+    generator = _stub_generator()
+    generator._project_internal_definitions(
+        stub, private_stub, frozenset({"internal", "_private"})
+    )
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert generator._public_names(stub) == ("public",)
+    assert "def internal(value: InternalType) -> InternalType:" in projected
+    assert "def _private() -> bool:" in projected
+    assert "from example.types import InternalType" in projected
+
+
+def test_refresh_internal_static_definitions_updates_only_internal_surface(
+    tmp_path: Path,
+) -> None:
+    package = tmp_path / "example"
+    package.mkdir()
+    (package / "__init__.py").write_text("")
+    (package / "owner.py").write_text(
+        '''
+__all__ = ["public"]
+
+def public() -> int:
+    return 1
+
+def internal() -> str:
+    return "internal"
+'''
+    )
+    (package / "consumer.py").write_text("from example.owner import internal\n")
+    (package / "__init__.pyi").write_text("")
+    (package / "owner.pyi").write_text(
+        '__all__ = ["public"]\ndef public() -> int: ...\n'
+    )
+    (package / "consumer.pyi").write_text(
+        "from example.owner import internal as internal\n"
+    )
+    generator = _stub_generator()
+    sources = tuple(sorted(package.rglob("*.py")))
+    generator._refresh_internal_static_definitions("example", package, sources)
+    projected = ast.parse((package / "owner.pyi").read_text())
+    assert generator._public_names(projected) == ("public",)
+    assert "def internal() -> str:" in ast.unparse(projected)

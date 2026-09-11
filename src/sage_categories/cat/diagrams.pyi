@@ -42,3 +42,9 @@ def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
 
 def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:
     ...
+
+def cospan_diagram(base: Category, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> Functor:
+    ...
+
+def _pointwise_limit_data(diagram: Functor) -> tuple[Functor, NaturalTransformation, _PointwiseLimitMediator]:
+    ...

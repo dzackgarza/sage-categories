@@ -176,3 +176,6 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
 
     def composite(self, second: _TaggedCategory.MorphismType, first: _TaggedCategory.MorphismType) -> _TaggedCategory.MorphismType:
         ...
+
+def _limit_of_opposite_categories(diagram: Functor) -> CategoryOfCategories.ElementType:
+    ...

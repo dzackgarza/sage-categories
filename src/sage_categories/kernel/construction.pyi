@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from sage_categories.cat.category import Category
 from sage_categories.kernel.compiler import Node
 from sage_categories.kernel.roles import CategoryPoint, MorphismOfCategory, ObjectOfCategory
+from sage_categories.kernel.roles import Role as Role
 __all__ = ['ObjectRoleIdentity', 'ElementRoleIdentity', 'CategoryPointIdentity', 'CatElementRoleIdentity', 'MorphismRoleIdentity', 'ObjectConstructionInput', 'ElementConstructionInput', 'MorphismConstructionInput', 'retain_object_input', 'retain_element_input', 'retain_morphism_input', 'retained_objects', 'retained_values', 'is_constructed', 'retained_object_input', 'retained_element_input', 'retained_morphism_input', 'retained_object_by_datum', 'retain_object_by_datum', 'retained_input', 'ObjectConstructionContext', 'ElementConstructionContext', 'MorphismConstructionContext', 'active_object_context', 'active_element_context', 'active_morphism_context', 'active_construction_context', 'activate_object_context', 'activate_element_context', 'activate_morphism_context', 'deactivate_object_context', 'deactivate_element_context', 'deactivate_morphism_context']
 type ObjectRealization = Callable[[ObjectOfCategory, type[ObjectOfCategory]], None]
 
@@ -152,4 +153,16 @@ def deactivate_element_context(token: Token[ElementConstructionContext | None]) 
     ...
 
 def deactivate_morphism_context(token: Token[MorphismConstructionContext | None]) -> None:
+    ...
+
+def install_object_realization(realization: ObjectRealization) -> None:
+    ...
+
+def realize_object(value: ObjectOfCategory, category_type: type[ObjectOfCategory]) -> None:
+    ...
+
+def construction_role(value: CategoryPoint) -> Role | None:
+    ...
+
+def retain_category_universe(value: ObjectOfCategory, universe: Category) -> None:
     ...

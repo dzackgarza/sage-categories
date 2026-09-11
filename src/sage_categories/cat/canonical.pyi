@@ -5,6 +5,7 @@ from collections.abc import Hashable
 from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.predicates import UnknownClass
+from sage_categories.kernel.sage_runtime import cached_function as cached_function
 __all__ = ['FinitePresentedCategory', 'enumerated_datum', 'empty_category', 'simplex', 'boundary', 'horn', 'walking_isomorphism', 'walking_parallel_pair']
 type Word = tuple[str, ...]
 type Generator = tuple[str, Hashable, Hashable]
@@ -112,4 +113,8 @@ def walking_isomorphism() -> FinitePresentedCategory:
     ...
 
 def walking_parallel_pair() -> FinitePresentedCategory:
+    ...
+
+@cached_function
+def _finite_discrete(length: int) -> FinitePresentedCategory:
     ...

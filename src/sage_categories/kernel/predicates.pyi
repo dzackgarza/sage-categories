@@ -68,3 +68,6 @@ def ask_query(application: AppliedQuery) -> Answer:
 
 def assume_property(proposition: Proposition) -> None:
     ...
+
+def _owned_atom(value: Argument) -> _OwnedValueAtom:
+    ...

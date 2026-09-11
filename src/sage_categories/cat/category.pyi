@@ -505,3 +505,16 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
 def Cat() -> CategoryOfCategories:
     ...
+concrete_category: Predicate
+
+def retain_composite_factors(composite: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> None:
+    ...
+
+def composite_factors(composite: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    ...
+
+def is_composite(morphism: MorphismCategory.ObjectType) -> bool:
+    ...
+
+def bootstrap() -> None:
+    ...

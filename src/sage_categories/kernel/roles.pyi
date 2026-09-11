@@ -78,3 +78,16 @@ def role_of(candidate: RoleCandidate) -> Role | None:
 
 def category_of(value: CategoryPoint, role: Role) -> Category:
     ...
+
+@contextmanager
+def record_attribute_writes(value: CategoryPoint) -> Iterator[set[str]]:
+    ...
+
+def install_category_declaration_root(declaration_root: type[CategoryPoint], universal_class: type[CategoryPoint]) -> None:
+    ...
+
+def declaration_role(declaration: type[CategoryPoint]) -> Role | None:
+    ...
+
+def declared_roles() -> tuple[tuple[type[CategoryPoint], Role], ...]:
+    ...

@@ -258,3 +258,6 @@ class SetSubobjects(SliceProperty):
     def from_predicate(self, predicate: Callable[[SetsCategory.ElementType], Proposition]) -> SliceLikeCategory.ObjectType:
         ...
 FiniteSets: Incomplete
+
+def _finite_data(value: SetsCategory.ObjectType) -> tuple[Hashable, ...] | UnknownClass:
+    ...

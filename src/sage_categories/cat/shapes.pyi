@@ -172,3 +172,6 @@ def Thin(carrier: CategoryOfCategories.ElementType, order: Predicate) -> ThinCat
 
 def omega() -> Category:
     ...
+
+def realize_discrete_object(value: CategoryOfCategories.ElementType) -> None:
+    ...

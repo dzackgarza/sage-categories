@@ -83,7 +83,10 @@ def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
 
 
 @overload
-def Mor(level: int | Integer, category: _category.CategoryDeclaration) -> _category.CategoryDeclaration: ...
+def Mor[**M, **T, _ObjectRole, _ElementRole, _MorphismRole](
+    level: int | Integer,
+    category: _category.CategoryDeclaration[M, T, _ObjectRole, _ElementRole, _MorphismRole],
+) -> _category.CategoryDeclaration: ...
 
 
 def Mor(*arguments: int | Integer | Category) -> Category:

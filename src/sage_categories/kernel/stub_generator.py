@@ -437,8 +437,20 @@ def _project_category_role_parameters(
                 defaults[role] = role_reference
                 continue
             alias = role_alias(owner, role)
-            assert alias is not None, f"{owner_name}.{role} has no static role declaration"
-            defaults[role] = alias
+            if alias is None:
+                alias = role_alias(source_owner, role)
+                assert alias is not None, f"{owner_name}.{role} has no static role declaration"
+                replacement = ast.Assign(
+                    targets=[ast.Name(id=role, ctx=ast.Store())],
+                    value=copy.deepcopy(alias),
+                )
+                for index, local in enumerate(owner.body):
+                    if role in _statement_names(local):
+                        owner.body[index] = replacement
+                        break
+                else:
+                    owner.body.insert(0, replacement)
+            defaults[role] = copy.deepcopy(alias)
 
         generic_owner = owner_name in generic_category_bases
         role_arguments: list[ast.expr]

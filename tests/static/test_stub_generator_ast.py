@@ -699,3 +699,51 @@ Public: Incomplete
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "from example.owner import Public as Public" in projected
     assert "Public: Incomplete" not in projected
+
+
+def test_category_role_projection_restores_source_role_alias_lost_by_parse_only() -> None:
+    source = ast.parse(
+        """
+class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+    pass
+Category = CategoryDeclaration
+
+class Base:
+    class MorphismType: pass
+
+class Owner(Category):
+    ObjectType = Base.MorphismType
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    stub = ast.parse(
+        """
+from _typeshed import Incomplete
+class CategoryDeclaration[**P, **Q]: pass
+Category = CategoryDeclaration
+class Base:
+    class MorphismType: pass
+class Owner(Category):
+    ObjectType: Incomplete
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    generator = _stub_generator()
+    generator._project_class_aliases(stub, source)
+
+    generator._project_category_role_parameters(
+        stub,
+        source,
+        "example",
+        {"CategoryDeclaration": 2, "Category": 2, "Owner": 0},
+        {"Owner": "example"},
+        frozenset(),
+        {},
+        frozenset({"example", "sage_categories.kernel.roles"}),
+    )
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "ObjectType = Base.MorphismType" in projected
+    assert "ObjectType: Incomplete" not in projected

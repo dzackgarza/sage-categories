@@ -320,7 +320,6 @@ class CategoryDeclaration[
         self._composites: TripleDict = TripleDict(weak_values=False)
         self._slices: MonoDict = MonoDict()
         self._coslices: MonoDict = MonoDict()
-        self._retained_data: MonoDict = MonoDict()
         self._biproduct_constructor: Callable[[object, object], object] | None = None
         self._zero_morphism_constructor: Callable[[object, object], object] | None = (
             None
@@ -440,20 +439,6 @@ class CategoryDeclaration[
         assert functor.domain() is self
         if not any(functor is known for known in self._selected_functors):
             self._selected_functors = (*self._selected_functors, functor)
-
-    def retain_datum[Datum](
-        self, value: CategoryOfCategories.ElementType, datum: Datum
-    ) -> None:
-        """Retain this category's datum for ``value`` by identity."""
-        assert value not in self._retained_data, (
-            f"{value!r} already retains a datum of {self!r}"
-        )
-        self._retained_data[value] = datum
-
-    def retained_datum[Datum](self, value: CategoryOfCategories.ElementType) -> Datum:
-        """The datum ``value`` was constructed with as an object of this category."""
-        assert value in self._retained_data, f"{value!r} retains no datum of {self!r}"
-        return self._retained_data[value]
 
     def has_ambient(self) -> bool:
         """Whether this category is a declared subcategory: one selected functor traces placement (POL-FUN-036)."""

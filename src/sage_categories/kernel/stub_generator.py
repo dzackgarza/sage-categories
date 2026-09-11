@@ -115,7 +115,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
             source_class_parameters,
             source_modules,
         )
-        _project_hoisted_role_defaults(tree, hoisted_role_providers)
+        _project_hoisted_role_defaults(tree, module, hoisted_role_providers)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
     return tuple(sorted(output_directory.rglob("*.pyi")))
 
@@ -1373,6 +1373,7 @@ def _project_runtime_class_aliases(tree: ast.Module, aliases: dict[str, str], so
 
 def _project_hoisted_role_defaults(
     tree: ast.Module,
+    module: str,
     hoisted_role_providers: dict[str, str],
 ) -> None:
     """Resolve quoted role defaults to the direct generated role TypeInfo.
@@ -1399,7 +1400,10 @@ def _project_hoisted_role_defaults(
         if not matches:
             return expression
         assert len(matches) == 1, f"ambiguous quoted role default {spelling!r}: {matches!r}"
-        return _base_expression(matches[0])
+        helper = matches[0]
+        local_prefix = f"{module}."
+        rendered = helper.removeprefix(local_prefix) if helper.startswith(local_prefix) else helper
+        return _base_expression(rendered)
 
     for declaration in _classes(tree.body, ""):
         for parameter in declaration.node.type_params:

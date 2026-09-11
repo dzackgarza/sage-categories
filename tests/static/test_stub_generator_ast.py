@@ -733,12 +733,14 @@ _AliasRole = _typing.TypeVar("_AliasRole", default="Owner.ObjectType")
 
     generator._project_hoisted_role_defaults(
         stub,
+        "example",
         {"example.Owner.ObjectType": helper},
     )
 
     projected = ast.unparse(ast.fix_missing_locations(stub))
-    assert f"class Carrier[T = {helper}]" in projected
-    assert f'default={helper}' in projected
+    local_helper = "_StaticRoles_Owner.ObjectType"
+    assert f"class Carrier[T = {local_helper}]" in projected
+    assert f'default={local_helper}' in projected
 
 
 def test_generic_morphism_projection_uses_declared_endpoint_parameters() -> None:

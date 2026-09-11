@@ -353,3 +353,28 @@ def test_provider_projection_uses_direct_branches_not_transitive_c3_ancestry() -
         "sage_categories.kernel.roles.MorphismOfCategory",
         "example.MorphismCategory.ObjectType",
     )
+
+
+def test_concrete_morphism_projection_has_exact_owner_object_endpoints() -> None:
+    stub = ast.parse(
+        """
+class CategoryOfCategories:
+    type ObjectType = Category
+    class MorphismType(MorphismOfCategory):
+        def on_object(self, value: ObjectType) -> ObjectType: ...
+
+class OwnEndpoints:
+    class ObjectType:
+        pass
+    class MorphismType(MorphismOfCategory):
+        def domain(self) -> ObjectType: ...
+"""
+    )
+    generator = _stub_generator()
+    generator._project_exact_morphism_endpoints(stub)
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "def domain(self) -> CategoryOfCategories.ObjectType:" in projected
+    assert "def codomain(self) -> CategoryOfCategories.ObjectType:" in projected
+    assert projected.count("def domain(self) -> OwnEndpoints.ObjectType:") == 0
+    assert "def domain(self) -> ObjectType:" in projected
+    assert "def codomain(self) -> OwnEndpoints.ObjectType:" in projected

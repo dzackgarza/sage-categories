@@ -351,7 +351,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     Empty: Incomplete
     Concrete: Incomplete
 
-    class MorphismType(_StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.kernel.roles.MorphismOfCategory, sage_categories.cat.morphisms.MorphismCategory.ObjectType):
 
         def __init__(self, data: FunctorData) -> None:
             ...
@@ -399,6 +399,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             ...
 
         def cocartesian_lift(self, morphism: MorphismCategory.ObjectType, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            ...
+
+        def domain(self) -> CategoryOfCategories.ObjectType:
+            ...
+
+        def codomain(self) -> CategoryOfCategories.ObjectType:
             ...
 
     def __init__(self) -> None:

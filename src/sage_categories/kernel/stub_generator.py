@@ -96,6 +96,7 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         )
         if providers:
             _project_provider_bases(tree, module, providers, source_modules)
+        _project_exact_morphism_endpoints(tree)
         _hoist_lexically_cyclic_nested_classes(tree, module)
         stub_path.write_text(
             ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8"
@@ -775,6 +776,63 @@ def _project_runtime_class_aliases(
             tree,
             {_qualified_module(target, source_modules) for target in aliases.values()},
         )
+
+
+def _project_exact_morphism_endpoints(tree: ast.Module) -> None:
+    """Project each concrete ``C.MorphismType`` endpoint as ``C.ObjectType``.
+
+    ``MorphismCategory.ObjectType`` owns ``domain`` and ``codomain`` at runtime.
+    The generic owner cannot name the associated object type of every source category
+    in an ordinary Python annotation, but the output-only projection can: inside a
+    concrete category declaration ``C``, both endpoints of ``C.MorphismType`` have
+    exactly ``C.ObjectType`` (POL-CAT-024, POL-TYPE-017).  Add only the static
+    specialization; never duplicate the runtime method body or overwrite a method the
+    concrete declaration itself owns.
+    """
+
+    def endpoint_method(name: str, owner_name: str) -> ast.FunctionDef:
+        return ast.FunctionDef(
+            name=name,
+            args=ast.arguments(
+                posonlyargs=[],
+                args=[ast.arg(arg="self")],
+                kwonlyargs=[],
+                kw_defaults=[],
+                defaults=[],
+            ),
+            body=[ast.Expr(value=ast.Constant(value=Ellipsis))],
+            decorator_list=[],
+            returns=ast.Attribute(
+                value=ast.Name(id=owner_name, ctx=ast.Load()),
+                attr="ObjectType",
+                ctx=ast.Load(),
+            ),
+            type_comment=None,
+            type_params=[],
+        )
+
+    for owner in tree.body:
+        if not isinstance(owner, ast.ClassDef):
+            continue
+        morphism_type = next(
+            (
+                statement
+                for statement in owner.body
+                if isinstance(statement, ast.ClassDef)
+                and statement.name == "MorphismType"
+            ),
+            None,
+        )
+        if morphism_type is None:
+            continue
+        local_methods = {
+            statement.name
+            for statement in morphism_type.body
+            if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef)
+        }
+        for name in ("domain", "codomain"):
+            if name not in local_methods:
+                morphism_type.body.append(endpoint_method(name, owner.name))
 
 
 def _project_provider_bases(

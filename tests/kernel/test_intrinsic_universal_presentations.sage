@@ -157,7 +157,41 @@ def test_dual_indexed_coproduct_retains_its_universal_map() -> None:
     assert ask(opposite_morphism(dual_mediator) == mediator) is True
 
 
+def test_nonstandard_indexed_predicate_subobject_keeps_selected_universal_data() -> None:
+    ambient = FinitePresentedCategory(
+        "Predicate-indexed upper bounds", ("a", "b", "c", "e"),
+        (("ac", "a", "c"), ("bc", "b", "c"), ("ce", "c", "e")), (),
+    )
+    intrinsic = IntrinsicUpperBounds(ambient, "IntrinsicUpperBounds", ())
+    a, b, c = (intrinsic(label) for label in ("a", "b", "c"))
+    index_set = Sets((7, 9))
+    shape = Discrete(index_set)
+    vertices = tuple(shape(index_set.point(index)) for index in (7, 9))
+    diagram = Fun(shape, intrinsic).from_object_rule(
+        lambda vertex: a if vertex is vertices[0] else b
+    )
+    ac = Mor(intrinsic)(a, c)(("ac",))
+    bc = Mor(intrinsic)(b, c)(("bc",))
+    legs = (ac, bc)
+    family = intrinsic.Colimits(shape)
+    chosen = cocone(diagram, c, lambda vertex: legs[0] if vertex is vertices[0] else legs[1])
+
+    def descend(candidate):
+        (unique,) = intrinsic.hom_morphisms(c, cocone_apex(candidate))
+        return unique
+
+    family.with_universal_data(diagram, c, chosen, descend)
+    presentation = family.universal_data(diagram)
+    assert presentation.diagram() is diagram
+    assert presentation.apex() is c
+    assert vertices[0].point() is index_set.point(7)
+    assert vertices[1].point() is index_set.point(9)
+    assert presentation.leg(vertices[0]) is ac
+    assert presentation.leg(vertices[1]) is bc
+    assert family.ambient() is intrinsic
+
 test_abelian_colimit_family_has_its_intrinsic_owner()
 test_intrinsic_coproduct_retains_distinct_presentations()
 test_limiting_presentations_of_one_apex_retain_their_legs()
 test_dual_indexed_coproduct_retains_its_universal_map()
+test_nonstandard_indexed_predicate_subobject_keeps_selected_universal_data()

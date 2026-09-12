@@ -50,6 +50,22 @@ LocalComponentRule = Callable[[int], ExactLocalValue]
 LocalCondition = Callable[[ExactLocalValue], bool | None]
 
 
+def _adelic_open_conditions(open_set: AdeleOpen, value: AdeleValue) -> bool | None:
+    """Decide the retained real and exceptional finite conditions of one basic open."""
+    real_answer = open_set.real_condition(value.real)
+    answers = tuple(condition(value.finite_component(prime)) for prime, condition in open_set.finite_conditions)
+    match real_answer is False or any(answer is False for answer in answers):
+        case True:
+            return False
+        case False:
+            pass
+    match real_answer is True and all(answer is True for answer in answers):
+        case True:
+            return True
+        case False:
+            return None
+
+
 @dataclass(frozen=True, eq=False, slots=True)
 class AdeleValue:
     """One exact adele with all finite components retained by a callable rule."""
@@ -148,23 +164,7 @@ class AdeleOpen:
                 return False
             case True:
                 pass
-        real_answer = self.real_condition(value.real)
-        match real_answer:
-            case False:
-                return False
-            case _:
-                pass
-        answers = tuple(condition(value.finite_component(prime)) for prime, condition in self.finite_conditions)
-        match any(answer is False for answer in answers):
-            case True:
-                return False
-            case False:
-                pass
-        match real_answer is True and all(answer is True for answer in answers):
-            case True:
-                return True
-            case False:
-                return None
+        return _adelic_open_conditions(self, value)
 
     def included_in(self, other: AdeleOpen) -> bool | None:
         assert self.owner is other.owner

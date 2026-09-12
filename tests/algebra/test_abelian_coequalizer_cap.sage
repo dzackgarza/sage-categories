@@ -12,6 +12,7 @@ from sage_categories.algebra import (
     abelian_homomorphism,
     coequalizer_mediator,
     coequalizer_projection,
+    AbelianGroups,
     presented_abelian_group,
 )
 from sage_categories.algebra._presented_modules_cap import (
@@ -19,7 +20,11 @@ from sage_categories.algebra._presented_modules_cap import (
     presented_native_object,
 )
 from sage_categories.algebra.abelian import presentation
+from sage_categories.cat.monoidal import Cartesian
+from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.predicates import ask
+from sage_categories.cat.structured_objects import AdditiveGroups
+from sage_categories.sets.finite import Sets
 
 
 def test_cap_computes_the_selected_nonidentity_coequalizer_and_owned_mediator() -> None:
@@ -44,6 +49,16 @@ def test_cap_computes_the_selected_nonidentity_coequalizer_and_owned_mediator() 
     assert native_projection.value is projection
     assert native_projection.source is target
     assert native_projection.target is apex
+    abelian = AbelianGroups()
+    assert projection in Mor(abelian)(target, apex)
+
+    groups = AdditiveGroups(Cartesian(Sets()))
+    monoids = groups.named_monoids()
+    magmas = monoids.named_magmas()
+    forgetful = magmas.to_carrier() * monoids.to_named_magmas() * groups.to_named_monoids() * abelian.subcategory_monomorphism()
+    forgotten_projection = forgetful.on_morphism(projection)
+    assert forgotten_projection.domain() is forgetful.on_object(target)
+    assert forgotten_projection.codomain() is forgetful.on_object(apex)
     assert libgap.Range(native_projection.native) == native_apex.native
     assert int(libgap.NumberColumns(libgap.UnderlyingMatrix(native_apex.native))) == 1
 
@@ -62,6 +77,10 @@ def test_cap_computes_the_selected_nonidentity_coequalizer_and_owned_mediator() 
     mediator = coequalizer_mediator(projection, coequalizing)
     assert mediator.domain() is apex
     assert mediator.codomain() is plane
+    assert mediator in Mor(abelian)(apex, plane)
+    forgotten_mediator = forgetful.on_morphism(mediator)
+    assert forgotten_mediator.domain() is forgetful.on_object(apex)
+    assert forgotten_mediator.codomain() is forgetful.on_object(plane)
     assert ask(mediator * projection == coequalizing) is True
 
 

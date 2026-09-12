@@ -17,10 +17,15 @@ def test_mixed_biproduct_has_additive_universal_maps() -> None:
     shape = diagram.domain()
     product = abelian.Limits(shape).universal_data(diagram)
     coproduct = abelian.Colimits(shape).universal_data(diagram)
+    assert product is not coproduct
     assert product.apex() is biproduct
     assert coproduct.apex() is biproduct
     first, second = product.leg(0), product.leg(1)
     include_first, include_second = coproduct.leg(0), coproduct.leg(1)
+    assert first in Mor(abelian)(biproduct, integers)
+    assert second in Mor(abelian)(biproduct, cyclic)
+    assert include_first in Mor(abelian)(integers, biproduct)
+    assert include_second in Mor(abelian)(cyclic, biproduct)
     assert ask(first * include_first == Mor(abelian)(integers, integers).one()) is True
     assert ask(second * include_second == Mor(abelian)(cyclic, cyclic).one()) is True
     assert ask(first * include_second == abelian.zero_morphism(cyclic, integers)) is True
@@ -43,6 +48,8 @@ def test_mixed_biproduct_has_additive_universal_maps() -> None:
     assert ask(copairing * pairing == triple_reduction) is True
     assert pairing.base_category() is abelian
     assert copairing.base_category() is abelian
+    assert pairing in Mor(abelian)(integers, biproduct)
+    assert copairing in Mor(abelian)(biproduct, cyclic)
 
     forgetful = abelian.forgetful()
     assert forgetful in Fun(abelian, Sets)
@@ -51,6 +58,10 @@ def test_mixed_biproduct_has_additive_universal_maps() -> None:
     assert image.domain() is carrier
     assert image.codomain() is forgetful.on_object(cyclic)
     assert image(carrier.point(3)) is image.codomain().point(3 * generator)
+    assert forgetful.on_morphism(include_first).domain() is forgetful.on_object(integers)
+    assert forgetful.on_morphism(include_first).codomain() is forgetful.on_object(biproduct)
+    assert forgetful.on_morphism(second).domain() is forgetful.on_object(biproduct)
+    assert forgetful.on_morphism(second).codomain() is forgetful.on_object(cyclic)
     assert ask(forgetful.on_morphism(first) * forgetful.on_morphism(pairing)
                == forgetful.on_morphism(double)) is True
     plain_product = Sets.Products()((Sets(("left", "right")), Sets(("up", "down"))))

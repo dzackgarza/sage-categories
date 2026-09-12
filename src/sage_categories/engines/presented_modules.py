@@ -358,13 +358,15 @@ def retain_binary_biproduct(first: object, second: object, apex: object):
     """Retain CAP's direct sum on the already selected owned biproduct apex."""
     factors = (first, second)
     native_factors = [_native_object(factor) for factor in factors]
-    native_apex = libgap.DirectSumOp(native_factors, _category())
+    category = _category()
+    native_apex = libgap.DirectSumOp(category, native_factors)
     retain_presented_native_object(apex, native_apex, _DirectSumBridge(factors))
     projections = tuple(
         _owned_morphism_from_native(
             apex,
             factor,
             libgap.ProjectionInFactorOfDirectSumWithGivenDirectSum(
+                category,
                 native_factors,
                 index + 1,
                 native_apex,
@@ -377,6 +379,7 @@ def retain_binary_biproduct(first: object, second: object, apex: object):
             factor,
             apex,
             libgap.InjectionOfCofactorOfDirectSumWithGivenDirectSum(
+                category,
                 native_factors,
                 index + 1,
                 native_apex,
@@ -396,6 +399,7 @@ def direct_sum_product_lift(
     """Return CAP's universal map from ``source`` into the retained direct sum."""
     native_factors = [_native_object(factor) for factor in factors]
     native = libgap.UniversalMorphismIntoDirectSumWithGivenDirectSum(
+        _category(),
         native_factors,
         _native_object(source),
         [_native_morphism(component) for component in components],
@@ -413,6 +417,7 @@ def direct_sum_coproduct_lift(
     """Return CAP's universal map from the retained direct sum into ``target``."""
     native_factors = [_native_object(factor) for factor in factors]
     native = libgap.UniversalMorphismFromDirectSumWithGivenDirectSum(
+        _category(),
         native_factors,
         _native_object(target),
         [_native_morphism(component) for component in components],

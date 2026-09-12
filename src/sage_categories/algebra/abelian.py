@@ -305,7 +305,11 @@ def _group_from_operations(
 ) -> CategoryOfCategories.ElementType:
     """The object of ``Ab`` on a presented carrier: addition is the linear form ``(x, y) ↦ x + y``, decided a commutative group on the way."""
     structure = _structure()
-    Sets.retain_form(carrier, form)
+    retained_form = Sets.form_of(carrier)
+    if retained_form is None:
+        Sets.retain_form(carrier, form)
+    else:
+        assert retained_form is form, f"{carrier!r} already carries a different presentation"
     square = binary_product_data(Sets(), carrier, carrier).apex()
     square_form = Sets.form_of(square)
     assert isinstance(square_form, Presentation) and square_form.factors == (form, form)
@@ -645,8 +649,10 @@ def _biproduct(
     abelian = AbelianGroups()
     assert first in abelian and second in abelian
     first_form, second_form = presentation(first), presentation(second)
-    direct_sum = first_form.direct_sum((first_form, second_form))
     carrier = Sets.Products()((_points(first), _points(second)))
+    direct_sum = Sets.form_of(carrier)
+    assert isinstance(direct_sum, Presentation)
+    assert direct_sum.factors == (first_form, second_form)
     apex = _group_from_operations(
         carrier,
         direct_sum,

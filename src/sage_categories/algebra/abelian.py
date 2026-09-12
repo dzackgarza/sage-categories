@@ -257,9 +257,6 @@ _tensor_data: MonoDict = MonoDict()
 _indexed_free_data: MonoDict = MonoDict()
 _identity_coequalizers: MonoDict = MonoDict()
 
-_terminal_presentation = Presentation((), lambda datum: (), lambda coords: ())
-Sets.retain_form(Sets.Terminal(), _terminal_presentation)
-
 
 def _structure() -> MonoidalStructuresCategory.ObjectType:
     return Cartesian(Sets())
@@ -323,24 +320,14 @@ def _group_from_operations(
     carrier: CategoryOfCategories.ElementType,
     form: Presentation,
     zero: Hashable,
+    addition_rule: Callable[[tuple[Hashable, Hashable]], Hashable],
 ) -> CategoryOfCategories.ElementType:
-    """The object of ``Ab`` on a presented carrier: addition is the linear form ``(x, y) ↦ x + y``, decided a commutative group on the way."""
+    """The engine-certified object of ``Ab`` on a presented carrier."""
     structure = _structure()
-    retained_form = Sets.form_of(carrier)
-    if retained_form is None:
-        Sets.retain_form(carrier, form)
-    else:
-        assert retained_form is form, f"{carrier!r} already carries a different presentation"
     square = binary_product_data(Sets(), carrier, carrier).apex()
-    square_form = Sets.form_of(square)
-    assert isinstance(square_form, Presentation) and square_form.factors == (form, form)
-    identity = identity_matrix(ZZ, form.rank())
-    addition = Mor(Sets)(square, carrier)(LinearForm(square_form, form, identity.stack(identity)))
-    unit = Mor(Sets)(structure.unit(), carrier)(LinearForm(_terminal_presentation, form, zero_matrix(ZZ, 0, form.rank())))
-    monoid = Monoids(structure)(addition, unit)
-    assert monoid in Groups(structure), f"{addition!r} is not a group operation"
-    group = AdditiveGroups(structure).renamed(monoid)
-    assert group in AbelianGroups(), f"{addition!r} is not commutative"
+    addition = Mor(Sets)(square, carrier)(addition_rule)
+    unit = Mor(Sets)(structure.unit(), carrier)(lambda _point: zero)
+    group = _certified_abelian_group(carrier, addition, unit)
     _presentations[group] = form
     return group
 
@@ -361,7 +348,12 @@ def _group_from_engine(engine: Engine) -> CategoryOfCategories.ElementType:
         lambda datum: tuple(int(c) for c in datum.vector()),
         lambda coordinates: engine.linear_combination_of_smith_form_gens(vector(ZZ, coordinates)),
     )
-    return _group_from_operations(Sets.from_membership(partial(_engine_membership, engine)), form, engine.zero())
+    return _group_from_operations(
+        Sets.from_membership(partial(_engine_membership, engine)),
+        form,
+        engine.zero(),
+        lambda pair: pair[0] + pair[1],
+    )
 
 
 def _engine_membership(engine: Engine, datum: Hashable) -> Proposition:
@@ -380,7 +372,7 @@ def integer_group() -> CategoryOfCategories.ElementType:
     """``Z`` as an object of ``Ab``: the rule-defined integers, the free group on one generator."""
     integers = Sets.from_membership(lambda n: Q.integer(n))
     form = Presentation((0,), lambda datum: (int(datum),), lambda coordinates: int(coordinates[0]))
-    return _group_from_operations(integers, form, 0)
+    return _group_from_operations(integers, form, 0, lambda pair: pair[0] + pair[1])
 
 
 class _OwnedIndexFacade(Parent):
@@ -615,13 +607,15 @@ def _biproduct(
     assert first in abelian and second in abelian
     first_form, second_form = presentation(first), presentation(second)
     carrier = Sets.Products()((_points(first), _points(second)))
-    direct_sum = Sets.form_of(carrier)
-    assert isinstance(direct_sum, Presentation)
-    assert direct_sum.factors == (first_form, second_form)
+    direct_sum = first_form.direct_sum((first_form, second_form))
     apex = _group_from_operations(
         carrier,
         direct_sum,
         (first_form.zero_datum(), second_form.zero_datum()),
+        lambda pair: (
+            pair[0][0] + pair[1][0],
+            pair[0][1] + pair[1][1],
+        ),
     )
     from sage_categories.engines.presented_modules import (
         direct_sum_coproduct_lift,

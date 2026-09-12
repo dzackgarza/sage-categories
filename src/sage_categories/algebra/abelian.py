@@ -828,22 +828,12 @@ def coequalizer_mediator(
         diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
     )
     assert len(matching) == 1, f"{projection!r} is not the selected leg of one retained coequalizer presentation"
-    (diagram,) = matching
-    presentation = family.universal_data(diagram)
-    source_vertex, target_vertex = Cat().WalkingParallelPair()(0), Cat().WalkingParallelPair()(1)
-    first = diagram.on_morphism(Cat().WalkingParallelPair().generator("f"))
-    source_component = coequalizing * first
-
-    def component(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        match vertex is source_vertex:
-            case True:
-                return source_component
-            case False:
-                return coequalizing
-
-    candidate = cocones(diagram)(cocone(diagram, coequalizing.codomain(), component))
-    assert candidate.leg(target_vertex) is coequalizing
-    return presentation.lift(candidate)
+    # The selected presentation already retains the CAP cokernel and its universal
+    # factor.  Rebuilding a generic cocone here duplicates that construction and forces
+    # the whole opposite/cone category tower merely to recover the same target leg.
+    # The matching presentation above establishes ownership; the retained CAP colift
+    # checks and constructs the universal factor on the exact public endpoints.
+    return _coequalizer_mediator(projection, coequalizing)
 
 
 def _pair_vector(

@@ -14,6 +14,7 @@ from sage_categories.cat.monoidal import (
 )
 from sage_categories.cat.category import is_placed
 from sage_categories.cat.predicates import Proposition, register_handler
+from sage_categories.engines import cells
 
 
 class RationalLine(Category):
@@ -124,6 +125,17 @@ def test_scaled_associator_pentagon_retains_eight_versus_four() -> None:
     )
     assert interpreted_zero is zero
     assert not is_placed(interpreted_zero, Mor(category).Isomorphisms())
+    native_zero = cells.native_cell(category, interpreted_zero)
+    cells.typecheck(category, interpreted_zero)
+    try:
+        cells.native_signature(category).typecheck(native_zero.inverse(), True)
+    except ValueError as error:
+        assert "directed generator" in str(error)
+    else:
+        raise AssertionError("a noninvertible interpreted arrow acquired a native inverse")
+
+    native_associator = cells.native_cell(category, associator.component(triples((line, line, line))))
+    cells.native_signature(category).typecheck(native_associator.inverse(), True)
 
     def component(x, y, z):
         return associator.component(triples((x, y, z)))

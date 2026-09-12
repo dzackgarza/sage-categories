@@ -14,6 +14,7 @@ from sage_categories.algebra import (
     simple_tensor,
     tensor_mediator,
 )
+from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.modules import Modules
 from sage_categories.cat.monoidal import Reversed, SelfAction
 from sage_categories.cat.structured_objects import Monoids
@@ -184,8 +185,74 @@ def test_the_induced_right_action_is_the_right_action_of_the_first_factor() -> N
     assert ask(scale(unit_tensor(e1), e12) == balanced_tensor(balanced, e1, e12)) is True
 
 
+
+def test_distinct_outer_scalars_descend_to_the_R_T_bimodule() -> None:
+    entries, element, middle_group, regular, middle_ring, opposite = matrix_ring()
+    monoidal = AbelianTensor()
+    integers = integer_group()
+    integer_multiplication = tensor_mediator(integers, integers, integers, lambda left, right: left * right)
+    integer_ring = Monoids(monoidal)(
+        integer_multiplication,
+        abelian_homomorphism(integers, integers, lambda value: value),
+    )
+
+    field_engine = AdditiveAbelianGroup([2])
+    field = presented_abelian_group(field_engine)
+    field_generator = field_engine.gen(0)
+    field_ring = Monoids(monoidal)(
+        tensor_mediator(
+            field,
+            field,
+            field,
+            lambda left, right: int(left.vector()[0]) * int(right.vector()[0]) * field_generator,
+        ),
+        abelian_homomorphism(integers, field, lambda value: value * field_generator),
+    )
+
+    row_engine, rows, row_of = plane()
+    column_engine, columns, column_of = plane()
+
+    def act_on_rows(row, matrix):
+        u, x = [int(c) for c in row.vector()], entries(matrix)
+        return row_of([u[0] * x[0] + u[1] * x[2], u[0] * x[1] + u[1] * x[3]])
+
+    def act_on_columns(matrix, column):
+        x, u = entries(matrix), [int(c) for c in column.vector()]
+        return column_of([x[0] * u[0] + x[1] * u[1], x[2] * u[0] + x[3] * u[1]])
+
+    left_integer = tensor_mediator(integers, rows, rows, lambda scalar, row: int(scalar) * row)
+    right_middle = tensor_mediator(rows, middle_group, rows, act_on_rows)
+    left_middle = tensor_mediator(middle_group, columns, columns, act_on_columns)
+    right_field = tensor_mediator(
+        columns,
+        field,
+        columns,
+        lambda column, scalar: int(scalar.vector()[0]) * column,
+    )
+
+    first = Bimodules(integer_ring, middle_ring, monoidal)(left_integer, right_middle)
+    second = Bimodules(middle_ring, field_ring, monoidal)(left_middle, right_field)
+    projection = relative_tensor(first.right_action(), second.left_action())
+    left_outer = induced_left_action(projection, first.left_action())
+    right_outer = induced_right_action(projection, second.right_action())
+    target_category = Bimodules(integer_ring, field_ring, monoidal)
+    result = target_category(left_outer, right_outer)
+
+    assert result in target_category
+    assert target_category.forgetful().on_object(result) is projection.codomain()
+    assert result.left_action() is left_outer
+    assert result.right_action() is right_outer
+
+    e1, f1 = row_of([1, 0]), column_of([1, 0])
+    generator = balanced_tensor(projection, e1, f1)
+    twice = simple_tensor(integers, projection.codomain(), 2, generator.datum())
+    assert ask(left_outer(twice) == projection.codomain().zero()) is True
+    on_the_right = simple_tensor(projection.codomain(), field, generator.datum(), field_generator)
+    assert ask(right_outer(on_the_right) == generator) is True
+
 test_rows_tensor_columns_over_the_matrix_ring_is_the_field()
 test_the_dot_product_factors_through_the_balanced_map()
 test_the_outer_actions_survive_the_balancing()
 test_the_induced_right_action_is_the_right_action_of_the_first_factor()
+test_distinct_outer_scalars_descend_to_the_R_T_bimodule()
 

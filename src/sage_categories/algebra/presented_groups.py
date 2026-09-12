@@ -88,7 +88,6 @@ def _owned_group_homomorphism(source, target, native):
         target,
         magma_map,
     )
-    monoid_map._native_group_homomorphism = native
     return monoid_map
 
 
@@ -167,8 +166,8 @@ class GroupPresentation(SageObject):
         """Factor a relation-respecting assignment uniquely through the quotient.
 
         Sage/GAP's native finitely-presented-group homomorphism constructor checks the
-        relators.  A violated relation therefore raises ``ValueError`` rather than being
-        accepted by a second local word evaluator.
+        relators.  A violated relation therefore raises ``ValueError`` without a second
+        repository-owned evaluator.
         """
         target_carrier = target.operation().codomain()
         points = tuple(generator_images)

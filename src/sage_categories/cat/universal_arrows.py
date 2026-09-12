@@ -29,18 +29,14 @@ from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 type Factor = Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
-type Choice = Callable[
-    [CategoryOfCategories.ElementType], CategoryOfCategories.ElementType
-]
+type Choice = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
 
 
 class TerminalObjectsCategory(FullSubcategory):
     """Terminal objects equipped with their unique incoming arrows."""
 
     class ObjectType:
-        def unique_from(
-            self, source: CategoryOfCategories.ElementType
-        ) -> MorphismCategory.ObjectType:
+        def unique_from(self, source: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             arrow = self._terminal_factor(source)
             assert arrow.domain() is source and arrow.codomain() is self
             return arrow
@@ -51,9 +47,7 @@ class TerminalObjectsCategory(FullSubcategory):
     class MorphismType:
         pass
 
-    def __call__(
-        self, value: CategoryOfCategories.ElementType, factor: Factor
-    ) -> CategoryOfCategories.ElementType:
+    def __call__(self, value: CategoryOfCategories.ElementType, factor: Factor) -> CategoryOfCategories.ElementType:
         assert value in self.ambient()
         value._terminal_factor = factor
         refine(value, self)
@@ -69,9 +63,7 @@ class InitialObjectsCategory(FullSubcategory):
     """Initial objects equipped with their unique outgoing arrows."""
 
     class ObjectType:
-        def unique_to(
-            self, target: CategoryOfCategories.ElementType
-        ) -> MorphismCategory.ObjectType:
+        def unique_to(self, target: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             arrow = self._initial_factor(target)
             assert arrow.domain() is self and arrow.codomain() is target
             return arrow
@@ -82,9 +74,7 @@ class InitialObjectsCategory(FullSubcategory):
     class MorphismType:
         pass
 
-    def __call__(
-        self, value: CategoryOfCategories.ElementType, factor: Factor
-    ) -> CategoryOfCategories.ElementType:
+    def __call__(self, value: CategoryOfCategories.ElementType, factor: Factor) -> CategoryOfCategories.ElementType:
         assert value in self.ambient()
         value._initial_factor = factor
         refine(value, self)
@@ -104,13 +94,9 @@ class RightUniversalArrows:
     choose: Choice
 
     @cached_method(key=identity_key)
-    def presentation(
-        self, value: CategoryOfCategories.ElementType
-    ) -> CategoryOfCategories.ElementType:
+    def presentation(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         result = self.choose(value)
-        comma = comma_objects(
-            self.forward, self.forward.codomain().point_functor(value)
-        )
+        comma = comma_objects(self.forward, self.forward.codomain().point_functor(value))
         assert result in TerminalObjects(comma)
         return result
 
@@ -121,9 +107,7 @@ class RightUniversalArrows:
         arrow: MorphismCategory.ObjectType,
     ) -> MorphismCategory.ObjectType:
         presentation = self.presentation(target)
-        comma = comma_objects(
-            self.forward, self.forward.codomain().point_functor(target)
-        )
+        comma = comma_objects(self.forward, self.forward.codomain().point_functor(target))
         candidate = comma.from_arrow(source, Cat().Terminal()(0), arrow)
         return presentation.unique_from(candidate).first()
 
@@ -151,9 +135,7 @@ class RightUniversalArrows:
                 Mor(target)(forward.on_object(value), forward.on_object(value)).one(),
             )
         )
-        counit = Mor(Fun(target, target))(forward * inverse, Fun(target, target).one())(
-            lambda value: self.presentation(value).arrow()
-        )
+        counit = Mor(Fun(target, target))(forward * inverse, Fun(target, target).one())(lambda value: self.presentation(value).arrow())
         return Adjunctions(forward, inverse)(unit, counit)
 
 
@@ -165,13 +147,9 @@ class LeftUniversalArrows:
     choose: Choice
 
     @cached_method(key=identity_key)
-    def presentation(
-        self, value: CategoryOfCategories.ElementType
-    ) -> CategoryOfCategories.ElementType:
+    def presentation(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         result = self.choose(value)
-        comma = comma_objects(
-            self.inverse.codomain().point_functor(value), self.inverse
-        )
+        comma = comma_objects(self.inverse.codomain().point_functor(value), self.inverse)
         assert result in InitialObjects(comma)
         return result
 
@@ -182,9 +160,7 @@ class LeftUniversalArrows:
         arrow: MorphismCategory.ObjectType,
     ) -> MorphismCategory.ObjectType:
         presentation = self.presentation(source)
-        comma = comma_objects(
-            self.inverse.codomain().point_functor(source), self.inverse
-        )
+        comma = comma_objects(self.inverse.codomain().point_functor(source), self.inverse)
         candidate = comma.from_arrow(Cat().Terminal()(0), target, arrow)
         return presentation.unique_to(candidate).second()
 
@@ -205,9 +181,7 @@ class LeftUniversalArrows:
 
         forward, inverse = self.functor(), self.inverse
         source, target = forward.domain(), forward.codomain()
-        unit = Mor(Fun(source, source))(Fun(source, source).one(), inverse * forward)(
-            lambda value: self.presentation(value).arrow()
-        )
+        unit = Mor(Fun(source, source))(Fun(source, source).one(), inverse * forward)(lambda value: self.presentation(value).arrow())
         counit = Mor(Fun(target, target))(forward * inverse, Fun(target, target).one())(
             lambda value: self.factor(
                 inverse.on_object(value),

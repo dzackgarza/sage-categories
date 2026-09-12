@@ -101,11 +101,7 @@ def _atom_type(domain: type) -> type[_OwnedValueAtom]:
     if not inherited:
         result = _OwnedValueAtom
     else:
-        bases = tuple(
-            base
-            for base in inherited
-            if not any(other is not base and issubclass(other, base) for other in inherited)
-        )
+        bases = tuple(base for base in inherited if not any(other is not base and issubclass(other, base) for other in inherited))
         result = type(f"_{domain.__name__}Atom", bases, {})
     _atom_types[domain] = result
     return result
@@ -242,10 +238,7 @@ def _evaluated_domain(
 
 
 def _predicate_domains(handler: PredicateHandler) -> tuple[type, ...]:
-    return tuple(
-        Integer if domain is int else domain if issubclass(domain, Basic) else _atom_type(domain)
-        for domain in _handler_domains(handler)
-    )
+    return tuple(Integer if domain is int else domain if issubclass(domain, Basic) else _atom_type(domain) for domain in _handler_domains(handler))
 
 
 def bind_property_predicate(owner: OwnedPredicate, category: Category) -> None:
@@ -320,10 +313,7 @@ def _register_exact_case(owner: OwnedPredicate, domains: tuple[type, ...], handl
 
 def register_query_handler(query: Query, handler: QueryHandler) -> None:
     """Register one exact typed-query evaluator with private Plum dispatch."""
-    domains = tuple(
-        Annotated[domain | CategoryPoint, Is[partial(_matches_handler_domain, domain)]]
-        for domain in _handler_domains(handler)
-    )
+    domains = tuple(Annotated[domain | CategoryPoint, Is[partial(_matches_handler_domain, domain)]] for domain in _handler_domains(handler))
     assert len(domains) == query._arity, f"{handler!r} has the wrong arity for {query!r}"
     if query not in _query_dispatchers:
         dispatcher = Dispatcher()

@@ -117,9 +117,7 @@ class InserterCategory(LimitSubcategory):
             target,
             (
                 arrow,
-                comma.morphism_from_pair(
-                    source.family_component(1), target.family_component(1), arrow, arrow
-                ),
+                comma.morphism_from_pair(source.family_component(1), target.family_component(1), arrow, arrow),
                 pairs.construct_morphism(
                     source.family_component(2),
                     target.family_component(2),
@@ -130,28 +128,19 @@ class InserterCategory(LimitSubcategory):
 
     @cached_method
     def forgetful(self) -> Functor:
-        return (
-            Fun(self, self.factor(0))
-            .Faithful()
-            .Isofibrations()(
-                lambda value: value.carrier(), lambda arrow: arrow.underlying_morphism()
-            )
-        )
+        return Fun(self, self.factor(0)).Faithful().Isofibrations()(lambda value: value.carrier(), lambda arrow: arrow.underlying_morphism())
 
     @cached_method
     def defining_transformation(self) -> NaturalTransformation:
         first, second = self.factor(1).comma_functors()
-        return Mor(Fun(self, first.codomain()))(
-            first * self.forgetful(), second * self.forgetful()
-        )(lambda value: value.structure())
+        return Mor(Fun(self, first.codomain()))(first * self.forgetful(), second * self.forgetful())(lambda value: value.structure())
 
 
 @cached_function(key=identity_key)
 def Inserter(
     first: Functor,
     second: Functor,
-    category_type: type[InserterCategory]
-    | partial[InserterCategory] = InserterCategory,
+    category_type: type[InserterCategory] | partial[InserterCategory] = InserterCategory,
 ) -> InserterCategory:
     """The inserter of ``first`` and ``second``, retained as the named construction ``category_type``."""
     assert first.domain() is second.domain() and first.codomain() is second.codomain()
@@ -159,9 +148,7 @@ def Inserter(
     comma = comma_objects(first, second)
     pairs = Cat().Products()((source, source))
     factors = pairs.product_factors()
-    diagonal = pairs.universal_morphism(
-        cone(factors, source, lambda vertex: Fun(source, source).one())
-    )
+    diagonal = pairs.universal_morphism(cone(factors, source, lambda vertex: Fun(source, source).one()))
     diagram = cospan_diagram(Cat(), diagonal, comma.pair_projection())
     return limit_of_categories(diagram, Cat().Pullbacks(), category_type)
 
@@ -176,18 +163,12 @@ class EquifierCategory(FullSubcategory):
     class MorphismType:
         pass
 
-    def __init__(
-        self, first: NaturalTransformation, second: NaturalTransformation
-    ) -> None:
-        assert (
-            first.domain() is second.domain() and first.codomain() is second.codomain()
-        )
+    def __init__(self, first: NaturalTransformation, second: NaturalTransformation) -> None:
+        assert first.domain() is second.domain() and first.codomain() is second.codomain()
         self._equations = (first, second)
         super().__init__(first.domain().domain())
 
-    def __call__(
-        self, value: CategoryOfCategories.ElementType
-    ) -> CategoryOfCategories.ElementType:
+    def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         if isinstance(self.ambient(), EquifierCategory):
             self.ambient()(value)
         assert value in self.ambient()
@@ -198,9 +179,7 @@ class EquifierCategory(FullSubcategory):
 
 
 @cached_function(key=identity_key)
-def Equifier(
-    first: NaturalTransformation, second: NaturalTransformation
-) -> EquifierCategory:
+def Equifier(first: NaturalTransformation, second: NaturalTransformation) -> EquifierCategory:
     return EquifierCategory(first, second)
 
 
@@ -285,10 +264,7 @@ def Magmas(structure: Functor | MonoidalStructuresCategory.ObjectType) -> MagmaC
     tensor = structure
     source = tensor.codomain()
     pairs = tensor.domain()
-    assert (
-        pairs.product_projection(0).codomain() is source
-        and pairs.product_projection(1).codomain() is source
-    )
+    assert pairs.product_projection(0).codomain() is source and pairs.product_projection(1).codomain() is source
     diagonal = pair_maps(Cat(), Fun(source, source).one(), Fun(source, source).one())
     return Inserter(
         tensor * diagonal,
@@ -298,9 +274,7 @@ def Magmas(structure: Functor | MonoidalStructuresCategory.ObjectType) -> MagmaC
 
 
 @cached_function(key=identity_key)
-def PointedMagmas(
-    tensor: Functor, unit: CategoryOfCategories.ElementType
-) -> InserterCategory:
+def PointedMagmas(tensor: Functor, unit: CategoryOfCategories.ElementType) -> InserterCategory:
     """An operation together with a map from the specified unit object."""
     magmas = Magmas(tensor)
     return Inserter(Fun(magmas, tensor.codomain()).constant(unit), magmas.forgetful())
@@ -358,9 +332,7 @@ class MonoidCategory(EquifierCategory):
         """The monoid morphism over a morphism of the ambient preserving operation and unit."""
         return _monoid_homomorphism(self.monoidal_structure(), source, target, arrow)
 
-    def __call__(
-        self, operation: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType
-    ) -> MonoidCategory.ObjectType:
+    def __call__(self, operation: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType) -> MonoidCategory.ObjectType:
         monoidal = self.monoidal_structure()
         magma = Magmas(monoidal).algebra(operation.codomain(), operation)
         pointed = PointedMagmas(monoidal.tensor(), monoidal.unit()).algebra(magma, unit)
@@ -384,46 +356,32 @@ def Monoids(
     pointed = PointedMagmas(tensor, structure.unit())
     forget = Magmas(tensor).forgetful() * pointed.forgetful()
 
-    def unital(
-        value: CategoryOfCategories.ElementType, left: bool
-    ) -> MorphismCategory.ObjectType:
+    def unital(value: CategoryOfCategories.ElementType, left: bool) -> MorphismCategory.ObjectType:
         carrier = value.carrier().carrier()
         operation, unit = value.carrier().operation(), value.structure()
         identity = Mor(base)(carrier, carrier).one()
-        return operation * tensor_morphism(
-            tensor, unit if left else identity, identity if left else unit
-        )
+        return operation * tensor_morphism(tensor, unit if left else identity, identity if left else unit)
 
-    def associative(
-        value: CategoryOfCategories.ElementType, left: bool
-    ) -> MorphismCategory.ObjectType:
+    def associative(value: CategoryOfCategories.ElementType, left: bool) -> MorphismCategory.ObjectType:
         carrier, operation = value.carrier().carrier(), value.carrier().operation()
         identity = Mor(base)(carrier, carrier).one()
         if left:
             return operation * tensor_morphism(tensor, operation, identity)
-        associator = structure.associator().component(
-            structure.associator().domain().domain()((carrier, carrier, carrier))
-        )
+        associator = structure.associator().component(structure.associator().domain().domain()((carrier, carrier, carrier)))
         return operation * tensor_morphism(tensor, identity, operation) * associator
 
     transformations = Mor(Fun(pointed, base))
     left_unit, right_unit = tensor_units(tensor, structure.unit())
     triples = structure.associator().domain().domain()
-    diagonal = triples.universal_morphism(
-        cone(triples.product_factors(), base, lambda vertex: Fun(base, base).one())
-    )
+    diagonal = triples.universal_morphism(cone(triples.product_factors(), base, lambda vertex: Fun(base, base).one()))
     cube = tensor_parentheses(tensor)[0] * diagonal * forget
     equations = (
         (
-            transformations(left_unit * forget, forget)(
-                lambda value: unital(value, True)
-            ),
+            transformations(left_unit * forget, forget)(lambda value: unital(value, True)),
             structure.left_unitor().whisker_right(forget),
         ),
         (
-            transformations(right_unit * forget, forget)(
-                lambda value: unital(value, False)
-            ),
+            transformations(right_unit * forget, forget)(lambda value: unital(value, False)),
             structure.right_unitor().whisker_right(forget),
         ),
         (
@@ -433,19 +391,11 @@ def Monoids(
     )
     result = pointed
     for first, second in equations[:-1]:
-        inclusion = (
-            Fun.full_subcategory_monomorphism(result, pointed)
-            if result is not pointed
-            else Fun(pointed, pointed).one()
-        )
-        result = Equifier(
-            first.whisker_right(inclusion), second.whisker_right(inclusion)
-        )
+        inclusion = Fun.full_subcategory_monomorphism(result, pointed) if result is not pointed else Fun(pointed, pointed).one()
+        result = Equifier(first.whisker_right(inclusion), second.whisker_right(inclusion))
     inclusion = Fun.full_subcategory_monomorphism(result, pointed)
     first, second = equations[-1]
-    return MonoidCategory(
-        first.whisker_right(inclusion), second.whisker_right(inclusion), structure
-    )
+    return MonoidCategory(first.whisker_right(inclusion), second.whisker_right(inclusion), structure)
 
 
 # -- group objects: monoid objects whose shear map is an isomorphism -----------------------------
@@ -460,9 +410,7 @@ def _shear(monoid: MonoidCategory.ObjectType) -> MorphismCategory.ObjectType:
     """
     operation = monoid.operation()
     base, carrier = operation.base_category(), operation.codomain()
-    return pair_maps(
-        base, binary_product_data(base, carrier, carrier).leg(0), operation
-    )
+    return pair_maps(base, binary_product_data(base, carrier, carrier).leg(0), operation)
 
 
 class GroupsCategory(PropertySubcategory):
@@ -477,18 +425,10 @@ class GroupsCategory(PropertySubcategory):
             operation = self.operation()
             base, carrier = operation.base_category(), operation.codomain()
             shear = _shear(self)
-            assert shear in Mor(base).Isomorphisms(), (
-                f"{self!r} is placed among group objects but its shear map is not an isomorphism"
-            )
+            assert shear in Mor(base).Isomorphisms(), f"{self!r} is placed among group objects but its shear map is not an isomorphism"
             unit_everywhere = self.unit_morphism() * terminal_map(base, carrier)
-            at_unit = pair_maps(
-                base, Mor(base)(carrier, carrier).one(), unit_everywhere
-            )
-            return (
-                binary_product_data(base, carrier, carrier).leg(1)
-                * shear.inverse()
-                * at_unit
-            )
+            at_unit = pair_maps(base, Mor(base)(carrier, carrier).one(), unit_everywhere)
+            return binary_product_data(base, carrier, carrier).leg(1) * shear.inverse() * at_unit
 
     class ElementType:
         pass
@@ -526,9 +466,7 @@ def _symbol_category(symbol: str) -> Category:
 
 
 @complete_constructions()
-def _named_copy(
-    neutral: Category, symbol: str, category_type: type[NamedOperationCategory]
-) -> NamedOperationCategory:
+def _named_copy(neutral: Category, symbol: str, category_type: type[NamedOperationCategory]) -> NamedOperationCategory:
     """``neutral × 1_s`` in ``Cat``, retained as ``category_type`` with its projections.
 
     Its first projection and the section defined by the product's universal property
@@ -541,9 +479,7 @@ def _named_copy(
         Fun(neutral, neutral).one(),
         Fun(neutral, copy.symbol_category()).constant(copy.symbol()),
     )
-    section_cone = cone(
-        diagram, neutral, lambda vertex: legs[sequence_position(vertex)]
-    )
+    section_cone = cone(diagram, neutral, lambda vertex: legs[sequence_position(vertex)])
     section = family.universal_data(diagram).lift(cones(diagram)(section_cone))
     Cat().retain_inverses(copy.product_projection(0), section)
     return copy
@@ -559,9 +495,7 @@ def _carrier_point(
     return base, base.point_morphism(comparison.on_object(point).point())
 
 
-def _apply(
-    point: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType
-) -> CategoryOfCategories.ElementType:
+def _apply(point: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> CategoryOfCategories.ElementType:
     """``f ∘ x``: an endomorphism of the carrier applied to a point, re-owned by the structured object."""
     base, x = _carrier_point(point)
     return point.parent().object_at(base.element_from_defining_morphism(arrow * x))
@@ -580,23 +514,15 @@ def _combine(
     "Named operations", the generalized-element diagram).
     """
     owner = first.parent()
-    assert second.parent() is owner, (
-        f"{first!r} and {second!r} are points of different objects"
-    )
+    assert second.parent() is owner, f"{first!r} and {second!r} are points of different objects"
     base, x = _carrier_point(first)
     _, y = _carrier_point(second)
-    return owner.object_at(
-        base.element_from_defining_morphism(operation * pair_maps(base, x, y))
-    )
+    return owner.object_at(base.element_from_defining_morphism(operation * pair_maps(base, x, y)))
 
 
-def _unit_point(
-    owner: CategoryOfCategories.ElementType, unit: MorphismCategory.ObjectType
-) -> CategoryOfCategories.ElementType:
+def _unit_point(owner: CategoryOfCategories.ElementType, unit: MorphismCategory.ObjectType) -> CategoryOfCategories.ElementType:
     """The point ``1 -> X`` a unit morphism selects when the monoidal unit is terminal, re-owned by the structured object."""
-    return owner.object_at(
-        unit.codomain().category().element_from_defining_morphism(unit)
-    )
+    return owner.object_at(unit.codomain().category().element_from_defining_morphism(unit))
 
 
 class NamedOperationCategory(LimitSubcategory):
@@ -619,9 +545,7 @@ class NamedOperationCategory(LimitSubcategory):
     class MorphismType:
         pass
 
-    Commutative = MagmaCategory.Commutative.inverse_image(
-        lambda category: category.product_projection(0)
-    )
+    Commutative = MagmaCategory.Commutative.inverse_image(lambda category: category.product_projection(0))
 
     def neutral_category(self) -> Category:
         return self.factor(0)
@@ -634,9 +558,7 @@ class NamedOperationCategory(LimitSubcategory):
         tag = self.symbol_category()
         return tag(next(iter(tag.index_set())))
 
-    def renamed(
-        self, neutral_object: CategoryOfCategories.ElementType
-    ) -> NamedOperationCategory.ObjectType:
+    def renamed(self, neutral_object: CategoryOfCategories.ElementType) -> NamedOperationCategory.ObjectType:
         """The object of this category over an object of the neutral one."""
         return self.product_projection(0).inverse().on_object(neutral_object)
 
@@ -660,32 +582,20 @@ class NamedOperationCategory(LimitSubcategory):
     @cached_method
     def to_named_magmas(self) -> Functor:
         """``(M, s) ↦ (M's magma, s)``: restriction along the inclusion of presentations ``{s} ⊂ {s, e}``."""
-        return (
-            self.named_magmas().product_projection(0).inverse()
-            * self.neutral_category().to_magmas()
-            * self.product_projection(0)
-        )
+        return self.named_magmas().product_projection(0).inverse() * self.neutral_category().to_magmas() * self.product_projection(0)
 
     def named_magmas(self) -> NamedOperationCategory:
         """The magma copy under the same symbol this category restricts to."""
-        raise AssertionError(
-            f"{self!r} names no magma copy its structure functor restricts to"
-        )
+        raise AssertionError(f"{self!r} names no magma copy its structure functor restricts to")
 
     @cached_method
     def to_named_monoids(self) -> Functor:
         """``(G, s) ↦ (G, s)``: restriction along the inclusion of presentations ``{s, e} ⊂ {s, e, ι}``; a group object is its monoid object."""
-        return (
-            self.named_monoids().product_projection(0).inverse()
-            * self.neutral_category().subcategory_monomorphism()
-            * self.product_projection(0)
-        )
+        return self.named_monoids().product_projection(0).inverse() * self.neutral_category().subcategory_monomorphism() * self.product_projection(0)
 
     def named_monoids(self) -> NamedOperationCategory:
         """The monoid copy under the same symbol this category restricts to."""
-        raise AssertionError(
-            f"{self!r} names no monoid copy its structure functor restricts to"
-        )
+        raise AssertionError(f"{self!r} names no monoid copy its structure functor restricts to")
 
 
 class AdditiveMagmasCategory(NamedOperationCategory):
@@ -699,9 +609,7 @@ class AdditiveMagmasCategory(NamedOperationCategory):
             return self._additive_magma.operation()
 
     class ElementType:
-        def __add__(
-            self, other: CategoryOfCategories.ElementType
-        ) -> CategoryOfCategories.ElementType:
+        def __add__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             return _combine(self, other, self.parent().addition())
 
     class MorphismType:
@@ -722,9 +630,7 @@ class MultiplicativeMagmasCategory(NamedOperationCategory):
             return self._multiplicative_magma.operation()
 
     class ElementType:
-        def __mul__(
-            self, other: CategoryOfCategories.ElementType
-        ) -> CategoryOfCategories.ElementType:
+        def __mul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             return _combine(self, other, self.parent().multiplication())
 
     class MorphismType:
@@ -746,9 +652,7 @@ class NamedMonoidsCategory(NamedOperationCategory):
     class MorphismType:
         pass
 
-    Group = MonoidCategory.Group.inverse_image(
-        lambda category: category.product_projection(0)
-    )
+    Group = MonoidCategory.Group.inverse_image(lambda category: category.product_projection(0))
 
 
 class AdditiveMonoidsCategory(NamedMonoidsCategory):
@@ -818,9 +722,7 @@ class AdditiveGroupsCategory(NamedOperationCategory):
         def __neg__(self) -> CategoryOfCategories.ElementType:
             return _apply(self, self.parent().negation())
 
-        def __sub__(
-            self, other: CategoryOfCategories.ElementType
-        ) -> CategoryOfCategories.ElementType:
+        def __sub__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             return self + (-other)
 
     class MorphismType:
@@ -980,9 +882,7 @@ class MonoidPairsCategory(LimitSubcategory):
                 arrow,
             ),
         )
-        return self.construct_morphism(
-            source, target, (additive_map, multiplicative_map, arrow)
-        )
+        return self.construct_morphism(source, target, (additive_map, multiplicative_map, arrow))
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (
@@ -1020,23 +920,17 @@ class SemiringCategory(EquifierCategory):
     @cached_method
     def to_additive(self) -> Functor:
         """The retained leg to ``AdditiveMonoids(C_x).Commutative()``."""
-        return self._pairs.to_additive() * Fun.full_subcategory_monomorphism(
-            self, self._pairs
-        )
+        return self._pairs.to_additive() * Fun.full_subcategory_monomorphism(self, self._pairs)
 
     @cached_method
     def to_multiplicative(self) -> Functor:
         """The retained leg to ``MultiplicativeMonoids(C_x)``."""
-        return self._pairs.to_multiplicative() * Fun.full_subcategory_monomorphism(
-            self, self._pairs
-        )
+        return self._pairs.to_multiplicative() * Fun.full_subcategory_monomorphism(self, self._pairs)
 
     @cached_method
     def to_carrier(self) -> Functor:
         """The retained carrier functor of a semiring."""
-        return self._pairs.to_carrier() * Fun.full_subcategory_monomorphism(
-            self, self._pairs
-        )
+        return self._pairs.to_carrier() * Fun.full_subcategory_monomorphism(self, self._pairs)
 
     def homomorphism(
         self,
@@ -1056,15 +950,9 @@ class SemiringCategory(EquifierCategory):
     ) -> SemiringCategory.ObjectType:
         monoidal = self.monoidal_structure()
         additive = AdditiveMonoids(monoidal).renamed(Monoids(monoidal)(addition, zero))
-        assert additive in AdditiveMonoids(monoidal).Commutative(), (
-            f"{addition!r} is not commutative"
-        )
-        multiplicative = MultiplicativeMonoids(monoidal).renamed(
-            Monoids(monoidal)(multiplication, one)
-        )
-        return super().__call__(
-            self._pairs((additive, multiplicative, addition.codomain()))
-        )
+        assert additive in AdditiveMonoids(monoidal).Commutative(), f"{addition!r} is not commutative"
+        multiplicative = MultiplicativeMonoids(monoidal).renamed(Monoids(monoidal)(multiplication, one))
+        return super().__call__(self._pairs((additive, multiplicative, addition.codomain())))
 
 
 @cached_function(key=identity_key)
@@ -1076,14 +964,8 @@ def Semirings(base: Category) -> SemiringCategory:
         AdditiveMonoids(monoidal).Commutative(),
         MultiplicativeMonoids(monoidal),
     )
-    additive_carrier = (
-        AdditiveMagmas(monoidal).to_carrier()
-        * AdditiveMonoids(monoidal).to_named_magmas()
-        * additive.subcategory_monomorphism()
-    )
-    multiplicative_carrier = (
-        MultiplicativeMagmas(monoidal).to_carrier() * multiplicative.to_named_magmas()
-    )
+    additive_carrier = AdditiveMagmas(monoidal).to_carrier() * AdditiveMonoids(monoidal).to_named_magmas() * additive.subcategory_monomorphism()
+    multiplicative_carrier = MultiplicativeMagmas(monoidal).to_carrier() * multiplicative.to_named_magmas()
     pairs = limit_of_categories(
         cospan_diagram(Cat(), additive_carrier, multiplicative_carrier),
         Cat().Pullbacks(),
@@ -1104,9 +986,7 @@ def Semirings(base: Category) -> SemiringCategory:
         zero = renaming.on_object(value.family_component(0)).unit_morphism()
         return x, alpha, mu, zero * terminal_map(base, x)
 
-    def left_distributive(
-        value: CategoryOfCategories.ElementType, law: bool
-    ) -> MorphismCategory.ObjectType:
+    def left_distributive(value: CategoryOfCategories.ElementType, law: bool) -> MorphismCategory.ObjectType:
         """``μ ∘ (1 × α)`` and ``α ∘ ⟨μ ∘ ⟨x, y⟩, μ ∘ ⟨x, z⟩⟩`` on ``X × (X × X)``."""
         x, alpha, mu, _ = operations(value)
         if law:
@@ -1124,9 +1004,7 @@ def Semirings(base: Category) -> SemiringCategory:
             mu * pair_maps(base, first, third),
         )
 
-    def right_distributive(
-        value: CategoryOfCategories.ElementType, law: bool
-    ) -> MorphismCategory.ObjectType:
+    def right_distributive(value: CategoryOfCategories.ElementType, law: bool) -> MorphismCategory.ObjectType:
         """``μ ∘ (α × 1)`` and ``α ∘ ⟨μ ∘ ⟨x, z⟩, μ ∘ ⟨y, z⟩⟩`` on ``(X × X) × X``."""
         x, alpha, mu, _ = operations(value)
         if law:
@@ -1144,9 +1022,7 @@ def Semirings(base: Category) -> SemiringCategory:
             mu * pair_maps(base, second, third),
         )
 
-    def absorbing(
-        value: CategoryOfCategories.ElementType, left: bool
-    ) -> MorphismCategory.ObjectType:
+    def absorbing(value: CategoryOfCategories.ElementType, left: bool) -> MorphismCategory.ObjectType:
         """``μ ∘ ⟨0 ∘ !, 1⟩`` and ``μ ∘ ⟨1, 0 ∘ !⟩`` on ``X``; each must equal ``0 ∘ !``."""
         x, _, mu, zero_everywhere = operations(value)
         identity = Mor(base)(x, x).one()
@@ -1158,26 +1034,16 @@ def Semirings(base: Category) -> SemiringCategory:
 
     transformations = Mor(Fun(pairs, base))
     triples = monoidal.associator().domain().domain()
-    diagonal = triples.universal_morphism(
-        cone(triples.product_factors(), base, lambda vertex: Fun(base, base).one())
-    )
+    diagonal = triples.universal_morphism(cone(triples.product_factors(), base, lambda vertex: Fun(base, base).one()))
     left, right = (parentheses * diagonal for parentheses in tensor_parentheses(tensor))
     equations = (
         (
-            transformations(right * carrier, carrier)(
-                lambda value: left_distributive(value, True)
-            ),
-            transformations(right * carrier, carrier)(
-                lambda value: left_distributive(value, False)
-            ),
+            transformations(right * carrier, carrier)(lambda value: left_distributive(value, True)),
+            transformations(right * carrier, carrier)(lambda value: left_distributive(value, False)),
         ),
         (
-            transformations(left * carrier, carrier)(
-                lambda value: right_distributive(value, True)
-            ),
-            transformations(left * carrier, carrier)(
-                lambda value: right_distributive(value, False)
-            ),
+            transformations(left * carrier, carrier)(lambda value: right_distributive(value, True)),
+            transformations(left * carrier, carrier)(lambda value: right_distributive(value, False)),
         ),
         (
             transformations(carrier, carrier)(lambda value: absorbing(value, True)),
@@ -1190,19 +1056,11 @@ def Semirings(base: Category) -> SemiringCategory:
     )
     result = pairs
     for first, second in equations[:-1]:
-        inclusion = (
-            Fun.full_subcategory_monomorphism(result, pairs)
-            if result is not pairs
-            else Fun(pairs, pairs).one()
-        )
-        result = Equifier(
-            first.whisker_right(inclusion), second.whisker_right(inclusion)
-        )
+        inclusion = Fun.full_subcategory_monomorphism(result, pairs) if result is not pairs else Fun(pairs, pairs).one()
+        result = Equifier(first.whisker_right(inclusion), second.whisker_right(inclusion))
     inclusion = Fun.full_subcategory_monomorphism(result, pairs)
     first, second = equations[-1]
-    return SemiringCategory(
-        first.whisker_right(inclusion), second.whisker_right(inclusion), monoidal, pairs
-    )
+    return SemiringCategory(first.whisker_right(inclusion), second.whisker_right(inclusion), monoidal, pairs)
 
 
 # -- ring objects: a semiring whose additive monoid is a group --------------------------------
@@ -1216,12 +1074,8 @@ def _monoid_homomorphism(
 ) -> MorphismCategory.ObjectType:
     """The monoid morphism over a carrier map, through the magma and pointed-magma constructors."""
     to_magmas = Monoids(monoidal).to_magmas()
-    magma_map = Magmas(monoidal).homomorphism(
-        to_magmas.on_object(source), to_magmas.on_object(target), arrow
-    )
-    return PointedMagmas(monoidal.tensor(), monoidal.unit()).homomorphism(
-        source, target, magma_map
-    )
+    magma_map = Magmas(monoidal).homomorphism(to_magmas.on_object(source), to_magmas.on_object(target), arrow)
+    return PointedMagmas(monoidal.tensor(), monoidal.unit()).homomorphism(source, target, magma_map)
 
 
 class RingCategory(LimitSubcategory):
@@ -1242,9 +1096,7 @@ class RingCategory(LimitSubcategory):
     class MorphismType:
         pass
 
-    def __init__(
-        self, diagram: Functor, monoidal: MonoidalStructuresCategory.ObjectType
-    ) -> None:
+    def __init__(self, diagram: Functor, monoidal: MonoidalStructuresCategory.ObjectType) -> None:
         self._monoidal = monoidal
         super().__init__(diagram)
 
@@ -1298,9 +1150,7 @@ class RingCategory(LimitSubcategory):
         semiring = semirings(addition, zero, multiplication, one)
         additive = semirings.to_additive().on_object(semiring)
         monoid = AdditiveMonoids(monoidal).product_projection(0).on_object(additive)
-        assert monoid in Groups(monoidal), (
-            f"the additive monoid of {addition!r} is not a group"
-        )
+        assert monoid in Groups(monoidal), f"the additive monoid of {addition!r} is not a group"
         group = AdditiveGroups(monoidal).renamed(monoid)
         assert group in groups
         return self._ring(semiring, group, additive)
@@ -1315,9 +1165,7 @@ class RingCategory(LimitSubcategory):
         """The retained family ``(semiring, group, additive monoid)`` over the walking cospan; the constructor above owns ``__call__``."""
         family = (semiring, group, additive)
         for position, member in enumerate(family):
-            assert member in self.factor(position), (
-                f"{member!r} is not an object of {self.factor(position)!r}"
-            )
+            assert member in self.factor(position), f"{member!r} is not an object of {self.factor(position)!r}"
         return self.from_components(lambda vertex: family[sequence_position(vertex)])
 
     def homomorphism(
@@ -1329,9 +1177,7 @@ class RingCategory(LimitSubcategory):
         """The ring morphism over a carrier map ``f: R -> S`` preserving addition, zero, multiplication, and one."""
         monoidal = self.monoidal_structure()
         semirings, additive_groups = self.factor(0), AdditiveGroups(monoidal)
-        semiring_map = semirings.homomorphism(
-            source.family_component(0), target.family_component(0), arrow
-        )
+        semiring_map = semirings.homomorphism(source.family_component(0), target.family_component(0), arrow)
         renaming = additive_groups.product_projection(0)
         group_source, group_target = (
             source.family_component(1),
@@ -1369,14 +1215,8 @@ class RingCategory(LimitSubcategory):
         semiring = self.to_semiring().on_object(ring)
         additive = semirings.to_additive().on_object(semiring)
         multiplicative = semirings.to_multiplicative().on_object(semiring)
-        additive_monoid = (
-            AdditiveMonoids(monoidal).product_projection(0).on_object(additive)
-        )
-        multiplicative_monoid = (
-            MultiplicativeMonoids(monoidal)
-            .product_projection(0)
-            .on_object(multiplicative)
-        )
+        additive_monoid = AdditiveMonoids(monoidal).product_projection(0).on_object(additive)
+        multiplicative_monoid = MultiplicativeMonoids(monoidal).product_projection(0).on_object(multiplicative)
         carrier = additive_monoid.operation().codomain()
         product = binary_product_data(base, carrier, carrier)
         swap = pair_maps(base, product.leg(1), product.leg(0))
@@ -1397,9 +1237,7 @@ class RingCategory(LimitSubcategory):
         def on_morphism(arrow: RingCategory.MorphismType) -> RingCategory.MorphismType:
             semiring_map = self.to_semiring().on_morphism(arrow)
             carrier_map = semiring_map.family_component(2)
-            return self.homomorphism(
-                on_object(arrow.domain()), on_object(arrow.codomain()), carrier_map
-            )
+            return self.homomorphism(on_object(arrow.domain()), on_object(arrow.codomain()), carrier_map)
 
         return Fun(self, self)(on_object, on_morphism)
 
@@ -1409,13 +1247,8 @@ def Rings(base: Category) -> RingCategory:
     """Ring objects of a category with finite products: the pullback of its semirings and its commutative additive groups over its additive monoids."""
     monoidal = Cartesian(base)
     semirings, groups = Semirings(base), AdditiveGroups(monoidal).Commutative()
-    semiring_leg = (
-        AdditiveMonoids(monoidal).Commutative().subcategory_monomorphism()
-        * semirings.to_additive()
-    )
-    group_leg = (
-        AdditiveGroups(monoidal).to_named_monoids() * groups.subcategory_monomorphism()
-    )
+    semiring_leg = AdditiveMonoids(monoidal).Commutative().subcategory_monomorphism() * semirings.to_additive()
+    group_leg = AdditiveGroups(monoidal).to_named_monoids() * groups.subcategory_monomorphism()
     return limit_of_categories(
         cospan_diagram(Cat(), semiring_leg, group_leg),
         Cat().Pullbacks(),
@@ -1437,10 +1270,7 @@ def EilenbergMoore(
     base = endofunctor.domain()
     assert endofunctor.codomain() is base
     assert unit.domain() is Fun(base, base).one() and unit.codomain() is endofunctor
-    assert (
-        multiplication.domain() is endofunctor * endofunctor
-        and multiplication.codomain() is endofunctor
-    )
+    assert multiplication.domain() is endofunctor * endofunctor and multiplication.codomain() is endofunctor
     algebras = EndofunctorAlgebras(endofunctor)
     forget = algebras.forgetful()
     action = algebras.defining_transformation()

@@ -65,25 +65,19 @@ def install_functor_declaration_readers(
 
 def traces_placement(functor: MorphismOfCategory) -> bool:
     """Whether placement follows ``functor``: it is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036)."""
-    assert _traces_placement is not None, (
-        "cat_kernel installs the functor declaration readers before any category is declared"
-    )
+    assert _traces_placement is not None, "cat_kernel installs the functor declaration readers before any category is declared"
     return _traces_placement(functor)
 
 
 def traces_inheritance(functor: MorphismOfCategory) -> bool:
     """Whether inheritance follows ``functor``: it is declared an isofibration (D164 to D167)."""
-    assert _traces_inheritance is not None, (
-        "cat_kernel installs the functor declaration readers before any category is declared"
-    )
+    assert _traces_inheritance is not None, "cat_kernel installs the functor declaration readers before any category is declared"
     return _traces_inheritance(functor)
 
 
 def declares_point(functor: MorphismOfCategory) -> bool:
     """Whether ``functor`` is declared a point ``* -> C``, the arrow that places its object in ``C`` (D154, D162)."""
-    assert _declares_point is not None, (
-        "cat_kernel installs the functor declaration readers before any category is declared"
-    )
+    assert _declares_point is not None, "cat_kernel installs the functor declaration readers before any category is declared"
     return _declares_point(functor)
 
 
@@ -143,10 +137,7 @@ def is_placed(candidate: RoleCandidate, category: Category) -> bool:
     # narrowing base, so recognize it directly without traversing the category graph on
     # every placement query.
     placement = category_of(candidate, role)
-    if (
-        role in (Role.OBJECT, Role.MORPHISM)
-        and placement.narrowing_base() is category
-    ):
+    if role in (Role.OBJECT, Role.MORPHISM) and placement.narrowing_base() is category:
         return True
     target = compiler.node(category, Role.OBJECT)
     placements = [_placement_node(candidate)]
@@ -157,11 +148,7 @@ def is_placed(candidate: RoleCandidate, category: Category) -> bool:
         identity = retained_object_input(candidate).identity
         if identity.universe is not None:
             placements.append(compiler.node(identity.universe, Role.OBJECT))
-    return any(
-        compiler.same_node(target, found)
-        for placement in placements
-        for found in _reached_placements(placement)
-    )
+    return any(compiler.same_node(target, found) for placement in placements for found in _reached_placements(placement))
 
 
 def _narrowing_roots(category: Category) -> tuple[Category, ...] | None:
@@ -185,16 +172,12 @@ def _contained_by_roots(inner: Category, outer: Category) -> bool:
     outer_roots = _narrowing_roots(outer)
     if outer_roots is None:
         return False
-    return is_subcategory(inner, outer.narrowing_base()) and all(
-        is_subcategory(inner, root) for root in outer_roots
-    )
+    return is_subcategory(inner, outer.narrowing_base()) and all(is_subcategory(inner, root) for root in outer_roots)
 
 
 def is_subcategory(inner: Category, outer: Category) -> bool:
     """Whether ``inner`` is ``outer`` or a declared subcategory of it, through placement-tracing functors."""
-    return any(
-        found is outer for found in _reached_subcategories(inner)
-    ) or _contained_by_roots(inner, outer)
+    return any(found is outer for found in _reached_subcategories(inner)) or _contained_by_roots(inner, outer)
 
 
 def common_ancestor(first: Category, second: Category) -> Category | None:
@@ -210,26 +193,16 @@ def common_ancestor(first: Category, second: Category) -> Category | None:
     represented common container.
     """
     common = tuple(
-        reached
-        for reached in (*_reached_subcategories(first), *_reached_subcategories(second))
-        if is_subcategory(first, reached) and is_subcategory(second, reached)
+        reached for reached in (*_reached_subcategories(first), *_reached_subcategories(second)) if is_subcategory(first, reached) and is_subcategory(second, reached)
     )
     narrowest = next(
-        (
-            candidate
-            for candidate in common
-            if all(is_subcategory(candidate, other) for other in common)
-        ),
+        (candidate for candidate in common if all(is_subcategory(candidate, other) for other in common)),
         None,
     )
     if narrowest is not None:
         return narrowest
     ambient = next(
-        (
-            candidate
-            for candidate in common
-            if all(is_subcategory(other, candidate) for other in common)
-        ),
+        (candidate for candidate in common if all(is_subcategory(other, candidate) for other in common)),
         None,
     )
     return None if ambient is None else ambient.intersection(common)
@@ -287,13 +260,9 @@ def _join(current: Category, target: Category) -> Category:
             f"{current!r} and {target!r} have no common placement: incomparable non-full bases cannot be intersected"
         )
         common_base = common_ancestor(current_base, target_base)
-        assert common_base is not None, (
-            f"{current!r} and {target!r} have no common placement: {current_base!r} and {target_base!r} are incomparable"
-        )
+        assert common_base is not None, f"{current!r} and {target!r} have no common placement: {current_base!r} and {target_base!r} are incomparable"
         current_roots = (*current_roots, current_base)
-        return common_base.intersection(
-            (*current_roots, target_base, *target.narrowing_roots())
-        )
+        return common_base.intersection((*current_roots, target_base, *target.narrowing_roots()))
     return base.intersection((*current_roots, *target.narrowing_roots()))
 
 
@@ -302,8 +271,6 @@ def refine[Value: ObjectOfCategory](value: Value, target: Category) -> Value:
     if is_placed(value, target):
         return value
     role = role_of(value)
-    assert role in (Role.OBJECT, Role.MORPHISM), (
-        f"{value!r} is not refinable: only objects and morphisms are placed"
-    )
+    assert role in (Role.OBJECT, Role.MORPHISM), f"{value!r} is not refinable: only objects and morphisms are placed"
     place(value, _join(category_of(value, role), target))
     return value

@@ -58,15 +58,11 @@ class ActionPairsCategory(LimitSubcategory):
 
     @cached_method
     def to_left(self) -> Functor:
-        return Fun(self, self.factor(0)).Faithful().Isofibrations()(
-            lambda value: value.family_component(0), lambda arrow: arrow.family_component(0)
-        )
+        return Fun(self, self.factor(0)).Faithful().Isofibrations()(lambda value: value.family_component(0), lambda arrow: arrow.family_component(0))
 
     @cached_method
     def to_right(self) -> Functor:
-        return Fun(self, self.factor(1)).Faithful().Isofibrations()(
-            lambda value: value.family_component(1), lambda arrow: arrow.family_component(1)
-        )
+        return Fun(self, self.factor(1)).Faithful().Isofibrations()(lambda value: value.family_component(1), lambda arrow: arrow.family_component(1))
 
     def homomorphism(
         self,
@@ -154,12 +150,8 @@ class BimoduleCategory(EquifierCategory):
         right_action: MorphismCategory.ObjectType,
     ) -> BimoduleCategory.ObjectType:
         """The bimodule with these two actions; their common codomain is the carrier."""
-        assert left_action.codomain() is right_action.codomain(), (
-            f"{left_action!r} and {right_action!r} do not act on one carrier"
-        )
-        return super().__call__(
-            self._pairs((self._left(left_action), self._right(right_action), left_action.codomain()))
-        )
+        assert left_action.codomain() is right_action.codomain(), f"{left_action!r} and {right_action!r} do not act on one carrier"
+        return super().__call__(self._pairs((self._left(left_action), self._right(right_action), left_action.codomain())))
 
     def homomorphism(
         self,
@@ -189,9 +181,7 @@ def Bimodules(
         assert scalars in monoids, f"{scalars!r} is not a monoid object of {monoidal.underlying_category()!r}"
     opposite = Monoids(reverse)(right_scalars.operation(), right_scalars.unit_morphism())
     left, right = Modules(left_scalars, SelfAction(monoidal)), Modules(opposite, SelfAction(reverse))
-    pairs = limit_of_categories(
-        cospan_diagram(Cat(), left.forgetful(), right.forgetful()), Cat().Pullbacks(), ActionPairsCategory
-    )
+    pairs = limit_of_categories(cospan_diagram(Cat(), left.forgetful(), right.forgetful()), Cat().Pullbacks(), ActionPairsCategory)
     base, tensor = monoidal.underlying_category(), monoidal.tensor()
     carrier = left.forgetful() * pairs.to_left()
     scalars, co_scalars = left.carrier(), right.carrier()

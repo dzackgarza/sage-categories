@@ -187,10 +187,11 @@ def _raw_coordinates_from_public(value: object, public_coordinates) -> tuple[int
 
 
 def _native_matrix_from_public(value: object) -> GapElement:
-    from sage_categories.algebra.abelian import linear_form
+    from sage_categories.algebra.abelian import presentation
 
-    form = linear_form(value)
     source, target = value.domain(), value.codomain()
+    source_form = presentation(source)
+    target_form = presentation(target)
     native_source = _native_object(source)
     native_target = _native_object(target)
     source_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(native_source)))
@@ -199,8 +200,8 @@ def _native_matrix_from_public(value: object) -> GapElement:
     for position in range(source_rank):
         raw_source = [0] * source_rank
         raw_source[position] = 1
-        public_source = vector(ZZ, _public_coordinates_from_raw(source, raw_source))
-        public_target = public_source * form.matrix
+        public_source = source_form.element(_public_coordinates_from_raw(source, raw_source))
+        public_target = target_form.coordinates(value(source.point(public_source)).datum())
         rows.append(_raw_coordinates_from_public(target, public_target))
     return _homalg_matrix(tuple(rows), target_rank)
 
@@ -213,6 +214,7 @@ def _native_morphism(value: object) -> GapElement:
         _native_matrix_from_public(value),
         _native_object(value.codomain()),
     )
+    assert bool(libgap.IsWellDefined(native)), f"CAP rejected the public morphism {value!r}"
     retain_presented_native_morphism(value, native)
     return native
 

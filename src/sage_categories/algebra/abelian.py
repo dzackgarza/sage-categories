@@ -579,17 +579,6 @@ def indexed_free_abelian_coproduct(
     return abelian.Colimits(shape).with_universal_data(diagram, apex, selected, mediator)
 
 
-def linear_form(arrow: MorphismCategory.ObjectType) -> LinearForm:
-    """The integer matrix on Smith generators of a homomorphism of ``Ab``, read off its carrier map.
-
-    ``Sets`` composes, pairs, and projects these matrices itself, so a composite of maps
-    this leaf built carries the composite matrix and needs no separate record here.
-    """
-    form = Sets.map_form(_point_map(arrow))
-    assert isinstance(form, LinearForm), f"{arrow!r} carries no matrix on Smith generators"
-    return form
-
-
 def _generators(form: Presentation) -> tuple[Hashable, ...]:
     return tuple(form.element(tuple(int(i == k) for k in range(form.rank()))) for i in range(form.rank()))
 

@@ -811,6 +811,8 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         return apex
 
     def has_construction(self, diagram: Functor) -> bool:
+        if diagram in self._presentations:
+            return True
         dual_diagram = self._dual_diagram(diagram)
         return self._dual_limits.has_construction(self._dual_limits.lowered(dual_diagram))
 
@@ -841,7 +843,18 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         return self._presentations[diagram]
 
     def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
-        return tuple(diagram for dual_diagram in self._dual_limits.presenting_diagrams(constructed) for diagram in self._original_diagrams(dual_diagram))
+        direct = tuple(
+            diagram
+            for diagram, presentation in self._presentations.items()
+            if presentation.apex() is constructed
+        )
+        dual = tuple(
+            diagram
+            for dual_diagram in self._dual_limits.presenting_diagrams(constructed)
+            for diagram in self._original_diagrams(dual_diagram)
+            if diagram not in direct
+        )
+        return (*direct, *dual)
 
     def presenting_diagram(self, constructed: CategoryOfCategories.ElementType) -> Functor:
         diagrams = self.presenting_diagrams(constructed)
@@ -852,8 +865,10 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         return self.universal_data(self.presenting_diagram(constructed))
 
     def __call__(self, diagram: Functor) -> CategoryOfCategories.ElementType:
-        """Construct the chosen colimit as the dual limit in ``C.op()``."""
+        """Construct the chosen colimit from supplied public data or the dual limit fallback."""
         self.accepts(diagram)
+        if diagram in self._presentations:
+            return self._associate(self._presentations[diagram])
         dual_diagram = self._dual_diagram(diagram)
         if not self._dual_limits.has_construction(self._dual_limits.lowered(dual_diagram)):
             self._dual_limits(dual_diagram)
@@ -880,15 +895,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         self._presentations[diagram] = colimit_cocones(diagram).with_universal_data(
             colimiting_cocone, mediator
         )
-        dual_diagram = self._dual_diagram(diagram)
-        self._dual_limits.with_universal_data(
-            dual_diagram,
-            self.ambient().op()(apex),
-            colimiting_cocone.op(),
-            lambda candidate: opposite_morphism(mediator(candidate.op())),
-        )
-        presentation = self._dual_limits.universal_data(self._dual_limits.lowered(dual_diagram))
-        return self._associate(presentation)
+        return self._associate(self._presentations[diagram])
 
     def colimit_functor(self) -> Functor:
         """``Colim_I: Fun(I, C) -> C``, derived from the opposite limit functor."""

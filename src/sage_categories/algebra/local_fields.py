@@ -22,6 +22,7 @@ from sage_categories.cat.structured_objects import Rings
 __all__ = [
     "ExactLocalFieldPresentation",
     "ExactLocalValue",
+    "NoIntegralSubring",
     "exact_padic_field",
     "exact_rational_field",
     "exact_real_field",
@@ -145,12 +146,22 @@ class ExactLocalValue:
 
 
 @dataclass(frozen=True, eq=False, slots=True)
+class NoIntegralSubring:
+    """This local-field presentation selects no distinguished integral subring."""
+
+    place: str
+
+
+type IntegralSubring = CategoryOfCategories.ElementType | NoIntegralSubring
+
+
+@dataclass(frozen=True, eq=False, slots=True)
 class ExactLocalFieldPresentation:
     """One exact field carrier and, for p-adic places, its certified valuation subring."""
 
     place: str | int
     ring: CategoryOfCategories.ElementType
-    integers: CategoryOfCategories.ElementType | None
+    integers: IntegralSubring
 
     def value(self, datum: Fraction | int) -> CategoryOfCategories.ElementType:
         carrier = Rings(Sets).forgetful().on_object(self.ring)
@@ -182,12 +193,13 @@ def _exact_field(place: str | int) -> ExactLocalFieldPresentation:
         zero,
         one,
     )
-    integers = None
     match place:
         case int():
-            integers = Sets.from_membership(lambda value: true if isinstance(value, ExactLocalValue) and value.place == place and value.is_integral() is True else false)
-        case _:
-            pass
+            integers: IntegralSubring = Sets.from_membership(
+                lambda value: true if isinstance(value, ExactLocalValue) and value.place == place and value.is_integral() is True else false
+            )
+        case str():
+            integers = NoIntegralSubring(place)
     return ExactLocalFieldPresentation(place, ring, integers)
 
 

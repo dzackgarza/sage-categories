@@ -72,6 +72,7 @@ from sage_categories.algebra.indexed_modules import (
 from sage_categories.algebra.local_fields import (
     ExactLocalFieldPresentation,
     ExactLocalValue,
+    NoIntegralSubring,
     exact_padic_field,
     exact_rational_field,
     exact_real_field,
@@ -91,6 +92,7 @@ __all__ = [
     "AdeleValue",
     "ExactLocalFieldPresentation",
     "ExactLocalValue",
+    "NoIntegralSubring",
     "GroupPresentation",
     "IntegerModulePresentation",
     "PrimeIdeal",

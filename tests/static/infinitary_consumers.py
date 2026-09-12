@@ -12,6 +12,7 @@ from sage_categories.algebra.adeles import (
 from sage_categories.algebra.local_fields import (
     ExactLocalFieldPresentation,
     ExactLocalValue,
+    NoIntegralSubring,
     exact_padic_field,
     exact_rational_field,
     exact_real_field,
@@ -53,6 +54,9 @@ def local_field_types(field: ExactLocalFieldPresentation) -> None:
     assert_type(field.value(Fraction(1, 5)), CategoryOfCategories.ElementType)
     assert_type(ExactLocalValue.rational(5, Fraction(1, 5)), ExactLocalValue)
     assert_type(field.embed_rational(exact_rational_field().ring), MorphismCategory.ObjectType)
+    assert_type(exact_rational_field().integers, CategoryOfCategories.ElementType | NoIntegralSubring)
+    assert_type(exact_real_field().integers, CategoryOfCategories.ElementType | NoIntegralSubring)
+    assert_type(exact_padic_field(5).integers, CategoryOfCategories.ElementType | NoIntegralSubring)
 
 
 def adelic_types(

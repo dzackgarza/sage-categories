@@ -1341,9 +1341,12 @@ def implement_category(
     for role in Role:
         declaration = vars(implementation)[role.value]
         compiled = category.role_class(role)
-        if not issubclass(compiled, declaration):
-            with building_role_classes():
-                compiled.__bases__ = (declaration, *compiled.__bases__)
+        # Exact-category augmentation adds the written body to the already compiled
+        # role surface.  Do not splice the declaration into ``compiled.__bases__``:
+        # descendants already inherit this compiled class through the runtime graph,
+        # and repeating the declaration as a Python base creates a second ordering
+        # constraint that can make a later fixed-endpoint narrowing unlinearizable.
+        _install_written_body(compiled, declaration)
         runtime = _node_runtimes[role][category]
         local_initializer = vars(declaration).get("__init__")
         if local_initializer is None:

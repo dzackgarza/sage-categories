@@ -43,6 +43,28 @@ def _list_bucket[Key, Value](mapping: dict[Key, list[Value]], key: Key) -> list[
             return bucket
 
 
+def _dotted_name(expression: ast.expr) -> str | None:
+    """The dotted spelling of a name/attribute expression, when it has one."""
+    if isinstance(expression, ast.Name):
+        return expression.id
+    if isinstance(expression, ast.Attribute):
+        prefix = _dotted_name(expression.value)
+        if prefix is not None:
+            return f"{prefix}.{expression.attr}"
+    return None
+
+
+def _base_name(expression: ast.expr) -> str | None:
+    """The final declaration name of a possibly parameterized base expression."""
+    while isinstance(expression, ast.Subscript):
+        expression = expression.value
+    if isinstance(expression, ast.Name):
+        return expression.id
+    if isinstance(expression, ast.Attribute):
+        return expression.attr
+    return None
+
+
 def generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> tuple[Path, ...]:
     """Write the compiler-derived stub projection for ``package`` in repository format."""
     sage_bin = os.environ.get("SAGE_BIN")
@@ -428,15 +450,6 @@ def _publicize_private_type_parameters(tree: ast.Module) -> None:
 def _unquote_stub_annotations(tree: ast.Module) -> None:
     """Replace source forward-reference strings by their Python 3.14 type syntax."""
 
-    def dotted_name(expression: ast.expr) -> str | None:
-        if isinstance(expression, ast.Name):
-            return expression.id
-        if isinstance(expression, ast.Attribute):
-            prefix = dotted_name(expression.value)
-            if prefix is not None:
-                return f"{prefix}.{expression.attr}"
-        return None
-
     class ForwardReferences(ast.NodeTransformer):
         def visit_Constant(self, node: ast.Constant) -> ast.expr:
             if not isinstance(node.value, str):
@@ -448,7 +461,7 @@ def _unquote_stub_annotations(tree: ast.Module) -> None:
             return ast.copy_location(expression, node)
 
         def visit_Subscript(self, node: ast.Subscript) -> ast.expr:
-            name = dotted_name(node.value)
+            name = _dotted_name(node.value)
             if name is not None and name.rsplit(".", 1)[-1] == "Literal":
                 return node
             if name is not None and name.rsplit(".", 1)[-1] == "Annotated":
@@ -527,18 +540,9 @@ def _normalize_stub_class_bodies(tree: ast.Module) -> None:
 def _localize_self_references(tree: ast.Module, module: str) -> None:
     """Use local declarations instead of importing the generated module from itself."""
 
-    def dotted_name(expression: ast.expr) -> str | None:
-        if isinstance(expression, ast.Name):
-            return expression.id
-        if isinstance(expression, ast.Attribute):
-            prefix = dotted_name(expression.value)
-            if prefix is not None:
-                return f"{prefix}.{expression.attr}"
-        return None
-
     class Localizer(ast.NodeTransformer):
         def visit_Attribute(self, node: ast.Attribute) -> ast.expr:
-            name = dotted_name(node)
+            name = _dotted_name(node)
             prefix = f"{module}."
             if name is not None and name.startswith(prefix):
                 local = ast.parse(name[len(prefix) :], mode="eval").body
@@ -686,15 +690,6 @@ def _source_generic_category_bases(sources: tuple[Path, ...], category_parameter
     currently being projected.
     """
 
-    def base_name(expression: ast.expr) -> str | None:
-        while isinstance(expression, ast.Subscript):
-            expression = expression.value
-        if isinstance(expression, ast.Name):
-            return expression.id
-        if isinstance(expression, ast.Attribute):
-            return expression.attr
-        return None
-
     result: set[str] = set()
     for source in sources:
         tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
@@ -704,7 +699,7 @@ def _source_generic_category_bases(sources: tuple[Path, ...], category_parameter
             bound = {name for local in statement.body for name in _statement_names(local)}
             if not set(_CATEGORY_ROLES).issubset(bound):
                 continue
-            name = base_name(statement.bases[0])
+            name = _base_name(statement.bases[0])
             if name in category_parameter_counts:
                 result.add(name)
     return frozenset(result)
@@ -761,15 +756,6 @@ def _project_category_role_parameters(
             if set(_CATEGORY_ROLES).issubset(bound):
                 owners[statement.name] = statement
         return owners
-
-    def base_name(expression: ast.expr) -> str | None:
-        while isinstance(expression, ast.Subscript):
-            expression = expression.value
-        if isinstance(expression, ast.Name):
-            return expression.id
-        if isinstance(expression, ast.Attribute):
-            return expression.attr
-        return None
 
     def expression_fullname(expression: ast.expr) -> str | None:
         while isinstance(expression, ast.Subscript):
@@ -1015,7 +1001,7 @@ def _project_category_role_parameters(
         assert category_bases, f"category declaration {owner_name} has no category base"
         category_base = category_bases[0]
         carrier = category_base.value if isinstance(category_base, ast.Subscript) else category_base
-        name = base_name(carrier)
+        name = _base_name(carrier)
         assert name in category_parameter_counts, f"cannot determine public generic arity of category base {ast.unparse(carrier)}"
         base_module = category_modules.get(name)
         if base_module is not None:

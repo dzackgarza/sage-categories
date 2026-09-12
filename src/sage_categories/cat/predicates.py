@@ -578,9 +578,9 @@ class ConstructionFamily(Axiom):
         return self._construct_declared(category, *parameters)
 
 
-def _class_declaration(category: Category, name: str) -> object | None:
-    """The first declaration named ``name`` in the runtime class MRO, without dynamic probing."""
-    for owner in type(category).__mro__:
+def _class_declaration(value: object, name: str) -> object | None:
+    """The first declaration named ``name`` in a runtime class MRO, without dynamic probing."""
+    for owner in type(value).__mro__:
         namespace = vars(owner)
         if name in namespace:
             return namespace[name]

@@ -71,7 +71,7 @@ from sage_categories.cat.dual_functor_categories import (
 )
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Proposition, Unknown, ask
+from sage_categories.cat.predicates import Proposition, Unknown, _class_declaration, ask
 from sage_categories.cat.properties import PredicateSubcategory, PropertySubcategory
 from sage_categories.kernel.refinement import (
     is_placed,
@@ -120,10 +120,10 @@ def _nontrivial_discrete(shape: Category) -> bool | None:
     if objects is not Unknown:
         return len(objects) >= 2
     object_set = shape.object_set()
-    try:
-        cardinality = object_set.cardinality
-    except AttributeError:
+    declaration = _class_declaration(object_set, "cardinality")
+    if declaration is None:
         return None
+    cardinality = declaration.__get__(object_set, type(object_set))
     cardinal = ask(cardinality())
     if cardinal is Unknown:
         return None

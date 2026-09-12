@@ -36,16 +36,9 @@ def _native_parent_is(engine, value) -> bool:
     return getattr(value, "parent", lambda: None)() is engine
 
 
-def _word(engine, word: GroupWord):
-    generators = tuple(engine.gens())
-    result = engine.one()
-    for letter in word:
-        index = abs(int(letter)) - 1
-        if index < 0 or index >= len(generators):
-            raise ValueError(f"group word letter {letter} is outside the selected generator range")
-        generator = generators[index]
-        result *= generator if letter > 0 else generator**-1
-    return result
+def _native_word(engine, word: GroupWord):
+    """Construct a word through Sage/GAP's native Tietze-word constructor."""
+    return engine(tuple(int(letter) for letter in word))
 
 
 def _owned_group(engine):
@@ -109,7 +102,7 @@ class GroupPresentation(SageObject):
             raise ValueError("group presentation generator names are distinct")
         relation_words = tuple(tuple(int(letter) for letter in word) for word in relations)
         free = FreeGroup(names)
-        native_relations = tuple(_word(free, word) for word in relation_words)
+        native_relations = tuple(_native_word(free, word) for word in relation_words)
         quotient = free / native_relations
 
         relation_free = FreeGroup(tuple(f"r{index}" for index in range(len(native_relations))))
@@ -167,7 +160,7 @@ class GroupPresentation(SageObject):
         return tuple(self.relation_arrow()(generator) for generator in generators)
 
     def evaluate_word(self, word: GroupWord):
-        return self.group().point(_word(self._quotient_engine, tuple(word)))
+        return self.group().point(_native_word(self._quotient_engine, tuple(word)))
 
     def factor(self, target, generator_images):
         """Factor a relation-respecting assignment uniquely through the quotient.

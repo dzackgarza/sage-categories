@@ -81,7 +81,7 @@ from sage_categories.cat.monoidal import (
     tensor_units,
 )
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Proposition, ask
+from sage_categories.cat.predicates import Proposition, ask, register_handler
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import (
     AdditiveGroups,
@@ -492,6 +492,29 @@ def abelian_homomorphism(
     from sage_categories.engines.presented_modules import homomorphism_from_rule
 
     return homomorphism_from_rule(source, target, rule)
+
+
+def _equal_presented_homomorphisms(
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+    assumptions: Proposition,
+) -> bool | None:
+    """Delegate equality on retained presented ``Ab`` maps to CAP."""
+    match first.domain() is second.domain() and first.codomain() is second.codomain():
+        case False:
+            return False
+        case True:
+            pass
+    match first.domain() in _presentations and first.codomain() in _presentations:
+        case False:
+            return None
+        case True:
+            from sage_categories.engines.presented_modules import equal_morphisms
+
+            return equal_morphisms(first, second)
+
+
+register_handler(AbelianGroups().equality(), _equal_presented_homomorphisms)
 
 
 def _zero_morphism(

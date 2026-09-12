@@ -34,6 +34,7 @@ __all__ = [
     "colift_along_epimorphism",
     "direct_sum_coproduct_lift",
     "direct_sum_product_lift",
+    "equal_morphisms",
     "retain_binary_biproduct",
     "tensor_associator",
     "tensor_element",
@@ -218,6 +219,12 @@ def _native_morphism(value: object) -> GapElement:
     assert bool(libgap.IsWellDefined(native)), f"CAP rejected the public morphism {value!r}"
     retain_presented_native_morphism(value, native)
     return native
+
+
+def equal_morphisms(first: object, second: object) -> bool:
+    """CAP's equality decision for two owned presented-module morphisms."""
+    assert first.domain() is second.domain() and first.codomain() is second.codomain()
+    return bool(libgap.IsEqualForMorphisms(_native_morphism(first), _native_morphism(second)))
 
 
 def _integer_matrix_rows(native_matrix: GapElement) -> tuple[tuple[int, ...], ...]:

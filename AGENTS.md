@@ -393,6 +393,42 @@ Identify the shared premise or mechanism. Recheck those consumers within the ass
 Do not declare the latest symptom to be the whole defect before following its callers and sibling use.
 Retain unrelated acceptance; the scope of invalidation follows evidence, not a blanket restart or automatic exoneration.
 
+## Your ledger is a product, and a broken one stops the repository
+
+`TODO.md` is the DAG that says what is next: nodes, their `Needs` column, and the acceptance
+each links to. It is not documentation about the work, it is the instrument that selects the
+work, and when it stops answering "what is next" the repository does not slow down — it hands
+unit selection back to whoever is reading it, and the program drifts toward whatever is
+nearest. An absence of checkboxes in it is not an absence of work; the table is the backlog.
+
+So the ledger is maintained as a deliverable. When a node closes, its row reflects that in the
+commit that delivered it. When the `Needs` column no longer describes real dependencies, when a
+node's acceptance text no longer matches what the node now means, or when the table cannot tell
+you what is ready, stop and repair it before taking more mathematics. A ledger defect outranks
+the node you were about to start, because every later worker inherits the same wrong answer.
+
+## Review your own work for drift, and fix the obstruction
+
+At every node closure, before selecting the next one, check three things about the session you
+just had:
+
+- **Did it produce mathematics?** Lint repairs, stub regeneration, formatting passes and
+  annotation changes are maintenance. They are sometimes necessary and they are never the
+  product. A run of commits carrying no new construction means the session drifted into
+  maintenance and the next commit must carry content.
+- **Did it move the DAG?** If nodes are not closing while commits land, the commits are not
+  delivering nodes, and the gap between those two facts is where the program quietly stalls.
+- **Is anything blocking you that you have been working around?** A gate you annotate instead
+  of repair, a check you skip, a generated artifact you hand-edit because the generator is
+  wrong, a run you keep restarting: each is an obstruction you are paying for repeatedly.
+
+Address the obstruction at its owner rather than routing around it. `[known red: ...]` is the
+canonical example of routing around one — it is a bounded allowance for a named check with a
+named owner and a repair in the active plan, it does not survive being inherited, and a check
+red across many commits by many workers has stopped being a gate at all. If the owner is
+outside this repository, record the blocker with a reproducer and an owner, then work something
+the obstruction does not touch. Never both.
+
 ## Never report a run as live without having just seen its output
 
 A long-running check is the one thing in this repository a worker cannot observe from the

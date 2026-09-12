@@ -496,8 +496,8 @@ def abelian_homomorphism(
 
 
 def _equal_presented_homomorphisms(
-    first: MorphismCategory.ObjectType,
-    second: MorphismCategory.ObjectType,
+    first: _AbelianOperations.MorphismType,
+    second: _AbelianOperations.MorphismType,
     assumptions: Proposition,
 ) -> bool | None:
     """Delegate equality on retained presented ``Ab`` maps to CAP."""

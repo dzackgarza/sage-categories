@@ -723,6 +723,81 @@ def _source_category_modules(package: str, output_directory: Path, sources: tupl
     return result
 
 
+def _source_role_owners(source: ast.Module) -> dict[str, ast.ClassDef]:
+    """Category declarations in ``source`` that write all three public role classes."""
+    owners: dict[str, ast.ClassDef] = {}
+    for statement in source.body:
+        if not isinstance(statement, ast.ClassDef):
+            continue
+        bound = {name for local in statement.body for name in _statement_names(local)}
+        if set(_CATEGORY_ROLES).issubset(bound):
+            owners[statement.name] = statement
+    return owners
+
+
+def _expression_fullname(expression: ast.expr) -> str | None:
+    """The full dotted name after removing any generic subscription layers."""
+    while isinstance(expression, ast.Subscript):
+        expression = expression.value
+    return _dotted_name(expression)
+
+
+def _subscript_arguments(expression: ast.Subscript) -> list[ast.expr]:
+    """The argument list of one AST subscription, including the unary case."""
+    return list(expression.slice.elts) if isinstance(expression.slice, ast.Tuple) else [expression.slice]
+
+
+def _role_alias(owner: ast.ClassDef, role: str) -> ast.expr | None:
+    """The assignment/type-alias expression by which ``owner`` declares ``role``."""
+    for local in owner.body:
+        if isinstance(local, ast.Assign) and any(isinstance(target, ast.Name) and target.id == role for target in local.targets):
+            if owner.name == "CategoryOfCategories" and role == "ObjectType":
+                return ast.Subscript(
+                    value=ast.Name(id="Category", ctx=ast.Load()),
+                    slice=ast.Tuple(
+                        elts=[ast.Constant(value=Ellipsis), ast.Constant(value=Ellipsis)],
+                        ctx=ast.Load(),
+                    ),
+                    ctx=ast.Load(),
+                )
+            return copy.deepcopy(local.value)
+        if isinstance(local, ast.TypeAlias) and isinstance(local.name, ast.Name) and local.name.id == role:
+            return copy.deepcopy(local.value)
+    return None
+
+
+def _rewrite_local_roles(owner: ast.ClassDef, role_parameters: dict[str, str]) -> None:
+    """Rewrite references to one owner's role classes to its selected static parameters."""
+
+    class RoleReferenceRewriter(ast.NodeTransformer):
+        def visit_Attribute(self, node: ast.Attribute) -> ast.expr:
+            node = self.generic_visit(node)
+            if isinstance(node.value, ast.Name) and node.value.id == owner.name and node.attr in role_parameters:
+                return ast.copy_location(
+                    ast.Name(id=role_parameters[node.attr], ctx=ast.Load()),
+                    node,
+                )
+            return node
+
+    rewriter = RoleReferenceRewriter()
+    for local in owner.body:
+        if not isinstance(local, ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        for argument in (
+            *local.args.posonlyargs,
+            *local.args.args,
+            *local.args.kwonlyargs,
+        ):
+            if argument.annotation is not None:
+                argument.annotation = rewriter.visit(argument.annotation)
+        if local.args.vararg is not None and local.args.vararg.annotation is not None:
+            local.args.vararg.annotation = rewriter.visit(local.args.vararg.annotation)
+        if local.args.kwarg is not None and local.args.kwarg.annotation is not None:
+            local.args.kwarg.annotation = rewriter.visit(local.args.kwarg.annotation)
+        if local.returns is not None:
+            local.returns = rewriter.visit(local.returns)
+
+
 def _project_category_role_parameters(
     tree: ast.Module,
     source: ast.Module,
@@ -748,78 +823,7 @@ def _project_category_role_parameters(
     inherits that helper, preserving ``C.ObjectType`` as the same class TypeInfo.
     """
 
-    def source_role_owners() -> dict[str, ast.ClassDef]:
-        owners: dict[str, ast.ClassDef] = {}
-        for statement in source.body:
-            if not isinstance(statement, ast.ClassDef):
-                continue
-            bound = {name for local in statement.body for name in _statement_names(local)}
-            if set(_CATEGORY_ROLES).issubset(bound):
-                owners[statement.name] = statement
-        return owners
-
-    def expression_fullname(expression: ast.expr) -> str | None:
-        while isinstance(expression, ast.Subscript):
-            expression = expression.value
-        parts: list[str] = []
-        while isinstance(expression, ast.Attribute):
-            parts.append(expression.attr)
-            expression = expression.value
-        if not isinstance(expression, ast.Name):
-            return None
-        parts.append(expression.id)
-        return ".".join(reversed(parts))
-
-    def subscript_arguments(expression: ast.Subscript) -> list[ast.expr]:
-        return list(expression.slice.elts) if isinstance(expression.slice, ast.Tuple) else [expression.slice]
-
-    source_owners = source_role_owners()
-
-    def role_alias(owner: ast.ClassDef, role: str) -> ast.expr | None:
-        for local in owner.body:
-            if isinstance(local, ast.Assign) and any(isinstance(target, ast.Name) and target.id == role for target in local.targets):
-                if owner.name == "CategoryOfCategories" and role == "ObjectType":
-                    return ast.Subscript(
-                        value=ast.Name(id="Category", ctx=ast.Load()),
-                        slice=ast.Tuple(
-                            elts=[ast.Constant(value=Ellipsis), ast.Constant(value=Ellipsis)],
-                            ctx=ast.Load(),
-                        ),
-                        ctx=ast.Load(),
-                    )
-                return copy.deepcopy(local.value)
-            if isinstance(local, ast.TypeAlias) and isinstance(local.name, ast.Name) and local.name.id == role:
-                return copy.deepcopy(local.value)
-        return None
-
-    def rewrite_local_roles(owner: ast.ClassDef, role_parameters: dict[str, str]) -> None:
-        class RoleReferenceRewriter(ast.NodeTransformer):
-            def visit_Attribute(self, node: ast.Attribute) -> ast.expr:
-                node = self.generic_visit(node)
-                if isinstance(node.value, ast.Name) and node.value.id == owner.name and node.attr in role_parameters:
-                    return ast.copy_location(
-                        ast.Name(id=role_parameters[node.attr], ctx=ast.Load()),
-                        node,
-                    )
-                return node
-
-        rewriter = RoleReferenceRewriter()
-        for local in owner.body:
-            if not isinstance(local, ast.FunctionDef | ast.AsyncFunctionDef):
-                continue
-            for argument in (
-                *local.args.posonlyargs,
-                *local.args.args,
-                *local.args.kwonlyargs,
-            ):
-                if argument.annotation is not None:
-                    argument.annotation = rewriter.visit(argument.annotation)
-            if local.args.vararg is not None and local.args.vararg.annotation is not None:
-                local.args.vararg.annotation = rewriter.visit(local.args.vararg.annotation)
-            if local.args.kwarg is not None and local.args.kwarg.annotation is not None:
-                local.args.kwarg.annotation = rewriter.visit(local.args.kwarg.annotation)
-            if local.returns is not None:
-                local.returns = rewriter.visit(local.returns)
+    source_owners = _source_role_owners(source)
 
     top_level = {statement.name: statement for statement in tree.body if isinstance(statement, ast.ClassDef)}
     category_declaration = top_level.get("CategoryDeclaration")
@@ -860,7 +864,7 @@ def _project_category_role_parameters(
             None,
         )
         if category_alias is not None and isinstance(category_alias.value, ast.Subscript):
-            alias_arguments = subscript_arguments(category_alias.value)
+            alias_arguments = _subscript_arguments(category_alias.value)
             alias_hidden: list[ast.stmt] = []
             for hidden, default in zip(_HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True):
                 name = f"_CategoryDeclaration{hidden}"
@@ -946,7 +950,7 @@ def _project_category_role_parameters(
                             ctx=ast.Load(),
                         )
                         for index, base in enumerate(helper_role.bases):
-                            fullname = expression_fullname(base)
+                            fullname = _expression_fullname(base)
                             if fullname is None or isinstance(base, ast.Subscript):
                                 continue
                             if source_class_parameters.get(fullname) != role_parameters:
@@ -961,9 +965,9 @@ def _project_category_role_parameters(
                             )
                 defaults[role] = role_reference
                 continue
-            alias = role_alias(owner, role)
+            alias = _role_alias(owner, role)
             if alias is None:
-                alias = role_alias(source_owner, role)
+                alias = _role_alias(source_owner, role)
                 assert alias is not None, f"{owner_name}.{role} has no static role declaration"
                 replacement = ast.Assign(
                     targets=[ast.Name(id=role, ctx=ast.Store())],
@@ -1017,7 +1021,7 @@ def _project_category_role_parameters(
 
         public_arity = category_parameter_counts[name]
         if isinstance(category_base, ast.Subscript):
-            written_arguments = subscript_arguments(category_base)
+            written_arguments = _subscript_arguments(category_base)
             assert len(written_arguments) >= public_arity, f"category base {ast.unparse(category_base)} supplies fewer than its {public_arity} public parameters"
             arguments = written_arguments[:public_arity]
         else:
@@ -1030,7 +1034,7 @@ def _project_category_role_parameters(
         )
         owner.bases[:] = [ast.Name(id=helper_name, ctx=ast.Load()), projected_base, *category_bases[1:]]
         if generic_owner:
-            rewrite_local_roles(owner, selected_role_parameters)
+            _rewrite_local_roles(owner, selected_role_parameters)
 
     for owner, helper in reversed(new_helpers):
         index = tree.body.index(owner)

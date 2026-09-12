@@ -39,6 +39,8 @@ def test_restrictions_are_owned_ring_maps_and_compose_contravariantly() -> None:
     point_to_empty = sheaf_data.restriction(point, empty)
     whole_to_empty = sheaf_data.restriction(whole, empty)
     assert whole_to_point.domain() is sections[whole] and whole_to_point.codomain() is sections[point]
+    assert sheaf_data.section_ring(whole) is sections[whole]
+    assert sheaf_data.section_ring(point) is sections[point]
     assert ask(point_to_empty * whole_to_point == whole_to_empty) is True
     assert whole_to_point(sections[whole].point(3)).datum() == 3
     assert sheaf_data.functor.domain() is space.open_category().op()

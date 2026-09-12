@@ -931,76 +931,166 @@ def _indexed_free_reindex(
     return _rule_abelian_homomorphism(source, target, evaluate)
 
 
+def _presented_rebracket(
+    a: CategoryOfCategories.ElementType,
+    b: CategoryOfCategories.ElementType,
+    c: CategoryOfCategories.ElementType,
+    ab: CategoryOfCategories.ElementType,
+    bc: CategoryOfCategories.ElementType,
+    left_object: CategoryOfCategories.ElementType,
+    right_object: CategoryOfCategories.ElementType,
+    forward: bool,
+) -> MorphismCategory.ObjectType | None:
+    """Use CAP's associator when all four tensor stages are retained presentations."""
+    match all(isinstance(_tensor_data[value], _TensorData) for value in (ab, bc, left_object, right_object)):
+        case False:
+            return None
+        case True:
+            pass
+    from sage_categories.engines.presented_modules import tensor_associator
+
+    match forward:
+        case True:
+            source, target = left_object, right_object
+        case False:
+            source, target = right_object, left_object
+    return tensor_associator(a, b, c, source, target, left_to_right=forward)
+
+
+def _indexed_rebracket(
+    ab: CategoryOfCategories.ElementType,
+    bc: CategoryOfCategories.ElementType,
+    left_object: CategoryOfCategories.ElementType,
+    right_object: CategoryOfCategories.ElementType,
+    forward: bool,
+) -> MorphismCategory.ObjectType | None:
+    """Rebracket indexed free tensors by relabeling their retained basis index."""
+    match left_object in _indexed_free_data and right_object in _indexed_free_data:
+        case False:
+            return None
+        case True:
+            pass
+    left_index = _indexed_free_record(left_object).index_set
+    right_index = _indexed_free_record(right_object).index_set
+    match left_index is right_index, forward:
+        case True, True:
+            return _indexed_free_relabel(left_object, right_object)
+        case True, False:
+            return _indexed_free_relabel(right_object, left_object)
+        case _:
+            pass
+    pair_tensor = all(isinstance(_tensor_data[value], _IndexedPairTensorData) for value in (left_object, right_object, ab, bc))
+    match pair_tensor, forward:
+        case True, True:
+            return _indexed_free_reindex(
+                left_object,
+                right_object,
+                lambda index: (index[0][0], (index[0][1], index[1])),
+            )
+        case True, False:
+            return _indexed_free_reindex(
+                right_object,
+                left_object,
+                lambda index: ((index[0], index[1][0]), index[1][1]),
+            )
+        case _:
+            return None
+
+
+def _coordinate_rebracket_forward(
+    a: CategoryOfCategories.ElementType,
+    b: CategoryOfCategories.ElementType,
+    c: CategoryOfCategories.ElementType,
+    ab: CategoryOfCategories.ElementType,
+    bc: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """Finite-coordinate map ``(A tensor B) tensor C -> A tensor (B tensor C)``."""
+    bc_data = _tensor_data[bc]
+    generators_a, generators_b = _generators(_coordinates(a)), _generators(_coordinates(b))
+    target = _tensor_object(a, bc)
+    target_data, middle_rank = _tensor_data[target], _coordinates(b).rank()
+
+    def rule(t: Hashable, x: Hashable) -> Hashable:
+        total = target_data.quotient.zero()
+        for position, coefficient in enumerate(t.lift()):
+            match bool(coefficient):
+                case True:
+                    total = total + int(coefficient) * _pair_vector(
+                        target_data,
+                        generators_a[position // middle_rank],
+                        _pair_vector(bc_data, generators_b[position % middle_rank], x),
+                    )
+                case False:
+                    pass
+        return total
+
+    return tensor_mediator(ab, c, target, rule)
+
+
+def _coordinate_rebracket_backward(
+    a: CategoryOfCategories.ElementType,
+    b: CategoryOfCategories.ElementType,
+    c: CategoryOfCategories.ElementType,
+    ab: CategoryOfCategories.ElementType,
+    bc: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """Finite-coordinate map ``A tensor (B tensor C) -> (A tensor B) tensor C``."""
+    ab_data = _tensor_data[ab]
+    generators_b, generators_c = _generators(_coordinates(b)), _generators(_coordinates(c))
+    target = _tensor_object(ab, c)
+    target_data, right_rank = _tensor_data[target], _coordinates(c).rank()
+
+    def rule(x: Hashable, t: Hashable) -> Hashable:
+        total = target_data.quotient.zero()
+        for position, coefficient in enumerate(t.lift()):
+            match bool(coefficient):
+                case True:
+                    total = total + int(coefficient) * _pair_vector(
+                        target_data,
+                        _pair_vector(ab_data, x, generators_b[position // right_rank]),
+                        generators_c[position % right_rank],
+                    )
+                case False:
+                    pass
+        return total
+
+    return tensor_mediator(a, bc, target, rule)
+
+
+def _coordinate_rebracket(
+    a: CategoryOfCategories.ElementType,
+    b: CategoryOfCategories.ElementType,
+    c: CategoryOfCategories.ElementType,
+    ab: CategoryOfCategories.ElementType,
+    bc: CategoryOfCategories.ElementType,
+    forward: bool,
+) -> MorphismCategory.ObjectType:
+    """Select the direction of the finite Smith-coordinate associator."""
+    match forward:
+        case True:
+            return _coordinate_rebracket_forward(a, b, c, ab, bc)
+        case False:
+            return _coordinate_rebracket_backward(a, b, c, ab, bc)
+
+
 def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
     """``(A ⊗ B) ⊗ C -> A ⊗ (B ⊗ C)`` and back, each the mediator of a biadditive rule written through lifts."""
     a, b, c = (triple.family_component(index) for index in range(3))
     ab, bc = _tensor_object(a, b), _tensor_object(b, c)
     left_object = _tensor_object(ab, c)
     right_object = _tensor_object(a, bc)
-    if all(isinstance(_tensor_data[value], _TensorData) for value in (ab, bc, left_object, right_object)):
-        from sage_categories.engines.presented_modules import tensor_associator
-
-        return tensor_associator(
-            a,
-            b,
-            c,
-            left_object if forward else right_object,
-            right_object if forward else left_object,
-            left_to_right=forward,
-        )
-    if left_object in _indexed_free_data and right_object in _indexed_free_data:
-        left_index = _indexed_free_record(left_object).index_set
-        right_index = _indexed_free_record(right_object).index_set
-        if left_index is right_index:
-            match forward:
-                case True:
-                    return _indexed_free_relabel(left_object, right_object)
-                case False:
-                    return _indexed_free_relabel(right_object, left_object)
-        if (
-            isinstance(_tensor_data[left_object], _IndexedPairTensorData)
-            and isinstance(_tensor_data[right_object], _IndexedPairTensorData)
-            and isinstance(_tensor_data[ab], _IndexedPairTensorData)
-            and isinstance(_tensor_data[bc], _IndexedPairTensorData)
-        ):
-            match forward:
-                case True:
-                    return _indexed_free_reindex(
-                        left_object,
-                        right_object,
-                        lambda index: (index[0][0], (index[0][1], index[1])),
-                    )
-                case False:
-                    return _indexed_free_reindex(
-                        right_object,
-                        left_object,
-                        lambda index: ((index[0], index[1][0]), index[1][1]),
-                    )
-    ab_data, bc_data = _tensor_data[ab], _tensor_data[bc]
-    generators_a, generators_b, generators_c = _generators(_coordinates(a)), _generators(_coordinates(b)), _generators(_coordinates(c))
-    if forward:
-        target = _tensor_object(a, bc)
-        target_data, m = _tensor_data[target], _coordinates(b).rank()
-
-        def rule(t: Hashable, x: Hashable) -> Hashable:
-            total = target_data.quotient.zero()
-            for position, coefficient in enumerate(t.lift()):
-                if coefficient:
-                    total = total + int(coefficient) * _pair_vector(target_data, generators_a[position // m], _pair_vector(bc_data, generators_b[position % m], x))
-            return total
-
-        return tensor_mediator(ab, c, target, rule)
-    target = _tensor_object(ab, c)
-    target_data, p = _tensor_data[target], _coordinates(c).rank()
-
-    def rule_back(x: Hashable, t: Hashable) -> Hashable:
-        total = target_data.quotient.zero()
-        for position, coefficient in enumerate(t.lift()):
-            if coefficient:
-                total = total + int(coefficient) * _pair_vector(target_data, _pair_vector(ab_data, x, generators_b[position // p]), generators_c[position % p])
-        return total
-
-    return tensor_mediator(a, bc, target, rule_back)
+    presented = _presented_rebracket(a, b, c, ab, bc, left_object, right_object, forward)
+    match presented:
+        case None:
+            pass
+        case _:
+            return presented
+    indexed = _indexed_rebracket(ab, bc, left_object, right_object, forward)
+    match indexed:
+        case None:
+            return _coordinate_rebracket(a, b, c, ab, bc, forward)
+        case _:
+            return indexed
 
 
 def _tensor_scalar(group: CategoryOfCategories.ElementType, coefficient: Hashable, value: Hashable) -> Hashable:

@@ -25,8 +25,8 @@ from sage_categories.algebra.indexed_modules import (
 from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.modules import ModuleCategory
-from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.monoidal import tensor_object
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.native import NativeObjectRealizations
 from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoids
 from sage_categories.engines import free_algebras
@@ -43,9 +43,7 @@ class IntegerFreeAssociativeConstruction:
     word_module: CategoryOfCategories.ElementType
 
 
-_objects: NativeObjectRealizations[object, IntegerFreeAssociativeConstruction] = (
-    NativeObjectRealizations()
-)
+_objects: NativeObjectRealizations[object, IntegerFreeAssociativeConstruction] = NativeObjectRealizations()
 
 
 def _word_set(names: tuple[str, ...]):
@@ -105,12 +103,8 @@ def integer_free_associative_algebra(
     projection = relative_tensor(bimodule.right_action(), bimodule.left_action())
 
     def multiply(left, right):
-        record_terms_left = indexed_free_integer_coefficients(
-            word_module, word_module.point(left)
-        )
-        record_terms_right = indexed_free_integer_coefficients(
-            word_module, word_module.point(right)
-        )
+        record_terms_left = indexed_free_integer_coefficients(word_module, word_module.point(left))
+        record_terms_right = indexed_free_integer_coefficients(word_module, word_module.point(right))
         terms = free_algebras.multiply(native, record_terms_left, record_terms_right)
         return indexed_free_integer_element(word_module, terms).datum()
 
@@ -148,11 +142,7 @@ def _underlying_module_functor(algebra):
     monoids = record.owner
     structure = monoids.monoidal_structure()
     bimodules = structure.underlying_category()
-    return (
-        bimodules.to_left()
-        * Magmas(structure).forgetful()
-        * monoids.to_magmas()
-    )
+    return bimodules.to_left() * Magmas(structure).forgetful() * monoids.to_magmas()
 
 
 def free_associative_element(algebra: MonoidCategory.ObjectType, terms: Mapping[Word, int]) -> ModuleCategory.ElementType:
@@ -243,9 +233,7 @@ def free_associative_underlying_morphism(
     algebra_morphism: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Forget a retained free-algebra morphism to its actual left-module map."""
-    return _underlying_module_functor(algebra_morphism.domain()).on_morphism(
-        algebra_morphism
-    )
+    return _underlying_module_functor(algebra_morphism.domain()).on_morphism(algebra_morphism)
 
 
 __all__ = [

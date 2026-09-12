@@ -464,7 +464,7 @@ def test_category_role_projection_is_noop_without_category_declarations() -> Non
 def test_category_role_hoisting_keeps_role_only_owner_syntactic() -> None:
     source = ast.parse(
         """
-class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+class CategoryDeclaration[**P, **Q, ObjectRole=object, ElementRole=object, MorphismRole=object]:
     pass
 Category = CategoryDeclaration
 
@@ -497,7 +497,7 @@ class RoleOnly(Category):
 def test_category_roles_are_hidden_parameters_threaded_through_base() -> None:
     source = ast.parse(
         """
-class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+class CategoryDeclaration[**P, **Q, ObjectRole=object, ElementRole=object, MorphismRole=object]:
     pass
 Category = CategoryDeclaration
 
@@ -529,9 +529,9 @@ class Derived(Base):
         frozenset({"example", "sage_categories.kernel.roles"}),
     )
     projected = ast.unparse(ast.fix_missing_locations(stub))
-    assert "_ObjectRole = object" in projected
-    assert "_ElementRole = object" in projected
-    assert "_MorphismRole = object" in projected
+    assert "ObjectRole = object" in projected
+    assert "ElementRole = object" in projected
+    assert "MorphismRole = object" in projected
     assert "class _StaticRoles_Base:" in projected
     assert "Category[P, Q, _ObjectRole, _ElementRole, _MorphismRole]" in projected
     assert "_CategoryDeclaration_ObjectRole = _typing.TypeVar" in projected
@@ -546,7 +546,7 @@ class Derived(Base):
 def test_category_role_projection_replaces_existing_hidden_base_roles() -> None:
     source = ast.parse(
         """
-class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+class CategoryDeclaration[**P, **Q, ObjectRole=object, ElementRole=object, MorphismRole=object]:
     pass
 Category = CategoryDeclaration
 
@@ -647,9 +647,9 @@ class Fixed[
     **Q,
     DomainType=object,
     CodomainType=object,
-    _ObjectRole=object,
-    _ElementRole=object,
-    _MorphismRole=object,
+    ObjectRole=object,
+    ElementRole=object,
+    MorphismRole=object,
 ]:
     class ObjectType: pass
     class ElementType: pass
@@ -679,7 +679,7 @@ def test_hoisted_role_provider_keeps_source_generic_parameters() -> None:
 def test_generic_role_specializes_matching_provider_base() -> None:
     source = ast.parse(
         """
-class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+class CategoryDeclaration[**P, **Q, ObjectRole=object, ElementRole=object, MorphismRole=object]:
     pass
 Category = CategoryDeclaration
 
@@ -806,7 +806,7 @@ Public: Incomplete
 def test_category_role_projection_restores_source_role_alias_lost_by_parse_only() -> None:
     source = ast.parse(
         """
-class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+class CategoryDeclaration[**P, **Q, ObjectRole=object, ElementRole=object, MorphismRole=object]:
     pass
 Category = CategoryDeclaration
 
@@ -854,7 +854,7 @@ class Owner(Category):
 def test_role_local_generics_do_not_require_category_owner_parameters() -> None:
     source = ast.parse(
         """
-class CategoryDeclaration[**P, **Q, _ObjectRole=object, _ElementRole=object, _MorphismRole=object]:
+class CategoryDeclaration[**P, **Q, ObjectRole=object, ElementRole=object, MorphismRole=object]:
     pass
 Category = CategoryDeclaration
 

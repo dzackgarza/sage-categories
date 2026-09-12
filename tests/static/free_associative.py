@@ -11,7 +11,6 @@ from sage_categories.algebra import (
     free_associative_underlying_morphism,
     integer_free_associative_algebra,
 )
-from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import MonoidCategory

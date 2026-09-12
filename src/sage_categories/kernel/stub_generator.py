@@ -544,6 +544,11 @@ def _remove_non_projection_stubs(
 
 
 _CATEGORY_ROLES = ("ObjectType", "ElementType", "MorphismType")
+_SOURCE_CATEGORY_ROLE_PARAMETERS = {
+    "ObjectType": "ObjectRole",
+    "ElementType": "ElementRole",
+    "MorphismType": "MorphismRole",
+}
 _HIDDEN_CATEGORY_ROLES = {
     "ObjectType": "_ObjectRole",
     "ElementType": "_ElementRole",
@@ -557,7 +562,8 @@ def _source_category_parameter_counts(sources: tuple[Path, ...]) -> dict[str, in
     Category declaration class names are repository-wide unique.  The runtime source
     writes all three role names in every category class (POL-CAT-057), so that
     declaration is also the source-derived marker that the first base is a category
-    base.  Hidden static role parameters are not counted here.
+    base.  Defaulted role parameters are not part of the caller-written data arity,
+    whether source writes their public names or an older projection uses hidden names.
     """
     result = {"CategoryDeclaration": 2, "Category": 2}
     for source in sources:
@@ -569,8 +575,8 @@ def _source_category_parameter_counts(sources: tuple[Path, ...]) -> dict[str, in
             if not set(_CATEGORY_ROLES).issubset(bound):
                 continue
             previous = result.get(statement.name)
-            hidden_roles = frozenset(_HIDDEN_CATEGORY_ROLES.values())
-            arity = sum(parameter.name not in hidden_roles for parameter in statement.type_params)
+            role_parameters = frozenset((*_SOURCE_CATEGORY_ROLE_PARAMETERS.values(), *_HIDDEN_CATEGORY_ROLES.values()))
+            arity = sum(parameter.name not in role_parameters for parameter in statement.type_params)
             assert previous is None or previous == arity, f"category class name {statement.name!r} has conflicting public arities"
             result[statement.name] = arity
     return result
@@ -766,13 +772,13 @@ def _project_category_role_parameters(
                 return copy.deepcopy(local.value)
         return None
 
-    def rewrite_local_roles(owner: ast.ClassDef) -> None:
+    def rewrite_local_roles(owner: ast.ClassDef, role_parameters: dict[str, str]) -> None:
         class RoleReferenceRewriter(ast.NodeTransformer):
             def visit_Attribute(self, node: ast.Attribute) -> ast.expr:
                 node = self.generic_visit(node)
-                if isinstance(node.value, ast.Name) and node.value.id == owner.name and node.attr in _HIDDEN_CATEGORY_ROLES:
+                if isinstance(node.value, ast.Name) and node.value.id == owner.name and node.attr in role_parameters:
                     return ast.copy_location(
-                        ast.Name(id=_HIDDEN_CATEGORY_ROLES[node.attr], ctx=ast.Load()),
+                        ast.Name(id=role_parameters[node.attr], ctx=ast.Load()),
                         node,
                     )
                 return node
@@ -806,19 +812,23 @@ def _project_category_role_parameters(
         source_parameters = {parameter.name: parameter for parameter in source_category_declaration.type_params}
         existing = {parameter.name: parameter for parameter in category_declaration.type_params}
         defaults: list[ast.expr] = []
-        for hidden in _HIDDEN_CATEGORY_ROLES.values():
-            source_parameter = source_parameters.get(hidden)
-            assert isinstance(source_parameter, ast.TypeVar), f"source CategoryDeclaration parameter {hidden!r} is not a TypeVar"
-            assert source_parameter.default_value is not None, f"source CategoryDeclaration parameter {hidden!r} has no default"
+        for role in _CATEGORY_ROLES:
+            public = _SOURCE_CATEGORY_ROLE_PARAMETERS[role]
+            hidden = _HIDDEN_CATEGORY_ROLES[role]
+            source_parameter = next((source_parameters[name] for name in (public, hidden) if name in source_parameters), None)
+            assert isinstance(source_parameter, ast.TypeVar), f"source CategoryDeclaration role parameter {public!r} is not a TypeVar"
+            assert source_parameter.default_value is not None, f"source CategoryDeclaration role parameter {public!r} has no default"
             default = copy.deepcopy(source_parameter.default_value)
-            parameter = existing.get(hidden)
-            if parameter is None:
-                parameter = ast.TypeVar(name=hidden, default_value=copy.deepcopy(default))
-                category_declaration.type_params.append(parameter)
-                existing[hidden] = parameter
-            else:
-                assert isinstance(parameter, ast.TypeVar), f"CategoryDeclaration parameter {hidden!r} is not a TypeVar"
-                parameter.default_value = copy.deepcopy(default)
+            parameter = next((existing[name] for name in (public, hidden) if name in existing), None)
+            match parameter:
+                case None:
+                    parameter = ast.TypeVar(name=hidden, default_value=copy.deepcopy(default))
+                    category_declaration.type_params.append(parameter)
+                    existing[hidden] = parameter
+                case ast.TypeVar():
+                    parameter.default_value = copy.deepcopy(default)
+                case _:
+                    raise AssertionError(f"CategoryDeclaration role parameter {public!r} is not a TypeVar")
             defaults.append(default)
 
         category_alias = next(
@@ -949,13 +959,21 @@ def _project_category_role_parameters(
 
         generic_owner = owner_name in generic_category_bases
         role_arguments: list[ast.expr]
+        selected_role_parameters: dict[str, str] = {}
         if generic_owner:
             existing = {parameter.name for parameter in owner.type_params}
             for role in _CATEGORY_ROLES:
+                public = _SOURCE_CATEGORY_ROLE_PARAMETERS[role]
                 hidden = _HIDDEN_CATEGORY_ROLES[role]
-                if hidden not in existing:
-                    owner.type_params.append(ast.TypeVar(name=hidden, default_value=defaults[role]))
-            role_arguments = [ast.Name(id=hidden, ctx=ast.Load()) for hidden in _HIDDEN_CATEGORY_ROLES.values()]
+                selected = next((name for name in (public, hidden) if name in existing), None)
+                match selected:
+                    case None:
+                        owner.type_params.append(ast.TypeVar(name=hidden, default_value=defaults[role]))
+                        existing.add(hidden)
+                        selected_role_parameters[role] = hidden
+                    case str():
+                        selected_role_parameters[role] = selected
+            role_arguments = [ast.Name(id=selected_role_parameters[role], ctx=ast.Load()) for role in _CATEGORY_ROLES]
         else:
             role_arguments = [copy.deepcopy(defaults[role]) for role in _CATEGORY_ROLES]
 
@@ -992,7 +1010,7 @@ def _project_category_role_parameters(
         )
         owner.bases[:] = [ast.Name(id=helper_name, ctx=ast.Load()), projected_base, *category_bases[1:]]
         if generic_owner:
-            rewrite_local_roles(owner)
+            rewrite_local_roles(owner, selected_role_parameters)
 
     for owner, helper in reversed(new_helpers):
         index = tree.body.index(owner)

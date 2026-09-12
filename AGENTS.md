@@ -393,6 +393,23 @@ Identify the shared premise or mechanism. Recheck those consumers within the ass
 Do not declare the latest symptom to be the whole defect before following its callers and sibling use.
 Retain unrelated acceptance; the scope of invalidation follows evidence, not a blanket restart or automatic exoneration.
 
+## Content, not bookkeeping
+
+A commit earns its place by carrying something that did not exist before: a construction, a
+test that pins real behaviour, a defect actually repaired. Advancing a DAG row, recording an
+owner, annotating a known-red check, regenerating stubs with no change in what they mean,
+normalising formatting — none of that builds anything, and none of it is free. Each one spends
+a turn, a full gate run, and a tick of the ledger that then reports progress that did not
+happen, which is how a session can look busy all night and leave the repository where it
+started.
+
+The test is not the size of the commit and not the ratio of administrative lines to content
+lines; paperwork commits are small, which is exactly why counting lines hides them. The test is
+whether an object exists now that did not exist before. Fold every row update, owner
+assignment and record change into the commit carrying the content it describes, so it can never
+be a unit on its own. If a record change has nothing to ride with, it is bookkeeping that
+should not be happening.
+
 ## Your ledger is a product, and a broken one stops the repository
 
 `TODO.md` is the DAG that says what is next: nodes, their `Needs` column, and the acceptance

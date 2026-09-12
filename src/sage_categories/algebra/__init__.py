@@ -68,12 +68,8 @@ from sage_categories.algebra.indexed_modules import (
     indexed_free_integer_support,
     integer_module,
     integer_regular_module,
-    presented_integer_module,
     integer_scalar_monoid,
-)
-from sage_categories.algebra.presented_groups import (
-    GroupPresentation,
-    presented_group,
+    presented_integer_module,
 )
 from sage_categories.algebra.local_fields import (
     ExactLocalFieldPresentation,
@@ -82,6 +78,10 @@ from sage_categories.algebra.local_fields import (
     exact_rational_field,
     exact_real_field,
     prime_indices,
+)
+from sage_categories.algebra.presented_groups import (
+    GroupPresentation,
+    presented_group,
 )
 
 __all__ = [

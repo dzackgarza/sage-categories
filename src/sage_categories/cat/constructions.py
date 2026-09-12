@@ -883,7 +883,6 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         mediator: Mediator,
     ) -> CategoryOfCategories.ElementType:
         """Select the dual limiting cone from supplied colimit data."""
-        from sage_categories.cat.opposites import opposite_morphism
 
         assert diagram in self.diagrams()
         assert colimiting_cocone in self.diagrams().morphism_category(1)

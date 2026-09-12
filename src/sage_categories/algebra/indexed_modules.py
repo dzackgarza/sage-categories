@@ -46,8 +46,8 @@ __all__ = [
     "indexed_free_integer_support",
     "integer_module",
     "integer_regular_module",
-    "presented_integer_module",
     "integer_scalar_monoid",
+    "presented_integer_module",
 ]
 
 
@@ -234,6 +234,7 @@ def integer_module(
 def finite_free_integer_module(rank: int) -> ModuleCategory.ObjectType:
     r"""The finite free left module ``ZZ^rank`` in the general integer-module category."""
     from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup
+
     from sage_categories.algebra.abelian import presented_abelian_group
 
     rank = int(rank)
@@ -247,8 +248,9 @@ class IntegerModulePresentation:
 
     def __init__(self, relation_rows) -> None:
         from sage.matrix.constructor import matrix
-        from sage.rings.integer_ring import ZZ
         from sage.modules.free_module_element import vector
+        from sage.rings.integer_ring import ZZ
+
         from sage_categories.algebra.abelian import (
             abelian_homomorphism,
             coequalizer_projection,

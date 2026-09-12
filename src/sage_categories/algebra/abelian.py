@@ -75,7 +75,7 @@ from sympy import Q, false, true
 from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.cones import ConeCategory, cocone, cocones, cone
+from sage_categories.cat.cones import ConeCategory, cocone, cone
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.limit_basis import parallel_pair

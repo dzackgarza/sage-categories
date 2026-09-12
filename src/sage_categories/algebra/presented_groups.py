@@ -11,7 +11,6 @@ from __future__ import annotations
 __all__ = ["GroupPresentation", "presented_group"]
 
 from collections.abc import Sequence
-from typing import TypeAlias
 
 from sage.groups.free_group import FreeGroup
 from sage.structure.sage_object import SageObject
@@ -19,12 +18,18 @@ from sympy import false, true
 
 from sage_categories.cat.calculus import binary_product_data
 from sage_categories.cat.monoidal import Cartesian
-from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.structured_objects import Groups, Magmas, Monoids, PointedMagmas, _shear
+from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.structured_objects import (
+    Groups,
+    Magmas,
+    Monoids,
+    PointedMagmas,
+    _shear,
+)
 from sage_categories.kernel.refinement import refine
 from sage_categories.sets import Sets
 
-GroupWord: TypeAlias = tuple[int, ...]
+type GroupWord = tuple[int, ...]
 
 
 def _native_parent_is(engine, value) -> bool:

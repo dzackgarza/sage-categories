@@ -381,7 +381,9 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
         provider_name = _declaration_name(provider)
         names = tuple(_declaration_name(declaration) for declaration in declared_inheritance(category, role))
         entry = tuple(name for name in names if name != provider_name)
-        relations = result.setdefault(surface_name, {})
+        if surface_name not in result:
+            result[surface_name] = {}
+        relations = result[surface_name]
         key = (surface_name, provider_name)
         if key not in observed:
             relations[provider_name] = entry
@@ -401,7 +403,10 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
             declared_role,
         )
         provider_name = _declaration_name(provider)
-        relations = result.setdefault(_projection_surface(role), {})
+        surface_name = _projection_surface(role)
+        if surface_name not in result:
+            result[surface_name] = {}
+        relations = result[surface_name]
         if provider_name in relations:
             continue
         stable_role = kernel_base(role)
@@ -422,8 +427,11 @@ def _subtyping_projection() -> dict[str, dict[str, tuple[str, ...]]]:
         provider_name = _declaration_name(provider)
         names = tuple(_declaration_name(node(target, role).category.local_role_class(node(target, role).role)) for target in declared_subtyping(category, role))
         entry = tuple(name for name in names if name != provider_name)
-        existing = result.setdefault(surface_name, {}).get(provider_name, ())
-        result[surface_name][provider_name] = tuple(dict.fromkeys(existing + entry))
+        if surface_name not in result:
+            result[surface_name] = {}
+        relations = result[surface_name]
+        existing = relations[provider_name] if provider_name in relations else ()
+        relations[provider_name] = tuple(dict.fromkeys(existing + entry))
     return result
 
 
@@ -536,7 +544,10 @@ def _own_classes(value: CategoryPoint) -> tuple[type[CategoryPoint], ...]:
     category of its points.  A compiled role class is read back through its node, so a
     class the compiler has since rebuilt is not carried forward stale.
     """
-    recorded = vars(value).setdefault("_own_classes", (type(value),))
+    state = vars(value)
+    if "_own_classes" not in state:
+        state["_own_classes"] = (type(value),)
+    recorded = state["_own_classes"]
     current_classes = []
     for own in recorded:
         current = _runtime_node(own)

@@ -13,7 +13,7 @@ def test_adeles_retain_components_ring_operations_and_diagonal() -> None:
     one = adeles.ring.one()
     one_value = one.datum()
     assert one_value.exceptional_primes == frozenset()
-    for prime in (2, 3, 101):
+    for prime in (2, 3, 101, 1009):
         component = one_value.finite_component(prime)
         assert component.rational_value() == 1
         assert component.is_integral() is True
@@ -26,11 +26,17 @@ def test_adeles_retain_components_ring_operations_and_diagonal() -> None:
     assert diagonal_value.finite_component(7).valuation() == 0
     assert diagonal_value.certifies_integral_at(7)
 
+    real_component = adeles.component_map("real")
     five_component = adeles.component_map(5)
     seven_component = adeles.component_map(7)
+    assert real_component.domain() is adeles.ring
+    assert real_component.codomain() is adeles.real_field.ring
+    assert real_component(diagonal).datum().rational_value() == Fraction(1, 5)
     assert five_component.domain() is adeles.ring
     assert five_component.codomain() is adeles.local_field(5).ring
     assert seven_component(diagonal).datum().rational_value() == Fraction(1, 5)
+    assert adeles.diagonal_map().domain() is adeles.rational_field.ring
+    assert adeles.diagonal_map().codomain() is adeles.ring
 
     total = one + diagonal
     product = one * diagonal

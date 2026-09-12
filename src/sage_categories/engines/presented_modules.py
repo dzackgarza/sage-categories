@@ -15,6 +15,7 @@ from functools import cache
 
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
+from sage.matrix.constructor import matrix
 from sage.modules.free_module import FreeModule
 from sage.modules.free_module_element import vector
 from sage.rings.integer_ring import ZZ

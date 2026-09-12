@@ -53,3 +53,9 @@ assert ask(at_four == at_seven) is True
 assert ask(induced_shift(at_four) == at_four_shifted) is True
 assert ask(induced_shift(at_seven) == at_seven_shifted) is True
 assert ask(induced_shift(at_four) == induced_shift(at_seven)) is True
+for stage_index in (4, 7):
+    vertex = omega(stage_index)
+    assert ask(
+        induced_shift * data.leg(vertex)
+        == data.leg(vertex) * shift.component(vertex)
+    ) is True

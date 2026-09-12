@@ -798,6 +798,79 @@ def _rewrite_local_roles(owner: ast.ClassDef, role_parameters: dict[str, str]) -
             local.returns = rewriter.visit(local.returns)
 
 
+def _project_category_declaration_role_parameters(
+    tree: ast.Module,
+    source: ast.Module,
+    top_level: dict[str, ast.ClassDef],
+) -> bool:
+    """Project the three hidden role defaults onto ``CategoryDeclaration`` and ``Category``."""
+    category_declaration = top_level.get("CategoryDeclaration")
+    if category_declaration is None:
+        return False
+    source_category_declaration = next(
+        (statement for statement in source.body if isinstance(statement, ast.ClassDef) and statement.name == "CategoryDeclaration"),
+        None,
+    )
+    assert source_category_declaration is not None, "source has no CategoryDeclaration"
+    source_parameters = {parameter.name: parameter for parameter in source_category_declaration.type_params}
+    existing = {parameter.name: parameter for parameter in category_declaration.type_params}
+    defaults: list[ast.expr] = []
+    for role in _CATEGORY_ROLES:
+        public = _SOURCE_CATEGORY_ROLE_PARAMETERS[role]
+        hidden = _HIDDEN_CATEGORY_ROLES[role]
+        source_parameter = next((source_parameters[name] for name in (public, hidden) if name in source_parameters), None)
+        assert isinstance(source_parameter, ast.TypeVar), f"source CategoryDeclaration role parameter {public!r} is not a TypeVar"
+        assert source_parameter.default_value is not None, f"source CategoryDeclaration role parameter {public!r} has no default"
+        default = copy.deepcopy(source_parameter.default_value)
+        parameter = next((existing[name] for name in (public, hidden) if name in existing), None)
+        match parameter:
+            case None:
+                parameter = ast.TypeVar(name=hidden, default_value=copy.deepcopy(default))
+                category_declaration.type_params.append(parameter)
+                existing[hidden] = parameter
+            case ast.TypeVar():
+                parameter.default_value = copy.deepcopy(default)
+            case _:
+                raise AssertionError(f"CategoryDeclaration role parameter {public!r} is not a TypeVar")
+        defaults.append(default)
+
+    category_alias = next(
+        (
+            statement
+            for statement in tree.body
+            if isinstance(statement, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "Category" for target in statement.targets)
+        ),
+        None,
+    )
+    if category_alias is None or not isinstance(category_alias.value, ast.Subscript):
+        return True
+    alias_arguments = _subscript_arguments(category_alias.value)
+    alias_hidden: list[ast.stmt] = []
+    for hidden, default in zip(_HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True):
+        name = f"_CategoryDeclaration{hidden}"
+        alias_arguments.append(ast.Name(id=name, ctx=ast.Load()))
+        if not any(isinstance(statement, ast.Assign) and any(isinstance(target, ast.Name) and target.id == name for target in statement.targets) for statement in tree.body):
+            alias_hidden.append(
+                ast.Assign(
+                    targets=[ast.Name(id=name, ctx=ast.Store())],
+                    value=ast.Call(
+                        func=ast.Attribute(
+                            value=ast.Name(id="_typing", ctx=ast.Load()),
+                            attr="TypeVar",
+                            ctx=ast.Load(),
+                        ),
+                        args=[ast.Constant(value=name)],
+                        keywords=[ast.keyword(arg="default", value=copy.deepcopy(default))],
+                    ),
+                )
+            )
+    category_alias.value.slice = ast.Tuple(elts=alias_arguments, ctx=ast.Load())
+    if alias_hidden:
+        index = tree.body.index(category_alias)
+        tree.body[index:index] = alias_hidden
+    return True
+
+
 def _project_category_role_parameters(
     tree: ast.Module,
     source: ast.Module,
@@ -826,70 +899,7 @@ def _project_category_role_parameters(
     source_owners = _source_role_owners(source)
 
     top_level = {statement.name: statement for statement in tree.body if isinstance(statement, ast.ClassDef)}
-    category_declaration = top_level.get("CategoryDeclaration")
-    if category_declaration is not None:
-        source_category_declaration = next(
-            (statement for statement in source.body if isinstance(statement, ast.ClassDef) and statement.name == "CategoryDeclaration"),
-            None,
-        )
-        assert source_category_declaration is not None, "source has no CategoryDeclaration"
-        source_parameters = {parameter.name: parameter for parameter in source_category_declaration.type_params}
-        existing = {parameter.name: parameter for parameter in category_declaration.type_params}
-        defaults: list[ast.expr] = []
-        for role in _CATEGORY_ROLES:
-            public = _SOURCE_CATEGORY_ROLE_PARAMETERS[role]
-            hidden = _HIDDEN_CATEGORY_ROLES[role]
-            source_parameter = next((source_parameters[name] for name in (public, hidden) if name in source_parameters), None)
-            assert isinstance(source_parameter, ast.TypeVar), f"source CategoryDeclaration role parameter {public!r} is not a TypeVar"
-            assert source_parameter.default_value is not None, f"source CategoryDeclaration role parameter {public!r} has no default"
-            default = copy.deepcopy(source_parameter.default_value)
-            parameter = next((existing[name] for name in (public, hidden) if name in existing), None)
-            match parameter:
-                case None:
-                    parameter = ast.TypeVar(name=hidden, default_value=copy.deepcopy(default))
-                    category_declaration.type_params.append(parameter)
-                    existing[hidden] = parameter
-                case ast.TypeVar():
-                    parameter.default_value = copy.deepcopy(default)
-                case _:
-                    raise AssertionError(f"CategoryDeclaration role parameter {public!r} is not a TypeVar")
-            defaults.append(default)
-
-        category_alias = next(
-            (
-                statement
-                for statement in tree.body
-                if isinstance(statement, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "Category" for target in statement.targets)
-            ),
-            None,
-        )
-        if category_alias is not None and isinstance(category_alias.value, ast.Subscript):
-            alias_arguments = _subscript_arguments(category_alias.value)
-            alias_hidden: list[ast.stmt] = []
-            for hidden, default in zip(_HIDDEN_CATEGORY_ROLES.values(), defaults, strict=True):
-                name = f"_CategoryDeclaration{hidden}"
-                alias_arguments.append(ast.Name(id=name, ctx=ast.Load()))
-                if not any(
-                    isinstance(statement, ast.Assign) and any(isinstance(target, ast.Name) and target.id == name for target in statement.targets) for statement in tree.body
-                ):
-                    alias_hidden.append(
-                        ast.Assign(
-                            targets=[ast.Name(id=name, ctx=ast.Store())],
-                            value=ast.Call(
-                                func=ast.Attribute(
-                                    value=ast.Name(id="_typing", ctx=ast.Load()),
-                                    attr="TypeVar",
-                                    ctx=ast.Load(),
-                                ),
-                                args=[ast.Constant(value=name)],
-                                keywords=[ast.keyword(arg="default", value=copy.deepcopy(default))],
-                            ),
-                        )
-                    )
-            category_alias.value.slice = ast.Tuple(elts=alias_arguments, ctx=ast.Load())
-            if alias_hidden:
-                index = tree.body.index(category_alias)
-                tree.body[index:index] = alias_hidden
+    has_category_declaration = _project_category_declaration_role_parameters(tree, source, top_level)
 
     required_helper_modules: set[str] = set()
     new_helpers: list[tuple[ast.ClassDef, ast.ClassDef]] = []
@@ -1040,7 +1050,7 @@ def _project_category_role_parameters(
         index = tree.body.index(owner)
         tree.body.insert(index, helper)
     required_modules = set(required_helper_modules)
-    if category_declaration is not None:
+    if has_category_declaration:
         required_modules.add("sage_categories.kernel.roles")
     _ensure_module_imports(tree, required_modules & source_modules)
 

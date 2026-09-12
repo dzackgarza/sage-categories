@@ -21,6 +21,8 @@ from sage.modules.free_module_element import vector
 from sage.rings.integer_ring import ZZ
 
 from sage_categories.algebra._presented_modules_cap import (
+    has_presented_native_morphism,
+    has_presented_native_object,
     presented_native_morphism,
     presented_native_object,
     retain_presented_native_morphism,
@@ -90,24 +92,8 @@ def _homalg_matrix(rows: tuple[tuple[int, ...], ...], columns: int) -> GapElemen
     )
 
 
-def _has_native_object(value: object) -> bool:
-    try:
-        presented_native_object(value)
-    except AssertionError:
-        return False
-    return True
-
-
-def _has_native_morphism(value: object) -> bool:
-    try:
-        presented_native_morphism(value)
-    except AssertionError:
-        return False
-    return True
-
-
 def _native_object(value: object) -> GapElement:
-    if _has_native_object(value):
+    if has_presented_native_object(value):
         return presented_native_object(value).native
     from sage_categories.algebra.abelian import _coordinates
 
@@ -209,7 +195,7 @@ def _native_matrix_from_public(value: object) -> GapElement:
 
 
 def _native_morphism(value: object) -> GapElement:
-    if _has_native_morphism(value):
+    if has_presented_native_morphism(value):
         return presented_native_morphism(value).native
     native = libgap.PresentationMorphism(
         _native_object(value.domain()),

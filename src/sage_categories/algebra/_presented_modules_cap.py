@@ -13,6 +13,8 @@ from sage_categories.cat.native import (
 
 __all__ = [
     "PresentedModuleConstruction",
+    "has_presented_native_morphism",
+    "has_presented_native_object",
     "presented_native_morphism",
     "presented_native_object",
     "retain_presented_native_morphism",
@@ -29,6 +31,16 @@ class PresentedModuleConstruction:
 
 _objects: NativeObjectRealizations[object, PresentedModuleConstruction] = NativeObjectRealizations()
 _morphisms: NativeMorphismRealizations[object] = NativeMorphismRealizations()
+
+
+def has_presented_native_object(value: CategoryOfCategories.ElementType) -> bool:
+    """Whether ``value`` already retains a native presented-module realization."""
+    return _objects.has(value)
+
+
+def has_presented_native_morphism(value: MorphismCategory.ObjectType) -> bool:
+    """Whether ``value`` already retains a native presented-module morphism."""
+    return _morphisms.has(value)
 
 
 def retain_presented_native_object(

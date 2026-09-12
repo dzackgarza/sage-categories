@@ -2,10 +2,13 @@
 
 from sage_categories.all import Mor, ask
 from sage_categories.algebra import (
+    induced_stalk_map,
     inverse_unit,
     localization_extension,
+    localize_at_prime,
     polynomial_ring,
     presented_ring_homomorphism,
+    prime_ideal,
     prime_field,
     principal_localization,
     quotient_ring,
@@ -43,4 +46,25 @@ def test_polynomial_quotient_and_principal_localization_maps() -> None:
     assert ask(quotient_map(epsilon) == target.zero()) is True
 
 
+
+def test_prime_localizations_and_stalk_map_retain_owned_endpoints() -> None:
+    field = prime_field(5)
+    source, (t,) = polynomial_ring(field, ("t",))
+    target, (u,) = polynomial_ring(field, ("u",))
+    mapping = presented_ring_homomorphism(source, target, (u,))
+    target_prime = prime_ideal(target, (u,))
+    target_local, target_localization = localize_at_prime(target_prime)
+    source_prime, source_local, induced_target_local, stalk = induced_stalk_map(
+        mapping, target_prime
+    )
+
+    assert source_prime.ring is source
+    assert target_localization.domain() is target
+    assert target_localization.codomain() is target_local
+    assert induced_target_local is not target_local
+    assert stalk.domain() is source_local
+    assert stalk.codomain() is induced_target_local
+
+
 test_polynomial_quotient_and_principal_localization_maps()
+test_prime_localizations_and_stalk_map_retain_owned_endpoints()

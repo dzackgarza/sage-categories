@@ -8,14 +8,11 @@ additive group objects of sets (``specs/magmas-monoids-semirings.md``, "Groups")
 ``R``, ``AbelianBimoduleTensor(R)`` selects relative tensor product on ``(R,R)``-bimodules
 with unit the regular bimodule (``specs/bimodules.md``, "Relative tensor product").
 
-The public presentation language is Smith coordinates.  Every presented carrier registers its
-``Presentation`` with ``Sets`` as the object form, and every homomorphism between presented
-carriers is constructed from its ``LinearForm``, the integer matrix of its action on Smith
-generators; ``Sets`` composes, pairs, and projects these forms itself and decides the
-equality of two such maps by comparing matrices modulo the target orders, so no law is
-decided by enumeration.  Selected cokernels lower these presentations and morphisms to
-``ModulePresentationsForCAP`` and reconstruct the same owned ``Ab`` object from CAP's returned
-relations; the native CAP object and projection remain private retained realizations.  A
+The public presentation language is Smith coordinates.  Presented carriers retain only the
+coordinate conversion needed at the native boundary; ``ModulePresentationsForCAP`` owns
+presented morphisms, relation checks, additive universal constructions, and their matrices.
+Selected cokernels reconstruct the same owned ``Ab`` object from CAP's returned relations;
+the native CAP object and projection remain private retained realizations.  A
 presented group ``A = Z^n / R_A`` in Smith generators of orders
 ``(d_1, ..., d_n)`` has ``A ⊗ B = Z^{nm} / (R_A ⊗ 1 + 1 ⊗ R_B)``, the quotient of the free
 module on the pairs of generators by ``d_i e_{ij}`` and ``d'_j e_{ij}`` (Stacks, tag 00CV,
@@ -61,8 +58,6 @@ from sage.combinat.free_module import CombinatorialFreeModule
 from sage.groups.additive_abelian.additive_abelian_group import (
     AdditiveAbelianGroup_class,
 )
-from sage.matrix.constructor import block_matrix, identity_matrix, zero_matrix
-from sage.matrix.matrix_integer_dense import Matrix_integer_dense
 from sage.modules.fg_pid.fgp_element import FGP_Element
 from sage.modules.fg_pid.fgp_module import FGP_Module_class
 from sage.modules.free_module_element import vector
@@ -107,12 +102,7 @@ type Engine = AdditiveAbelianGroup_class | FGP_Module_class
 
 @dataclass(frozen=True, eq=False, slots=True)
 class Presentation:
-    """Smith coordinates of a presented carrier: generator orders and the two coordinate maps on data.
-
-    A direct sum of presented carriers, the ``Sets`` product of their carriers, records its
-    factors so that projections and pairings have matrices.  This is the object form
-    ``Sets`` reads (``sets.finite.ObjectForm``).
-    """
+    """Coordinate conversion at the public/native presented-module boundary."""
 
     orders: tuple[int, ...]
     coordinates: Callable[[Hashable], tuple[int, ...]]
@@ -121,9 +111,6 @@ class Presentation:
 
     def rank(self) -> int:
         return len(self.orders)
-
-    def identity(self) -> LinearForm:
-        return LinearForm(self, self, identity_matrix(ZZ, self.rank()))
 
     def direct_sum(self, factors: tuple[Presentation, ...]) -> Presentation:
         sizes = tuple(factor.rank() for factor in factors)
@@ -140,89 +127,8 @@ class Presentation:
 
         return Presentation(tuple(order for factor in factors for order in factor.orders), coordinates, element, factors)
 
-    def projection(self, index: int) -> LinearForm:
-        offset = sum(factor.rank() for factor in self.factors[:index])
-        factor = self.factors[index]
-        matrix = zero_matrix(ZZ, self.rank(), factor.rank())
-        for k in range(factor.rank()):
-            matrix[offset + k, k] = 1
-        return LinearForm(self, factor, matrix)
-
-    def pair(self, components: tuple[LinearForm, ...], target: Presentation) -> LinearForm:
-        assert all(component.source is self for component in components)
-        if not components:
-            return LinearForm(self, target, zero_matrix(ZZ, self.rank(), target.rank()))
-        return LinearForm(self, target, block_matrix(ZZ, 1, len(components), [component.matrix for component in components], subdivide=False))
-
     def zero_datum(self) -> Hashable:
         return self.element((0,) * self.rank())
-
-    def zero_map(self, source: Presentation) -> LinearForm:
-        return LinearForm(source, self, zero_matrix(ZZ, source.rank(), self.rank()))
-
-
-def _descends(matrix: Matrix_integer_dense, source_orders: tuple[int, ...], target_orders: tuple[int, ...]) -> bool:
-    """Whether an integer matrix on generators defines a map of the quotients: ``d_i M_{ij} ≡ 0 (mod e_j)``."""
-    return all(
-        (source * matrix[i, j]) % target == 0 if target else source * matrix[i, j] == 0
-        for i, source in enumerate(source_orders)
-        if source
-        for j, target in enumerate(target_orders)
-    )
-
-
-@dataclass(frozen=True, eq=False, slots=True)
-class LinearForm:
-    """A homomorphism between presented carriers as its integer matrix on Smith generators, ``x ↦ x · M`` on coordinate rows.
-
-    This is the map form ``Sets`` reads (``sets.finite.MapForm``): composition is the
-    matrix product, equality is equality of matrices reduced modulo the target orders,
-    and a unimodular matrix between free presentations inverts.
-    """
-
-    source: Presentation
-    target: Presentation
-    matrix: Matrix_integer_dense
-
-    def evaluate(self, datum: Hashable) -> Hashable:
-        image = vector(ZZ, self.source.coordinates(datum)) * self.matrix
-        return self.target.element(tuple(int(c) for c in image))
-
-    def compose(self, first: LinearForm) -> LinearForm | None:
-        if not isinstance(first, LinearForm) or first.target is not self.source:
-            return None
-        return LinearForm(first.source, self.target, first.matrix * self.matrix)
-
-    def equals(self, other: LinearForm) -> bool | None:
-        if not isinstance(other, LinearForm) or other.source is not self.source or other.target is not self.target:
-            return None
-        return self.reduced() == other.reduced()
-
-    def reduced(self) -> Matrix_integer_dense:
-        """The matrix with each column reduced modulo the order of its target generator."""
-        matrix = self.matrix.__copy__()
-        for column, order in enumerate(self.target.orders):
-            if order:
-                for row in range(matrix.nrows()):
-                    matrix[row, column] = matrix[row, column] % order
-        matrix.set_immutable()
-        return matrix
-
-    def inverse(self) -> LinearForm | None:
-        """The two-sided inverse when the matrix is unimodular and both it and its integer inverse respect the relations.
-
-        A square integer matrix of determinant ``±1`` has an integer inverse, and each of
-        the two descends to the quotients exactly when ``d_i M_{ij} ≡ 0 (mod e_j)`` for the
-        source orders ``d`` and target orders ``e``.  Both conditions checked, the two maps
-        compose to the identity on coordinates and so on the groups.  Anything else leaves
-        invertibility to another route rather than asserting it.
-        """
-        if self.matrix.nrows() != self.matrix.ncols() or abs(self.matrix.det()) != 1:
-            return None
-        candidate = self.matrix.inverse().change_ring(ZZ)
-        if not _descends(candidate, self.target.orders, self.source.orders):
-            return None
-        return LinearForm(self.target, self.source, candidate)
 
 
 @dataclass(frozen=True, eq=False, slots=True)

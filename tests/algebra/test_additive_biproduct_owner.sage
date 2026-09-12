@@ -26,8 +26,10 @@ def test_mixed_biproduct_has_additive_universal_maps() -> None:
     assert second in Mor(abelian)(biproduct, cyclic)
     assert include_first in Mor(abelian)(integers, biproduct)
     assert include_second in Mor(abelian)(cyclic, biproduct)
-    assert ask(first * include_first == Mor(abelian)(integers, integers).one()) is True
-    assert ask(second * include_second == Mor(abelian)(cyclic, cyclic).one()) is True
+    integer_identity = abelian_homomorphism(integers, integers, lambda value: value)
+    cyclic_identity = abelian_homomorphism(cyclic, cyclic, lambda value: value)
+    assert ask(first * include_first == integer_identity) is True
+    assert ask(second * include_second == cyclic_identity) is True
     assert ask(first * include_second == abelian.zero_morphism(cyclic, integers)) is True
     assert ask(second * include_first == abelian.zero_morphism(integers, cyclic)) is True
 
@@ -37,7 +39,7 @@ def test_mixed_biproduct_has_additive_universal_maps() -> None:
     pairing = product.lift(cones(diagram)(cone(
         diagram, integers, lambda vertex: pairing_legs[sequence_position(vertex)],
     )))
-    copairing_legs = (reduction, Mor(abelian)(cyclic, cyclic).one())
+    copairing_legs = (reduction, cyclic_identity)
     copairing = coproduct.lift(cocones(diagram)(cocone(
         diagram, cyclic, lambda vertex: copairing_legs[sequence_position(vertex)],
     )))

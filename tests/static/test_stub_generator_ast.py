@@ -968,6 +968,7 @@ def test_stub_import_groups_prune_stale_incomplete_and_sort_project_imports() ->
 import sage_categories.kernel.roles
 from _typeshed import Incomplete
 from dataclasses import dataclass
+from sage.structure.parent import Parent
 from sage_categories.cat.category import Category as Category, Cat as Cat
 
 class Owner:
@@ -978,7 +979,6 @@ class Owner:
     groups = generator._stub_import_groups(tree, "sage_categories")
     rendered = [[ast.unparse(statement) for statement in group] for group in groups]
     assert rendered == [
-        ["from dataclasses import dataclass"],
         [
             "import sage_categories.kernel.roles",
             "from sage_categories.cat.category import Cat as Cat",

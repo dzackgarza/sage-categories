@@ -161,11 +161,14 @@ def _stub_import_groups(tree: ast.Module, package: str) -> tuple[tuple[ast.stmt,
     no longer refers to ``Incomplete``.  Every remaining imported alias is emitted as
     its own statement, matching Ruff's stub import convention.
     """
-    uses_incomplete = any(
-        isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) and node.id == "Incomplete"
+    loaded_names = {
+        node.id
         for statement in tree.body
         if not isinstance(statement, ast.Import | ast.ImportFrom)
         for node in ast.walk(statement)
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
+    }
+    uses_incomplete = "Incomplete" in loaded_names
     )
     imports: list[ast.stmt] = []
     unaliased_from_imports: dict[tuple[str | None, int], list[ast.alias]] = {}
@@ -177,6 +180,10 @@ def _stub_import_groups(tree: ast.Module, package: str) -> tuple[tuple[ast.stmt,
             continue
         for alias in statement.names:
             if statement.module == "_typeshed" and alias.name == "Incomplete" and not uses_incomplete:
+                continue
+            bound = alias.asname or alias.name
+            explicit_reexport = alias.asname == alias.name
+            if statement.module != "__future__" and alias.name != "*" and not explicit_reexport and bound not in loaded_names:
                 continue
             if alias.asname is None:
                 key = (statement.module, statement.level)

@@ -1,6 +1,6 @@
 """Arbitrary-index free integer modules retain the full index and coproduct universal map."""
 
-from sympy import Q
+from sympy import Q, Rational, sqrt
 
 from sage_categories.algebra import (
     AbelianTensor,
@@ -33,6 +33,16 @@ def test_infinite_free_integer_module_retains_all_indices_and_finite_support() -
     assert element.parent() is module
 
 
+def test_nonenumerable_index_needs_only_finite_support_per_element() -> None:
+    reals = Sets.from_membership(lambda value: Q.real(value))
+    assert Sets.chosen_enumeration(reals) is Unknown
+    module = indexed_free_integer_module(reals)
+    half, irrational = Rational(1, 2), sqrt(2)
+    element = indexed_free_integer_element(module, {half: 3, irrational: -5})
+    assert indexed_free_integer_coefficients(module, element) == {half: 3, irrational: -5}
+    assert {point.datum() for point in indexed_free_integer_support(module, element)} == {half, irrational}
+
+
 def test_infinite_free_integer_module_has_rule_supplied_coproduct_mediator() -> None:
     indices = Sets.from_membership(lambda value: Q.integer(value))
     monoidal = AbelianTensor()
@@ -59,4 +69,5 @@ def test_infinite_free_integer_module_has_rule_supplied_coproduct_mediator() -> 
 
 
 test_infinite_free_integer_module_retains_all_indices_and_finite_support()
+test_nonenumerable_index_needs_only_finite_support_per_element()
 test_infinite_free_integer_module_has_rule_supplied_coproduct_mediator()

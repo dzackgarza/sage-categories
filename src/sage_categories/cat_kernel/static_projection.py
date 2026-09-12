@@ -12,7 +12,7 @@ from typing import get_args, get_type_hints
 from sage_categories.kernel.compiler import install_method_result_projection_reader
 
 
-def _fullname(value: type | object) -> str:
+def _fullname(value: type[object]) -> str:
     return f"{value.__module__}.{value.__qualname__}"
 
 

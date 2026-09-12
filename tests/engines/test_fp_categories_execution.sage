@@ -72,4 +72,31 @@ def test_native_finite_presented_category_paths() -> None:
     assert free_loop.finite_morphisms() is Unknown
 
 
+def test_native_parallel_length_two_relation() -> None:
+    square = FinitePresentedCategory(
+        "commuting square",
+        ("source", "upper", "lower", "target"),
+        (
+            ("up", "source", "upper"),
+            ("across upper", "upper", "target"),
+            ("down", "source", "lower"),
+            ("across lower", "lower", "target"),
+        ),
+        ((("up", "across upper"), ("down", "across lower")),),
+    )
+    upper = square.generator("across upper") * square.generator("up")
+    lower = square.generator("across lower") * square.generator("down")
+
+    assert upper.domain() is square("source")
+    assert upper.codomain() is square("target")
+    assert lower.domain() is square("source")
+    assert lower.codomain() is square("target")
+    assert ask(upper == lower) is True
+    assert upper.word() == lower.word()
+
+    arrows = square.finite_morphisms()
+    assert arrows is not Unknown and len(arrows) == 9
+
+
 test_native_finite_presented_category_paths()
+test_native_parallel_length_two_relation()

@@ -874,6 +874,12 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         assert colimiting_cocone in self.diagrams().morphism_category(1)
         assert colimiting_cocone.domain() is diagram
         assert cocone_apex(colimiting_cocone) is apex
+        # Keep the supplied public cocone as the authoritative presentation.  The
+        # opposite limit remains the execution model, but readers of this colimit should
+        # not reconstruct the same legs and mediator through the entire opposite tower.
+        self._presentations[diagram] = colimit_cocones(diagram).with_universal_data(
+            colimiting_cocone, mediator
+        )
         dual_diagram = self._dual_diagram(diagram)
         self._dual_limits.with_universal_data(
             dual_diagram,

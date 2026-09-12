@@ -37,12 +37,16 @@ from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 from sage_categories.sets.finite import Sets
 
 __all__ = [
+    "IntegerModulePresentation",
+    "finite_free_integer_module",
     "indexed_free_integer_coefficients",
     "indexed_free_integer_element",
     "indexed_free_integer_homomorphism",
     "indexed_free_integer_module",
     "indexed_free_integer_support",
+    "integer_module",
     "integer_regular_module",
+    "presented_integer_module",
     "integer_scalar_monoid",
 ]
 
@@ -215,3 +219,129 @@ def indexed_free_integer_homomorphism(
 
     additive = indexed_free_abelian_mediator(source_carrier, target_carrier, component)
     return source_data.modules.homomorphism(source, target, additive)
+
+
+@cached_function(key=identity_key)
+def integer_module(
+    additive_group: CategoryOfCategories.ElementType,
+) -> ModuleCategory.ObjectType:
+    r"""Equip a represented abelian group with its canonical left ``ZZ`` action."""
+    assert additive_group in AbelianGroups()
+    return _certified_integer_module(additive_group)
+
+
+@cached_function
+def finite_free_integer_module(rank: int) -> ModuleCategory.ObjectType:
+    r"""The finite free left module ``ZZ^rank`` in the general integer-module category."""
+    from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup
+    from sage_categories.algebra.abelian import presented_abelian_group
+
+    rank = int(rank)
+    if rank < 0:
+        raise ValueError("a free-module rank is nonnegative")
+    return integer_module(presented_abelian_group(AdditiveAbelianGroup([0] * rank)))
+
+
+class IntegerModulePresentation:
+    r"""A finite matrix presentation ``ZZ^m -> ZZ^n -> M`` with its cokernel map."""
+
+    def __init__(self, relation_rows) -> None:
+        from sage.matrix.constructor import matrix
+        from sage.rings.integer_ring import ZZ
+        from sage.modules.free_module_element import vector
+        from sage_categories.algebra.abelian import (
+            abelian_homomorphism,
+            coequalizer_projection,
+            presentation,
+        )
+
+        rows = tuple(tuple(int(entry) for entry in row) for row in relation_rows)
+        columns = len(rows[0]) if rows else 0
+        if any(len(row) != columns for row in rows):
+            raise ValueError("a relation matrix has one common target rank")
+        relation_matrix = matrix(ZZ, rows) if rows else matrix(ZZ, 0, columns)
+        source = finite_free_integer_module(len(rows))
+        target = finite_free_integer_module(columns)
+        modules = Modules(integer_scalar_monoid(), SelfAction(AbelianTensor()))
+        source_group = modules.forgetful().on_object(source)
+        target_group = modules.forgetful().on_object(target)
+        source_form = presentation(source_group)
+        target_form = presentation(target_group)
+
+        def relation_rule(datum):
+            coordinates = vector(ZZ, source_form.coordinates(datum)) * relation_matrix
+            return target_form.element(tuple(int(entry) for entry in coordinates))
+
+        relation_additive = abelian_homomorphism(source_group, target_group, relation_rule)
+        zero_additive = abelian_homomorphism(
+            source_group,
+            target_group,
+            lambda datum: target_form.zero_datum(),
+        )
+        relation = modules.homomorphism(source, target, relation_additive)
+        zero = modules.homomorphism(source, target, zero_additive)
+        additive_projection = coequalizer_projection(relation_additive, zero_additive)
+        quotient = integer_module(additive_projection.codomain())
+        projection = modules.homomorphism(target, quotient, additive_projection)
+
+        self._relation_matrix = relation_matrix
+        self._modules = modules
+        self._source = source
+        self._target = target
+        self._relation = relation
+        self._zero = zero
+        self._quotient = quotient
+        self._additive_projection = additive_projection
+        self._projection = projection
+
+    def relation_matrix(self):
+        return self._relation_matrix
+
+    def module_category(self):
+        return self._modules
+
+    def source_free_module(self):
+        return self._source
+
+    def target_free_module(self):
+        return self._target
+
+    def relation_morphism(self):
+        return self._relation
+
+    def zero_morphism(self):
+        return self._zero
+
+    def module(self):
+        return self._quotient
+
+    def cokernel_projection(self):
+        return self._projection
+
+    def target_basis_element(self, index: int):
+        from sage_categories.algebra.abelian import presentation
+
+        target_group = self._modules.forgetful().on_object(self.target_free_module())
+        form = presentation(target_group)
+        coordinates = [0] * form.rank()
+        coordinates[int(index)] = 1
+        return self.target_free_module().point(form.element(tuple(coordinates)))
+
+    def factor(
+        self,
+        target: ModuleCategory.ObjectType,
+        coequalizing: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
+        r"""Factor a map killing the relation matrix through the retained CAP cokernel."""
+        from sage_categories.algebra.abelian import coequalizer_mediator
+
+        assert coequalizing.domain() is self.target_free_module()
+        assert coequalizing.codomain() is target
+        additive = self._modules.forgetful().on_morphism(coequalizing)
+        mediator = coequalizer_mediator(self._additive_projection, additive)
+        return self._modules.homomorphism(self.module(), target, mediator)
+
+
+def presented_integer_module(relation_rows) -> IntegerModulePresentation:
+    r"""Construct the finite integer-module presentation with this relation matrix."""
+    return IntegerModulePresentation(relation_rows)

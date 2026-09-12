@@ -71,6 +71,7 @@ __all__ = [
     "GroupPresentation",
     "Groups",
     "IndexedCategories",
+    "IntegerModulePresentation",
     "InitialObjects",
     "Inserter",
     "LeftUniversalArrows",
@@ -128,8 +129,11 @@ __all__ = [
     "natural_transformation_diagram",
     "natural_transformation_to_end",
     "pair_maps",
+    "finite_free_integer_module",
+    "integer_module",
     "parallel_pair",
     "presented_group",
+    "presented_integer_module",
     "power_functor",
     "precompose",
     "product_functor",
@@ -220,7 +224,16 @@ from sage_categories import (
     weighted_projection,
     yoneda,
 )
-from sage_categories.algebra import AbelianGroups, AbelianTensor, GroupPresentation, presented_group
+from sage_categories.algebra import (
+    AbelianGroups,
+    AbelianTensor,
+    GroupPresentation,
+    IntegerModulePresentation,
+    finite_free_integer_module,
+    integer_module,
+    presented_group,
+    presented_integer_module,
+)
 from sage_categories.cat.monoidal import (
     Actions,
     Cartesian,

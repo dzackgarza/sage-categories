@@ -59,12 +59,16 @@ from sage_categories.algebra.free_associative import (
     integer_free_associative_algebra,
 )
 from sage_categories.algebra.indexed_modules import (
+    IntegerModulePresentation,
+    finite_free_integer_module,
     indexed_free_integer_coefficients,
     indexed_free_integer_element,
     indexed_free_integer_homomorphism,
     indexed_free_integer_module,
     indexed_free_integer_support,
+    integer_module,
     integer_regular_module,
+    presented_integer_module,
     integer_scalar_monoid,
 )
 from sage_categories.algebra.presented_groups import (
@@ -90,6 +94,7 @@ __all__ = [
     "ExactLocalFieldPresentation",
     "ExactLocalValue",
     "GroupPresentation",
+    "IntegerModulePresentation",
     "LinearForm",
     "Presentation",
     "PrimeIdeal",
@@ -102,6 +107,7 @@ __all__ = [
     "exact_padic_field",
     "exact_rational_field",
     "exact_real_field",
+    "finite_free_integer_module",
     "free_associative_coefficients",
     "free_associative_element",
     "free_associative_generator",
@@ -124,6 +130,7 @@ __all__ = [
     "induced_stalk_map_to",
     "integer_free_associative_algebra",
     "integer_group",
+    "integer_module",
     "integer_regular_module",
     "integer_scalar_monoid",
     "inverse_unit",
@@ -132,6 +139,7 @@ __all__ = [
     "polynomial_ring",
     "presented_abelian_group",
     "presented_group",
+    "presented_integer_module",
     "presented_ring_homomorphism",
     "prime_field",
     "prime_ideal",

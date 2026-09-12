@@ -4,7 +4,6 @@ from typing import Literal
 import sage_categories.cat.cat_constructions
 import sage_categories.cat.category
 import sage_categories.cat.constructions
-import sage_categories.cat.functors
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
 import sage_categories.sets.finite
@@ -174,7 +173,6 @@ class _StaticRoles_FixedEndpointProperty(_StaticRoles_NarrowedProperty):
         _StaticRoles_NarrowedProperty.ObjectType,
         sage_categories.cat.morphisms._StaticRoles_IsomorphismsCategory.ObjectType,
         sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory.ObjectType,
-        sage_categories.cat.functors._StaticRoles_FunctorCategory.MorphismType,
         sage_categories.cat.constructions._StaticRoles_LimitsCategory.ElementType,
     ): ...
     class ElementType(

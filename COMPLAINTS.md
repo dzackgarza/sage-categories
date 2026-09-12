@@ -568,3 +568,15 @@ Ideas, to be weighed, not obligations.*
 
 - **Required resolution:** Treat Sage `MonoDict` as its actual mapping API, not as `dict`. Preserve membership/indexing and `.items()` forms at these owners, and keep a root-package Sage bootstrap regression so any future autofix that reintroduces dict-only operations fails before static/plugin work proceeds.
   The normalizer invokes Ruff with the explicit central config `~/ai-review-ci/tool-configs/ruff-global.toml`; repository-local Ruff configuration therefore cannot enforce this exclusion. The remaining repair belongs to that central QC owner: mark `SIM401` and `PERF102` unfixable there, then rerun the unsafe-fix reproducer and the MonoDict runtime consumer.
+
+## Finite category limits and colimits duplicate the same native diagram lowering
+
+- **Mathematical need or user action:** Lower one finite category-valued diagram to `FinSetsForCAP` once, then choose either the native limit or colimit operation without maintaining two copies of the object/arrow encoding.
+
+- **Evidence:** `src/sage_categories/engines/category_limits.py` currently repeats the same `vertex_positions`, per-factor `value_positions`, `native_factors`, and decorated-edge construction in both `compatible_families()` and `identified_objects()`. Only the final CAP operation and projection/injection readback differ. `matching_triples()` uses a genuinely different three-factor equalizer construction and is not part of this duplication.
+
+- **Gap and impact:** The repeated finite-diagram lowering is engine-boundary code, so any indexing, identity, or map-graph correction must be made twice before either limits or colimits are trustworthy. It also obscures the actual distinction between the two operations behind duplicated setup code. The earliest owner is `engines/category_limits.py`, not the public limit/colimit categories.
+
+- **Uncertainty:** This audit establishes duplication inside this adapter only; it does not claim that the same lowering helper should absorb product/equalizer-specific adapters elsewhere.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Resolve by giving the shared finite-diagram lowering one private owner returning the native factors and decorated arrows, with `compatible_families()` and `identified_objects()` retaining only their limit-versus-colimit calls and directional readback. Existing finite category limit/colimit consumers must remain unchanged.

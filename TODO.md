@@ -17,7 +17,7 @@ Multiple prerequisites are conjunctive.
 | ID | Work and full obligation in the governing plan | Needs |
 | --- | --- | --- |
 | `runtime` | Section 19.1: runtime bindings, owned reconstruction, exact installation, earlier objects and selected maps | none |
-| `sets` | Section 19.2: restore general Sets products, including rule-defined integers, represented reals and mixed inputs, while retaining finite native operations | `sets-mixed`, `sets-finite-native` |
+| `sets` | **Closed.** Section 19.2: restore general Sets products, including rule-defined integers, represented reals and mixed inputs, while retaining finite native operations | `sets-mixed`, `sets-finite-native` |
 | `functors` | Section 19.2: native categories, both functor actions, transformations, compositions, whiskerings and nonenumerated sources | none |
 | `paths` | Section 19.2: complete typed presented paths and native finite universal-construction operation families | none |
 | `universal` | Section 19.2: retained diagrams, chosen apex/legs/mediators, nonstandard indexing, opposites and predicate subobjects (#30/#24/#41; intrinsic #32) | `sets`, `functors`, `paths` |
@@ -54,7 +54,7 @@ Multiple prerequisites are conjunctive.
 | `sets-integers` | **Closed.** Section 19.2 decomposition: rule-defined integer objects inside general Sets products. **Acceptance:** `tests/sets/test_set_scaffold.sage::test_rule_defined_infinite_set` passes under the declared runtime | `sets-core` |
 | `sets-reals` | **Closed.** Section 19.2 decomposition: represented reals inside general Sets products. **Acceptance:** `tests/sets/test_represented_real_products.sage::test_represented_real_product` passes under the declared runtime | `sets-core` |
 | `sets-mixed` | **Closed.** Section 19.2 decomposition: mixed-input products combining enumerated, rule-defined and represented factors. **Acceptance:** `tests/sets/test_mixed_input_products.sage::test_mixed_input_product` passes under the declared runtime | `sets-integers`, `sets-reals` |
-| `sets-finite-native` | Section 19.2 decomposition: finite native operations retained unchanged across the restored general product. **Acceptance:** `tests/sets/test_set_scaffold.sage::test_finite_set_universal_maps` passes against the restored general product, not only the finite path | `sets-core` |
+| `sets-finite-native` | **Closed.** Section 19.2 decomposition: finite native operations retained unchanged across the restored general product. **Acceptance:** `tests/sets/test_set_scaffold.sage::test_finite_set_universal_maps` passes under the declared runtime and asserts retained native product, mediator and projection realizations | `sets-core` |
 | `sets-core` | **Closed.** Section 19.2 decomposition: the general Sets product construction itself, before its factor kinds. **Acceptance:** `tests/sets/test_general_set_product.sage::test_general_set_product` passes under the declared runtime | none |
 | `acceptance` | Section 20 in full, including displaced-code removal under 20.1 and native integration extensions under 20.2 | `host-headroom`, `monodict-autofix`, `runtime`, `sets`, `functors`, `paths`, `universal`, `indexed`, `diagrams`, `refinement`, `inverses`, `isofibrations`, `named`, `additive`, `tensor`, `relative`, `actions`, `kan`, `orders`, `groups`, `modules`, `module-sums`, `algebras`, `rings`, `spaces-sheaves`, `affine`, `gluing`, `topological-colimit`, `adeles`, `gate`, `python-runtime`, `static` |
 

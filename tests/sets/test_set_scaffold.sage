@@ -13,6 +13,7 @@ from sage_categories.cat.limit_basis import parallel_pair
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.predicates import Unknown, ask
 from sage_categories.cat.shapes import Discrete
+from sage_categories.sets._finite_cap import finite_native_morphism, finite_native_object
 from sage_categories.sets.finite import FiniteSets, Sets, SetsCategory
 
 
@@ -30,6 +31,11 @@ def test_finite_set_universal_maps() -> None:
     g = Mor(Sets)(X, Y)(lambda n: int(n > 0))
     pair = pair_maps(Sets, f, g)
     product = pair.codomain()
+    assert finite_native_object(product).value is product
+    assert finite_native_morphism(pair).source is X
+    assert finite_native_morphism(pair).target is product
+    assert finite_native_morphism(product.product_projection(0)).source is product
+    assert finite_native_morphism(product.product_projection(0)).target is Y
     assert ask(product.product_projection(0) * pair == f) is True
     assert ask(product.product_projection(1) * pair == g) is True
     assert pair(X.point(2)).datum() == (0, 1)

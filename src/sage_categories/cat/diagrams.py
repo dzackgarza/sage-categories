@@ -104,8 +104,14 @@ def evaluation(functors: FunctorCategory, vertex: CategoryOfCategories.ElementTy
 def constant(functors: FunctorCategory, value: CategoryOfCategories.ElementType) -> Functor:
     """The constant diagram at ``value``, retained per value."""
     assert value in functors.codomain(), f"{value!r} is not an object of {functors.codomain()!r}"
-    identity = functors.codomain().morphism_category(1)(value, value).one()
-    diagram = functors(lambda vertex: value, lambda morphism: identity)
+    # A constant diagram needs its target identity only when a source morphism is
+    # actually evaluated.  In particular, cones over a discrete shape should not force
+    # construction of an unrelated exact-category identity merely to name the constant
+    # object family.
+    diagram = functors(
+        lambda vertex: value,
+        lambda morphism: functors.codomain().morphism_category(1)(value, value).one(),
+    )
     functors._constant_values[diagram] = value
     return diagram
 

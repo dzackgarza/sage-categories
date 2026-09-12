@@ -4,23 +4,16 @@ from collections.abc import Hashable
 
 from sympy import Dummy, Lambda, Q, pi, sqrt
 
-from sage_categories.all import (
-    Cat,
-    Category,
-    FiniteSets,
-    Fun,
-    Mor,
-    Sets,
-    Unknown,
-    ask,
-    pair_maps,
-    parallel_pair,
-)
+from sage_categories.cat.calculus import pair_maps
+from sage_categories.cat.category import Category
 from sage_categories.cat.cones import cocone, cocones
 from sage_categories.cat.constructions import constructed_data
-from sage_categories.cat.functors import Functor
+from sage_categories.cat.functors import Cat, Fun, Functor
+from sage_categories.cat.limit_basis import parallel_pair
+from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.predicates import Unknown, ask
 from sage_categories.cat.shapes import Discrete
-from sage_categories.sets.finite import SetsCategory
+from sage_categories.sets.finite import FiniteSets, Sets, SetsCategory
 
 
 def test_finite_set_universal_maps() -> None:

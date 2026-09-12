@@ -862,6 +862,14 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         self.accepts(diagram)
         if diagram in self._presentations:
             return self._associate(self._presentations[diagram])
+        # An exact ambient may retain a construction for this shape (for example the
+        # native cokernel realization of walking parallel pairs in ``Ab``).  That owner
+        # must run before the generic opposite-limit fallback, otherwise its public
+        # presentation is bypassed and the dual family is asked to invent a second one.
+        if self._shape in self.ambient()._colimit_constructors:
+            self.ambient().colimit_construction(self._shape)(diagram)
+            assert diagram in self._presentations, "the retained colimit constructor did not retain its public universal data"
+            return self._associate(self._presentations[diagram])
         dual_diagram = self._dual_diagram(diagram)
         if not self._dual_limits.has_construction(self._dual_limits.lowered(dual_diagram)):
             self._dual_limits(dual_diagram)

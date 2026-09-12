@@ -54,7 +54,6 @@ __all__ = [
 ]
 
 
-
 def version() -> str:
     """Return the OSCAR package version loaded by the isolated worker."""
     return bridge().text("version")

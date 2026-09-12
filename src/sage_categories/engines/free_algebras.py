@@ -38,11 +38,7 @@ def _word(native_word) -> Word:
 
 def _element(algebra, terms: Terms):
     return algebra.sum_of_terms(
-        (
-            (_native_word(algebra, word), ZZ(int(coefficient)))
-            for word, coefficient in terms.items()
-            if int(coefficient) != 0
-        ),
+        ((_native_word(algebra, word), ZZ(int(coefficient))) for word, coefficient in terms.items() if int(coefficient) != 0),
         distinct=True,
     )
 
@@ -50,11 +46,7 @@ def _element(algebra, terms: Terms):
 def coefficients(algebra, element) -> dict[Word, int]:
     """Serialize one native free-algebra element in the word basis."""
     assert element.parent() is algebra
-    return {
-        _word(word): int(coefficient)
-        for word, coefficient in element.monomial_coefficients(copy=False).items()
-        if int(coefficient) != 0
-    }
+    return {_word(word): int(coefficient) for word, coefficient in element.monomial_coefficients(copy=False).items() if int(coefficient) != 0}
 
 
 def multiply(algebra, left: Terms, right: Terms) -> dict[Word, int]:

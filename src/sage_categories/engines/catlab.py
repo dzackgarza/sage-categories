@@ -58,9 +58,7 @@ _functor_recipes: dict[int, tuple[object, FunctorRecipe]] = {}
 _transformation_recipes: dict[int, tuple[object, TransformationRecipe]] = {}
 
 
-def _retain_functor_recipe(
-    value: MorphismCategory.ObjectType, recipe: FunctorRecipe
-) -> None:
+def _retain_functor_recipe(value: MorphismCategory.ObjectType, recipe: FunctorRecipe) -> None:
     identifier = id(value)
     if identifier in _functor_recipes:
         retained, existing = _functor_recipes[identifier]
@@ -78,16 +76,12 @@ def _functor_recipe(value: MorphismCategory.ObjectType) -> FunctorRecipe | None:
     return recipe
 
 
-def _retain_transformation_recipe(
-    value: MorphismCategory.ObjectType, recipe: TransformationRecipe
-) -> None:
+def _retain_transformation_recipe(value: MorphismCategory.ObjectType, recipe: TransformationRecipe) -> None:
     identifier = id(value)
     if identifier in _transformation_recipes:
         retained, _ = _transformation_recipes[identifier]
         assert retained is value
-        assert not has_native_transformation(value), (
-            f"{value!r} already materialized its Catlab transformation"
-        )
+        assert not has_native_transformation(value), f"{value!r} already materialized its Catlab transformation"
         _transformation_recipes[identifier] = (value, recipe)
         return
     _transformation_recipes[identifier] = (value, recipe)
@@ -130,9 +124,7 @@ def ensure_native_functor(functor: MorphismCategory.ObjectType) -> object:
         case ("identity", (owner,)):
             native = bridge.identity_functor(ensure_native_category(owner))
         case ("compose", (first, second)):
-            native = bridge.compose_functors(
-                ensure_native_functor(first), ensure_native_functor(second)
-            )
+            native = bridge.compose_functors(ensure_native_functor(first), ensure_native_functor(second))
         case None:
             native = bridge.callable_functor(
                 functor._declared_object_image,
@@ -150,18 +142,12 @@ def functor_object_image(functor: MorphismCategory.ObjectType, value: object) ->
     return _bridge().functor_object_image(ensure_native_functor(functor), value)
 
 
-def functor_morphism_image(
-    functor: MorphismCategory.ObjectType, value: object
-) -> object:
+def functor_morphism_image(functor: MorphismCategory.ObjectType, value: object) -> object:
     return _bridge().functor_morphism_image(ensure_native_functor(functor), value)
 
 
-def compose_functors(
-    first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType
-) -> object:
-    return _bridge().compose_functors(
-        ensure_native_functor(first), ensure_native_functor(second)
-    )
+def compose_functors(first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> object:
+    return _bridge().compose_functors(ensure_native_functor(first), ensure_native_functor(second))
 
 
 def retain_composite_functor(
@@ -196,9 +182,7 @@ def callable_transformation(
 
 
 def _native_transformation(value: MorphismCategory.ObjectType) -> object:
-    assert has_native_transformation(value), (
-        f"{value!r} has no retained native transformation"
-    )
+    assert has_native_transformation(value), f"{value!r} has no retained native transformation"
     return retained_native_transformation(value).native
 
 
@@ -247,12 +231,8 @@ def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:
     return _retain_transformation(value, source, target, native)
 
 
-def transformation_component(
-    value: MorphismCategory.ObjectType, member_object: object
-) -> object:
-    return _bridge().transformation_component(
-        ensure_native_transformation(value), member_object
-    )
+def transformation_component(value: MorphismCategory.ObjectType, member_object: object) -> object:
+    return _bridge().transformation_component(ensure_native_transformation(value), member_object)
 
 
 def identity_transformation(
@@ -279,9 +259,7 @@ def whisker_left(
     source: MorphismCategory.ObjectType,
     target: MorphismCategory.ObjectType,
 ) -> None:
-    _retain_transformation_recipe(
-        value, ("whisker_left", (functor, transformation, source, target))
-    )
+    _retain_transformation_recipe(value, ("whisker_left", (functor, transformation, source, target)))
 
 
 def whisker_right(
@@ -291,9 +269,7 @@ def whisker_right(
     source: MorphismCategory.ObjectType,
     target: MorphismCategory.ObjectType,
 ) -> None:
-    _retain_transformation_recipe(
-        value, ("whisker_right", (transformation, functor, source, target))
-    )
+    _retain_transformation_recipe(value, ("whisker_right", (transformation, functor, source, target)))
 
 
 def horizontal_composite(
@@ -303,16 +279,12 @@ def horizontal_composite(
     source: MorphismCategory.ObjectType,
     target: MorphismCategory.ObjectType,
 ) -> None:
-    _retain_transformation_recipe(
-        value, ("horizontal", (first, second, source, target))
-    )
+    _retain_transformation_recipe(value, ("horizontal", (first, second, source, target)))
 
 
 def _presented_category_data(
     category: object,
-) -> tuple[
-    list[str], list[tuple[str, int, int]], list[tuple[int, list[int], list[int]]]
-]:
+) -> tuple[list[str], list[tuple[str, int, int]], list[tuple[int, list[int], list[int]]]]:
     labels = tuple(category.labels())
     names = tuple(category.generator_names())
     label_positions = {label: index + 1 for index, label in enumerate(labels)}
@@ -343,9 +315,7 @@ def _presented_category_data(
 
 def presented_coproduct(categories: tuple[object, ...]) -> object:
     """Native Catlab coproduct of exact finite presentations."""
-    return _bridge().presented_coproduct(
-        [_presented_category_data(category) for category in categories]
-    )
+    return _bridge().presented_coproduct([_presented_category_data(category) for category in categories])
 
 
 def presented_coproduct_data(
@@ -359,25 +329,16 @@ def presented_coproduct_data(
     return (
         tuple(str(name) for name in objects),
         tuple((str(name), str(source), str(target)) for name, source, target in homs),
-        tuple(
-            (tuple(str(name) for name in left), tuple(str(name) for name in right))
-            for left, right in relations
-        ),
+        tuple((tuple(str(name) for name in left), tuple(str(name) for name in right)) for left, right in relations),
     )
 
 
-def presented_coproduct_object_image(
-    value: object, factor: int, object_index: int
-) -> str:
-    return str(
-        _bridge().presented_coproduct_object_image(value, factor + 1, object_index + 1)
-    )
+def presented_coproduct_object_image(value: object, factor: int, object_index: int) -> str:
+    return str(_bridge().presented_coproduct_object_image(value, factor + 1, object_index + 1))
 
 
 def _word_indices(category: object, word: tuple[str, ...]) -> list[int]:
-    positions = {
-        name: index + 1 for index, name in enumerate(category.generator_names())
-    }
+    positions = {name: index + 1 for index, name in enumerate(category.generator_names())}
     return [positions[name] for name in word]
 
 

@@ -217,17 +217,9 @@ def _native_morphism(value: object) -> GapElement:
 def _integer_matrix_rows(native_matrix: GapElement) -> tuple[tuple[int, ...], ...]:
     row_count = int(libgap.NumberRows(native_matrix))
     column_count = int(libgap.NumberColumns(native_matrix))
-    entries = tuple(
-        int(str(entry)) for entry in libgap.EntriesOfHomalgMatrix(native_matrix)
-    )
+    entries = tuple(int(str(entry)) for entry in libgap.EntriesOfHomalgMatrix(native_matrix))
     assert len(entries) == row_count * column_count
-    return tuple(
-        tuple(
-            entries[row * column_count + column]
-            for column in range(column_count)
-        )
-        for row in range(row_count)
-    )
+    return tuple(tuple(entries[row * column_count + column] for column in range(column_count)) for row in range(row_count))
 
 
 def _integer_rows(native_object: GapElement) -> tuple[tuple[int, ...], ...]:
@@ -258,9 +250,7 @@ def _owned_morphism_from_native(source: object, target: object, native: GapEleme
         tuple(vector(ZZ, row) for row in native_matrix_rows),
         int(libgap.NumberColumns(libgap.UnderlyingMatrix(native))),
     )
-    raw_source_rank = int(
-        libgap.NumberColumns(libgap.UnderlyingMatrix(_native_object(source)))
-    )
+    raw_source_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(_native_object(source))))
     rows = []
     for position in range(source_form.rank()):
         public_source = [0] * source_form.rank()
@@ -330,9 +320,7 @@ def coequalizer_projection(first: object, second: object):
 def coequalizer_mediator(projection: object, coequalizing: object):
     """Return CAP's universal colift through an already retained cokernel projection."""
     record = _cokernel_differences.get(id(projection))
-    assert record is not None and record[0] is projection, (
-        f"{projection!r} is not a retained CAP cokernel projection"
-    )
+    assert record is not None and record[0] is projection, f"{projection!r} is not a retained CAP cokernel projection"
     native_difference = record[1]
     apex = projection.codomain()
     target = coequalizing.codomain()
@@ -464,11 +452,7 @@ def tensor_element(first: object, second: object, tensor: object, left: object, 
     second_form = presentation(second)
     left_raw = _raw_coordinates_from_public(first, first_form.coordinates(left))
     right_raw = _raw_coordinates_from_public(second, second_form.coordinates(right))
-    raw_pair = tuple(
-        left_coefficient * right_coefficient
-        for left_coefficient in left_raw
-        for right_coefficient in right_raw
-    )
+    raw_pair = tuple(left_coefficient * right_coefficient for left_coefficient in left_raw for right_coefficient in right_raw)
     bridge = _bridge(tensor)
     assert isinstance(bridge, _PresentationBridge)
     return bridge.engine(bridge.free(vector(ZZ, raw_pair)))
@@ -497,15 +481,11 @@ def tensor_mediator(
     for first_position in range(first_raw_rank):
         first_raw = [0] * first_raw_rank
         first_raw[first_position] = 1
-        first_public = first_form.element(
-            _public_coordinates_from_raw(first, first_raw)
-        )
+        first_public = first_form.element(_public_coordinates_from_raw(first, first_raw))
         for second_position in range(second_raw_rank):
             second_raw = [0] * second_raw_rank
             second_raw[second_position] = 1
-            second_public = second_form.element(
-                _public_coordinates_from_raw(second, second_raw)
-            )
+            second_public = second_form.element(_public_coordinates_from_raw(second, second_raw))
             image = biadditive(first_public, second_public)
             public_target = target_form.coordinates(image)
             rows.append(_raw_coordinates_from_public(target, public_target))

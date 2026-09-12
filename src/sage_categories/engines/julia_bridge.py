@@ -71,10 +71,7 @@ def _oscar_julia() -> str:
         configured,
         os.environ.get("PYTHON_JULIAPKG_EXE"),
         str(Path(sys.prefix) / "julia_env/pyjuliapkg/install/bin/julia"),
-        str(
-            Path.home()
-            / ".julia/environments/pyjuliapkg/pyjuliapkg/install/bin/julia"
-        ),
+        str(Path.home() / ".julia/environments/pyjuliapkg/pyjuliapkg/install/bin/julia"),
         shutil.which("julia"),
     )
     for candidate in candidates:
@@ -88,9 +85,7 @@ def _oscar_julia() -> str:
         )
         if result.returncode == 0 and result.stdout.strip() == "julia version 1.12.7":
             return candidate
-    raise RuntimeError(
-        "OSCAR requires Julia 1.12.7; set SAGE_CATEGORIES_OSCAR_JULIA to its executable"
-    )
+    raise RuntimeError("OSCAR requires Julia 1.12.7; set SAGE_CATEGORIES_OSCAR_JULIA to its executable")
 
 
 def _encode_oscar(worker: _OscarWorker, value: object) -> object:
@@ -101,9 +96,7 @@ def _encode_oscar(worker: _OscarWorker, value: object) -> object:
         case tuple() | list():
             return [_encode_oscar(worker, part) for part in value]
         case dict():
-            return {
-                str(key): _encode_oscar(worker, part) for key, part in value.items()
-            }
+            return {str(key): _encode_oscar(worker, part) for key, part in value.items()}
         case None | bool() | int() | float() | str():
             return value
     raise TypeError(f"OSCAR worker input is not JSON-convertible: {type(value)!r}")
@@ -162,9 +155,7 @@ class _OscarWorker:
             "args": [_encode_oscar(self, argument) for argument in arguments],
         }
         with self._lock:
-            assert self._process.poll() is None, (
-                f"the OSCAR worker terminated unexpectedly; see {self._stderr_path}"
-            )
+            assert self._process.poll() is None, f"the OSCAR worker terminated unexpectedly; see {self._stderr_path}"
             self._stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
             self._stdin.flush()
             line = self._stdout.readline()
@@ -183,32 +174,24 @@ class _OscarBridge:
         assert isinstance(result, OscarHandle)
         return result
 
-    def pair(
-        self, operation: str, *arguments: object
-    ) -> tuple[OscarHandle, OscarHandle]:
+    def pair(self, operation: str, *arguments: object) -> tuple[OscarHandle, OscarHandle]:
         result = self._worker.request(operation, *arguments)
         assert isinstance(result, tuple) and len(result) == 2
         first, second = result
         assert isinstance(first, OscarHandle) and isinstance(second, OscarHandle)
         return first, second
 
-    def handle_and_handles(
-        self, operation: str, *arguments: object
-    ) -> tuple[OscarHandle, tuple[OscarHandle, ...]]:
+    def handle_and_handles(self, operation: str, *arguments: object) -> tuple[OscarHandle, tuple[OscarHandle, ...]]:
         result = self._worker.request(operation, *arguments)
         assert isinstance(result, tuple) and len(result) == 2
         first, remaining = result
         assert isinstance(first, OscarHandle)
-        assert isinstance(remaining, tuple) and all(
-            isinstance(value, OscarHandle) for value in remaining
-        )
+        assert isinstance(remaining, tuple) and all(isinstance(value, OscarHandle) for value in remaining)
         return first, remaining
 
     def handles(self, operation: str, *arguments: object) -> tuple[OscarHandle, ...]:
         result = self._worker.request(operation, *arguments)
-        assert isinstance(result, tuple) and all(
-            isinstance(value, OscarHandle) for value in result
-        )
+        assert isinstance(result, tuple) and all(isinstance(value, OscarHandle) for value in result)
         return result
 
     def boolean(self, operation: str, *arguments: object) -> bool:

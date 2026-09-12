@@ -446,6 +446,23 @@ red across many commits by many workers has stopped being a gate at all. If the 
 outside this repository, record the blocker with a reproducer and an owner, then work something
 the obstruction does not touch. Never both.
 
+## Bank before you wait
+
+Long consumer runs on this host stall or die often enough that waiting on one is the single
+largest source of lost time in this repository — four separate turns on 2026-09-12 each spent
+between twenty-five and fifty minutes waiting on a consumer that was no longer running, and in
+every one of them the work being validated was already written and unbanked.
+
+So order the work the other way. When a piece is written and you believe it correct, commit it
+*before* starting the run that validates it. A commit is not a claim that the run passed; the
+message can say the validation is pending, and a later commit can record the result or the
+repair. What it does buy is that a stalled or killed run costs a wait and nothing else, rather
+than taking the work with it.
+
+The same applies to `scripts/run_sage_test_case.sh`, which bounds what a single run loads and
+is the right way to execute a consumer here. Bounded is not the same as reliable on a
+memory-tight host: use it, and still bank first.
+
 ## Never report a run as live without having just seen its output
 
 A long-running check is the one thing in this repository a worker cannot observe from the

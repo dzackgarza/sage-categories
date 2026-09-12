@@ -12,24 +12,12 @@ from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
-from sage_categories.cat.predicates import (
-    Decision as Decision,
-)
-from sage_categories.cat.predicates import (
-    Predicate as Predicate,
-)
-from sage_categories.cat.predicates import (
-    Proposition as Proposition,
-)
-from sage_categories.cat.predicates import (
-    UnknownClass as UnknownClass,
-)
-from sage_categories.cat.predicates import (
-    ask as ask,
-)
-from sage_categories.cat.predicates import (
-    register_handler as register_handler,
-)
+from sage_categories.cat.predicates import Decision as Decision
+from sage_categories.cat.predicates import Predicate as Predicate
+from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.cat.predicates import UnknownClass as UnknownClass
+from sage_categories.cat.predicates import ask as ask
+from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
 from sage_categories.kernel.sage_runtime import cached_method as cached_method

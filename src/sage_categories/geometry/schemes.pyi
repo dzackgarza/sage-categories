@@ -6,18 +6,10 @@ import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
 from sage_categories.algebra._commutative_rings_oscar import oscar_morphism_handle as oscar_morphism_handle
-from sage_categories.algebra.commutative_rings import (
-    inverse_unit as inverse_unit,
-)
-from sage_categories.algebra.commutative_rings import (
-    localization_extension as localization_extension,
-)
-from sage_categories.algebra.commutative_rings import (
-    polynomial_ring as polynomial_ring,
-)
-from sage_categories.algebra.commutative_rings import (
-    presented_ring_homomorphism as presented_ring_homomorphism,
-)
+from sage_categories.algebra.commutative_rings import inverse_unit as inverse_unit
+from sage_categories.algebra.commutative_rings import localization_extension as localization_extension
+from sage_categories.algebra.commutative_rings import polynomial_ring as polynomial_ring
+from sage_categories.algebra.commutative_rings import presented_ring_homomorphism as presented_ring_homomorphism
 from sage_categories.cat.canonical import FinitePresentedCategory as FinitePresentedCategory
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
@@ -25,37 +17,19 @@ from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
-from sage_categories.cat.native import (
-    NativeMorphismRealization as NativeMorphismRealization,
-)
-from sage_categories.cat.native import (
-    NativeMorphismRealizations as NativeMorphismRealizations,
-)
-from sage_categories.cat.native import (
-    NativeObjectRealization as NativeObjectRealization,
-)
-from sage_categories.cat.native import (
-    NativeObjectRealizations as NativeObjectRealizations,
-)
+from sage_categories.cat.native import NativeMorphismRealization as NativeMorphismRealization
+from sage_categories.cat.native import NativeMorphismRealizations as NativeMorphismRealizations
+from sage_categories.cat.native import NativeObjectRealization as NativeObjectRealization
+from sage_categories.cat.native import NativeObjectRealizations as NativeObjectRealizations
 from sage_categories.cat.opposites import opposite_morphism as opposite_morphism
 from sage_categories.cat.structured_objects import Rings as Rings
 from sage_categories.engines import oscar as oscar
 from sage_categories.engines.julia_bridge import OscarHandle as OscarHandle
-from sage_categories.geometry.affine import (
-    AffineOpenCategory as AffineOpenCategory,
-)
-from sage_categories.geometry.affine import (
-    AffineSchemesCategory as AffineSchemesCategory,
-)
-from sage_categories.geometry.affine import (
-    Spec as Spec,
-)
-from sage_categories.geometry.affine import (
-    affine_structure_sheaf as affine_structure_sheaf,
-)
-from sage_categories.geometry.affine import (
-    native_affine_scheme as native_affine_scheme,
-)
+from sage_categories.geometry.affine import AffineOpenCategory as AffineOpenCategory
+from sage_categories.geometry.affine import AffineSchemesCategory as AffineSchemesCategory
+from sage_categories.geometry.affine import Spec as Spec
+from sage_categories.geometry.affine import affine_structure_sheaf as affine_structure_sheaf
+from sage_categories.geometry.affine import native_affine_scheme as native_affine_scheme
 from sage_categories.geometry.sheaves import RingPresheaf as RingPresheaf
 from sage_categories.geometry.sheaves import ring_presheaf_from_functor as ring_presheaf_from_functor
 

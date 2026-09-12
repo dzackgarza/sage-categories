@@ -7,27 +7,13 @@ from _typeshed import Incomplete
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
-from sage_categories.algebra._commutative_rings_oscar import (
-    oscar_element_handle as oscar_element_handle,
-)
-from sage_categories.algebra._commutative_rings_oscar import (
-    oscar_morphism_handle as oscar_morphism_handle,
-)
-from sage_categories.algebra._commutative_rings_oscar import (
-    oscar_object_handle as oscar_object_handle,
-)
-from sage_categories.algebra.commutative_rings import (
-    PrimeIdeal as PrimeIdeal,
-)
-from sage_categories.algebra.commutative_rings import (
-    induced_stalk_map_to as induced_stalk_map_to,
-)
-from sage_categories.algebra.commutative_rings import (
-    localize_at_prime as localize_at_prime,
-)
-from sage_categories.algebra.commutative_rings import (
-    prime_ideal as prime_ideal,
-)
+from sage_categories.algebra._commutative_rings_oscar import oscar_element_handle as oscar_element_handle
+from sage_categories.algebra._commutative_rings_oscar import oscar_morphism_handle as oscar_morphism_handle
+from sage_categories.algebra._commutative_rings_oscar import oscar_object_handle as oscar_object_handle
+from sage_categories.algebra.commutative_rings import PrimeIdeal as PrimeIdeal
+from sage_categories.algebra.commutative_rings import induced_stalk_map_to as induced_stalk_map_to
+from sage_categories.algebra.commutative_rings import localize_at_prime as localize_at_prime
+from sage_categories.algebra.commutative_rings import prime_ideal as prime_ideal
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.declarations import Sets as Sets
@@ -35,18 +21,10 @@ from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
-from sage_categories.cat.native import (
-    NativeMorphismRealization as NativeMorphismRealization,
-)
-from sage_categories.cat.native import (
-    NativeMorphismRealizations as NativeMorphismRealizations,
-)
-from sage_categories.cat.native import (
-    NativeObjectRealization as NativeObjectRealization,
-)
-from sage_categories.cat.native import (
-    NativeObjectRealizations as NativeObjectRealizations,
-)
+from sage_categories.cat.native import NativeMorphismRealization as NativeMorphismRealization
+from sage_categories.cat.native import NativeMorphismRealizations as NativeMorphismRealizations
+from sage_categories.cat.native import NativeObjectRealization as NativeObjectRealization
+from sage_categories.cat.native import NativeObjectRealizations as NativeObjectRealizations
 from sage_categories.cat.opposites import opposite_morphism as opposite_morphism
 from sage_categories.engines import oscar as oscar
 from sage_categories.engines.julia_bridge import OscarHandle as OscarHandle

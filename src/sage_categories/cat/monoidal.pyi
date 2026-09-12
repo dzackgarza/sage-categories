@@ -4,21 +4,11 @@ from typing import NamedTuple
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
-from sage_categories.cat.calculus import (
-    binary_product_data as binary_product_data,
-)
-from sage_categories.cat.calculus import (
-    natural_isomorphism as natural_isomorphism,
-)
-from sage_categories.cat.calculus import (
-    pair_maps as pair_maps,
-)
-from sage_categories.cat.calculus import (
-    product_functor as product_functor,
-)
-from sage_categories.cat.calculus import (
-    terminal_map as terminal_map,
-)
+from sage_categories.cat.calculus import binary_product_data as binary_product_data
+from sage_categories.cat.calculus import natural_isomorphism as natural_isomorphism
+from sage_categories.cat.calculus import pair_maps as pair_maps
+from sage_categories.cat.calculus import product_functor as product_functor
+from sage_categories.cat.calculus import terminal_map as terminal_map
 from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories

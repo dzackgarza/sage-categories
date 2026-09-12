@@ -6,53 +6,23 @@ import sage_categories.cat.category as _category
 import sage_categories.cat.morphisms
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
-from sage_categories.cat.category import (
-    Category as Category,
-)
-from sage_categories.cat.category import (
-    CategoryOfCategories as CategoryOfCategories,
-)
-from sage_categories.cat.category import (
-    composite_factors as composite_factors,
-)
-from sage_categories.cat.category import (
-    is_composite as is_composite,
-)
-from sage_categories.cat.category import (
-    retain_composite_factors as retain_composite_factors,
-)
+from sage_categories.cat.category import Category as Category
+from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.category import composite_factors as composite_factors
+from sage_categories.cat.category import is_composite as is_composite
+from sage_categories.cat.category import retain_composite_factors as retain_composite_factors
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.predicates import Axiom as Axiom
-from sage_categories.cat.predicates import (
-    Decision as Decision,
-)
-from sage_categories.cat.predicates import (
-    Predicate as Predicate,
-)
-from sage_categories.cat.predicates import (
-    Proposition as Proposition,
-)
-from sage_categories.cat.predicates import (
-    decide as decide,
-)
-from sage_categories.cat.predicates import (
-    property_predicate as property_predicate,
-)
-from sage_categories.cat.predicates import (
-    register_handler as register_handler,
-)
-from sage_categories.cat.properties import (
-    FixedEndpointProperty as FixedEndpointProperty,
-)
-from sage_categories.cat.properties import (
-    FullSubcategory as FullSubcategory,
-)
-from sage_categories.cat.properties import (
-    PredicateSubcategory as PredicateSubcategory,
-)
-from sage_categories.cat.properties import (
-    PropertySubcategory as PropertySubcategory,
-)
+from sage_categories.cat.predicates import Decision as Decision
+from sage_categories.cat.predicates import Predicate as Predicate
+from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.cat.predicates import decide as decide
+from sage_categories.cat.predicates import property_predicate as property_predicate
+from sage_categories.cat.predicates import register_handler as register_handler
+from sage_categories.cat.properties import FixedEndpointProperty as FixedEndpointProperty
+from sage_categories.cat.properties import FullSubcategory as FullSubcategory
+from sage_categories.cat.properties import PredicateSubcategory as PredicateSubcategory
+from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.kernel.refinement import common_ancestor as common_ancestor
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.refinement import refine as refine

@@ -2,18 +2,10 @@ import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
-from sage_categories.cat.category import (
-    Category as Category,
-)
-from sage_categories.cat.category import (
-    CategoryDeclaration as CategoryDeclaration,
-)
-from sage_categories.cat.category import (
-    CategoryOfCategories as CategoryOfCategories,
-)
-from sage_categories.cat.category import (
-    concrete_category as concrete_category,
-)
+from sage_categories.cat.category import Category as Category
+from sage_categories.cat.category import CategoryDeclaration as CategoryDeclaration
+from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.category import concrete_category as concrete_category
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor

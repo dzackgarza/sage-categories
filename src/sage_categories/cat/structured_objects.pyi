@@ -30,18 +30,10 @@ from sage_categories.cat.diagrams import sequence_position as sequence_position
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
-from sage_categories.cat.monoidal import (
-    Cartesian as Cartesian,
-)
-from sage_categories.cat.monoidal import (
-    MonoidalStructuresCategory as MonoidalStructuresCategory,
-)
-from sage_categories.cat.monoidal import (
-    tensor_parentheses as tensor_parentheses,
-)
-from sage_categories.cat.monoidal import (
-    tensor_units as tensor_units,
-)
+from sage_categories.cat.monoidal import Cartesian as Cartesian
+from sage_categories.cat.monoidal import MonoidalStructuresCategory as MonoidalStructuresCategory
+from sage_categories.cat.monoidal import tensor_parentheses as tensor_parentheses
+from sage_categories.cat.monoidal import tensor_units as tensor_units
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Axiom as Axiom

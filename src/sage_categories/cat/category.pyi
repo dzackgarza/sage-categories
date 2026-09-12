@@ -21,39 +21,17 @@ from sage_categories.cat.functors import FunctorsCategory as FunctorsCategory
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.points import PointCategory as PointCategory
-from sage_categories.cat.predicates import (
-    AppliedQuery as AppliedQuery,
-)
-from sage_categories.cat.predicates import (
-    Axiom as Axiom,
-)
-from sage_categories.cat.predicates import (
-    ConstructionFamily as ConstructionFamily,
-)
-from sage_categories.cat.predicates import (
-    Decision as Decision,
-)
-from sage_categories.cat.predicates import (
-    Predicate as Predicate,
-)
-from sage_categories.cat.predicates import (
-    Proposition as Proposition,
-)
-from sage_categories.cat.predicates import (
-    Query as Query,
-)
-from sage_categories.cat.predicates import (
-    Unknown as Unknown,
-)
-from sage_categories.cat.predicates import (
-    UnknownClass as UnknownClass,
-)
-from sage_categories.cat.predicates import (
-    ask as ask,
-)
-from sage_categories.cat.predicates import (
-    register_handler as register_handler,
-)
+from sage_categories.cat.predicates import AppliedQuery as AppliedQuery
+from sage_categories.cat.predicates import Axiom as Axiom
+from sage_categories.cat.predicates import ConstructionFamily as ConstructionFamily
+from sage_categories.cat.predicates import Decision as Decision
+from sage_categories.cat.predicates import Predicate as Predicate
+from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.cat.predicates import Query as Query
+from sage_categories.cat.predicates import Unknown as Unknown
+from sage_categories.cat.predicates import UnknownClass as UnknownClass
+from sage_categories.cat.predicates import ask as ask
+from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.refinement import is_subcategory as is_subcategory
 from sage_categories.kernel.refinement import refine as refine

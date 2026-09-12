@@ -9,50 +9,24 @@ import sage_categories.cat.functors
 import sage_categories.cat.morphisms
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
-from sage_categories.cat.category import (
-    Assignment as Assignment,
-)
+from sage_categories.cat.category import Assignment as Assignment
 from sage_categories.cat.category import Cat as Cat
-from sage_categories.cat.category import (
-    Category as Category,
-)
-from sage_categories.cat.category import (
-    CategoryOfCategories as CategoryOfCategories,
-)
-from sage_categories.cat.category import (
-    OnMorphism as OnMorphism,
-)
-from sage_categories.cat.category import (
-    OnObject as OnObject,
-)
+from sage_categories.cat.category import Category as Category
+from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.category import OnMorphism as OnMorphism
+from sage_categories.cat.category import OnObject as OnObject
 from sage_categories.cat.morphisms import FixedEndpointCategory as FixedEndpointCategory
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.morphisms import endpoints as endpoints
 from sage_categories.cat.predicates import Axiom as Axiom
-from sage_categories.cat.predicates import (
-    Predicate as Predicate,
-)
-from sage_categories.cat.predicates import (
-    Proposition as Proposition,
-)
-from sage_categories.cat.predicates import (
-    Unknown as Unknown,
-)
-from sage_categories.cat.predicates import (
-    UnknownClass as UnknownClass,
-)
-from sage_categories.cat.predicates import (
-    ask as ask,
-)
-from sage_categories.cat.predicates import (
-    conjunction as conjunction,
-)
-from sage_categories.cat.predicates import (
-    decide as decide,
-)
-from sage_categories.cat.predicates import (
-    register_handler as register_handler,
-)
+from sage_categories.cat.predicates import Predicate as Predicate
+from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.cat.predicates import Unknown as Unknown
+from sage_categories.cat.predicates import UnknownClass as UnknownClass
+from sage_categories.cat.predicates import ask as ask
+from sage_categories.cat.predicates import conjunction as conjunction
+from sage_categories.cat.predicates import decide as decide
+from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.cat.properties import FixedEndpointProperty as FixedEndpointProperty
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.kernel.refinement import is_placed as is_placed

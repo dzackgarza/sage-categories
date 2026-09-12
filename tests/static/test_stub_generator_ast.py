@@ -740,7 +740,7 @@ _AliasRole = _typing.TypeVar("_AliasRole", default="Owner.ObjectType")
     projected = ast.unparse(ast.fix_missing_locations(stub))
     local_helper = "_StaticRoles_Owner.ObjectType"
     assert f"class Carrier[T = {local_helper}]" in projected
-    assert f'default={local_helper}' in projected
+    assert f"default={local_helper}" in projected
 
 
 def test_generic_morphism_projection_uses_declared_endpoint_parameters() -> None:
@@ -927,6 +927,24 @@ class Family[T = Owner]: pass
     assert "class Family[T = 'Owner']" in projected
 
 
+def test_projector_renders_with_formatter_before_writing(tmp_path: Path) -> None:
+    stub = tmp_path / "category.pyi"
+    stub.write_text("sentinel\n")
+    config = tmp_path / "ruff.toml"
+    config.write_text('line-length = 176\ntarget-version = "py314"\n')
+    generator = _stub_generator()
+
+    rendered = generator._render_stub_source(
+        ast.parse("class Category: ...\n"),
+        "sage_categories",
+        stub,
+        config,
+    )
+
+    assert rendered == "class Category: ...\n"
+    assert stub.read_text() == "sentinel\n"
+
+
 def test_projection_scope_removes_stubs_for_ordinary_modules(tmp_path: Path) -> None:
     package = tmp_path / "example"
     package.mkdir()
@@ -942,3 +960,46 @@ def test_projection_scope_removes_stubs_for_ordinary_modules(tmp_path: Path) -> 
 
     assert (package / "category.pyi").exists()
     assert not (package / "ordinary.pyi").exists()
+
+
+def test_stub_import_groups_prune_stale_incomplete_and_sort_project_imports() -> None:
+    tree = ast.parse(
+        """
+import sage_categories.kernel.roles
+from _typeshed import Incomplete
+from dataclasses import dataclass
+from sage_categories.cat.category import Category as Category, Cat as Cat
+
+class Owner:
+    value: Category
+"""
+    )
+    generator = _stub_generator()
+    groups = generator._stub_import_groups(tree, "sage_categories")
+    rendered = [[ast.unparse(statement) for statement in group] for group in groups]
+    assert rendered == [
+        ["from dataclasses import dataclass"],
+        [
+            "import sage_categories.kernel.roles",
+            "from sage_categories.cat.category import Cat as Cat",
+            "from sage_categories.cat.category import Category as Category",
+        ],
+    ]
+
+
+def test_stub_import_groups_retain_incomplete_when_projection_uses_it() -> None:
+    tree = ast.parse(
+        """
+from _typeshed import Incomplete
+import sage_categories.kernel.roles
+
+value: Incomplete
+"""
+    )
+    generator = _stub_generator()
+    groups = generator._stub_import_groups(tree, "sage_categories")
+    rendered = [[ast.unparse(statement) for statement in group] for group in groups]
+    assert rendered == [
+        ["from _typeshed import Incomplete"],
+        ["import sage_categories.kernel.roles"],
+    ]

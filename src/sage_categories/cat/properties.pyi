@@ -14,33 +14,15 @@ from sage_categories.cat.category import CategoryOfCategories as CategoryOfCateg
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import FunctorsCategory as FunctorsCategory
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
-from sage_categories.cat.predicates import (
-    Axiom as Axiom,
-)
-from sage_categories.cat.predicates import (
-    Decision as Decision,
-)
-from sage_categories.cat.predicates import (
-    Predicate as Predicate,
-)
-from sage_categories.cat.predicates import (
-    Proposition as Proposition,
-)
-from sage_categories.cat.predicates import (
-    Unknown as Unknown,
-)
-from sage_categories.cat.predicates import (
-    UnknownClass as UnknownClass,
-)
-from sage_categories.cat.predicates import (
-    ask as ask,
-)
-from sage_categories.cat.predicates import (
-    property_predicate as property_predicate,
-)
-from sage_categories.cat.predicates import (
-    register_handler as register_handler,
-)
+from sage_categories.cat.predicates import Axiom as Axiom
+from sage_categories.cat.predicates import Decision as Decision
+from sage_categories.cat.predicates import Predicate as Predicate
+from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.cat.predicates import Unknown as Unknown
+from sage_categories.cat.predicates import UnknownClass as UnknownClass
+from sage_categories.cat.predicates import ask as ask
+from sage_categories.cat.predicates import property_predicate as property_predicate
+from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.sage_runtime import TripleDict as TripleDict
 from sage_categories.kernel.sage_runtime import cached_method as cached_method

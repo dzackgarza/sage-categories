@@ -24,30 +24,14 @@ from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
-from sage_categories.cat.predicates import (
-    Axiom as Axiom,
-)
-from sage_categories.cat.predicates import (
-    Predicate as Predicate,
-)
-from sage_categories.cat.predicates import (
-    Proposition as Proposition,
-)
-from sage_categories.cat.predicates import (
-    Unknown as Unknown,
-)
-from sage_categories.cat.predicates import (
-    UnknownClass as UnknownClass,
-)
-from sage_categories.cat.predicates import (
-    ask as ask,
-)
-from sage_categories.cat.predicates import (
-    conjunction as conjunction,
-)
-from sage_categories.cat.predicates import (
-    register_handler as register_handler,
-)
+from sage_categories.cat.predicates import Axiom as Axiom
+from sage_categories.cat.predicates import Predicate as Predicate
+from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.cat.predicates import Unknown as Unknown
+from sage_categories.cat.predicates import UnknownClass as UnknownClass
+from sage_categories.cat.predicates import ask as ask
+from sage_categories.cat.predicates import conjunction as conjunction
+from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.cat.shapes import realize_discrete_object as realize_discrete_object
 from sage_categories.cat.slices import SliceLikeCategory as SliceLikeCategory
 from sage_categories.cat.slices import SliceProperty as SliceProperty

@@ -8,36 +8,16 @@ from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.category import member as member
-from sage_categories.cat.cones import (
-    ConeCategory as ConeCategory,
-)
-from sage_categories.cat.cones import (
-    LimitConesCategory as LimitConesCategory,
-)
-from sage_categories.cat.cones import (
-    cocone as cocone,
-)
-from sage_categories.cat.cones import (
-    cocone_apex as cocone_apex,
-)
-from sage_categories.cat.cones import (
-    colimit_cocones as colimit_cocones,
-)
-from sage_categories.cat.cones import (
-    cone as cone,
-)
-from sage_categories.cat.cones import (
-    cone_apex as cone_apex,
-)
-from sage_categories.cat.cones import (
-    cones as cones,
-)
-from sage_categories.cat.cones import (
-    limit_cones as limit_cones,
-)
-from sage_categories.cat.cones import (
-    vertex_of as vertex_of,
-)
+from sage_categories.cat.cones import ConeCategory as ConeCategory
+from sage_categories.cat.cones import LimitConesCategory as LimitConesCategory
+from sage_categories.cat.cones import cocone as cocone
+from sage_categories.cat.cones import cocone_apex as cocone_apex
+from sage_categories.cat.cones import colimit_cocones as colimit_cocones
+from sage_categories.cat.cones import cone as cone
+from sage_categories.cat.cones import cone_apex as cone_apex
+from sage_categories.cat.cones import cones as cones
+from sage_categories.cat.cones import limit_cones as limit_cones
+from sage_categories.cat.cones import vertex_of as vertex_of
 from sage_categories.cat.diagrams import from_sequence as from_sequence
 from sage_categories.cat.dual_functor_categories import dual_functor_category_equivalence as dual_functor_category_equivalence
 from sage_categories.cat.functors import Fun as Fun

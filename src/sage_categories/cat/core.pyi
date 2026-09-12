@@ -1,22 +1,12 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
-from sage_categories.cat.category import (
-    Assignment as Assignment,
-)
+from sage_categories.cat.category import Assignment as Assignment
 from sage_categories.cat.category import Cat as Cat
-from sage_categories.cat.category import (
-    Category as Category,
-)
-from sage_categories.cat.category import (
-    CategoryOfCategories as CategoryOfCategories,
-)
-from sage_categories.cat.category import (
-    OnMorphism as OnMorphism,
-)
-from sage_categories.cat.category import (
-    OnObject as OnObject,
-)
+from sage_categories.cat.category import Category as Category
+from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.category import OnMorphism as OnMorphism
+from sage_categories.cat.category import OnObject as OnObject
 from sage_categories.cat.declarations import Groupoids as Groupoids
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor

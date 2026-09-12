@@ -39,12 +39,11 @@ generate-stubs:
     #!/usr/bin/env bash
     set -euo pipefail
     sage_bin="${SAGE_BIN:?SAGE_BIN must name the Sage executable}"
-    "$sage_bin" -c 'from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs("sage_categories", Path("src/sage_categories"))'
+    ruff_config="${HOME}/ai-review-ci/tool-configs/ruff-global.toml"
+    "$sage_bin" -c "from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs('sage_categories', Path('src/sage_categories'), Path('$ruff_config'))"
     mapfile -t stubs < <(find src/sage_categories -type f -name '*.pyi' -print | sort)
     test "${#stubs[@]}" -gt 0
-    ruff_config="${HOME}/ai-review-ci/tool-configs/ruff-global.toml"
-    uvx --from ruff ruff format --config "$ruff_config" "${stubs[@]}"
-    uvx --from ruff ruff check --fix --config "$ruff_config" "${stubs[@]}"
+    uvx --from ruff ruff format --check --config "$ruff_config" "${stubs[@]}"
     uvx --from ruff ruff check --config "$ruff_config" "${stubs[@]}"
 
 # Run the full SageMath test suite before pushing.

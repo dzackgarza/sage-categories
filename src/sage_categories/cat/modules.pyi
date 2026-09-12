@@ -11,24 +11,12 @@ from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
 from sage_categories.cat.monoidal import ActionsCategory as ActionsCategory
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
-from sage_categories.cat.structured_objects import (
-    EndofunctorAlgebras as EndofunctorAlgebras,
-)
-from sage_categories.cat.structured_objects import (
-    Equifier as Equifier,
-)
-from sage_categories.cat.structured_objects import (
-    EquifierCategory as EquifierCategory,
-)
-from sage_categories.cat.structured_objects import (
-    InserterCategory as InserterCategory,
-)
-from sage_categories.cat.structured_objects import (
-    MonoidCategory as MonoidCategory,
-)
-from sage_categories.cat.structured_objects import (
-    Monoids as Monoids,
-)
+from sage_categories.cat.structured_objects import EndofunctorAlgebras as EndofunctorAlgebras
+from sage_categories.cat.structured_objects import Equifier as Equifier
+from sage_categories.cat.structured_objects import EquifierCategory as EquifierCategory
+from sage_categories.cat.structured_objects import InserterCategory as InserterCategory
+from sage_categories.cat.structured_objects import MonoidCategory as MonoidCategory
+from sage_categories.cat.structured_objects import Monoids as Monoids
 from sage_categories.engines.presented_modules import tensor_morphism as tensor_morphism
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function

@@ -20,45 +20,19 @@ from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism as opposite_morphism
-from sage_categories.cat.predicates import (
-    Predicate as Predicate,
-)
-from sage_categories.cat.predicates import (
-    Proposition as Proposition,
-)
-from sage_categories.cat.predicates import (
-    Unknown as Unknown,
-)
-from sage_categories.cat.predicates import (
-    UnknownClass as UnknownClass,
-)
-from sage_categories.cat.predicates import (
-    ask as ask,
-)
-from sage_categories.cat.predicates import (
-    conjunction as conjunction,
-)
-from sage_categories.cat.predicates import (
-    decide as decide,
-)
-from sage_categories.cat.predicates import (
-    register_handler as register_handler,
-)
-from sage_categories.cat.predicates import (
-    unconditional as unconditional,
-)
-from sage_categories.cat.shapes import (
-    Discrete as Discrete,
-)
-from sage_categories.cat.shapes import (
-    DiscreteCategory as DiscreteCategory,
-)
-from sage_categories.cat.shapes import (
-    DiscreteObjectCategory as DiscreteObjectCategory,
-)
-from sage_categories.cat.shapes import (
-    carrier_comparison as carrier_comparison,
-)
+from sage_categories.cat.predicates import Predicate as Predicate
+from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.cat.predicates import Unknown as Unknown
+from sage_categories.cat.predicates import UnknownClass as UnknownClass
+from sage_categories.cat.predicates import ask as ask
+from sage_categories.cat.predicates import conjunction as conjunction
+from sage_categories.cat.predicates import decide as decide
+from sage_categories.cat.predicates import register_handler as register_handler
+from sage_categories.cat.predicates import unconditional as unconditional
+from sage_categories.cat.shapes import Discrete as Discrete
+from sage_categories.cat.shapes import DiscreteCategory as DiscreteCategory
+from sage_categories.cat.shapes import DiscreteObjectCategory as DiscreteObjectCategory
+from sage_categories.cat.shapes import carrier_comparison as carrier_comparison
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.retention import complete_constructions as complete_constructions
 from sage_categories.kernel.retention import deferred_category as deferred_category

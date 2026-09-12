@@ -15,21 +15,26 @@ import sys
 from collections.abc import Iterator
 from importlib import import_module
 from pathlib import Path
+from shutil import which
 from tempfile import TemporaryDirectory
 
 __all__ = ["generate_stubs"]
 
 
-def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
-    """Write the compiler-derived stub projection for ``package`` to its package directory."""
+def generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> tuple[Path, ...]:
+    """Write the compiler-derived stub projection for ``package`` in repository format."""
     sage_bin = os.environ.get("SAGE_BIN")
     output = str(output_directory.resolve())
+    config = str(ruff_config.resolve())
     if sage_bin is not None:
         subprocess.run(
             [
                 sage_bin,
                 "-c",
-                (f"from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs({package!r}, Path({output!r}))"),
+                (
+                    "from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; "
+                    f"_generate_stubs({package!r}, Path({output!r}), Path({config!r}))"
+                ),
             ],
             check=True,
         )
@@ -38,17 +43,22 @@ def generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
         [
             sys.executable,
             "-c",
-            ("import sys; from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs(sys.argv[1], Path(sys.argv[2]))"),
+            (
+                "import sys; from pathlib import Path; "
+                "from sage_categories.kernel.stub_generator import _generate_stubs; "
+                "_generate_stubs(sys.argv[1], Path(sys.argv[2]), Path(sys.argv[3]))"
+            ),
             package,
             output,
+            config,
         ],
         check=True,
     )
     return tuple(sorted(output_directory.rglob("*.pyi")))
 
 
-def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
-    """Project declarations from a fresh package bootstrap in the current Sage interpreter."""
+def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> tuple[Path, ...]:
+    """Project declarations and return only formatter/linter-conforming stubs."""
     from mypy.stubgen import main as stubgen_main
 
     from sage_categories.kernel.compiler import compiler
@@ -116,10 +126,143 @@ def _generate_stubs(package: str, output_directory: Path) -> tuple[Path, ...]:
             source_modules,
         )
         _project_hoisted_role_defaults(tree, module, hoisted_role_providers)
-        stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
+        stub_path.write_text(
+            _render_stub_source(tree, package, stub_path, ruff_config),
+            encoding="utf-8",
+        )
     projected_modules = frozenset(category_modules.values())
     _remove_non_projection_stubs(package, output_directory, projected_modules)
-    return tuple(sorted(output_directory.rglob("*.pyi")))
+    stubs = tuple(sorted(output_directory.rglob("*.pyi")))
+    assert stubs, "static projection emitted no stubs"
+    return stubs
+
+
+def _ruff_executable() -> Path:
+    """Return the Ruff executable from the active projector environment."""
+    sibling = Path(sys.executable).with_name("ruff")
+    if sibling.is_file():
+        return sibling
+    executable = which("ruff")
+    assert executable is not None, "Ruff is required to emit the static projection"
+    return Path(executable)
+
+
+def _stub_import_groups(tree: ast.Module, package: str) -> tuple[tuple[ast.stmt, ...], ...]:
+    """Return Ruff-isort-ordered import groups for the generated stub.
+
+    The semantic projector owns import presence.  In particular, a parse-only
+    ``_typeshed.Incomplete`` import becomes stale after a projected declaration is
+    replaced by its exact owned type; remove that import only when the projected AST
+    no longer refers to ``Incomplete``.  Every remaining imported alias is emitted as
+    its own statement, matching Ruff's stub import convention.
+    """
+    uses_incomplete = any(
+        isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load) and node.id == "Incomplete"
+        for statement in tree.body
+        if not isinstance(statement, ast.Import | ast.ImportFrom)
+        for node in ast.walk(statement)
+    )
+    imports: list[ast.stmt] = []
+    unaliased_from_imports: dict[tuple[str | None, int], list[ast.alias]] = {}
+    for statement in tree.body:
+        if isinstance(statement, ast.Import):
+            imports.extend(ast.Import(names=[copy.deepcopy(alias)]) for alias in statement.names)
+            continue
+        if not isinstance(statement, ast.ImportFrom):
+            continue
+        for alias in statement.names:
+            if statement.module == "_typeshed" and alias.name == "Incomplete" and not uses_incomplete:
+                continue
+            if alias.asname is None:
+                key = (statement.module, statement.level)
+                if key not in unaliased_from_imports:
+                    unaliased_from_imports[key] = []
+                unaliased_from_imports[key].append(copy.deepcopy(alias))
+                continue
+            imports.append(
+                ast.ImportFrom(
+                    module=statement.module,
+                    names=[copy.deepcopy(alias)],
+                    level=statement.level,
+                )
+            )
+    imports.extend(
+        ast.ImportFrom(
+            module=module,
+            names=sorted(aliases, key=lambda alias: alias.name),
+            level=level,
+        )
+        for (module, level), aliases in unaliased_from_imports.items()
+    )
+
+    def module_name(statement: ast.stmt) -> str:
+        if isinstance(statement, ast.Import):
+            return statement.names[0].name
+        assert isinstance(statement, ast.ImportFrom)
+        return statement.module or ""
+
+    def group_index(statement: ast.stmt) -> int:
+        module = module_name(statement)
+        if isinstance(statement, ast.ImportFrom) and statement.level:
+            return 3
+        if module == "__future__":
+            return 0
+        root = module.split(".", 1)[0]
+        if root in sys.stdlib_module_names:
+            return 1
+        if module == package or module.startswith(f"{package}."):
+            return 3
+        return 2
+
+    def order_key(statement: ast.stmt) -> tuple[int, str, str, str]:
+        assert isinstance(statement, ast.Import | ast.ImportFrom)
+        alias = statement.names[0]
+        return (
+            0 if isinstance(statement, ast.Import) else 1,
+            module_name(statement),
+            alias.name,
+            alias.asname or "",
+        )
+
+    grouped: list[tuple[ast.stmt, ...]] = []
+    for index in range(4):
+        group = tuple(sorted((statement for statement in imports if group_index(statement) == index), key=order_key))
+        if group:
+            grouped.append(group)
+    return tuple(grouped)
+
+
+def _render_stub_source(tree: ast.Module, package: str, stub_path: Path, ruff_config: Path) -> str:
+    """Render one projected AST once, before writing the tracked stub.
+
+    Ruff is used only as the source renderer for line wrapping and whitespace.  Import
+    presence and ordering are already fixed in the projector AST, and no lint fixer is
+    run here.  The public recipe subsequently runs both formatter and linter in
+    check-only mode against the bytes written by this function.
+    """
+    tree = ast.fix_missing_locations(tree)
+    groups = _stub_import_groups(tree, package)
+    body = [statement for statement in tree.body if not isinstance(statement, ast.Import | ast.ImportFrom)]
+    chunks = ["\n".join(ast.unparse(statement) for statement in group) for group in groups]
+    if body:
+        chunks.append(ast.unparse(ast.Module(body=body, type_ignores=[])))
+    source = "\n\n".join(chunks) + "\n"
+    completed = subprocess.run(
+        [
+            str(_ruff_executable()),
+            "format",
+            "--config",
+            str(ruff_config.resolve()),
+            "--stdin-filename",
+            str(stub_path),
+            "-",
+        ],
+        input=source,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    return completed.stdout
 
 
 def _remove_non_projection_stubs(
@@ -577,9 +720,7 @@ def _project_category_role_parameters(
         public_arity = category_parameter_counts[name]
         if isinstance(category_base, ast.Subscript):
             written_arguments = subscript_arguments(category_base)
-            assert len(written_arguments) >= public_arity, (
-                f"category base {ast.unparse(category_base)} supplies fewer than its {public_arity} public parameters"
-            )
+            assert len(written_arguments) >= public_arity, f"category base {ast.unparse(category_base)} supplies fewer than its {public_arity} public parameters"
             arguments = written_arguments[:public_arity]
         else:
             arguments = [ast.Constant(value=Ellipsis) for _ in range(public_arity)]
@@ -1412,11 +1553,7 @@ def _project_hoisted_role_defaults(
         if not isinstance(expression, ast.Constant) or not isinstance(expression.value, str):
             return expression
         spelling = expression.value
-        matches = [
-            helper
-            for public, helper in hoisted_role_providers.items()
-            if public.endswith(f".{spelling}") or public == spelling
-        ]
+        matches = [helper for public, helper in hoisted_role_providers.items() if public.endswith(f".{spelling}") or public == spelling]
         if not matches:
             return expression
         assert len(matches) == 1, f"ambiguous quoted role default {spelling!r}: {matches!r}"
@@ -1435,12 +1572,7 @@ def _project_hoisted_role_defaults(
         if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Call):
             continue
         call = statement.value
-        if not (
-            isinstance(call.func, ast.Attribute)
-            and isinstance(call.func.value, ast.Name)
-            and call.func.value.id == "_typing"
-            and call.func.attr == "TypeVar"
-        ):
+        if not (isinstance(call.func, ast.Attribute) and isinstance(call.func.value, ast.Name) and call.func.value.id == "_typing" and call.func.attr == "TypeVar"):
             continue
         for keyword in call.keywords:
             if keyword.arg == "default":

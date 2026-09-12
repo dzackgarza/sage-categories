@@ -8,6 +8,14 @@ from sage_categories.cat.morphisms import FixedEndpointCategory, Mor, MorphismCa
 from sage_categories.cat.points import PointCategory
 
 
+class FixedSource(CategoryOfCategories.ElementType):
+    """A non-universal source type for the fixed-Hom projection consumer."""
+
+
+class FixedTarget(CategoryOfCategories.ElementType):
+    """A non-universal target type for the fixed-Hom projection consumer."""
+
+
 def constructor_parameters(
     category: Category[[str], [int]],
     source: CategoryOfCategories.ElementType,
@@ -21,6 +29,21 @@ def constructor_parameters(
     assert_type(Mor(0, category), Category[[str], [int]])
     assert_type(Mor(1, category), MorphismCategory[[str], [int]])
     assert_type(Mor(2, category), MorphismCategory[[int], []])
+
+
+def fixed_endpoint_dependence(
+    category: Category[[str], [int]],
+    source: FixedSource,
+    target: FixedTarget,
+) -> None:
+    hom = Mor(category)(source, target)
+    assert_type(
+        hom,
+        FixedEndpointCategory[[str], [int], FixedSource, FixedTarget],
+    )
+    assert_type(hom.domain(), FixedSource)
+    assert_type(hom.codomain(), FixedTarget)
+    assert_type(hom("arrow"), MorphismCategory.ObjectType)
 
 
 def nullary_categories(member: CategoryOfCategories.ElementType) -> None:

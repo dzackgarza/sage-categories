@@ -37,6 +37,7 @@ __all__ = [
     "direct_sum_coproduct_lift",
     "direct_sum_product_lift",
     "equal_morphisms",
+    "kernel_presentation",
     "retain_binary_biproduct",
     "tensor_associator",
     "tensor_element",
@@ -205,6 +206,125 @@ def _native_morphism(value: object) -> GapElement:
     retain_presented_native_morphism(value, native)
     return native
 
+
+
+@cache
+def _polynomial_ring(variable_names: tuple[str, ...]) -> GapElement:
+    """Return the CAP polynomial ring ``ZZ[variable_names]``."""
+    return libgap.PolynomialRing(_ring(), list(variable_names))
+
+
+def _polynomial_homalg_matrix(rows, columns: int, ring: GapElement) -> GapElement:
+    """Build a homalg matrix whose entries are polynomial expressions."""
+    normalized = tuple(tuple(str(entry) for entry in row) for row in rows)
+    if not normalized:
+        return libgap.HomalgZeroMatrix(0, columns, ring)
+    assert all(len(row) == columns for row in normalized)
+    return libgap.HomalgMatrix(
+        [list(row) for row in normalized],
+        len(normalized),
+        columns,
+        ring,
+    )
+
+
+def _parsed_matrix_rows(native_matrix: GapElement, parser) -> tuple[tuple[object, ...], ...]:
+    """Cross a CAP matrix back through the caller's owned coefficient parser."""
+    row_count = int(libgap.NumberRows(native_matrix))
+    column_count = int(libgap.NumberColumns(native_matrix))
+    entries = tuple(libgap.EntriesOfHomalgMatrix(native_matrix))
+    assert len(entries) == row_count * column_count
+    return tuple(
+        tuple(
+            parser(str(entries[row * column_count + column]))
+            for column in range(column_count)
+        )
+        for row in range(row_count)
+    )
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class KernelPresentation:
+    """Private CAP kernel data for a polynomial-ring presentation."""
+
+    parser: object
+    ring: GapElement
+    category: GapElement
+    source: GapElement
+    target: GapElement
+    morphism: GapElement
+    embedding: GapElement
+
+    def relation_rows(self):
+        return _parsed_matrix_rows(
+            libgap.UnderlyingMatrix(libgap.Source(self.embedding)),
+            self.parser,
+        )
+
+    def inclusion_rows(self):
+        return _parsed_matrix_rows(libgap.UnderlyingMatrix(self.embedding), self.parser)
+
+    def lift_row(self, source_row):
+        """Lift one represented source element through the kernel embedding."""
+        free_one = libgap.FreeLeftPresentation(1, self.ring)
+        row = tuple(source_row)
+        tau = libgap.PresentationMorphism(
+            free_one,
+            _polynomial_homalg_matrix((row,), len(row), self.ring),
+            self.source,
+        )
+        lifted = libgap.KernelLift(self.morphism, free_one, tau)
+        rows = _parsed_matrix_rows(libgap.UnderlyingMatrix(lifted), self.parser)
+        assert len(rows) == 1
+        return rows[0]
+
+
+def kernel_presentation(
+    *,
+    variable_names: tuple[str, ...],
+    owned_ring,
+    source_rank: int,
+    target_rank: int,
+    source_relation_rows,
+    target_relation_rows,
+    morphism_rows,
+) -> KernelPresentation:
+    """Return CAP's kernel embedding for presentations over ``ZZ[x_1,...,x_n]``.
+
+    ``owned_ring`` is used only as the parser that raises returned polynomial
+    entries into the caller's owned coefficient ring.  No caller object enters
+    CAP, and no CAP object leaves this private engine result.
+    """
+    variable_names = tuple(variable_names)
+    assert variable_names, "a polynomial presentation needs at least one variable"
+    ring = _polynomial_ring(variable_names)
+    source_rank = int(source_rank)
+    target_rank = int(target_rank)
+    morphism_rows = tuple(tuple(row) for row in morphism_rows)
+    if len(morphism_rows) != source_rank or any(
+        len(row) != target_rank for row in morphism_rows
+    ):
+        raise ValueError(
+            "the CAP morphism matrix has the wrong selected framing dimensions"
+        )
+    category = libgap.LeftPresentations(ring)
+    source = libgap.AsLeftPresentation(
+        category,
+        _polynomial_homalg_matrix(source_relation_rows, source_rank, ring),
+    )
+    target = libgap.AsLeftPresentation(
+        category,
+        _polynomial_homalg_matrix(target_relation_rows, target_rank, ring),
+    )
+    morphism = libgap.PresentationMorphism(
+        source,
+        _polynomial_homalg_matrix(morphism_rows, target_rank, ring),
+        target,
+    )
+    embedding = libgap.KernelEmbedding(morphism)
+    return KernelPresentation(
+        owned_ring, ring, category, source, target, morphism, embedding
+    )
 
 def equal_morphisms(first: object, second: object) -> bool:
     """CAP's equality decision for two owned presented-module morphisms."""

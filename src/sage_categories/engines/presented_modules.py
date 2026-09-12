@@ -297,30 +297,13 @@ def homomorphism_from_rule(source: object, target: object, rule):
 
 def coequalizer_projection(first: object, second: object):
     """Return CAP's selected cokernel of ``first-second`` as an owned ``Ab`` map."""
-    from sage_categories.algebra.abelian import (
-        _group_from_engine,
-        linear_form,
-    )
+    from sage_categories.algebra.abelian import _group_from_engine
 
     source, target = first.domain(), first.codomain()
     assert second.domain() is source and second.codomain() is target
-    first_form, second_form = linear_form(first), linear_form(second)
-    difference = first_form.matrix - second_form.matrix
-    source_native = _native_object(source)
-    target_native = _native_object(target)
-    source_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(source_native)))
-    target_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(target_native)))
-    rows = []
-    for position in range(source_rank):
-        raw_source = [0] * source_rank
-        raw_source[position] = 1
-        public_source = vector(ZZ, _public_coordinates_from_raw(source, raw_source))
-        public_target = public_source * difference
-        rows.append(_raw_coordinates_from_public(target, public_target))
-    native_difference = libgap.PresentationMorphism(
-        source_native,
-        _homalg_matrix(tuple(rows), target_rank),
-        target_native,
+    native_difference = libgap.SubtractionForMorphisms(
+        _native_morphism(first),
+        _native_morphism(second),
     )
     native_projection = libgap.CokernelProjection(native_difference)
     native_apex = libgap.Range(native_projection)

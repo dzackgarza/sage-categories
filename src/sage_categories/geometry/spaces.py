@@ -151,11 +151,7 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
             target_open: CategoryOfCategories.ElementType,
         ) -> frozenset[Hashable]:
             subset = target_open.point().datum()
-            return frozenset(
-                datum
-                for datum in source_data
-                if underlying(source.carrier().point(datum)).datum() in subset
-            )
+            return frozenset(datum for datum in source_data if underlying(source.carrier().point(datum)).datum() in subset)
 
         def on_object(
             target_open: CategoryOfCategories.ElementType,
@@ -183,10 +179,7 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         target: TopologicalSpacesCategory.ObjectType,
         underlying: MorphismCategory.ObjectType,
     ) -> TopologicalSpacesCategory.MorphismType:
-        assert (
-            underlying.domain() is source.carrier()
-            and underlying.codomain() is target.carrier()
-        )
+        assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()
         inverse = self._inverse_image_functor(source, target, underlying)
         return self.morphism_with_inverse_image(source, target, underlying, inverse)
 
@@ -198,15 +191,10 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         inverse: Functor,
     ) -> TopologicalSpacesCategory.MorphismType:
         """Retain a continuous map from its exact underlying map and inverse-image functor."""
-        assert (
-            underlying.domain() is source.carrier()
-            and underlying.codomain() is target.carrier()
-        )
+        assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()
         assert inverse.domain() is target.open_category()
         assert inverse.codomain() is source.open_category()
-        return self.MorphismType(
-            domain=source, codomain=target, data=(underlying, inverse)
-        )
+        return self.MorphismType(domain=source, codomain=target, data=(underlying, inverse))
 
     def construct_identity(
         self,

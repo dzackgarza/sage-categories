@@ -166,11 +166,7 @@ class ProjectiveSpacePresentation:
 
 
 def _stage_open_space(stage: int) -> tuple[CategoryOfCategories.ElementType, Any]:
-    opens = Sets.from_membership(
-        lambda value: (
-            true if isinstance(value, CWOpen) and value.stage == stage else false
-        )
-    )
+    opens = Sets.from_membership(lambda value: true if isinstance(value, CWOpen) and value.stage == stage else false)
     category = Thin(opens, _open_order)
     return opens, category
 
@@ -179,14 +175,7 @@ def _stage_open_space(stage: int) -> tuple[CategoryOfCategories.ElementType, Any
 def projective_space(stage: int) -> ProjectiveSpacePresentation:
     """Return ``CP^stage`` with its retained standard CW topology."""
     assert stage >= 0
-    carrier = Sets.from_membership(
-        lambda value: (
-            true
-            if isinstance(value, ComplexProjectivePoint)
-            and len(value.coordinates) == stage + 1
-            else false
-        )
-    )
+    carrier = Sets.from_membership(lambda value: true if isinstance(value, ComplexProjectivePoint) and len(value.coordinates) == stage + 1 else false)
     opens, open_category = _stage_open_space(stage)
     empty = CWOpen(stage, "empty", lambda _: False)
     whole = CWOpen(stage, "whole", lambda _: True)
@@ -205,9 +194,7 @@ def projective_space(stage: int) -> ProjectiveSpacePresentation:
     return ProjectiveSpacePresentation(stage, space, empty, whole)
 
 
-def _pad_point(
-    point: ComplexProjectivePoint, target_stage: int
-) -> ComplexProjectivePoint:
+def _pad_point(point: ComplexProjectivePoint, target_stage: int) -> ComplexProjectivePoint:
     assert len(point.coordinates) <= target_stage + 1
     padding = (0j,) * (target_stage + 1 - len(point.coordinates))
     return ComplexProjectivePoint((*point.coordinates, *padding))
@@ -234,9 +221,7 @@ def _conjugate_point(point: ComplexProjectivePoint) -> ComplexProjectivePoint:
 @cache
 def _stage_conjugation(stage: int) -> TopologicalSpacesCategory.MorphismType:
     presentation = projective_space(stage)
-    underlying = Mor(Sets)(presentation.space.carrier(), presentation.space.carrier())(
-        _conjugate_point
-    )
+    underlying = Mor(Sets)(presentation.space.carrier(), presentation.space.carrier())(_conjugate_point)
 
     def preimage(
         open_object: CategoryOfCategories.ElementType,
@@ -250,13 +235,9 @@ def _stage_conjugation(stage: int) -> TopologicalSpacesCategory.MorphismType:
         )
         return presentation.open(conjugate_open)
 
-    inverse = Fun(
-        presentation.space.open_category(), presentation.space.open_category()
-    )(
+    inverse = Fun(presentation.space.open_category(), presentation.space.open_category())(
         preimage,
-        lambda inclusion: Mor(presentation.space.open_category())(
-            preimage(inclusion.domain()), preimage(inclusion.codomain())
-        )(),
+        lambda inclusion: Mor(presentation.space.open_category())(preimage(inclusion.domain()), preimage(inclusion.codomain()))(),
     )
     return TopologicalSpaces().morphism_with_inverse_image(
         presentation.space,
@@ -267,34 +248,18 @@ def _stage_conjugation(stage: int) -> TopologicalSpacesCategory.MorphismType:
 
 
 @cache
-def _standard_inclusion(
-    source_stage: int, target_stage: int
-) -> TopologicalSpacesCategory.MorphismType:
+def _standard_inclusion(source_stage: int, target_stage: int) -> TopologicalSpacesCategory.MorphismType:
     assert 0 <= source_stage <= target_stage
     source, target = projective_space(source_stage), projective_space(target_stage)
-    underlying = Mor(Sets)(source.space.carrier(), target.space.carrier())(
-        lambda point: _pad_point(point, target_stage)
-    )
+    underlying = Mor(Sets)(source.space.carrier(), target.space.carrier())(lambda point: _pad_point(point, target_stage))
     inverse = Fun(target.space.open_category(), source.space.open_category())(
-        lambda target_open: source.open(
-            _restrict_open(cast(Any, target_open).point().datum(), source_stage)
-        ),
+        lambda target_open: source.open(_restrict_open(cast(Any, target_open).point().datum(), source_stage)),
         lambda inclusion: Mor(source.space.open_category())(
-            source.open(
-                _restrict_open(
-                    cast(Any, inclusion.domain()).point().datum(), source_stage
-                )
-            ),
-            source.open(
-                _restrict_open(
-                    cast(Any, inclusion.codomain()).point().datum(), source_stage
-                )
-            ),
+            source.open(_restrict_open(cast(Any, inclusion.domain()).point().datum(), source_stage)),
+            source.open(_restrict_open(cast(Any, inclusion.codomain()).point().datum(), source_stage)),
         )(),
     )
-    return TopologicalSpaces().morphism_with_inverse_image(
-        source.space, target.space, underlying, inverse
-    )
+    return TopologicalSpaces().morphism_with_inverse_image(source.space, target.space, underlying, inverse)
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -314,10 +279,7 @@ class ProjectiveInfinityPresentation:
         vertex = omega.object_at(omega.object_set().point(stage + 1))
         return cast(
             TopologicalSpacesCategory.MorphismType,
-            TopologicalSpaces()
-            .Colimits(omega)
-            .universal_data(self.diagram)
-            .leg(vertex),
+            TopologicalSpaces().Colimits(omega).universal_data(self.diagram).leg(vertex),
         )
 
     def open(self, value: _WeakCWOpen) -> CategoryOfCategories.ElementType:
@@ -329,18 +291,12 @@ class ProjectiveInfinityPresentation:
             cocone(
                 self.diagram,
                 self.space,
-                lambda vertex: (
-                    self.structure_map(_diagram_stage(vertex))
-                    * projective_space(_diagram_stage(vertex)).complex_conjugation()
-                ),
+                lambda vertex: self.structure_map(_diagram_stage(vertex)) * projective_space(_diagram_stage(vertex)).complex_conjugation(),
             )
         )
         return cast(
             TopologicalSpacesCategory.MorphismType,
-            TopologicalSpaces()
-            .Colimits(omega)
-            .universal_data(self.diagram)
-            .lift(candidate),
+            TopologicalSpaces().Colimits(omega).universal_data(self.diagram).lift(candidate),
         )
 
 
@@ -362,13 +318,7 @@ def _projective_diagram() -> Functor:
 def _weak_open_space(
     presentation: ProjectiveInfinityPresentation,
 ) -> tuple[CategoryOfCategories.ElementType, Any]:
-    opens = Sets.from_membership(
-        lambda value: (
-            true
-            if isinstance(value, _WeakCWOpen) and value.presentation is presentation
-            else false
-        )
-    )
+    opens = Sets.from_membership(lambda value: true if isinstance(value, _WeakCWOpen) and value.presentation is presentation else false)
     return opens, Thin(opens, _open_order)
 
 
@@ -387,25 +337,15 @@ def projective_infinity() -> ProjectiveInfinityPresentation:
     spaces = TopologicalSpaces()
     diagram = _projective_diagram()
     underlying_diagram = Fun(omega, Sets)(
-        lambda vertex: cast(
-            TopologicalSpacesCategory.ObjectType, diagram.on_object(vertex)
-        ).carrier(),
-        lambda arrow: cast(
-            TopologicalSpacesCategory.MorphismType, diagram.on_morphism(arrow)
-        ).underlying_map(),
+        lambda vertex: cast(TopologicalSpacesCategory.ObjectType, diagram.on_object(vertex)).carrier(),
+        lambda arrow: cast(TopologicalSpacesCategory.MorphismType, diagram.on_morphism(arrow)).underlying_map(),
     )
     carrier = Sets.Colimits(omega)(underlying_diagram)
 
-    presentation = ProjectiveInfinityPresentation.__new__(
-        ProjectiveInfinityPresentation
-    )
+    presentation = ProjectiveInfinityPresentation.__new__(ProjectiveInfinityPresentation)
     object.__setattr__(presentation, "diagram", diagram)
-    object.__setattr__(
-        presentation, "space", cast(TopologicalSpacesCategory.ObjectType, None)
-    )
-    object.__setattr__(
-        presentation, "weak_opens", cast(CategoryOfCategories.ElementType, None)
-    )
+    object.__setattr__(presentation, "space", cast(TopologicalSpacesCategory.ObjectType, None))
+    object.__setattr__(presentation, "weak_opens", cast(CategoryOfCategories.ElementType, None))
     empty = _WeakCWOpen(
         presentation,
         lambda stage: projective_space(stage).empty_open,
@@ -444,27 +384,13 @@ def projective_infinity() -> ProjectiveInfinityPresentation:
         source = projective_space(stage)
         underlying = set_colimit.leg(vertex)
         inverse = Fun(space.open_category(), source.space.open_category())(
-            lambda target_open: source.open(
-                cast(_WeakCWOpen, cast(Any, target_open).point().datum()).stage_open(
-                    stage
-                )
-            ),
+            lambda target_open: source.open(cast(_WeakCWOpen, cast(Any, target_open).point().datum()).stage_open(stage)),
             lambda inclusion: Mor(source.space.open_category())(
-                source.open(
-                    cast(
-                        _WeakCWOpen, cast(Any, inclusion.domain()).point().datum()
-                    ).stage_open(stage)
-                ),
-                source.open(
-                    cast(
-                        _WeakCWOpen, cast(Any, inclusion.codomain()).point().datum()
-                    ).stage_open(stage)
-                ),
+                source.open(cast(_WeakCWOpen, cast(Any, inclusion.domain()).point().datum()).stage_open(stage)),
+                source.open(cast(_WeakCWOpen, cast(Any, inclusion.codomain()).point().datum()).stage_open(stage)),
             )(),
         )
-        return spaces.morphism_with_inverse_image(
-            source.space, space, underlying, inverse
-        )
+        return spaces.morphism_with_inverse_image(source.space, space, underlying, inverse)
 
     def descend(
         candidate: CategoryOfCategories.ElementType,
@@ -493,9 +419,7 @@ def projective_infinity() -> ProjectiveInfinityPresentation:
                         Any,
                         cast(
                             TopologicalSpacesCategory.MorphismType,
-                            cast(Any, candidate).component(
-                                omega.object_at(omega.object_set().point(stage + 1))
-                            ),
+                            cast(Any, candidate).component(omega.object_at(omega.object_set().point(stage + 1))),
                         )
                         .inverse_image()
                         .on_object(target_open),
@@ -509,9 +433,7 @@ def projective_infinity() -> ProjectiveInfinityPresentation:
 
         inverse = Fun(target.open_category(), space.open_category())(
             preimage,
-            lambda inclusion: Mor(space.open_category())(
-                preimage(inclusion.domain()), preimage(inclusion.codomain())
-            )(),
+            lambda inclusion: Mor(space.open_category())(preimage(inclusion.domain()), preimage(inclusion.codomain()))(),
         )
         return spaces.morphism_with_inverse_image(space, target, underlying, inverse)
 

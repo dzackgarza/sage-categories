@@ -37,9 +37,7 @@ class OscarRingConstruction:
     data: object
 
 
-_objects: NativeObjectRealizations[object, OscarRingConstruction] = (
-    NativeObjectRealizations()
-)
+_objects: NativeObjectRealizations[object, OscarRingConstruction] = NativeObjectRealizations()
 _morphisms: NativeMorphismRealizations[object] = NativeMorphismRealizations()
 
 
@@ -64,9 +62,7 @@ def oscar_native_object(
     return _objects.realization(value)
 
 
-def retain_oscar_native_morphism(
-    value: MorphismCategory.ObjectType, native: object
-) -> NativeMorphismRealization[object]:
+def retain_oscar_native_morphism(value: MorphismCategory.ObjectType, native: object) -> NativeMorphismRealization[object]:
     """Retain one native ring map with the exact owned source and target rings."""
     return _morphisms.retain(_owner(), value, value.domain(), value.codomain(), native)
 
@@ -122,16 +118,10 @@ def reconstruct_oscar_object(
     Sets = declarations.Sets
     Mor = morphisms.Mor
     monoidal = monoidal_module.Cartesian(Sets)
-    carrier = Sets.from_membership(
-        lambda element: true if oscar.ring_contains(native, element) else false
-    )
+    carrier = Sets.from_membership(lambda element: true if oscar.ring_contains(native, element) else false)
     product = calculus.binary_product_data(Sets, carrier, carrier).apex()
-    addition = Mor(Sets)(product, carrier)(
-        lambda pair: oscar.ring_add(pair[0], pair[1])
-    )
-    multiplication = Mor(Sets)(product, carrier)(
-        lambda pair: oscar.ring_multiply(pair[0], pair[1])
-    )
+    addition = Mor(Sets)(product, carrier)(lambda pair: oscar.ring_add(pair[0], pair[1]))
+    multiplication = Mor(Sets)(product, carrier)(lambda pair: oscar.ring_multiply(pair[0], pair[1]))
     zero = Mor(Sets)(monoidal.unit(), carrier)(lambda _: oscar.ring_zero(native))
     one = Mor(Sets)(monoidal.unit(), carrier)(lambda _: oscar.ring_one(native))
 
@@ -158,9 +148,7 @@ def reconstruct_oscar_object(
     refinement.refine(group, additive_groups.Commutative())
 
     multiplicative_monoid = certified_monoid(multiplication, one)
-    multiplicative = structured.MultiplicativeMonoids(monoidal).renamed(
-        multiplicative_monoid
-    )
+    multiplicative = structured.MultiplicativeMonoids(monoidal).renamed(multiplicative_monoid)
 
     semirings = structured.Semirings(Sets)
     pair = semirings._pairs((additive, multiplicative, carrier))
@@ -192,9 +180,7 @@ def reconstruct_oscar_morphism(
     forgetful = rings.forgetful()
     source_carrier = forgetful.on_object(source)
     target_carrier = forgetful.on_object(target)
-    carrier_map = morphisms.Mor(Sets)(source_carrier, target_carrier)(
-        lambda element: oscar.map_apply(native, element)
-    )
+    carrier_map = morphisms.Mor(Sets)(source_carrier, target_carrier)(lambda element: oscar.map_apply(native, element))
     arrow = rings.homomorphism(source, target, carrier_map)
     retain_oscar_native_morphism(arrow, native)
     return cast(MorphismCategory.ObjectType, arrow)

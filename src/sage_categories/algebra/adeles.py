@@ -100,10 +100,7 @@ class AdeleValue:
             self.real + other.real,
             lambda prime: self.finite_component(prime) + other.finite_component(prime),
             exceptional,
-            lambda prime: (
-                self.integrality_certificate(prime)
-                and other.integrality_certificate(prime)
-            ),
+            lambda prime: self.integrality_certificate(prime) and other.integrality_certificate(prime),
         )
 
     def __mul__(self, other: AdeleValue) -> AdeleValue:
@@ -114,10 +111,7 @@ class AdeleValue:
             self.real * other.real,
             lambda prime: self.finite_component(prime) * other.finite_component(prime),
             exceptional,
-            lambda prime: (
-                self.integrality_certificate(prime)
-                and other.integrality_certificate(prime)
-            ),
+            lambda prime: self.integrality_certificate(prime) and other.integrality_certificate(prime),
         )
 
 
@@ -161,10 +155,7 @@ class AdeleOpen:
                 return False
             case _:
                 pass
-        answers = tuple(
-            condition(value.finite_component(prime))
-            for prime, condition in self.finite_conditions
-        )
+        answers = tuple(condition(value.finite_component(prime)) for prime, condition in self.finite_conditions)
         match any(answer is False for answer in answers):
             case True:
                 return False
@@ -300,9 +291,7 @@ class AdelePresentation:
             case _:
                 raise AssertionError(f"unknown adele place {place!r}")
         target_carrier = rings.forgetful().on_object(target.ring)
-        carrier_map = Mor(Sets)(source_carrier, target_carrier)(
-            lambda value: cast(AdeleValue, value).component(place)
-        )
+        carrier_map = Mor(Sets)(source_carrier, target_carrier)(lambda value: cast(AdeleValue, value).component(place))
         return rings.homomorphism(self.ring, target.ring, carrier_map)
 
     @cached_method
@@ -351,11 +340,7 @@ def adeles_of_rationals() -> AdelePresentation:
             pass
 
     owner = object()
-    carrier = Sets.from_membership(
-        lambda value: (
-            true if isinstance(value, AdeleValue) and value.owner is owner else false
-        )
-    )
+    carrier = Sets.from_membership(lambda value: true if isinstance(value, AdeleValue) and value.owner is owner else false)
     zero = AdeleValue(
         owner,
         ExactLocalValue.rational("real", 0),
@@ -378,11 +363,7 @@ def adeles_of_rationals() -> AdelePresentation:
         one,
     )
 
-    opens = Sets.from_membership(
-        lambda value: (
-            true if isinstance(value, AdeleOpen) and value.owner is owner else false
-        )
-    )
+    opens = Sets.from_membership(lambda value: true if isinstance(value, AdeleOpen) and value.owner is owner else false)
     open_category = Thin(opens, _open_order)
 
     def open_point(key: object) -> CategoryOfCategories.ElementType:

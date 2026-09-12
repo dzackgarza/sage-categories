@@ -100,18 +100,12 @@ class SchemesCategory(Category[Any, Any]):
         pass
 
     def __init__(self) -> None:
-        self._affine_wrappers: dict[
-            int, tuple[AffineSchemesCategory.ObjectType, SchemesCategory.ObjectType]
-        ] = {}
+        self._affine_wrappers: dict[int, tuple[AffineSchemesCategory.ObjectType, SchemesCategory.ObjectType]] = {}
         super().__init__()
 
-    def _from_native(
-        self, construction: object, native: OscarHandle
-    ) -> SchemesCategory.ObjectType:
+    def _from_native(self, construction: object, native: OscarHandle) -> SchemesCategory.ObjectType:
         value = self.ObjectType(construction)
-        _objects.retain(
-            self, cast(CategoryOfCategories.ElementType, value), native, construction
-        )
+        _objects.retain(self, cast(CategoryOfCategories.ElementType, value), native, construction)
         return value
 
     def _from_native_morphism(
@@ -141,20 +135,14 @@ class SchemesCategory(Category[Any, Any]):
         )
         return arrow
 
-    def affine(
-        self, affine: AffineSchemesCategory.ObjectType
-    ) -> SchemesCategory.ObjectType:
+    def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType:
         """The affine scheme as a scheme, preserving its exact OSCAR chart."""
         key = id(affine)
         match self._affine_wrappers.get(key):
             case (retained, value) if retained is affine:
                 return value
             case _:
-                native = oscar.covered_scheme(
-                    native_affine_scheme(
-                        cast(CategoryOfCategories.ElementType, affine)
-                    ).native
-                )
+                native = oscar.covered_scheme(native_affine_scheme(cast(CategoryOfCategories.ElementType, affine)).native)
                 value = self._from_native(_AffineSchemeConstruction(affine), native)
                 self._affine_wrappers[key] = (affine, value)
                 return value
@@ -177,12 +165,8 @@ class SchemesCategory(Category[Any, Any]):
         assert left_to_right_pullback.codomain() is left_open.section_ring()
         assert right_to_left_pullback.domain() is left_open.section_ring()
         assert right_to_left_pullback.codomain() is right_open.section_ring()
-        native_left = native_affine_scheme(
-            cast(CategoryOfCategories.ElementType, left)
-        ).native
-        native_right = native_affine_scheme(
-            cast(CategoryOfCategories.ElementType, right)
-        ).native
+        native_left = native_affine_scheme(cast(CategoryOfCategories.ElementType, left)).native
+        native_right = native_affine_scheme(cast(CategoryOfCategories.ElementType, right)).native
         native_left_to_right = oscar.affine_morphism_direct(
             left_open.native(),
             right_open.native(),
@@ -193,12 +177,8 @@ class SchemesCategory(Category[Any, Any]):
             left_open.native(),
             oscar_morphism_handle(right_to_left_pullback),
         )
-        native_gluing = oscar.simple_gluing(
-            native_left, native_right, native_left_to_right, native_right_to_left
-        )
-        native_glued = oscar.glued_covered_scheme(
-            native_left, native_right, native_gluing
-        )
+        native_gluing = oscar.simple_gluing(native_left, native_right, native_left_to_right, native_right_to_left)
+        native_glued = oscar.glued_covered_scheme(native_left, native_right, native_gluing)
         construction = TwoChartGluing(
             left,
             right,
@@ -213,9 +193,7 @@ class SchemesCategory(Category[Any, Any]):
             left_scheme,
             glued,
             oscar.covered_chart_inclusion(
-                native_scheme(
-                    cast(CategoryOfCategories.ElementType, left_scheme)
-                ).native,
+                native_scheme(cast(CategoryOfCategories.ElementType, left_scheme)).native,
                 native_left,
                 native_glued,
             ),
@@ -224,9 +202,7 @@ class SchemesCategory(Category[Any, Any]):
             right_scheme,
             glued,
             oscar.covered_chart_inclusion(
-                native_scheme(
-                    cast(CategoryOfCategories.ElementType, right_scheme)
-                ).native,
+                native_scheme(cast(CategoryOfCategories.ElementType, right_scheme)).native,
                 native_right,
                 native_glued,
             ),
@@ -252,12 +228,8 @@ class SchemesCategory(Category[Any, Any]):
         native = oscar.gluing_mediator(
             native_scheme(cast(CategoryOfCategories.ElementType, glued)).native,
             native_scheme(cast(CategoryOfCategories.ElementType, target)).native,
-            native_affine_scheme(
-                cast(CategoryOfCategories.ElementType, construction.left)
-            ).native,
-            native_affine_scheme(
-                cast(CategoryOfCategories.ElementType, construction.right)
-            ).native,
+            native_affine_scheme(cast(CategoryOfCategories.ElementType, construction.left)).native,
+            native_affine_scheme(cast(CategoryOfCategories.ElementType, construction.right)).native,
             native_scheme_morphism(cast(MorphismCategory.ObjectType, left_map)).native,
             native_scheme_morphism(cast(MorphismCategory.ObjectType, right_map)).native,
         )
@@ -276,9 +248,7 @@ class SchemesCategory(Category[Any, Any]):
         source_scheme = self.affine(source)
         native_affine_map = oscar.affine_morphism_direct(
             native_affine_scheme(cast(CategoryOfCategories.ElementType, source)).native,
-            native_affine_scheme(
-                cast(CategoryOfCategories.ElementType, target_chart)
-            ).native,
+            native_affine_scheme(cast(CategoryOfCategories.ElementType, target_chart)).native,
             oscar_morphism_handle(pullback),
         )
         native = oscar.covered_chart_map(
@@ -318,9 +288,7 @@ def projective_line(
     right_ring, (u,) = polynomial_ring(field, ("u",))
     left, right = Spec.on_object(left_ring), Spec.on_object(right_ring)
     left_opens, _ = affine_structure_sheaf(cast(AffineSchemesCategory.ObjectType, left))
-    right_opens, _ = affine_structure_sheaf(
-        cast(AffineSchemesCategory.ObjectType, right)
-    )
+    right_opens, _ = affine_structure_sheaf(cast(AffineSchemesCategory.ObjectType, right))
     left_root, right_root = left_opens.root(), right_opens.root()
     left_overlap = left_opens.principal_open(left_root, t)
     right_overlap = right_opens.principal_open(right_root, u)
@@ -328,18 +296,10 @@ def projective_line(
     right_u = right_overlap.restriction_to(right_root)(u)
     inverse_t, inverse_u = inverse_unit(left_t), inverse_unit(right_u)
 
-    right_to_left_base = presented_ring_homomorphism(
-        right_ring, left_overlap.section_ring(), (inverse_t,)
-    )
-    left_to_right_base = presented_ring_homomorphism(
-        left_ring, right_overlap.section_ring(), (inverse_u,)
-    )
-    right_to_left = localization_extension(
-        right_overlap.section_ring(), left_overlap.section_ring(), right_to_left_base
-    )
-    left_to_right = localization_extension(
-        left_overlap.section_ring(), right_overlap.section_ring(), left_to_right_base
-    )
+    right_to_left_base = presented_ring_homomorphism(right_ring, left_overlap.section_ring(), (inverse_t,))
+    left_to_right_base = presented_ring_homomorphism(left_ring, right_overlap.section_ring(), (inverse_u,))
+    right_to_left = localization_extension(right_overlap.section_ring(), left_overlap.section_ring(), right_to_left_base)
+    left_to_right = localization_extension(left_overlap.section_ring(), right_overlap.section_ring(), left_to_right_base)
 
     schemes = Schemes()
     glued, left_inclusion, right_inclusion = schemes.glue_two_affines(
@@ -405,9 +365,7 @@ def projective_line(
             case ("overlap->right",):
                 return transported_right_restriction
             case _:
-                raise AssertionError(
-                    f"unexpected projective-line restriction path {path!r}"
-                )
+                raise AssertionError(f"unexpected projective-line restriction path {path!r}")
 
     sheaf_functor = Fun(cover.op(), rings)(sections, restriction)
     structure_sheaf = ring_presheaf_from_functor(
@@ -415,16 +373,10 @@ def projective_line(
         cover,
         sheaf_functor,
         lambda key: cast(CategoryOfCategories.ElementType, cover(cast(str, key))),
-        lambda open_object: cover.label(
-            cast(FinitePresentedCategory.ObjectType, open_object)
-        ),
+        lambda open_object: cover.label(cast(FinitePresentedCategory.ObjectType, open_object)),
     )
-    swap_overlap_base = presented_ring_homomorphism(
-        left_ring, left_overlap.section_ring(), (inverse_t,)
-    )
-    overlap_swap = localization_extension(
-        left_overlap.section_ring(), left_overlap.section_ring(), swap_overlap_base
-    )
+    swap_overlap_base = presented_ring_homomorphism(left_ring, left_overlap.section_ring(), (inverse_t,))
+    overlap_swap = localization_extension(left_overlap.section_ring(), left_overlap.section_ring(), swap_overlap_base)
     return ProjectiveLinePresentation(
         glued,
         cast(AffineSchemesCategory.ObjectType, left),

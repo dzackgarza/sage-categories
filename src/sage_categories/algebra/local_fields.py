@@ -59,25 +59,15 @@ class ExactLocalValue:
             case "rational":
                 return cast(Fraction, self.expression.arguments[0])
             case "negate":
-                value = cast(
-                    ExactLocalValue, self.expression.arguments[0]
-                ).rational_value()
+                value = cast(ExactLocalValue, self.expression.arguments[0]).rational_value()
                 return None if value is None else -value
             case "add":
-                first = cast(
-                    ExactLocalValue, self.expression.arguments[0]
-                ).rational_value()
-                second = cast(
-                    ExactLocalValue, self.expression.arguments[1]
-                ).rational_value()
+                first = cast(ExactLocalValue, self.expression.arguments[0]).rational_value()
+                second = cast(ExactLocalValue, self.expression.arguments[1]).rational_value()
                 return None if first is None or second is None else first + second
             case "multiply":
-                first = cast(
-                    ExactLocalValue, self.expression.arguments[0]
-                ).rational_value()
-                second = cast(
-                    ExactLocalValue, self.expression.arguments[1]
-                ).rational_value()
+                first = cast(ExactLocalValue, self.expression.arguments[0]).rational_value()
+                second = cast(ExactLocalValue, self.expression.arguments[1]).rational_value()
                 return None if first is None or second is None else first * second
             case _:
                 return None
@@ -97,9 +87,7 @@ class ExactLocalValue:
             case Fraction(), Fraction():
                 return ExactLocalValue.rational(self.place, first + second)
             case _:
-                return ExactLocalValue(
-                    self.place, _ExactExpression("add", (self, other))
-                )
+                return ExactLocalValue(self.place, _ExactExpression("add", (self, other)))
 
     def __mul__(self, other: ExactLocalValue) -> ExactLocalValue:
         assert self.place == other.place
@@ -108,9 +96,7 @@ class ExactLocalValue:
             case Fraction(), Fraction():
                 return ExactLocalValue.rational(self.place, first * second)
             case _:
-                return ExactLocalValue(
-                    self.place, _ExactExpression("multiply", (self, other))
-                )
+                return ExactLocalValue(self.place, _ExactExpression("multiply", (self, other)))
 
     def valuation(self) -> int | float | None:
         """The exact p-adic valuation when determined by the retained expression."""
@@ -173,30 +159,20 @@ class ExactLocalFieldPresentation:
             cast(Any, carrier).point(ExactLocalValue.rational(self.place, datum)),
         )
 
-    def embed_rational(
-        self, rational_ring: CategoryOfCategories.ElementType
-    ) -> MorphismCategory.ObjectType:
+    def embed_rational(self, rational_ring: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         rings = Rings(Sets)
         source_carrier = rings.forgetful().on_object(rational_ring)
         target_carrier = rings.forgetful().on_object(self.ring)
         from sage_categories.cat.morphisms import Mor
 
         carrier_map = Mor(Sets)(source_carrier, target_carrier)(
-            lambda value: ExactLocalValue.rational(
-                self.place, cast(ExactLocalValue, value).rational_value() or Fraction(0)
-            )
+            lambda value: ExactLocalValue.rational(self.place, cast(ExactLocalValue, value).rational_value() or Fraction(0))
         )
         return rings.homomorphism(rational_ring, self.ring, carrier_map)
 
 
 def _exact_field(place: str | int) -> ExactLocalFieldPresentation:
-    carrier = Sets.from_membership(
-        lambda value: (
-            true
-            if isinstance(value, ExactLocalValue) and value.place == place
-            else false
-        )
-    )
+    carrier = Sets.from_membership(lambda value: true if isinstance(value, ExactLocalValue) and value.place == place else false)
     zero = ExactLocalValue.rational(place, 0)
     one = ExactLocalValue.rational(place, 1)
     ring = certified_commutative_ring(
@@ -209,15 +185,7 @@ def _exact_field(place: str | int) -> ExactLocalFieldPresentation:
     integers = None
     match place:
         case int():
-            integers = Sets.from_membership(
-                lambda value: (
-                    true
-                    if isinstance(value, ExactLocalValue)
-                    and value.place == place
-                    and value.is_integral() is True
-                    else false
-                )
-            )
+            integers = Sets.from_membership(lambda value: true if isinstance(value, ExactLocalValue) and value.place == place and value.is_integral() is True else false)
         case _:
             pass
     return ExactLocalFieldPresentation(place, ring, integers)
@@ -242,6 +210,4 @@ def exact_padic_field(prime: int) -> ExactLocalFieldPresentation:
 @cache
 def prime_indices() -> CategoryOfCategories.ElementType:
     """The infinite set of positive prime integers, represented by its primality predicate."""
-    return Sets.from_membership(
-        lambda value: true if isinstance(value, int) and isprime(value) else false
-    )
+    return Sets.from_membership(lambda value: true if isinstance(value, int) and isprime(value) else false)

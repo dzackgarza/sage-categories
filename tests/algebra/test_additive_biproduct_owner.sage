@@ -2,6 +2,7 @@
 
 from sage_categories.all import Fun, Mor, Sets, ask
 from sage_categories.algebra import AbelianGroups, abelian_homomorphism, integer_group, presented_abelian_group
+from sage_categories.algebra._presented_modules_cap import presented_native_morphism, presented_native_object
 from sage_categories.cat.cones import cone, cones, cocone, cocones
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 
@@ -20,6 +21,7 @@ def test_mixed_biproduct_has_additive_universal_maps() -> None:
     assert product is not coproduct
     assert product.apex() is biproduct
     assert coproduct.apex() is biproduct
+    assert presented_native_object(biproduct).value is biproduct
     first, second = product.leg(0), product.leg(1)
     include_first, include_second = coproduct.leg(0), coproduct.leg(1)
     assert first in Mor(abelian)(biproduct, integers)
@@ -52,6 +54,8 @@ def test_mixed_biproduct_has_additive_universal_maps() -> None:
     assert copairing.base_category() is abelian
     assert pairing in Mor(abelian)(integers, biproduct)
     assert copairing in Mor(abelian)(biproduct, cyclic)
+    for arrow in (first, second, include_first, include_second, pairing, copairing):
+        assert presented_native_morphism(arrow).value is arrow
 
     forgetful = abelian.forgetful()
     assert forgetful in Fun(abelian, Sets)

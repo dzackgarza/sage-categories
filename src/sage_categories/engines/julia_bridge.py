@@ -46,7 +46,7 @@ class OscarHandle:
 
 
 def _oscar_cache_directory() -> Path:
-    root = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    root = Path(os.environ["XDG_CACHE_HOME"]) if "XDG_CACHE_HOME" in os.environ else Path.home() / ".cache"
     return root / "sage-categories" / "oscar-1.8.2"
 
 

@@ -63,7 +63,7 @@ from sage.combinat.free_module import CombinatorialFreeModule
 from sage.groups.additive_abelian.additive_abelian_group import (
     AdditiveAbelianGroup_class,
 )
-from sage.matrix.constructor import block_matrix, identity_matrix, matrix, zero_matrix
+from sage.matrix.constructor import block_matrix, identity_matrix, zero_matrix
 from sage.matrix.matrix_integer_dense import Matrix_integer_dense
 from sage.modules.fg_pid.fgp_element import FGP_Element
 from sage.modules.fg_pid.fgp_module import FGP_Module_class
@@ -592,11 +592,6 @@ def linear_form(arrow: MorphismCategory.ObjectType) -> LinearForm:
 
 def _generators(form: Presentation) -> tuple[Hashable, ...]:
     return tuple(form.element(tuple(int(i == k) for k in range(form.rank()))) for i in range(form.rank()))
-
-
-def _matrix_of_rows(rows: list, width: int) -> Matrix_integer_dense:
-    """The integer matrix with these coordinate rows; a vector is a row here, not a column."""
-    return matrix(ZZ, len(rows), width, [entry for row in rows for entry in row])
 
 
 def abelian_homomorphism(

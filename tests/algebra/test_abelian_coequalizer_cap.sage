@@ -19,7 +19,7 @@ from sage_categories.algebra._presented_modules_cap import (
     presented_native_morphism,
     presented_native_object,
 )
-from sage_categories.algebra.abelian import presentation
+from sage_categories.algebra.abelian import _coordinates
 from sage_categories.cat.monoidal import Cartesian
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.predicates import ask
@@ -102,7 +102,7 @@ def test_cap_colift_crosses_a_non_diagonal_raw_quotient_to_its_public_smith_basi
 
     native_apex = presented_native_object(apex).native
     assert int(libgap.NumberColumns(libgap.UnderlyingMatrix(native_apex))) == 2
-    assert presentation(apex).rank() == 1
+    assert _coordinates(apex).rank() == 1
 
     difference = abelian_homomorphism(
         square,

@@ -14,7 +14,7 @@ from sage_categories.algebra._presented_modules_cap import (
     presented_native_morphism,
     presented_native_object,
 )
-from sage_categories.algebra.abelian import presentation
+from sage_categories.algebra.abelian import _coordinates
 from sage_categories.cat.monoidal import tensor_morphism, tensor_object
 from sage_categories.cat.predicates import ask
 
@@ -99,7 +99,7 @@ def test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis() -> None:
         two,
         target,
         lambda left, right: (
-            int(presentation(quotient).coordinates(left)[0])
+            int(_coordinates(quotient).coordinates(left)[0])
             * int(right.vector()[0])
             * target_generator
         ),

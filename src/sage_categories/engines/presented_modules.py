@@ -92,11 +92,16 @@ def _homalg_matrix(rows: tuple[tuple[int, ...], ...], columns: int) -> GapElemen
     )
 
 
+def _coordinates(value: object):
+    """Read the retained public coordinate bridge through the one lazy owner import."""
+    from sage_categories.algebra.abelian import _coordinates as retained_coordinates
+
+    return retained_coordinates(value)
+
+
 def _native_object(value: object) -> GapElement:
     if has_presented_native_object(value):
         return presented_native_object(value).native
-    from sage_categories.algebra.abelian import _coordinates
-
     category = _category()
     form = _coordinates(value)
     rank = form.rank()
@@ -122,8 +127,6 @@ def _bridge(value: object) -> _PresentationBridge | _DirectSumBridge | None:
 
 
 def _public_coordinates_from_raw(value: object, raw_coordinates) -> tuple[int, ...]:
-    from sage_categories.algebra.abelian import _coordinates
-
     form = _coordinates(value)
     bridge = _bridge(value)
     if bridge is None:
@@ -148,8 +151,6 @@ def _public_coordinates_from_raw(value: object, raw_coordinates) -> tuple[int, .
 
 
 def _raw_coordinates_from_public(value: object, public_coordinates) -> tuple[int, ...]:
-    from sage_categories.algebra.abelian import _coordinates
-
     form = _coordinates(value)
     normalized = form.element(tuple(int(entry) for entry in public_coordinates))
     bridge = _bridge(value)
@@ -175,8 +176,6 @@ def _raw_coordinates_from_public(value: object, public_coordinates) -> tuple[int
 
 
 def _native_matrix_from_public(value: object) -> GapElement:
-    from sage_categories.algebra.abelian import _coordinates
-
     source, target = value.domain(), value.codomain()
     source_form = _coordinates(source)
     target_form = _coordinates(target)
@@ -238,7 +237,6 @@ def _owned_morphism_from_native(source: object, target: object, native: GapEleme
     from sage_categories.algebra.abelian import (
         AbelianGroups,
         _rule_abelian_homomorphism,
-        _coordinates,
     )
     from sage_categories.cat.morphisms import Mor
     from sage_categories.kernel.refinement import refine
@@ -267,8 +265,6 @@ def homomorphism_from_rule(source: object, target: object, rule):
     ``IsWellDefined`` and the returned native presentation morphism remains the computational
     authority for the public arrow.
     """
-    from sage_categories.algebra.abelian import _coordinates
-
     source_form = _coordinates(source)
     target_form = _coordinates(target)
     source_native = _native_object(source)
@@ -453,8 +449,6 @@ def tensor_object(first: object, second: object):
 
 def tensor_element(first: object, second: object, tensor: object, left: object, right: object):
     """Return the public tensor datum of two public factor data via CAP's raw basis."""
-    from sage_categories.algebra.abelian import _coordinates
-
     first_form = _coordinates(first)
     second_form = _coordinates(second)
     left_raw = _raw_coordinates_from_public(first, first_form.coordinates(left))
@@ -473,8 +467,6 @@ def tensor_mediator(
     biadditive,
 ):
     """Return the CAP morphism induced by one public biadditive rule on factor data."""
-    from sage_categories.algebra.abelian import _coordinates
-
     first_native = _native_object(first)
     second_native = _native_object(second)
     first_raw_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(first_native)))

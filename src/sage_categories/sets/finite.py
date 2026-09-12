@@ -515,7 +515,8 @@ class SetsCategory(Category[[Map], []]):
             if decision is not None:
                 return decision
         values = _finite_data(domain)
-        if values is not Unknown:
+        target_values = _finite_data(first.codomain())
+        if values is not Unknown and target_values is not Unknown:
             from sage_categories.engines import finite_sets
 
             return finite_sets.equal_morphisms(first, second)

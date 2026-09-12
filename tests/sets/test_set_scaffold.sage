@@ -147,6 +147,15 @@ def test_rule_defined_infinite_set() -> None:
     assert (constant * constant)(point).datum() == 2
     assert Mor(Sets)(integers, integers).one()(point).datum() == 7
     assert ask(integers.is_finite()) is Unknown
+
+    # Finite-domain maps into a represented infinite codomain are compared on the
+    # supplied finite domain, not lowered to the finite-set engine by materializing
+    # the codomain.
+    singleton = Sets((0,))
+    first_constant = Mor(Sets)(singleton, integers)(lambda _: 2)
+    second_constant = Mor(Sets)(singleton, integers)(lambda _: 2)
+    assert ask(first_constant == second_constant) is True
+
     # The product of two rule-defined sets and a rule-defined map out of it, without enumerating either.
     square = Sets.Products()((integers, integers))
     pair = square.point((3, 4))

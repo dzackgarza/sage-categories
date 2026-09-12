@@ -3,6 +3,7 @@
 from sage_categories.algebra import inverse_unit, prime_field
 from sage_categories.all import ask
 from sage_categories.geometry import Schemes, TwoChartGluing, projective_line
+from sage_categories.geometry.schemes import native_scheme, native_scheme_morphism
 
 
 def test_projective_line_two_chart_gluing_and_swap() -> None:
@@ -23,6 +24,19 @@ def test_projective_line_two_chart_gluing_and_swap() -> None:
     assert presentation.right_inclusion.codomain() is presentation.scheme
     assert presentation.chart_swap.domain() is presentation.scheme
     assert presentation.chart_swap.codomain() is presentation.scheme
+    assert native_scheme(presentation.scheme).construction is construction
+    for arrow, source in (
+        (presentation.left_inclusion, left_scheme),
+        (presentation.right_inclusion, right_scheme),
+    ):
+        native = native_scheme_morphism(arrow)
+        assert native.value is arrow
+        assert native.source is source
+        assert native.target is presentation.scheme
+    native_swap = native_scheme_morphism(presentation.chart_swap)
+    assert native_swap.value is presentation.chart_swap
+    assert native_swap.source is presentation.scheme
+    assert native_swap.target is presentation.scheme
 
     sheaf = presentation.structure_sheaf
     assert sheaf.section_ring("left") is presentation.left_chart.coordinate_ring()

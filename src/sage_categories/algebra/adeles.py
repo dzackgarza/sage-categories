@@ -121,7 +121,7 @@ class AdeleOpen:
 
     owner: object
     kind: str
-    real_condition: LocalCondition | None
+    real_condition: LocalCondition
     finite_conditions: tuple[tuple[int, LocalCondition], ...]
 
     @property
@@ -148,7 +148,6 @@ class AdeleOpen:
                 return False
             case True:
                 pass
-        assert self.real_condition is not None
         real_answer = self.real_condition(value.real)
         match real_answer:
             case False:
@@ -416,8 +415,8 @@ def adeles_of_rationals() -> AdelePresentation:
         addition_continuity,
         multiplication_continuity,
     )
-    empty_open = AdeleOpen(owner, "empty", None, ())
-    whole_open = AdeleOpen(owner, "whole", None, ())
+    empty_open = AdeleOpen(owner, "empty", lambda _value: False, ())
+    whole_open = AdeleOpen(owner, "whole", lambda _value: True, ())
     _adeles = AdelePresentation(
         owner,
         ring,

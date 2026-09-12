@@ -894,6 +894,59 @@ def _static_role_helper(
     return helper_name, helper
 
 
+def _helper_role_reference(
+    owner_name: str,
+    owner: ast.ClassDef,
+    helper_name: str,
+    helper_role: ast.ClassDef,
+    role: str,
+    source_class_parameters: dict[str, tuple[str, ...]],
+) -> ast.expr:
+    """The exact static reference to one role class already owned by a helper."""
+    role_reference: ast.expr = ast.Attribute(value=ast.Name(id=helper_name, ctx=ast.Load()), attr=role, ctx=ast.Load())
+    role_parameters = tuple(parameter.name for parameter in helper_role.type_params)
+    if not role_parameters:
+        return role_reference
+    owner_parameters = {parameter.name for parameter in owner.type_params}
+    role_parameter_set = set(role_parameters)
+    shared_parameters = role_parameter_set & owner_parameters
+    assert not shared_parameters or role_parameter_set <= owner_parameters, f"{owner_name}.{role} carries only some of its generic parameters on its category owner"
+    if not role_parameter_set <= owner_parameters:
+        return role_reference
+    role_reference = ast.Subscript(
+        value=role_reference,
+        slice=ast.Tuple(elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters], ctx=ast.Load()),
+        ctx=ast.Load(),
+    )
+    for index, base in enumerate(helper_role.bases):
+        fullname = _expression_fullname(base)
+        if fullname is None or isinstance(base, ast.Subscript) or source_class_parameters.get(fullname) != role_parameters:
+            continue
+        helper_role.bases[index] = ast.Subscript(
+            value=base,
+            slice=ast.Tuple(elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters], ctx=ast.Load()),
+            ctx=ast.Load(),
+        )
+    return role_reference
+
+
+def _owner_role_alias(owner_name: str, owner: ast.ClassDef, source_owner: ast.ClassDef, role: str) -> ast.expr:
+    """Return one owner's role alias, restoring its source declaration when projection dropped it."""
+    alias = _role_alias(owner, role)
+    if alias is not None:
+        return alias
+    alias = _role_alias(source_owner, role)
+    assert alias is not None, f"{owner_name}.{role} has no static role declaration"
+    replacement = ast.Assign(targets=[ast.Name(id=role, ctx=ast.Store())], value=copy.deepcopy(alias))
+    for index, local in enumerate(owner.body):
+        if role in _statement_names(local):
+            owner.body[index] = replacement
+            break
+    else:
+        owner.body.insert(0, replacement)
+    return alias
+
+
 def _project_owner_role_defaults(
     owner_name: str,
     owner: ast.ClassDef,
@@ -913,42 +966,9 @@ def _project_owner_role_defaults(
                 owner.body.append(ast.Pass())
         helper_role = next((local for local in helper.body if isinstance(local, ast.ClassDef) and local.name == role), None)
         if helper_role is not None:
-            role_reference: ast.expr = ast.Attribute(value=ast.Name(id=helper_name, ctx=ast.Load()), attr=role, ctx=ast.Load())
-            role_parameters = tuple(parameter.name for parameter in helper_role.type_params)
-            if role_parameters:
-                owner_parameters = {parameter.name for parameter in owner.type_params}
-                role_parameter_set = set(role_parameters)
-                shared_parameters = role_parameter_set & owner_parameters
-                assert not shared_parameters or role_parameter_set <= owner_parameters, f"{owner_name}.{role} carries only some of its generic parameters on its category owner"
-                if role_parameter_set <= owner_parameters:
-                    role_reference = ast.Subscript(
-                        value=role_reference,
-                        slice=ast.Tuple(elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters], ctx=ast.Load()),
-                        ctx=ast.Load(),
-                    )
-                    for index, base in enumerate(helper_role.bases):
-                        fullname = _expression_fullname(base)
-                        if fullname is None or isinstance(base, ast.Subscript) or source_class_parameters.get(fullname) != role_parameters:
-                            continue
-                        helper_role.bases[index] = ast.Subscript(
-                            value=base,
-                            slice=ast.Tuple(elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters], ctx=ast.Load()),
-                            ctx=ast.Load(),
-                        )
-            defaults[role] = role_reference
+            defaults[role] = _helper_role_reference(owner_name, owner, helper_name, helper_role, role, source_class_parameters)
             continue
-        alias = _role_alias(owner, role)
-        if alias is None:
-            alias = _role_alias(source_owner, role)
-            assert alias is not None, f"{owner_name}.{role} has no static role declaration"
-            replacement = ast.Assign(targets=[ast.Name(id=role, ctx=ast.Store())], value=copy.deepcopy(alias))
-            for index, local in enumerate(owner.body):
-                if role in _statement_names(local):
-                    owner.body[index] = replacement
-                    break
-            else:
-                owner.body.insert(0, replacement)
-        defaults[role] = copy.deepcopy(alias)
+        defaults[role] = copy.deepcopy(_owner_role_alias(owner_name, owner, source_owner, role))
     return defaults
 
 

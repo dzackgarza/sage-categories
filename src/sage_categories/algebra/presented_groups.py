@@ -13,6 +13,7 @@ __all__ = ["GroupPresentation", "presented_group"]
 from collections.abc import Sequence
 
 from sage.groups.free_group import FreeGroup
+from sage.structure.element import Element
 from sage.structure.sage_object import SageObject
 from sympy import false, true
 
@@ -27,13 +28,15 @@ from sage_categories.cat.structured_objects import (
     _shear,
 )
 from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.sage_runtime import MonoDict
 from sage_categories.sets import Sets
 
 type GroupWord = tuple[int, ...]
+_native_group_engines: MonoDict = MonoDict()
 
 
 def _native_parent_is(engine, value) -> bool:
-    return getattr(value, "parent", lambda: None)() is engine
+    return isinstance(value, Element) and value.parent() is engine
 
 
 def _native_word(engine, word: GroupWord):
@@ -59,15 +62,13 @@ def _owned_group(engine):
     shear = _shear(pointed)
     inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], pair[0] ** -1 * pair[1]))
     Sets.retain_inverses(shear, inverse_shear)
-    pointed._native_group_engine = engine
+    _native_group_engines[pointed] = engine
     return pointed
 
 
 def _native_engine(group):
-    engine = getattr(group, "_native_group_engine", None)
-    if engine is None:
-        raise TypeError("this group object has no retained native group realization")
-    return engine
+    assert group in _native_group_engines, f"{group!r} has no retained native group realization"
+    return _native_group_engines[group]
 
 
 def _owned_group_homomorphism(source, target, native):

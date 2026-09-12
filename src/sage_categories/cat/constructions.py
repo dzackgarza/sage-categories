@@ -110,6 +110,14 @@ type Construction = Callable[[Functor], "CategoryOfCategories.ElementType"]
 type UniversalPresentation = LimitConesCategory.ObjectType
 
 
+def _construction_membership_proposition(
+    family: Category,
+    candidate: CategoryOfCategories.ElementType,
+) -> Proposition:
+    """Membership in a chosen construction family is established placement (POL-CAT-068)."""
+    return member(candidate, family)
+
+
 def _nontrivial_discrete(shape: Category) -> bool | None:
     """Return whether the owned object-set cardinality proves a nontrivial discrete shape; ``None`` while undecided."""
     if not shape.is_discrete():
@@ -236,7 +244,7 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in a construction family is established placement, two-valued: the family is the full image of its construction (POL-CAT-068)."""
-        return member(candidate, self)
+        return _construction_membership_proposition(self, candidate)
 
     # -- the diagrams this family accepts ----------------------------------------------
 
@@ -776,7 +784,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in a construction family is established placement, two-valued (POL-CAT-068)."""
-        return member(candidate, self)
+        return _construction_membership_proposition(self, candidate)
 
     def shape(self) -> Category:
         return self._shape

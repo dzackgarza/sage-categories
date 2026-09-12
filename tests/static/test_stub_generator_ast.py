@@ -1098,3 +1098,23 @@ class Carrier(example.category.Base):
     assert "import example.other" in projected
     assert "class Carrier(Base)" in projected
     assert "value: Role" in projected
+
+
+def test_generated_geometry_projection_retains_exact_owned_roles() -> None:
+    """The tracked projection keeps the affine/gluing owners used by static consumers."""
+    root = Path(__file__).parents[2] / "src/sage_categories/geometry"
+    affine = (root / "affine.pyi").read_text()
+    schemes = (root / "schemes.pyi").read_text()
+
+    assert "def domain(self) -> AffineSchemesCategory.ObjectType" in affine
+    assert "def codomain(self) -> AffineSchemesCategory.ObjectType" in affine
+    assert "def pullback(self) -> MorphismCategory.ObjectType" in affine
+    assert "def AffineSchemes() -> AffineSchemesCategory" in affine
+    assert "Spec: Functor" in affine
+    assert "def affine_structure_sheaf(scheme: AffineSchemesCategory.ObjectType) -> tuple[AffineOpenCategory, RingPresheaf]" in affine
+
+    assert "def domain(self) -> SchemesCategory.ObjectType" in schemes
+    assert "def codomain(self) -> SchemesCategory.ObjectType" in schemes
+    assert "def Schemes() -> SchemesCategory" in schemes
+    assert ") -> SchemesCategory.MorphismType" in schemes
+    assert "def projective_line(field: CategoryOfCategories.ElementType) -> ProjectiveLinePresentation" in schemes

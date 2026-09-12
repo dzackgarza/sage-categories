@@ -36,6 +36,49 @@ class _ExactExpression:
     arguments: tuple[object, ...]
 
 
+def _rational_padic_valuation(place: int, rational: Fraction) -> int | float:
+    """The exact ``place``-adic valuation of one rational value."""
+    match rational == 0:
+        case True:
+            return inf
+        case False:
+            pass
+    numerator, denominator = abs(rational.numerator), rational.denominator
+    value = 0
+    while numerator % place == 0:
+        numerator //= place
+        value += 1
+    while denominator % place == 0:
+        denominator //= place
+        value -= 1
+    return value
+
+
+def _expression_valuation(value: ExactLocalValue) -> int | float | None:
+    """Evaluate valuation from the retained non-rational expression tree."""
+    match value.expression.operation:
+        case "atom":
+            return cast(int | None, value.expression.arguments[1])
+        case "negate":
+            return cast(ExactLocalValue, value.expression.arguments[0]).valuation()
+        case "multiply":
+            first = cast(ExactLocalValue, value.expression.arguments[0]).valuation()
+            second = cast(ExactLocalValue, value.expression.arguments[1]).valuation()
+            return None if first is None or second is None else first + second
+        case "add":
+            first = cast(ExactLocalValue, value.expression.arguments[0]).valuation()
+            second = cast(ExactLocalValue, value.expression.arguments[1]).valuation()
+            match first, second:
+                case (None, _) | (_, None):
+                    return None
+                case _ if first != second:
+                    return min(first, second)
+                case _:
+                    return None
+        case _:
+            return None
+
+
 @dataclass(frozen=True, slots=True)
 class ExactLocalValue:
     """An exact local value, distinct from any finite-precision approximation."""
@@ -104,41 +147,10 @@ class ExactLocalValue:
         assert isinstance(self.place, int)
         rational = self.rational_value()
         match rational:
-            case Fraction() if rational == 0:
-                return inf
             case Fraction():
-                numerator, denominator = abs(rational.numerator), rational.denominator
-                value = 0
-                while numerator % self.place == 0:
-                    numerator //= self.place
-                    value += 1
-                while denominator % self.place == 0:
-                    denominator //= self.place
-                    value -= 1
-                return value
+                return _rational_padic_valuation(self.place, rational)
             case None:
-                pass
-        match self.expression.operation:
-            case "atom":
-                return cast(int | None, self.expression.arguments[1])
-            case "negate":
-                return cast(ExactLocalValue, self.expression.arguments[0]).valuation()
-            case "multiply":
-                first = cast(ExactLocalValue, self.expression.arguments[0]).valuation()
-                second = cast(ExactLocalValue, self.expression.arguments[1]).valuation()
-                return None if first is None or second is None else first + second
-            case "add":
-                first = cast(ExactLocalValue, self.expression.arguments[0]).valuation()
-                second = cast(ExactLocalValue, self.expression.arguments[1]).valuation()
-                match first, second:
-                    case (None, _) | (_, None):
-                        return None
-                    case _ if first != second:
-                        return min(first, second)
-                    case _:
-                        return None
-            case _:
-                return None
+                return _expression_valuation(self)
 
     def is_integral(self) -> bool | None:
         valuation = self.valuation()

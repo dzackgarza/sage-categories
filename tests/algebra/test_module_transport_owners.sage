@@ -80,6 +80,9 @@ def transport_boolean_action(actegory: ActionsCategory.ObjectType, projection: F
     backward = Mor(monoidal)(target_set, source_set)(lambda value: {30: 0, 10: 1, 20: 2}[value])
     monoidal.retain_inverses(forward, backward)
     isomorphism = section.on_morphism(forward)
+    inverse = section.on_morphism(backward)
+    assert isomorphism.inverse() is inverse
+    assert inverse.inverse() is isomorphism
 
     transported = modules.transport(module, isomorphism)
     action = actegory.action()

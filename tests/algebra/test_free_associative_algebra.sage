@@ -35,6 +35,7 @@ def test_native_substitution_commutes_with_the_underlying_module_functor() -> No
     y = free_associative_generator(algebra, 1)
     endomorphism = free_associative_substitution(algebra, (x + y, y))
     underlying = free_associative_underlying_morphism(endomorphism)
+    assert underlying.domain() is module and underlying.codomain() is module
 
     xy = free_associative_product(algebra, x, y)
     image = underlying(xy)

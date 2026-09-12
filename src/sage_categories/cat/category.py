@@ -465,6 +465,16 @@ class CategoryDeclaration[
             return self.ambient()._chosen_hom_inhabited(hom_category)
         return Unknown
 
+    def _morphism_equality(
+        self,
+        first: MorphismCategory.ObjectType,
+        second: MorphismCategory.ObjectType,
+    ) -> bool | None:
+        """A leaf engine's exact equality decision for two parallel morphisms, when it owns one."""
+        if self.has_full_ambient():
+            return self.ambient()._morphism_equality(first, second)
+        return None
+
     # -- membership and equality ----------------------------------------------
 
     def equality(self) -> Predicate:

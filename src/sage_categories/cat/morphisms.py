@@ -162,9 +162,16 @@ def _equal_words(
     second: MorphismCategory.ObjectType,
     assumptions: Proposition,
 ) -> Decision:
-    """Generic morphism equality through Maude's typed native reductions."""
+    """Morphism equality through the leaf engine first, then Maude's typed reductions."""
     if first.domain() is not second.domain() or first.codomain() is not second.codomain():
         return Unknown
+    match first.base_category()._morphism_equality(first, second):
+        case True:
+            return True
+        case False:
+            return False
+        case None:
+            pass
     from sage_categories.engines import equations
 
     return True if equations.equal_morphisms(first, second) else Unknown

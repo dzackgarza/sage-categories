@@ -93,11 +93,8 @@ A point of `X` is a morphism `* -> X`, that is, a morphism `1 -> X` from `Sets()
 The generic exponential construction comes from `Cat`. Its realization in `Sets()` is the function set from `X` to `Y`. It is a distinct owned object, and `Mor(Sets())(X, Y)` is the discrete category on its elements.
 
 `Mor(Sets())(X, Y)(rule)` constructs a set map.
-The rule can be a callable, an explicit mapping, a SymPy `Lambda`, a Sage callable symbolic expression, or a map form a leaf supplies; the constructor dispatches on that representation.
-A map form is a retained representation that an engine decides: it evaluates a datum, composes with another form, compares with another form, and may invert.
-A leaf supplies one for the maps its engine understands, such as the integer matrix of a homomorphism between presented abelian groups.
-A leaf also retains an object form for a set its engine presents, from which `Sets()` derives the forms of the maps it constructs itself: identities, the zero constant, composites, and the projections and pairings of products.
-`Sets()` consults a retained form before any enumeration or symbolic reasoning, so a map whose engine decides equality or invertibility is decided by that engine.
+The rule can be a callable, an explicit mapping, a SymPy `Lambda`, or a Sage callable symbolic expression; the constructor dispatches on that representation.
+Engine-specific morphism representations remain at the leaf category that owns them.  For example, presented abelian homomorphisms retain their CAP morphisms in `Ab`; their matrices are not a second `Sets()` map language.  Generic morphism equality asks the leaf category for an exact native decision before falling back to the shared typed-expression engine.
 Every representation is stored as a raw rule on data, which is what evaluation uses.
 A symbolic expression is retained beside that rule and propagates through identities, constants, composition, and the projections and pairings of rule-defined products, so that equality and the morphism properties can be decided symbolically where a raw rule alone would leave them `Unknown`. The constructor must establish that the rule is total and lands in `Y`.
 
@@ -170,10 +167,9 @@ Membership quantifies over the component membership propositions.
 Equality quantifies over the component equality propositions.
 For an infinite index, retain that quantifier and the indexed rule; do not construct
 it by exhausting a Python iterator. Finite conjunction is its finite-index case.
-A product of factors that retain object forms states its membership by those
-propositions without enumerating the carrier. Retained forms supply exact map
-operations on the domains their engines support; possession of a form alone does
-not establish a decision procedure for every product query.
+A product states its membership by the factor propositions without enumerating the
+carrier. Engine-specific exact map operations remain at the leaf category that owns
+their mathematical structure rather than being copied into the generic set product.
 A finite chosen index with chosen finite enumerations of every factor admits finite
 enumeration. Enumeration of the factors alone does not supply enumeration of an
 arbitrary product: a countable product of two-element sets is already uncountable.

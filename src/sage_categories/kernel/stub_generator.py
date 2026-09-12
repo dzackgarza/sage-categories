@@ -12,7 +12,6 @@ import copy
 import os
 import subprocess
 import sys
-from collections import defaultdict
 from collections.abc import Iterator
 from importlib import import_module
 from pathlib import Path
@@ -20,6 +19,28 @@ from shutil import which
 from tempfile import TemporaryDirectory
 
 __all__ = ["generate_stubs"]
+
+
+def _set_bucket[Key, Value](mapping: dict[Key, set[Value]], key: Key) -> set[Value]:
+    """Return the retained set accumulator at ``key``, creating it explicitly once."""
+    match key in mapping:
+        case True:
+            return mapping[key]
+        case False:
+            bucket: set[Value] = set()
+            mapping[key] = bucket
+            return bucket
+
+
+def _list_bucket[Key, Value](mapping: dict[Key, list[Value]], key: Key) -> list[Value]:
+    """Return the retained list accumulator at ``key``, creating it explicitly once."""
+    match key in mapping:
+        case True:
+            return mapping[key]
+        case False:
+            bucket: list[Value] = []
+            mapping[key] = bucket
+            return bucket
 
 
 def generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> tuple[Path, ...]:
@@ -1074,7 +1095,7 @@ def _internal_static_names(
         trees[module] = tree
         declarations[module] = frozenset(_declared_names(tree))
 
-    references: defaultdict[str, set[str]] = defaultdict(set)
+    references: dict[str, set[str]] = {}
     for module, tree in trees.items():
         module_aliases: dict[str, str] = {}
         for statement in ast.walk(tree):
@@ -1083,7 +1104,7 @@ def _internal_static_names(
                 if imported in modules:
                     for alias in statement.names:
                         if alias.name in declarations[imported]:
-                            references[imported].add(alias.name)
+                            _set_bucket(references, imported).add(alias.name)
                 if imported is not None:
                     for alias in statement.names:
                         candidate = f"{imported}.{alias.name}"
@@ -1100,7 +1121,7 @@ def _internal_static_names(
             imported = module_aliases.get(expression.value.id)
             if imported is None or expression.attr not in declarations[imported]:
                 continue
-            references[imported].add(expression.attr)
+            _set_bucket(references, imported).add(expression.attr)
 
     return {module: frozenset(names) for module, names in references.items()}
 
@@ -1128,10 +1149,10 @@ def _project_internal_definitions(
     if not names:
         return
     existing = {name for statement in tree.body for name in _statement_names(statement)}
-    declarations: defaultdict[str, list[ast.stmt]] = defaultdict(list)
+    declarations: dict[str, list[ast.stmt]] = {}
     for statement in private_tree.body:
         for name in _statement_names(statement):
-            declarations[name].append(statement)
+            _list_bucket(declarations, name).append(statement)
 
     required = set(names)
     while True:
@@ -1285,14 +1306,14 @@ def _canonical_exports(
     sources: tuple[Path, ...],
 ) -> dict[str, str]:
     """Map each uniquely declared public name to its authoritative source module."""
-    candidates: defaultdict[str, list[str]] = defaultdict(list)
+    candidates: dict[str, list[str]] = {}
     for source in sources:
         module = _module_name(package, output_directory, source)
         tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
         declarations = _declared_names(tree)
         for name in _public_names(tree):
             if name in declarations:
-                candidates[name].append(module)
+                _list_bucket(candidates, name).append(module)
     return {name: canonical for name, modules in candidates.items() if len(modules) == 1 for canonical in modules}
 
 
@@ -1434,10 +1455,10 @@ def _project_public_static_surface(tree: ast.Module, source: ast.Module) -> None
     public = frozenset(_public_names(source))
     if not public:
         return
-    declarations: defaultdict[str, list[ast.stmt]] = defaultdict(list)
+    declarations: dict[str, list[ast.stmt]] = {}
     for statement in tree.body:
         for name in _statement_names(statement):
-            declarations[name].append(statement)
+            _list_bucket(declarations, name).append(statement)
 
     required = set(public)
     while True:
@@ -1516,14 +1537,14 @@ def _canonicalize_imports(
         if statement.module != package and not statement.module.startswith(f"{package}."):
             statements.append(statement)
             continue
-        grouped: defaultdict[str, list[ast.alias]] = defaultdict(list)
+        grouped: dict[str, list[ast.alias]] = {}
         for alias in statement.names:
             match alias.name in canonical_exports:
                 case True:
                     module = canonical_exports[alias.name]
                 case False:
                     module = statement.module
-            grouped[module].append(alias)
+            _list_bucket(grouped, module).append(alias)
         statements.extend(ast.ImportFrom(module=module, names=aliases, level=statement.level) for module, aliases in grouped.items())
     tree.body[:] = statements
 
@@ -2008,7 +2029,7 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
         return False
 
     cyclic = {name for name in classes if reaches(name, name)}
-    owners: defaultdict[str, list[ast.ClassDef]] = defaultdict(list)
+    owners: dict[str, list[ast.ClassDef]] = {}
     for name in cyclic:
         relative = name.removeprefix(f"{module}.")
         if relative.count(".") != 1:
@@ -2022,7 +2043,7 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
             None,
         )
         if nested is not None:
-            owners[owner_name].append(nested)
+            _list_bucket(owners, owner_name).append(nested)
 
     if not owners:
         return

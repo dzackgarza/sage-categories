@@ -37,3 +37,19 @@ descent = data.lift(cocones(diagram)(candidate))
 assert descent(at_two).datum() == 3
 assert descent(at_101).datum() == 3
 assert (descent * data.leg(101))(integers.point(104)).datum() == 3
+
+shift = Mor(Fun(omega, Sets))(
+    diagram,
+    diagram,
+)(lambda vertex: Mor(Sets)(integers, integers)(lambda value: value + 1))
+induced_shift = Sets.Colimits(omega).defining_functor().on_morphism(shift)
+at_four = data.leg(4)(integers.point(9))
+at_four_shifted = data.leg(4)(integers.point(10))
+at_seven = data.leg(7)(integers.point(12))
+at_seven_shifted = data.leg(7)(integers.point(13))
+assert induced_shift.domain() is colimit
+assert induced_shift.codomain() is colimit
+assert ask(at_four == at_seven) is True
+assert ask(induced_shift(at_four) == at_four_shifted) is True
+assert ask(induced_shift(at_seven) == at_seven_shifted) is True
+assert ask(induced_shift(at_four) == induced_shift(at_seven)) is True

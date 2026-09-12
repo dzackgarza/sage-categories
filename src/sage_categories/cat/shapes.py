@@ -140,8 +140,7 @@ class DiscreteCategory(Category[[], []]):
         return self.MorphismType(member_object, member_object)
 
     def composite(self, second: DiscreteCategory.MorphismType, first: DiscreteCategory.MorphismType) -> DiscreteCategory.MorphismType:
-        assert ask(first.codomain() == second.domain())
-        return self.MorphismType(first.domain(), second.codomain())
+        return _thin_composite(self, second, first)
 
     def _equal(
         self,
@@ -164,6 +163,16 @@ class DiscreteCategory(Category[[], []]):
 # The retained images of the ``Discrete`` functor, keyed by identity.
 _discrete_categories: MonoDict = MonoDict()
 _discrete_functors: MonoDict = MonoDict()
+
+
+def _thin_composite(
+    category: Category,
+    second: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Compose in a thin category: compatible endpoints determine the unique arrow."""
+    assert ask(first.codomain() == second.domain())
+    return category.MorphismType(first.domain(), second.codomain())
 
 
 def _discrete_on_object(index_set: CategoryOfCategories.ElementType) -> DiscreteCategory:
@@ -384,8 +393,7 @@ class ThinCategory(Category[[], []]):
         return self.MorphismType(member_object, member_object)
 
     def composite(self, second: ThinCategory.MorphismType, first: ThinCategory.MorphismType) -> ThinCategory.MorphismType:
-        assert ask(first.codomain() == second.domain())
-        return self.MorphismType(first.domain(), second.codomain())
+        return _thin_composite(self, second, first)
 
     def _chosen_hom_inhabited(self, hom_category: Category) -> Decision:
         domain = hom_category.domain()

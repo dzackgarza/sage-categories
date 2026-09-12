@@ -101,18 +101,18 @@ type Engine = AdditiveAbelianGroup_class | FGP_Module_class
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class Presentation:
+class _CoordinateBridge:
     """Coordinate conversion at the public/native presented-module boundary."""
 
     orders: tuple[int, ...]
     coordinates: Callable[[Hashable], tuple[int, ...]]
     element: Callable[[tuple[int, ...]], Hashable]
-    factors: tuple[Presentation, ...] = ()
+    factors: tuple[_CoordinateBridge, ...] = ()
 
     def rank(self) -> int:
         return len(self.orders)
 
-    def direct_sum(self, factors: tuple[Presentation, ...]) -> Presentation:
+    def direct_sum(self, factors: tuple[_CoordinateBridge, ...]) -> _CoordinateBridge:
         sizes = tuple(factor.rank() for factor in factors)
 
         def coordinates(datum: Hashable) -> tuple[int, ...]:
@@ -125,7 +125,7 @@ class Presentation:
                 start += size
             return tuple(parts)
 
-        return Presentation(tuple(order for factor in factors for order in factor.orders), coordinates, element, factors)
+        return _CoordinateBridge(tuple(order for factor in factors for order in factor.orders), coordinates, element, factors)
 
     def zero_datum(self) -> Hashable:
         return self.element((0,) * self.rank())
@@ -216,7 +216,7 @@ def _point_map(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectTyp
     return _forgetful().on_morphism(arrow)
 
 
-def presentation(group: CategoryOfCategories.ElementType) -> Presentation:
+def _coordinates(group: CategoryOfCategories.ElementType) -> _CoordinateBridge:
     """The Smith presentation this leaf retained for a group object; a group built elsewhere has none."""
     assert group in _presentations, f"{group!r} was not constructed from a presented engine, so it has no Smith coordinates"
     return _presentations[group]
@@ -224,7 +224,7 @@ def presentation(group: CategoryOfCategories.ElementType) -> Presentation:
 
 def _group_from_operations(
     carrier: CategoryOfCategories.ElementType,
-    form: Presentation,
+    form: _CoordinateBridge,
     zero: Hashable,
     addition_rule: Callable[[tuple[Hashable, Hashable]], Hashable],
 ) -> CategoryOfCategories.ElementType:
@@ -249,7 +249,7 @@ def _group_from_engine(engine: Engine) -> CategoryOfCategories.ElementType:
     one engine; each tensor product is nevertheless its own object of ``Ab``, which is why
     this constructor is not retained by engine.
     """
-    form = Presentation(
+    form = _CoordinateBridge(
         tuple(int(order) for order in engine.invariants()),
         lambda datum: tuple(int(c) for c in datum.vector()),
         lambda coordinates: engine.linear_combination_of_smith_form_gens(vector(ZZ, coordinates)),
@@ -277,7 +277,7 @@ def presented_abelian_group(engine: Engine) -> CategoryOfCategories.ElementType:
 def integer_group() -> CategoryOfCategories.ElementType:
     """``Z`` as an object of ``Ab``: the rule-defined integers, the free group on one generator."""
     integers = Sets.from_membership(lambda n: Q.integer(n))
-    form = Presentation((0,), lambda datum: (int(datum),), lambda coordinates: int(coordinates[0]))
+    form = _CoordinateBridge((0,), lambda datum: (int(datum),), lambda coordinates: int(coordinates[0]))
     return _group_from_operations(integers, form, 0, lambda pair: pair[0] + pair[1])
 
 
@@ -475,7 +475,7 @@ def indexed_free_abelian_coproduct(
     return abelian.Colimits(shape).with_universal_data(diagram, apex, selected, mediator)
 
 
-def _generators(form: Presentation) -> tuple[Hashable, ...]:
+def _generators(form: _CoordinateBridge) -> tuple[Hashable, ...]:
     return tuple(form.element(tuple(int(i == k) for k in range(form.rank()))) for i in range(form.rank()))
 
 
@@ -511,7 +511,7 @@ def _biproduct(
     """The selected binary biproduct of two presented abelian groups, with both universal presentations."""
     abelian = AbelianGroups()
     assert first in abelian and second in abelian
-    first_form, second_form = presentation(first), presentation(second)
+    first_form, second_form = _coordinates(first), _coordinates(second)
     carrier = Sets.Products()((_points(first), _points(second)))
     direct_sum = first_form.direct_sum((first_form, second_form))
     apex = _group_from_operations(
@@ -702,10 +702,10 @@ def _pair_vector(
     if isinstance(data, _IndexedTensorData):
         match data.rank_one_on_left:
             case True:
-                coefficient = int(presentation(data.first).coordinates(a)[0])
+                coefficient = int(_coordinates(data.first).coordinates(a)[0])
                 return coefficient * b
             case False:
-                coefficient = int(presentation(data.second).coordinates(b)[0])
+                coefficient = int(_coordinates(data.second).coordinates(b)[0])
                 return coefficient * a
     if isinstance(data, _IndexedPairTensorData):
         result = _tensor_object(data.first, data.second)
@@ -744,7 +744,7 @@ def _tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCa
         return result
     if first_indexed != second_indexed:
         presented = second if first_indexed else first
-        presented_form = presentation(presented)
+        presented_form = _coordinates(presented)
         if presented_form.orders == (0,):
             indexed = first if first_indexed else second
             record = _indexed_free_record(indexed)
@@ -828,7 +828,7 @@ def tensor_mediator(
     if isinstance(data, _IndexedTensorData):
         indexed_record = _indexed_free_record(data.indexed_factor)
         rank_one = first if data.rank_one_on_left else second
-        rank_one_generator = _generators(presentation(rank_one))[0]
+        rank_one_generator = _generators(_coordinates(rank_one))[0]
 
         def evaluate(value: Hashable) -> Hashable:
             result_record = _indexed_free_record(result)
@@ -957,10 +957,10 @@ def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> Morph
                         lambda index: ((index[0], index[1][0]), index[1][1]),
                     )
     ab_data, bc_data = _tensor_data[ab], _tensor_data[bc]
-    generators_a, generators_b, generators_c = _generators(presentation(a)), _generators(presentation(b)), _generators(presentation(c))
+    generators_a, generators_b, generators_c = _generators(_coordinates(a)), _generators(_coordinates(b)), _generators(_coordinates(c))
     if forward:
         target = _tensor_object(a, bc)
-        target_data, m = _tensor_data[target], presentation(b).rank()
+        target_data, m = _tensor_data[target], _coordinates(b).rank()
 
         def rule(t: Hashable, x: Hashable) -> Hashable:
             total = target_data.quotient.zero()
@@ -971,7 +971,7 @@ def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> Morph
 
         return tensor_mediator(ab, c, target, rule)
     target = _tensor_object(ab, c)
-    target_data, p = _tensor_data[target], presentation(c).rank()
+    target_data, p = _tensor_data[target], _coordinates(c).rank()
 
     def rule_back(x: Hashable, t: Hashable) -> Hashable:
         total = target_data.quotient.zero()
@@ -1000,7 +1000,7 @@ def AbelianTensor() -> MonoidalStructuresCategory.ObjectType:
     def scalar(group: CategoryOfCategories.ElementType, k: Hashable, a: Hashable) -> Hashable:
         if group in _indexed_free_data:
             return int(k) * a
-        into = presentation(group)
+        into = _coordinates(group)
         return into.element(tuple(int(k) * coordinate for coordinate in into.coordinates(a)))
 
     def inverse_unitor(

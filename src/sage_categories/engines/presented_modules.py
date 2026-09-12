@@ -108,10 +108,10 @@ def _has_native_morphism(value: object) -> bool:
 def _native_object(value: object) -> GapElement:
     if _has_native_object(value):
         return presented_native_object(value).native
-    from sage_categories.algebra.abelian import presentation
+    from sage_categories.algebra.abelian import _coordinates
 
     category = _category()
-    form = presentation(value)
+    form = _coordinates(value)
     rank = form.rank()
     relations = []
     for position, order in enumerate(form.orders):
@@ -135,9 +135,9 @@ def _bridge(value: object) -> _PresentationBridge | _DirectSumBridge | None:
 
 
 def _public_coordinates_from_raw(value: object, raw_coordinates) -> tuple[int, ...]:
-    from sage_categories.algebra.abelian import presentation
+    from sage_categories.algebra.abelian import _coordinates
 
-    form = presentation(value)
+    form = _coordinates(value)
     bridge = _bridge(value)
     if bridge is None:
         return form.coordinates(form.element(tuple(int(entry) for entry in raw_coordinates)))
@@ -161,9 +161,9 @@ def _public_coordinates_from_raw(value: object, raw_coordinates) -> tuple[int, .
 
 
 def _raw_coordinates_from_public(value: object, public_coordinates) -> tuple[int, ...]:
-    from sage_categories.algebra.abelian import presentation
+    from sage_categories.algebra.abelian import _coordinates
 
-    form = presentation(value)
+    form = _coordinates(value)
     normalized = form.element(tuple(int(entry) for entry in public_coordinates))
     bridge = _bridge(value)
     if bridge is None:
@@ -175,7 +175,7 @@ def _raw_coordinates_from_public(value: object, public_coordinates) -> tuple[int
     result = []
     start = 0
     for factor in bridge.factors:
-        factor_rank = presentation(factor).rank()
+        factor_rank = _coordinates(factor).rank()
         result.extend(
             _raw_coordinates_from_public(
                 factor,
@@ -188,11 +188,11 @@ def _raw_coordinates_from_public(value: object, public_coordinates) -> tuple[int
 
 
 def _native_matrix_from_public(value: object) -> GapElement:
-    from sage_categories.algebra.abelian import presentation
+    from sage_categories.algebra.abelian import _coordinates
 
     source, target = value.domain(), value.codomain()
-    source_form = presentation(source)
-    target_form = presentation(target)
+    source_form = _coordinates(source)
+    target_form = _coordinates(target)
     native_source = _native_object(source)
     native_target = _native_object(target)
     source_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(native_source)))
@@ -245,13 +245,13 @@ def _owned_morphism_from_native(source: object, target: object, native: GapEleme
     from sage_categories.algebra.abelian import (
         AbelianGroups,
         _rule_abelian_homomorphism,
-        presentation,
+        _coordinates,
     )
     from sage_categories.cat.morphisms import Mor
     from sage_categories.kernel.refinement import refine
 
-    source_form = presentation(source)
-    target_form = presentation(target)
+    source_form = _coordinates(source)
+    target_form = _coordinates(target)
     native_matrix = matrix(ZZ, _integer_matrix_rows(libgap.UnderlyingMatrix(native)))
 
     def evaluate(datum):
@@ -274,10 +274,10 @@ def homomorphism_from_rule(source: object, target: object, rule):
     ``IsWellDefined`` and the returned native presentation morphism remains the computational
     authority for the public arrow.
     """
-    from sage_categories.algebra.abelian import presentation
+    from sage_categories.algebra.abelian import _coordinates
 
-    source_form = presentation(source)
-    target_form = presentation(target)
+    source_form = _coordinates(source)
+    target_form = _coordinates(target)
     source_native = _native_object(source)
     target_native = _native_object(target)
     source_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(source_native)))
@@ -460,10 +460,10 @@ def tensor_object(first: object, second: object):
 
 def tensor_element(first: object, second: object, tensor: object, left: object, right: object):
     """Return the public tensor datum of two public factor data via CAP's raw basis."""
-    from sage_categories.algebra.abelian import presentation
+    from sage_categories.algebra.abelian import _coordinates
 
-    first_form = presentation(first)
-    second_form = presentation(second)
+    first_form = _coordinates(first)
+    second_form = _coordinates(second)
     left_raw = _raw_coordinates_from_public(first, first_form.coordinates(left))
     right_raw = _raw_coordinates_from_public(second, second_form.coordinates(right))
     raw_pair = tuple(left_coefficient * right_coefficient for left_coefficient in left_raw for right_coefficient in right_raw)
@@ -480,7 +480,7 @@ def tensor_mediator(
     biadditive,
 ):
     """Return the CAP morphism induced by one public biadditive rule on factor data."""
-    from sage_categories.algebra.abelian import presentation
+    from sage_categories.algebra.abelian import _coordinates
 
     first_native = _native_object(first)
     second_native = _native_object(second)
@@ -488,9 +488,9 @@ def tensor_mediator(
     second_raw_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(second_native)))
     target_native = _native_object(target)
     target_raw_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(target_native)))
-    first_form = presentation(first)
-    second_form = presentation(second)
-    target_form = presentation(target)
+    first_form = _coordinates(first)
+    second_form = _coordinates(second)
+    target_form = _coordinates(target)
     rows = []
     for first_position in range(first_raw_rank):
         first_raw = [0] * first_raw_rank

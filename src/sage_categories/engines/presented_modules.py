@@ -34,10 +34,13 @@ __all__ = [
     "direct_sum_coproduct_lift",
     "direct_sum_product_lift",
     "retain_binary_biproduct",
+    "tensor_associator",
     "tensor_element",
+    "tensor_left_unitor",
     "tensor_mediator",
     "tensor_morphism",
     "tensor_object",
+    "tensor_right_unitor",
     "zero_morphism",
 ]
 
@@ -518,3 +521,61 @@ def tensor_morphism(
         native_target,
     )
     return _owned_morphism_from_native(source_tensor, target_tensor, native)
+
+def tensor_associator(
+    first: object,
+    second: object,
+    third: object,
+    source_tensor: object,
+    target_tensor: object,
+    *,
+    left_to_right: bool,
+):
+    """Return CAP's associator between the already selected public tensor objects."""
+    operation = (
+        libgap.AssociatorLeftToRightWithGivenTensorProducts
+        if left_to_right
+        else libgap.AssociatorRightToLeftWithGivenTensorProducts
+    )
+    native = operation(
+        _native_object(source_tensor),
+        _native_object(first),
+        _native_object(second),
+        _native_object(third),
+        _native_object(target_tensor),
+    )
+    return _owned_morphism_from_native(source_tensor, target_tensor, native)
+
+
+def tensor_left_unitor(group: object, tensor: object, *, inverse: bool):
+    """Return CAP's left unitor, or its inverse, for the selected tensor object."""
+    native = (
+        libgap.LeftUnitorInverseWithGivenTensorProduct(
+            _native_object(group),
+            _native_object(tensor),
+        )
+        if inverse
+        else libgap.LeftUnitorWithGivenTensorProduct(
+            _native_object(group),
+            _native_object(tensor),
+        )
+    )
+    source, target = (group, tensor) if inverse else (tensor, group)
+    return _owned_morphism_from_native(source, target, native)
+
+
+def tensor_right_unitor(group: object, tensor: object, *, inverse: bool):
+    """Return CAP's right unitor, or its inverse, for the selected tensor object."""
+    native = (
+        libgap.RightUnitorInverseWithGivenTensorProduct(
+            _native_object(group),
+            _native_object(tensor),
+        )
+        if inverse
+        else libgap.RightUnitorWithGivenTensorProduct(
+            _native_object(group),
+            _native_object(tensor),
+        )
+    )
+    source, target = (group, tensor) if inverse else (tensor, group)
+    return _owned_morphism_from_native(source, target, native)

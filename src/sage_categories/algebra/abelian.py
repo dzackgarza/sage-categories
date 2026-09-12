@@ -1080,6 +1080,20 @@ def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> Morph
     ab, bc = _tensor_object(a, b), _tensor_object(b, c)
     left_object = _tensor_object(ab, c)
     right_object = _tensor_object(a, bc)
+    if all(
+        isinstance(_tensor_data[value], _TensorData)
+        for value in (ab, bc, left_object, right_object)
+    ):
+        from sage_categories.engines.presented_modules import tensor_associator
+
+        return tensor_associator(
+            a,
+            b,
+            c,
+            left_object if forward else right_object,
+            right_object if forward else left_object,
+            left_to_right=forward,
+        )
     if left_object in _indexed_free_data and right_object in _indexed_free_data:
         left_index = _indexed_free_record(left_object).index_set
         right_index = _indexed_free_record(right_object).index_set
@@ -1164,25 +1178,45 @@ def AbelianTensor() -> MonoidalStructuresCategory.ObjectType:
             return _rule_abelian_homomorphism(group, target, rule)
         return abelian_homomorphism(group, target, rule)
 
+    def left_unitor_component(group: CategoryOfCategories.ElementType, inverse: bool) -> MorphismCategory.ObjectType:
+        tensor_group = _tensor_object(unit, group)
+        if group not in _indexed_free_data and isinstance(_tensor_data[tensor_group], _TensorData):
+            from sage_categories.engines.presented_modules import tensor_left_unitor
+
+            return tensor_left_unitor(group, tensor_group, inverse=inverse)
+        if inverse:
+            return inverse_unitor(
+                group,
+                tensor_group,
+                lambda a: _pair_vector(_tensor_data[tensor_group], 1, a),
+            )
+        return tensor_mediator(unit, group, group, lambda k, a: scalar(group, k, a))
+
+    def right_unitor_component(group: CategoryOfCategories.ElementType, inverse: bool) -> MorphismCategory.ObjectType:
+        tensor_group = _tensor_object(group, unit)
+        if group not in _indexed_free_data and isinstance(_tensor_data[tensor_group], _TensorData):
+            from sage_categories.engines.presented_modules import tensor_right_unitor
+
+            return tensor_right_unitor(group, tensor_group, inverse=inverse)
+        if inverse:
+            return inverse_unitor(
+                group,
+                tensor_group,
+                lambda a: _pair_vector(_tensor_data[tensor_group], a, 1),
+            )
+        return tensor_mediator(group, unit, group, lambda a, k: scalar(group, k, a))
+
     left_unitor = natural_isomorphism(
         left_unit,
         identity,
-        lambda group: tensor_mediator(unit, group, group, lambda k, a: scalar(group, k, a)),
-        lambda group: inverse_unitor(
-            group,
-            _tensor_object(unit, group),
-            lambda a: _pair_vector(_tensor_data[_tensor_object(unit, group)], 1, a),
-        ),
+        lambda group: left_unitor_component(group, False),
+        lambda group: left_unitor_component(group, True),
     )
     right_unitor = natural_isomorphism(
         right_unit,
         identity,
-        lambda group: tensor_mediator(group, unit, group, lambda a, k: scalar(group, k, a)),
-        lambda group: inverse_unitor(
-            group,
-            _tensor_object(group, unit),
-            lambda a: _pair_vector(_tensor_data[_tensor_object(group, unit)], a, 1),
-        ),
+        lambda group: right_unitor_component(group, False),
+        lambda group: right_unitor_component(group, True),
     )
     return MonoidalStructures(base)(tensor, unit, associator, left_unitor, right_unitor)
 

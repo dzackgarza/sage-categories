@@ -52,6 +52,14 @@ def test_cap_computes_finite_presented_tensor_object_and_nonidentity_tensor_map(
     assert native_induced.target is product
     assert ask(induced(generator_tensor) == product.zero()) is True
 
+    triples = monoidal.associator().domain().domain()
+    associator = monoidal.associator().component(triples((four, six, four)))
+    left_unitor = monoidal.left_unitor().component(four)
+    right_unitor = monoidal.right_unitor().component(six)
+    for comparison in (associator, left_unitor, right_unitor):
+        assert presented_native_morphism(comparison).value is comparison
+        assert presented_native_morphism(comparison.inverse()).value is comparison.inverse()
+
 
 def test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis() -> None:
     cyclic_engine = AdditiveAbelianGroup([4])

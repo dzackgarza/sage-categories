@@ -677,8 +677,10 @@ def _biproduct(
         return projections[sequence_position(vertex)]
 
     def product_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        components = tuple(candidate.leg(index) for index in (0, 1))
-        source = candidate.apex()
+        components = tuple(candidate.component(shape(index)) for index in (0, 1))
+        from sage_categories.cat.cones import cone_apex
+
+        source = cone_apex(candidate)
         return direct_sum_product_lift((first, second), apex, source, components)
 
     product_apex = abelian.Limits(shape).with_universal_data(

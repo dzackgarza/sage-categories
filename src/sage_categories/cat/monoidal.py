@@ -185,14 +185,18 @@ class _MonoidalData(NamedTuple):
     right_unitor: NaturalTransformation
 
 
-class MonoidalStructuresCategory(Category[[], []]):
+class MonoidalStructuresCategory[
+    BaseCategory: "Category[..., ...]" = "Category[..., ...]",
+](Category[[], []]):
     """The discrete category of supplied coherent monoidal structures on C."""
 
-    class ObjectType:
+    class ObjectType[
+        BaseCategory: "Category[..., ...]" = "Category[..., ...]",
+    ]:
         def __init__(self, data: _MonoidalData) -> None:
             self._monoidal_data = data
 
-        def underlying_category(self) -> Category:
+        def underlying_category(self) -> BaseCategory:
             return self.tensor().codomain()
 
         def tensor(self) -> Functor:
@@ -306,7 +310,7 @@ class MonoidalStructuresCategory(Category[[], []]):
     class MorphismType:
         pass
 
-    def __init__(self, base: Category) -> None:
+    def __init__(self, base: BaseCategory) -> None:
         self._base = base
 
     def __call__(
@@ -333,7 +337,7 @@ class MonoidalStructuresCategory(Category[[], []]):
 
 
 @cached_function(key=identity_key)
-def MonoidalStructures(base: Category) -> MonoidalStructuresCategory:
+def MonoidalStructures[BaseCategory: "Category[..., ...]"](base: BaseCategory) -> MonoidalStructuresCategory[BaseCategory]:
     return MonoidalStructuresCategory(base)
 
 
@@ -512,17 +516,23 @@ class _ActionData(NamedTuple):
     unitor: NaturalTransformation
 
 
-class ActionsCategory(Category[[], []]):
+class ActionsCategory[
+    ActingCategory: "Category[..., ...]" = "Category[..., ...]",
+    ActedCategory: "Category[..., ...]" = "Category[..., ...]",
+](Category[[], []]):
     """The discrete category of supplied coherent left actions of M on C."""
 
-    class ObjectType:
+    class ObjectType[
+        ActingCategory: "Category[..., ...]" = "Category[..., ...]",
+        ActedCategory: "Category[..., ...]" = "Category[..., ...]",
+    ]:
         def __init__(self, data: _ActionData) -> None:
             self._action_data = data
 
-        def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
+        def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType[ActingCategory]:
             return self.category()._monoidal
 
-        def underlying_category(self) -> Category:
+        def underlying_category(self) -> ActedCategory:
             return self.action().codomain()
 
         def action(self) -> Functor:
@@ -599,10 +609,10 @@ class ActionsCategory(Category[[], []]):
     class MorphismType:
         pass
 
-    def __init__(self, monoidal: MonoidalStructuresCategory.ObjectType, base: Category) -> None:
+    def __init__(self, monoidal: MonoidalStructuresCategory.ObjectType[ActingCategory], base: ActedCategory) -> None:
         self._monoidal, self._base = monoidal, base
 
-    def __call__(self, action: Functor, associator: NaturalTransformation, unitor: NaturalTransformation) -> ActionsCategory.ObjectType:
+    def __call__(self, action: Functor, associator: NaturalTransformation, unitor: NaturalTransformation) -> ActionsCategory.ObjectType[ActingCategory, ActedCategory]:
         monoidal = self._monoidal
         assert action in Fun(Cat().Products()((monoidal.underlying_category(), self._base)), self._base)
         triples = Cat().Products()((monoidal.underlying_category(), monoidal.underlying_category(), self._base))
@@ -622,7 +632,10 @@ class ActionsCategory(Category[[], []]):
 
 
 @cached_function(key=identity_key)
-def Actions(monoidal: MonoidalStructuresCategory.ObjectType, base: Category) -> ActionsCategory:
+def Actions[ActingCategory: "Category[..., ...]", ActedCategory: "Category[..., ...]"](
+    monoidal: MonoidalStructuresCategory.ObjectType[ActingCategory],
+    base: ActedCategory,
+) -> ActionsCategory[ActingCategory, ActedCategory]:
     return ActionsCategory(monoidal, base)
 
 

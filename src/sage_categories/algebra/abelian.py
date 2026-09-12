@@ -282,6 +282,29 @@ def _forgetful() -> Functor:
     return magmas.to_carrier() * monoids.to_named_magmas() * groups.to_named_monoids()
 
 
+class _AbelianOperations(Category):
+    """Public operations installed on the exact derived category ``Ab``."""
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def forgetful(self) -> Functor:
+        return _forgetful()
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        abelian = AbelianGroups()
+        return (Fun(abelian, abelian).one(),)
+
+
+Cat().implement(_AbelianOperations)
+
+
 def _points(group: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     """The carrier set of a group object, through the retained ``Ab -> Sets`` composite."""
     return _forgetful().on_object(group)

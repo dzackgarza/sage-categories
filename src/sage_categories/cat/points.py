@@ -112,7 +112,7 @@ class PointCategory(Category[[], []]):
 
     def __call__(self) -> CategoryOfCategories.ElementType:
         """Return the sole object ``X``."""
-        return self._member
+        return self.member()
 
     def construct_morphism(
         self,

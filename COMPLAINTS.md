@@ -580,3 +580,9 @@ Ideas, to be weighed, not obligations.*
 - **Uncertainty:** This audit establishes duplication inside this adapter only; it does not claim that the same lowering helper should absorb product/equalizer-specific adapters elsewhere.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Resolve by giving the shared finite-diagram lowering one private owner returning the native factors and decorated arrows, with `compatible_families()` and `identified_objects()` retaining only their limit-versus-colimit calls and directional readback. Existing finite category limit/colimit consumers must remain unchanged.
+
+## PointCategory duplicated its sole-object state read
+
+- **Evidence and impact:** `PointCategory.member()` and zero-argument `PointCategory.__call__()` both returned `_member` directly. The callable form is only a convenience spelling for the same mathematical object, so duplicating the state read gives two implementation owners for one trivial invariant.
+
+- **Repair link and acceptance:** `bloat-point-member-alias`. Keep `member()` as the state-reading owner and make `__call__()` delegate to it; point-category consumers must remain unchanged.

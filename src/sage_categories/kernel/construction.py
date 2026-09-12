@@ -287,8 +287,29 @@ def retained_input[Value: CategoryPoint, Datum](
     raise AssertionError(f"{value!r} is not an owned value")
 
 
+class _ConstructionContext:
+    """The shared closed-node bookkeeping of one C3 constructor chain."""
+
+    nodes: tuple[Node, ...]
+    initialized: list[Node]
+
+    def run(self, node: Node, initialize: Callable[[], None]) -> None:
+        assert not any(owner.category is node.category and owner.role is node.role for owner in self.initialized), (
+            f"the {node.role.value} role of {node.category!r} initialized twice"
+        )
+        assert any(owner.category is node.category and owner.role is node.role for owner in self.nodes), (
+            f"{node.category!r}.{node.role.value} is not a node of this constructor chain"
+        )
+        self.initialized.append(node)
+        initialize()
+
+    def assert_complete(self) -> None:
+        missing = [owner for owner in self.nodes if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)]
+        assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
+
+
 @dataclass(slots=True)
-class ObjectConstructionContext:
+class ObjectConstructionContext(_ConstructionContext):
     """One object identity and the closed node steps of its C3 constructor chain."""
 
     canonical_image: ObjectOfCategory
@@ -298,23 +319,9 @@ class ObjectConstructionContext:
     initialized: list[Node] = field(default_factory=list)
     initializing_image: ObjectOfCategory | None = None
 
-    def run(self, node: Node, initialize: Callable[[], None]) -> None:
-        assert not any(owner.category is node.category and owner.role is node.role for owner in self.initialized), (
-            f"the {node.role.value} role of {node.category!r} initialized twice"
-        )
-        assert any(owner.category is node.category and owner.role is node.role for owner in self.nodes), (
-            f"{node.category!r}.{node.role.value} is not a node of this constructor chain"
-        )
-        self.initialized.append(node)
-        initialize()
-
-    def assert_complete(self) -> None:
-        missing = [owner for owner in self.nodes if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)]
-        assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
-
 
 @dataclass(slots=True)
-class ElementConstructionContext:
+class ElementConstructionContext(_ConstructionContext):
     """One element identity and the closed node steps of its C3 constructor chain."""
 
     canonical_image: CategoryPoint
@@ -323,23 +330,8 @@ class ElementConstructionContext:
     nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
 
-    def run(self, node: Node, initialize: Callable[[], None]) -> None:
-        assert not any(owner.category is node.category and owner.role is node.role for owner in self.initialized), (
-            f"the {node.role.value} role of {node.category!r} initialized twice"
-        )
-        assert any(owner.category is node.category and owner.role is node.role for owner in self.nodes), (
-            f"{node.category!r}.{node.role.value} is not a node of this constructor chain"
-        )
-        self.initialized.append(node)
-        initialize()
-
-    def assert_complete(self) -> None:
-        missing = [owner for owner in self.nodes if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)]
-        assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
-
-
 @dataclass(slots=True)
-class MorphismConstructionContext:
+class MorphismConstructionContext(_ConstructionContext):
     """One morphism identity and the closed node steps of its C3 constructor chain."""
 
     canonical_image: MorphismOfCategory
@@ -347,21 +339,6 @@ class MorphismConstructionContext:
     cat_element_identity: CategoryPointIdentity
     nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
-
-    def run(self, node: Node, initialize: Callable[[], None]) -> None:
-        assert not any(owner.category is node.category and owner.role is node.role for owner in self.initialized), (
-            f"the {node.role.value} role of {node.category!r} initialized twice"
-        )
-        assert any(owner.category is node.category and owner.role is node.role for owner in self.nodes), (
-            f"{node.category!r}.{node.role.value} is not a node of this constructor chain"
-        )
-        self.initialized.append(node)
-        initialize()
-
-    def assert_complete(self) -> None:
-        missing = [owner for owner in self.nodes if not any(done.category is owner.category and done.role is owner.role for done in self.initialized)]
-        assert not missing, f"the constructor chain did not initialize {missing[0].category!r}.{missing[0].role.value}"
-
 
 _object_context: ContextVar[ObjectConstructionContext | None] = ContextVar("object construction context", default=None)
 _element_context: ContextVar[ElementConstructionContext | None] = ContextVar("element construction context", default=None)

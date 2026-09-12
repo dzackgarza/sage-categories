@@ -68,6 +68,7 @@ __all__ = [
     "FiniteSets",
     "Fun",
     "Grothendieck",
+    "GroupPresentation",
     "Groups",
     "IndexedCategories",
     "InitialObjects",
@@ -128,6 +129,7 @@ __all__ = [
     "natural_transformation_to_end",
     "pair_maps",
     "parallel_pair",
+    "presented_group",
     "power_functor",
     "precompose",
     "product_functor",
@@ -218,7 +220,7 @@ from sage_categories import (
     weighted_projection,
     yoneda,
 )
-from sage_categories.algebra import AbelianGroups, AbelianTensor
+from sage_categories.algebra import AbelianGroups, AbelianTensor, GroupPresentation, presented_group
 from sage_categories.cat.monoidal import (
     Actions,
     Cartesian,

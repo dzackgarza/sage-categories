@@ -67,6 +67,10 @@ from sage_categories.algebra.indexed_modules import (
     integer_regular_module,
     integer_scalar_monoid,
 )
+from sage_categories.algebra.presented_groups import (
+    GroupPresentation,
+    presented_group,
+)
 from sage_categories.algebra.local_fields import (
     ExactLocalFieldPresentation,
     ExactLocalValue,
@@ -85,6 +89,7 @@ __all__ = [
     "AdeleValue",
     "ExactLocalFieldPresentation",
     "ExactLocalValue",
+    "GroupPresentation",
     "LinearForm",
     "Presentation",
     "PrimeIdeal",
@@ -126,6 +131,7 @@ __all__ = [
     "localize_at_prime",
     "polynomial_ring",
     "presented_abelian_group",
+    "presented_group",
     "presented_ring_homomorphism",
     "prime_field",
     "prime_ideal",

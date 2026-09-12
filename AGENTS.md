@@ -446,6 +446,23 @@ red across many commits by many workers has stopped being a gate at all. If the 
 outside this repository, record the blocker with a reproducer and an owner, then work something
 the obstruction does not touch. Never both.
 
+## Do not end a turn without the next node started
+
+A turn that ends cleanly, with the work banked and nothing in flight, still stops this
+repository until somebody notices and pushes it. On 2026-09-12 that happened seven times, each
+costing between ten and fifty minutes of a stream that was otherwise producing well — more
+total time than any stall, bug or blocked run that day.
+
+Ending a turn is the decision to stop, so make it deliberately and rarely. When a node closes,
+take the next ready one from the DAG in the same turn: read its acceptance, open the files, and
+begin. If the work genuinely has to pause — a run you must wait on, a decision you cannot
+make — say what you are waiting for and what you will do when it returns, so the next turn
+starts with an instruction rather than a question.
+
+The DAG is what makes this possible without asking anyone. `Needs: none` nodes are always
+available, and a node whose acceptance names a test tells you exactly what to write next.
+Selecting the next piece is your work, not the steward's.
+
 ## Bank before you wait
 
 Long consumer runs on this host stall or die often enough that waiting on one is the single

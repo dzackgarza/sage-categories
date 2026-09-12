@@ -120,8 +120,12 @@ def _install_category_initializer(category_class: type[CategoryPoint]) -> None:
     the root initializer runs once, for the class the value actually names; an inner
     wrapper reached through that chain leaves it to the outer one.
     """
-    written = vars(category_class).get("__init__")
-    if written is None or getattr(written, "_runs_the_kernel_initializer", False):
+    namespace = vars(category_class)
+    written = namespace["__init__"] if "__init__" in namespace else None
+    if written is None:
+        return
+    written_state = vars(written)
+    if "_runs_the_kernel_initializer" in written_state and written_state["_runs_the_kernel_initializer"] is True:
         return
 
     def kernel_initializer(self: CategoryPoint, *arguments: object, **keywords: object) -> None:

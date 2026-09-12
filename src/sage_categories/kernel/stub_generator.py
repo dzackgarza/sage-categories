@@ -169,7 +169,6 @@ def _stub_import_groups(tree: ast.Module, package: str) -> tuple[tuple[ast.stmt,
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
     }
     uses_incomplete = "Incomplete" in loaded_names
-    )
     imports: list[ast.stmt] = []
     unaliased_from_imports: dict[tuple[str | None, int], list[ast.alias]] = {}
     for statement in tree.body:

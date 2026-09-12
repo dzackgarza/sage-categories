@@ -45,7 +45,11 @@ def test_free_group_carrier_is_rule_defined_not_enumerated() -> None:
     free = presentation.group()
     assert Sets.chosen_enumeration(free.operation().codomain()) is Unknown
     assert ask(presentation.evaluate_word((1, 2)) == presentation.evaluate_word((2, 1))) is False
-    assert ask(presentation.evaluate_word((1, -2)) == presentation.evaluate_word((1,)) * presentation.evaluate_word((-2,))) is True
+    first = presentation.evaluate_word((1,))
+    inverse_second = presentation.evaluate_word((-2,))
+    square = free.operation().domain()
+    product = free.operation()(square.point((first.datum(), inverse_second.datum())))
+    assert ask(presentation.evaluate_word((1, -2)) == product) is True
     with pytest.raises(ValueError, match="generators not in the group"):
         presentation.evaluate_word((3,))
 

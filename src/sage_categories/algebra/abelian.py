@@ -579,26 +579,6 @@ def indexed_free_abelian_coproduct(
     return abelian.Colimits(shape).with_universal_data(diagram, apex, selected, mediator)
 
 
-def _linear_homomorphism(
-    source: CategoryOfCategories.ElementType,
-    target: CategoryOfCategories.ElementType,
-    form: LinearForm,
-) -> MorphismCategory.ObjectType:
-    """The morphism of ``Ab`` with this linear form; the monoid constructor checks additivity and the unit through the forms."""
-    assert form.source is presentation(source) and form.target is presentation(target)
-    assert _descends(form.matrix, form.source.orders, form.target.orders), f"{form!r} does not respect the relations of {source!r} and {target!r}"
-    structure = _structure()
-    renaming = AdditiveGroups(structure).product_projection(0)
-    carrier_map = Mor(Sets)(_points(source), _points(target))(form)
-    monoid_map = Monoids(structure).homomorphism(renaming.on_object(source), renaming.on_object(target), carrier_map)
-    arrow = AdditiveGroups(structure).homomorphism(source, target, monoid_map)
-    # Presented homomorphisms live in the exact commutative-group owner, not merely
-    # in the ambient additive-group category.  Universal constructions such as the
-    # retained Ab coequalizer recover their diagram owner from the arrows themselves.
-    refine(arrow, Mor(AbelianGroups())(source, target))
-    return arrow
-
-
 def linear_form(arrow: MorphismCategory.ObjectType) -> LinearForm:
     """The integer matrix on Smith generators of a homomorphism of ``Ab``, read off its carrier map.
 
@@ -642,27 +622,6 @@ def _zero_morphism(
     from sage_categories.engines.presented_modules import zero_morphism
 
     return zero_morphism(source, target)
-
-
-def _inclusion_form(direct_sum: Presentation, index: int) -> LinearForm:
-    """The selected inclusion of one factor into a presented direct sum."""
-    factor = direct_sum.factors[index]
-    offset = sum(part.rank() for part in direct_sum.factors[:index])
-    matrix = zero_matrix(ZZ, factor.rank(), direct_sum.rank())
-    for row in range(factor.rank()):
-        matrix[row, offset + row] = 1
-    return LinearForm(factor, direct_sum, matrix)
-
-
-def _copair_form(components: tuple[LinearForm, ...], source: Presentation) -> LinearForm:
-    """The map out of a presented direct sum with these component maps."""
-    assert components and len(components) == len(source.factors)
-    target = components[0].target
-    assert all(component.target is target for component in components)
-    matrix = components[0].matrix
-    for component in components[1:]:
-        matrix = matrix.stack(component.matrix)
-    return LinearForm(source, target, matrix)
 
 
 def _biproduct(

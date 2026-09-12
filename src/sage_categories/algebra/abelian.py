@@ -52,6 +52,7 @@ __all__ = [
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import partial
+from typing import Literal
 
 from sage.categories.sets_cat import Sets as SageSets
 from sage.combinat.free_module import CombinatorialFreeModule
@@ -1002,6 +1003,64 @@ def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> Morph
     return tensor_mediator(a, bc, target, rule_back)
 
 
+def _tensor_scalar(group: CategoryOfCategories.ElementType, coefficient: Hashable, value: Hashable) -> Hashable:
+    """Multiply one tensor-unit coefficient into a datum of ``group``."""
+    match group in _indexed_free_data:
+        case True:
+            return int(coefficient) * value
+        case False:
+            coordinates = _coordinates(group)
+            return coordinates.element(tuple(int(coefficient) * entry for entry in coordinates.coordinates(value)))
+
+
+def _tensor_unitor_inverse(
+    group: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    rule: Callable[[Hashable], Hashable],
+) -> MorphismCategory.ObjectType:
+    """Construct a tensor unitor inverse through the group's selected native owner."""
+    match group in _indexed_free_data:
+        case True:
+            return _rule_abelian_homomorphism(group, target, rule)
+        case False:
+            return abelian_homomorphism(group, target, rule)
+
+
+def _tensor_unitor_component(
+    unit: CategoryOfCategories.ElementType,
+    group: CategoryOfCategories.ElementType,
+    side: Literal["left", "right"],
+    inverse: bool,
+) -> MorphismCategory.ObjectType:
+    """One component of the selected tensor left/right unitor or its inverse."""
+    match side:
+        case "left":
+            tensor_group = _tensor_object(unit, group)
+        case "right":
+            tensor_group = _tensor_object(group, unit)
+    native_presented = group not in _indexed_free_data and isinstance(_tensor_data[tensor_group], _TensorData)
+    match native_presented, side:
+        case True, "left":
+            from sage_categories.engines.presented_modules import tensor_left_unitor
+
+            return tensor_left_unitor(group, tensor_group, inverse=inverse)
+        case True, "right":
+            from sage_categories.engines.presented_modules import tensor_right_unitor
+
+            return tensor_right_unitor(group, tensor_group, inverse=inverse)
+        case _:
+            pass
+    match inverse, side:
+        case True, "left":
+            return _tensor_unitor_inverse(group, tensor_group, lambda value: _pair_vector(_tensor_data[tensor_group], 1, value))
+        case True, "right":
+            return _tensor_unitor_inverse(group, tensor_group, lambda value: _pair_vector(_tensor_data[tensor_group], value, 1))
+        case False, "left":
+            return tensor_mediator(unit, group, group, lambda coefficient, value: _tensor_scalar(group, coefficient, value))
+        case False, "right":
+            return tensor_mediator(group, unit, group, lambda value, coefficient: _tensor_scalar(group, coefficient, value))
+
+
 @cached_function(key=lambda: 0)
 def AbelianTensor() -> MonoidalStructuresCategory.ObjectType:
     """``(Ab, ⊗, Z)``: the tensor product of abelian groups as a selected monoidal structure on ``AbelianGroups()``."""
@@ -1016,60 +1075,17 @@ def AbelianTensor() -> MonoidalStructuresCategory.ObjectType:
     left_unit, right_unit = tensor_units(tensor, unit)
     identity = Fun(base, base).one()
 
-    def scalar(group: CategoryOfCategories.ElementType, k: Hashable, a: Hashable) -> Hashable:
-        if group in _indexed_free_data:
-            return int(k) * a
-        into = _coordinates(group)
-        return into.element(tuple(int(k) * coordinate for coordinate in into.coordinates(a)))
-
-    def inverse_unitor(
-        group: CategoryOfCategories.ElementType,
-        target: CategoryOfCategories.ElementType,
-        rule: Callable[[Hashable], Hashable],
-    ) -> MorphismCategory.ObjectType:
-        if group in _indexed_free_data:
-            return _rule_abelian_homomorphism(group, target, rule)
-        return abelian_homomorphism(group, target, rule)
-
-    def left_unitor_component(group: CategoryOfCategories.ElementType, inverse: bool) -> MorphismCategory.ObjectType:
-        tensor_group = _tensor_object(unit, group)
-        if group not in _indexed_free_data and isinstance(_tensor_data[tensor_group], _TensorData):
-            from sage_categories.engines.presented_modules import tensor_left_unitor
-
-            return tensor_left_unitor(group, tensor_group, inverse=inverse)
-        if inverse:
-            return inverse_unitor(
-                group,
-                tensor_group,
-                lambda a: _pair_vector(_tensor_data[tensor_group], 1, a),
-            )
-        return tensor_mediator(unit, group, group, lambda k, a: scalar(group, k, a))
-
-    def right_unitor_component(group: CategoryOfCategories.ElementType, inverse: bool) -> MorphismCategory.ObjectType:
-        tensor_group = _tensor_object(group, unit)
-        if group not in _indexed_free_data and isinstance(_tensor_data[tensor_group], _TensorData):
-            from sage_categories.engines.presented_modules import tensor_right_unitor
-
-            return tensor_right_unitor(group, tensor_group, inverse=inverse)
-        if inverse:
-            return inverse_unitor(
-                group,
-                tensor_group,
-                lambda a: _pair_vector(_tensor_data[tensor_group], a, 1),
-            )
-        return tensor_mediator(group, unit, group, lambda a, k: scalar(group, k, a))
-
     left_unitor = natural_isomorphism(
         left_unit,
         identity,
-        lambda group: left_unitor_component(group, False),
-        lambda group: left_unitor_component(group, True),
+        lambda group: _tensor_unitor_component(unit, group, "left", False),
+        lambda group: _tensor_unitor_component(unit, group, "left", True),
     )
     right_unitor = natural_isomorphism(
         right_unit,
         identity,
-        lambda group: right_unitor_component(group, False),
-        lambda group: right_unitor_component(group, True),
+        lambda group: _tensor_unitor_component(unit, group, "right", False),
+        lambda group: _tensor_unitor_component(unit, group, "right", True),
     )
     return MonoidalStructures(base)(tensor, unit, associator, left_unitor, right_unitor)
 

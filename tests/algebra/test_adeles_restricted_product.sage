@@ -2,11 +2,14 @@
 
 from fractions import Fraction
 
-from sage_categories.algebra import adeles_of_rationals
+from sage_categories.algebra import NoIntegralSubring, adeles_of_rationals
 
 
 def test_adeles_retain_components_ring_operations_and_diagonal() -> None:
     adeles = adeles_of_rationals()
+    assert isinstance(adeles.rational_field.integers, NoIntegralSubring)
+    assert isinstance(adeles.real_field.integers, NoIntegralSubring)
+    assert not isinstance(adeles.local_field(5).integers, NoIntegralSubring)
     assert adeles.primes.point(101).datum() == 101
     assert adeles.open_object(adeles.empty_open).category() is adeles.space.open_category()
     assert adeles.open_object(adeles.whole_open).category() is adeles.space.open_category()

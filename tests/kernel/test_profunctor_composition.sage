@@ -26,12 +26,14 @@ def test_hom_profunctor_composition_and_nonidentity_two_cells():
     horizontal = compose_profunctor_transformations(alpha, beta, hom)
     pair = horizontal.domain().domain()((base(0), base(1)))
     component = horizontal.component(pair)
+    assert component in Mor(S)(component.domain(), component.codomain())
     assert len(tuple(component.domain())) == 2
     for point in component.domain():
         assert ask(component(point) == point) is False
         assert ask(component(component(point)) == point) is True
     for left in (True, False):
         unitor = profunctor_unitor(first, hom, left)
+        assert unitor.inverse().inverse() is unitor
         forward = unitor.component(first.domain()((base(0), base(1))))
         inverse = unitor.inverse().component(first.domain()((base(0), base(1))))
         for point in values:

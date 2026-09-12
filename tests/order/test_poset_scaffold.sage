@@ -1,9 +1,9 @@
 """Sets with a binary relation, partial orders, total orders, and monotone maps."""
 
 import pytest
-from sympy import true, false
+from sympy import Q, true, false
 
-from sage_categories.all import Cat, Mor, Sets, ask
+from sage_categories.all import Cat, Mor, Sets, Unknown, ask
 from sage_categories.cat.cones import cone
 from sage_categories.order.posets import BinaryRelations, Posets, Thin, TotallyOrderedSets
 
@@ -123,6 +123,9 @@ def test_transport_along_a_bijection_lifts_it_to_an_isomorphism() -> None:
     chain = Posets()(_chain_relation(3))
     cycle = {0: 2, 1: 0, 2: 1}
     bijection = Mor(Sets)(chain.carrier(), chain.carrier())(lambda n: cycle[n])
+    inverse_cycle = {value: key for key, value in cycle.items()}
+    inverse = Mor(Sets)(chain.carrier(), chain.carrier())(lambda n: inverse_cycle[n])
+    Sets.retain_inverses(bijection, inverse)
     isomorphism = BinaryRelations().transport(chain, bijection)
     moved = isomorphism.codomain()
 
@@ -151,6 +154,9 @@ def test_transport_carries_an_incomparable_pair_to_a_new_carrier() -> None:
     letters = Sets(("bottom", "left", "right", "top"))
     naming = {(0, 0): "bottom", (0, 1): "left", (1, 0): "right", (1, 1): "top"}
     bijection = Mor(Sets)(product.carrier(), letters)(lambda pair: naming[pair])
+    reverse = {value: key for key, value in naming.items()}
+    inverse = Mor(Sets)(letters, product.carrier())(lambda value: reverse[value])
+    Sets.retain_inverses(bijection, inverse)
     moved = BinaryRelations().transport(product, bijection).codomain()
 
     assert ask(Posets().membership_proposition(moved)) is True
@@ -161,6 +167,24 @@ def test_transport_carries_an_incomparable_pair_to_a_new_carrier() -> None:
     assert len(moved) == 4
     assert sorted(point.datum() for point in moved) == ["bottom", "left", "right", "top"]
     assert moved.point("top") in moved
+
+
+def test_transport_of_an_infinite_predicate_relation_uses_the_supplied_inverse() -> None:
+    integers = Sets.from_membership(Q.integer)
+    relation = BinaryRelations().from_predicate(
+        integers,
+        lambda first, second: Q.nonnegative(second.datum() - first.datum()),
+    )
+    shift = Mor(Sets)(integers, integers)(lambda value: value + 1)
+    unshift = Mor(Sets)(integers, integers)(lambda value: value - 1)
+    Sets.retain_inverses(shift, unshift)
+
+    transported = BinaryRelations().transport(relation, shift)
+    moved = transported.codomain()
+    assert transported.inverse().underlying_map() is unshift
+    assert ask(moved.related(moved.point(1), moved.point(2))) is True
+    assert ask(moved.related(moved.point(2), moved.point(1))) is False
+    assert Sets.chosen_enumeration(integers) is Unknown
 
 
 def test_thin_sends_a_poset_to_its_thin_category() -> None:
@@ -210,5 +234,6 @@ test_product_of_two_chains_carries_the_componentwise_order()
 test_competing_cone_over_the_product_has_the_monotone_mediator()
 test_transport_along_a_bijection_lifts_it_to_an_isomorphism()
 test_transport_carries_an_incomparable_pair_to_a_new_carrier()
+test_transport_of_an_infinite_predicate_relation_uses_the_supplied_inverse()
 test_thin_sends_a_poset_to_its_thin_category()
 test_thin_sends_a_monotone_map_to_a_functor_of_thin_categories()

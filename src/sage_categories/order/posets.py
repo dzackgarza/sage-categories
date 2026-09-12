@@ -74,9 +74,22 @@ def _decide_order_related(
     first: CategoryOfCategories.ElementType,
     second: CategoryOfCategories.ElementType,
     assumptions: Proposition,
-) -> bool:
-    """Whether the ordered pair ``(first, second)`` lies in its object's relation."""
-    return (first.datum(), second.datum()) in _related_pairs(first.parent())
+) -> bool | None:
+    """Whether the ordered pair ``(first, second)`` lies in its object's relation.
+
+    Membership is asked of the represented relation subobject itself.  This keeps
+    predicate-defined infinite relations nonenumerative and preserves an undecided
+    membership proposition when their predicate is undecided.
+    """
+    relation_object = first.parent()
+    if second.parent() is not relation_object:
+        return False
+    relation = relation_object.relation()
+    ambient = relation.arrow().codomain()
+    selected = relation.arrow().domain()
+    pair = ambient.point((first.datum(), second.datum()))
+    decision = sympy_ask(selected.membership_proposition(pair), assumptions)
+    return None if decision is None else bool(decision)
 
 
 def _decide_partial_order(
@@ -190,35 +203,33 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         relation_object: BinaryRelationsCategory.ObjectType,
         bijection: MorphismCategory.ObjectType,
     ) -> BinaryRelationsCategory.MorphismType:
-        """Transport a relation along a bijection of carriers (D183).
+        """Transport a relation along a retained set isomorphism (D183).
 
-        The result is the isomorphism ``(X, R) -> (Y, S)`` whose underlying set map is
-        ``bijection``; its codomain relates ``y`` and ``y'`` exactly when ``f^-1(y)`` and
-        ``f^-1(y')`` stand in ``R``.  These lifts of the isomorphisms of ``Sets()`` are
-        what makes ``to_sets()`` an isofibration.
+        The inverse is supplied by the isomorphism itself.  No carrier is enumerated:
+        ``y S y'`` is defined by ``f^-1(y) R f^-1(y')`` pointwise, so this works equally
+        for finite, infinite and predicate-defined carriers.
         """
         carrier = relation_object.carrier()
         assert bijection.domain() is carrier, f"{bijection!r} does not start at the carrier of {relation_object!r}"
+        inverse = bijection.inverse()
         image = bijection.codomain()
-        preimage = {bijection(point).datum(): point.datum() for point in carrier}
-        assert len(preimage) == len(image), f"{bijection!r} is not a bijection"
+        assert inverse.domain() is image and inverse.codomain() is carrier
 
         def transported_rule(
             first: CategoryOfCategories.ElementType,
             second: CategoryOfCategories.ElementType,
         ) -> Proposition:
             return relation_object.related(
-                relation_object.point(preimage[first.datum()]),
-                relation_object.point(preimage[second.datum()]),
+                relation_object.point(inverse(first).datum()),
+                relation_object.point(inverse(second).datum()),
             )
 
         transported = self.from_predicate(image, transported_rule)
-        forward = self.construct_morphism(relation_object, transported, bijection)
-        backward = self.construct_morphism(
-            transported,
-            relation_object,
-            Mor(Sets)(image, carrier)(lambda datum: preimage[datum]),
-        )
+        # Preservation in both directions is the defining equation above, so this
+        # theorem-backed lift must not re-enumerate the source relation merely to
+        # rediscover it pointwise.
+        forward = self.MorphismType(domain=relation_object, codomain=transported, data=bijection)
+        backward = self.MorphismType(domain=transported, codomain=relation_object, data=inverse)
         self.retain_inverses(forward, backward)
         return forward
 

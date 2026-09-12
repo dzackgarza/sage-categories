@@ -871,6 +871,153 @@ def _project_category_declaration_role_parameters(
     return True
 
 
+def _static_role_helper(
+    owner_name: str,
+    owner: ast.ClassDef,
+    top_level: dict[str, ast.ClassDef],
+    new_helpers: list[tuple[ast.ClassDef, ast.ClassDef]],
+) -> tuple[str, ast.ClassDef]:
+    """Return the static-role helper for ``owner``, creating it before ``owner`` when absent."""
+    helper_name = f"_StaticRoles_{owner_name}"
+    helper = top_level.get(helper_name)
+    if helper is None:
+        helper = ast.ClassDef(
+            name=helper_name,
+            bases=[],
+            keywords=[],
+            body=[],
+            decorator_list=[],
+            type_params=[],
+        )
+        top_level[helper_name] = helper
+        new_helpers.append((owner, helper))
+    return helper_name, helper
+
+
+def _project_owner_role_defaults(
+    owner_name: str,
+    owner: ast.ClassDef,
+    source_owner: ast.ClassDef,
+    helper_name: str,
+    helper: ast.ClassDef,
+    source_class_parameters: dict[str, tuple[str, ...]],
+) -> dict[str, ast.expr]:
+    """Move local role classes to ``helper`` and return each owner's static role default."""
+    defaults: dict[str, ast.expr] = {}
+    for role in _CATEGORY_ROLES:
+        nested = next((local for local in owner.body if isinstance(local, ast.ClassDef) and local.name == role), None)
+        if nested is not None:
+            owner.body.remove(nested)
+            helper.body.append(nested)
+            if not owner.body:
+                owner.body.append(ast.Pass())
+        helper_role = next((local for local in helper.body if isinstance(local, ast.ClassDef) and local.name == role), None)
+        if helper_role is not None:
+            role_reference: ast.expr = ast.Attribute(value=ast.Name(id=helper_name, ctx=ast.Load()), attr=role, ctx=ast.Load())
+            role_parameters = tuple(parameter.name for parameter in helper_role.type_params)
+            if role_parameters:
+                owner_parameters = {parameter.name for parameter in owner.type_params}
+                role_parameter_set = set(role_parameters)
+                shared_parameters = role_parameter_set & owner_parameters
+                assert not shared_parameters or role_parameter_set <= owner_parameters, f"{owner_name}.{role} carries only some of its generic parameters on its category owner"
+                if role_parameter_set <= owner_parameters:
+                    role_reference = ast.Subscript(
+                        value=role_reference,
+                        slice=ast.Tuple(elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters], ctx=ast.Load()),
+                        ctx=ast.Load(),
+                    )
+                    for index, base in enumerate(helper_role.bases):
+                        fullname = _expression_fullname(base)
+                        if fullname is None or isinstance(base, ast.Subscript) or source_class_parameters.get(fullname) != role_parameters:
+                            continue
+                        helper_role.bases[index] = ast.Subscript(
+                            value=base,
+                            slice=ast.Tuple(elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters], ctx=ast.Load()),
+                            ctx=ast.Load(),
+                        )
+            defaults[role] = role_reference
+            continue
+        alias = _role_alias(owner, role)
+        if alias is None:
+            alias = _role_alias(source_owner, role)
+            assert alias is not None, f"{owner_name}.{role} has no static role declaration"
+            replacement = ast.Assign(targets=[ast.Name(id=role, ctx=ast.Store())], value=copy.deepcopy(alias))
+            for index, local in enumerate(owner.body):
+                if role in _statement_names(local):
+                    owner.body[index] = replacement
+                    break
+            else:
+                owner.body.insert(0, replacement)
+        defaults[role] = copy.deepcopy(alias)
+    return defaults
+
+
+def _project_owner_role_arguments(
+    owner_name: str,
+    owner: ast.ClassDef,
+    defaults: dict[str, ast.expr],
+    generic_category_bases: frozenset[str],
+) -> tuple[list[ast.expr], dict[str, str]]:
+    """Return role arguments for one category owner, adding hidden parameters when generic."""
+    if owner_name not in generic_category_bases:
+        return [copy.deepcopy(defaults[role]) for role in _CATEGORY_ROLES], {}
+    existing = {parameter.name for parameter in owner.type_params}
+    selected_role_parameters: dict[str, str] = {}
+    for role in _CATEGORY_ROLES:
+        public = _SOURCE_CATEGORY_ROLE_PARAMETERS[role]
+        hidden = _HIDDEN_CATEGORY_ROLES[role]
+        selected = next((name for name in (public, hidden) if name in existing), None)
+        match selected:
+            case None:
+                owner.type_params.append(ast.TypeVar(name=hidden, default_value=defaults[role]))
+                existing.add(hidden)
+                selected_role_parameters[role] = hidden
+            case str():
+                selected_role_parameters[role] = selected
+    return [ast.Name(id=selected_role_parameters[role], ctx=ast.Load()) for role in _CATEGORY_ROLES], selected_role_parameters
+
+
+def _project_owner_category_base(
+    owner_name: str,
+    owner: ast.ClassDef,
+    helper_name: str,
+    helper: ast.ClassDef,
+    role_arguments: list[ast.expr],
+    module: str,
+    category_parameter_counts: dict[str, int],
+    category_modules: dict[str, str],
+) -> str | None:
+    """Project one category owner's base with its exact static-role arguments."""
+    category_bases = [base for base in owner.bases if not (isinstance(base, ast.Name) and base.id == helper_name)]
+    assert category_bases, f"category declaration {owner_name} has no category base"
+    category_base = category_bases[0]
+    carrier = category_base.value if isinstance(category_base, ast.Subscript) else category_base
+    name = _base_name(carrier)
+    assert name in category_parameter_counts, f"cannot determine public generic arity of category base {ast.unparse(carrier)}"
+    base_module = category_modules.get(name)
+    required_helper_module: str | None = None
+    if base_module is not None:
+        base_helper_name = f"_StaticRoles_{name}"
+        if base_module == module:
+            helper_base = ast.Name(id=base_helper_name, ctx=ast.Load())
+        else:
+            required_helper_module = base_module
+            helper_base = _base_expression(f"{base_module}.{base_helper_name}")
+        if not helper.bases:
+            helper.bases.append(copy.deepcopy(helper_base))
+    public_arity = category_parameter_counts[name]
+    if isinstance(category_base, ast.Subscript):
+        written_arguments = _subscript_arguments(category_base)
+        assert len(written_arguments) >= public_arity, f"category base {ast.unparse(category_base)} supplies fewer than its {public_arity} public parameters"
+        arguments = written_arguments[:public_arity]
+    else:
+        arguments = [ast.Constant(value=Ellipsis) for _ in range(public_arity)]
+    arguments.extend(role_arguments)
+    projected_base = ast.Subscript(value=copy.deepcopy(carrier), slice=ast.Tuple(elts=arguments, ctx=ast.Load()), ctx=ast.Load())
+    owner.bases[:] = [ast.Name(id=helper_name, ctx=ast.Load()), projected_base, *category_bases[1:]]
+    return required_helper_module
+
+
 def _project_category_role_parameters(
     tree: ast.Module,
     source: ast.Module,
@@ -907,143 +1054,22 @@ def _project_category_role_parameters(
         owner = top_level.get(owner_name)
         if owner is None:
             continue
-        helper_name = f"_StaticRoles_{owner_name}"
-        helper = top_level.get(helper_name)
-        if helper is None:
-            helper = ast.ClassDef(
-                name=helper_name,
-                bases=[],
-                keywords=[],
-                body=[],
-                decorator_list=[],
-                type_params=[],
-            )
-            top_level[helper_name] = helper
-            new_helpers.append((owner, helper))
-
-        defaults: dict[str, ast.expr] = {}
-        for role in _CATEGORY_ROLES:
-            nested = next(
-                (local for local in owner.body if isinstance(local, ast.ClassDef) and local.name == role),
-                None,
-            )
-            if nested is not None:
-                owner.body.remove(nested)
-                helper.body.append(nested)
-                if not owner.body:
-                    owner.body.append(ast.Pass())
-            helper_role = next(
-                (local for local in helper.body if isinstance(local, ast.ClassDef) and local.name == role),
-                None,
-            )
-            if helper_role is not None:
-                role_reference: ast.expr = ast.Attribute(
-                    value=ast.Name(id=helper_name, ctx=ast.Load()),
-                    attr=role,
-                    ctx=ast.Load(),
-                )
-                role_parameters = tuple(parameter.name for parameter in helper_role.type_params)
-                if role_parameters:
-                    owner_parameters = {parameter.name for parameter in owner.type_params}
-                    role_parameter_set = set(role_parameters)
-                    shared_parameters = role_parameter_set & owner_parameters
-                    assert not shared_parameters or role_parameter_set <= owner_parameters, (
-                        f"{owner_name}.{role} carries only some of its generic parameters on its category owner"
-                    )
-                    if role_parameter_set <= owner_parameters:
-                        role_reference = ast.Subscript(
-                            value=role_reference,
-                            slice=ast.Tuple(
-                                elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters],
-                                ctx=ast.Load(),
-                            ),
-                            ctx=ast.Load(),
-                        )
-                        for index, base in enumerate(helper_role.bases):
-                            fullname = _expression_fullname(base)
-                            if fullname is None or isinstance(base, ast.Subscript):
-                                continue
-                            if source_class_parameters.get(fullname) != role_parameters:
-                                continue
-                            helper_role.bases[index] = ast.Subscript(
-                                value=base,
-                                slice=ast.Tuple(
-                                    elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters],
-                                    ctx=ast.Load(),
-                                ),
-                                ctx=ast.Load(),
-                            )
-                defaults[role] = role_reference
-                continue
-            alias = _role_alias(owner, role)
-            if alias is None:
-                alias = _role_alias(source_owner, role)
-                assert alias is not None, f"{owner_name}.{role} has no static role declaration"
-                replacement = ast.Assign(
-                    targets=[ast.Name(id=role, ctx=ast.Store())],
-                    value=copy.deepcopy(alias),
-                )
-                for index, local in enumerate(owner.body):
-                    if role in _statement_names(local):
-                        owner.body[index] = replacement
-                        break
-                else:
-                    owner.body.insert(0, replacement)
-            defaults[role] = copy.deepcopy(alias)
-
-        generic_owner = owner_name in generic_category_bases
-        role_arguments: list[ast.expr]
-        selected_role_parameters: dict[str, str] = {}
-        if generic_owner:
-            existing = {parameter.name for parameter in owner.type_params}
-            for role in _CATEGORY_ROLES:
-                public = _SOURCE_CATEGORY_ROLE_PARAMETERS[role]
-                hidden = _HIDDEN_CATEGORY_ROLES[role]
-                selected = next((name for name in (public, hidden) if name in existing), None)
-                match selected:
-                    case None:
-                        owner.type_params.append(ast.TypeVar(name=hidden, default_value=defaults[role]))
-                        existing.add(hidden)
-                        selected_role_parameters[role] = hidden
-                    case str():
-                        selected_role_parameters[role] = selected
-            role_arguments = [ast.Name(id=selected_role_parameters[role], ctx=ast.Load()) for role in _CATEGORY_ROLES]
-        else:
-            role_arguments = [copy.deepcopy(defaults[role]) for role in _CATEGORY_ROLES]
-
-        helper_base: ast.expr | None = None
-        category_bases = [base for base in owner.bases if not (isinstance(base, ast.Name) and base.id == helper_name)]
-        assert category_bases, f"category declaration {owner_name} has no category base"
-        category_base = category_bases[0]
-        carrier = category_base.value if isinstance(category_base, ast.Subscript) else category_base
-        name = _base_name(carrier)
-        assert name in category_parameter_counts, f"cannot determine public generic arity of category base {ast.unparse(carrier)}"
-        base_module = category_modules.get(name)
-        if base_module is not None:
-            base_helper_name = f"_StaticRoles_{name}"
-            if base_module == module:
-                helper_base = ast.Name(id=base_helper_name, ctx=ast.Load())
-            else:
-                required_helper_modules.add(base_module)
-                helper_base = _base_expression(f"{base_module}.{base_helper_name}")
-            if not helper.bases:
-                helper.bases.append(copy.deepcopy(helper_base))
-
-        public_arity = category_parameter_counts[name]
-        if isinstance(category_base, ast.Subscript):
-            written_arguments = _subscript_arguments(category_base)
-            assert len(written_arguments) >= public_arity, f"category base {ast.unparse(category_base)} supplies fewer than its {public_arity} public parameters"
-            arguments = written_arguments[:public_arity]
-        else:
-            arguments = [ast.Constant(value=Ellipsis) for _ in range(public_arity)]
-        arguments.extend(role_arguments)
-        projected_base = ast.Subscript(
-            value=copy.deepcopy(carrier),
-            slice=ast.Tuple(elts=arguments, ctx=ast.Load()),
-            ctx=ast.Load(),
+        helper_name, helper = _static_role_helper(owner_name, owner, top_level, new_helpers)
+        defaults = _project_owner_role_defaults(owner_name, owner, source_owner, helper_name, helper, source_class_parameters)
+        role_arguments, selected_role_parameters = _project_owner_role_arguments(owner_name, owner, defaults, generic_category_bases)
+        required_helper_module = _project_owner_category_base(
+            owner_name,
+            owner,
+            helper_name,
+            helper,
+            role_arguments,
+            module,
+            category_parameter_counts,
+            category_modules,
         )
-        owner.bases[:] = [ast.Name(id=helper_name, ctx=ast.Load()), projected_base, *category_bases[1:]]
-        if generic_owner:
+        if required_helper_module is not None:
+            required_helper_modules.add(required_helper_module)
+        if selected_role_parameters:
             _rewrite_local_roles(owner, selected_role_parameters)
 
     for owner, helper in reversed(new_helpers):

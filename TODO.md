@@ -16,7 +16,7 @@ Multiple prerequisites are conjunctive.
 
 | ID | Work and full obligation in the governing plan | Needs |
 | --- | --- | --- |
-| `runtime` | Section 19.1: runtime bindings, owned reconstruction, exact installation, earlier objects and selected maps | none |
+| `runtime` | **Closed.** Section 19.1: runtime bindings, owned reconstruction, exact installation, earlier objects and selected maps. **Acceptance:** `tests/engines/test_runtime_identity_retention.sage::test_runtime_identity_retention` preserves distinct owned identities, exact native-map endpoints and selected presentations sharing an apex; `tests/kernel/test_runtime_selected_actions.sage::test_runtime_selected_actions` preserves selected-action order, earlier objects/arrows and cached selected-functor images; the exact-category implementation and role-surface consumers pass after augmentation | none |
 | `sets` | **Closed.** Section 19.2: restore general Sets products, including rule-defined integers, represented reals and mixed inputs, while retaining finite native operations | `sets-mixed`, `sets-finite-native` |
 | `functors` | Section 19.2: native categories, both functor actions, transformations, compositions, whiskerings and nonenumerated sources | none |
 | `paths` | Section 19.2: complete typed presented paths and native finite universal-construction operation families | none |

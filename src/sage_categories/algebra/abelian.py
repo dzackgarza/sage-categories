@@ -82,7 +82,7 @@ from sage_categories.cat.monoidal import (
     tensor_units,
 )
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import ask
+from sage_categories.cat.predicates import Proposition, ask
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import (
     AdditiveGroups,

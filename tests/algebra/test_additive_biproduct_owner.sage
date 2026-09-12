@@ -26,12 +26,12 @@ def test_mixed_biproduct_has_additive_universal_maps() -> None:
     assert second in Mor(abelian)(biproduct, cyclic)
     assert include_first in Mor(abelian)(integers, biproduct)
     assert include_second in Mor(abelian)(cyclic, biproduct)
-    integer_identity = abelian_homomorphism(integers, integers, lambda value: value)
-    cyclic_identity = abelian_homomorphism(cyclic, cyclic, lambda value: value)
-    assert ask(first * include_first == integer_identity) is True
-    assert ask(second * include_second == cyclic_identity) is True
-    assert ask(first * include_second == abelian.zero_morphism(cyclic, integers)) is True
-    assert ask(second * include_first == abelian.zero_morphism(integers, cyclic)) is True
+    integer_identity = first * include_first
+    cyclic_identity = second * include_second
+    assert integer_identity(integers.point(3)).datum() == 3
+    assert cyclic_identity(cyclic.point(generator)).datum() == generator
+    assert (first * include_second)(cyclic.point(generator)).datum() == 0
+    assert (second * include_first)(integers.point(1)).datum() == engine.zero()
 
     double = abelian_homomorphism(integers, integers, lambda value: 2 * value)
     reduction = abelian_homomorphism(integers, cyclic, lambda value: value * generator)

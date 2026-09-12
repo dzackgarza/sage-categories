@@ -240,39 +240,59 @@ def _public_engine_from_native(native_object: GapElement):
 
 def _owned_morphism_from_native(source: object, target: object, native: GapElement):
     from sage_categories.algebra.abelian import (
-        LinearForm,
-        _linear_homomorphism,
-        _matrix_of_rows,
+        AbelianGroups,
+        _rule_abelian_homomorphism,
         presentation,
     )
+    from sage_categories.cat.morphisms import Mor
+    from sage_categories.kernel.refinement import refine
 
     source_form = presentation(source)
     target_form = presentation(target)
-    native_matrix_rows = _integer_matrix_rows(libgap.UnderlyingMatrix(native))
-    native_matrix = _matrix_of_rows(
-        tuple(vector(ZZ, row) for row in native_matrix_rows),
-        int(libgap.NumberColumns(libgap.UnderlyingMatrix(native))),
-    )
-    raw_source_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(_native_object(source))))
-    rows = []
-    for position in range(source_form.rank()):
-        public_source = [0] * source_form.rank()
-        public_source[position] = 1
+    native_matrix = matrix(ZZ, _integer_matrix_rows(libgap.UnderlyingMatrix(native)))
+
+    def evaluate(datum):
+        public_source = source_form.coordinates(datum)
         raw_source = _raw_coordinates_from_public(source, public_source)
-        assert len(raw_source) == raw_source_rank
         raw_target = vector(ZZ, raw_source) * native_matrix
-        rows.append(vector(ZZ, _public_coordinates_from_raw(target, raw_target)))
-    owned = _linear_homomorphism(
-        source,
-        target,
-        LinearForm(
-            source_form,
-            target_form,
-            _matrix_of_rows(tuple(rows), target_form.rank()),
-        ),
-    )
+        public_target = _public_coordinates_from_raw(target, raw_target)
+        return target_form.element(public_target)
+
+    owned = _rule_abelian_homomorphism(source, target, evaluate)
+    refine(owned, Mor(AbelianGroups())(source, target))
     retain_presented_native_morphism(owned, native)
     return owned
+
+
+def homomorphism_from_rule(source: object, target: object, rule):
+    """Construct the presented-module morphism determined by generator images.
+
+    Public data are converted only at the boundary.  CAP owns the relation check through
+    ``IsWellDefined`` and the returned native presentation morphism remains the computational
+    authority for the public arrow.
+    """
+    from sage_categories.algebra.abelian import presentation
+
+    source_form = presentation(source)
+    target_form = presentation(target)
+    source_native = _native_object(source)
+    target_native = _native_object(target)
+    source_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(source_native)))
+    target_rank = int(libgap.NumberColumns(libgap.UnderlyingMatrix(target_native)))
+    rows = []
+    for position in range(source_rank):
+        raw_source = [0] * source_rank
+        raw_source[position] = 1
+        public_source = source_form.element(_public_coordinates_from_raw(source, raw_source))
+        public_target = target_form.coordinates(rule(public_source))
+        rows.append(_raw_coordinates_from_public(target, public_target))
+    native = libgap.PresentationMorphism(
+        source_native,
+        _homalg_matrix(tuple(rows), target_rank),
+        target_native,
+    )
+    assert bool(libgap.IsWellDefined(native)), "CAP rejected the supplied generator images"
+    return _owned_morphism_from_native(source, target, native)
 
 
 def coequalizer_projection(first: object, second: object):

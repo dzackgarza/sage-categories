@@ -624,18 +624,14 @@ def abelian_homomorphism(
     target: CategoryOfCategories.ElementType,
     rule: Callable[[Hashable], Hashable],
 ) -> MorphismCategory.ObjectType:
-    """The morphism of ``Ab`` that extends a rule's values on the generators linearly.
+    """The morphism of ``Ab`` determined by the supplied images of Smith generators.
 
-    The matrix is the rule read on the source's generators, and the morphism it defines is
-    that linear extension.  The zero, the generators, and their pairwise sums are compared
-    with it, which refutes a rule that is not the additive map it presents itself as.
+    ModulePresentationsForCAP owns the relation check and the native morphism; this layer
+    only converts the public generator data to and from the retained presentation.
     """
-    left, right = presentation(source), presentation(target)
-    form = LinearForm(left, right, _matrix_of_rows([vector(ZZ, right.coordinates(rule(generator))) for generator in _generators(left)], right.rank()))
-    generators = _generators(left)
-    samples = (left.zero_datum(), *generators, *(first + second for first in generators for second in generators))
-    assert all(rule(sample) == form.evaluate(sample) for sample in samples), f"{rule!r} differs from its linear extension on {source!r}"
-    return _linear_homomorphism(source, target, form)
+    from sage_categories.engines.presented_modules import homomorphism_from_rule
+
+    return homomorphism_from_rule(source, target, rule)
 
 
 def _zero_morphism(

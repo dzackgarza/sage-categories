@@ -1,5 +1,7 @@
 """Exact Ab Hom ownership survives the forgetful map on a nonidentity arrow."""
 
+import pytest
+
 from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup
 
 from sage_categories.algebra import AbelianGroups, abelian_homomorphism, integer_group, presented_abelian_group
@@ -37,4 +39,14 @@ def test_additive_hom_owner_and_forgetful_image() -> None:
     assert image in Mor(Sets)(source, target)
 
 
+def test_presented_homomorphism_relations_are_checked_by_cap() -> None:
+    source_engine = AdditiveAbelianGroup([2])
+    target_engine = AdditiveAbelianGroup([4])
+    source = presented_abelian_group(source_engine)
+    target = presented_abelian_group(target_engine)
+    with pytest.raises(AssertionError, match="CAP rejected"):
+        abelian_homomorphism(source, target, lambda _value: target_engine.gen(0))
+
+
 test_additive_hom_owner_and_forgetful_image()
+test_presented_homomorphism_relations_are_checked_by_cap()

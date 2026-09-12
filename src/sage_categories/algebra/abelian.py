@@ -677,11 +677,8 @@ def _biproduct(
         return projections[sequence_position(vertex)]
 
     def product_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        components = tuple(candidate.component(shape(index)) for index in (0, 1))
-        # The cone owner retains the competing apex.
-        from sage_categories.cat.cones import cone_apex
-
-        source = cone_apex(candidate)
+        components = tuple(candidate.leg(index) for index in (0, 1))
+        source = candidate.apex()
         return direct_sum_product_lift((first, second), apex, source, components)
 
     product_apex = abelian.Limits(shape).with_universal_data(
@@ -696,10 +693,8 @@ def _biproduct(
         return inclusions[sequence_position(vertex)]
 
     def coproduct_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        components = tuple(candidate.component(shape(index)) for index in (0, 1))
-        from sage_categories.cat.cones import cocone_apex
-
-        target = cocone_apex(candidate)
+        components = tuple(candidate.leg(index) for index in (0, 1))
+        target = candidate.apex()
         return direct_sum_coproduct_lift((first, second), apex, target, components)
 
     coproduct_apex = abelian.Colimits(shape).with_universal_data(

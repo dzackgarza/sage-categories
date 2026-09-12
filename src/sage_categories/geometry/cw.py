@@ -59,23 +59,7 @@ class CWOpen:
     subset_rule: Callable[[CWOpen], bool | None] | None = None
 
     def included_in(self, other: CWOpen) -> bool | None:
-        match self is other:
-            case True:
-                return True
-            case False:
-                pass
-        match self.name, other.name:
-            case ("empty", _):
-                return True
-            case (_, "whole"):
-                return True
-            case _:
-                pass
-        match self.subset_rule:
-            case None:
-                return None
-            case rule:
-                return rule(other)
+        return _named_open_inclusion(self, other, self.name, other.name, self.subset_rule)
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -93,23 +77,25 @@ class _WeakCWOpen:
         return result
 
     def included_in(self, other: _WeakCWOpen) -> bool | None:
-        match self is other:
-            case True:
-                return True
-            case False:
-                pass
-        match self.name, other.name:
-            case ("empty", _):
-                return True
-            case (_, "whole"):
-                return True
-            case _:
-                pass
-        match self.subset_rule:
-            case None:
-                return None
-            case rule:
-                return rule(other)
+        return _named_open_inclusion(self, other, self.name, other.name, self.subset_rule)
+
+
+def _named_open_inclusion[Open](
+    first: Open,
+    second: Open,
+    first_name: Hashable,
+    second_name: Hashable,
+    subset_rule: Callable[[Open], bool | None] | None,
+) -> bool | None:
+    """The shared identity/empty/whole/custom-rule inclusion calculus for CW opens."""
+    if first is second:
+        return True
+    match first_name, second_name:
+        case ("empty", _) | (_, "whole"):
+            return True
+        case _:
+            pass
+    return None if subset_rule is None else subset_rule(second)
 
 
 class _CWOpenIncludedPredicate(Predicate):

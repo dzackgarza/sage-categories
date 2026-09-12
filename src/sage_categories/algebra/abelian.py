@@ -30,8 +30,6 @@ __all__ = [
     "AbelianBimoduleTensor",
     "AbelianGroups",
     "AbelianTensor",
-    "LinearForm",
-    "Presentation",
     "abelian_homomorphism",
     "balanced_tensor",
     "bilinear_map",

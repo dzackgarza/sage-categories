@@ -49,6 +49,17 @@ def test_native_finite_presented_category_paths() -> None:
     assert finite is not Unknown and len(finite) == 2
     assert ask(finite[0] == finite[0]) is True
 
+    parallel = FinitePresentedCategory(
+        "parallel relation",
+        ("source", "target"),
+        (("f", "source", "target"), ("g", "source", "target")),
+        ((("f",), ("g",)),),
+    )
+    assert parallel("source") is not parallel("target")
+    assert ask(parallel.generator("f") == parallel.generator("g")) is True
+    parallel_arrows = parallel.finite_morphisms()
+    assert parallel_arrows is not Unknown and len(parallel_arrows) == 3
+
     free_loop = FinitePresentedCategory("free loop", (0,), (("x", 0, 0),), ())
     assert free_loop.finite_morphisms() is Unknown
     loop = free_loop.generator("x")

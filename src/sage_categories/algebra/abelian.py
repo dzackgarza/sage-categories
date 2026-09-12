@@ -1080,10 +1080,7 @@ def _rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> Morph
     ab, bc = _tensor_object(a, b), _tensor_object(b, c)
     left_object = _tensor_object(ab, c)
     right_object = _tensor_object(a, bc)
-    if all(
-        isinstance(_tensor_data[value], _TensorData)
-        for value in (ab, bc, left_object, right_object)
-    ):
+    if all(isinstance(_tensor_data[value], _TensorData) for value in (ab, bc, left_object, right_object)):
         from sage_categories.engines.presented_modules import tensor_associator
 
         return tensor_associator(

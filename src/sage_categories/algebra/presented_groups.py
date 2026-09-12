@@ -51,9 +51,7 @@ def _word(engine, word: GroupWord):
 def _owned_group(engine):
     """Raise one native group parent to the existing category of group objects."""
     structure = Cartesian(Sets)
-    carrier = Sets.from_membership(
-        lambda value: true if _native_parent_is(engine, value) else false
-    )
+    carrier = Sets.from_membership(lambda value: true if _native_parent_is(engine, value) else false)
     square = binary_product_data(Sets, carrier, carrier).apex()
     multiplication = Mor(Sets)(square, carrier)(lambda pair: pair[0] * pair[1])
     unit = Mor(Sets)(structure.unit(), carrier)(lambda _: engine.one())
@@ -66,9 +64,7 @@ def _owned_group(engine):
     refine(pointed, Groups(structure))
 
     shear = _shear(pointed)
-    inverse_shear = Mor(Sets)(square, square)(
-        lambda pair: (pair[0], pair[0] ** -1 * pair[1])
-    )
+    inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], pair[0] ** -1 * pair[1]))
     Sets.retain_inverses(shear, inverse_shear)
     pointed._native_group_engine = engine
     return pointed
@@ -118,9 +114,7 @@ class GroupPresentation(SageObject):
 
         relation_free = FreeGroup(tuple(f"r{index}" for index in range(len(native_relations))))
         relation_arrow_native = relation_free.hom(native_relations, free)
-        trivial_relation_native = relation_free.hom(
-            [free.one() for _ in native_relations], free
-        )
+        trivial_relation_native = relation_free.hom([free.one() for _ in native_relations], free)
         quotient_native = free.hom(tuple(quotient.gens()), quotient)
 
         self._generator_names = names
@@ -131,15 +125,9 @@ class GroupPresentation(SageObject):
         self._free_group = _owned_group(free)
         self._relation_group = _owned_group(relation_free)
         self._group = _owned_group(quotient)
-        self._relation_arrow = _owned_group_homomorphism(
-            self._relation_group, self._free_group, relation_arrow_native
-        )
-        self._trivial_relation_arrow = _owned_group_homomorphism(
-            self._relation_group, self._free_group, trivial_relation_native
-        )
-        self._quotient_morphism = _owned_group_homomorphism(
-            self._free_group, self._group, quotient_native
-        )
+        self._relation_arrow = _owned_group_homomorphism(self._relation_group, self._free_group, relation_arrow_native)
+        self._trivial_relation_arrow = _owned_group_homomorphism(self._relation_group, self._free_group, trivial_relation_native)
+        self._quotient_morphism = _owned_group_homomorphism(self._free_group, self._group, quotient_native)
 
     def generator_names(self) -> tuple[str, ...]:
         return self._generator_names

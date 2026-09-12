@@ -843,16 +843,9 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         return self._presentations[diagram]
 
     def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
-        direct = tuple(
-            diagram
-            for diagram, presentation in self._presentations.items()
-            if presentation.apex() is constructed
-        )
+        direct = tuple(diagram for diagram, presentation in self._presentations.items() if presentation.apex() is constructed)
         dual = tuple(
-            diagram
-            for dual_diagram in self._dual_limits.presenting_diagrams(constructed)
-            for diagram in self._original_diagrams(dual_diagram)
-            if diagram not in direct
+            diagram for dual_diagram in self._dual_limits.presenting_diagrams(constructed) for diagram in self._original_diagrams(dual_diagram) if diagram not in direct
         )
         return (*direct, *dual)
 
@@ -891,9 +884,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         # Keep the supplied public cocone as the authoritative presentation.  The
         # opposite limit remains the execution model, but readers of this colimit should
         # not reconstruct the same legs and mediator through the entire opposite tower.
-        self._presentations[diagram] = colimit_cocones(diagram).with_universal_data(
-            colimiting_cocone, mediator
-        )
+        self._presentations[diagram] = colimit_cocones(diagram).with_universal_data(colimiting_cocone, mediator)
         return self._associate(self._presentations[diagram])
 
     def colimit_functor(self) -> Functor:

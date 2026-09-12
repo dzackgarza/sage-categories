@@ -82,9 +82,7 @@ def _morphisms() -> ModuleType:
     return morphisms
 
 
-class FullSubcategory[**MorphismData, **TwoMorphismData](
-    Category[MorphismData, TwoMorphismData]
-):
+class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
     """A full subcategory of an ambient category, declared by its monomorphism into the ambient.
 
     Its morphisms, identities, and composites are those of the ambient between its
@@ -161,14 +159,10 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](
         """The selected point morphism is the ambient's on the shared object and point."""
         return self._ambient.point_morphism(point)
 
-    def limit_construction(
-        self, shape: Category
-    ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+    def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         return self._ambient.limit_construction(shape)
 
-    def colimit_construction(
-        self, shape: Category
-    ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         # A full subcategory may own a construction more specific than its ambient
         # category (for example Ab's retained walking-parallel-pair coequalizer).
         # Prefer that exact owner before inheriting the ambient construction.
@@ -178,28 +172,20 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](
 
     def Terminal(self) -> CategoryOfCategories.ElementType:
         terminal = self._ambient.Terminal()
-        assert ask(self.membership_proposition(terminal)) is True, (
-            "the ambient terminal object must belong to the full subcategory"
-        )
+        assert ask(self.membership_proposition(terminal)) is True, "the ambient terminal object must belong to the full subcategory"
         refine(terminal, self)
         return terminal
 
-    def image_factorization(
-        self, arrow: MorphismCategory.ObjectType
-    ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    def image_factorization(self, arrow: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
         factor, inclusion = self._ambient.image_factorization(arrow)
         image = inclusion.domain()
-        assert ask(self.membership_proposition(image)) is True, (
-            "the ambient image must belong to the full subcategory"
-        )
+        assert ask(self.membership_proposition(image)) is True, "the ambient image must belong to the full subcategory"
         refine(image, self)
         refine(factor, self.morphism_category(1))
         refine(inclusion, self.morphism_category(1))
         return factor, inclusion
 
-    def factor_through_monomorphism(
-        self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType
-    ) -> MorphismCategory.ObjectType | Literal[False] | UnknownClass:
+    def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False] | UnknownClass:
         factor = self._ambient.factor_through_monomorphism(mono, arrow)
         if factor is False or factor is Unknown:
             return factor
@@ -222,9 +208,7 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](
 _inverse_images: TripleDict = TripleDict(weak_values=False)
 
 
-class InverseImageSubcategory[**MorphismData, **TwoMorphismData](
-    FullSubcategory[MorphismData, TwoMorphismData]
-):
+class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``F.inverse_image(P)``: the full same-value subcategory ``D ×_C P``.
 
     The source projection is the subcategory monomorphism into ``D``.  The second
@@ -296,31 +280,19 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](
         return (self.subcategory_monomorphism(), self.target_projection())
 
     @cached_method(key=lambda self, candidate: (id(candidate), candidate))
-    def membership_proposition(
-        self, candidate: CategoryOfCategories.ElementType
-    ) -> Proposition:
-        return self._ambient.membership_proposition(
-            candidate
-        ) & self._inverse_image_predicate(candidate)
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
+        return self._ambient.membership_proposition(candidate) & self._inverse_image_predicate(candidate)
 
-    def _decide_membership(
-        self, candidate: CategoryOfCategories.ElementType, assumptions: Proposition
-    ) -> bool | None:
-        ambient = sympy_ask(
-            self._ambient.membership_proposition(candidate), assumptions
-        )
+    def _decide_membership(self, candidate: CategoryOfCategories.ElementType, assumptions: Proposition) -> bool | None:
+        ambient = sympy_ask(self._ambient.membership_proposition(candidate), assumptions)
         if ambient is not True:
             return ambient
         return sympy_ask(
-            self._target_subcategory.membership_proposition(
-                self._functor.on_object(candidate)
-            ),
+            self._target_subcategory.membership_proposition(self._functor.on_object(candidate)),
             assumptions,
         )
 
-    def __call__[Datum](
-        self, *construction_data: Datum, **keywords: Datum
-    ) -> CategoryOfCategories.ElementType:
+    def __call__[Datum](self, *construction_data: Datum, **keywords: Datum) -> CategoryOfCategories.ElementType:
         """``F.inverse_image(P)(data)``: ``D``'s constructor, with the result narrowed into the pullback.
 
         The source projection is identity on the values of ``D``, so this subcategory
@@ -358,9 +330,7 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
     if target_subcategory is functor.codomain():
         # ``F⁻¹(C) = D``: the whole codomain pulls back to the whole domain.
         return functor.domain()
-    if functor.domain() is target_subcategory and _functors().declares_subcategory(
-        functor
-    ):
+    if functor.domain() is target_subcategory and _functors().declares_subcategory(functor):
         # ``ι⁻¹(P) = P`` along the inclusion ``ι: P -> C`` of ``P`` itself.
         return target_subcategory
 
@@ -399,17 +369,10 @@ def _declared_inclusion(subcategory: Category, ambient: Category) -> Functor:
     (D159, ``POL-LEAF-081``).
     """
     declared = next(
-        (
-            functor
-            for functor in subcategory.selected_functors()
-            if functor.codomain() is ambient
-            and _functors().declares_subcategory(functor)
-        ),
+        (functor for functor in subcategory.selected_functors() if functor.codomain() is ambient and _functors().declares_subcategory(functor)),
         None,
     )
-    assert declared is not None, (
-        f"{subcategory!r} declares no subcategory monomorphism into {ambient!r}"
-    )
+    assert declared is not None, f"{subcategory!r} declares no subcategory monomorphism into {ambient!r}"
     return declared
 
 
@@ -432,22 +395,16 @@ def retain_inverse_image(
     from sage_categories.cat.functors import Cat, Fun
 
     key = (functor, target_subcategory, Cat())
-    assert key not in _inverse_images, (
-        f"an inverse image of {target_subcategory!r} along {functor!r} is already retained"
-    )
+    assert key not in _inverse_images, f"an inverse image of {target_subcategory!r} along {functor!r} is already retained"
     _inverse_images[key] = realization
-    diagram = cospan_diagram(
-        Cat(), functor, _declared_inclusion(target_subcategory, functor.codomain())
-    )
+    diagram = cospan_diagram(Cat(), functor, _declared_inclusion(target_subcategory, functor.codomain()))
     shape = diagram.domain()
     projections = {
         0: source_projection,
         1: target_projection,
         2: functor * source_projection,
     }
-    limiting_cone = cone(
-        diagram, realization, lambda vertex: projections[shape.label(vertex)]
-    )
+    limiting_cone = cone(diagram, realization, lambda vertex: projections[shape.label(vertex)])
 
     def mediator(candidate_cone):
         source = cone_apex(candidate_cone)
@@ -482,8 +439,7 @@ def retain_inverse_image(
             (
                 candidate
                 for candidate in containment.codomain().selected_functors()
-                if candidate.codomain() is functor.codomain()
-                and _functors().declares_subcategory(candidate)
+                if candidate.codomain() is functor.codomain() and _functors().declares_subcategory(candidate)
             ),
             None,
         )
@@ -496,15 +452,11 @@ def retain_inverse_image(
         )
         if target_key in _inverse_images:
             assert pullbacks.has_construction(target_diagram)
-            assert (
-                pullbacks.chosen_object(target_diagram) is _inverse_images[target_key]
-            )
+            assert pullbacks.chosen_object(target_diagram) is _inverse_images[target_key]
         pullbacks._retain_pullback_comparison(diagram, target_diagram, containment)
 
 
-class PropertySubcategory[**MorphismData, **TwoMorphismData](
-    FullSubcategory[MorphismData, TwoMorphismData]
-):
+class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``C.P()``: the full subcategory of ``C`` on the objects satisfying ``P``.
 
     A subclass implements one generated property subcategory by naming the declaring
@@ -538,13 +490,9 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](
         if connection is None:
             return
         declaring_class, name = connection
-        assert hasattr(declaring_class, name), (
-            f"{declaring_class.__name__}.{name} does not exist"
-        )
+        assert hasattr(declaring_class, name), f"{declaring_class.__name__}.{name} does not exist"
         axiom = getattr(declaring_class, name)
-        assert isinstance(axiom, Axiom), (
-            f"{declaring_class.__name__}.{name} is not an axiom, so {cls.__name__} cannot implement it"
-        )
+        assert isinstance(axiom, Axiom), f"{declaring_class.__name__}.{name} is not an axiom, so {cls.__name__} cannot implement it"
         axiom.implemented_by(cls)
 
     def __init__(
@@ -570,8 +518,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](
 
     def intersection(
         self,
-        other: PropertySubcategory[MorphismData, TwoMorphismData]
-        | tuple[Category[MorphismData, TwoMorphismData], ...],
+        other: PropertySubcategory[MorphismData, TwoMorphismData] | tuple[Category[MorphismData, TwoMorphismData], ...],
     ) -> Category[MorphismData, TwoMorphismData]:
         """``self.intersection(other)`` as the retained pullback over the common ambient."""
         if isinstance(other, tuple):
@@ -581,21 +528,15 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](
         from sage_categories.cat.functors import Cat, Fun
 
         ambient = self.narrowing_base()
-        assert other.narrowing_base() is ambient, (
-            f"{self!r} and {other!r} do not have a common narrowing base"
-        )
+        assert other.narrowing_base() is ambient, f"{self!r} and {other!r} do not have a common narrowing base"
         result = ambient.intersection((self, other))
-        diagram = cospan_diagram(
-            Cat(), self.subcategory_monomorphism(), other.subcategory_monomorphism()
-        )
+        diagram = cospan_diagram(Cat(), self.subcategory_monomorphism(), other.subcategory_monomorphism())
         shape = diagram.domain()
         projections = {
             0: Fun.full_subcategory_monomorphism(result, self),
             1: Fun.full_subcategory_monomorphism(result, other),
         }
-        limiting_cone = cone(
-            diagram, result, lambda vertex: projections[shape.label(vertex)]
-        )
+        limiting_cone = cone(diagram, result, lambda vertex: projections[shape.label(vertex)])
 
         def mediator(candidate_cone):
             source = cone_apex(candidate_cone)
@@ -630,9 +571,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](
         return _axiom_layer().subcategory_inclusions(self)
 
     @cached_method(key=lambda self, candidate: (id(candidate), candidate))
-    def membership_proposition(
-        self, candidate: CategoryOfCategories.ElementType
-    ) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in the ambient and the property's own predicate.
 
         ``x in C.P()`` and ``ask(x.is_P())`` are one question asked twice
@@ -644,9 +583,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](
         the defining predicate evaluated, and an undecided answer fails loudly at
         ``__contains__`` rather than being reported as non-membership.
         """
-        return self._ambient.membership_proposition(
-            candidate
-        ) & self._property_predicate(candidate)
+        return self._ambient.membership_proposition(candidate) & self._property_predicate(candidate)
 
     def __call__[Datum](
         self,
@@ -667,10 +604,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](
         where the narrowing of a value of it is refinement.
         """
         constructed = self._ambient(*construction_data, **keywords)
-        if (
-            isinstance(constructed, FullSubcategory)
-            and constructed.ambient() is self._ambient
-        ):
+        if isinstance(constructed, FullSubcategory) and constructed.ambient() is self._ambient:
             return constructed.property_subcategory(self)
         refine(constructed, self)
         return constructed
@@ -679,9 +613,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](
         return f"{self._ambient!r}.{self._name}()"
 
 
-class PredicateSubcategory[**MorphismData, **TwoMorphismData](
-    PropertySubcategory[MorphismData, TwoMorphismData]
-):
+class PredicateSubcategory[**MorphismData, **TwoMorphismData](PropertySubcategory[MorphismData, TwoMorphismData]):
     """``C.P()`` whose membership its own mathematics decides (POL-CAT-060, D97).
 
     An axiom alone is already complete: it makes ``C.P()`` available, a value enters by
@@ -730,9 +662,7 @@ class PredicateSubcategory[**MorphismData, **TwoMorphismData](
         """The defining decision of membership in this property, on a value of the ambient."""
 
 
-class NarrowedProperty[**MorphismData, **TwoMorphismData](
-    FullSubcategory[MorphismData, TwoMorphismData]
-):
+class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``D.P().Q()...``: the objects of ``D`` in each of the root subcategories.
 
     It is a full subcategory of ``D``, of each root, of the narrowing of ``D`` by
@@ -802,9 +732,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](
         targets: list[Category] = [self._ambient, *self._roots]
         own = {root.ordinal() for root in self._roots}
         for omitted in self._roots:
-            kept = self._ambient.closed_roots(
-                tuple(root for root in self._roots if root is not omitted)
-            )
+            kept = self._ambient.closed_roots(tuple(root for root in self._roots if root is not omitted))
             # A root can carry the omitted one among its own roots, so the closure of the
             # remaining roots can be this category again, which declares nothing.
             if kept and {root.ordinal() for root in kept} != own:
@@ -816,14 +744,9 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](
         for target in targets:
             if target is not self and not any(target is known for known in distinct):
                 distinct.append(target)
-        return tuple(
-            _functors().full_subcategory_monomorphism(self, target)
-            for target in distinct
-        )
+        return tuple(_functors().full_subcategory_monomorphism(self, target) for target in distinct)
 
-    def membership_proposition(
-        self, candidate: CategoryOfCategories.ElementType
-    ) -> Proposition:
+    def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in the ambient together with membership in every root.
 
         Each root states its own membership: a property subcategory asks its predicate,
@@ -835,9 +758,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](
             proposition = proposition & root.membership_proposition(candidate)
         return proposition
 
-    def __call__[Datum](
-        self, *construction_data: Datum, **keywords: Datum
-    ) -> CategoryOfCategories.ElementType:
+    def __call__[Datum](self, *construction_data: Datum, **keywords: Datum) -> CategoryOfCategories.ElementType:
         """Construct through the one root that constructs, or through the base, and narrow the result.
 
         A narrowing wires no constructor of its own either: it has exactly the
@@ -848,9 +769,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](
         ``D``'s own predicates supply -- the theorem that the construction restricts to
         the subcategory (D104) -- and then enters this narrowing.
         """
-        constructing = tuple(
-            root for root in self._roots if root._constructs_from_diagrams
-        )
+        constructing = tuple(root for root in self._roots if root._constructs_from_diagrams)
         if not constructing:
             constructed = self._ambient(*construction_data, **keywords)
             refine(constructed, self)
@@ -864,14 +783,10 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](
         return constructed
 
     def __repr__(self) -> str:
-        return f"{self._ambient!r}." + ".".join(
-            f"{root.name()}()" for root in self._roots
-        )
+        return f"{self._ambient!r}." + ".".join(f"{root.name()}()" for root in self._roots)
 
 
-class FixedEndpointProperty[**MorphismData, **TwoMorphismData](
-    NarrowedProperty[TwoMorphismData, []]
-):
+class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[TwoMorphismData, []]):
     """``Mor(C)(A, B).P()``: constructs a morphism ``A -> B`` with property ``P``, through ``Mor(C)(A, B)``."""
 
     class ObjectType:

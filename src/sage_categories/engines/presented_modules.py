@@ -522,6 +522,7 @@ def tensor_morphism(
     )
     return _owned_morphism_from_native(source_tensor, target_tensor, native)
 
+
 def tensor_associator(
     first: object,
     second: object,
@@ -532,11 +533,7 @@ def tensor_associator(
     left_to_right: bool,
 ):
     """Return CAP's associator between the already selected public tensor objects."""
-    operation = (
-        libgap.AssociatorLeftToRightWithGivenTensorProducts
-        if left_to_right
-        else libgap.AssociatorRightToLeftWithGivenTensorProducts
-    )
+    operation = libgap.AssociatorLeftToRightWithGivenTensorProducts if left_to_right else libgap.AssociatorRightToLeftWithGivenTensorProducts
     native = operation(
         _native_object(source_tensor),
         _native_object(first),

@@ -490,15 +490,16 @@ def _unquote_stub_annotations(tree: ast.Module) -> None:
             node.annotation = type_expression(node.annotation)
             return node
 
-        def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.stmt:
+        def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> ast.stmt:
             type_parameters(node.type_params)
             node.returns = type_expression(node.returns)
             return self.generic_visit(node)
 
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.stmt:
+            return self._visit_function(node)
+
         def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.stmt:
-            type_parameters(node.type_params)
-            node.returns = type_expression(node.returns)
-            return self.generic_visit(node)
+            return self._visit_function(node)
 
         def visit_ClassDef(self, node: ast.ClassDef) -> ast.stmt:
             type_parameters(node.type_params)

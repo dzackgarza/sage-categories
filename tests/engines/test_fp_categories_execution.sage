@@ -24,6 +24,7 @@ def test_native_finite_presented_category_paths() -> None:
     iso = walking_isomorphism()
     assert (iso.generator("g") * iso.generator("f")).word() == ()
     assert (iso.generator("f") * iso.generator("g")).word() == ()
+    assert iso.inverse_morphism(iso.generator("f")) is iso.generator("g")
     iso_arrows = iso.finite_morphisms()
     assert iso_arrows is not Unknown and len(iso_arrows) == 4
 
@@ -49,6 +50,14 @@ def test_native_finite_presented_category_paths() -> None:
     assert ask(finite[0] == finite[0]) is True
 
     free_loop = FinitePresentedCategory("free loop", (0,), (("x", 0, 0),), ())
+    assert free_loop.finite_morphisms() is Unknown
+    loop = free_loop.generator("x")
+    power = loop
+    for exponent in range(2, 65):
+        power = loop * power
+        assert power.word() == ("x",) * exponent
+        assert power.domain() is free_loop(0)
+        assert power.codomain() is free_loop(0)
     assert free_loop.finite_morphisms() is Unknown
 
 

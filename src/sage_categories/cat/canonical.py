@@ -197,10 +197,7 @@ class FinitePresentedCategory(Category[[Word], []]):
                 self._finite_arrows = Unknown
                 return Unknown
             labels = self.labels()
-            self._finite_arrows = tuple(
-                self.construct_morphism(self(labels[source]), self(labels[target]), word)
-                for source, target, word in native
-            )
+            self._finite_arrows = tuple(self.construct_morphism(self(labels[source]), self(labels[target]), word) for source, target, word in native)
         return self._finite_arrows
 
     def Terminal(self) -> FinitePresentedCategory.ObjectType:
@@ -242,7 +239,7 @@ class FinitePresentedCategory(Category[[Word], []]):
         codomain: FinitePresentedCategory.ObjectType,
         word: Word,
     ) -> Word:
-        if not word or not self._relations:
+        if not word:
             return word
         from sage_categories.engines import fp_categories
 
@@ -263,32 +260,29 @@ class FinitePresentedCategory(Category[[Word], []]):
                 codomain=codomain,
                 data=PathData(key[1]),
             )
-            # A word in generators with declared two-sided inverses is invertible by construction.
-            if path.word() and all(name in self._inverse_generators() for name in path.word()):
-                refine(path, self.morphism_category(1).Isomorphisms())
+            # Positive invertibility comes from the native quotient category; absence of a
+            # native decision leaves refinement open rather than manufacturing an inverse.
+            if path.word() and self._relations:
+                from sage_categories.engines import fp_categories
+
+                if fp_categories.is_isomorphism(self, path) is True:
+                    refine(path, self.morphism_category(1).Isomorphisms())
             self._paths[key] = path
         return self._paths[key]
-
-    def _inverse_generators(self) -> dict[str, str]:
-        """``u |-> v`` for every generator pair with both relations ``(u v) -> ()`` and ``(v u) -> ()``.
-
-        One relation alone makes ``u`` a split monomorphism and ``v`` a split
-        epimorphism, not an isomorphism (POL-MATH-042).
-        """
-        one_sided = {(left[0], left[1]) for left, right in self._relations if len(left) == 2 and not right}
-        return {first: second for first, second in one_sided if (second, first) in one_sided}
 
     def construct_identity(self, vertex: FinitePresentedCategory.ObjectType) -> FinitePresentedCategory.MorphismType:
         return self.construct_morphism(vertex, vertex, ())
 
     def composite(self, second: FinitePresentedCategory.MorphismType, first: FinitePresentedCategory.MorphismType) -> FinitePresentedCategory.MorphismType:
-        assert first.codomain() is second.domain()
-        return self.construct_morphism(first.domain(), second.codomain(), (*first.word(), *second.word()))
+        from sage_categories.engines import fp_categories
+
+        return fp_categories.compose_morphisms(self, second, first)
 
     def inverse_morphism(self, morphism: FinitePresentedCategory.MorphismType) -> FinitePresentedCategory.MorphismType:
-        """The inverse of a path whose generators each have a declared inverse generator."""
-        inverses = self._inverse_generators()
-        return self.construct_morphism(morphism.codomain(), morphism.domain(), tuple(inverses[name] for name in reversed(morphism.word())))
+        """The inverse reconstructed from the native presented category."""
+        from sage_categories.engines import fp_categories
+
+        return fp_categories.inverse_morphism(self, morphism)
 
     def _equal(
         self,

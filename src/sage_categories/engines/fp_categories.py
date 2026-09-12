@@ -6,11 +6,15 @@ from dataclasses import dataclass
 
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
+from sage.libs.gap.util import GAPError
 
 from sage_categories.engines.gap import FINITE_CATEGORY_PACKAGES, load_packages
 
 __all__ = [
+    "compose_morphisms",
     "finite_morphisms",
+    "inverse_morphism",
+    "is_isomorphism",
     "native_category",
     "native_morphism",
     "native_object",
@@ -153,13 +157,8 @@ def _native_path(
 
 
 def _word(presentation: _Presentation, native: GapElement) -> tuple[str, ...]:
-    representative = (
-        libgap.CanonicalRepresentative(native) if presentation.quotient else native
-    )
-    return tuple(
-        presentation.generator_names[int(index) - 1]
-        for index in libgap.MorphismIndices(representative)
-    )
+    representative = libgap.CanonicalRepresentative(native) if presentation.quotient else native
+    return tuple(presentation.generator_names[int(index) - 1] for index in libgap.MorphismIndices(representative))
 
 
 def reduce_word(
@@ -174,6 +173,31 @@ def reduce_word(
         presentation,
         _native_path(category, presentation, source, target, word),
     )
+
+
+def compose_morphisms(category: object, second: object, first: object) -> object:
+    """Compose two owned paths through the native ``FpCategories`` category."""
+    assert first.codomain() is second.domain()
+    native = libgap.PreCompose(
+        native_morphism(category, first),
+        native_morphism(category, second),
+    )
+    return owned_morphism(category, native)
+
+
+def inverse_morphism(category: object, morphism: object) -> object:
+    """Reconstruct the inverse supplied by the native presented category."""
+    return owned_morphism(category, libgap.Inverse(native_morphism(category, morphism)))
+
+
+def is_isomorphism(category: object, morphism: object) -> bool | None:
+    """Native isomorphism decision when ``FpCategories`` has an applicable method."""
+    try:
+        return bool(libgap.IsIsomorphism(native_morphism(category, morphism)))
+    except GAPError as error:
+        if "no method found" in str(error):
+            return None
+        raise
 
 
 def finite_morphisms(category: object) -> tuple[tuple[int, int, tuple[str, ...]], ...] | None:
@@ -209,7 +233,6 @@ def native_morphism(category: object, value: object) -> GapElement:
     return _native_path(category, presentation, value.domain(), value.codomain(), value.word())
 
 
-
 def owned_object(category: object, native: GapElement) -> object:
     """Reconstruct one owned vertex from its native FpCategories object."""
     index = int(libgap.ObjectIndex(native)) - 1
@@ -224,12 +247,10 @@ def terminal_object(category: object) -> object | None:
     if not bool(libgap.IsFiniteCategory(presentation.native)):
         return None
     for target in presentation.native_objects:
-        if all(
-            len(libgap.MorphismsOfExternalHom(source, target)) == 1
-            for source in presentation.native_objects
-        ):
+        if all(len(libgap.MorphismsOfExternalHom(source, target)) == 1 for source in presentation.native_objects):
             return owned_object(category, target)
     return None
+
 
 def owned_morphism(category: object, native: GapElement) -> object:
     """Reconstruct one owned morphism from its native path representative."""

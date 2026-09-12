@@ -2,6 +2,7 @@
 
 from sage_categories.algebra import polynomial_ring, presented_ring_homomorphism, prime_field
 from sage_categories.geometry import AffineSchemes, Spec
+from sage_categories.geometry.affine import native_affine_morphism, native_affine_scheme
 
 
 def test_affine_map_retains_prime_image_and_stalk_map() -> None:
@@ -14,6 +15,13 @@ def test_affine_map_retains_prime_image_and_stalk_map() -> None:
     target = Spec.on_object(target_ring)
     mapping = Spec.on_morphism(pullback.op())
     assert mapping.domain() is source and mapping.codomain() is target
+    assert mapping.pullback() is pullback
+    native_mapping = native_affine_morphism(mapping)
+    assert native_mapping.value is mapping
+    assert native_mapping.source is source
+    assert native_mapping.target is target
+    assert native_affine_scheme(source).construction.coordinate_ring is source_ring
+    assert native_affine_scheme(target).construction.coordinate_ring is target_ring
 
     affine = AffineSchemes()
     point = affine.spectrum_point(source, (s,))

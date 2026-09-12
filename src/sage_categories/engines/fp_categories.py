@@ -38,23 +38,13 @@ class _Presentation:
 
 
 _presentations: dict[int, _Presentation] = {}
-_loaded = False
-
-
-def _load() -> None:
-    global _loaded
-    if not _loaded:
-        load_packages(FINITE_CATEGORY_PACKAGES)
-        _loaded = True
-
-
 def _presentation(category: object) -> _Presentation:
     identifier = id(category)
     if identifier in _presentations:
         retained = _presentations[identifier]
         assert retained.owner is category
         return retained
-    _load()
+    load_packages(FINITE_CATEGORY_PACKAGES)
     labels = tuple(category.labels())
     names = tuple(category.generator_names())
     positions = {label: index + 1 for index, label in enumerate(labels)}

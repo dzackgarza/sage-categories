@@ -10,16 +10,6 @@ from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
 
 __all__ = ["compatible_families", "identified_objects", "matching_triples"]
 
-_loaded = False
-
-
-def _load() -> None:
-    global _loaded
-    if not _loaded:
-        load_packages(FINITE_SETS_PACKAGES)
-        _loaded = True
-
-
 def compatible_families(
     vertices: tuple[object, ...],
     arrows: tuple[object, ...],
@@ -33,7 +23,7 @@ def compatible_families(
     object or morphism.  GAP owns the compatibility computation; Python only
     translates retained values to and from skeletal finite-set indices.
     """
-    _load()
+    load_packages(FINITE_SETS_PACKAGES)
     assert len(vertices) == len(families)
     vertex_positions = {id(vertex): index for index, vertex in enumerate(vertices)}
     value_positions = tuple(
@@ -93,7 +83,7 @@ def identified_objects(
     locate: Callable[[tuple[object, ...], object], int],
 ) -> tuple[int, tuple[tuple[int, ...], ...]]:
     """Native finite colimit of object families, returned as factor-to-class maps."""
-    _load()
+    load_packages(FINITE_SETS_PACKAGES)
     assert len(vertices) == len(families)
     vertex_positions = {id(vertex): index for index, vertex in enumerate(vertices)}
     value_positions = tuple(
@@ -150,7 +140,7 @@ def matching_triples(
     already-owned finite values and converts their retained identities to skeletal
     indices.
     """
-    _load()
+    load_packages(FINITE_SETS_PACKAGES)
     category = libgap.SkeletalFinSets
     native_source = libgap.FinSet(len(source_values))
     native_target = libgap.FinSet(len(target_values))

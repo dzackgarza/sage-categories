@@ -9,19 +9,9 @@ from sage_categories.engines.gap import SLICE_CATEGORIES, load_repository_packag
 
 __all__ = ["slice_category"]
 
-_loaded = False
-
-
-def _load() -> None:
-    global _loaded
-    if not _loaded:
-        load_repository_package(SLICE_CATEGORIES)
-        _loaded = True
-
-
 def slice_category(category: object, base: object, arrows: tuple[object, ...]):
     """Exact finite data for ``base.SliceOver(x)`` using native slice Hom sets."""
-    _load()
+    load_repository_package(SLICE_CATEGORIES)
     assert category._fixed_label == 1, "native slice execution currently models SliceOver"
     fixed = category.fixed_object()
     native_slice = libgap.SliceCategory(fp_categories.native_object(base, fixed))

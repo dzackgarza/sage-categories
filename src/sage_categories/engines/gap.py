@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 
 from sage.libs.gap.element import GapElement
@@ -140,6 +141,7 @@ def _loaded_package_info(package: GapPackage, expected_path: Path) -> GapElement
 
 
 
+@cache
 def load_repository_package(package: GapPackage) -> GapElement:
     """Load one exact package after forcing every repository-local package path.
 
@@ -169,6 +171,7 @@ def load_repository_package(package: GapPackage) -> GapElement:
     assert loaded == libgap.true, f"failed to load {package.name} {package.version} from {path}"
     return _loaded_package_info(package, path)
 
+@cache
 def load_packages(packages: tuple[GapPackage, ...]) -> tuple[GapElement, ...]:
     """Force an exact package closure, then load it in dependency order.
 

@@ -11,19 +11,9 @@ from sage_categories.engines.gap import FUNCTOR_CATEGORIES, load_repository_pack
 
 __all__ = ["arrow_category"]
 
-_loaded = False
-
-
-def _load() -> None:
-    global _loaded
-    if not _loaded:
-        load_repository_package(FUNCTOR_CATEGORIES)
-        _loaded = True
-
-
 def arrow_category(category: object, target: object, arrows: tuple[object, ...]):
     """Exact finite data for ``Fun([1], target)`` with native naturality checks."""
-    _load()
+    load_repository_package(FUNCTOR_CATEGORIES)
     interval = Cat().Simplex(1)
     native = libgap.FunctorCategory(
         fp_categories.native_category(interval),

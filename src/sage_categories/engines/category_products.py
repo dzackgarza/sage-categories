@@ -10,16 +10,6 @@ from sage_categories.engines.gap import FINITE_CATEGORY_PACKAGES, load_packages
 
 __all__ = ["finite_product_data"]
 
-_loaded = False
-
-
-def _load() -> None:
-    global _loaded
-    if not _loaded:
-        load_packages(FINITE_CATEGORY_PACKAGES)
-        _loaded = True
-
-
 def _cartesian(families: tuple[tuple[GapElement, ...], ...]) -> tuple[tuple[GapElement, ...], ...]:
     if not families:
         return ((),)
@@ -36,7 +26,7 @@ def finite_product_data(
     CAP owns the product category and product cells.  The returned tuples are the
     owned components reconstructed from those native product cells.
     """
-    _load()
+    load_packages(FINITE_CATEGORY_PACKAGES)
     native_factors = tuple(fp_categories.native_category(factor) for factor in factors)
     product_category = libgap.ProductCategory(list(native_factors))
 

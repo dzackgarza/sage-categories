@@ -10,6 +10,7 @@ matrix; no CAP object escapes this module.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
 
@@ -207,7 +208,6 @@ def _native_morphism(value: object) -> GapElement:
     return native
 
 
-
 @cache
 def _polynomial_ring(variable_names: tuple[str, ...]) -> GapElement:
     """Return the CAP polynomial ring ``ZZ[variable_names]``."""
@@ -247,7 +247,7 @@ def _parsed_matrix_rows(native_matrix: GapElement, parser) -> tuple[tuple[object
 class KernelPresentation:
     """Private CAP kernel data for a polynomial-ring presentation."""
 
-    parser: object
+    parser: Callable[[str], object]
     ring: GapElement
     category: GapElement
     source: GapElement
@@ -282,7 +282,7 @@ class KernelPresentation:
 def kernel_presentation(
     *,
     variable_names: tuple[str, ...],
-    owned_ring,
+    owned_ring: Callable[[str], object],
     source_rank: int,
     target_rank: int,
     source_relation_rows,

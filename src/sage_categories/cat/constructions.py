@@ -592,6 +592,39 @@ class LimitsCategory(ApexCategory):
         return f"{self.ambient()!r}.{self.name()}({self._shape!r})"
 
 
+def _discrete_family_predicate(
+    candidate: CategoryOfCategories.ElementType,
+    families: list[LimitsCategory] | list[ColimitsCategory],
+) -> bool | None:
+    """Whether one retained nontrivial discrete construction family contains ``candidate``."""
+    decisions: list[bool | None] = []
+    for family in families:
+        membership = ask(family.membership_proposition(candidate))
+        nontrivial = _nontrivial_discrete(family.shape())
+        if membership is False or nontrivial is False:
+            decisions.append(False)
+        elif membership is True and nontrivial is True:
+            decisions.append(True)
+        else:
+            decisions.append(None)
+    if any(decision is True for decision in decisions):
+        return True
+    if any(decision is None for decision in decisions):
+        return None
+    return False
+
+
+def _discrete_diagrams(ambient: Category, shape: Category) -> Category:
+    assert shape.is_discrete(), f"{shape!r} is not a discrete shape"
+    return Fun(shape, ambient)
+
+
+def _discrete_sequence_diagram(ambient: Category, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> Functor:
+    for member_object in sequence:
+        assert member_object in ambient, f"{member_object!r} is not an object of {ambient!r}"
+    return from_sequence(ambient, sequence)
+
+
 class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
     """``C.Products()``: the union of full images of the known nontrivial discrete limit functors."""
 
@@ -645,21 +678,7 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         assumptions: Proposition,
     ) -> bool | None:
         """Whether a retained limit presentation currently has a nontrivial discrete shape."""
-        decisions: list[bool | None] = []
-        for family in self._candidate_families:
-            membership = ask(family.membership_proposition(candidate))
-            nontrivial = _nontrivial_discrete(family.shape())
-            if membership is False or nontrivial is False:
-                decisions.append(False)
-            elif membership is True and nontrivial is True:
-                decisions.append(True)
-            else:
-                decisions.append(None)
-        if any(decision is True for decision in decisions):
-            return True
-        if any(decision is None for decision in decisions):
-            return None
-        return False
+        return _discrete_family_predicate(candidate, self._candidate_families)
 
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> Category:
         families = tuple(family for family in self._candidate_families if _nontrivial_discrete(family.shape()) is True and ask(family.membership_proposition(apex)) is True)
@@ -667,15 +686,11 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         return families[0]
 
     def diagrams(self, shape: Category) -> Category:
-        assert shape.is_discrete(), f"{shape!r} is not a discrete shape"
-        return Fun(shape, self.ambient())
+        return _discrete_diagrams(self.ambient(), shape)
 
     def _sequence_diagram(self, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> Functor:
         """The sequence diagram on objects of ``C``, retained per sequence."""
-        ambient = self.ambient()
-        for member_object in sequence:
-            assert member_object in ambient, f"{member_object!r} is not an object of {ambient!r}"
-        return from_sequence(ambient, sequence)
+        return _discrete_sequence_diagram(self.ambient(), sequence)
 
     def __call__(
         self,
@@ -958,21 +973,7 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        decisions: list[bool | None] = []
-        for family in self._candidate_families:
-            membership = ask(family.membership_proposition(candidate))
-            nontrivial = _nontrivial_discrete(family.shape())
-            if membership is False or nontrivial is False:
-                decisions.append(False)
-            elif membership is True and nontrivial is True:
-                decisions.append(True)
-            else:
-                decisions.append(None)
-        if any(decision is True for decision in decisions):
-            return True
-        if any(decision is None for decision in decisions):
-            return None
-        return False
+        return _discrete_family_predicate(candidate, self._candidate_families)
 
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> ColimitsCategory:
         families = tuple(family for family in self._candidate_families if _nontrivial_discrete(family.shape()) is True and ask(family.membership_proposition(apex)) is True)
@@ -980,15 +981,11 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         return families[0]
 
     def diagrams(self, shape: Category) -> Category:
-        assert shape.is_discrete(), f"{shape!r} is not a discrete shape"
-        return Fun(shape, self.ambient())
+        return _discrete_diagrams(self.ambient(), shape)
 
     def _sequence_diagram(self, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> Functor:
         """The sequence diagram on objects of ``C``, retained per sequence."""
-        ambient = self.ambient()
-        for member_object in sequence:
-            assert member_object in ambient, f"{member_object!r} is not an object of {ambient!r}"
-        return from_sequence(ambient, sequence)
+        return _discrete_sequence_diagram(self.ambient(), sequence)
 
     def __call__(
         self,

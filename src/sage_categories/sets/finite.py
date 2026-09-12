@@ -211,12 +211,21 @@ _enumerations: MonoDict = MonoDict()
 _enumeration_indices: MonoDict = MonoDict()
 
 
+@dataclass(frozen=True, slots=True)
+class _NoSymbolicRule:
+    """Explicit absence of a symbolic rule on an otherwise executable set map."""
+
+
+_NO_SYMBOLIC_RULE = _NoSymbolicRule()
+type SymbolicRule = Lambda | _NoSymbolicRule
+
+
 @dataclass(frozen=True, eq=False, slots=True)
 class _SetMap:
     """The evaluation rule of a set map and its symbolic form, when it has one."""
 
     action: Map
-    rule: Lambda | None
+    rule: SymbolicRule
 
 
 def _structure(value: SetsCategory.ObjectType) -> Basic:
@@ -250,48 +259,48 @@ def _sympifiable(datum: Hashable) -> bool:
     return isinstance(datum, (int, SageInteger, Basic))
 
 
-def _symbolic_rule(action: MapData | _SetMap) -> Lambda | None:
+def _symbolic_rule(action: MapData | _SetMap) -> SymbolicRule:
     """The symbolic form of a construction input, normalized to one structured argument."""
     if isinstance(action, _SetMap):
         return action.rule
     if isinstance(action, SageExpression):
         if not action.arguments():
-            return None
+            return _NO_SYMBOLIC_RULE
         action = action._sympy_()
     if not isinstance(action, Lambda):
-        return None
+        return _NO_SYMBOLIC_RULE
     if len(action.signature) == 1:
         return action
     return Lambda((Tuple(*action.signature),), action.expr)
 
 
-def _evaluation(action: MapData | _SetMap, rule: Lambda | None) -> Map:
+def _evaluation(action: MapData | _SetMap, rule: SymbolicRule) -> Map:
     """The rule on data a construction input evaluates by: its symbolic form when it has one, its table, or itself."""
     if isinstance(action, _SetMap):
         return action.action
-    if rule is not None:
+    if isinstance(rule, Lambda):
         return lambda datum: _plain(rule(datum))
     if isinstance(action, Mapping):
         return action.__getitem__
     return action
 
 
-def _constant_rule(source: SetsCategory.ObjectType, datum: Hashable) -> Lambda | None:
-    return Lambda((_structure(source),), sympify(datum)) if _sympifiable(datum) else None
+def _constant_rule(source: SetsCategory.ObjectType, datum: Hashable) -> SymbolicRule:
+    return Lambda((_structure(source),), sympify(datum)) if _sympifiable(datum) else _NO_SYMBOLIC_RULE
 
 
-def _composed_rule(second: SetsCategory.MorphismType, first: SetsCategory.MorphismType) -> Lambda | None:
+def _composed_rule(second: SetsCategory.MorphismType, first: SetsCategory.MorphismType) -> SymbolicRule:
     """``g ∘ f`` symbolically: ``g``'s form applied to ``f``'s expression, or a constant when ``g`` leaves a one-point set."""
-    if first._symbolic is None:
-        return None
-    if second._symbolic is not None:
+    if not isinstance(first._symbolic, Lambda):
+        return _NO_SYMBOLIC_RULE
+    if isinstance(second._symbolic, Lambda):
         return Lambda(first._symbolic.signature, second._symbolic(first._symbolic.expr))
     source = second.domain()
     presentation = source.set_presentation()
     if isinstance(presentation, tuple) and len(presentation) == 1:
         value = second._action(presentation[0])
-        return Lambda(first._symbolic.signature, sympify(value)) if _sympifiable(value) else None
-    return None
+        return Lambda(first._symbolic.signature, sympify(value)) if _sympifiable(value) else _NO_SYMBOLIC_RULE
+    return _NO_SYMBOLIC_RULE
 
 
 def _identically_zero(first: Basic, second: Basic) -> bool:
@@ -437,7 +446,7 @@ class SetsCategory(Category[[Map], []]):
             if isinstance(data, _SetMap):
                 self._action, self._symbolic = data.action, data.rule
             else:
-                self._action, self._symbolic = data, None
+                self._action, self._symbolic = data, _NO_SYMBOLIC_RULE
 
         @property
         def _table(self) -> dict[Hashable, Hashable]:
@@ -479,7 +488,7 @@ class SetsCategory(Category[[Map], []]):
                     conjunction(first(point) == second(point) for point in points),
                     assumptions,
                 )
-        if first._symbolic is not None and second._symbolic is not None:
+        if isinstance(first._symbolic, Lambda) and isinstance(second._symbolic, Lambda):
             argument = _structure(domain)
             if _identically_zero(first._symbolic(argument), second._symbolic(argument)):
                 return True
@@ -540,7 +549,7 @@ class SetsCategory(Category[[Map], []]):
 
     def _symbolic_injective(self, arrow: SetsCategory.MorphismType) -> bool | None:
         """``f(x) = f(y)`` has only the solution ``y = x``: solved symbolically for a map out of a rule-defined set."""
-        if arrow._symbolic is None or isinstance(arrow.domain().set_presentation(), tuple):
+        if not isinstance(arrow._symbolic, Lambda) or isinstance(arrow.domain().set_presentation(), tuple):
             return None
         first, second = _structure(arrow.domain()), _structure(arrow.domain())
         unknowns = _flatten(second)
@@ -568,7 +577,7 @@ class SetsCategory(Category[[Map], []]):
     def _generic_preimage(self, arrow: SetsCategory.MorphismType) -> tuple[Basic, Basic] | None:
         """The codomain structure ``a`` and the one symbolic preimage of ``a`` under a symbolic map, when solving gives exactly one."""
         domain, codomain = arrow.domain(), arrow.codomain()
-        if arrow._symbolic is None or isinstance(domain.set_presentation(), tuple) or isinstance(codomain.set_presentation(), tuple):
+        if not isinstance(arrow._symbolic, Lambda) or isinstance(domain.set_presentation(), tuple) or isinstance(codomain.set_presentation(), tuple):
             return None
         source, target = _structure(domain), _structure(codomain)
         image, unknowns, targets = (
@@ -775,7 +784,8 @@ class SetsCategory(Category[[Map], []]):
         table = {value: target.representative(evaluate(value)) for value in source._values}
         if len(table) == 1:
             value = next(iter(table.values()))
-            rule = rule if rule is not None else _constant_rule(source, value)
+            if not isinstance(rule, Lambda):
+                rule = _constant_rule(source, value)
         return self.MorphismType(domain=source, codomain=target, data=_SetMap(table.__getitem__, rule))
 
     def construct_identity(self, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
@@ -848,8 +858,8 @@ class SetsCategory(Category[[Map], []]):
             components = tuple(candidate.component(vertex) for vertex in vertices)
             source = cone_apex(candidate)
             structure = _structure(source)
-            symbolic = None
-            if all(component._symbolic is not None for component in components):
+            symbolic: SymbolicRule = _NO_SYMBOLIC_RULE
+            if all(isinstance(component._symbolic, Lambda) for component in components):
                 symbolic = Lambda(
                     (structure,),
                     Tuple(*(component._symbolic(structure) for component in components)),

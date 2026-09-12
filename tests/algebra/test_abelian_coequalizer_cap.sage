@@ -66,21 +66,16 @@ def test_cap_computes_the_selected_nonidentity_coequalizer_and_owned_mediator() 
     assert ask(image == apex.zero()) is False
     assert ask(image + image == apex.zero()) is True
 
-    plane_engine = AdditiveAbelianGroup([2, 2])
-    plane = presented_abelian_group(plane_engine)
-    corner = plane_engine.gen(0)
-    coequalizing = abelian_homomorphism(
-        target,
-        plane,
-        lambda value: int(value.vector()[0]) * corner,
-    )
+    # A nonidentity map x |-> 2x kills the image of the doubled generator, so it
+    # factors through the selected Z/2 coequalizer without constructing another group.
+    coequalizing = abelian_homomorphism(target, target, lambda value: 2 * value)
     mediator = coequalizer_mediator(projection, coequalizing)
     assert mediator.domain() is apex
-    assert mediator.codomain() is plane
-    assert mediator in Mor(abelian)(apex, plane)
+    assert mediator.codomain() is target
+    assert mediator in Mor(abelian)(apex, target)
     forgotten_mediator = forgetful.on_morphism(mediator)
     assert forgotten_mediator.domain() is forgetful.on_object(apex)
-    assert forgotten_mediator.codomain() is forgetful.on_object(plane)
+    assert forgotten_mediator.codomain() is forgetful.on_object(target)
     assert ask(mediator * projection == coequalizing) is True
 
 

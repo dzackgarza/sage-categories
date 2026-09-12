@@ -8,16 +8,23 @@ def test_projective_infinity_retains_arbitrary_stages_and_mediator() -> None:
     presentation = projective_infinity()
     low = presentation.finite_skeleton(2)
     high = presentation.finite_skeleton(37)
+    far = presentation.finite_skeleton(137)
 
     assert low.stage == 2 and low.cells() == (0, 2, 4)
     assert high.stage == 37 and high.cells()[-1] == 74
+    assert far.stage == 137 and far.cells()[-1] == 274
     assert low.space is not presentation.space
     assert high.space is not presentation.space
+    assert far.space is not presentation.space
 
     low_inclusion = presentation.structure_map(2)
     high_inclusion = presentation.structure_map(37)
+    far_inclusion = presentation.structure_map(137)
     assert low_inclusion.domain() is low.space and low_inclusion.codomain() is presentation.space
     assert high_inclusion.domain() is high.space and high_inclusion.codomain() is presentation.space
+    assert far_inclusion.domain() is far.space and far_inclusion.codomain() is presentation.space
+    assert presentation.empty_open.stage_open(137) is far.empty_open
+    assert presentation.whole_open.stage_open(137) is far.whole_open
 
     conjugation = presentation.complex_conjugation()
     assert conjugation.domain() is presentation.space and conjugation.codomain() is presentation.space

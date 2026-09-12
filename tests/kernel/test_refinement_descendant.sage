@@ -23,6 +23,9 @@ class RefinementMiddle(Category):
         def __init__(self, data: None) -> None:
             pass
 
+        def middle_arrow(self):
+            return self
+
     def __call__(self, value: int) -> RefinementMiddle.ObjectType:
         return self.ObjectType(value)
 
@@ -55,6 +58,9 @@ class RefinementUpper(Category):
         def __init__(self, data: None) -> None:
             pass
 
+        def upper_arrow(self):
+            return self
+
     def __init__(self, middle: RefinementMiddle) -> None:
         self._middle = middle
 
@@ -83,7 +89,8 @@ class TaggedRefinementUpper(PropertySubcategory):
         pass
 
     class MorphismType:
-        pass
+        def tagged_arrow(self):
+            return self
 
 
 def test_refining_intermediate_category_preserves_existing_placed_descendant() -> None:
@@ -100,14 +107,24 @@ def test_refining_intermediate_category_preserves_existing_placed_descendant() -
     assert value.middle_value() == 7
     assert value.upper_value() == 7
     assert value.tagged_value() == 7
+    identity = Mor(tagged)(value, value).one()
+    assert identity.middle_arrow() is identity
+    assert identity.upper_arrow() is identity
+    assert identity.tagged_arrow() is identity
 
     # Refining the intermediate category rebuilds every descendant runtime class.  The
-    # already-placed value must move to those replacements without losing any declaration.
+    # already-placed object and arrow must move to those replacements without losing any
+    # declaration or changing their retained identities.
     assert ask(middle.is_concrete()) is True
     assert value.category() is tagged
     assert value.middle_value() == 7
     assert value.upper_value() == 7
     assert value.tagged_value() == 7
+    assert identity.domain() is value and identity.codomain() is value
+    assert identity.middle_arrow() is identity
+    assert identity.upper_arrow() is identity
+    assert identity.tagged_arrow() is identity
+    assert Mor(tagged)(value, value).one() is identity
 
 
 test_refining_intermediate_category_preserves_existing_placed_descendant()

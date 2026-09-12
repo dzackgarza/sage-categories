@@ -23,7 +23,7 @@ Multiple prerequisites are conjunctive.
 | `universal` | Section 19.2: retained diagrams, chosen apex/legs/mediators, nonstandard indexing, opposites and predicate subobjects (#30/#24/#41; intrinsic #32) | `sets`, `functors`, `paths` |
 | `indexed` | Section 19.2: full infinite/nonenumerable indexed constructions and sequential colimits with maps and their specified equality | `sets`, `functors` |
 | `diagrams` | Section 19.3: symbolic, supplied monoidal and cell interpretation, including nonstrict comparisons and noninvertible ordinary arrows | `functors` |
-| `refinement` | Section 19.4: same-object refinement (#31), with existing inherited operations | none |
+| `refinement` | **Closed.** Section 19.4: same-object refinement (#31), with existing inherited operations. **Acceptance:** `tests/kernel/test_refinement_descendant.sage::test_refining_intermediate_category_preserves_existing_placed_descendant` passes while preserving the exact already-placed object and identity morphism across an intermediate-category refinement, including inherited object and morphism operations from the middle, upper and property declarations | none |
 | `inverses` | Section 19.4: retained inverses (#33) | none |
 | `isofibrations` | Section 19.4: composite isofibrations and generic state transport (#35) | none |
 | `named` | Section 19.4: named projections and composites (#39), consuming the required structure and transport | `refinement`, `inverses`, `isofibrations` |

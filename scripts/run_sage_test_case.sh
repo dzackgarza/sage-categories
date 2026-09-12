@@ -63,5 +63,18 @@ relative_importable="${source_file%.sage}.py"
 (
     cd "$work"
     PYTHONPATH="$repo_root/src${PYTHONPATH:+:$PYTHONPATH}" \
-        "$sage_bin" -python -m pytest -vv -s "$relative_importable::$test_name"
+        "$sage_bin" -python -m pytest -vv -s "$relative_importable::$test_name" &
+    pytest_pid=$!
+    while kill -0 "$pytest_pid" 2>/dev/null; do
+        sleep 15
+        if kill -0 "$pytest_pid" 2>/dev/null; then
+            ps -o pid=,stat=,etime=,pcpu=,rss= -p "$pytest_pid" >&2
+        fi
+    done
+    if wait "$pytest_pid"; then
+        exit 0
+    else
+        status=$?
+        exit "$status"
+    fi
 )

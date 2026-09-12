@@ -12,6 +12,7 @@ import copy
 import os
 import subprocess
 import sys
+from collections import defaultdict
 from collections.abc import Iterator
 from importlib import import_module
 from pathlib import Path
@@ -110,7 +111,12 @@ def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> 
         _project_public_exports(tree, source_tree)
         _canonicalize_imports(tree, package, canonical_exports)
         projected_generic_aliases = _project_class_aliases(tree, source_tree)
-        _project_runtime_class_aliases(tree, runtime_aliases.get(module, {}), source_modules)
+        match module in runtime_aliases:
+            case True:
+                module_runtime_aliases = runtime_aliases[module]
+            case False:
+                module_runtime_aliases = {}
+        _project_runtime_class_aliases(tree, module_runtime_aliases, source_modules)
         if providers:
             _project_provider_bases(tree, module, providers, source_modules, hoisted_role_providers)
         _project_exact_morphism_endpoints(tree)
@@ -1068,7 +1074,7 @@ def _internal_static_names(
         trees[module] = tree
         declarations[module] = frozenset(_declared_names(tree))
 
-    references: dict[str, set[str]] = {}
+    references: defaultdict[str, set[str]] = defaultdict(set)
     for module, tree in trees.items():
         module_aliases: dict[str, str] = {}
         for statement in ast.walk(tree):
@@ -1077,7 +1083,7 @@ def _internal_static_names(
                 if imported in modules:
                     for alias in statement.names:
                         if alias.name in declarations[imported]:
-                            references.setdefault(imported, set()).add(alias.name)
+                            references[imported].add(alias.name)
                 if imported is not None:
                     for alias in statement.names:
                         candidate = f"{imported}.{alias.name}"
@@ -1094,7 +1100,7 @@ def _internal_static_names(
             imported = module_aliases.get(expression.value.id)
             if imported is None or expression.attr not in declarations[imported]:
                 continue
-            references.setdefault(imported, set()).add(expression.attr)
+            references[imported].add(expression.attr)
 
     return {module: frozenset(names) for module, names in references.items()}
 
@@ -1122,14 +1128,14 @@ def _project_internal_definitions(
     if not names:
         return
     existing = {name for statement in tree.body for name in _statement_names(statement)}
-    declarations: dict[str, list[ast.stmt]] = {}
+    declarations: defaultdict[str, list[ast.stmt]] = defaultdict(list)
     for statement in private_tree.body:
         for name in _statement_names(statement):
-            declarations.setdefault(name, []).append(statement)
+            declarations[name].append(statement)
 
     required = set(names)
     while True:
-        selected = {id(statement): statement for name in required for statement in declarations.get(name, ())}
+        selected = {id(statement): statement for name in required if name in declarations for statement in declarations[name]}
         loaded = {
             expression.id for statement in selected.values() for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
         }
@@ -1248,7 +1254,7 @@ def _direct_provider_bases(
     those transitive ancestors while preserving the compiler's order on unrelated
     branches.
     """
-    return tuple(base for base in bases if not any(base in relations.get(other, ()) for other in bases if other != base))
+    return tuple(base for base in bases if not any(base in relations[other] for other in bases if other != base and other in relations))
 
 
 def _providers_in_module(
@@ -1279,14 +1285,14 @@ def _canonical_exports(
     sources: tuple[Path, ...],
 ) -> dict[str, str]:
     """Map each uniquely declared public name to its authoritative source module."""
-    candidates: dict[str, list[str]] = {}
+    candidates: defaultdict[str, list[str]] = defaultdict(list)
     for source in sources:
         module = _module_name(package, output_directory, source)
         tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
         declarations = _declared_names(tree)
         for name in _public_names(tree):
             if name in declarations:
-                candidates.setdefault(name, []).append(module)
+                candidates[name].append(module)
     return {name: canonical for name, modules in candidates.items() if len(modules) == 1 for canonical in modules}
 
 
@@ -1428,14 +1434,14 @@ def _project_public_static_surface(tree: ast.Module, source: ast.Module) -> None
     public = frozenset(_public_names(source))
     if not public:
         return
-    declarations: dict[str, list[ast.stmt]] = {}
+    declarations: defaultdict[str, list[ast.stmt]] = defaultdict(list)
     for statement in tree.body:
         for name in _statement_names(statement):
-            declarations.setdefault(name, []).append(statement)
+            declarations[name].append(statement)
 
     required = set(public)
     while True:
-        selected = {id(statement): statement for name in required for statement in declarations.get(name, ())}
+        selected = {id(statement): statement for name in required if name in declarations for statement in declarations[name]}
         loaded = {
             expression.id for statement in selected.values() for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
         }
@@ -1510,10 +1516,14 @@ def _canonicalize_imports(
         if statement.module != package and not statement.module.startswith(f"{package}."):
             statements.append(statement)
             continue
-        grouped: dict[str, list[ast.alias]] = {}
+        grouped: defaultdict[str, list[ast.alias]] = defaultdict(list)
         for alias in statement.names:
-            module = canonical_exports.get(alias.name, statement.module)
-            grouped.setdefault(module, []).append(alias)
+            match alias.name in canonical_exports:
+                case True:
+                    module = canonical_exports[alias.name]
+                case False:
+                    module = statement.module
+            grouped[module].append(alias)
         statements.extend(ast.ImportFrom(module=module, names=aliases, level=statement.level) for module, aliases in grouped.items())
     tree.body[:] = statements
 
@@ -1932,7 +1942,7 @@ def _project_provider_bases(
         bases = providers.get(statement.name)
         if bases is None:
             continue
-        projected_bases = tuple(hoisted_role_providers.get(base, base) for base in bases)
+        projected_bases = tuple(hoisted_role_providers[base] if base in hoisted_role_providers else base for base in bases)
         statement.node.bases = [_base_expression(base) for base in projected_bases]
         required_modules.update(_qualified_module(base, source_modules) for base in projected_bases)
     _ensure_module_imports(tree, required_modules)
@@ -1998,7 +2008,7 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
         return False
 
     cyclic = {name for name in classes if reaches(name, name)}
-    owners: dict[str, list[ast.ClassDef]] = {}
+    owners: defaultdict[str, list[ast.ClassDef]] = defaultdict(list)
     for name in cyclic:
         relative = name.removeprefix(f"{module}.")
         if relative.count(".") != 1:
@@ -2012,7 +2022,7 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
             None,
         )
         if nested is not None:
-            owners.setdefault(owner_name, []).append(nested)
+            owners[owner_name].append(nested)
 
     if not owners:
         return

@@ -11,6 +11,7 @@ import sys
 from dataclasses import dataclass
 from functools import cache
 from importlib import import_module
+from numbers import Integral
 from pathlib import Path
 from threading import Lock
 from typing import Any
@@ -99,6 +100,8 @@ def _encode_oscar(worker: _OscarWorker, value: object) -> object:
             return {str(key): _encode_oscar(worker, part) for key, part in value.items()}
         case None | bool() | int() | float() | str():
             return value
+        case Integral():
+            return int(value)
     raise TypeError(f"OSCAR worker input is not JSON-convertible: {type(value)!r}")
 
 

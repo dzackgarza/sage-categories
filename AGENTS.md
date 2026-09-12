@@ -393,6 +393,32 @@ Identify the shared premise or mechanism. Recheck those consumers within the ass
 Do not declare the latest symptom to be the whole defect before following its callers and sibling use.
 Retain unrelated acceptance; the scope of invalidation follows evidence, not a blanket restart or automatic exoneration.
 
+## Never report a run as live without having just seen its output
+
+A long-running check is the one thing in this repository a worker cannot observe from the
+inside, and the failure mode is not that it hangs — it is that it dies and leaves the worker
+describing it as healthy. On 2026-09-12 a worker reported that the recorded module consumer for
+`refinement` was "running under Sage now" and "remains CPU-active", and kept reporting it for
+fifty-two minutes, during which no `sage` or `mypy` process existed on the host at all and
+nothing was banked. Every sentence it wrote was specific, confident and false.
+
+A busy wait and a dead one are indistinguishable from inside the chat, so the claim needs
+outside evidence every time it is made:
+
+```bash
+pgrep -af 'sage|mypy|pytest' | grep -v grep    # is anything actually running
+ps -o pid,etime,pcpu,rss -p <pid>              # is it advancing, sampled twice
+```
+
+If the process is gone, the run is gone: re-run it in the foreground where you see the output
+directly, or drop it and bank what is verified. Never write that something is executing on the
+strength of having started it. Prefer foreground runs whose output you read to detached runs
+whose completion you infer — a detached run that dies is silent, and silence here costs hours.
+
+The same applies to the host itself: this machine is memory-tight, and a killed process leaves
+no error anywhere a worker looks. Check `free -m` and the process before concluding that a
+gate, a build or a test is merely slow.
+
 ## Repeated failures
 
 Apply these actions to observed conditions, regardless of how productive the current work feels:

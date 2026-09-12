@@ -6,7 +6,6 @@ from sage_categories.cat.native import (
     has_native_functor,
     has_native_transformation,
 )
-from sage_categories.engines.catlab import ensure_native_functor
 
 
 class IntegerLabels(Category):
@@ -59,18 +58,18 @@ first = affine_functor(SOURCE, MIDDLE, 1, 1)
 second = affine_functor(MIDDLE, TARGET, 2, 0)
 composite = second * first
 
-# No source-object enumeration exists. Primitive declarations and the retained composite
-# execute their owned Python actions directly. The Catlab representation remains lazy and
-# is materialized only when a native engine consumer explicitly requests it.
+# No source-object enumeration exists. Public application enters the retained Catlab
+# callable functor, and composition executes through Catlab's composite functor rather
+# than a second Python evaluator.
 value = SOURCE(10**6)
-assert not has_native_functor(first)
-assert first.on_object(value).label() == 10**6 + 1
-assert not has_native_functor(first)
-assert composite.on_object(value).label() == 2 * (10**6 + 1)
 assert not has_native_functor(first)
 assert not has_native_functor(second)
 assert not has_native_functor(composite)
-ensure_native_functor(composite)
+assert first.on_object(value).label() == 10**6 + 1
+assert has_native_functor(first)
+assert not has_native_functor(second)
+assert not has_native_functor(composite)
+assert composite.on_object(value).label() == 2 * (10**6 + 1)
 assert has_native_functor(first)
 assert has_native_functor(second)
 assert has_native_functor(composite)
@@ -108,7 +107,7 @@ theta = Mor(Fun(SOURCE, TARGET))(parallel1, parallel2)(
 assert not has_native_transformation(eta)
 primitive_component = eta.component(SOURCE(10**8))
 assert primitive_component.label() == "eta"
-assert not has_native_transformation(eta)
+assert has_native_transformation(eta)
 vertical = theta * eta
 component = vertical.component(SOURCE(10**9))
 assert component.domain().label() == 10**9

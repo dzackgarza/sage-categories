@@ -1555,8 +1555,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         # values whose placement reaches that node.
 
         def on_object(self, member_object: DomainObject) -> CodomainObject:
-            """The image of an object of the domain, one value per object."""
-            return self._declared_object_image(member_object)
+            """The image of an object of the domain, executed by the retained Catlab functor."""
+            return self._cached_object_image(member_object, self._construct_object_image)
 
         def _retain_object_action_result(
             self,
@@ -1602,8 +1602,18 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return image
 
         def on_morphism(self, morphism: DomainMorphism) -> CodomainMorphism:
-            """The image of a morphism of the domain, one value per morphism."""
-            return self._declared_morphism_image(morphism)
+            """The image of a morphism of the domain, executed by the retained Catlab functor."""
+            image = self._cached_morphism_image(
+                morphism,
+                self.on_object,
+                self._construct_morphism_image,
+            )
+            return self._retain_isomorphism_image(
+                morphism,
+                image,
+                self.on_object,
+                self._construct_morphism_image,
+            )
 
         def _retain_morphism_action_result(
             self,

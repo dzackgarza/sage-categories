@@ -62,6 +62,7 @@ from sage.modules.fg_pid.fgp_element import FGP_Element
 from sage.modules.fg_pid.fgp_module import FGP_Module_class
 from sage.modules.free_module_element import vector
 from sage.rings.integer_ring import ZZ
+from sage.structure.element import Element as SageElement
 from sage.structure.parent import Parent
 from sympy import Q, false, true
 
@@ -370,7 +371,7 @@ def _new_indexed_free_abelian_group(
     """Construct a fresh native realization of ``ZZ^(S)`` on the same owned index."""
     assert index_set in Sets
     engine = CombinatorialFreeModule(ZZ, _OwnedIndexFacade(index_set))
-    carrier = Sets.from_membership(lambda datum: true if getattr(datum, "parent", lambda: None)() is engine else false)
+    carrier = Sets.from_membership(lambda datum: true if isinstance(datum, SageElement) and datum.parent() is engine else false)
     square = binary_product_data(Sets(), carrier, carrier).apex()
     addition = Mor(Sets)(square, carrier)(lambda pair: pair[0] + pair[1])
     zero = Mor(Sets)(_structure().unit(), carrier)(lambda _point: engine.zero())
@@ -409,7 +410,7 @@ def indexed_free_abelian_mediator(
     record = _indexed_free_record(group)
 
     def evaluate(value: Hashable) -> Hashable:
-        assert getattr(value, "parent", lambda: None)() is record.engine
+        assert isinstance(value, SageElement) and value.parent() is record.engine
         total = target.zero()
         for index, coefficient in value.monomial_coefficients(copy=False).items():
             arrow = component(index)
@@ -837,7 +838,7 @@ def tensor_mediator(
 
         def evaluate(value: Hashable) -> Hashable:
             result_record = _indexed_free_record(result)
-            assert getattr(value, "parent", lambda: None)() is result_record.engine
+            assert isinstance(value, SageElement) and value.parent() is result_record.engine
             total = target.zero()
             for pair, coefficient in value.monomial_coefficients(copy=False).items():
                 first_index, second_index = pair
@@ -855,7 +856,7 @@ def tensor_mediator(
 
         def evaluate(value: Hashable) -> Hashable:
             result_record = _indexed_free_record(result)
-            assert getattr(value, "parent", lambda: None)() is result_record.engine
+            assert isinstance(value, SageElement) and value.parent() is result_record.engine
             total = target.zero()
             for index, coefficient in value.monomial_coefficients(copy=False).items():
                 basis = indexed_record.engine.monomial(index)
@@ -906,7 +907,7 @@ def _indexed_free_relabel(
     assert source_record.index_set is target_record.index_set
 
     def evaluate(value: Hashable) -> Hashable:
-        assert getattr(value, "parent", lambda: None)() is source_record.engine
+        assert isinstance(value, SageElement) and value.parent() is source_record.engine
         return target_record.engine.sum_of_terms(
             tuple(value.monomial_coefficients(copy=False).items()),
             distinct=True,
@@ -925,7 +926,7 @@ def _indexed_free_reindex(
     target_record = _indexed_free_record(target)
 
     def evaluate(value: Hashable) -> Hashable:
-        assert getattr(value, "parent", lambda: None)() is source_record.engine
+        assert isinstance(value, SageElement) and value.parent() is source_record.engine
         return target_record.engine.sum_of_terms(
             tuple((target_record.index_set.representative(index_map(index)), coefficient) for index, coefficient in value.monomial_coefficients(copy=False).items()),
             distinct=False,

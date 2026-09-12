@@ -2,9 +2,7 @@
 
 import sys
 
-from sage.version import version as sage_version
-
-from sage_categories.kernel.sage_runtime import Integer
+from sage_categories.kernel.sage_runtime import Integer, sage_version
 
 
 def test_declared_sage_python_runtime() -> None:

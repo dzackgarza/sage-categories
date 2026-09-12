@@ -1,13 +1,12 @@
 """An exact constructed category gains all three implementation role surfaces in place."""
 
-from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup
-
 from sage_categories.algebra.abelian import presented_abelian_group
 from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.monoidal import Cartesian
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.structured_objects import AdditiveGroups
+from sage_categories.kernel.sage_runtime import AdditiveAbelianGroup
 from sage_categories.sets.finite import Sets
 
 

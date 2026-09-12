@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sage.categories.category import Category as SageCategory
 from sage.categories.category_with_axiom import uncamelcase
+from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
 from sage.misc.cachefunc import cached_function, cached_method
@@ -14,8 +15,10 @@ from sage.sets.disjoint_set import DisjointSet
 from sage.sets.family import LazyFamily
 from sage.structure.coerce_dict import MonoDict, TripleDict
 from sage.structure.dynamic_class import dynamic_class
+from sage.version import version as sage_version
 
 __all__ = [
+    "AdditiveAbelianGroup",
     "DisjointSet",
     "GapElement",
     "Integer",
@@ -30,5 +33,6 @@ __all__ = [
     "dynamic_class",
     "lazy_attribute",
     "libgap",
+    "sage_version",
     "uncamelcase",
 ]

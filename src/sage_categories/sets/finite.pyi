@@ -46,10 +46,15 @@ type Map = Callable[[Hashable], Hashable]
 type MembershipRule = Callable[[Hashable], Proposition]
 type MapData = Map | Lambda | SageExpression | Mapping[Hashable, Hashable]
 
+@dataclass(frozen=True, slots=True)
+class _NoSymbolicRule: ...
+
+type SymbolicRule = Lambda | _NoSymbolicRule
+
 @dataclass(frozen=True, eq=False, slots=True)
 class _SetMap:
     action: Map
-    rule: Lambda | None
+    rule: SymbolicRule
 
 class _StaticRoles_SetsCategory:
     class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):

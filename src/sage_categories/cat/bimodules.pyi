@@ -4,7 +4,9 @@ import sage_categories.cat.morphisms
 import sage_categories.cat.structured_objects
 import sage_categories.kernel.roles
 from sage_categories.cat.cat_constructions import LimitSubcategory as LimitSubcategory
-from sage_categories.cat.cat_constructions import limit_of_categories as limit_of_categories
+from sage_categories.cat.cat_constructions import (
+    limit_of_categories as limit_of_categories,
+)
 from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
@@ -14,7 +16,9 @@ from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
 from sage_categories.cat.modules import ModuleCategory as ModuleCategory
 from sage_categories.cat.modules import Modules as Modules
-from sage_categories.cat.monoidal import MonoidalStructuresCategory as MonoidalStructuresCategory
+from sage_categories.cat.monoidal import (
+    MonoidalStructuresCategory as MonoidalStructuresCategory,
+)
 from sage_categories.cat.monoidal import Reversed as Reversed
 from sage_categories.cat.monoidal import SelfAction as SelfAction
 from sage_categories.cat.morphisms import Mor as Mor
@@ -34,8 +38,6 @@ class _StaticRoles_ActionPairsCategory(sage_categories.cat.cat_constructions._St
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> ActionPairsCategory.ObjectType: ...
         def codomain(self) -> ActionPairsCategory.ObjectType: ...
 
@@ -60,8 +62,6 @@ class _StaticRoles_BimoduleCategory(sage_categories.cat.structured_objects._Stat
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> BimoduleCategory.ObjectType: ...
         def codomain(self) -> BimoduleCategory.ObjectType: ...
 

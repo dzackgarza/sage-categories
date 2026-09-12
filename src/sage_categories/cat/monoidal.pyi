@@ -19,7 +19,9 @@ from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Proposition as Proposition
 from sage_categories.engines.diagrams import DiagramBox as DiagramBox
-from sage_categories.engines.diagrams import NonstrictMonoidalModel as NonstrictMonoidalModel
+from sage_categories.engines.diagrams import (
+    NonstrictMonoidalModel as NonstrictMonoidalModel,
+)
 from sage_categories.engines.diagrams import evaluate_path as evaluate_path
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
@@ -69,8 +71,6 @@ class _StaticRoles_MonoidalStructuresCategory:
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> MonoidalStructuresCategory.ObjectType: ...
         def codomain(self) -> MonoidalStructuresCategory.ObjectType: ...
 
@@ -117,8 +117,6 @@ class _StaticRoles_ActionsCategory:
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> ActionsCategory.ObjectType: ...
         def codomain(self) -> ActionsCategory.ObjectType: ...
 

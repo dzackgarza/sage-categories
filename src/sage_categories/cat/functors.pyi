@@ -5,7 +5,6 @@ from typing import overload
 from _typeshed import Incomplete
 
 import sage_categories.cat.category
-import sage_categories.cat.functors
 import sage_categories.cat.morphisms
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
@@ -27,7 +26,9 @@ from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.predicates import conjunction as conjunction
 from sage_categories.cat.predicates import decide as decide
 from sage_categories.cat.predicates import register_handler as register_handler
-from sage_categories.cat.properties import FixedEndpointProperty as FixedEndpointProperty
+from sage_categories.cat.properties import (
+    FixedEndpointProperty as FixedEndpointProperty,
+)
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.refinement import is_subcategory as is_subcategory
@@ -51,12 +52,10 @@ class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [A
     def shape(self) -> Category | Functor: ...
 
 class _StaticRoles_FunctorProperty(sage_categories.cat.properties._StaticRoles_FixedEndpointProperty):
-    class ObjectType(sage_categories.cat.functors._StaticRoles_FunctorCategory.ObjectType, sage_categories.cat.properties._StaticRoles_PropertySubcategory.ObjectType): ...
-    class ElementType(sage_categories.cat.functors._StaticRoles_FunctorCategory.ElementType, sage_categories.cat.properties._StaticRoles_PropertySubcategory.ElementType): ...
+    class ObjectType(_StaticRoles_FunctorCategory.ObjectType, sage_categories.cat.properties._StaticRoles_PropertySubcategory.ObjectType): ...
+    class ElementType(_StaticRoles_FunctorCategory.ElementType, sage_categories.cat.properties._StaticRoles_PropertySubcategory.ElementType): ...
 
-    class MorphismType(sage_categories.cat.functors._StaticRoles_FunctorCategory.MorphismType, sage_categories.cat.properties._StaticRoles_PropertySubcategory.MorphismType):
-        ...
-
+    class MorphismType(_StaticRoles_FunctorCategory.MorphismType, sage_categories.cat.properties._StaticRoles_PropertySubcategory.MorphismType):
         def domain(self) -> FunctorProperty.ObjectType: ...
         def codomain(self) -> FunctorProperty.ObjectType: ...
 
@@ -70,8 +69,8 @@ class FunctorProperty(
 
 class _StaticRoles_FunctorCategory(sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory):
     class ObjectType[
-        DomainCategory = "Category[..., ...]",
-        CodomainCategory = "Category[..., ...]",
+        DomainCategory = Category[..., ...],
+        CodomainCategory = Category[..., ...],
         DomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
         DomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
         DomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
@@ -84,17 +83,15 @@ class _StaticRoles_FunctorCategory(sage_categories.cat.morphisms._StaticRoles_Fi
         ],
         sage_categories.kernel.roles.ObjectOfCategory,
     ): ...
-    class ElementType(sage_categories.cat.functors._StaticRoles_FunctorsCategory.ElementType): ...
+    class ElementType(_StaticRoles_FunctorsCategory.ElementType): ...
 
-    class MorphismType(sage_categories.cat.functors._StaticRoles_FunctorsCategory.MorphismType):
-        ...
-
+    class MorphismType(_StaticRoles_FunctorsCategory.MorphismType):
         def domain(self) -> FunctorCategory.ObjectType: ...
         def codomain(self) -> FunctorCategory.ObjectType: ...
 
 class FunctorCategory[
-    DomainCategory = "Category[..., ...]",
-    CodomainCategory = "Category[..., ...]",
+    DomainCategory = Category[..., ...],
+    CodomainCategory = Category[..., ...],
     DomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
     DomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
     DomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
@@ -199,7 +196,7 @@ class PreservesLimitsCategory(ShapeIndexedFunctorProperty): ...
 class CreatesLimitsCategory(ShapeIndexedFunctorProperty): ...
 
 Fun: FunctorsCategory
-type NaturalTransformation = sage_categories.cat.functors.FunctorsCategory.MorphismType
+type NaturalTransformation = FunctorsCategory.MorphismType
 
 def diagram_of(value: CategoryOfCategories.ElementType) -> Functor: ...
 

@@ -15,7 +15,9 @@ from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import ask as ask
 from sage_categories.geometry.sheaves import RingSheaf as RingSheaf
 from sage_categories.geometry.spaces import TopologicalSpaces as TopologicalSpaces
-from sage_categories.geometry.spaces import TopologicalSpacesCategory as TopologicalSpacesCategory
+from sage_categories.geometry.spaces import (
+    TopologicalSpacesCategory as TopologicalSpacesCategory,
+)
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method

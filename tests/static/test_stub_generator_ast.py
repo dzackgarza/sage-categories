@@ -1003,3 +1003,98 @@ value: Incomplete
         ["from _typeshed import Incomplete"],
         ["import sage_categories.kernel.roles"],
     ]
+
+
+def test_final_projection_marks_owned_generic_aliases() -> None:
+    source = ast.parse(
+        """
+class Declaration[**P]:
+    pass
+
+Category = Declaration
+"""
+    )
+    stub = ast.parse(
+        """
+class Declaration[**P]:
+    pass
+
+Category = Declaration
+"""
+    )
+    generator = _stub_generator()
+    projected_aliases = generator._project_class_aliases(stub, source)
+    generator._mark_projected_generic_aliases(stub, projected_aliases)
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "Category: _typing.TypeAlias = Declaration[_Declaration_P,]" in projected
+
+
+def test_final_projection_publicizes_class_local_type_parameters() -> None:
+    stub = ast.parse(
+        """
+class Carrier[_ObjectRole = object, _MorphismRole = object]:
+    def construct(self, value: _ObjectRole) -> _MorphismRole: ...
+"""
+    )
+    generator = _stub_generator()
+    generator._publicize_private_type_parameters(stub)
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "class Carrier[ObjectRole = object, MorphismRole = object]" in projected
+    assert "def construct(self, value: ObjectRole) -> MorphismRole" in projected
+    assert "_ObjectRole" not in projected
+    assert "_MorphismRole" not in projected
+
+
+def test_final_projection_unquotes_forward_refs_but_preserves_literal_values() -> None:
+    stub = ast.parse(
+        """
+from typing import Literal
+
+type Alias = tuple["Owner", Literal["tag"]]
+class Carrier[T: "Owner" = "Owner"]:
+    def construct(self, value: "Owner") -> "Owner": ...
+"""
+    )
+    generator = _stub_generator()
+    generator._unquote_stub_annotations(stub)
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "type Alias = tuple[Owner, Literal['tag']]" in projected
+    assert "class Carrier[T: Owner = Owner]" in projected
+    assert "def construct(self, value: Owner) -> Owner" in projected
+
+
+def test_final_projection_normalizes_stub_class_bodies() -> None:
+    stub = ast.parse(
+        """
+class NonEmpty:
+    ...
+    value: int
+
+class Empty:
+    pass
+"""
+    )
+    generator = _stub_generator()
+    generator._normalize_stub_class_bodies(stub)
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "class NonEmpty:\n    value: int" in projected
+    assert "class Empty:\n    ..." in projected
+
+
+def test_final_projection_localizes_self_references() -> None:
+    stub = ast.parse(
+        """
+import example.category
+import example.other
+
+class Carrier(example.category.Base):
+    value: example.category.Role
+"""
+    )
+    generator = _stub_generator()
+    generator._localize_self_references(stub, "example.category")
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "import example.category" not in projected
+    assert "import example.other" in projected
+    assert "class Carrier(Base)" in projected
+    assert "value: Role" in projected

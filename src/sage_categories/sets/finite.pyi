@@ -32,7 +32,9 @@ from sage_categories.cat.predicates import UnknownClass as UnknownClass
 from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.predicates import conjunction as conjunction
 from sage_categories.cat.predicates import register_handler as register_handler
-from sage_categories.cat.shapes import realize_discrete_object as realize_discrete_object
+from sage_categories.cat.shapes import (
+    realize_discrete_object as realize_discrete_object,
+)
 from sage_categories.cat.slices import SliceLikeCategory as SliceLikeCategory
 from sage_categories.cat.slices import SliceProperty as SliceProperty
 from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
@@ -124,8 +126,6 @@ class _StaticRoles_SetSubobjects(sage_categories.cat.slices._StaticRoles_SlicePr
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> SetSubobjects.ObjectType: ...
         def codomain(self) -> SetSubobjects.ObjectType: ...
 

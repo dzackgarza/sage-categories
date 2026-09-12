@@ -3,7 +3,6 @@ from collections.abc import Callable, Hashable
 from _typeshed import Incomplete
 
 import sage_categories.cat.comma
-import sage_categories.cat.cones
 import sage_categories.cat.properties
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
@@ -59,14 +58,12 @@ class ConeCategory(
     def apex_functor(self) -> Functor: ...
 
 class _StaticRoles_LimitConesCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
-    class ObjectType(sage_categories.cat.cones._StaticRoles_ConeCategory.ObjectType):
+    class ObjectType(_StaticRoles_ConeCategory.ObjectType):
         def lift(self, candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType: ...
 
-    class ElementType(sage_categories.cat.cones._StaticRoles_ConeCategory.ElementType): ...
+    class ElementType(_StaticRoles_ConeCategory.ElementType): ...
 
-    class MorphismType(sage_categories.cat.cones._StaticRoles_ConeCategory.MorphismType):
-        ...
-
+    class MorphismType(_StaticRoles_ConeCategory.MorphismType):
         def domain(self) -> LimitConesCategory.ObjectType: ...
         def codomain(self) -> LimitConesCategory.ObjectType: ...
 

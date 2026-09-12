@@ -7,7 +7,6 @@ import sage_categories.cat.category
 import sage_categories.cat.constructions
 import sage_categories.cat.morphisms
 import sage_categories.cat.properties
-import sage_categories.cat.structured_objects
 import sage_categories.kernel.roles
 import sage_categories.sets.finite
 from sage_categories.cat.calculus import binary_product_data as binary_product_data
@@ -16,7 +15,9 @@ from sage_categories.cat.calculus import product_functor as product_functor
 from sage_categories.cat.calculus import terminal_map as terminal_map
 from sage_categories.cat.cat_constructions import FamilyObjectData as FamilyObjectData
 from sage_categories.cat.cat_constructions import LimitSubcategory as LimitSubcategory
-from sage_categories.cat.cat_constructions import limit_of_categories as limit_of_categories
+from sage_categories.cat.cat_constructions import (
+    limit_of_categories as limit_of_categories,
+)
 from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
@@ -31,7 +32,9 @@ from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
 from sage_categories.cat.monoidal import Cartesian as Cartesian
-from sage_categories.cat.monoidal import MonoidalStructuresCategory as MonoidalStructuresCategory
+from sage_categories.cat.monoidal import (
+    MonoidalStructuresCategory as MonoidalStructuresCategory,
+)
 from sage_categories.cat.monoidal import tensor_parentheses as tensor_parentheses
 from sage_categories.cat.monoidal import tensor_units as tensor_units
 from sage_categories.cat.morphisms import Mor as Mor
@@ -45,7 +48,9 @@ from sage_categories.cat.properties import PropertySubcategory as PropertySubcat
 from sage_categories.cat.shapes import Discrete as Discrete
 from sage_categories.engines.presented_modules import tensor_morphism as tensor_morphism
 from sage_categories.kernel.refinement import refine as refine
-from sage_categories.kernel.retention import complete_constructions as complete_constructions
+from sage_categories.kernel.retention import (
+    complete_constructions as complete_constructions,
+)
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
@@ -82,25 +87,25 @@ __all__ = [
 ]
 
 class _StaticRoles_InserterCategory(sage_categories.cat.cat_constructions._StaticRoles_LimitSubcategory):
-    class ObjectType(sage_categories.cat.structured_objects._StaticRoles_MagmaCategory.ObjectType):
+    class ObjectType(_StaticRoles_MagmaCategory.ObjectType):
         def carrier(self) -> CategoryOfCategories.ElementType: ...
         def structure(self) -> MorphismCategory.ObjectType: ...
 
-    class ElementType(sage_categories.cat.structured_objects._StaticRoles_MagmaCategory.ElementType): ...
+    class ElementType(_StaticRoles_MagmaCategory.ElementType): ...
 
-    class MorphismType(sage_categories.cat.structured_objects._StaticRoles_MagmaCategory.MorphismType):
+    class MorphismType(_StaticRoles_MagmaCategory.MorphismType):
         def underlying_morphism(self) -> MorphismCategory.ObjectType: ...
         def domain(self) -> InserterCategory.ObjectType: ...
         def codomain(self) -> InserterCategory.ObjectType: ...
 
 class InserterCategory[
-    _ObjectRole = _StaticRoles_InserterCategory.ObjectType,
-    _ElementRole = _StaticRoles_InserterCategory.ElementType,
-    _MorphismRole = _StaticRoles_InserterCategory.MorphismType,
-](_StaticRoles_InserterCategory, LimitSubcategory[_ObjectRole, _ElementRole, _MorphismRole]):
+    ObjectRole = _StaticRoles_InserterCategory.ObjectType,
+    ElementRole = _StaticRoles_InserterCategory.ElementType,
+    MorphismRole = _StaticRoles_InserterCategory.MorphismType,
+](_StaticRoles_InserterCategory, LimitSubcategory[ObjectRole, ElementRole, MorphismRole]):
     def structure_functors(self) -> tuple[Functor, ...]: ...
-    def algebra(self, carrier: CategoryOfCategories.ElementType, structure: MorphismCategory.ObjectType) -> _ObjectRole: ...
-    def homomorphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> _MorphismRole: ...
+    def algebra(self, carrier: CategoryOfCategories.ElementType, structure: MorphismCategory.ObjectType) -> ObjectRole: ...
+    def homomorphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> MorphismRole: ...
     @cached_method
     def forgetful(self) -> Functor: ...
     @cached_method
@@ -117,16 +122,14 @@ class _StaticRoles_EquifierCategory(sage_categories.cat.properties._StaticRoles_
     class ElementType(sage_categories.cat.cat_constructions._StaticRoles_LimitCategory.ElementType, sage_categories.sets.finite._StaticRoles_SetsCategory.ElementType): ...
 
     class MorphismType(sage_categories.cat.cat_constructions._StaticRoles_LimitCategory.MorphismType, sage_categories.sets.finite._StaticRoles_SetsCategory.MorphismType):
-        ...
-
         def domain(self) -> EquifierCategory.ObjectType: ...
         def codomain(self) -> EquifierCategory.ObjectType: ...
 
 class EquifierCategory[
-    _ObjectRole = _StaticRoles_EquifierCategory.ObjectType,
-    _ElementRole = _StaticRoles_EquifierCategory.ElementType,
-    _MorphismRole = _StaticRoles_EquifierCategory.MorphismType,
-](_StaticRoles_EquifierCategory, FullSubcategory[..., ..., _ObjectRole, _ElementRole, _MorphismRole]):
+    ObjectRole = _StaticRoles_EquifierCategory.ObjectType,
+    ElementRole = _StaticRoles_EquifierCategory.ElementType,
+    MorphismRole = _StaticRoles_EquifierCategory.MorphismType,
+](_StaticRoles_EquifierCategory, FullSubcategory[..., ..., ObjectRole, ElementRole, MorphismRole]):
     def __init__(self, first: NaturalTransformation, second: NaturalTransformation) -> None: ...
     def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType: ...
 
@@ -161,21 +164,13 @@ def Magmas(structure: Functor | MonoidalStructuresCategory.ObjectType) -> MagmaC
 def PointedMagmas(tensor: Functor, unit: CategoryOfCategories.ElementType) -> InserterCategory: ...
 
 class _StaticRoles_MonoidCategory(_StaticRoles_EquifierCategory):
-    class ObjectType(
-        sage_categories.cat.structured_objects._StaticRoles_EquifierCategory.ObjectType, sage_categories.cat.structured_objects._StaticRoles_InserterCategory.ObjectType
-    ):
+    class ObjectType(_StaticRoles_EquifierCategory.ObjectType, _StaticRoles_InserterCategory.ObjectType):
         def operation(self) -> MorphismCategory.ObjectType: ...
         def unit_morphism(self) -> MorphismCategory.ObjectType: ...
 
-    class ElementType(
-        sage_categories.cat.structured_objects._StaticRoles_EquifierCategory.ElementType, sage_categories.cat.structured_objects._StaticRoles_InserterCategory.ElementType
-    ): ...
+    class ElementType(_StaticRoles_EquifierCategory.ElementType, _StaticRoles_InserterCategory.ElementType): ...
 
-    class MorphismType(
-        sage_categories.cat.structured_objects._StaticRoles_EquifierCategory.MorphismType, sage_categories.cat.structured_objects._StaticRoles_InserterCategory.MorphismType
-    ):
-        ...
-
+    class MorphismType(_StaticRoles_EquifierCategory.MorphismType, _StaticRoles_InserterCategory.MorphismType):
         def domain(self) -> MonoidCategory.ObjectType: ...
         def codomain(self) -> MonoidCategory.ObjectType: ...
 
@@ -194,23 +189,20 @@ class MonoidCategory(
 def Monoids(structure: Category | MonoidalStructuresCategory.ObjectType) -> MonoidCategory: ...
 
 class _StaticRoles_GroupsCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
-    class ObjectType(sage_categories.cat.structured_objects._StaticRoles_MonoidCategory.ObjectType):
+    class ObjectType(_StaticRoles_MonoidCategory.ObjectType):
         @cached_method
         def inversion(self) -> MorphismCategory.ObjectType: ...
 
-    class ElementType(sage_categories.cat.structured_objects._StaticRoles_MonoidCategory.ElementType): ...
+    class ElementType(_StaticRoles_MonoidCategory.ElementType): ...
 
-    class MorphismType(sage_categories.cat.structured_objects._StaticRoles_MonoidCategory.MorphismType):
-        ...
-
+    class MorphismType(_StaticRoles_MonoidCategory.MorphismType):
         def domain(self) -> GroupsCategory.ObjectType: ...
         def codomain(self) -> GroupsCategory.ObjectType: ...
 
 class GroupsCategory(
     _StaticRoles_GroupsCategory,
     PropertySubcategory[..., ..., _StaticRoles_GroupsCategory.ObjectType, _StaticRoles_GroupsCategory.ElementType, _StaticRoles_GroupsCategory.MorphismType],
-):
-    pass
+): ...
 
 def Groups(structure: Category | MonoidalStructuresCategory.ObjectType) -> GroupsCategory: ...
 
@@ -219,23 +211,21 @@ class _StaticRoles_NamedOperationCategory(sage_categories.cat.cat_constructions.
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> NamedOperationCategory.ObjectType: ...
         def codomain(self) -> NamedOperationCategory.ObjectType: ...
 
 class NamedOperationCategory[
-    _ObjectRole = _StaticRoles_NamedOperationCategory.ObjectType,
-    _ElementRole = _StaticRoles_NamedOperationCategory.ElementType,
-    _MorphismRole = _StaticRoles_NamedOperationCategory.MorphismType,
-](_StaticRoles_NamedOperationCategory, LimitSubcategory[_ObjectRole, _ElementRole, _MorphismRole]):
+    ObjectRole = _StaticRoles_NamedOperationCategory.ObjectType,
+    ElementRole = _StaticRoles_NamedOperationCategory.ElementType,
+    MorphismRole = _StaticRoles_NamedOperationCategory.MorphismType,
+](_StaticRoles_NamedOperationCategory, LimitSubcategory[ObjectRole, ElementRole, MorphismRole]):
     Commutative: Incomplete
 
     def neutral_category(self) -> Category: ...
     def symbol_category(self) -> Category: ...
     def symbol(self) -> CategoryOfCategories.ElementType: ...
-    def renamed(self, neutral_object: CategoryOfCategories.ElementType) -> _ObjectRole: ...
-    def homomorphism(self, source: _ObjectRole, target: _ObjectRole, arrow: MorphismCategory.ObjectType) -> _MorphismRole: ...
+    def renamed(self, neutral_object: CategoryOfCategories.ElementType) -> ObjectRole: ...
+    def homomorphism(self, source: ObjectRole, target: ObjectRole, arrow: MorphismCategory.ObjectType) -> MorphismRole: ...
     @cached_method
     def to_carrier(self) -> Functor: ...
     @cached_method
@@ -259,8 +249,6 @@ class _StaticRoles_AdditiveMagmasCategory(_StaticRoles_NamedOperationCategory):
         def __add__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType: ...
 
     class MorphismType(sage_categories.cat.cat_constructions._StaticRoles_LimitCategory.MorphismType, sage_categories.sets.finite._StaticRoles_SetsCategory.MorphismType):
-        ...
-
         def domain(self) -> AdditiveMagmasCategory.ObjectType: ...
         def codomain(self) -> AdditiveMagmasCategory.ObjectType: ...
 
@@ -284,8 +272,6 @@ class _StaticRoles_MultiplicativeMagmasCategory(_StaticRoles_NamedOperationCateg
         def __mul__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType: ...
 
     class MorphismType(sage_categories.cat.cat_constructions._StaticRoles_LimitCategory.MorphismType, sage_categories.sets.finite._StaticRoles_SetsCategory.MorphismType):
-        ...
-
         def domain(self) -> MultiplicativeMagmasCategory.ObjectType: ...
         def codomain(self) -> MultiplicativeMagmasCategory.ObjectType: ...
 
@@ -302,28 +288,24 @@ class _StaticRoles_NamedMonoidsCategory(_StaticRoles_NamedOperationCategory):
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> NamedMonoidsCategory.ObjectType: ...
         def codomain(self) -> NamedMonoidsCategory.ObjectType: ...
 
 class NamedMonoidsCategory[
-    _ObjectRole = _StaticRoles_NamedMonoidsCategory.ObjectType,
-    _ElementRole = _StaticRoles_NamedMonoidsCategory.ElementType,
-    _MorphismRole = _StaticRoles_NamedMonoidsCategory.MorphismType,
-](_StaticRoles_NamedMonoidsCategory, NamedOperationCategory[_ObjectRole, _ElementRole, _MorphismRole]):
+    ObjectRole = _StaticRoles_NamedMonoidsCategory.ObjectType,
+    ElementRole = _StaticRoles_NamedMonoidsCategory.ElementType,
+    MorphismRole = _StaticRoles_NamedMonoidsCategory.MorphismType,
+](_StaticRoles_NamedMonoidsCategory, NamedOperationCategory[ObjectRole, ElementRole, MorphismRole]):
     Group: Incomplete
 
 class _StaticRoles_AdditiveMonoidsCategory(_StaticRoles_NamedMonoidsCategory):
-    class ObjectType(sage_categories.cat.structured_objects._StaticRoles_AdditiveMagmasCategory.ObjectType):
+    class ObjectType(_StaticRoles_AdditiveMagmasCategory.ObjectType):
         def __init__(self, data: FamilyObjectData) -> None: ...
         def zero(self) -> CategoryOfCategories.ElementType: ...
 
-    class ElementType(sage_categories.cat.structured_objects._StaticRoles_AdditiveMagmasCategory.ElementType): ...
+    class ElementType(_StaticRoles_AdditiveMagmasCategory.ElementType): ...
 
-    class MorphismType(sage_categories.cat.structured_objects._StaticRoles_AdditiveMagmasCategory.MorphismType):
-        ...
-
+    class MorphismType(_StaticRoles_AdditiveMagmasCategory.MorphismType):
         def domain(self) -> AdditiveMonoidsCategory.ObjectType: ...
         def codomain(self) -> AdditiveMonoidsCategory.ObjectType: ...
 
@@ -335,15 +317,13 @@ class AdditiveMonoidsCategory(
     def structure_functors(self) -> tuple[Functor, ...]: ...
 
 class _StaticRoles_MultiplicativeMonoidsCategory(_StaticRoles_NamedMonoidsCategory):
-    class ObjectType(sage_categories.cat.structured_objects._StaticRoles_MultiplicativeMagmasCategory.ObjectType):
+    class ObjectType(_StaticRoles_MultiplicativeMagmasCategory.ObjectType):
         def __init__(self, data: FamilyObjectData) -> None: ...
         def one(self) -> CategoryOfCategories.ElementType: ...
 
-    class ElementType(sage_categories.cat.structured_objects._StaticRoles_MultiplicativeMagmasCategory.ElementType): ...
+    class ElementType(_StaticRoles_MultiplicativeMagmasCategory.ElementType): ...
 
-    class MorphismType(sage_categories.cat.structured_objects._StaticRoles_MultiplicativeMagmasCategory.MorphismType):
-        ...
-
+    class MorphismType(_StaticRoles_MultiplicativeMagmasCategory.MorphismType):
         def domain(self) -> MultiplicativeMonoidsCategory.ObjectType: ...
         def codomain(self) -> MultiplicativeMonoidsCategory.ObjectType: ...
 
@@ -357,17 +337,15 @@ class MultiplicativeMonoidsCategory(
     def structure_functors(self) -> tuple[Functor, ...]: ...
 
 class _StaticRoles_AdditiveGroupsCategory(_StaticRoles_NamedOperationCategory):
-    class ObjectType(sage_categories.cat.structured_objects._StaticRoles_AdditiveMonoidsCategory.ObjectType):
+    class ObjectType(_StaticRoles_AdditiveMonoidsCategory.ObjectType):
         def __init__(self, data: FamilyObjectData) -> None: ...
         def negation(self) -> MorphismCategory.ObjectType: ...
 
-    class ElementType(sage_categories.cat.structured_objects._StaticRoles_AdditiveMonoidsCategory.ElementType):
+    class ElementType(_StaticRoles_AdditiveMonoidsCategory.ElementType):
         def __neg__(self) -> CategoryOfCategories.ElementType: ...
         def __sub__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType: ...
 
-    class MorphismType(sage_categories.cat.structured_objects._StaticRoles_AdditiveMonoidsCategory.MorphismType):
-        ...
-
+    class MorphismType(_StaticRoles_AdditiveMonoidsCategory.MorphismType):
         def domain(self) -> AdditiveGroupsCategory.ObjectType: ...
         def codomain(self) -> AdditiveGroupsCategory.ObjectType: ...
 
@@ -387,22 +365,20 @@ def MultiplicativeMonoids(structure: Category | MonoidalStructuresCategory.Objec
 class _StaticRoles_MonoidPairsCategory(sage_categories.cat.cat_constructions._StaticRoles_LimitSubcategory):
     class ObjectType(
         sage_categories.cat.properties._StaticRoles_InverseImageSubcategory.ObjectType,
-        sage_categories.cat.structured_objects._StaticRoles_MultiplicativeMonoidsCategory.ObjectType,
-        sage_categories.cat.structured_objects._StaticRoles_AdditiveMonoidsCategory.ObjectType,
+        _StaticRoles_MultiplicativeMonoidsCategory.ObjectType,
+        _StaticRoles_AdditiveMonoidsCategory.ObjectType,
     ): ...
     class ElementType(
         sage_categories.cat.properties._StaticRoles_InverseImageSubcategory.ElementType,
-        sage_categories.cat.structured_objects._StaticRoles_MultiplicativeMonoidsCategory.ElementType,
-        sage_categories.cat.structured_objects._StaticRoles_AdditiveMonoidsCategory.ElementType,
+        _StaticRoles_MultiplicativeMonoidsCategory.ElementType,
+        _StaticRoles_AdditiveMonoidsCategory.ElementType,
     ): ...
 
     class MorphismType(
         sage_categories.cat.properties._StaticRoles_InverseImageSubcategory.MorphismType,
-        sage_categories.cat.structured_objects._StaticRoles_MultiplicativeMonoidsCategory.MorphismType,
-        sage_categories.cat.structured_objects._StaticRoles_AdditiveMonoidsCategory.MorphismType,
+        _StaticRoles_MultiplicativeMonoidsCategory.MorphismType,
+        _StaticRoles_AdditiveMonoidsCategory.MorphismType,
     ):
-        ...
-
         def domain(self) -> MonoidPairsCategory.ObjectType: ...
         def codomain(self) -> MonoidPairsCategory.ObjectType: ...
 
@@ -422,18 +398,10 @@ class MonoidPairsCategory(
     def structure_functors(self) -> tuple[Functor, ...]: ...
 
 class _StaticRoles_SemiringCategory(_StaticRoles_EquifierCategory):
-    class ObjectType(
-        sage_categories.cat.structured_objects._StaticRoles_EquifierCategory.ObjectType, sage_categories.cat.structured_objects._StaticRoles_MonoidPairsCategory.ObjectType
-    ): ...
-    class ElementType(
-        sage_categories.cat.structured_objects._StaticRoles_EquifierCategory.ElementType, sage_categories.cat.structured_objects._StaticRoles_MonoidPairsCategory.ElementType
-    ): ...
+    class ObjectType(_StaticRoles_EquifierCategory.ObjectType, _StaticRoles_MonoidPairsCategory.ObjectType): ...
+    class ElementType(_StaticRoles_EquifierCategory.ElementType, _StaticRoles_MonoidPairsCategory.ElementType): ...
 
-    class MorphismType(
-        sage_categories.cat.structured_objects._StaticRoles_EquifierCategory.MorphismType, sage_categories.cat.structured_objects._StaticRoles_MonoidPairsCategory.MorphismType
-    ):
-        ...
-
+    class MorphismType(_StaticRoles_EquifierCategory.MorphismType, _StaticRoles_MonoidPairsCategory.MorphismType):
         def domain(self) -> SemiringCategory.ObjectType: ...
         def codomain(self) -> SemiringCategory.ObjectType: ...
 
@@ -457,19 +425,10 @@ class SemiringCategory(
 def Semirings(base: Category) -> SemiringCategory: ...
 
 class _StaticRoles_RingCategory(sage_categories.cat.cat_constructions._StaticRoles_LimitSubcategory):
-    class ObjectType(
-        sage_categories.cat.structured_objects._StaticRoles_SemiringCategory.ObjectType, sage_categories.cat.structured_objects._StaticRoles_AdditiveGroupsCategory.ObjectType
-    ): ...
-    class ElementType(
-        sage_categories.cat.structured_objects._StaticRoles_SemiringCategory.ElementType, sage_categories.cat.structured_objects._StaticRoles_AdditiveGroupsCategory.ElementType
-    ): ...
+    class ObjectType(_StaticRoles_SemiringCategory.ObjectType, _StaticRoles_AdditiveGroupsCategory.ObjectType): ...
+    class ElementType(_StaticRoles_SemiringCategory.ElementType, _StaticRoles_AdditiveGroupsCategory.ElementType): ...
 
-    class MorphismType(
-        sage_categories.cat.structured_objects._StaticRoles_SemiringCategory.MorphismType,
-        sage_categories.cat.structured_objects._StaticRoles_AdditiveGroupsCategory.MorphismType,
-    ):
-        ...
-
+    class MorphismType(_StaticRoles_SemiringCategory.MorphismType, _StaticRoles_AdditiveGroupsCategory.MorphismType):
         def domain(self) -> RingCategory.ObjectType: ...
         def codomain(self) -> RingCategory.ObjectType: ...
 

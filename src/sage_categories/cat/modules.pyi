@@ -11,7 +11,9 @@ from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
 from sage_categories.cat.monoidal import ActionsCategory as ActionsCategory
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
-from sage_categories.cat.structured_objects import EndofunctorAlgebras as EndofunctorAlgebras
+from sage_categories.cat.structured_objects import (
+    EndofunctorAlgebras as EndofunctorAlgebras,
+)
 from sage_categories.cat.structured_objects import Equifier as Equifier
 from sage_categories.cat.structured_objects import EquifierCategory as EquifierCategory
 from sage_categories.cat.structured_objects import InserterCategory as InserterCategory
@@ -31,8 +33,6 @@ class _StaticRoles_ModuleCategory(sage_categories.cat.structured_objects._Static
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> ModuleCategory.ObjectType: ...
         def codomain(self) -> ModuleCategory.ObjectType: ...
 

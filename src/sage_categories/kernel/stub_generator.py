@@ -109,7 +109,7 @@ def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> 
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
         _project_public_exports(tree, source_tree)
         _canonicalize_imports(tree, package, canonical_exports)
-        _project_class_aliases(tree, source_tree)
+        projected_generic_aliases = _project_class_aliases(tree, source_tree)
         _project_runtime_class_aliases(tree, runtime_aliases.get(module, {}), source_modules)
         if providers:
             _project_provider_bases(tree, module, providers, source_modules, hoisted_role_providers)
@@ -126,6 +126,11 @@ def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> 
             source_modules,
         )
         _project_hoisted_role_defaults(tree, module, hoisted_role_providers)
+        _mark_projected_generic_aliases(tree, projected_generic_aliases)
+        _publicize_private_type_parameters(tree)
+        _unquote_stub_annotations(tree)
+        _normalize_stub_class_bodies(tree)
+        _localize_self_references(tree, module)
         stub_path.write_text(
             _render_stub_source(tree, package, stub_path, ruff_config),
             encoding="utf-8",
@@ -235,18 +240,34 @@ def _stub_import_groups(tree: ast.Module, package: str) -> tuple[tuple[ast.stmt,
 def _render_stub_source(tree: ast.Module, package: str, stub_path: Path, ruff_config: Path) -> str:
     """Render one projected AST once, before writing the tracked stub.
 
-    Ruff is used only as the source renderer for line wrapping and whitespace.  Import
-    presence and ordering are already fixed in the projector AST, and no lint fixer is
-    run here.  The public recipe subsequently runs both formatter and linter in
-    check-only mode against the bytes written by this function.
+    Import presence and ordering are projector-owned. Ruff's default formatter is
+    used only on that import block so its isort contract sees the same wrapped
+    representation as ``ruff check``. The complete source is then rendered with
+    the repository commit-harness formatter. No lint fixer runs at either stage.
     """
     tree = ast.fix_missing_locations(tree)
     groups = _stub_import_groups(tree, package)
     body = [statement for statement in tree.body if not isinstance(statement, ast.Import | ast.ImportFrom)]
-    chunks = ["\n".join(ast.unparse(statement) for statement in group) for group in groups]
-    if body:
-        chunks.append(ast.unparse(ast.Module(body=body, type_ignores=[])))
-    source = "\n\n".join(chunks) + "\n"
+    import_source = "\n\n".join("\n".join(ast.unparse(statement) for statement in group) for group in groups)
+    if import_source:
+        import_source += "\n"
+        imported = subprocess.run(
+            [
+                str(_ruff_executable()),
+                "format",
+                "--stdin-filename",
+                str(stub_path),
+                "-",
+            ],
+            input=import_source,
+            text=True,
+            capture_output=True,
+            check=True,
+        ).stdout.rstrip()
+    else:
+        imported = ""
+    body_source = ast.unparse(ast.Module(body=body, type_ignores=[])) if body else ""
+    source = "\n\n".join(part for part in (imported, body_source) if part) + "\n"
     completed = subprocess.run(
         [
             str(_ruff_executable()),
@@ -263,6 +284,245 @@ def _render_stub_source(tree: ast.Module, package: str, stub_path: Path, ruff_co
         check=True,
     )
     return completed.stdout
+
+
+def _mark_projected_generic_aliases(tree: ast.Module, projected_aliases: frozenset[int]) -> None:
+    """Mark projector-owned generic aliases with the strongest valid stub syntax."""
+
+    def alias_parameters(value: ast.expr) -> list[ast.type_param]:
+        if not isinstance(value, ast.Subscript):
+            return []
+        slice_items = value.slice.elts if isinstance(value.slice, ast.Tuple) else [value.slice]
+        return [ast.ParamSpec(name=expression.id, default_value=None) for expression in slice_items if isinstance(expression, ast.Name) and expression.id.startswith("_")]
+
+    def rewrite(statements: list[ast.stmt], *, nested: bool) -> None:
+        projected: list[ast.stmt] = []
+        for statement in statements:
+            if isinstance(statement, ast.ClassDef):
+                rewrite(statement.body, nested=True)
+            if isinstance(statement, ast.Assign) and id(statement) in projected_aliases:
+                assert len(statement.targets) == 1 and isinstance(statement.targets[0], ast.Name)
+                if nested:
+                    projected.append(
+                        ast.TypeAlias(
+                            name=statement.targets[0],
+                            type_params=alias_parameters(statement.value),
+                            value=statement.value,
+                        )
+                    )
+                else:
+                    projected.append(
+                        ast.AnnAssign(
+                            target=statement.targets[0],
+                            annotation=ast.Attribute(
+                                value=ast.Name(id="_typing", ctx=ast.Load()),
+                                attr="TypeAlias",
+                                ctx=ast.Load(),
+                            ),
+                            value=statement.value,
+                            simple=1,
+                        )
+                    )
+                continue
+            projected.append(statement)
+        statements[:] = projected
+
+    rewrite(tree.body, nested=False)
+
+
+def _publicize_private_type_parameters(tree: ast.Module) -> None:
+    """Rename scoped private PEP-695 parameters without changing their meaning."""
+
+    class Renamer(ast.NodeTransformer):
+        def __init__(self, names: dict[str, str]) -> None:
+            self._names = names
+
+        def visit_Name(self, node: ast.Name) -> ast.expr:
+            replacement = self._names.get(node.id)
+            if replacement is None:
+                return node
+            return ast.copy_location(ast.Name(id=replacement, ctx=node.ctx), node)
+
+    def parameter_names(parameters: list[ast.type_param]) -> dict[str, str]:
+        names = {parameter.name: parameter.name.lstrip("_") for parameter in parameters if parameter.name.startswith("_") and parameter.name.lstrip("_")}
+        assert len(set(names.values())) == len(names), "type-parameter rename collision"
+        return names
+
+    def rewrite_parameters(parameters: list[ast.type_param], renamer: Renamer, names: dict[str, str]) -> None:
+        for parameter in parameters:
+            if parameter.name in names:
+                parameter.name = names[parameter.name]
+            if isinstance(parameter, ast.TypeVar) and parameter.bound is not None:
+                parameter.bound = renamer.visit(parameter.bound)
+            if parameter.default_value is not None:
+                parameter.default_value = renamer.visit(parameter.default_value)
+
+    def rewrite_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        names = parameter_names(node.type_params)
+        if names:
+            renamer = Renamer(names)
+            rewrite_parameters(node.type_params, renamer, names)
+            node.args = renamer.visit(node.args)
+            node.returns = renamer.visit(node.returns) if node.returns is not None else None
+            node.body = [renamer.visit(statement) for statement in node.body]
+        for statement in node.body:
+            if isinstance(statement, ast.ClassDef):
+                rewrite_class(statement)
+            elif isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
+                rewrite_function(statement)
+
+    def rewrite_class(node: ast.ClassDef) -> None:
+        names = parameter_names(node.type_params)
+        if names:
+            renamer = Renamer(names)
+            rewrite_parameters(node.type_params, renamer, names)
+            node.bases = [renamer.visit(base) for base in node.bases]
+            node.keywords = [ast.keyword(arg=keyword.arg, value=renamer.visit(keyword.value)) for keyword in node.keywords]
+            node.body = [renamer.visit(statement) for statement in node.body]
+        for statement in node.body:
+            if isinstance(statement, ast.ClassDef):
+                rewrite_class(statement)
+            elif isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
+                rewrite_function(statement)
+
+    for statement in tree.body:
+        if isinstance(statement, ast.ClassDef):
+            rewrite_class(statement)
+        elif isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
+            rewrite_function(statement)
+
+
+def _unquote_stub_annotations(tree: ast.Module) -> None:
+    """Replace source forward-reference strings by their Python 3.14 type syntax."""
+
+    def dotted_name(expression: ast.expr) -> str | None:
+        if isinstance(expression, ast.Name):
+            return expression.id
+        if isinstance(expression, ast.Attribute):
+            prefix = dotted_name(expression.value)
+            if prefix is not None:
+                return f"{prefix}.{expression.attr}"
+        return None
+
+    class ForwardReferences(ast.NodeTransformer):
+        def visit_Constant(self, node: ast.Constant) -> ast.expr:
+            if not isinstance(node.value, str):
+                return node
+            try:
+                expression = ast.parse(node.value, mode="eval").body
+            except SyntaxError:
+                return node
+            return ast.copy_location(expression, node)
+
+        def visit_Subscript(self, node: ast.Subscript) -> ast.expr:
+            name = dotted_name(node.value)
+            if name is not None and name.rsplit(".", 1)[-1] == "Literal":
+                return node
+            if name is not None and name.rsplit(".", 1)[-1] == "Annotated":
+                if isinstance(node.slice, ast.Tuple) and node.slice.elts:
+                    first, *metadata = node.slice.elts
+                    node.slice = ast.Tuple(elts=[self.visit(first), *metadata], ctx=node.slice.ctx)
+                else:
+                    node.slice = self.visit(node.slice)
+                node.value = self.visit(node.value)
+                return node
+            return self.generic_visit(node)
+
+    forward = ForwardReferences()
+
+    def type_expression(expression: ast.expr | None) -> ast.expr | None:
+        return forward.visit(expression) if expression is not None else None
+
+    def type_parameters(parameters: list[ast.type_param]) -> None:
+        for parameter in parameters:
+            if isinstance(parameter, ast.TypeVar):
+                parameter.bound = type_expression(parameter.bound)
+            parameter.default_value = type_expression(parameter.default_value)
+
+    class Annotations(ast.NodeTransformer):
+        def visit_arg(self, node: ast.arg) -> ast.arg:
+            node.annotation = type_expression(node.annotation)
+            return node
+
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.stmt:
+            type_parameters(node.type_params)
+            node.returns = type_expression(node.returns)
+            return self.generic_visit(node)
+
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.stmt:
+            type_parameters(node.type_params)
+            node.returns = type_expression(node.returns)
+            return self.generic_visit(node)
+
+        def visit_ClassDef(self, node: ast.ClassDef) -> ast.stmt:
+            type_parameters(node.type_params)
+            node.bases = [type_expression(base) for base in node.bases]
+            return self.generic_visit(node)
+
+        def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.stmt:
+            node.annotation = type_expression(node.annotation)
+            return self.generic_visit(node)
+
+        def visit_TypeAlias(self, node: ast.TypeAlias) -> ast.stmt:
+            type_parameters(node.type_params)
+            node.value = type_expression(node.value)
+            return self.generic_visit(node)
+
+    Annotations().visit(tree)
+
+
+def _normalize_stub_class_bodies(tree: ast.Module) -> None:
+    """Use exactly one ellipsis for an otherwise empty generated class body."""
+
+    def is_ellipsis(statement: ast.stmt) -> bool:
+        return isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Constant) and statement.value.value is Ellipsis
+
+    def rewrite(node: ast.ClassDef) -> None:
+        for statement in node.body:
+            if isinstance(statement, ast.ClassDef):
+                rewrite(statement)
+        if len(node.body) > 1:
+            node.body = [statement for statement in node.body if not is_ellipsis(statement)]
+        if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
+            node.body[0] = ast.Expr(value=ast.Constant(value=Ellipsis))
+
+    for statement in tree.body:
+        if isinstance(statement, ast.ClassDef):
+            rewrite(statement)
+
+
+def _localize_self_references(tree: ast.Module, module: str) -> None:
+    """Use local declarations instead of importing the generated module from itself."""
+
+    def dotted_name(expression: ast.expr) -> str | None:
+        if isinstance(expression, ast.Name):
+            return expression.id
+        if isinstance(expression, ast.Attribute):
+            prefix = dotted_name(expression.value)
+            if prefix is not None:
+                return f"{prefix}.{expression.attr}"
+        return None
+
+    class Localizer(ast.NodeTransformer):
+        def visit_Attribute(self, node: ast.Attribute) -> ast.expr:
+            name = dotted_name(node)
+            prefix = f"{module}."
+            if name is not None and name.startswith(prefix):
+                local = ast.parse(name[len(prefix) :], mode="eval").body
+                return ast.copy_location(local, node)
+            return self.generic_visit(node)
+
+    Localizer().visit(tree)
+    rewritten: list[ast.stmt] = []
+    for statement in tree.body:
+        if not isinstance(statement, ast.Import):
+            rewritten.append(statement)
+            continue
+        names = [alias for alias in statement.names if alias.name != module]
+        if names:
+            statement.names = names
+            rewritten.append(statement)
+    tree.body[:] = rewritten
 
 
 def _remove_non_projection_stubs(
@@ -1237,7 +1497,7 @@ def _canonicalize_imports(
 def _project_class_aliases(
     tree: ast.Module,
     source: ast.Module,
-) -> None:
+) -> frozenset[int]:
     """Project runtime generic class aliases as legacy generic aliases.
 
     ``stubgen`` writes ``Category = CategoryDeclaration`` as an inferred alias.
@@ -1274,6 +1534,7 @@ def _project_class_aliases(
         )
 
     used: set[str] = set()
+    projected_aliases: set[int] = set()
 
     def project(statements: list[ast.stmt]) -> None:
         rewritten: list[ast.stmt] = []
@@ -1286,6 +1547,7 @@ def _project_class_aliases(
                 declaration = alias_declaration(statement.value)
                 if declaration is not None:
                     statement.value = projected_value(declaration)
+                    projected_aliases.add(id(statement))
                     used.add(declaration)
                 rewritten.append(statement)
                 continue
@@ -1293,19 +1555,19 @@ def _project_class_aliases(
                 declaration = alias_declaration(statement.value)
                 if declaration is not None and isinstance(statement.name, ast.Name):
                     used.add(declaration)
-                    rewritten.append(
-                        ast.Assign(
-                            targets=[ast.Name(id=statement.name.id, ctx=ast.Store())],
-                            value=projected_value(declaration),
-                        )
+                    projected = ast.Assign(
+                        targets=[ast.Name(id=statement.name.id, ctx=ast.Store())],
+                        value=projected_value(declaration),
                     )
+                    projected_aliases.add(id(projected))
+                    rewritten.append(projected)
                     continue
             rewritten.append(statement)
         statements[:] = rewritten
 
     project(tree.body)
     if not used:
-        return
+        return frozenset(projected_aliases)
 
     has_typing_import = any(
         isinstance(statement, ast.Import) and any(alias.name == "typing" and alias.asname == "_typing" for alias in statement.names) for statement in tree.body
@@ -1339,6 +1601,7 @@ def _project_class_aliases(
             )
             existing_names.add(name)
     tree.body[:] = rewritten
+    return frozenset(projected_aliases)
 
 
 def _source_symbol_tables(

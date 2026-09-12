@@ -3,7 +3,6 @@ from collections.abc import Callable
 from _typeshed import Incomplete
 
 import sage_categories.cat.properties
-import sage_categories.order.posets
 import sage_categories.sets.finite
 from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
@@ -67,14 +66,12 @@ class BinaryRelationsCategory(
     def composite(self, second: BinaryRelationsCategory.MorphismType, first: BinaryRelationsCategory.MorphismType) -> BinaryRelationsCategory.MorphismType: ...
 
 class _StaticRoles_PosetsCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
-    class ObjectType(sage_categories.order.posets._StaticRoles_BinaryRelationsCategory.ObjectType): ...
+    class ObjectType(_StaticRoles_BinaryRelationsCategory.ObjectType): ...
 
-    class ElementType(sage_categories.order.posets._StaticRoles_BinaryRelationsCategory.ElementType):
+    class ElementType(_StaticRoles_BinaryRelationsCategory.ElementType):
         def __le__(self, other: CategoryOfCategories.ElementType) -> Proposition: ...
 
-    class MorphismType(sage_categories.order.posets._StaticRoles_BinaryRelationsCategory.MorphismType):
-        ...
-
+    class MorphismType(_StaticRoles_BinaryRelationsCategory.MorphismType):
         def domain(self) -> PosetsCategory.ObjectType: ...
         def codomain(self) -> PosetsCategory.ObjectType: ...
 

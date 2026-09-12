@@ -19,7 +19,9 @@ from sage_categories.cat.cones import cones as cones
 from sage_categories.cat.cones import limit_cones as limit_cones
 from sage_categories.cat.cones import vertex_of as vertex_of
 from sage_categories.cat.diagrams import from_sequence as from_sequence
-from sage_categories.cat.dual_functor_categories import dual_functor_category_equivalence as dual_functor_category_equivalence
+from sage_categories.cat.dual_functor_categories import (
+    dual_functor_category_equivalence as dual_functor_category_equivalence,
+)
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
@@ -29,7 +31,9 @@ from sage_categories.cat.predicates import Unknown as Unknown
 from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.properties import PredicateSubcategory as PredicateSubcategory
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
-from sage_categories.cat.universal_arrows import RightUniversalArrows as RightUniversalArrows
+from sage_categories.cat.universal_arrows import (
+    RightUniversalArrows as RightUniversalArrows,
+)
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.refinement import is_subcategory as is_subcategory
 from sage_categories.kernel.refinement import refine as refine
@@ -56,7 +60,7 @@ __all__ = [
     "vertex_of",
 ]
 type Mediator = Callable[[NaturalTransformation], MorphismCategory.ObjectType]
-type Construction = Callable[[Functor], "CategoryOfCategories.ElementType"]
+type Construction = Callable[[Functor], CategoryOfCategories.ElementType]
 type UniversalPresentation = LimitConesCategory.ObjectType
 
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category: ...
@@ -66,18 +70,16 @@ class _StaticRoles_ApexCategory(sage_categories.cat.properties._StaticRoles_Prop
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> ApexCategory.ObjectType: ...
         def codomain(self) -> ApexCategory.ObjectType: ...
 
 class ApexCategory[
     **MorphismData,
     **TwoMorphismData,
-    _ObjectRole = _StaticRoles_ApexCategory.ObjectType,
-    _ElementRole = _StaticRoles_ApexCategory.ElementType,
-    _MorphismRole = _StaticRoles_ApexCategory.MorphismType,
-](_StaticRoles_ApexCategory, PropertySubcategory[MorphismData, TwoMorphismData, _ObjectRole, _ElementRole, _MorphismRole]):
+    ObjectRole = _StaticRoles_ApexCategory.ObjectType,
+    ElementRole = _StaticRoles_ApexCategory.ElementType,
+    MorphismRole = _StaticRoles_ApexCategory.MorphismType,
+](_StaticRoles_ApexCategory, PropertySubcategory[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]):
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], name: str, full_subcategory_of: tuple[Category, ...]) -> None: ...
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...
     def accepts(self, diagram: Functor, shape: Category) -> None: ...
@@ -99,8 +101,6 @@ class _StaticRoles_LimitsCategory(_StaticRoles_ApexCategory):
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.MorphismType):
-        ...
-
         def domain(self) -> LimitsCategory.ObjectType: ...
         def codomain(self) -> LimitsCategory.ObjectType: ...
 
@@ -130,8 +130,6 @@ class _StaticRoles_ProductsCategory(sage_categories.cat.properties._StaticRoles_
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.MorphismType):
-        ...
-
         def domain(self) -> ProductsCategory.ObjectType: ...
         def codomain(self) -> ProductsCategory.ObjectType: ...
 
@@ -161,8 +159,6 @@ class _StaticRoles_ColimitsCategory(sage_categories.cat.properties._StaticRoles_
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> ColimitsCategory.ObjectType: ...
         def codomain(self) -> ColimitsCategory.ObjectType: ...
 
@@ -199,8 +195,6 @@ class _StaticRoles_CoproductsCategory(sage_categories.cat.properties._StaticRole
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
     class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        ...
-
         def domain(self) -> CoproductsCategory.ObjectType: ...
         def codomain(self) -> CoproductsCategory.ObjectType: ...
 

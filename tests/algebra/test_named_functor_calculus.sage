@@ -31,6 +31,8 @@ def test_named_restriction_retains_renaming_and_both_actions() -> None:
     restriction = named_monoids.to_named_magmas()
     neutral_restriction = Monoids(structure).to_magmas()
     assert restriction is magma_projection.inverse() * neutral_restriction * projection
+    assert ask(restriction.is_isofibrations()) is True
+    assert Fun.declares_inheritance(restriction)
     assert named_magmas.to_carrier() is named_magmas.neutral_category().forgetful() * magma_projection
     assert named_monoids.Commutative() is projection.inverse_image(Monoids(structure).Commutative())
     assert named_monoids.Group() is projection.inverse_image(Monoids(structure).Group())

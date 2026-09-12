@@ -474,7 +474,7 @@ class Axiom:
             defining_functor = category.subcategory_monomorphism()
             if declared_axiom(defining_functor.codomain(), self._name) is self:
                 return defining_functor.inverse_image(self._declared_on(defining_functor.codomain(), *parameters))
-        if getattr(type(category), self._name, None) is not self:
+        if _class_declaration(category, self._name) is not self:
             from sage_categories.cat.functors import Fun
             from sage_categories.cat.properties import retain_inverse_image
 
@@ -578,6 +578,15 @@ class ConstructionFamily(Axiom):
         return self._construct_declared(category, *parameters)
 
 
+def _class_declaration(category: Category, name: str) -> object | None:
+    """The first declaration named ``name`` in the runtime class MRO, without dynamic probing."""
+    for owner in type(category).__mro__:
+        namespace = vars(owner)
+        if name in namespace:
+            return namespace[name]
+    return None
+
+
 def declared_axiom(category: Category, name: str) -> Axiom | None:
     """The axiom ``category`` supplies under ``name``, declared on it or reached from its ambient (D77 item 4).
 
@@ -588,10 +597,12 @@ def declared_axiom(category: Category, name: str) -> Axiom | None:
     the walk follows it, and the name is the one the declaring category writes, exactly as
     a role is (``Category.local_role_class``, ``POL-KERNEL-028``).
     """
-    declared = getattr(type(category), name, None)
+    declared = _class_declaration(category, name)
     if isinstance(declared, Axiom):
         return declared
-    for functor in vars(category).get("_selected_functors", ()):
+    state = vars(category)
+    selected_functors = state["_selected_functors"] if "_selected_functors" in state else ()
+    for functor in selected_functors:
         target = functor.codomain()
         if target is category:
             continue

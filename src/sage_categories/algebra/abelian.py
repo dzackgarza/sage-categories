@@ -568,7 +568,12 @@ def _linear_homomorphism(
     renaming = AdditiveGroups(structure).product_projection(0)
     carrier_map = Mor(Sets)(_points(source), _points(target))(form)
     monoid_map = Monoids(structure).homomorphism(renaming.on_object(source), renaming.on_object(target), carrier_map)
-    return AdditiveGroups(structure).homomorphism(source, target, monoid_map)
+    arrow = AdditiveGroups(structure).homomorphism(source, target, monoid_map)
+    # Presented homomorphisms live in the exact commutative-group owner, not merely
+    # in the ambient additive-group category.  Universal constructions such as the
+    # retained Ab coequalizer recover their diagram owner from the arrows themselves.
+    refine(arrow, Mor(AbelianGroups())(source, target))
+    return arrow
 
 
 def linear_form(arrow: MorphismCategory.ObjectType) -> LinearForm:

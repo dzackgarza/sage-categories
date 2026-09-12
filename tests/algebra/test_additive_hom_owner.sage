@@ -18,6 +18,7 @@ def test_additive_hom_owner_and_forgetful_image() -> None:
 
     reduction = abelian_homomorphism(integers, cyclic, lambda value: 3 * value * generator)
     assert reduction in Mor(abelian)(integers, cyclic)
+    assert reduction.base_category() is abelian
     assert reduction.domain() is integers
     assert reduction.codomain() is cyclic
 

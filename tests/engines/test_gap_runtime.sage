@@ -11,9 +11,9 @@ from sage_categories.engines.gap import (
 for packages in (FINITE_SETS_PACKAGES, PRESENTED_MODULE_PACKAGES):
     expected = tuple(package_directory(package) for package in packages)
     records = load_packages(packages)
-    assert tuple(str(info.Version) for info in records) == tuple(
+    assert tuple(str(info["Version"]) for info in records) == tuple(
         package.version for package in packages
     )
-    assert tuple(str(info.InstallationPath).rstrip("/") for info in records) == tuple(
+    assert tuple(str(info["InstallationPath"]).rstrip("/") for info in records) == tuple(
         str(path) for path in expected
     )

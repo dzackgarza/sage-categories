@@ -256,12 +256,6 @@ def evaluate_path(
     """Compose a retained semantic path through DisCoPy's native arrow evaluator."""
     cat = _discopy_cat()
     category, ObjectValue, ArrowValue = _path_semantic_category(identity, compose)
-    objects: MonoDict = MonoDict()
-
-    def ob(value: object) -> ObjectValue:
-        if value not in objects:
-            objects[value] = ObjectValue(value)
-        return objects[value]
 
     targets = tuple(arrow.codomain() for arrow in arrows)
     chain = (domain, *targets)
@@ -278,8 +272,8 @@ def evaluate_path(
         for index, (source, target, arrow) in enumerate(zip(chain, chain[1:], arrows, strict=True))
     )
     functor = cat.Functor(
-        lambda token: ob(token_values[token.name]),
-        lambda box: ArrowValue(ob(box.data.domain()), ob(box.data.codomain()), box.data),
+        lambda token: ObjectValue(token_values[token.name]),
+        lambda box: ArrowValue(ObjectValue(box.data.domain()), ObjectValue(box.data.codomain()), box.data),
         cod=category,
     )
     if not boxes:

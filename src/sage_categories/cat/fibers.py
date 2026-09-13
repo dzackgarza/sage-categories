@@ -17,7 +17,8 @@ from typing import TYPE_CHECKING
 from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Cat, Functor
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import cached_function
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -54,9 +55,7 @@ class FiberCategory(LimitSubcategory):
         return f"{self._defining_functor!r}.Fiber({self._base_object!r})"
 
 
-_fibers: MonoDict = MonoDict()
-
-
+@cached_function(key=identity_key)
 def fiber(
     defining_functor: Functor,
     base_object: CategoryOfCategories.ElementType,
@@ -64,17 +63,12 @@ def fiber(
     """Return the retained strict fiber of ``defining_functor`` over ``base_object``."""
     base = defining_functor.codomain()
     assert base_object in base, f"{base_object!r} is not an object of {base!r}"
-    if defining_functor not in _fibers:
-        _fibers[defining_functor] = MonoDict()
-    retained = _fibers[defining_functor]
-    if base_object not in retained:
-        diagram = cospan_diagram(Cat(), defining_functor, base.point_functor(base_object))
-        result = limit_of_categories(
-            diagram,
-            Cat().Pullbacks(),
-            partial(FiberCategory, defining_functor=defining_functor, base_object=base_object),
-        )
-        assert isinstance(result, FiberCategory)
-        result.inclusion()
-        retained[base_object] = result
-    return retained[base_object]
+    diagram = cospan_diagram(Cat(), defining_functor, base.point_functor(base_object))
+    result = limit_of_categories(
+        diagram,
+        Cat().Pullbacks(),
+        partial(FiberCategory, defining_functor=defining_functor, base_object=base_object),
+    )
+    assert isinstance(result, FiberCategory)
+    result.inclusion()
+    return result

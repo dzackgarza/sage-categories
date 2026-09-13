@@ -27,6 +27,14 @@ __all__ = [
 ]
 
 
+def _retained_object_image(
+    defining_functor: Functor,
+    candidate: CategoryOfCategories.ElementType,
+) -> bool | None:
+    """Whether ``candidate`` is already retained as an exact object image of ``defining_functor``."""
+    return True if defining_functor._image_cache.has_object_image(candidate) else None
+
+
 class ImageMorphismCategory[**MorphismData, **TwoMorphismData](MorphismCategory[MorphismData, TwoMorphismData]):
     """The morphisms retained by a strict or full image."""
 
@@ -106,9 +114,7 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        if self._defining_functor._image_cache.has_object_image(candidate):
-            return True
-        return None
+        return _retained_object_image(self._defining_functor, candidate)
 
     def _morphism_membership(
         self,
@@ -272,9 +278,7 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](PredicateSubcate
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        if self._defining_functor._image_cache.has_object_image(candidate):
-            return True
-        return None
+        return _retained_object_image(self._defining_functor, candidate)
 
     def object_image(
         self,

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import partial
 from inspect import get_annotations, signature
+from types import MethodType
 from itertools import count
 from typing import TYPE_CHECKING, Annotated, Self, get_origin
 
@@ -190,7 +191,7 @@ def _owned_argument(argument: Basic) -> Argument:
 
 def _handler_domains(handler: PredicateHandler | QueryHandler) -> tuple[type, ...]:
     annotations = get_annotations(handler)
-    function = handler.__func__ if hasattr(handler, "__func__") else handler
+    function = handler.__func__ if isinstance(handler, MethodType) else handler
     namespace = dict(function.__globals__)
     domains: list[type] = []
     for parameter in signature(handler).parameters.values():

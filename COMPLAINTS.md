@@ -1652,9 +1652,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-binary-relations-public-surface`. Route those operations through the existing accessors and ordinary owned set-map application.
 
-
 ## Exact rational embedding silently replaced unresolved values by zero
 
-- **Evidence and impact:** `ExactLocalFieldPresentation.embed_rational()` used `rational_value() or Fraction(0)`, so any source value without a rational payload would be embedded as zero. The source object is the exact rational field, so unresolved/non-rational input is an invariant violation, not a defaultable value.
+- **Evidence and impact:** `ExactLocalFieldPresentation.embed_rational()` used `rational_value() or Fraction(0)`, so any source value without a rational payload would be embedded as zero.
+  The source object is the exact rational field, so unresolved/non-rational input is an invariant violation, not a defaultable value.
 
 - **Repair link and acceptance:** `bloat-local-field-rational-embedding-fallback`. Extract the rational payload explicitly, assert it exists, and embed exactly that value.
+
+
+## Runtime reflection used generic attribute probes where representations are fixed
+
+- **Evidence and impact:** `CategoryDeclaration.__init__()` used `hasattr(self, "_ordinal")` to detect an already initialized owned category, and predicate-domain extraction used `hasattr(handler, "__func__")` to distinguish bound methods. Both representations are fixed locally: initialized category state lives in the instance namespace and bound handlers are Python `MethodType` objects. Generic probing makes unrelated descriptors participate in control flow.
+
+- **Repair link and acceptance:** `bloat-runtime-reflection-probes`. Use exact instance-namespace membership for category state and `MethodType` for bound-handler recognition.

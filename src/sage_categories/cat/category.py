@@ -250,7 +250,7 @@ class CategoryDeclaration[
     _constructs_from_diagrams: ClassVar[bool] = False
 
     def __init__(self, data: None = None) -> None:
-        if hasattr(self, "_ordinal"):
+        if "_ordinal" in vars(self):
             return
         if not any(all(name in vars(found) for name in ("ObjectType", "ElementType", "MorphismType")) for found in type(self).__mro__):
             return

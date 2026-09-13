@@ -23,6 +23,7 @@ morphisms of the fixed-endpoint functor category ``Fun(C, E)``.
 
 from __future__ import annotations
 
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 from sage_categories.cat.cones import cocone, cocones, cone, cones
@@ -55,6 +56,13 @@ def _kan_adjunction_runtime():
     from sage_categories.cat.morphisms import Mor
 
     return precompose, comma_objects, Mor
+
+
+def _universal_arrows() -> ModuleType:
+    """Load universal-arrow categories at the cycle-safe Kan/adjunction boundary."""
+    from sage_categories.cat import universal_arrows
+
+    return universal_arrows
 
 
 def _kan_presentation(
@@ -229,12 +237,8 @@ def left_kan_desc(
 @cached_function(key=identity_key)
 def right_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategories.ElementType:
     """The adjunction ``K* ⊣ Ran_K``, including the action on transformations."""
-    from sage_categories.cat.universal_arrows import (
-        RightUniversalArrows,
-        TerminalObjects,
-    )
-
     precompose, comma_objects, Mor = _kan_adjunction_runtime()
+    universal = _universal_arrows()
     restriction = precompose(along, values)
     star = _star()
     identity = Mor(Cat().Terminal())(star, star).one()
@@ -242,7 +246,7 @@ def right_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategori
     def choose(functor: Functor) -> CategoryOfCategories.ElementType:
         comma = comma_objects(restriction, restriction.codomain().point_functor(functor))
         value = comma.from_arrow(right_kan_extension(along, functor), star, right_kan_counit(along, functor))
-        return TerminalObjects(comma)(
+        return universal.TerminalObjects(comma)(
             value,
             lambda candidate: comma.morphism_from_pair(
                 candidate,
@@ -252,15 +256,14 @@ def right_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategori
             ),
         )
 
-    return RightUniversalArrows(restriction, choose).adjunction()
+    return universal.RightUniversalArrows(restriction, choose).adjunction()
 
 
 @cached_function(key=identity_key)
 def left_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategories.ElementType:
     """The adjunction ``Lan_K ⊣ K*``, including the action on transformations."""
-    from sage_categories.cat.universal_arrows import InitialObjects, LeftUniversalArrows
-
     precompose, comma_objects, Mor = _kan_adjunction_runtime()
+    universal = _universal_arrows()
     restriction = precompose(along, values)
     star = _star()
     identity = Mor(Cat().Terminal())(star, star).one()
@@ -268,7 +271,7 @@ def left_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategorie
     def choose(functor: Functor) -> CategoryOfCategories.ElementType:
         comma = comma_objects(restriction.codomain().point_functor(functor), restriction)
         value = comma.from_arrow(star, left_kan_extension(along, functor), left_kan_unit(along, functor))
-        return InitialObjects(comma)(
+        return universal.InitialObjects(comma)(
             value,
             lambda candidate: comma.morphism_from_pair(
                 value,
@@ -278,4 +281,4 @@ def left_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategorie
             ),
         )
 
-    return LeftUniversalArrows(restriction, choose).adjunction()
+    return universal.LeftUniversalArrows(restriction, choose).adjunction()

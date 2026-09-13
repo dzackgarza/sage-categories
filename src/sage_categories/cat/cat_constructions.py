@@ -74,7 +74,7 @@ from sage_categories.cat.shapes import (
 )
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.retention import complete_constructions, deferred_category, identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
+from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -605,7 +605,6 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
 
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
-        self._objects: TripleDict = TripleDict(weak_values=False)
         super().__init__()
         register_handler(self._equality, self._equal)
 
@@ -650,10 +649,16 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
         """``Q(i, x)``: the object of the ``i``-th summand tagged by ``i``, retained per pair."""
         tag = vertex_of(self.shape(), index)
         assert member_object in self.summand(tag), f"{member_object!r} is not an object of {self.summand(tag)!r}"
-        key = (tag, member_object, self)
-        if key not in self._objects:
-            self._objects[key] = self.ObjectType(_TaggedObjectData(tag, member_object))
-        return self._objects[key]
+        return self._tagged_object(tag, member_object)
+
+    @cached_method(key=lambda self, tag, member_object: identity_key(tag, member_object))
+    def _tagged_object(
+        self,
+        tag: CategoryOfCategories.ElementType,
+        member_object: CategoryOfCategories.ElementType,
+    ) -> _TaggedCategory.ObjectType:
+        """The retained tagged object for one exact index/member pair."""
+        return self.ObjectType(_TaggedObjectData(tag, member_object))
 
     def construct_morphism(
         self,

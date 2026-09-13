@@ -1870,3 +1870,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `FinitePresentedCategory.construct_morphism()` maintained `_paths` and open-coded lookup/construct/store under the already-canonical mathematical key `(source label, reduced word)`. The reduction and endpoint validation are genuine mathematics; the dictionary lifecycle is not, and Sage `cached_method` can retain exactly one result for that canonical key.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Keep validation and native reduction in `construct_morphism`, move reduced-path construction to a cached helper keyed by source label and reduced word, and remove `_paths`.
+
+## Tagged coproduct objects hand-rolled a two-argument identity cache
+
+- **Evidence and impact:** `_TaggedCategory(index, member)` normalized the public index to a retained shape vertex, then stored the resulting tagged object in `_objects: TripleDict` with explicit lookup/construct/store. The retained object is determined solely by the exact normalized tag and member identities, and the module already carries the repository `identity_key`/`cached_method` machinery.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Keep public index normalization and summand membership checks in `__call__`, cache the normalized tag/member construction in a private identity-keyed method, and remove `_objects` plus the now-unused `TripleDict` import.

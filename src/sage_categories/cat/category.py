@@ -641,7 +641,6 @@ class CategoryDeclaration[
         inverse and is placed in ``Mor(self).Automorphisms()`` by construction
         (POL-CAT-079/081).
         """
-        from sage_categories.kernel.refinement import refine
 
         if member_object not in self._identities:
             identity = self.construct_identity(member_object)
@@ -672,7 +671,6 @@ class CategoryDeclaration[
         backward: MorphismRole,
     ) -> None:
         """Record two morphisms as mutually inverse; both enter ``Mor(self).Isomorphisms()`` (POL-MATH-037)."""
-        from sage_categories.kernel.refinement import refine
 
         self._inverses[forward] = backward
         self._inverses[backward] = forward
@@ -704,7 +702,6 @@ class CategoryDeclaration[
         ``Mor(self)(B, A).Isomorphisms()`` by ``_symbolic_inverse_`` and whose equations
         hold by placement (``specs/undecidable-properties.md``, isomorphism inversion).
         """
-        from sage_categories.kernel.refinement import refine
 
         if morphism in self._inverses:
             return self._inverses[morphism]
@@ -746,7 +743,6 @@ class CategoryDeclaration[
         **kwargs: MorphismData.kwargs,
     ) -> MorphismRole:
         """The morphism ``domain -> codomain`` this category's morphism data names."""
-        from sage_categories.kernel.refinement import refine
 
         if self.has_full_ambient():
             morphism = self.ambient().construct_morphism(domain, codomain, *args, **kwargs)
@@ -760,7 +756,6 @@ class CategoryDeclaration[
         A subcategory contains the identities of its objects, full or not, so the guard
         is the ambient itself and the ambient's identity refines into this category.
         """
-        from sage_categories.kernel.refinement import refine
 
         if self.has_ambient():
             ambient = self.ambient()
@@ -777,7 +772,6 @@ class CategoryDeclaration[
         determined by ``g`` and ``f`` and not by ``dom f`` and ``cod g``, so the
         composite is retained on the pair and retains the pair as its factors (D44).
         """
-        from sage_categories.kernel.refinement import refine
 
         assert first.codomain() is second.domain(), (
             f"{second!r} after {first!r} is not composable: the first ends at {first.codomain()!r} and the second starts at {second.domain()!r}"
@@ -797,7 +791,6 @@ class CategoryDeclaration[
         return self._composites[key]
 
     def identity_two_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        from sage_categories.kernel.refinement import refine
 
         if self.has_full_ambient():
             two_cell = self.ambient().identity_two_morphism(morphism)
@@ -811,7 +804,6 @@ class CategoryDeclaration[
         return two_cell
 
     def compose_two_morphisms(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        from sage_categories.kernel.refinement import refine
 
         if self.has_full_ambient():
             two_cell = self.ambient().compose_two_morphisms(second, first)
@@ -832,7 +824,6 @@ class CategoryDeclaration[
         *args: TwoMorphismData.args,
         **kwargs: TwoMorphismData.kwargs,
     ) -> MorphismCategory.ObjectType:
-        from sage_categories.kernel.refinement import refine
 
         if self.has_full_ambient():
             two_cell = self.ambient().construct_two_morphism(first, second, *args, **kwargs)
@@ -1993,7 +1984,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def construct_identity(self, category: CategoryOfCategories.ObjectType) -> CategoryOfCategories.MorphismType:
         Fun = _functors()
         catlab = _catlab_engine()
-        from sage_categories.kernel.refinement import refine
 
         def on_object(
             value: CategoryOfCategories.ElementType,
@@ -2032,7 +2022,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     ) -> CategoryOfCategories.MorphismType:
         """``second * first``: the composite functor, rules composed (Mathlib ``Functor.comp``)."""
         Fun = _functors()
-        from sage_categories.kernel.refinement import refine
 
         assert first in self.morphism_category(1) and second in self.morphism_category(1)
         assert first.codomain() is second.domain()

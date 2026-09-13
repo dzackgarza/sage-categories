@@ -892,3 +892,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `Cat()` imported `cat.canonical` independently for presented categories, the initial category, simplices, boundaries, horns, the walking isomorphism, and the walking parallel pair. Those imports are deliberately delayed until the `Cat` owner exists, but seven constructors repeated the same bootstrap boundary.
 
 - **Repair link and acceptance:** `bloat-category-canonical-boundary`. Put the delayed canonical-constructor module behind `_canonical_categories()` and route every canonical `Cat()` constructor through that owner.
+
+## Category core re-imported refinement despite a module-level binding
+
+- **Evidence and impact:** `cat/category.py` already imports `refine` with `is_placed` and `is_subcategory` at module scope, but eleven identity, inverse, morphism, 2-cell, functor-identity, and functor-composition methods re-imported `refine` locally. Those imports neither break a cycle nor defer an absent dependency; they duplicate the binding the module already established.
+
+- **Repair link and acceptance:** `bloat-category-refine-reimports`. Delete every function-local `refine` import from `cat/category.py` and use the existing module-level binding throughout category-core execution.

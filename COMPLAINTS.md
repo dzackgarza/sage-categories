@@ -874,3 +874,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/category.py` imported `finite_category` independently in `morphisms()` and `hom_morphisms()` after the primary morphism-set query failed to provide an exact set. Both paths invoke the same finite structural evaluator and keep it delayed only to avoid the category/evaluator bootstrap cycle.
 
 - **Repair link and acceptance:** `bloat-category-finite-evaluator-boundary`. Put the delayed evaluator behind `_finite_category_data()` and let both finite morphism-query fallbacks share it.
+
+## Category core repeated the functor-category bootstrap import
+
+- **Evidence and impact:** `cat/category.py` imported `Fun` independently in ten methods spanning structural-declaration queries, exponentials, point/arrow functors, restriction/lift registration, identities, and composition. All ten imports serve the same deliberate bootstrap rule: `Fun` cannot be imported until the core category declaration exists. Repeating the cycle break across the core obscured that single dependency boundary.
+
+- **Repair link and acceptance:** `bloat-category-functor-boundary`. Put the delayed functor-category owner behind `_functors()` and route every exact `Fun` import in `cat/category.py` through that one bootstrap boundary.

@@ -156,6 +156,13 @@ def _morphism_set() -> Query:
     return query
 
 
+def _functors():
+    """Load the functor-category owner after ``Category`` is available to bootstrap it."""
+    from sage_categories.cat.functors import Fun as functor_categories
+
+    return functor_categories
+
+
 def _declares_subcategory(functor: MorphismCategory.ObjectType) -> bool:
     """Whether ``functor`` is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
 
@@ -164,7 +171,7 @@ def _declares_subcategory(functor: MorphismCategory.ObjectType) -> bool:
     because it is built from this one, and a category with no selected functor asks
     nothing: that is the window the bootstrap runs in.
     """
-    from sage_categories.cat.functors import Fun
+    Fun = _functors()
 
     return Fun.declares_subcategory(functor)
 
@@ -175,7 +182,7 @@ def _declares_point(functor: MorphismCategory.ObjectType) -> bool:
     Read the same way and for the same reason as ``_declares_subcategory``: the
     declaration is the property category ``C.Point()`` constructed the arrow in.
     """
-    from sage_categories.cat.functors import Fun
+    Fun = _functors()
 
     return Fun.declares_point(functor)
 
@@ -188,7 +195,7 @@ def _declares_implementation(functor: MorphismCategory.ObjectType) -> Category |
     and nothing else.  Every other structure functor starts at the category under
     construction, and a point functor starts at the terminal category.
     """
-    from sage_categories.cat.functors import Fun
+    Fun = _functors()
 
     domain = functor.domain()
     if domain is not functor.codomain():
@@ -286,7 +293,7 @@ class CategoryDeclaration[
 
     def __pow__(self, exponent: Category) -> Category:
         """``D ** C = Fun(C, D)``: the functor category."""
-        from sage_categories.cat.functors import Fun
+        Fun = _functors()
 
         return Fun(exponent, self)
 
@@ -846,7 +853,7 @@ class CategoryDeclaration[
         lift to in ``*``, so the arrow is not an isofibration.  Its fullness, which holds
         exactly when ``member_object`` has no nonidentity endomorphism, is not declared.
         """
-        from sage_categories.cat.functors import Fun
+        Fun = _functors()
 
         if member_object not in self._points:
             # The identity is the morphism action's own result, computed when the action
@@ -878,7 +885,7 @@ class CategoryDeclaration[
 
     def arrow_functor(self, morphism: MorphismRole) -> Functor:
         """The diagram ``[1] -> self`` of shape the walking arrow that ``morphism`` denotes."""
-        from sage_categories.cat.functors import Fun
+        Fun = _functors()
 
         if morphism in self._arrows:
             return self._arrows[morphism]
@@ -1717,7 +1724,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             The caller supplies the factorization theorem; the actions retain its exact target placement.
             See Mathlib CategoryTheory.Functor.factorization through a full subcategory.
             """
-            from sage_categories.cat.functors import Fun
+            Fun = _functors()
 
             assert is_subcategory(source, self.domain())
             assert is_subcategory(target, self.codomain())
@@ -1764,7 +1771,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             Existence of these lifts is the supplied mathematical theorem;
             faithfulness makes their cone equations and uniqueness follow.
             """
-            from sage_categories.cat.functors import Fun
+            Fun = _functors()
             from sage_categories.cat.shapes import Discrete
 
             assert self in Fun.Faithful(), "limit reconstruction requires a faithful functor"
@@ -1963,7 +1970,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         return by_morphism_action[on_morphism]
 
     def construct_identity(self, category: CategoryOfCategories.ObjectType) -> CategoryOfCategories.MorphismType:
-        from sage_categories.cat.functors import Fun
+        Fun = _functors()
         from sage_categories.engines import catlab
         from sage_categories.kernel.refinement import refine
 
@@ -2003,7 +2010,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         first: CategoryOfCategories.MorphismType,
     ) -> CategoryOfCategories.MorphismType:
         """``second * first``: the composite functor, rules composed (Mathlib ``Functor.comp``)."""
-        from sage_categories.cat.functors import Fun
+        Fun = _functors()
         from sage_categories.kernel.refinement import refine
 
         assert first in self.morphism_category(1) and second in self.morphism_category(1)

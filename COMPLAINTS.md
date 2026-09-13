@@ -652,3 +652,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/monoidal.py::Cartesian` assembled the selected monoidal structure while also containing full associator rebracketing and two nearly identical left/right unitor native/fallback implementations. This made the constructor a 22-complexity owner for both declaration and execution details.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Move associator and shared unitor component execution to private helpers; leave `Cartesian` responsible only for assembling the tensor, unit, and natural isomorphisms from those component owners.
+
+## Presented-colimit construction mixed every lowering phase in one function
+
+- **Evidence and impact:** `cat/presented_colimits.py::presented_colimit_in_opposite` combined finite-shape extraction, object-class lowering, coproduct generator provenance, diagram-relation generation, injection reconstruction, quotient representatives, and mediator reconstruction in one 20-complexity function. Each phase has a different invariant and engine boundary, so one edit required reasoning across the entire pipeline.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Give each lowering/reconstruction phase a named private owner and leave `presented_colimit_in_opposite` as the orchestration that connects their retained data and installs the final universal presentation.

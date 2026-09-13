@@ -15,68 +15,47 @@ from sage_categories.engines import category_limits, catlab
 __all__ = ["presented_colimit_in_opposite"]
 
 
-def presented_colimit_in_opposite(
-    dual_diagram: Functor,
-) -> CategoryOfCategories.ElementType:
-    """Selected finite presented colimit, computed by native presentation engines."""
-    diagram = dual_diagram.op()
-    shape = diagram.domain()
-    if isinstance(shape, FinitePresentedCategory):
-        vertices = tuple(shape(label) for label in shape.labels())
-        edges = shape.generating_morphisms()
-    else:
-        finite = finite_category(shape)
-        assert finite is not Unknown, (
-            "colimit evaluation requires an exact finite index category"
-        )
-        vertices, edges = finite.objects, finite.morphisms
+def _finite_shape_data(
+    shape: CategoryOfCategories.ElementType,
+) -> tuple[
+    tuple[CategoryOfCategories.ElementType, ...],
+    tuple[MorphismCategory.ObjectType, ...],
+]:
+    """The exact finite vertices and arrows of one colimit indexing shape."""
+    match shape:
+        case FinitePresentedCategory():
+            return tuple(shape(label) for label in shape.labels()), shape.generating_morphisms()
+        case _:
+            finite = finite_category(shape)
+            assert finite is not Unknown, "colimit evaluation requires an exact finite index category"
+            return finite.objects, finite.morphisms
 
-    factors = tuple(diagram.on_object(vertex) for vertex in vertices)
-    assert all(isinstance(factor, FinitePresentedCategory) for factor in factors), (
-        "colimit evaluation requires presented factor categories"
-    )
-    factor_objects = tuple(
-        tuple(factor(label) for label in factor.labels()) for factor in factors
-    )
 
-    class_count, object_classes = category_limits.identified_objects(
-        vertices,
-        edges,
-        factor_objects,
-        lambda edge, value: diagram.on_morphism(edge).on_object(value),
-        position,
-    )
-
-    def vertex_class(index: int, value: CategoryOfCategories.ElementType) -> int:
-        return object_classes[index][position(factor_objects[index], value)]
-
-    coproduct = catlab.presented_coproduct(factors)
-    coproduct_objects, coproduct_homs, inherited_relations = (
-        catlab.presented_coproduct_data(coproduct)
-    )
-    coproduct_object_classes: dict[str, int] = {}
+def _coproduct_object_classes(
+    coproduct: object,
+    factor_objects: tuple[tuple[CategoryOfCategories.ElementType, ...], ...],
+    object_classes: tuple[tuple[int, ...], ...],
+) -> dict[str, int]:
+    """Match Catlab coproduct object names to the selected quotient object classes."""
+    result: dict[str, int] = {}
     for factor_index, objects in enumerate(factor_objects):
-        for object_index, value in enumerate(objects):
-            native_name = catlab.presented_coproduct_object_image(
-                coproduct, factor_index, object_index
-            )
+        for object_index, _value in enumerate(objects):
+            native_name = catlab.presented_coproduct_object_image(coproduct, factor_index, object_index)
             selected_class = object_classes[factor_index][object_index]
-            if native_name in coproduct_object_classes:
-                assert coproduct_object_classes[native_name] == selected_class
-            else:
-                coproduct_object_classes[native_name] = selected_class
-    assert set(coproduct_object_classes) == set(coproduct_objects)
+            match native_name in result:
+                case True:
+                    assert result[native_name] == selected_class
+                case False:
+                    result[native_name] = selected_class
+    return result
 
-    generators = tuple(
-        (
-            name,
-            coproduct_object_classes[source],
-            coproduct_object_classes[target],
-        )
-        for name, source, target in coproduct_homs
-    )
 
-    generator_origins: dict[str, tuple[int, str]] = {}
+def _generator_origins(
+    coproduct: object,
+    factors: tuple[CategoryOfCategories.ElementType, ...],
+) -> dict[str, tuple[int, str]]:
+    """Record which presented factor generator produced each coproduct generator."""
+    origins: dict[str, tuple[int, str]] = {}
     for factor_index, factor in enumerate(factors):
         for name in factor.generator_names():
             generator = factor.generator(name)
@@ -87,12 +66,20 @@ def presented_colimit_in_opposite(
                 generator.word(),
                 generator.domain(),
             )
-            assert len(image) == 1, (
-                "a coproduct inclusion must carry a source generator to one target generator"
-            )
-            generator_origins[image[0]] = (factor_index, name)
-    assert set(generator_origins) == {name for name, _, _ in coproduct_homs}
+            assert len(image) == 1, "a coproduct inclusion must carry a source generator to one target generator"
+            origins[image[0]] = (factor_index, name)
+    return origins
 
+
+def _diagram_relations(
+    diagram: Functor,
+    vertices: tuple[CategoryOfCategories.ElementType, ...],
+    edges: tuple[MorphismCategory.ObjectType, ...],
+    factors: tuple[CategoryOfCategories.ElementType, ...],
+    coproduct: object,
+    inherited_relations: tuple[object, ...],
+) -> tuple[object, ...]:
+    """Add the relations imposed by every arrow of the indexing diagram."""
     relations = list(inherited_relations)
     for edge in edges:
         first = position(vertices, edge.domain())
@@ -115,90 +102,136 @@ def presented_colimit_in_opposite(
                 image.word(),
                 image.domain(),
             )
-            if left != right:
-                relations.append((left, right))
+            match left == right:
+                case True:
+                    pass
+                case False:
+                    relations.append((left, right))
+    return tuple(relations)
+
+
+def _colimit_injection(
+    index: int,
+    factor: CategoryOfCategories.ElementType,
+    colimit: FinitePresentedCategory,
+    vertex_class,
+    coproduct: object,
+    factors: tuple[CategoryOfCategories.ElementType, ...],
+) -> Functor:
+    """The selected inclusion of one presented factor into the presented colimit."""
+
+    def on_object(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return colimit(vertex_class(index, value))
+
+    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        word = catlab.presented_coproduct_path_image(
+            coproduct,
+            factors,
+            index,
+            morphism.word(),
+            morphism.domain(),
+        )
+        return colimit.construct_morphism(on_object(morphism.domain()), on_object(morphism.codomain()), word)
+
+    return Fun(factor, colimit)(on_object, on_morphism)
+
+
+def _class_representatives(
+    class_count: int,
+    factor_objects: tuple[tuple[CategoryOfCategories.ElementType, ...], ...],
+    object_classes: tuple[tuple[int, ...], ...],
+) -> tuple[tuple[int, CategoryOfCategories.ElementType], ...]:
+    """Choose one owned factor object representing each quotient object class."""
+    representatives: list[tuple[int, CategoryOfCategories.ElementType] | None] = [None] * class_count
+    for factor_index, objects in enumerate(factor_objects):
+        for object_index, value in enumerate(objects):
+            selected_class = object_classes[factor_index][object_index]
+            match representatives[selected_class]:
+                case None:
+                    representatives[selected_class] = (factor_index, value)
+                case _:
+                    pass
+    assert all(representative is not None for representative in representatives)
+    return tuple(representative for representative in representatives if representative is not None)
+
+
+def _colimit_mediator(
+    candidate: NaturalTransformation,
+    *,
+    vertices: tuple[CategoryOfCategories.ElementType, ...],
+    representatives: tuple[tuple[int, CategoryOfCategories.ElementType], ...],
+    generator_origins: dict[str, tuple[int, str]],
+    factors: tuple[CategoryOfCategories.ElementType, ...],
+    colimit: FinitePresentedCategory,
+) -> MorphismCategory.ObjectType:
+    """Factor one cocone through the selected presented colimit."""
+    target = cone_apex(candidate)
+    legs = tuple(opposite_morphism(candidate.component(vertex)) for vertex in vertices)
+    object_images = tuple(legs[factor_index].on_object(value) for factor_index, value in representatives)
+    generator_images = tuple(
+        legs[generator_origins[name][0]].on_morphism(factors[generator_origins[name][0]].generator(generator_origins[name][1]))
+        for name in colimit.generator_names()
+    )
+    native = catlab.presented_functor(colimit, target, object_images, generator_images)
+
+    def on_object(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return object_images[colimit.label(value)]
+
+    def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        return catlab.presented_functor_morphism_image(native, colimit, morphism)
+
+    return opposite_morphism(Fun(colimit, target)(on_object, on_morphism))
+
+
+def presented_colimit_in_opposite(
+    dual_diagram: Functor,
+) -> CategoryOfCategories.ElementType:
+    """Selected finite presented colimit, computed by native presentation engines."""
+    diagram = dual_diagram.op()
+    shape = diagram.domain()
+    vertices, edges = _finite_shape_data(shape)
+
+    factors = tuple(diagram.on_object(vertex) for vertex in vertices)
+    assert all(isinstance(factor, FinitePresentedCategory) for factor in factors), "colimit evaluation requires presented factor categories"
+    factor_objects = tuple(tuple(factor(label) for label in factor.labels()) for factor in factors)
+
+    class_count, object_classes = category_limits.identified_objects(
+        vertices,
+        edges,
+        factor_objects,
+        lambda edge, value: diagram.on_morphism(edge).on_object(value),
+        position,
+    )
+
+    def vertex_class(index: int, value: CategoryOfCategories.ElementType) -> int:
+        return object_classes[index][position(factor_objects[index], value)]
+
+    coproduct = catlab.presented_coproduct(factors)
+    coproduct_objects, coproduct_homs, inherited_relations = catlab.presented_coproduct_data(coproduct)
+    coproduct_object_classes = _coproduct_object_classes(coproduct, factor_objects, object_classes)
+    assert set(coproduct_object_classes) == set(coproduct_objects)
+
+    generators = tuple(
+        (
+            name,
+            coproduct_object_classes[source],
+            coproduct_object_classes[target],
+        )
+        for name, source, target in coproduct_homs
+    )
+
+    generator_origins = _generator_origins(coproduct, factors)
+    assert set(generator_origins) == {name for name, _, _ in coproduct_homs}
+    relations = _diagram_relations(diagram, vertices, edges, factors, coproduct, inherited_relations)
 
     colimit = FinitePresentedCategory(
         "Colimit",
         tuple(range(class_count)),
         generators,
-        tuple(relations),
+        relations,
     )
-
-    def injection(index: int) -> Functor:
-        factor = factors[index]
-
-        def on_object(
-            value: CategoryOfCategories.ElementType,
-        ) -> CategoryOfCategories.ElementType:
-            return colimit(vertex_class(index, value))
-
-        def on_morphism(
-            morphism: MorphismCategory.ObjectType,
-        ) -> MorphismCategory.ObjectType:
-            word = catlab.presented_coproduct_path_image(
-                coproduct,
-                factors,
-                index,
-                morphism.word(),
-                morphism.domain(),
-            )
-            return colimit.construct_morphism(
-                on_object(morphism.domain()),
-                on_object(morphism.codomain()),
-                word,
-            )
-
-        return Fun(factor, colimit)(on_object, on_morphism)
-
-    injections = tuple(injection(index) for index in range(len(factors)))
-
-    representatives: list[tuple[int, CategoryOfCategories.ElementType] | None] = [
-        None
-    ] * class_count
-    for factor_index, objects in enumerate(factor_objects):
-        for object_index, value in enumerate(objects):
-            selected_class = object_classes[factor_index][object_index]
-            if representatives[selected_class] is None:
-                representatives[selected_class] = (factor_index, value)
-    assert all(representative is not None for representative in representatives)
-
-    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
-        target = cone_apex(candidate)
-        legs = tuple(
-            opposite_morphism(candidate.component(vertex)) for vertex in vertices
-        )
-        object_images = tuple(
-            legs[representative[0]].on_object(representative[1])
-            for representative in representatives
-            if representative is not None
-        )
-        generator_images = tuple(
-            legs[generator_origins[name][0]].on_morphism(
-                factors[generator_origins[name][0]].generator(
-                    generator_origins[name][1]
-                )
-            )
-            for name in colimit.generator_names()
-        )
-        native = catlab.presented_functor(
-            colimit,
-            target,
-            object_images,
-            generator_images,
-        )
-
-        def on_object(
-            value: CategoryOfCategories.ElementType,
-        ) -> CategoryOfCategories.ElementType:
-            return object_images[colimit.label(value)]
-
-        def on_morphism(
-            morphism: MorphismCategory.ObjectType,
-        ) -> MorphismCategory.ObjectType:
-            return catlab.presented_functor_morphism_image(native, colimit, morphism)
-
-        return opposite_morphism(Fun(colimit, target)(on_object, on_morphism))
+    injections = tuple(_colimit_injection(index, factors[index], colimit, vertex_class, coproduct, factors) for index in range(len(factors)))
+    representatives = _class_representatives(class_count, factor_objects, object_classes)
 
     family = Cat().op().Limits(dual_diagram.domain())
     return family.with_universal_data(
@@ -209,5 +242,12 @@ def presented_colimit_in_opposite(
             colimit,
             lambda vertex: opposite_morphism(injections[position(vertices, vertex)]),
         ),
-        mediator,
+        lambda candidate: _colimit_mediator(
+            candidate,
+            vertices=vertices,
+            representatives=representatives,
+            generator_origins=generator_origins,
+            factors=factors,
+            colimit=colimit,
+        ),
     )

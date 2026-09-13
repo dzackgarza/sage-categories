@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 from sage_categories.cat.cones import cocone, cocones, cone, cones
 from sage_categories.cat.constructions import UniversalPresentation, constructed_data
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.slices import CommaCategory, comma_category
+from sage_categories.cat.slices import CommaCategory, _star, comma_category
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
@@ -46,11 +46,6 @@ __all__ = [
     "right_kan_extension",
     "right_kan_lift",
 ]
-
-
-def _star() -> CategoryOfCategories.ElementType:
-    return Cat().Terminal()(0)
-
 
 def _kan_presentation(
     along: Functor,

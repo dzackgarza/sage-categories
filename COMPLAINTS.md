@@ -616,3 +616,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `_IndexedProductRule`, `_IndexedCoproductRule`, and `_SequentialColimitRule` each stored one diagram and implemented the same identity-based admission test, differing only in the retained value class they accept. Three copies of the same constructor and predicate obscure that one invariant owns all represented diagram values.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Put diagram retention and identity-based value admission on one private base rule; keep the three named rule subclasses only to select their distinct retained value type and preserve existing dispatch by presentation class.
+
+## Kan extensions duplicated the comma-category terminal point helper
+
+- **Evidence and impact:** `cat/kan.py` and `cat/slices.py` each defined the same `_star()` constructor for the sole object of `Cat().Terminal()`. Kan extensions already depend on the comma/slice module for their indexing categories, so the duplicated helper created a second owner for the same terminal point used in those constructions.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Reuse the slice/comma module's `_star` helper in Kan constructions and keep the terminal-point construction at that one owner.

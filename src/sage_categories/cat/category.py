@@ -32,7 +32,6 @@ from sage_categories.kernel.roles import prepare_category_subclass
 from sage_categories.kernel.sage_runtime import (
     Integer,
     MonoDict,
-    TripleDict,
     cached_method,
 )
 from sage_categories.kernel.type_aliases import ContainmentInput, EqualityInput
@@ -1374,8 +1373,6 @@ type LiftRule = Callable[
 
 _cartesian_rules: MonoDict = MonoDict()
 _cocartesian_rules: MonoDict = MonoDict()
-_cartesian_lifts: TripleDict = TripleDict(weak_values=False)
-_cocartesian_lifts: TripleDict = TripleDict(weak_values=False)
 
 # The factors ``(first, second)`` of every composite ``second * first`` constructed by
 # ``Cat()``: an explicit composite names its construction (``specs/functor.md``,
@@ -1814,6 +1811,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert self not in _cocartesian_rules, f"{self!r} already retains its cocartesian lifts"
             _cocartesian_rules[self] = rule
 
+        @cached_method(key=lambda self, morphism, member_object: identity_key(morphism, member_object))
         def cartesian_lift(
             self,
             morphism: MorphismCategory.ObjectType,
@@ -1823,11 +1821,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert self in _cartesian_rules, f"{self!r} retains no cartesian lifts"
             assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
             assert morphism.codomain() is self.on_object(member_object), f"{morphism!r} does not end at the image of {member_object!r}"
-            key = (morphism, member_object, self)
-            if key not in _cartesian_lifts:
-                _cartesian_lifts[key] = _cartesian_rules[self](morphism, member_object)
-            return _cartesian_lifts[key]
+            return _cartesian_rules[self](morphism, member_object)
 
+        @cached_method(key=lambda self, morphism, member_object: identity_key(morphism, member_object))
         def cocartesian_lift(
             self,
             morphism: MorphismCategory.ObjectType,
@@ -1837,10 +1833,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert self in _cocartesian_rules, f"{self!r} retains no cocartesian lifts"
             assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
             assert morphism.domain() is self.on_object(member_object), f"{morphism!r} does not start at the image of {member_object!r}"
-            key = (morphism, member_object, self)
-            if key not in _cocartesian_lifts:
-                _cocartesian_lifts[key] = _cocartesian_rules[self](morphism, member_object)
-            return _cocartesian_lifts[key]
+            return _cocartesian_rules[self](morphism, member_object)
 
         def __repr__(self) -> str:
             return f"Functor({self.domain()!r} -> {self.codomain()!r})"

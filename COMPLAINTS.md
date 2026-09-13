@@ -1320,3 +1320,9 @@ Ideas, to be weighed, not obligations.*
   Those are two distinct owner boundaries, and the public substitution constructor obscured which layer was responsible for which step.
 
 - **Repair link and acceptance:** `bloat-free-associative-substitution-layers`. Extract `_free_associative_linear_substitution()` and `_free_associative_algebra_substitution()`; leave the public function to validate generator images and compose those two named owner transitions.
+
+## Applied-query SymPy conversion re-imported an already-bound kernel owner
+
+- **Evidence and impact:** `cat/predicates.py` already imports its predicate/query execution surface from `kernel.predicates`, but `AppliedQuery._sympy_()` performed a second local import of `_owned_atom` from that same module. The local import avoids no cycle and obscures that all predicate/query-to-SymPy conversion crosses the same kernel boundary.
+
+- **Repair link and acceptance:** `bloat-predicate-owned-atom-import`. Bind `_owned_atom` once with the other kernel predicate operations and let `AppliedQuery._sympy_()` use that shared module-level owner.

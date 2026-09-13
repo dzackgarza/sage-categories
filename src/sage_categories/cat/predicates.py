@@ -15,6 +15,7 @@ from sympy.logic.boolalg import Boolean, BooleanAtom
 
 from sage_categories.kernel.predicates import (
     AppliedPredicate,
+    _owned_atom,
     ask_query,
     assume_property,
     axiom_layer,
@@ -163,8 +164,6 @@ class AppliedQuery:
         raise TypeError(f"cannot determine truth value of {self!r}; use ask()")
 
     def _sympy_(self):
-        from sage_categories.kernel.predicates import _owned_atom
-
         return _owned_atom(self)
 
     def __hash__(self) -> int:

@@ -60,6 +60,11 @@ def _identity_positions(values: tuple[object, ...]) -> MonoDict:
     return positions
 
 
+def _owned_map_value(arrow: MorphismCategory.ObjectType, datum: object) -> object:
+    """Evaluate one owned set map through its public point action and return the target datum."""
+    return arrow(arrow.domain().point(datum)).datum()
+
+
 @cache
 def _category() -> GapElement:
     load_packages(FINITE_SETS_PACKAGES)
@@ -95,7 +100,9 @@ def _index(realization: object, datum: object) -> int:
 def _native_object(value: object) -> GapElement:
     if has_finite_native_object(value):
         return finite_native_object(value).native
-    indexing = tuple(value._values)
+    presentation = value.set_presentation()
+    assert isinstance(presentation, tuple), f"{value!r} has no chosen finite presentation"
+    indexing = presentation
     category = _category()
     native = libgap.FinSet(category, len(indexing))
     retain_finite_native_object(value, native, indexing)
@@ -123,7 +130,7 @@ def _native_morphism(value: MorphismCategory.ObjectType) -> GapElement:
     target_native = _native_object(value.codomain())
     source_record = finite_native_object(value.domain())
     target_record = finite_native_object(value.codomain())
-    graph = [_index(target_record, value._action(datum)) for datum in source_record.construction.data]
+    graph = [_index(target_record, _owned_map_value(value, datum)) for datum in source_record.construction.data]
     native = libgap.MapOfFinSets(source_native, graph, target_native)
     retain_finite_native_morphism(value, native)
     return native
@@ -319,7 +326,7 @@ def finite_limit(diagram: Functor) -> object:
             return diagram.codomain().construct_morphism(
                 source,
                 apex,
-                lambda value: tuple(component._action(value) for component in components),
+                lambda value: tuple(_owned_map_value(component, value) for component in components),
             )
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismIntoLimitWithGivenLimit(category, native_factors, decorated, native_source, tau, computed_apex)
@@ -372,7 +379,7 @@ def finite_colimit(diagram: Functor) -> object:
 
             def evaluate(part: frozenset[tuple[int, object]]) -> object:
                 factor_index, datum = next(iter(part))
-                return components[factor_index]._action(datum)
+                return _owned_map_value(components[factor_index], datum)
 
             return diagram.codomain().construct_morphism(apex, target, evaluate)
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
@@ -427,7 +434,7 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
             return diagram.codomain().construct_morphism(
                 source,
                 apex,
-                lambda value: tuple(component._action(value) for component in components),
+                lambda value: tuple(_owned_map_value(component, value) for component in components),
             )
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismIntoDirectProductWithGivenDirectProduct(category, native_factors, native_source, tau, computed_apex)
@@ -475,7 +482,7 @@ def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         candidate_native = _native_object_if_finite(candidate_source)
         component = candidate.component(source_vertex)
         if candidate_native is None:
-            return diagram.codomain().construct_morphism(candidate_source, apex, component._action)
+            return diagram.codomain().construct_morphism(candidate_source, apex, lambda datum: _owned_map_value(component, datum))
         tau = _native_morphism(component)
         computed = libgap.UniversalMorphismIntoEqualizerWithGivenEqualizer(
             category,
@@ -533,7 +540,7 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
         native_target = _native_object_if_finite(target)
         if native_target is None:
             components = tuple(candidate.component(vertex) for vertex in vertices)
-            return diagram.codomain().construct_morphism(apex, target, lambda tagged: components[tagged[0]]._action(tagged[1]))
+            return diagram.codomain().construct_morphism(apex, target, lambda tagged: _owned_map_value(components[tagged[0]], tagged[1]))
         tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
         computed = libgap.UniversalMorphismFromCoproductWithGivenCoproduct(category, native_factors, native_target, tau, computed_apex)
         return _native_map_on_owned_endpoints(apex, target, computed)
@@ -583,7 +590,7 @@ def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         candidate_native = _native_object_if_finite(candidate_target)
         component = candidate.component(target_vertex)
         if candidate_native is None:
-            return diagram.codomain().construct_morphism(apex, candidate_target, lambda part: component._action(next(iter(part))))
+            return diagram.codomain().construct_morphism(apex, candidate_target, lambda part: _owned_map_value(component, next(iter(part))))
         tau = _native_morphism(component)
         computed = libgap.UniversalMorphismFromCoequalizerWithGivenCoequalizer(
             category,

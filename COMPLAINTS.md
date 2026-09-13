@@ -1580,9 +1580,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-additive-integer-multiple`. Delegate to Sage `multiple` with the owned group zero, unary negation, and addition operation.
 
-
 ## Free-algebra serialization inspected Sage FreeMonoid private state
 
-- **Evidence and impact:** `engines/free_algebras.py::_word()` decoded native free-monoid words through the private `_element_list` field and reimplemented exponent expansion. Sage exposes `FreeMonoidElement.to_list()` as the public conversion to its generator word, so this boundary depended on an internal representation without need.
+- **Evidence and impact:** `engines/free_algebras.py::_word()` decoded native free-monoid words through the private `_element_list` field and reimplemented exponent expansion.
+  Sage exposes `FreeMonoidElement.to_list()` as the public conversion to its generator word, so this boundary depended on an internal representation without need.
 
 - **Repair link and acceptance:** `bloat-free-algebra-word-serialization`. Decode through `to_list()` and the parent's public generator tuple, preserving the repository's tuple-of-generator-positions serialization.
+
+
+## FinSetsForCAP bypassed the owned Sets API for finite data and map evaluation
+
+- **Evidence and impact:** `engines/finite_sets.py` lowered finite objects through the private `_values` field and evaluated owned maps through their private `_action` callbacks in native graph construction and fallback universal mediators. Those operations already have public owners: `set_presentation()` for a chosen finite presentation and ordinary morphism application on owned points. The private probes couple the engine adapter to one implementation of `Sets`.
+
+- **Repair link and acceptance:** `bloat-finite-set-public-boundary`. Read finite presentation data through `set_presentation()` and route raw-datum evaluation through `_owned_map_value`, which applies the owned morphism to a public source point and returns its target datum.

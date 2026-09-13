@@ -1709,9 +1709,9 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-universal-construction-functor-caches`. Cache those three accessors with Sage, retaining full-image and coproduct registration inside the first cached construction.
 
-
 ## Inverse-image subcategories hand-rolled a nullable projection cache
 
-- **Evidence and impact:** `InverseImageSubcategory.target_projection()` stored a nullable `_target_projection` and mutated it on first use even though this is an ordinary per-instance structural-functor accessor. Sage `cached_method` already owns that lifecycle and is already imported in the module.
+- **Evidence and impact:** `InverseImageSubcategory.target_projection()` stored a nullable `_target_projection` and mutated it on first use even though this is an ordinary per-instance structural-functor accessor.
+  Sage `cached_method` already owns that lifecycle and is already imported in the module.
 
 - **Repair link and acceptance:** `bloat-inverse-image-projection-cache`. Make `target_projection()` a `cached_method`, return the constructed restricted functor directly, and retain monomorphism/isofibration refinement inside that first cached construction.

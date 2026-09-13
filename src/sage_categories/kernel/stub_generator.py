@@ -1351,14 +1351,7 @@ def _selected_declarations(
     names: set[str] | frozenset[str],
 ) -> tuple[ast.stmt, ...]:
     """Return declaration statements once by their AST-node identity, preserving encounter order."""
-    return tuple(
-        dict.fromkeys(
-            statement
-            for name in names
-            if name in declarations
-            for statement in declarations[name]
-        )
-    )
+    return tuple(dict.fromkeys(statement for name in names if name in declarations for statement in declarations[name]))
 
 
 def _internal_definition_closure(
@@ -1720,9 +1713,7 @@ def _project_public_static_surface(tree: ast.Module, source: ast.Module) -> None
     required = set(public)
     while True:
         selected = _selected_declarations(declarations, required)
-        loaded = {
-            expression.id for statement in selected for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
-        }
+        loaded = {expression.id for statement in selected for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)}
         added = (loaded & declarations.keys()) - required
         if not added:
             break

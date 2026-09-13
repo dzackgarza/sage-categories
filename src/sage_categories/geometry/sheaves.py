@@ -129,10 +129,7 @@ def _verify_gluing_result(
     matching = []
     for candidate in tuple(carrier):
         point = cast(Any, global_ring).point(candidate.datum())
-        if all(
-            ask(_apply_ring_map(presheaf.restriction(open_set, member), point) == local) is True
-            for member, local in zip(cover, local_sections, strict=True)
-        ):
+        if all(ask(_apply_ring_map(presheaf.restriction(open_set, member), point) == local) is True for member, local in zip(cover, local_sections, strict=True)):
             matching.append(point)
     assert len(matching) == 1 and ask(matching[0] == global_section) is True
 

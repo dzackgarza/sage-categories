@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import partial
 from inspect import get_annotations, signature
-from types import MethodType
 from itertools import count
+from types import MethodType
 from typing import TYPE_CHECKING, Annotated, Self, get_origin
 
 from beartype.vale import Is

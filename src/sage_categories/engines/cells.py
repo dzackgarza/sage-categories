@@ -276,6 +276,15 @@ def native_cell(owner: Category, value: MorphismCategory.ObjectType) -> homotopy
     return native
 
 
+def _strengthen_generator_invertibility(state: _CellState, native: homotopy.Cell) -> None:
+    """Mark a native generator invertible; composite cells inherit invertibility from their factors."""
+    try:
+        state.signature.strengthen_invertibility(native, invertibility="invertible")
+    except ValueError as error:
+        if "only generator cells" not in str(error):
+            raise
+
+
 def retain_inverses(
     owner: Category,
     forward: MorphismCategory.ObjectType,
@@ -292,11 +301,7 @@ def retain_inverses(
             return
         case False:
             pass
-    try:
-        state.signature.strengthen_invertibility(forward_native, invertibility="invertible")
-    except ValueError as error:
-        if "only generator cells" not in str(error):
-            raise
+    _strengthen_generator_invertibility(state, forward_native)
     inverse_native = forward_native.inverse()
     state.signature.typecheck(inverse_native, True)
     backward_cached = _cached_morphism(state, backward)
@@ -304,11 +309,7 @@ def retain_inverses(
         case True:
             _retain_morphism(state, backward, inverse_native)
         case False:
-            try:
-                state.signature.strengthen_invertibility(backward_cached, invertibility="invertible")
-            except ValueError as error:
-                if "only generator cells" not in str(error):
-                    raise
+            _strengthen_generator_invertibility(state, backward_cached)
             state.signature.typecheck(backward_cached.inverse(), True)
 
 

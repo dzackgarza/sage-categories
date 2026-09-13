@@ -58,10 +58,10 @@ from typing import Literal
 
 from sage.categories.sets_cat import Sets as SageSets
 from sage.combinat.free_module import CombinatorialFreeModule
-from sage.groups.generic import multiple
 from sage.groups.additive_abelian.additive_abelian_group import (
     AdditiveAbelianGroup_class,
 )
+from sage.groups.generic import multiple
 from sage.modules.fg_pid.fgp_element import FGP_Element
 from sage.modules.fg_pid.fgp_module import FGP_Module_class
 from sage.modules.free_module_element import vector

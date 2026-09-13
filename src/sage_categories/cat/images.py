@@ -26,9 +26,7 @@ __all__ = [
 ]
 
 
-class ImageMorphismCategory[**MorphismData, **TwoMorphismData](
-    MorphismCategory[MorphismData, TwoMorphismData]
-):
+class ImageMorphismCategory[**MorphismData, **TwoMorphismData](MorphismCategory[MorphismData, TwoMorphismData]):
     """The morphisms retained by a strict or full image."""
 
     class ObjectType:
@@ -47,9 +45,7 @@ class ImageMorphismCategory[**MorphismData, **TwoMorphismData](
         return self._base.morphism_membership_proposition(candidate)
 
 
-class ImageCategory[**MorphismData, **TwoMorphismData](
-    Category[MorphismData, TwoMorphismData]
-):
+class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
     """The common retained-data boundary of strict and full images."""
 
     _image_name: str
@@ -135,9 +131,7 @@ class ImageCategory[**MorphismData, **TwoMorphismData](
         self,
         morphism: MorphismCategory.ObjectType,
     ) -> MorphismCategory.ObjectType:
-        assert morphism in self.target().morphism_category(1), (
-            f"{morphism!r} is not a morphism of {self.target()!r}"
-        )
+        assert morphism in self.target().morphism_category(1), f"{morphism!r} is not a morphism of {self.target()!r}"
         self._morphism_members[morphism] = True
         return morphism
 
@@ -210,9 +204,7 @@ class ImageCategory[**MorphismData, **TwoMorphismData](
         return f"{self.target()!r}.{type(self).__name__.removesuffix('Category')}({self._defining_functor!r})"
 
 
-class StrictImageCategory[**MorphismData, **TwoMorphismData](
-    ImageCategory[MorphismData, TwoMorphismData]
-):
+class StrictImageCategory[**MorphismData, **TwoMorphismData](ImageCategory[MorphismData, TwoMorphismData]):
     """The literal object and morphism image of ``F: C -> D``."""
 
     _image_name = "strict_image"
@@ -230,9 +222,7 @@ class StrictImageCategory[**MorphismData, **TwoMorphismData](
         return Fun(self, self.target()).Monomorphisms()()
 
 
-class FullImageCategory[**MorphismData, **TwoMorphismData](
-    ImageCategory[MorphismData, TwoMorphismData]
-):
+class FullImageCategory[**MorphismData, **TwoMorphismData](ImageCategory[MorphismData, TwoMorphismData]):
     """The full subcategory spanned by the literal object image of ``F``."""
 
     _image_name = "full_image"
@@ -254,8 +244,7 @@ class FullImageCategory[**MorphismData, **TwoMorphismData](
         if not candidate._is_morphism():
             return False
         return sympy_ask(
-            self.membership_proposition(candidate.domain())
-            & self.membership_proposition(candidate.codomain()),
+            self.membership_proposition(candidate.domain()) & self.membership_proposition(candidate.codomain()),
             assumptions,
         )
 
@@ -263,9 +252,7 @@ class FullImageCategory[**MorphismData, **TwoMorphismData](
         return Fun(self, self.target()).FullyFaithful().Monomorphisms()()
 
 
-class EssentialImageCategory[**MorphismData, **TwoMorphismData](
-    PredicateSubcategory[MorphismData, TwoMorphismData]
-):
+class EssentialImageCategory[**MorphismData, **TwoMorphismData](PredicateSubcategory[MorphismData, TwoMorphismData]):
     """The full replete subcategory on objects isomorphic to some ``F(X)``.
 
     This is ``D.EssentialImage(F)``, the axiom ``Category`` declares, parameterized by the
@@ -296,9 +283,7 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](
         # inverse image of ``A.Finite()`` along ``D -> A``, because ``A`` states the same
         # predicate (D83, POL-CAT-084); ``A`` states no essential image of a functor that
         # lands in ``D``, so that derivation reaches here with the wrong ambient and stops.
-        assert defining_functor.codomain() is ambient, (
-            f"{defining_functor!r} does not land in {ambient!r}, so {ambient!r} states no essential image of it"
-        )
+        assert defining_functor.codomain() is ambient, f"{defining_functor!r} does not land in {ambient!r}, so {ambient!r} states no essential image of it"
         self._defining_functor = defining_functor
         super().__init__(ambient, name, full_subcategory_of)
 
@@ -415,11 +400,9 @@ def strict_image(target: Category, defining_functor: Functor) -> StrictImageCate
 def register_full_image(defining_functor: Functor, image: Category) -> None:
     """Register the category that owns the full image of ``defining_functor``."""
     codomain = defining_functor.codomain()
-    assert (
-        codomain is image
-        or codomain is image.narrowing_base()
-        or (image.has_ambient() and codomain is image.ambient())
-    ), f"{defining_functor!r} does not land in {image!r}, its narrowing base, or its ambient"
+    assert codomain is image or codomain is image.narrowing_base() or (image.has_ambient() and codomain is image.ambient()), (
+        f"{defining_functor!r} does not land in {image!r}, its narrowing base, or its ambient"
+    )
     assert defining_functor not in _full_images or _full_images[defining_functor] is image
     _full_images[defining_functor] = image
 

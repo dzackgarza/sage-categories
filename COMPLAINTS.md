@@ -658,3 +658,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/presented_colimits.py::presented_colimit_in_opposite` combined finite-shape extraction, object-class lowering, coproduct generator provenance, diagram-relation generation, injection reconstruction, quotient representatives, and mediator reconstruction in one 20-complexity function. Each phase has a different invariant and engine boundary, so one edit required reasoning across the entire pipeline.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give each lowering/reconstruction phase a named private owner and leave `presented_colimit_in_opposite` as the orchestration that connects their retained data and installs the final universal presentation.
+
+## Native cell lookup mixed inverse synchronization with construction dispatch
+
+- **Evidence and impact:** `engines/cells.py::native_cell` handled cache lookup, identity recognition, reverse-orientation reuse, composite/generator construction, invertibility classification, and inverse-partner retention in one 16-complexity routine. The inverse bookkeeping appeared twice around the construction branch, making the ordinary lookup path harder to audit than the native operation requires.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Separate retained-inverse lookup, uncached cell construction, and inverse-partner synchronization into private helpers; leave `native_cell` as the ordered orchestration of those responsibilities.

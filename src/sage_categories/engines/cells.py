@@ -223,6 +223,52 @@ def retain_generator(
             return _retain_morphism(state, value, native)
 
 
+def _retained_inverse_native(
+    state: _CellState,
+    value: MorphismCategory.ObjectType,
+    inverse: MorphismCategory.ObjectType | None,
+) -> homotopy.Cell | None:
+    """The already-retained native inverse cell, excluding absent and self-inverse cases."""
+    match inverse is None or inverse is value:
+        case True:
+            return None
+        case False:
+            return _cached_morphism(state, inverse)
+
+
+def _construct_native_cell(
+    owner: Category,
+    value: MorphismCategory.ObjectType,
+    inverse: MorphismCategory.ObjectType | None,
+) -> homotopy.Cell:
+    """Construct one uncached native cell as a composite or primitive generator."""
+    match is_composite(value):
+        case True:
+            first, second = composite_factors(value)
+            return retain_composite(owner, value, first, second)
+        case False:
+            classification: Literal["directed", "invertible"] = "directed" if inverse is None else "invertible"
+            return retain_generator(owner, value, invertibility=classification)
+
+
+def _retain_inverse_partner(
+    state: _CellState,
+    value: MorphismCategory.ObjectType,
+    inverse: MorphismCategory.ObjectType | None,
+) -> None:
+    """Retain the opposite native orientation after ``value`` itself has been constructed."""
+    match inverse is None or inverse is value:
+        case True:
+            return
+        case False:
+            pass
+    match _cached_morphism(state, inverse):
+        case None:
+            _retain_morphism(state, inverse, state.morphisms[id(value)][1].inverse())
+        case _:
+            pass
+
+
 def native_cell(owner: Category, value: MorphismCategory.ObjectType) -> homotopy.Cell:
     """Return the native cell for one exact owned arrow of ``owner``."""
     owner = _cell_owner(value, owner)
@@ -243,37 +289,16 @@ def native_cell(owner: Category, value: MorphismCategory.ObjectType) -> homotopy
             pass
 
     inverse = owner.retained_inverse(value)
-    match inverse is None or inverse is value:
-        case False:
-            inverse_native = _cached_morphism(state, inverse)
-            match inverse_native is None:
-                case False:
-                    return _retain_morphism(state, value, inverse_native.inverse())
-                case True:
-                    pass
-        case True:
+    inverse_native = _retained_inverse_native(state, value, inverse)
+    match inverse_native:
+        case None:
             pass
+        case _:
+            return _retain_morphism(state, value, inverse_native.inverse())
 
-    match is_composite(value):
-        case True:
-            first, second = composite_factors(value)
-            retain_composite(owner, value, first, second)
-        case False:
-            classification: Literal["directed", "invertible"]
-            match inverse is None:
-                case True:
-                    classification = "directed"
-                case False:
-                    classification = "invertible"
-            retain_generator(owner, value, invertibility=classification)
-
-    match inverse is None or inverse is value:
-        case False:
-            if _cached_morphism(state, inverse) is None:
-                _retain_morphism(state, inverse, state.morphisms[id(value)][1].inverse())
-        case True:
-            pass
-    return state.morphisms[id(value)][1]
+    native = _construct_native_cell(owner, value, inverse)
+    _retain_inverse_partner(state, value, inverse)
+    return native
 
 
 def retain_inverses(

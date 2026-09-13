@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Hashable
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -10,7 +10,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
-from sage_categories.geometry.sheaves import RingSheaf, _open_data
+from sage_categories.geometry.sheaves import RingSheaf
 from sage_categories.geometry.spaces import (
     TopologicalSpacesCategory,
     _topological_space_projection,
@@ -21,7 +21,7 @@ from sage_categories.kernel.sage_runtime import cached_function, cached_method
 __all__ = ["RingedSpaces", "RingedSpacesCategory"]
 
 
-type SheafComponentRule = Callable[[frozenset[Hashable]], MorphismCategory.ObjectType]
+type SheafComponentRule = Callable[[object], MorphismCategory.ObjectType]
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -86,7 +86,7 @@ class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         assert target_sheaf.domain() is pushed_source.domain() and target_sheaf.codomain() is pushed_source.codomain()
 
         def component(open_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-            arrow = component_rule(_open_data(open_object))
+            arrow = component_rule(target.sheaf().presheaf.open_key(open_object))
             assert arrow.domain() is target_sheaf.on_object(open_object)
             assert arrow.codomain() is pushed_source.on_object(open_object)
             return arrow

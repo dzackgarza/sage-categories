@@ -1,10 +1,15 @@
 """Ringed-space morphisms retain their continuous map and natural sheaf action."""
 
 from sage_categories import omega
-from sage_categories.all import Fun, Mor, NN, Sets, Cartesian
+from sage_categories.all import NN, Cartesian, Fun, Mor, Sets
 from sage_categories.cat.calculus import binary_product_data
 from sage_categories.cat.structured_objects import Rings
-from sage_categories.geometry import RingedSpaces, TopologicalSpaces, ring_presheaf, ring_sheaf
+from sage_categories.geometry import (
+    RingedSpaces,
+    TopologicalSpaces,
+    ring_presheaf,
+    ring_sheaf,
+)
 from sage_categories.geometry.sheaves import ring_presheaf_from_functor
 
 
@@ -87,7 +92,7 @@ def test_ringed_map_does_not_enumerate_a_represented_open_category() -> None:
         omega,
         Fun(omega.op(), rings).constant(ring),
         lambda key: omega(NN.point(key)),
-        lambda open_object: open_object.point().datum(),
+        lambda open_object: ("stage", open_object.point().datum()),
     )
     sheaf = ring_sheaf(presheaf, lambda _open, _cover, local: local[0])
     ringed = RingedSpaces()
@@ -98,11 +103,16 @@ def test_ringed_map_does_not_enumerate_a_represented_open_category() -> None:
         Mor(Sets)(NN, NN).one(),
         Fun(omega, omega).one(),
     )
+
+    def represented_component(key):
+        assert key[0] == "stage"
+        return Mor(rings)(ring, ring).one()
+
     morphism = ringed.homomorphism(
         ringed_space,
         ringed_space,
         continuous,
-        lambda _key: Mor(rings)(ring, ring).one(),
+        represented_component,
     )
     assert morphism.domain() is ringed_space and morphism.codomain() is ringed_space
     assert morphism.continuous_map() is continuous

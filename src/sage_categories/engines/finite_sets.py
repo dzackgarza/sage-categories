@@ -20,6 +20,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Unknown, UnknownClass
 from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
 from sage_categories.kernel.retention import identity_positions
+from sage_categories.kernel.sage_runtime import MonoDict
 from sage_categories.sets._finite_cap import (
     finite_native_morphism,
     finite_native_object,
@@ -303,6 +304,15 @@ def _parallel_pair_data(
     return arrows, source, target, _category(), [_native_morphism(arrow) for arrow in maps]
 
 
+def _finite_discrete_factors(
+    diagram: Functor,
+    vertices: tuple[object, ...],
+) -> tuple[tuple[object, ...], list[GapElement], GapElement, MonoDict]:
+    """Lower the factors of one finite discrete diagram once for product/coproduct execution."""
+    factors = tuple(diagram.on_object(vertex) for vertex in vertices)
+    return factors, [_native_object(factor) for factor in factors], _category(), identity_positions(vertices)
+
+
 def _native_diagram(diagram: Functor):
     finite = _finite_category_data(diagram.domain())
     assert finite is not Unknown, "native finite-set execution requires exact finite structural data"
@@ -425,9 +435,7 @@ def finite_colimit(diagram: Functor) -> object:
 def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
     cones = _cones()
 
-    factors = tuple(diagram.on_object(vertex) for vertex in vertices)
-    native_factors = [_native_object(factor) for factor in factors]
-    category = _category()
+    factors, native_factors, category, positions = _finite_discrete_factors(diagram, vertices)
     computed_apex = libgap.DirectProduct(category, native_factors)
     computed_projections = tuple(
         libgap.ProjectionInFactorOfDirectProductWithGivenDirectProduct(category, native_factors, index + 1, computed_apex) for index in range(len(vertices))
@@ -440,7 +448,6 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
     )
     apex = Sets(apex_data)
     native_apex = _native_object(apex)
-    positions = identity_positions(vertices)
     legs = tuple(
         _native_map_on_owned_endpoints(
             apex,
@@ -527,9 +534,7 @@ def primitive_limit(diagram: Functor) -> object:
 def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
     cones = _cones()
 
-    factors = tuple(diagram.on_object(vertex) for vertex in vertices)
-    native_factors = [_native_object(factor) for factor in factors]
-    category = _category()
+    factors, native_factors, category, positions = _finite_discrete_factors(diagram, vertices)
     computed_apex = libgap.Coproduct(category, native_factors)
     computed_injections = tuple(libgap.InjectionOfCofactorOfCoproductWithGivenCoproduct(category, native_factors, index + 1, computed_apex) for index in range(len(vertices)))
     injection_graphs = tuple(_graph(injection) for injection in computed_injections)
@@ -544,7 +549,6 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
     assert all(label is not None for label in apex_labels)
     apex = Sets(tuple(apex_labels))
     native_apex = _native_object(apex)
-    positions = identity_positions(vertices)
     legs = tuple(
         _native_map_on_owned_endpoints(
             factors[index],

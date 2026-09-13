@@ -38,7 +38,7 @@ from sage_categories.cat.predicates import (
     register_handler,
 )
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.sage_runtime import MonoDict, cached_function, cached_method
+from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -127,8 +127,6 @@ class FinitePresentedCategory(Category[[Word], []]):
         # One retained path per (source label, reduced word) (specs/functor.md, "Canonical objects of Cat"): a morphism of a
         # finitely presented category exists once by identity.
         self._paths: dict[tuple[Hashable, Word], FinitePresentedCategory.MorphismType] = {}
-        self._object_set: MonoDict = MonoDict()
-        self._morphism_set: MonoDict = MonoDict()
         super().__init__()
         self._vertices = {label: self.ObjectType(VertexData(label)) for label in labels}
         register_handler(self._equality, self._equal_objects)
@@ -172,10 +170,9 @@ class FinitePresentedCategory(Category[[Word], []]):
     # graph is acyclic every morphism is reached by breadth-first extension of words,
     # and otherwise no finite enumeration of morphisms is chosen.
 
+    @cached_method
     def object_set(self) -> CategoryOfCategories.ElementType:
-        if self not in self._object_set:
-            self._object_set[self] = Sets.Finite()(self._labels)
-        return self._object_set[self]
+        return Sets.Finite()(self._labels)
 
     def object_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.ObjectType:
         return self(enumerated_datum(self.object_set(), point))
@@ -183,14 +180,13 @@ class FinitePresentedCategory(Category[[Word], []]):
     def object_point(self, vertex: FinitePresentedCategory.ObjectType) -> CategoryOfCategories.ElementType:
         return self.object_set().point(self.label(vertex))
 
+    @cached_method
     def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
         """The finite set of morphisms when the presentation determines a finite normal-form language."""
         arrows = self.finite_morphisms()
         if arrows is Unknown:
             return Unknown
-        if self not in self._morphism_set:
-            self._morphism_set[self] = Sets.Finite()(tuple((self.label(arrow.domain()), arrow.word()) for arrow in arrows))
-        return self._morphism_set[self]
+        return Sets.Finite()(tuple((self.label(arrow.domain()), arrow.word()) for arrow in arrows))
 
     @cached_method
     def finite_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass:

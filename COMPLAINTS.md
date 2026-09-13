@@ -1762,3 +1762,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `FinitePresentedCategory` carried nullable `_finite_arrows` and `_terminal` fields and open-coded first-call mutation in `finite_morphisms()` and `Terminal()`. Both are immutable per-instance query results, while Sage `cached_method` is already the repository owner for exactly this lifecycle. The duplicate protocol added state and branches without mathematical meaning.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `finite_morphisms()` and `Terminal()` with Sage `cached_method`; remove both nullable fields and return the native reconstruction directly on first evaluation.
+
+## Finite presented categories wrapped two nullary set results in one-entry MonoDicts
+
+- **Evidence and impact:** `FinitePresentedCategory.object_set()` and `_chosen_morphism_set()` each allocated a per-instance `MonoDict`, then keyed that table by the instance itself to retain exactly one nullary result. The identity table added an extra container and mutation protocol around values already determined solely by the category instance.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache both nullary set-valued accessors with Sage `cached_method` and remove the two one-entry `MonoDict` fields.

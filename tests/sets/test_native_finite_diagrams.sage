@@ -122,7 +122,7 @@ def test_native_parallel_pair_equalizer_and_coequalizer() -> None:
     coequalizer = Sets.Colimits(shape)(diagram)
     selected_colimit = Sets.Colimits(shape).universal_data(diagram)
     assert len(tuple(coequalizer)) == 1
-    assert selected_colimit.leg(target)(B.point(0)) == selected_colimit.leg(target)(B.point(1))
+    assert ask(selected_colimit.leg(target)(B.point(0)) == selected_colimit.leg(target)(B.point(1))) is True
     C = Sets(("class",))
     from_b = Mor(Sets)(B, C)({0: "class", 1: "class"})
     from_a = from_b * first

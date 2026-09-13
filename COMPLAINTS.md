@@ -724,3 +724,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/finite_categories.py` imported `DiscreteCategory` independently in `finite_objects`, `_evaluate`, and `_limit`, although `cat/shapes.py` has no dependency back on the finite evaluator. The three delayed imports therefore protected no cycle and obscured that discrete-shape recognition is a module-wide evaluator dependency.
 
 - **Repair link and acceptance:** `bloat-finite-discrete-imports`. Bind `DiscreteCategory` once at module scope and share it across finite object enumeration, representation dispatch, and finite-product specialization.
+
+## FinSetsForCAP repeatedly imported the implemented Sets leaf instead of its declaration
+
+- **Evidence and impact:** `engines/finite_sets.py` performed eight function-local `from sage_categories.sets.finite import Sets` imports across morphism reconstruction, image factorization, and every primitive finite universal construction. The engine needs the owned `Sets` declaration whose implementation has already been installed by the caller, not a repeated dependency on the leaf implementation module itself.
+
+- **Repair link and acceptance:** `bloat-finite-sets-owner-import`. Bind `Sets` once from `cat.declarations` at the engine boundary and remove every reverse import of `sets/finite.py`, preserving the existing native object/morphism reconstruction operations.

@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Literal
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
 
+from sage_categories.cat.declarations import Sets
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
 from sage_categories.sets._finite_cap import (
@@ -109,8 +110,6 @@ def _owned_morphism(
     target: object,
     native: GapElement,
 ) -> MorphismCategory.ObjectType:
-    from sage_categories.sets.finite import Sets
-
     source_record = finite_native_object(source)
     target_record = finite_native_object(target)
     graph = _graph(native)
@@ -203,8 +202,6 @@ def inverse_morphism(value: MorphismCategory.ObjectType) -> MorphismCategory.Obj
 def image_factorization(
     value: MorphismCategory.ObjectType,
 ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    from sage_categories.sets.finite import Sets
-
     native = _native_morphism(value)
     computed_inclusion = libgap.ImageEmbedding(native)
     target_record = finite_native_object(value.codomain())
@@ -268,7 +265,6 @@ def _native_diagram(diagram: Functor):
 def finite_limit(diagram: Functor) -> object:
     """Selected limit of an arbitrary exact finite diagram, computed by CAP."""
     from sage_categories.cat.cones import cone, cone_apex
-    from sage_categories.sets.finite import Sets
 
     vertices, positions, factors, native_factors, decorated = _native_diagram(diagram)
     category = _category()
@@ -319,7 +315,6 @@ def finite_limit(diagram: Functor) -> object:
 def finite_colimit(diagram: Functor) -> object:
     """Selected colimit of an arbitrary exact finite diagram, computed by CAP."""
     from sage_categories.cat.cones import cocone, cocone_apex
-    from sage_categories.sets.finite import Sets
 
     vertices, positions, factors, native_factors, decorated = _native_diagram(diagram)
     category = _category()
@@ -373,7 +368,6 @@ def finite_colimit(diagram: Functor) -> object:
 
 def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cone, cone_apex
-    from sage_categories.sets.finite import Sets
 
     factors = tuple(diagram.on_object(vertex) for vertex in vertices)
     native_factors = [_native_object(factor) for factor in factors]
@@ -428,7 +422,6 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
 
 def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cone, cone_apex
-    from sage_categories.sets.finite import Sets
 
     arrows = diagram.domain().generating_morphisms()
     first, second = (diagram.on_morphism(arrow) for arrow in arrows)
@@ -484,7 +477,6 @@ def primitive_limit(diagram: Functor) -> object:
 
 def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cocone, cocone_apex
-    from sage_categories.sets.finite import Sets
 
     factors = tuple(diagram.on_object(vertex) for vertex in vertices)
     native_factors = [_native_object(factor) for factor in factors]
@@ -537,7 +529,6 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
 
 def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     from sage_categories.cat.cones import cocone, cocone_apex
-    from sage_categories.sets.finite import Sets
 
     arrows = diagram.domain().generating_morphisms()
     first, second = (diagram.on_morphism(arrow) for arrow in arrows)

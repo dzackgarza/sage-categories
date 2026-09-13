@@ -9,6 +9,7 @@ from sage.libs.gap.libgap import libgap
 from sage.libs.gap.util import GAPError
 
 from sage_categories.engines.gap import FINITE_CATEGORY_PACKAGES, load_packages
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
     "compose_morphisms",
@@ -37,7 +38,7 @@ class _Presentation:
     quotient: bool
 
 
-_presentations: dict[int, _Presentation] = {}
+_presentations: MonoDict = MonoDict()
 
 
 def _native_path(
@@ -121,11 +122,8 @@ def _defining_relations(
 
 
 def _presentation(category: object) -> _Presentation:
-    identifier = id(category)
-    if identifier in _presentations:
-        retained = _presentations[identifier]
-        assert retained.owner is category
-        return retained
+    if category in _presentations:
+        return _presentations[category]
     load_packages(FINITE_CATEGORY_PACKAGES)
     names, positions, ambient, ambient_objects, generator_indices = _ambient_presentation(category)
     relations = _defining_relations(category, positions, ambient, ambient_objects, generator_indices)
@@ -140,7 +138,7 @@ def _presentation(category: object) -> _Presentation:
         generator_indices,
         bool(relations),
     )
-    _presentations[identifier] = record
+    _presentations[category] = record
     return record
 
 

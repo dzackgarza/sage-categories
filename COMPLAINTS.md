@@ -1362,9 +1362,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-discrete-family-registry`. Centralize those three registry operations and keep the product/coproduct classes responsible only for their directional construction data.
 
-
 ## Product and coproduct constructors repeated discrete input normalization
 
-- **Evidence and impact:** both union constructors independently converted tuple arguments into a discrete sequence diagram, recovered its shape, and enforced the same nontrivial-discrete admission before branching to limit versus colimit execution. That shared parsing/admission step obscured the actual directional difference.
+- **Evidence and impact:** both union constructors independently converted tuple arguments into a discrete sequence diagram, recovered its shape, and enforced the same nontrivial-discrete admission before branching to limit versus colimit execution.
+  That shared parsing/admission step obscured the actual directional difference.
 
 - **Repair link and acceptance:** `bloat-discrete-construction-input`. Centralize input normalization and shape admission in `_discrete_construction_diagram`; leave only directional execution in the public constructors.
+
+
+## FpCategories kept a hand-rolled identity cache beside Sage MonoDict
+
+- **Evidence and impact:** `engines/fp_categories.py` keyed native presentation records by `id(category)` in a plain dictionary and separately retained/asserted the owner object to defend against id reuse. The repository already uses Sage `MonoDict` precisely for identity-keyed state with strong key retention, so this duplicated lower-level identity bookkeeping.
+
+- **Repair link and acceptance:** `bloat-fp-presentation-identity-cache`. Store presentation records directly in `MonoDict` under the owned category and delete the integer-key/owner-assertion protocol.

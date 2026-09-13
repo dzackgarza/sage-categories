@@ -1376,9 +1376,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-fp-presentation-identity-cache`. Store presentation records directly in `MonoDict` under the owned category and delete the integer-key/owner-assertion protocol.
 
-
 ## Catlab recipe retention reimplemented identity maps with integer keys
 
-- **Evidence and impact:** `engines/catlab.py` stored functor and transformation recipes in plain dictionaries keyed by `id(value)`, retaining the owned morphism again beside each recipe and asserting identity on every read. Sage `MonoDict` already owns exactly this identity-keyed strong-reference behavior, so both recipe tables duplicated the same low-level protocol.
+- **Evidence and impact:** `engines/catlab.py` stored functor and transformation recipes in plain dictionaries keyed by `id(value)`, retaining the owned morphism again beside each recipe and asserting identity on every read.
+  Sage `MonoDict` already owns exactly this identity-keyed strong-reference behavior, so both recipe tables duplicated the same low-level protocol.
 
 - **Repair link and acceptance:** `bloat-catlab-recipe-identity-cache`. Key both recipe tables directly by the owned morphism in `MonoDict`, preserving transformation-recipe replacement only before native materialization.
+
+
+## CAP cokernel mediator state used a manual id-keyed table
+
+- **Evidence and impact:** `engines/presented_modules.py` retained the native difference associated to a selected cokernel projection under `id(projection)`, stored the projection again beside it, then manually checked identity on lookup. This is the same identity-table protocol already owned by Sage `MonoDict`.
+
+- **Repair link and acceptance:** `bloat-cokernel-difference-identity-cache`. Key the native difference directly by the owned projection in `MonoDict` and remove the integer key plus duplicate owner record.

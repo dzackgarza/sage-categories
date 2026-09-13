@@ -2126,6 +2126,67 @@ def _project_runtime_class_aliases(tree: ast.Module, aliases: dict[str, str], so
         )
 
 
+def _direct_hoisted_role_expression(
+    expression: ast.expr | None,
+    module: str,
+    hoisted_role_providers: dict[str, str],
+) -> ast.expr | None:
+    """Resolve one quoted public role spelling to its direct generated helper TypeInfo."""
+    if not isinstance(expression, ast.Constant) or not isinstance(expression.value, str):
+        return expression
+    spelling = expression.value
+    matches = [
+        helper
+        for public, helper in hoisted_role_providers.items()
+        if public.endswith(f".{spelling}") or public == spelling
+    ]
+    if not matches:
+        return expression
+    assert len(matches) == 1, f"ambiguous quoted role default {spelling!r}: {matches!r}"
+    helper = matches[0]
+    local_prefix = f"{module}."
+    rendered = helper.removeprefix(local_prefix) if helper.startswith(local_prefix) else helper
+    return _base_expression(rendered)
+
+
+def _rewrite_hoisted_class_role_defaults(
+    tree: ast.Module,
+    module: str,
+    hoisted_role_providers: dict[str, str],
+) -> None:
+    """Rewrite hoisted role defaults on PEP-695 class parameters."""
+    for declaration in _classes(tree.body, ""):
+        for parameter in declaration.node.type_params:
+            parameter.default_value = _direct_hoisted_role_expression(parameter.default_value, module, hoisted_role_providers)
+            if isinstance(parameter, ast.TypeVar):
+                parameter.bound = _direct_hoisted_role_expression(parameter.bound, module, hoisted_role_providers)
+
+
+def _rewrite_hoisted_legacy_typevar_defaults(
+    tree: ast.Module,
+    module: str,
+    hoisted_role_providers: dict[str, str],
+) -> None:
+    """Rewrite hoisted role defaults in legacy ``_typing.TypeVar`` declarations."""
+    for statement in tree.body:
+        if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Call):
+            continue
+        call = statement.value
+        if not (
+            isinstance(call.func, ast.Attribute)
+            and isinstance(call.func.value, ast.Name)
+            and call.func.value.id == "_typing"
+            and call.func.attr == "TypeVar"
+        ):
+            continue
+        for keyword in call.keywords:
+            if keyword.arg != "default":
+                continue
+            projected = _direct_hoisted_role_expression(keyword.value, module, hoisted_role_providers)
+            if projected is not None:
+                keyword.value = projected
+
+
 def _project_hoisted_role_defaults(
     tree: ast.Module,
     module: str,
@@ -2142,35 +2203,8 @@ def _project_hoisted_role_defaults(
     Apply the rewrite both to PEP-695 class type parameters and to the legacy ``TypeVar``
     declarations used by the public ``Category`` class alias.
     """
-
-    def direct_role(expression: ast.expr | None) -> ast.expr | None:
-        if not isinstance(expression, ast.Constant) or not isinstance(expression.value, str):
-            return expression
-        spelling = expression.value
-        matches = [helper for public, helper in hoisted_role_providers.items() if public.endswith(f".{spelling}") or public == spelling]
-        if not matches:
-            return expression
-        assert len(matches) == 1, f"ambiguous quoted role default {spelling!r}: {matches!r}"
-        helper = matches[0]
-        local_prefix = f"{module}."
-        rendered = helper.removeprefix(local_prefix) if helper.startswith(local_prefix) else helper
-        return _base_expression(rendered)
-
-    for declaration in _classes(tree.body, ""):
-        for parameter in declaration.node.type_params:
-            parameter.default_value = direct_role(parameter.default_value)
-            if isinstance(parameter, ast.TypeVar):
-                parameter.bound = direct_role(parameter.bound)
-
-    for statement in tree.body:
-        if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Call):
-            continue
-        call = statement.value
-        if not (isinstance(call.func, ast.Attribute) and isinstance(call.func.value, ast.Name) and call.func.value.id == "_typing" and call.func.attr == "TypeVar"):
-            continue
-        for keyword in call.keywords:
-            if keyword.arg == "default":
-                keyword.value = direct_role(keyword.value) or keyword.value
+    _rewrite_hoisted_class_role_defaults(tree, module, hoisted_role_providers)
+    _rewrite_hoisted_legacy_typevar_defaults(tree, module, hoisted_role_providers)
 
 
 def _project_exact_morphism_endpoints(tree: ast.Module) -> None:

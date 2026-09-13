@@ -49,6 +49,7 @@ from sage_categories.cat.calculus import (
 from sage_categories.cat.cat_constructions import (
     FamilyObjectData,
     LimitSubcategory,
+    _faithful_isofibration_projection,
     limit_of_categories,
 )
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -802,37 +803,16 @@ class MonoidPairsCategory(LimitSubcategory):
 
     @cached_method
     def to_additive(self) -> Functor:
-        return (
-            Fun(self, self.factor(0))
-            .Faithful()
-            .Isofibrations()(
-                lambda value: value.family_component(0),
-                lambda arrow: arrow.family_component(0),
-            )
-        )
+        return _faithful_isofibration_projection(self, 0)
 
     @cached_method
     def to_multiplicative(self) -> Functor:
-        return (
-            Fun(self, self.factor(1))
-            .Faithful()
-            .Isofibrations()(
-                lambda value: value.family_component(1),
-                lambda arrow: arrow.family_component(1),
-            )
-        )
+        return _faithful_isofibration_projection(self, 1)
 
     @cached_method
     def to_carrier(self) -> Functor:
         """The shared carrier ``(A, M, X) |-> X`` of the two named monoid structures."""
-        return (
-            Fun(self, self.factor(2))
-            .Faithful()
-            .Isofibrations()(
-                lambda value: value.family_component(2),
-                lambda arrow: arrow.family_component(2),
-            )
-        )
+        return _faithful_isofibration_projection(self, 2)
 
     def homomorphism(
         self,

@@ -17,7 +17,11 @@ from __future__ import annotations
 
 __all__ = ["ActionPairsCategory", "BimoduleCategory", "Bimodules"]
 
-from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
+from sage_categories.cat.cat_constructions import (
+    LimitSubcategory,
+    _faithful_isofibration_projection,
+    limit_of_categories,
+)
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
@@ -58,11 +62,11 @@ class ActionPairsCategory(LimitSubcategory):
 
     @cached_method
     def to_left(self) -> Functor:
-        return Fun(self, self.factor(0)).Faithful().Isofibrations()(lambda value: value.family_component(0), lambda arrow: arrow.family_component(0))
+        return _faithful_isofibration_projection(self, 0)
 
     @cached_method
     def to_right(self) -> Functor:
-        return Fun(self, self.factor(1)).Faithful().Isofibrations()(lambda value: value.family_component(1), lambda arrow: arrow.family_component(1))
+        return _faithful_isofibration_projection(self, 1)
 
     def homomorphism(
         self,

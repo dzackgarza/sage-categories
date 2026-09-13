@@ -694,3 +694,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/structured_objects.py::MagmaCategory` repeated `carrier()`, `structure()`, and `underlying_morphism()` byte-for-byte with `InserterCategory`, even though `MagmaCategory` subclasses that owner. The overrides added a second state-reading surface with no changed semantics and made later subclasses look as though Magma owned those generic inserter operations.
 
 - **Repair link and acceptance:** `bloat-magma-inherited-accessors`. Delete the redundant overrides and inherit the exact inserter implementations; keep only Magma's mathematical `operation()` alias on the object role.
+
+## Pullback pair categories repeated faithful factor projections
+
+- **Evidence and impact:** `MonoidPairsCategory` built the same `Fun(self, factor).Faithful().Isofibrations()` projection three times and `ActionPairsCategory` repeated it twice more, differing only by factor index and public semantic name. The componentwise object/morphism action is generic limit-family plumbing, not monoid- or module-specific mathematics.
+
+- **Repair link and acceptance:** `bloat-faithful-factor-projections`. Give the componentwise faithful-isofibration factor projection one private owner in the category-limit layer and let the pair categories keep only their named projection methods.

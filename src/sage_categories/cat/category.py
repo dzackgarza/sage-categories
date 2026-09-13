@@ -32,6 +32,7 @@ from sage_categories.kernel.roles import prepare_category_subclass
 from sage_categories.kernel.sage_runtime import (
     Integer,
     MonoDict,
+    cached_function,
     cached_method,
 )
 from sage_categories.kernel.type_aliases import ContainmentInput, EqualityInput
@@ -2391,10 +2392,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         return "Cat"
 
 
-# The singleton is ``None`` while the kernel constructs the first ``Cat()`` object.
-_CAT: CategoryOfCategories | None = None
-
-
 def _member_by_placement(
     candidate: CategoryOfCategories.ElementType,
     category: Category,
@@ -2409,6 +2406,12 @@ def _integer_member_by_placement(candidate: int, category: Category, assumptions
 
 register_handler(member, _member_by_placement)
 register_handler(member, _integer_member_by_placement)
+
+
+@cached_function
+def Cat() -> CategoryOfCategories:
+    """The category of categories, installed exactly once by the bootstrap."""
+    raise AssertionError("Cat is not bootstrapped")
 
 
 def bootstrap() -> None:
@@ -2427,13 +2430,9 @@ def bootstrap() -> None:
     """
     from sage_categories.kernel.compiler import construct_category_singleton
 
-    global _CAT, Category, Functor
-    assert _CAT is None, "Cat is already bound"
-    _CAT = construct_category_singleton(CategoryOfCategories)
-    Category = _CAT.ObjectType
-    Functor = _CAT.MorphismType
-
-
-def Cat() -> CategoryOfCategories:
-    """The category of categories."""
-    return _CAT
+    global Category, Functor
+    assert not Cat.is_in_cache(), "Cat is already bound"
+    category = construct_category_singleton(CategoryOfCategories)
+    Cat.set_cache(category)
+    Category = category.ObjectType
+    Functor = category.MorphismType

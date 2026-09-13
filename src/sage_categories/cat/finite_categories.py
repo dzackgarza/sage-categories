@@ -22,7 +22,7 @@ from sage_categories.cat.opposites import OppositeCategory, opposite_morphism
 from sage_categories.cat.predicates import Unknown, UnknownClass, ask
 from sage_categories.cat.shapes import DiscreteCategory
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
 
 @dataclass(frozen=True)
@@ -46,9 +46,6 @@ def equal(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.
     return result is True
 
 
-_retained: MonoDict = MonoDict()
-
-
 def _category_limits_engine() -> ModuleType:
     """Load the finite-set limit adapter only when a finite category construction needs it."""
     from sage_categories.engines import category_limits
@@ -63,12 +60,26 @@ def _slices() -> ModuleType:
     return slices
 
 
+@cached_function(key=lambda category: identity_key(category))
+def _retained_finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData:
+    """A positive finite-category evaluation retained by exact category identity."""
+    result = _evaluate(category)
+    assert result is not Unknown, f"{category!r} has no finite category evaluation to retain"
+    return result
+
+
 def finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
-    if category in _retained:
-        return _retained[category]
+    """Evaluate ``category`` finitely, caching only positive results.
+
+    ``Unknown`` is intentionally not retained: a category may acquire finite retained
+    data later in the construction lifecycle.  Positive evaluations are immutable for
+    the exact owned category and use Sage's identity-keyed function cache.
+    """
+    if _retained_finite_category.is_in_cache(category):
+        return _retained_finite_category(category)
     result = _evaluate(category)
     if result is not Unknown:
-        _retained[category] = result
+        _retained_finite_category.set_cache(result, category)
     return result
 
 

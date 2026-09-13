@@ -1912,3 +1912,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `LimitCategory` stored unconditional component-agreement decisions in `_agreement: MonoDict` and the predicate handler manually checked, computed, and retained them. The cached value is a pure result of the exact candidate family under no assumptions; conditional decisions deliberately remain uncached.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Put unconditional compatibility behind an identity-keyed cached method, use `is_in_cache` to reuse it under later assumptions without constructing anything, and remove `_agreement` while leaving conditional predicate evaluation unchanged.
+
+## Cat singleton used a nullable module-global memoization protocol
+
+- **Evidence and impact:** `cat/category.py` kept `_CAT: CategoryOfCategories | None` solely to store the one bootstrapped `Cat()` object; `bootstrap()` open-coded the empty check and assignment, and `Cat()` was only a getter over that cache. The singleton itself is mathematically required, but this parallel memoization mechanism is not: Sage's nullary `cached_function` already owns one-value retention and explicit `set_cache` installation for externally constructed results.
+
+- **Repair link and acceptance:** `bloat-cat-singleton-cache`. Make `Cat()` a nullary Sage cached function whose uncached body fails before bootstrap, have `bootstrap()` construct the self-referential category once and install it with `set_cache`, and delete `_CAT` entirely while preserving stable singleton identity after import.

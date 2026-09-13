@@ -389,7 +389,7 @@ class Axiom:
 
     def application_name(self) -> str:
         """``is_p()``: the application generated from this axiom's identifier and nothing else (D89, POL-CAT-060)."""
-        return _application_name(self._name)
+        return "is_" + uncamelcase(self._name, "_")
 
     def application_owner(self) -> type[CategoryOfCategories.ElementType] | None:
         """The role class the application is written onto: the object declaration of the declaring category class.
@@ -603,8 +603,3 @@ def declared_axiom(category: Category, name: str) -> Axiom | None:
         if inherited is not None:
             return inherited
     return None
-
-
-def _application_name(identifier: str) -> str:
-    """``"FullyFaithful"`` gives ``"is_fully_faithful"``."""
-    return "is_" + uncamelcase(identifier, "_")

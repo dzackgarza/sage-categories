@@ -820,3 +820,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/properties.py` imported `cone`, `cone_apex`, `cospan_diagram`, `Cat`, and `Fun` independently in inverse-image retention and property-subcategory intersection. Both paths construct the same kind of retained pullback and delay the same imports to avoid property/functor/construction bootstrap cycles, so the five-name runtime boundary had two owners.
 
 - **Repair link and acceptance:** `bloat-property-pullback-runtime`. Put the delayed pullback helper bundle behind one `_subcategory_pullback_runtime()` owner and let inverse images and intersections share it without changing their distinct projections or mediator logic.
+
+## Yoneda helpers repeatedly imported refinement
+
+- **Evidence and impact:** `cat/weighted.py::yoneda` and `coyoneda` each imported the same kernel `refine` operation locally immediately before marking the constructed embedding fully faithful. The module already depends on the refinement-independent category layer at import time, and the kernel refinement owner has no reverse dependency on weighted constructions, so the duplicate delayed imports protect no cycle.
+
+- **Repair link and acceptance:** `bloat-weighted-refinement-import`. Bind `refine` once at module scope and let both Yoneda constructions use the shared owner while retaining their separate curry/transpose formulas.

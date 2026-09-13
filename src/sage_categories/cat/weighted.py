@@ -41,6 +41,7 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import Unknown
 from sage_categories.cat.shapes import discrete_functor
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
@@ -193,7 +194,6 @@ def hom_functor(category: Category, sets: Category) -> Functor:
 def yoneda(category: Category, sets: Category) -> Functor:
     """The covariant Yoneda embedding ``C -> Fun(C.op(), Sets)``."""
     from sage_categories.cat.calculus import curry, transpose
-    from sage_categories.kernel.refinement import refine
 
     result = transpose(curry(hom_functor(category, sets)))
     refine(result, Fun.FullyFaithful())
@@ -204,7 +204,6 @@ def yoneda(category: Category, sets: Category) -> Functor:
 def coyoneda(category: Category, sets: Category) -> Functor:
     """The covariant-hom embedding ``C.op() -> Fun(C, Sets)``."""
     from sage_categories.cat.calculus import curry
-    from sage_categories.kernel.refinement import refine
 
     result = curry(hom_functor(category, sets))
     refine(result, Fun.FullyFaithful())

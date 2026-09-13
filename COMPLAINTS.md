@@ -970,3 +970,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/cones.py` imported `opposite_morphism` in cocone construction and `OppositeCategory` independently in vertex resolution. Both operations must remain below the opposite-category layer during bootstrap, but they cross one delayed module boundary rather than two unrelated dependencies.
 
 - **Repair link and acceptance:** `bloat-cone-opposite-boundary`. Put the delayed opposite-category module behind `_opposites()` and use it for both cocone arrow reversal and opposite-shape recognition.
+
+## Integer-module presentations retained a deleted additive presentation API
+
+- **Evidence and impact:** `algebra/indexed_modules.py` already imports its additive construction owners at module scope, but finite free modules, matrix presentations, basis elements, and cokernel factors reopened `algebra.abelian` locally. Three of those paths still imported the removed public `presentation()` accessor, so they would fail when exercised after the native-additive cleanup. The retained Smith conversion is now the private `_coordinates` boundary used by the CAP adapter itself.
+
+- **Repair link and acceptance:** `bloat-indexed-module-additive-boundary`. Bind the required additive operations once at module scope, replace the stale `presentation()` calls by `_coordinates()`, and remove every function-local `algebra.abelian` import from the integer-module presentation path.

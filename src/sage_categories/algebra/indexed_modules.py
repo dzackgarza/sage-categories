@@ -16,12 +16,17 @@ from dataclasses import dataclass
 from sage_categories.algebra.abelian import (
     AbelianGroups,
     AbelianTensor,
+    _coordinates,
     _indexed_free_record,
     _rule_abelian_homomorphism,
+    abelian_homomorphism,
+    coequalizer_mediator,
+    coequalizer_projection,
     indexed_free_abelian_coproduct,
     indexed_free_abelian_injection,
     indexed_free_abelian_mediator,
     integer_group,
+    presented_abelian_group,
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.cones import cocone, cocone_apex
@@ -235,8 +240,6 @@ def finite_free_integer_module(rank: int) -> ModuleCategory.ObjectType:
     r"""The finite free left module ``ZZ^rank`` in the general integer-module category."""
     from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup
 
-    from sage_categories.algebra.abelian import presented_abelian_group
-
     rank = int(rank)
     if rank < 0:
         raise ValueError("a free-module rank is nonnegative")
@@ -251,12 +254,6 @@ class IntegerModulePresentation:
         from sage.modules.free_module_element import vector
         from sage.rings.integer_ring import ZZ
 
-        from sage_categories.algebra.abelian import (
-            abelian_homomorphism,
-            coequalizer_projection,
-            presentation,
-        )
-
         rows = tuple(tuple(int(entry) for entry in row) for row in relation_rows)
         columns = len(rows[0]) if rows else 0
         if any(len(row) != columns for row in rows):
@@ -267,8 +264,8 @@ class IntegerModulePresentation:
         modules = Modules(integer_scalar_monoid(), SelfAction(AbelianTensor()))
         source_group = modules.forgetful().on_object(source)
         target_group = modules.forgetful().on_object(target)
-        source_form = presentation(source_group)
-        target_form = presentation(target_group)
+        source_form = _coordinates(source_group)
+        target_form = _coordinates(target_group)
 
         def relation_rule(datum):
             coordinates = vector(ZZ, source_form.coordinates(datum)) * relation_matrix
@@ -321,10 +318,8 @@ class IntegerModulePresentation:
         return self._projection
 
     def target_basis_element(self, index: int):
-        from sage_categories.algebra.abelian import presentation
-
         target_group = self._modules.forgetful().on_object(self.target_free_module())
-        form = presentation(target_group)
+        form = _coordinates(target_group)
         coordinates = [0] * form.rank()
         coordinates[int(index)] = 1
         return self.target_free_module().point(form.element(tuple(coordinates)))
@@ -335,8 +330,6 @@ class IntegerModulePresentation:
         coequalizing: MorphismCategory.ObjectType,
     ) -> MorphismCategory.ObjectType:
         r"""Factor a map killing the relation matrix through the retained CAP cokernel."""
-        from sage_categories.algebra.abelian import coequalizer_mediator
-
         assert coequalizing.domain() is self.target_free_module()
         assert coequalizing.codomain() is target
         additive = self._modules.forgetful().on_morphism(coequalizing)

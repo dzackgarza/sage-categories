@@ -1876,3 +1876,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `_TaggedCategory(index, member)` normalized the public index to a retained shape vertex, then stored the resulting tagged object in `_objects: TripleDict` with explicit lookup/construct/store. The retained object is determined solely by the exact normalized tag and member identities, and the module already carries the repository `identity_key`/`cached_method` machinery.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Keep public index normalization and summand membership checks in `__call__`, cache the normalized tag/member construction in a private identity-keyed method, and remove `_objects` plus the now-unused `TripleDict` import.
+
+## Formal composition hand-rolled a two-argument identity cache
+
+- **Evidence and impact:** `Category.composite(second, first)` used `_composites: TripleDict` only for the no-ambient formal-composite case, with explicit identity lookup/construct/store. The composite is determined by the exact ordered factor pair; retaining its factors and native cell belongs to first construction, but the dedicated table lifecycle does not.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Keep composability and ambient delegation in `composite`, move the no-ambient construction to an identity-keyed cached helper, and remove the per-category `_composites` table while preserving retained factors/native composite cells.

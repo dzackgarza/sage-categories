@@ -341,7 +341,6 @@ class CategoryDeclaration[
         self._inverses: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
         self._elements: MonoDict = MonoDict()
-        self._composites: TripleDict = TripleDict(weak_values=False)
         self._biproduct_constructor: Callable[[object, object], object] | None = None
         self._zero_morphism_constructor: Callable[[object, object], object] | None = None
         self._colimit_constructors: MonoDict = MonoDict()
@@ -784,15 +783,15 @@ class CategoryDeclaration[
             composite = self.ambient().composite(second, first)
             refine(composite, self.morphism_category(1))
             return composite
-        key = (second, first, self)
-        if key not in self._composites:
-            formal = self.MorphismType(first.domain(), second.codomain())
-            formal.retain_factors(first, second)
-            cells = _cells_engine()
+        return self._formal_composite(second, first)
 
-            cells.retain_composite(self, formal, first, second)
-            self._composites[key] = formal
-        return self._composites[key]
+    @cached_method(key=lambda self, second, first: identity_key(second, first))
+    def _formal_composite(self, second: MorphismRole, first: MorphismRole) -> MorphismRole:
+        """The retained formal composite in a category with no ambient owner."""
+        formal = self.MorphismType(first.domain(), second.codomain())
+        formal.retain_factors(first, second)
+        _cells_engine().retain_composite(self, formal, first, second)
+        return formal
 
     def identity_two_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
 

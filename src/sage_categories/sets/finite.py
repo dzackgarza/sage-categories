@@ -68,6 +68,13 @@ def _finite_sets_engine():
     return finite_sets
 
 
+def _finite_category_engine():
+    """Load finite-category recognition at the one cycle-safe Sets boundary."""
+    from sage_categories.cat import finite_categories
+
+    return finite_categories
+
+
 class FinitePredicate(Predicate):
     name = "finite_set"
 
@@ -687,10 +694,8 @@ class SetsCategory(Category[[Map], []]):
 
     def _product_enumeration(self, diagram: Functor) -> MorphismCategory.ObjectType | UnknownClass:
         """``(prod_i e_i) * c``, with ``c`` the finite enumeration of ``prod_i I_i``."""
-        from sage_categories.cat.finite_categories import finite_objects
-
         shape = diagram.domain()
-        vertices = finite_objects(shape)
+        vertices = _finite_category_engine().finite_objects(shape)
         if vertices is Unknown:
             return Unknown
         enumerations: dict[CategoryOfCategories.ElementType, MorphismCategory.ObjectType] = {}
@@ -814,10 +819,9 @@ class SetsCategory(Category[[Map], []]):
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         if shape.is_discrete() or shape is Cat().WalkingParallelPair() or shape.op() is Cat().WalkingParallelPair():
             return self._primitive_limit
-        from sage_categories.cat.finite_categories import finite_category
         finite_sets = _finite_sets_engine()
 
-        if finite_category(shape) is not Unknown:
+        if _finite_category_engine().finite_category(shape) is not Unknown:
             return finite_sets.finite_limit
         return Category.limit_construction(self, shape)
 
@@ -826,10 +830,9 @@ class SetsCategory(Category[[Map], []]):
             return self._sequential_colimit
         if shape.is_discrete() or shape is Cat().WalkingParallelPair() or shape.op() is Cat().WalkingParallelPair():
             return self._primitive_colimit
-        from sage_categories.cat.finite_categories import finite_category
         finite_sets = _finite_sets_engine()
 
-        if finite_category(shape) is not Unknown:
+        if _finite_category_engine().finite_category(shape) is not Unknown:
             return finite_sets.finite_colimit
         return Category.colimit_construction(self, shape)
 
@@ -902,12 +905,11 @@ class SetsCategory(Category[[Map], []]):
         return self.Limits(shape).with_universal_data(diagram, apex, cone(diagram, apex, leg), lift)
 
     def _primitive_limit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
-        from sage_categories.cat.finite_categories import finite_category
         finite_sets = _finite_sets_engine()
 
         shape = diagram.domain()
         if shape.is_discrete():
-            finite_shape = finite_category(shape)
+            finite_shape = _finite_category_engine().finite_category(shape)
             if finite_shape is Unknown:
                 return self._indexed_product(diagram)
             vertices = tuple(finite_shape.objects)
@@ -967,12 +969,11 @@ class SetsCategory(Category[[Map], []]):
         return self.Colimits(shape).with_universal_data(diagram, apex, cocone(diagram, apex, leg), descent)
 
     def _primitive_colimit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
-        from sage_categories.cat.finite_categories import finite_category
         finite_sets = _finite_sets_engine()
 
         shape = diagram.domain()
         if shape.is_discrete():
-            finite_shape = finite_category(shape)
+            finite_shape = _finite_category_engine().finite_category(shape)
             if finite_shape is Unknown:
                 return self._indexed_coproduct(diagram)
             summands = tuple(diagram.on_object(vertex) for vertex in finite_shape.objects)

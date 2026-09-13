@@ -760,3 +760,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `sets/finite.py` imported `engines.finite_sets` independently in equality, mono/epi/inverse checks, limit/colimit dispatch, primitive universal constructions, image factorization, Hom enumeration, and cartesian comparisons. The delay is necessary because the engine reaches back through the finite-set retention layer, but twelve separate import sites gave one cycle-breaking boundary twelve owners.
 
 - **Repair link and acceptance:** `bloat-sets-finite-engine-boundary`. Keep the import delayed behind one `_finite_sets_engine()` helper and route every finite-set engine call through that boundary without changing which operations remain native or represented.
+
+## Sets repeated its finite-category evaluator import boundary
+
+- **Evidence and impact:** `sets/finite.py` imported `cat.finite_categories` separately for product enumeration, finite limit/colimit dispatch, and primitive finite product/coproduct selection. These imports are intentionally delayed to avoid bootstrap cycles, but five spellings of the same cycle-safe evaluator boundary obscure the dependency and duplicate its loading policy.
+
+- **Repair link and acceptance:** `bloat-sets-finite-category-boundary`. Keep finite-category recognition delayed behind one `_finite_category_engine()` helper and use it for `finite_objects` and `finite_category` throughout the Sets implementation.

@@ -32,7 +32,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.refinement import is_placed, refine
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -136,8 +136,6 @@ class SliceLikeCategory(CommaSpecialization):
         # ``structure_functors`` runs inside that construction, so both projections are
         # built there and retained (``cat/points.py`` makes the same call at the same
         # point).
-        self._arrow_projection: Functor | None = None
-        self._varying_projection: Functor | None = None
         point, identity = base.point_functor(fixed), Fun(base, base).one()
         super().__init__(identity if fixed_label == 1 else point, point if fixed_label == 1 else identity)
         self.retain_lifts()
@@ -152,22 +150,20 @@ class SliceLikeCategory(CommaSpecialization):
         """``ev_k: Fun([1], C) -> C``, the leg of the cospan this category is the pullback of."""
         return self.arrows().evaluation(_walking_arrow()(self._fixed_label))
 
+    @cached_method
     def defining_arrow(self) -> Functor:
         """The retained pullback projection to ``Fun([1], C)``: the defining morphism of an object, the commuting square of a triangle (POL-CAT-092)."""
-        if self._arrow_projection is None:
-            self._arrow_projection = Cat().construct_morphism(self, self.arrows(), _structure_of, self._square)
-        return self._arrow_projection
+        return Cat().construct_morphism(self, self.arrows(), _structure_of, self._square)
 
+    @cached_method
     def fixed_projection(self) -> Functor:
         """Return the retained projection from the slice to its varying objects in ``C``."""
-        if self._varying_projection is None:
-            self._varying_projection = Cat().construct_morphism(
-                self,
-                self._base_of_slice,
-                lambda member_object: self.varying_end(self.defining_arrow_of(member_object)),
-                lambda triangle: _varying_of(triangle),
-            )
-        return self._varying_projection
+        return Cat().construct_morphism(
+            self,
+            self._base_of_slice,
+            lambda member_object: self.varying_end(self.defining_arrow_of(member_object)),
+            lambda triangle: _varying_of(triangle),
+        )
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The fixed projection: a slice inherits the methods of the category its objects sit over (POL-CAT-047, POL-FUN-031)."""

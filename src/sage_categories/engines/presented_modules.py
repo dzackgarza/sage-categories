@@ -31,7 +31,6 @@ from sage_categories.algebra._presented_modules_cap import (
     retain_presented_native_object,
 )
 from sage_categories.engines.gap import PRESENTED_MODULE_PACKAGES, load_packages
-from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
     "coequalizer_mediator",
@@ -66,9 +65,6 @@ class _DirectSumBridge:
     """A raw CAP direct-sum basis assembled from the retained factor bases."""
 
     factors: tuple[object, ...]
-
-
-_cokernel_differences: MonoDict = MonoDict()
 
 
 def _abelian_owner() -> ModuleType:
@@ -424,14 +420,22 @@ def coequalizer_projection(first: object, second: object):
         _PresentationBridge(free, engine),
     )
     owned_projection = _owned_morphism_from_native(target, apex, native_projection)
-    _cokernel_differences[owned_projection] = native_difference
     return owned_projection
 
 
-def coequalizer_mediator(projection: object, coequalizing: object):
+def coequalizer_mediator(
+    projection: object,
+    coequalizing: object,
+    first: object,
+    second: object,
+):
     """Return CAP's universal colift through an already retained cokernel projection."""
-    assert projection in _cokernel_differences, f"{projection!r} is not a retained CAP cokernel projection"
-    native_difference = _cokernel_differences[projection]
+    assert first.domain() is second.domain()
+    assert first.codomain() is second.codomain() is projection.domain()
+    native_difference = libgap.SubtractionForMorphisms(
+        _native_morphism(first),
+        _native_morphism(second),
+    )
     apex = projection.codomain()
     target = coequalizing.codomain()
     assert coequalizing.domain() is projection.domain()

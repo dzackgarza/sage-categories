@@ -605,15 +605,17 @@ def _coequalizer_projection(
 def _coequalizer_mediator(
     projection: MorphismCategory.ObjectType,
     coequalizing: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """The one homomorphism ``h`` out of a quotient with ``h ∘ q = k``, for a ``k`` that kills the same subgroup.
 
-    The selected quotient is retained together with its private CAP cokernel.  CAP's
-    ``CokernelColift`` computes the universal factor, which is reconstructed on the exact
-    public owned endpoints.
+    The public universal presentation owns the defining parallel pair. CAP reconstructs
+    their native difference when computing the colift, so no reverse projection-to-pair
+    registry is needed at the engine boundary.
     """
     assert coequalizing.domain() is projection.domain(), f"{coequalizing!r} does not start at {projection.domain()!r}"
-    return _presented_modules().coequalizer_mediator(projection, coequalizing)
+    return _presented_modules().coequalizer_mediator(projection, coequalizing, first, second)
 
 
 def _abelian_coequalizer(diagram: Functor) -> CategoryOfCategories.ElementType:
@@ -638,7 +640,7 @@ def _abelian_coequalizer(diagram: Functor) -> CategoryOfCategories.ElementType:
     selected = cocone(diagram, apex, selected_leg)
 
     def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        return _coequalizer_mediator(projection, candidate.component(target_vertex))
+        return _coequalizer_mediator(projection, candidate.component(target_vertex), first, second)
 
     return abelian.Colimits(shape).with_universal_data(
         diagram,
@@ -685,12 +687,16 @@ def coequalizer_mediator(
         diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
     )
     assert len(matching) == 1, f"{projection!r} is not the selected leg of one retained coequalizer presentation"
+    shape = Cat().WalkingParallelPair()
+    diagram = matching[0]
+    first = diagram.on_morphism(shape.generator("f"))
+    second = diagram.on_morphism(shape.generator("g"))
     # The selected presentation already retains the CAP cokernel and its universal
     # factor.  Rebuilding a generic cocone here duplicates that construction and forces
     # the whole opposite/cone category tower merely to recover the same target leg.
     # The matching presentation above establishes ownership; the retained CAP colift
     # checks and constructs the universal factor on the exact public endpoints.
-    return _coequalizer_mediator(projection, coequalizing)
+    return _coequalizer_mediator(projection, coequalizing, first, second)
 
 
 def _pair_vector(

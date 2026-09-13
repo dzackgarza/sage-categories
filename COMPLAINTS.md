@@ -1954,3 +1954,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `_indexed_integer_module_data` stored `(Modules(ZZ, Ab), carrier)` for every indexed free integer module. Neither value is independent construction data: the integer-module category is the already-selected cached `Modules(integer_scalar_monoid(), SelfAction(AbelianTensor()))`, and its forgetful functor recovers the module's additive carrier. Indexed-freeness itself is already certified by `_indexed_free_record(carrier)`. The registry therefore duplicated public ownership/forgetful structure and served only as a parallel marker.
 
 - **Repair link and acceptance:** `bloat-indexed-module-data-registry`. Delete the record class and `MonoDict`; recover the shared integer-module owner and forgetful carrier at use sites, validate the carrier through `_indexed_free_record`, and keep indexed element/support/coefficient/homomorphism operations otherwise unchanged.
+
+## CAP cokernels retained a reverse registry for data the universal presentation already owns
+
+- **Evidence and impact:** `engines/presented_modules.py` stored `_cokernel_differences[projection] = first-second` solely so a later colift could recover the native difference from the selected projection. The owned coequalizer presentation already retains the defining parallel diagram, and `abelian.coequalizer_mediator()` explicitly locates that exact presentation before crossing the engine boundary. The reverse registry therefore duplicated universal-construction provenance and kept a second source of truth for which pair a projection coequalizes.
+
+- **Repair link and acceptance:** `bloat-cokernel-difference-registry`. Pass the retained public pair to the CAP colift boundary, reconstruct its native difference from the already-retained native morphisms, and delete `_cokernel_differences` entirely.

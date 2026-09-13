@@ -664,3 +664,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/cells.py::native_cell` handled cache lookup, identity recognition, reverse-orientation reuse, composite/generator construction, invertibility classification, and inverse-partner retention in one 16-complexity routine. The inverse bookkeeping appeared twice around the construction branch, making the ordinary lookup path harder to audit than the native operation requires.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Separate retained-inverse lookup, uncached cell construction, and inverse-partner synchronization into private helpers; leave `native_cell` as the ordered orchestration of those responsibilities.
+
+## Compiler initialization mixed graph traversal with selected-action execution
+
+- **Evidence and impact:** `kernel/compiler.py::_initialize_graph` contained local implementations of reached-node lookup, queued structure-functor execution, and traversal ordering inside the initializer loop itself. The resulting 14-complexity function made the once-only initialization contract depend on three nested pieces of mutable traversal machinery.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Give resolved-input lookup, selected-action execution, and initialization ordering separate private owners; leave `_initialize_graph` responsible for running the resulting ordered initializer turns and preserving first-written state.

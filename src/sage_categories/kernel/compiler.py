@@ -828,6 +828,68 @@ def _keep_first_state(
         )
 
 
+def _resolved_value(
+    resolved: list[tuple[Node, object, CategoryPoint]],
+    owner: Node,
+) -> tuple[object, CategoryPoint] | None:
+    """The retained datum and representative for one reached initializer owner."""
+    return next(((datum, value) for known, datum, value in resolved if same_node(known, owner)), None)
+
+
+def _run_selected_action(
+    queued: list[_SelectedAction],
+    resolved: list[tuple[Node, object, CategoryPoint]],
+    image_datum: _ImageDatum,
+) -> bool:
+    """Run one unresolved selected action and retain the target's construction input."""
+    while queued:
+        action = queued.pop(0)
+        match _resolved_value(resolved, action.target):
+            case None:
+                pass
+            case _:
+                continue
+        image, built, image_data = image_datum(action.functor, action.representative)
+        match image is action.representative:
+            case True:
+                resolved.append((action.target, action.datum, action.representative))
+                return True
+            case False:
+                pass
+        assert same_node(built, action.target) or not _runtime(action.target).written, (
+            f"{action.functor!r} out of {type(action.owner.category).__name__} constructs its image at "
+            f"{type(built.category).__name__}.{built.role.value}, not at its codomain "
+            f"{type(action.target.category).__name__}.{action.target.role.value}, whose declaration initializes local state"
+        )
+        resolved.append((action.target, image_data, image))
+        match same_node(built, action.target):
+            case True:
+                pass
+            case False:
+                resolved.append((built, image_data, image))
+        return True
+    return False
+
+
+def _initialization_order(
+    context: ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext,
+    current: Node,
+) -> tuple[Node, ...]:
+    """Selected-functor traversal order followed by any remaining C3 context nodes."""
+    pending = [current]
+    ordered: list[Node] = []
+    while pending:
+        owner = pending.pop()
+        match any(same_node(owner, known) for known in ordered):
+            case True:
+                continue
+            case False:
+                ordered.append(owner)
+                pending.extend(reversed([target for _, target in successors(owner)]))
+    ordered.extend(owner for owner in context.nodes if not any(same_node(owner, known) for known in ordered))
+    return tuple(ordered)
+
+
 def _initialize_graph(
     context: ObjectConstructionContext | ElementConstructionContext | MorphismConstructionContext,
     current: Node,
@@ -865,50 +927,11 @@ def _initialize_graph(
     # it.
     kernel_state = frozenset(vars(instance))
     installed: dict[str, tuple[object, Node]] = {}
-
-    def resolution(owner: Node) -> tuple[object, CategoryPoint] | None:
-        return next(
-            ((datum, value) for known, datum, value in resolved if same_node(known, owner)),
-            None,
-        )
-
-    def run_next_action() -> bool:
-        """Run one queued action and record what the owner it reaches is constructed from."""
-        while queued:
-            action = queued.pop(0)
-            if resolution(action.target) is not None:
-                continue
-            image, built, image_data = image_datum(action.functor, action.representative)
-            if image is action.representative:
-                # An inclusion is the identity on this value: the target shares the datum
-                # this owner was constructed from, and adds nothing to it.
-                resolved.append((action.target, action.datum, action.representative))
-                return True
-            assert same_node(built, action.target) or not _runtime(action.target).written, (
-                f"{action.functor!r} out of {type(action.owner.category).__name__} constructs its image at "
-                f"{type(built.category).__name__}.{built.role.value}, not at its codomain "
-                f"{type(action.target.category).__name__}.{action.target.role.value}, whose declaration initializes local state"
-            )
-            resolved.append((action.target, image_data, image))
-            if not same_node(built, action.target):
-                resolved.append((built, image_data, image))
-            return True
-        return False
-
-    pending = [current]
-    ordered: list[Node] = []
-    while pending:
-        owner = pending.pop()
-        if any(same_node(owner, known) for known in ordered):
-            continue
-        ordered.append(owner)
-        pending.extend(reversed([target for _, target in successors(owner)]))
-    ordered.extend(owner for owner in context.nodes if not any(same_node(owner, known) for known in ordered))
-    for owner in ordered:
+    for owner in _initialization_order(context, current):
         is_point_node = _is_cat_element_root(owner) or (owner.role is Role.ELEMENT and current.role is not Role.ELEMENT)
-        while not is_point_node and resolution(owner) is None and run_next_action():
+        while not is_point_node and _resolved_value(resolved, owner) is None and _run_selected_action(queued, resolved, image_datum):
             pass
-        found = (data, instance) if is_point_node else resolution(owner)
+        found = (data, instance) if is_point_node else _resolved_value(resolved, owner)
         assert found is not None, f"no selected functor reaches {owner.category!r}.{owner.role.value} from {current.category!r}"
         datum, representative = found
         runtime = _runtime(owner)

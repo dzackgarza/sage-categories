@@ -862,3 +862,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `algebra/abelian.py` imported `colift_along_epimorphism` separately for induced left actions, induced right actions, and relative-tensor associator descent. All three operations factor already-owned maps through a retained CAP epimorphism; the import must remain delayed because the CAP adapter imports the additive owner, but the same descent boundary appeared three times.
 
 - **Repair link and acceptance:** `bloat-additive-colift-boundary`. Put the delayed CAP colift behind `_colift_presented_epimorphism()` and route action descent plus associator descent through it.
+
+## OSCAR reconstruction repeated its execution-adapter import
+
+- **Evidence and impact:** `algebra/_commutative_rings_oscar.py` imported `engines.oscar` separately while reconstructing native ring objects and native ring morphisms. Both operations already share the same cycle-safe owner/runtime module bundle, so duplicating the OSCAR adapter import split one reconstruction boundary across two functions.
+
+- **Repair link and acceptance:** `bloat-oscar-reconstruction-boundary`. Put the delayed OSCAR adapter lookup behind `_oscar_runtime()` and let object and morphism reconstruction share it.

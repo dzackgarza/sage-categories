@@ -51,6 +51,13 @@ def _ring_runtime_modules() -> tuple[ModuleType, ModuleType, ModuleType]:
     )
 
 
+def _oscar_runtime() -> ModuleType:
+    """Load the OSCAR execution adapter at the one cycle-safe reconstruction boundary."""
+    from sage_categories.engines import oscar
+
+    return oscar
+
+
 def _owner() -> Any:
     declarations, _morphisms_module, structured = _ring_runtime_modules()
     return structured.Rings(declarations.Sets).Commutative()
@@ -116,8 +123,7 @@ def reconstruct_oscar_object(
     """
     from sympy import false, true
 
-    from sage_categories.engines import oscar
-
+    oscar = _oscar_runtime()
     calculus = import_module("sage_categories.cat.calculus")
     declarations, morphisms, structured = _ring_runtime_modules()
     monoidal_module = import_module("sage_categories.cat.monoidal")
@@ -173,8 +179,7 @@ def reconstruct_oscar_morphism(
     native: OscarHandle,
 ) -> MorphismCategory.ObjectType:
     """Reconstruct an OSCAR-certified ring map with the exact owned endpoints."""
-    from sage_categories.engines import oscar
-
+    oscar = _oscar_runtime()
     source_native = oscar_object_handle(source)
     target_native = oscar_object_handle(target)
     assert oscar.same_native(oscar.domain(native), source_native)

@@ -238,11 +238,6 @@ def _points(group: CategoryOfCategories.ElementType) -> CategoryOfCategories.Ele
     return _forgetful().on_object(group)
 
 
-def _point_map(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-    """The carrier map of a homomorphism, through the retained ``Ab -> Sets`` composite."""
-    return _forgetful().on_morphism(arrow)
-
-
 def _coordinates(group: CategoryOfCategories.ElementType) -> _CoordinateBridge:
     """The Smith presentation this leaf retained for a group object; a group built elsewhere has none."""
     assert group in _presentations, f"{group!r} was not constructed from a presented engine, so it has no Smith coordinates"

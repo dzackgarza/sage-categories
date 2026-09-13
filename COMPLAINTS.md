@@ -2026,3 +2026,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/monoidal.py` maintained `_cartesian_comparison_handlers: dict[type[Category], handler]`, manually registered leaf handlers, and manually dispatched on `type(base)`. This is ordinary single-dispatch behavior with no independent mathematical state, while Python already supplies the registration and dispatch mechanism.
 
 - **Repair link and acceptance:** `bloat-cartesian-comparison-dispatch`. Make `_native_cartesian_comparison` a `functools.singledispatch` function, register each leaf category type through its standard registry, and delete the parallel handler dictionary without changing the finite-set native comparison implementation.
+
+## The additive owner retained an unused carrier-map wrapper
+
+- **Evidence and impact:** `algebra/abelian.py::_point_map()` was a two-line wrapper around `_forgetful().on_morphism(arrow)` with no source or test callers. The public forgetful functor is already the owner of that operation, so the wrapper carried no retained state, abstraction boundary, or reuse and simply enlarged the private additive surface.
+
+- **Repair link and acceptance:** `bloat-additive-dead-point-map`. Delete `_point_map`, keep `_points` for the still-used carrier-object boundary, and leave morphism forgetting at the public forgetful-functor call sites.

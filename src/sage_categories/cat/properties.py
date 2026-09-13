@@ -82,6 +82,15 @@ def _morphisms() -> ModuleType:
     return morphisms
 
 
+def _subcategory_pullback_runtime():
+    """Load pullback construction helpers at the cycle-safe subcategory boundary."""
+    from sage_categories.cat.constructions import cone, cone_apex
+    from sage_categories.cat.diagrams import cospan_diagram
+    from sage_categories.cat.functors import Cat, Fun
+
+    return cone, cone_apex, cospan_diagram, Cat, Fun
+
+
 class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
     """A full subcategory of an ambient category, declared by its monomorphism into the ambient.
 
@@ -390,9 +399,7 @@ def retain_inverse_image(
     category (``specs/functor.md``, "Inverse-image subcategories";
     ``specs/ordered-sets.md``).
     """
-    from sage_categories.cat.constructions import cone, cone_apex
-    from sage_categories.cat.diagrams import cospan_diagram
-    from sage_categories.cat.functors import Cat, Fun
+    cone, cone_apex, cospan_diagram, Cat, Fun = _subcategory_pullback_runtime()
 
     key = (functor, target_subcategory, Cat())
     assert key not in _inverse_images, f"an inverse image of {target_subcategory!r} along {functor!r} is already retained"
@@ -523,9 +530,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         """``self.intersection(other)`` as the retained pullback over the common ambient."""
         if isinstance(other, tuple):
             return super().intersection(other)
-        from sage_categories.cat.constructions import cone, cone_apex
-        from sage_categories.cat.diagrams import cospan_diagram
-        from sage_categories.cat.functors import Cat, Fun
+        cone, cone_apex, cospan_diagram, Cat, Fun = _subcategory_pullback_runtime()
 
         ambient = self.narrowing_base()
         assert other.narrowing_base() is ambient, f"{self!r} and {other!r} do not have a common narrowing base"

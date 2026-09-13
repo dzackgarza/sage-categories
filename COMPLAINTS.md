@@ -814,3 +814,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/finite_sets.py` imported `cone`/`cone_apex` separately in finite limit, product, and equalizer execution, and imported `cocone`/`cocone_apex` separately in finite colimit, coproduct, and coequalizer execution. Those imports remain delayed because cone construction sits above the finite engine in the public category layer, but six local import sites gave two cycle-safe execution boundaries six owners.
 
 - **Repair link and acceptance:** `bloat-finite-sets-cone-boundaries`. Put the delayed limit and colimit cone bundles behind `_limit_cone_runtime()` and `_colimit_cocone_runtime()`, and route all six native universal-construction paths through them.
+
+## Property pullbacks repeated the same construction runtime bundle
+
+- **Evidence and impact:** `cat/properties.py` imported `cone`, `cone_apex`, `cospan_diagram`, `Cat`, and `Fun` independently in inverse-image retention and property-subcategory intersection. Both paths construct the same kind of retained pullback and delay the same imports to avoid property/functor/construction bootstrap cycles, so the five-name runtime boundary had two owners.
+
+- **Repair link and acceptance:** `bloat-property-pullback-runtime`. Put the delayed pullback helper bundle behind one `_subcategory_pullback_runtime()` owner and let inverse images and intersections share it without changing their distinct projections or mediator logic.

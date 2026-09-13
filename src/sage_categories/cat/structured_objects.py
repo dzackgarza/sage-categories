@@ -1086,25 +1086,11 @@ class RingCategory(LimitSubcategory):
 
     @cached_method
     def to_semiring(self) -> Functor:
-        return (
-            Fun(self, self.factor(0))
-            .Faithful()
-            .Isofibrations()(
-                lambda value: value.family_component(0),
-                lambda arrow: arrow.family_component(0),
-            )
-        )
+        return _faithful_isofibration_projection(self, 0)
 
     @cached_method
     def to_additive_group(self) -> Functor:
-        return (
-            Fun(self, self.factor(1))
-            .Faithful()
-            .Isofibrations()(
-                lambda value: value.family_component(1),
-                lambda arrow: arrow.family_component(1),
-            )
-        )
+        return _faithful_isofibration_projection(self, 1)
 
     @cached_method
     def forgetful(self) -> Functor:

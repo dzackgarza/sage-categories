@@ -1212,42 +1212,55 @@ Ideas, to be weighed, not obligations.*
 
 ## Adjunction and equivalence categories duplicated retained inhabitation
 
-- **Evidence and impact:** `AdjunctionsCategory` and `EquivalencesCategory` each implemented `_chosen_inhabitation` with the identical retained-object test. These categories differ in their mathematical data, but their chosen inhabitation semantics are the same private retention rule.
+- **Evidence and impact:** `AdjunctionsCategory` and `EquivalencesCategory` each implemented `_chosen_inhabitation` with the identical retained-object test.
+  These categories differ in their mathematical data, but their chosen inhabitation semantics are the same private retention rule.
 
 - **Repair link and acceptance:** `bloat-adjunction-inhabitation`. Put the retained-object decision in `_retained_inhabitation()` and let both category owners delegate to it without changing their public category structure.
 
 ## Universal-construction families repeated diagram-category construction
 
-- **Evidence and impact:** `LimitsCategory.diagrams` and `ColimitsCategory.diagrams` each reconstructed `Fun(shape, ambient)` directly, while the product/coproduct convenience layer had its own discrete helper doing the same thing after an extra shape assertion. The category of diagrams has one mathematical owner independent of limit versus colimit variance.
+- **Evidence and impact:** `LimitsCategory.diagrams` and `ColimitsCategory.diagrams` each reconstructed `Fun(shape, ambient)` directly, while the product/coproduct convenience layer had its own discrete helper doing the same thing after an extra shape assertion.
+  The category of diagrams has one mathematical owner independent of limit versus colimit variance.
 
 - **Repair link and acceptance:** `bloat-universal-diagram-category`. Put `Fun(shape, ambient)` behind `_diagram_category()`, use it from both shape-indexed universal families, and let `_discrete_diagrams()` add only its discrete-shape precondition before delegating.
 
 ## Dual functor equivalence built the same round-trip isomorphism twice
 
-- **Evidence and impact:** `dual_functor_category_equivalence` separately constructed the unit and its retained inverse on `Fun(I,C)`, then repeated the same endofunctor/identity/transformation/inverse-retention scaffold for the counit on the opposite dual category. Only the component rule differs: ordinary identity transformations on the source versus opposite identity transformations on the target.
+- **Evidence and impact:** `dual_functor_category_equivalence` separately constructed the unit and its retained inverse on `Fun(I,C)`, then repeated the same endofunctor/identity/transformation/inverse-retention scaffold for the counit on the opposite dual category.
+  Only the component rule differs: ordinary identity transformations on the source versus opposite identity transformations on the target.
 
 - **Repair link and acceptance:** `bloat-dual-functor-round-trip`. Put the retained `Id ≅ round_trip` scaffold in `_identity_round_trip()` and express source unit and target counit through their two component rules, retaining the same inverses and equivalence data.
 
 ## Projective-infinity construction hid topology maps inside one long initializer
 
-- **Evidence and impact:** `geometry/cw.py::projective_infinity` mixed object initialization with three independent universal-map responsibilities: finite-stage topological legs, stagewise weak-open preimages, and cocone descent. The resulting constructor exceeded one hundred lines and made the weak-topology equations available only as nested closures rather than named operations.
+- **Evidence and impact:** `geometry/cw.py::projective_infinity` mixed object initialization with three independent universal-map responsibilities: finite-stage topological legs, stagewise weak-open preimages, and cocone descent.
+  The resulting constructor exceeded one hundred lines and made the weak-topology equations available only as nested closures rather than named operations.
 
 - **Repair link and acceptance:** `bloat-projective-infinity-maps`. Extract `_projective_infinity_leg`, `_projective_infinity_preimage`, and `_projective_infinity_descent`; leave `projective_infinity()` responsible for constructing/retaining the object and wiring those named universal maps into its colimit presentation.
 
 ## Projective-line construction embedded the entire chart sheaf in its initializer
 
-- **Evidence and impact:** `geometry/schemes.py::projective_line` constructed the affine gluing and chart-swap map, then embedded a second independent responsibility: the finite cover category, section-ring functor, transported overlap restriction, and ring-presheaf reconstruction. That made the line constructor over one hundred lines and hid the sheaf's exact restriction presentation inside local closures.
+- **Evidence and impact:** `geometry/schemes.py::projective_line` constructed the affine gluing and chart-swap map, then embedded a second independent responsibility: the finite cover category, section-ring functor, transported overlap restriction, and ring-presheaf reconstruction.
+  That made the line constructor over one hundred lines and hid the sheaf's exact restriction presentation inside local closures.
 
 - **Repair link and acceptance:** `bloat-projective-line-sheaf`. Move the finite cover, sections, restrictions and `ring_presheaf_from_functor` call into `_projective_line_structure_sheaf()`; keep `projective_line()` responsible for chart rings, gluing/swap data, and assembly of the final presentation.
 
 ## Adele construction mixed algebra and topology in one long initializer
 
-- **Evidence and impact:** `adeles_of_rationals()` built the restricted-product carrier, its commutative ring, the topology of basic opens, and continuity witnesses for both ring operations in one function. These are two independent mathematical construction boundaries, and the resulting initializer hid the topology's binary-preimage rule inside a nested closure.
+- **Evidence and impact:** `adeles_of_rationals()` built the restricted-product carrier, its commutative ring, the topology of basic opens, and continuity witnesses for both ring operations in one function.
+  These are two independent mathematical construction boundaries, and the resulting initializer hid the topology's binary-preimage rule inside a nested closure.
 
 - **Repair link and acceptance:** `bloat-adele-algebra-topology`. Split `_adele_ring()` from `_adele_topological_ring()` so the public constructor only selects the owner, assembles the two retained structures, and packages the final presentation.
 
 ## Semiring construction embedded every law equation in the public constructor
 
-- **Evidence and impact:** `cat/structured_objects.py::Semirings` built the pullback of additive/multiplicative monoids and also carried the full distributivity and zero-absorption calculus, including product coordinates and all four natural-transformation equations. That mixed structural assembly with the laws that cut out the semiring subcategory and left the public constructor over one hundred lines.
+- **Evidence and impact:** `cat/structured_objects.py::Semirings` built the pullback of additive/multiplicative monoids and also carried the full distributivity and zero-absorption calculus, including product coordinates and all four natural-transformation equations.
+  That mixed structural assembly with the laws that cut out the semiring subcategory and left the public constructor over one hundred lines.
 
 - **Repair link and acceptance:** `bloat-semiring-law-equations`. Move the four law equations and their local operation calculus into `_semiring_law_equations()`; keep `Semirings()` responsible for assembling the monoid-pair carrier and applying the resulting equifiers.
+
+## Ring projections bypassed the shared faithful-isofibration owner
+
+- **Evidence and impact:** `RingCategory.to_semiring` and `to_additive_group` rebuilt the same faithful isofibration factor projections that `cat_constructions._faithful_isofibration_projection` already owns and that neighboring structured-object/bimodule limits already use. The duplicate code stated no ring-specific mathematics.
+
+- **Repair link and acceptance:** `bloat-ring-factor-projections`. Route both ring structure legs through `_faithful_isofibration_projection(self, index)` so the limit-projection owner is shared with the rest of the category-product implementation.

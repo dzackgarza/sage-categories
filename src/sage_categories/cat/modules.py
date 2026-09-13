@@ -40,12 +40,6 @@ def _underlying_object(scalars: MonoidCategory.ObjectType) -> CategoryOfCategori
     return scalars.carrier().carrier()
 
 
-def _underlying_morphism(monoids: MonoidCategory, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-    """The morphism of ``M`` carrying a monoid morphism."""
-    magmas = monoids.to_magmas().codomain()
-    return magmas.forgetful().on_morphism(monoids.to_magmas().on_morphism(arrow))
-
-
 class ModuleCategory(EquifierCategory):
     """``Modules(A, C)``: module objects over ``A`` in the actegory ``C``.
 
@@ -129,7 +123,8 @@ class ModuleCategory(EquifierCategory):
         monoids = Monoids(self._actegory.monoidal_structure())
         assert scalar_morphism.codomain() is self._scalars, f"{scalar_morphism!r} does not end at {self._scalars!r}"
         target = Modules(scalar_morphism.domain(), self._actegory)
-        underlying = _underlying_morphism(monoids, scalar_morphism)
+        to_magmas = monoids.to_magmas()
+        underlying = to_magmas.codomain().forgetful().on_morphism(to_magmas.on_morphism(scalar_morphism))
         base = self.underlying_category()
 
         def on_object(module: ModuleCategory.ObjectType) -> ModuleCategory.ObjectType:

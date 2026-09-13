@@ -108,15 +108,8 @@ def generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> t
     return tuple(sorted(output_directory.rglob("*.pyi")))
 
 
-def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> tuple[Path, ...]:
-    """Project declarations and return only formatter/linter-conforming stubs."""
-    from sage_categories.kernel.compiler import compiler
-
-    sources = tuple(sorted(output_directory.rglob("*.py")))
-    for source in sources:
-        if _bootstrap_source(output_directory, source):
-            import_module(_module_name(package, output_directory, source))
-    canonical_exports = _canonical_exports(package, output_directory, sources)
+def _run_parse_only_stubgen(output_directory: Path, sources: tuple[Path, ...]) -> None:
+    """Emit mypy's syntax-only source projection before owned static rewrites."""
     _stubgen_main()(
         [
             "--no-import",
@@ -126,17 +119,34 @@ def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> 
             *(str(source) for source in sources),
         ]
     )
+
+
+def _project_parse_only_surfaces(package: str, output_directory: Path) -> None:
+    """Apply source-local projection rules before package-wide declaration analysis."""
     for stub_path in output_directory.rglob("*.pyi"):
-        module = _module_name(package, output_directory, stub_path)
         source_path = stub_path.with_suffix(".py")
         if not source_path.exists():
             continue
+        module = _module_name(package, output_directory, stub_path)
         source_tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
         tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
         _project_source_value_aliases(tree, source_tree)
         _project_public_static_surface(tree, source_tree)
         _project_quoted_type_parameter_references(tree, source_tree, module)
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
+
+
+def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> tuple[Path, ...]:
+    """Project declarations and return only formatter/linter-conforming stubs."""
+    from sage_categories.kernel.compiler import compiler
+
+    sources = tuple(sorted(output_directory.rglob("*.py")))
+    for source in sources:
+        if _bootstrap_source(output_directory, source):
+            import_module(_module_name(package, output_directory, source))
+    canonical_exports = _canonical_exports(package, output_directory, sources)
+    _run_parse_only_stubgen(output_directory, sources)
+    _project_parse_only_surfaces(package, output_directory)
     _refresh_internal_static_definitions(package, output_directory, sources)
     inheritance = compiler().declared_inheritance()
     runtime_aliases = _source_role_aliases(package, output_directory, sources, inheritance)

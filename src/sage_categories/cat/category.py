@@ -1280,11 +1280,12 @@ class CategoryDeclaration[
     def retain_intersection(self, roots: tuple[Category, ...], intersection: Category) -> None:
         """Identify a constructed category with the intersection of these roots."""
         assert intersection.narrowing_base() is self
-        key = tuple(sorted(root.ordinal() for root in roots))
-        if key in self._narrowings:
-            assert self._narrowings[key] is intersection
-        else:
-            self._narrowings[key] = intersection
+        selected = self.closed_roots(roots)
+        assert selected, "an externally retained intersection must narrow the base"
+        if self._narrowing.is_in_cache(selected):
+            assert self._narrowing(selected) is intersection
+            return
+        self._narrowing.set_cache(intersection, selected)
 
     def __getattr__(
         self, name: str

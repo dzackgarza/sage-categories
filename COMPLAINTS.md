@@ -1637,9 +1637,17 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-adele-binary-preimage-dispatch`. Share the topology construction in `_binary_adele_preimage` and pass addition/multiplication as callables; keep the name only as retained presentation metadata.
 
-
 ## Finite poset validation reimplemented reflexive/transitive closure in Python
 
-- **Evidence and impact:** `_decide_partial_order()` enumerated all points, all pairs, and all triples to check reflexivity, antisymmetry, and transitivity directly. Sage already ships its mature finite `Poset` implementation: it rejects cyclic/antisymmetry failures and completes reflexive/transitive closure. The repository only needs to ask whether that completed relation equals the supplied relation.
+- **Evidence and impact:** `_decide_partial_order()` enumerated all points, all pairs, and all triples to check reflexivity, antisymmetry, and transitivity directly.
+  Sage already ships its mature finite `Poset` implementation: it rejects cyclic/antisymmetry failures and completes reflexive/transitive closure.
+  The repository only needs to ask whether that completed relation equals the supplied relation.
 
 - **Repair link and acceptance:** `bloat-finite-partial-order-laws`. Move finite relation validation to an engine adapter around Sage `Poset` and delete the local cubic law implementation from the mathematical owner.
+
+
+## BinaryRelations bypassed its own retained carrier and map surface
+
+- **Evidence and impact:** `order/posets.py` exposed `carrier()` and `underlying_map()` as the mathematical accessors, but its forgetful functor, morphism validation, identities, and composition still read `_carrier`, `_underlying_map`, and the underlying set map's private `_action` directly. That creates two operational paths for the same structure and couples order code to Sets internals.
+
+- **Repair link and acceptance:** `bloat-binary-relations-public-surface`. Route those operations through the existing accessors and ordinary owned set-map application.

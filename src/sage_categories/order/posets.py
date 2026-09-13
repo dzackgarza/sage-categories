@@ -242,8 +242,8 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
                 Fun(self, Sets)
                 .Faithful()
                 .Isofibrations()(
-                    lambda relation_object: relation_object._carrier,
-                    lambda arrow: arrow._underlying_map,
+                    lambda relation_object: relation_object.carrier(),
+                    lambda arrow: arrow.underlying_map(),
                 )
                 .with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
             )
@@ -258,8 +258,9 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         target: BinaryRelationsCategory.ObjectType,
         underlying: MorphismCategory.ObjectType,
     ) -> BinaryRelationsCategory.MorphismType:
-        assert underlying.domain() is source._carrier and underlying.codomain() is target._carrier
-        images = {value: underlying._action(value) for value in (point.datum() for point in source._carrier)}
+        source_carrier, target_carrier = source.carrier(), target.carrier()
+        assert underlying.domain() is source_carrier and underlying.codomain() is target_carrier
+        images = {value: underlying(source_carrier.point(value)).datum() for value in (point.datum() for point in source_carrier)}
         target_pairs = _related_pairs(target)
         assert all((images[first], images[second]) in target_pairs for first, second in _related_pairs(source)), f"{underlying!r} does not preserve the relation of {source!r}"
         return self.MorphismType(domain=source, codomain=target, data=underlying)
@@ -268,7 +269,7 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         return self.MorphismType(
             domain=relation_object,
             codomain=relation_object,
-            data=Mor(Sets)(relation_object._carrier, relation_object._carrier).one(),
+            data=Mor(Sets)(relation_object.carrier(), relation_object.carrier()).one(),
         )
 
     def composite(
@@ -279,7 +280,7 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         return self.MorphismType(
             domain=first.domain(),
             codomain=second.codomain(),
-            data=second._underlying_map * first._underlying_map,
+            data=second.underlying_map() * first.underlying_map(),
         )
 
 

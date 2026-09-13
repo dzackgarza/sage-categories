@@ -772,3 +772,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/functors.py` imported `finite_category` independently in finite functor equality and finite natural-transformation equality. The import must remain delayed because the finite evaluator imports the functor owner, but duplicating that cycle break gave one extensionality boundary two spellings.
 
 - **Repair link and acceptance:** `bloat-functor-finite-category-boundary`. Put the delayed finite-category lookup behind one `_finite_category_data()` helper and let both extensional equality handlers share it.
+
+## Pointwise diagram constructions repeated universal-data imports
+
+- **Evidence and impact:** `cat/diagrams.py` imported `constructed_data` separately in pointwise-limit assembly and in the dualized pointwise-colimit path. The delay is intentional because `cat.constructions` depends on diagram machinery, but two local imports gave the same cycle-safe universal-data boundary two owners.
+
+- **Repair link and acceptance:** `bloat-diagram-constructed-data-boundary`. Put the delayed lookup behind one `_constructed_data()` helper and route both pointwise limit and pointwise colimit through it.

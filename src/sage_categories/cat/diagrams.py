@@ -294,12 +294,17 @@ def domain_lift(
 # -- limits and colimits in ``Fun(I, C)``, pointwise (specs/functor.md, "Diagram shapes and universal constructions") -----------------------------------------
 
 
+def _constructed_data(family: Category, diagram: Functor):
+    """Read selected universal data through the cycle-safe constructions boundary."""
+    from sage_categories.cat.constructions import constructed_data
+
+    return constructed_data(family, diagram)
+
+
 def _pointwise_limit_data(
     diagram: Functor,
 ) -> tuple[Functor, NaturalTransformation, _PointwiseLimitMediator]:
     """Build the pointwise apex, cone, and mediator without retaining an outer construction."""
-    from sage_categories.cat.constructions import constructed_data
-
     functors, shape = diagram.codomain(), diagram.domain()
     assert functors is not Fun, f"{diagram!r} is not a diagram in a fixed-endpoint functor category"
     target = functors.codomain()
@@ -312,7 +317,7 @@ def _pointwise_limit_data(
     def at(vertex: CategoryOfCategories.ElementType) -> LimitConesCategory.ObjectType:
         """The limiting cone of the pointwise diagram at ``vertex``."""
         if vertex not in composites:
-            presentation = constructed_data(limits, transposed.on_object(vertex))
+            presentation = _constructed_data(limits, transposed.on_object(vertex))
             assert isinstance(presentation, LimitConesCategory.ObjectType)
             composites[vertex] = presentation
         return composites[vertex]
@@ -358,8 +363,6 @@ def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
 
 def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:
     """Derive a pointwise colimit from the pointwise limit in the dual functor category."""
-    from sage_categories.cat.constructions import constructed_data
-
     functors, shape = diagram.codomain(), diagram.domain()
     assert functors is not Fun, f"{diagram!r} is not a diagram in a fixed-endpoint functor category"
     duality = dual_functor_category_equivalence(functors.domain(), functors.codomain())
@@ -368,7 +371,7 @@ def pointwise_colimit(diagram: Functor) -> CategoryOfCategories.ElementType:
     assert isinstance(transported, Functor)
     dual_apex = pointwise_limit(transported)
     dual_family = Fun.Limits(transported.domain())
-    presentation = constructed_data(dual_family, transported)
+    presentation = _constructed_data(dual_family, transported)
     assert isinstance(presentation, LimitConesCategory.ObjectType)
     inverse = duality.inverse()
     dual_functors = to_dual.codomain()

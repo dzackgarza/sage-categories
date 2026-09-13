@@ -123,52 +123,19 @@ def reconstruct_oscar_object(
     """
     from sympy import false, true
 
+    from sage_categories.algebra._certified_commutative_ring import certified_commutative_ring
+
     oscar = _oscar_runtime()
-    calculus = import_module("sage_categories.cat.calculus")
-    declarations, morphisms, structured = _ring_runtime_modules()
-    monoidal_module = import_module("sage_categories.cat.monoidal")
-    refinement = import_module("sage_categories.kernel.refinement")
+    declarations, _morphisms, _structured = _ring_runtime_modules()
     Sets = declarations.Sets
-    Mor = morphisms.Mor
-    monoidal = monoidal_module.Cartesian(Sets)
     carrier = Sets.from_membership(lambda element: true if oscar.ring_contains(native, element) else false)
-    product = calculus.binary_product_data(Sets, carrier, carrier).apex()
-    addition = Mor(Sets)(product, carrier)(lambda pair: oscar.ring_add(pair[0], pair[1]))
-    multiplication = Mor(Sets)(product, carrier)(lambda pair: oscar.ring_multiply(pair[0], pair[1]))
-    zero = Mor(Sets)(monoidal.unit(), carrier)(lambda _: oscar.ring_zero(native))
-    one = Mor(Sets)(monoidal.unit(), carrier)(lambda _: oscar.ring_one(native))
-
-    magmas = structured.Magmas(monoidal)
-    pointed_magmas = structured.PointedMagmas(monoidal.tensor(), monoidal.unit())
-    monoids = structured.Monoids(monoidal)
-
-    def certified_monoid(
-        operation: MorphismCategory.ObjectType,
-        unit: MorphismCategory.ObjectType,
-    ) -> CategoryOfCategories.ElementType:
-        magma = magmas.algebra(carrier, operation)
-        pointed = pointed_magmas.algebra(magma, unit)
-        refinement.refine(pointed, monoids)
-        return cast(CategoryOfCategories.ElementType, pointed)
-
-    additive_monoid = certified_monoid(addition, zero)
-    refinement.refine(additive_monoid, structured.Groups(monoidal))
-    additive_monoids = structured.AdditiveMonoids(monoidal)
-    additive = additive_monoids.renamed(additive_monoid)
-    refinement.refine(additive, additive_monoids.Commutative())
-    additive_groups = structured.AdditiveGroups(monoidal)
-    group = additive_groups.renamed(additive_monoid)
-    refinement.refine(group, additive_groups.Commutative())
-
-    multiplicative_monoid = certified_monoid(multiplication, one)
-    multiplicative = structured.MultiplicativeMonoids(monoidal).renamed(multiplicative_monoid)
-
-    semirings = structured.Semirings(Sets)
-    pair = semirings._pairs((additive, multiplicative, carrier))
-    refinement.refine(pair, semirings)
-    rings = structured.Rings(Sets)
-    ring = rings._ring(pair, group, additive)
-    refinement.refine(ring, rings.Commutative())
+    ring = certified_commutative_ring(
+        carrier,
+        lambda pair: oscar.ring_add(pair[0], pair[1]),
+        lambda pair: oscar.ring_multiply(pair[0], pair[1]),
+        oscar.ring_zero(native),
+        oscar.ring_one(native),
+    )
     retain_oscar_native_object(ring, native, construction)
     return cast(CategoryOfCategories.ElementType, ring)
 

@@ -469,10 +469,6 @@ class SetsCategory(Category[[Map], []]):
             else:
                 self._action, self._symbolic = data, _NO_SYMBOLIC_RULE
 
-        @property
-        def _table(self) -> dict[Hashable, Hashable]:
-            return {value: self._action(value) for value in self.domain()._values}
-
         def __call__(self, point: CategoryOfCategories.ElementType) -> SetsCategory.ElementType:
             assert point in self.domain()
             return self.codomain().point(self._action(point.datum()))

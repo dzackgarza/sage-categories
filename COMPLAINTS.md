@@ -2038,3 +2038,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/catlab.py::_native_transformation()` only asserted retention and returned `retained_native_transformation(value).native`; no source or test caller used it. Active execution already goes through `ensure_native_transformation()` when materialization may be needed and through the retained realization API when presence is known.
 
 - **Repair link and acceptance:** `bloat-catlab-dead-native-transformation-wrapper`. Delete the dead wrapper and keep the two actual native-transformation boundaries unchanged.
+
+## Set morphisms retained an unused eager table accessor
+
+- **Evidence and impact:** `SetsCategory.MorphismType._table` rebuilt `{datum: image}` by evaluating every value of an enumerated domain, but no source or test caller read the property. Besides being dead surface, the accessor encoded eager materialization directly on a morphism whose ordinary execution already lives in `_action` and whose finite native realization has its own engine boundary.
+
+- **Repair link and acceptance:** `bloat-dead-set-map-table`. Delete `_table` entirely and leave finite map tabulation/native lowering at their actual construction owners.

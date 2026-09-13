@@ -313,13 +313,22 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     ) -> MorphismRule:
         return lambda vertex: self.factor(vertex).morphism_at(self._component_at(families, point, vertex))
 
-    def object_set(self) -> CategoryOfCategories.ElementType:
-        families = self._families("objects", lambda factor: factor.object_set())
+    def _compatible_family_subset(
+        self,
+        kind: str,
+        families: CategoryOfCategories.ElementType,
+        rule: Callable[[CategoryOfCategories.ElementType], ObjectRule | MorphismRule],
+    ) -> CategoryOfCategories.ElementType:
+        """Retain the subfamily whose components satisfy the shape's generator equations."""
         if not self._generators():
             return families
-        if "object set" not in self._finite_data:
-            self._finite_data["object set"] = families.subset_from(lambda datum: ask(self._agrees(self._object_rule(families, families.point(datum)))))
-        return self._finite_data["object set"]
+        if kind not in self._finite_data:
+            self._finite_data[kind] = families.subset_from(lambda datum: ask(self._agrees(rule(families.point(datum)))))
+        return self._finite_data[kind]
+
+    def object_set(self) -> CategoryOfCategories.ElementType:
+        families = self._families("objects", lambda factor: factor.object_set())
+        return self._compatible_family_subset("object set", families, lambda point: self._object_rule(families, point))
 
     def object_at(self, point: CategoryOfCategories.ElementType) -> LimitCategory.ObjectType:
         return self(self._object_rule(self._families("objects", lambda factor: factor.object_set()), point))
@@ -331,11 +340,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         if any(ask(self.factor(vertex).morphism_set()) is Unknown for vertex in vertices):
             return Unknown
         families = self._families("morphisms", lambda factor: ask(factor.morphism_set()))
-        if not self._generators():
-            return families
-        if "morphism set" not in self._finite_data:
-            self._finite_data["morphism set"] = families.subset_from(lambda datum: ask(self._agrees(self._morphism_rule(families, families.point(datum)))))
-        return self._finite_data["morphism set"]
+        return self._compatible_family_subset("morphism set", families, lambda point: self._morphism_rule(families, point))
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> LimitCategory.MorphismType:
         rule = self._morphism_rule(self._families("morphisms", lambda factor: ask(factor.morphism_set())), point)

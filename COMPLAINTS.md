@@ -1742,3 +1742,10 @@ Ideas, to be weighed, not obligations.*
   The only varying data are the mathematical presentation key and constructor, so six copies obscure the actual shape-specific assertions.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give `CategoryOfCategories` one `_canonical_shape` retention helper and leave each public shape constructor responsible only for its admissibility rules and canonical constructor.
+
+## Finite Cat limits duplicated compatibility-subset retention
+
+- **Evidence and impact:** `cat/cat_constructions.py::LimitCategory.object_set` and `_chosen_morphism_set` independently repeated the same generator-empty fast path, `_finite_data` cache mutation, subset construction, and `_agrees` predicate; only the component-rule constructor and cache key differed.
+  Keeping the two copies makes the object and morphism compatibility semantics easier to drift apart.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Move the shared compatibility-subset lifecycle to `_compatible_family_subset` and leave object/morphism accessors to supply only their respective retained component rules.

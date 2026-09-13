@@ -1349,6 +1349,13 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-shape-point-navigation`. Keep the typed public wrappers but route their implementation through shared point/object and identity helpers.
 
+## Point-indexed shapes still duplicated object retention
+
+- **Evidence and impact:** after the shared point payload, object surface, navigation, and identity helpers landed, `DiscreteCategory.__call__` and `ThinCategory.__call__` still repeated the same carrier-membership assertion, `MonoDict` lookup, `_PointObjectData` construction, and retained-object return.
+  That lifecycle depends only on the common point-indexed shape contract.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Route both public constructors through one `_point_shape_construct` helper while keeping their distinct morphism admission and equality semantics unchanged.
+
 ## Limit and colimit families repeated retained shape access
 
 - **Evidence and impact:** `LimitsCategory` and `ColimitsCategory` each repeated the same `shape()` read from `_shape` and the same construction of `Fun(shape, ambient)` for `diagrams()`. Directionality enters only in their universal data and mediator logic, not in these accessors.

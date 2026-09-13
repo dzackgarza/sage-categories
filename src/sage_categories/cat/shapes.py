@@ -93,6 +93,19 @@ def _point_shape_identity(category: Category, member_object: CategoryOfCategorie
     return category.MorphismType(member_object, member_object)
 
 
+def _point_shape_construct(
+    category: Category,
+    objects: MonoDict,
+    point: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    """Retain the unique shape object over one carrier point."""
+    carrier = category.object_set()
+    assert point in carrier, f"{point!r} is not a point of {carrier!r}"
+    if point not in objects:
+        objects[point] = category.ObjectType(_PointObjectData(point))
+    return objects[point]
+
+
 class DiscreteCategory(Category[[], []]):
     """The discrete category on a set."""
 
@@ -144,10 +157,7 @@ class DiscreteCategory(Category[[], []]):
 
     def __call__(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.ObjectType:
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
-        assert point in self._index_set, f"{point!r} is not a point of {self._index_set!r}"
-        if point not in self._objects:
-            self._objects[point] = self.ObjectType(_PointObjectData(point))
-        return self._objects[point]
+        return _point_shape_construct(self, self._objects, point)
 
     def construct_morphism(self, domain: DiscreteCategory.ObjectType, codomain: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
         """``Mor(Discrete(S))(x, y)()``: the identity, which exists exactly when ``x == y``."""
@@ -381,10 +391,7 @@ class ThinCategory(Category[[], []]):
 
     def __call__(self, point: CategoryOfCategories.ElementType) -> ThinCategory.ObjectType:
         """The object at a point of ``P``, one object per retained point."""
-        assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
-        if point not in self._objects:
-            self._objects[point] = self.ObjectType(_PointObjectData(point))
-        return self._objects[point]
+        return _point_shape_construct(self, self._objects, point)
 
     def construct_morphism(self, domain: ThinCategory.ObjectType, codomain: ThinCategory.ObjectType) -> ThinCategory.MorphismType:
         """``Mor(Thin)(x, y)()``: the comparison ``x <= y``; rejected only when the order decides against it."""

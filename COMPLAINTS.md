@@ -1786,3 +1786,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `LimitCategory` stored object-family products, morphism-family products, and their two compatibility subsets in one `_finite_data: MonoDict` addressed by the strings `"objects"`, `"morphisms"`, `"object set"`, and `"morphism set"`. The four values are distinct nullary results of the category instance; the string dispatch obscured their types and used an identity table for symbolic tags.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give object/morphism family products and compatible object/morphism sets named cached methods, remove `_finite_data`, and leave compatibility-subset construction free of internal string dispatch.
+
+## Commuting-square construction stored private string-keyed state on FunctorCategory
+
+- **Evidence and impact:** `cat/diagrams.py` wrote candidate quadruples and commuting-square subsets into `FunctorCategory._finite_data` under the strings `"quadruples"` and `"squares"`. That made an unrelated category object carry module-private state, used an identity dictionary for symbolic tags, and split one cached construction across two modules.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache the pair as `_square_data(functors)` with the repository identity-key contract, remove `FunctorCategory._finite_data`, and make `square_set`/`square_at` consume that one owner.

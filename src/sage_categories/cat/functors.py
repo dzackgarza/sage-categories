@@ -310,7 +310,6 @@ class FunctorCategory[
         codomain: CodomainCategory,
     ) -> None:
         self._constant_values: MonoDict = MonoDict()
-        self._finite_data: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:

@@ -169,33 +169,34 @@ def from_sequence(ambient: Category, sequence: tuple[CategoryOfCategories.Elemen
 # -- the commuting squares of ``Fun([1], C)`` as a finite set (specs/functor.md, "Diagram shapes and universal constructions") ---------------------------
 
 
+@cached_function(key=lambda functors: identity_key(functors))
+def _square_data(
+    functors: FunctorCategory,
+) -> tuple[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType]:
+    """The candidate quadruples and their commuting-square subset for ``Fun([1], C)``."""
+    base = functors.codomain()
+    morphisms = ask(base.morphism_set())
+    quadruples = Sets.Products()((morphisms, morphisms, morphisms, morphisms))
+
+    def commutes(datum: Datum) -> Decision:
+        point = quadruples.point(datum)
+        f, g, a, b = (base.morphism_at(quadruples.product_projection(position)(point)) for position in range(4))
+        corners = ask(endpoints(a, f.domain(), g.domain()) & endpoints(b, f.codomain(), g.codomain()))
+        if corners is not True:
+            return corners
+        return ask(g * a == b * f)
+
+    return quadruples, quadruples.subset_from(commutes)
+
+
 def square_set(functors: FunctorCategory) -> CategoryOfCategories.ElementType:
     """The finite set of commuting squares ``(f, g, a, b)`` with ``g * a == b * f`` in ``C``, when ``C`` chooses a finite set of morphisms."""
-    base = functors.codomain()
-    if "squares" not in functors._finite_data:
-        morphisms = ask(base.morphism_set())
-        quadruples = Sets.Products()((morphisms, morphisms, morphisms, morphisms))
-
-        def commutes(datum: Datum) -> Decision:
-            point = quadruples.point(datum)
-            f, g, a, b = (base.morphism_at(quadruples.product_projection(position)(point)) for position in range(4))
-            # The corners are a guarded proposition: ``g * a`` and ``b * f`` exist only once
-            # the endpoints hold, so they are asked first and an undecided corner stays
-            # undecided rather than reporting the quadruple as no square.
-            corners = ask(endpoints(a, f.domain(), g.domain()) & endpoints(b, f.codomain(), g.codomain()))
-            if corners is not True:
-                return corners
-            return ask(g * a == b * f)
-
-        functors._finite_data["quadruples"] = quadruples
-        functors._finite_data["squares"] = quadruples.subset_from(commutes)
-    return functors._finite_data["squares"]
+    return _square_data(functors)[1]
 
 
 def square_at(functors: FunctorCategory, point: CategoryOfCategories.ElementType) -> NaturalTransformation:
     """The square selected by a point of ``square_set``."""
-    square_set(functors)
-    base, quadruples = functors.codomain(), functors._finite_data["quadruples"]
+    base, (quadruples, _squares) = functors.codomain(), _square_data(functors)
     f, g, a, b = (base.morphism_at(quadruples.product_projection(position)(point)) for position in range(4))
     components = {0: a, 1: b}
     return functors.morphism_category(1)(f, g)(lambda vertex: components[functors.domain().label(vertex)])

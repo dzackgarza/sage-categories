@@ -65,6 +65,20 @@ def _finite_category_data(
     return finite_category(category)
 
 
+def _limit_cone_runtime():
+    """Load cone construction at the one cycle-safe finite-set engine boundary."""
+    from sage_categories.cat.cones import cone, cone_apex
+
+    return cone, cone_apex
+
+
+def _colimit_cocone_runtime():
+    """Load cocone construction at the one cycle-safe finite-set engine boundary."""
+    from sage_categories.cat.cones import cocone, cocone_apex
+
+    return cocone, cocone_apex
+
+
 def _index(realization: object, datum: object) -> int:
     indexing = realization.construction.data
     owner = realization.value
@@ -272,7 +286,7 @@ def _native_diagram(diagram: Functor):
 
 def finite_limit(diagram: Functor) -> object:
     """Selected limit of an arbitrary exact finite diagram, computed by CAP."""
-    from sage_categories.cat.cones import cone, cone_apex
+    cone, cone_apex = _limit_cone_runtime()
 
     vertices, positions, factors, native_factors, decorated = _native_diagram(diagram)
     category = _category()
@@ -322,7 +336,7 @@ def finite_limit(diagram: Functor) -> object:
 
 def finite_colimit(diagram: Functor) -> object:
     """Selected colimit of an arbitrary exact finite diagram, computed by CAP."""
-    from sage_categories.cat.cones import cocone, cocone_apex
+    cocone, cocone_apex = _colimit_cocone_runtime()
 
     vertices, positions, factors, native_factors, decorated = _native_diagram(diagram)
     category = _category()
@@ -375,7 +389,7 @@ def finite_colimit(diagram: Functor) -> object:
 
 
 def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
-    from sage_categories.cat.cones import cone, cone_apex
+    cone, cone_apex = _limit_cone_runtime()
 
     factors = tuple(diagram.on_object(vertex) for vertex in vertices)
     native_factors = [_native_object(factor) for factor in factors]
@@ -429,7 +443,7 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
 
 
 def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
-    from sage_categories.cat.cones import cone, cone_apex
+    cone, cone_apex = _limit_cone_runtime()
 
     arrows = diagram.domain().generating_morphisms()
     first, second = (diagram.on_morphism(arrow) for arrow in arrows)
@@ -482,7 +496,7 @@ def primitive_limit(diagram: Functor) -> object:
 
 
 def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
-    from sage_categories.cat.cones import cocone, cocone_apex
+    cocone, cocone_apex = _colimit_cocone_runtime()
 
     factors = tuple(diagram.on_object(vertex) for vertex in vertices)
     native_factors = [_native_object(factor) for factor in factors]
@@ -534,7 +548,7 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
 
 
 def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
-    from sage_categories.cat.cones import cocone, cocone_apex
+    cocone, cocone_apex = _colimit_cocone_runtime()
 
     arrows = diagram.domain().generating_morphisms()
     first, second = (diagram.on_morphism(arrow) for arrow in arrows)

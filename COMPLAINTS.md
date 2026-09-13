@@ -808,3 +808,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/cones.py` imported `Cat` independently in cone-object construction and cone-morphism construction, then rebuilt `Cat().Terminal()` in each path. The delay is required because functors depend on cone machinery during bootstrap, but the same terminal-category boundary had two spellings and one path constructed it twice.
 
 - **Repair link and acceptance:** `bloat-cone-terminal-boundary`. Put the delayed terminal-category lookup behind `_terminal_category_and_star()` and let both construction paths share the retained terminal category and its unique object.
+
+## FinSetsForCAP repeated cone and cocone imports
+
+- **Evidence and impact:** `engines/finite_sets.py` imported `cone`/`cone_apex` separately in finite limit, product, and equalizer execution, and imported `cocone`/`cocone_apex` separately in finite colimit, coproduct, and coequalizer execution. Those imports remain delayed because cone construction sits above the finite engine in the public category layer, but six local import sites gave two cycle-safe execution boundaries six owners.
+
+- **Repair link and acceptance:** `bloat-finite-sets-cone-boundaries`. Put the delayed limit and colimit cone bundles behind `_limit_cone_runtime()` and `_colimit_cocone_runtime()`, and route all six native universal-construction paths through them.

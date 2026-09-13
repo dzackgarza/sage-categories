@@ -6,7 +6,7 @@ from collections.abc import Callable, Hashable, Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
-from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
@@ -144,23 +144,7 @@ def ring_presheaf(
     ],
 ) -> RingPresheaf:
     """Construct a commutative-ring presheaf after checking its restriction identities and composites."""
-    opens = tuple(point.datum() for point in cast(Any, space.opens()).carrier())
-    assert set(sections) == set(opens)
-    rings = _rings()
-    assert all(section in rings for section in sections.values())
-
-    comparable = tuple((larger, smaller) for larger in opens for smaller in opens if smaller <= larger)
-    assert set(restrictions) == set(comparable)
-    for larger, smaller in comparable:
-        arrow = restrictions[(larger, smaller)]
-        assert arrow.domain() is sections[larger] and arrow.codomain() is sections[smaller]
-    for open_set in opens:
-        assert ask(restrictions[(open_set, open_set)] == Mor(rings)(sections[open_set], sections[open_set]).one()) is True
-    for largest in opens:
-        for middle in opens:
-            for smallest in opens:
-                if smallest <= middle <= largest:
-                    assert ask(restrictions[(middle, smallest)] * restrictions[(largest, middle)] == restrictions[(largest, smallest)]) is True
+    rings = _validate_ring_presheaf_data(space, sections, restrictions)
 
     source = space.open_category().op()
 
@@ -184,6 +168,35 @@ def ring_presheaf(
         lambda key: space.open_object(cast(frozenset[Hashable], key)),
         lambda open_object: _open_data(open_object),
     )
+
+
+def _validate_ring_presheaf_data(
+    space: TopologicalSpacesCategory.ObjectType,
+    sections: Mapping[frozenset[Hashable], CategoryOfCategories.ElementType],
+    restrictions: Mapping[
+        tuple[frozenset[Hashable], frozenset[Hashable]],
+        MorphismCategory.ObjectType,
+    ],
+) -> Category:
+    """Validate the section rings and contravariant restriction calculus for a finite open family."""
+    opens = tuple(point.datum() for point in cast(Any, space.opens()).carrier())
+    assert set(sections) == set(opens)
+    rings = _rings()
+    assert all(section in rings for section in sections.values())
+
+    comparable = tuple((larger, smaller) for larger in opens for smaller in opens if smaller <= larger)
+    assert set(restrictions) == set(comparable)
+    for larger, smaller in comparable:
+        arrow = restrictions[(larger, smaller)]
+        assert arrow.domain() is sections[larger] and arrow.codomain() is sections[smaller]
+    for open_set in opens:
+        assert ask(restrictions[(open_set, open_set)] == Mor(rings)(sections[open_set], sections[open_set]).one()) is True
+    for largest in opens:
+        for middle in opens:
+            for smallest in opens:
+                if smallest <= middle <= largest:
+                    assert ask(restrictions[(middle, smallest)] * restrictions[(largest, middle)] == restrictions[(largest, smallest)]) is True
+    return rings
 
 
 def ring_presheaf_from_functor(

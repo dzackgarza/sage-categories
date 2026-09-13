@@ -52,6 +52,7 @@ __all__ = [
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import partial
+from types import ModuleType
 from typing import Literal
 
 from sage.categories.sets_cat import Sets as SageSets
@@ -100,6 +101,13 @@ from sage_categories.kernel.type_aliases import ContainmentInput
 from sage_categories.sets.finite import Sets
 
 type Engine = AdditiveAbelianGroup_class | FGP_Module_class
+
+
+def _presented_modules() -> ModuleType:
+    """Load the CAP adapter at the one cycle-safe additive/presented-module boundary."""
+    from sage_categories.engines import presented_modules
+
+    return presented_modules
 
 
 def _has_native_parent(value: object, parent: object) -> bool:
@@ -214,9 +222,7 @@ class _AbelianOperations(Category):
             case False:
                 return None
             case True:
-                from sage_categories.engines.presented_modules import equal_morphisms
-
-                return equal_morphisms(first, second)
+                return _presented_modules().equal_morphisms(first, second)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         abelian = AbelianGroups()
@@ -507,9 +513,7 @@ def abelian_homomorphism(
     ModulePresentationsForCAP owns the relation check and the native morphism; this layer
     only converts the public generator data to and from the retained presentation.
     """
-    from sage_categories.engines.presented_modules import homomorphism_from_rule
-
-    return homomorphism_from_rule(source, target, rule)
+    return _presented_modules().homomorphism_from_rule(source, target, rule)
 
 
 def _zero_morphism(
@@ -517,9 +521,7 @@ def _zero_morphism(
     target: CategoryOfCategories.ElementType,
 ) -> MorphismCategory.ObjectType:
     """The additive zero map between two presented objects of ``Ab``."""
-    from sage_categories.engines.presented_modules import zero_morphism
-
-    return zero_morphism(source, target)
+    return _presented_modules().zero_morphism(source, target)
 
 
 def _biproduct(
@@ -541,13 +543,8 @@ def _biproduct(
             pair[0][1] + pair[1][1],
         ),
     )
-    from sage_categories.engines.presented_modules import (
-        direct_sum_coproduct_lift,
-        direct_sum_product_lift,
-        retain_binary_biproduct,
-    )
-
-    projections, inclusions = retain_binary_biproduct(first, second, apex)
+    presented = _presented_modules()
+    projections, inclusions = presented.retain_binary_biproduct(first, second, apex)
     diagram = from_sequence(abelian, (first, second))
     shape = diagram.domain()
 
@@ -557,7 +554,7 @@ def _biproduct(
     def product_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         components = tuple(candidate.component(shape(index)) for index in (0, 1))
         source = cone_apex(candidate)
-        return direct_sum_product_lift((first, second), apex, source, components)
+        return presented.direct_sum_product_lift((first, second), apex, source, components)
 
     product_apex = abelian.Limits(shape).with_universal_data(
         diagram,
@@ -573,7 +570,7 @@ def _biproduct(
     def coproduct_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         components = tuple(candidate.leg(index) for index in (0, 1))
         target = candidate.apex()
-        return direct_sum_coproduct_lift((first, second), apex, target, components)
+        return presented.direct_sum_coproduct_lift((first, second), apex, target, components)
 
     coproduct_apex = abelian.Colimits(shape).with_universal_data(
         diagram,
@@ -608,10 +605,8 @@ def _coequalizer_projection(
     The coequalizer object is the codomain of this map, and ``coequalizer_mediator``
     factors a coequalizing homomorphism through it.
     """
-    from sage_categories.engines.presented_modules import coequalizer_projection
-
     target = first.codomain()
-    projection = coequalizer_projection(first, second)
+    projection = _presented_modules().coequalizer_projection(first, second)
     assert projection.domain() is target
     return projection
 
@@ -626,10 +621,8 @@ def _coequalizer_mediator(
     ``CokernelColift`` computes the universal factor, which is reconstructed on the exact
     public owned endpoints.
     """
-    from sage_categories.engines.presented_modules import coequalizer_mediator
-
     assert coequalizing.domain() is projection.domain(), f"{coequalizing!r} does not start at {projection.domain()!r}"
-    return coequalizer_mediator(projection, coequalizing)
+    return _presented_modules().coequalizer_mediator(projection, coequalizing)
 
 
 def _abelian_coequalizer(diagram: Functor) -> CategoryOfCategories.ElementType:
@@ -736,9 +729,7 @@ def _pair_vector(
             ),
             distinct=True,
         )
-    from sage_categories.engines.presented_modules import tensor_element
-
-    return tensor_element(
+    return _presented_modules().tensor_element(
         data.first,
         data.second,
         _tensor_object(data.first, data.second),
@@ -772,9 +763,7 @@ def _tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCa
                 not first_indexed,
             )
             return result
-    from sage_categories.engines.presented_modules import tensor_object
-
-    result, quotient = tensor_object(first, second)
+    result, quotient = _presented_modules().tensor_object(first, second)
     _tensor_data[result] = _TensorData(first, second, quotient)
     return result
 
@@ -865,11 +854,7 @@ def tensor_mediator(
             return total.datum()
 
         return _rule_abelian_homomorphism(result, target, evaluate)
-    from sage_categories.engines.presented_modules import (
-        tensor_mediator as native_tensor_mediator,
-    )
-
-    return native_tensor_mediator(first, second, result, target, biadditive)
+    return _presented_modules().tensor_mediator(first, second, result, target, biadditive)
 
 
 def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
@@ -877,9 +862,7 @@ def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategor
     source = _tensor_object(first.domain(), second.domain())
     target = _tensor_object(first.codomain(), second.codomain())
     if isinstance(_tensor_data[source], _TensorData) and isinstance(_tensor_data[target], _TensorData):
-        from sage_categories.engines.presented_modules import tensor_morphism
-
-        return tensor_morphism(first, second, source, target)
+        return _presented_modules().tensor_morphism(first, second, source, target)
     target_data = _tensor_data[target]
     return tensor_mediator(
         first.domain(),
@@ -943,14 +926,12 @@ def _presented_rebracket(
             return None
         case True:
             pass
-    from sage_categories.engines.presented_modules import tensor_associator
-
     match forward:
         case True:
             source, target = left_object, right_object
         case False:
             source, target = right_object, left_object
-    return tensor_associator(a, b, c, source, target, left_to_right=forward)
+    return _presented_modules().tensor_associator(a, b, c, source, target, left_to_right=forward)
 
 
 def _indexed_rebracket(
@@ -1127,13 +1108,9 @@ def _tensor_unitor_component(
     native_presented = group not in _indexed_free_data and isinstance(_tensor_data[tensor_group], _TensorData)
     match native_presented, side:
         case True, "left":
-            from sage_categories.engines.presented_modules import tensor_left_unitor
-
-            return tensor_left_unitor(group, tensor_group, inverse=inverse)
+            return _presented_modules().tensor_left_unitor(group, tensor_group, inverse=inverse)
         case True, "right":
-            from sage_categories.engines.presented_modules import tensor_right_unitor
-
-            return tensor_right_unitor(group, tensor_group, inverse=inverse)
+            return _presented_modules().tensor_right_unitor(group, tensor_group, inverse=inverse)
         case _:
             pass
     match inverse, side:
@@ -1240,9 +1217,7 @@ def _colift_presented_epimorphism(
     arrow: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Colift through a retained CAP epimorphism at the cycle-safe additive boundary."""
-    from sage_categories.engines.presented_modules import colift_along_epimorphism
-
-    return colift_along_epimorphism(epimorphism, arrow)
+    return _presented_modules().colift_along_epimorphism(epimorphism, arrow)
 
 
 def induced_left_action(

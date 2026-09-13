@@ -982,3 +982,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/presented_modules.py` lazily imported additive coordinates, object reconstruction, and the exact `Ab` Hom constructor through three separate `algebra.abelian` import sites. The delay is required by the owner/engine cycle, but all three operations cross the same additive reconstruction boundary.
 
 - **Repair link and acceptance:** `bloat-presented-module-additive-boundary`. Put the delayed additive module behind `_abelian_owner()` and route coordinate lookup, object reconstruction, and native-morphism reconstruction through it.
+
+## Additive ownership reopened the presented-module engine at every operation
+
+- **Evidence and impact:** `algebra/abelian.py` crossed the `ModulePresentationsForCAP` adapter separately for morphism equality/construction, zero maps, biproducts, coequalizers, tensor elements/objects/maps/mediators/comparisons, and epimorphism colifts. The cycle-safe delay is required because the engine reconstructs owned `Ab` values, but thirteen operation-local imports made one allocated computation boundary look like thirteen independent implementations.
+
+- **Repair link and acceptance:** `bloat-additive-presented-module-boundary`. Put the delayed CAP adapter behind `_presented_modules()` and route every presented additive operation through that single engine-module owner.

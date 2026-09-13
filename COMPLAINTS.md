@@ -1622,3 +1622,10 @@ Ideas, to be weighed, not obligations.*
   Endpoint orientation is owned by the slice implementation; the engine also repeated a check the finite dispatcher had already made.
 
 - **Repair link and acceptance:** `bloat-slice-dispatch-boundary`. Encapsulate the orientation test in the slice owner for internal dispatch, reuse it in triangle projection, and remove the redundant native-adapter probe.
+
+
+## CW topology maps repeated the same open-object unwrapping casts
+
+- **Evidence and impact:** finite-stage restriction, finite conjugation, and weak-colimit inverse-image paths in `geometry/cw.py` repeatedly spelled nested `cast(Any, open_object).point().datum()` chains. The representation boundary is one operation — recover the retained `CWOpen` or `_WeakCWOpen` from an open-category object — and scattering the casts obscures the actual topology logic.
+
+- **Repair link and acceptance:** `bloat-cw-open-datum-boundary`. Centralize finite and weak open extraction in two typed helpers and use them throughout inverse-image construction.

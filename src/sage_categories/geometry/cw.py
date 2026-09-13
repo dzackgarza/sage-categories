@@ -157,6 +157,16 @@ def _stage_open_space(stage: int) -> tuple[CategoryOfCategories.ElementType, Any
     return opens, category
 
 
+def _cw_open_datum(open_object: CategoryOfCategories.ElementType) -> CWOpen:
+    """Return the retained finite-stage open carried by one open-category object."""
+    return _cw_open_datum(open_object)
+
+
+def _weak_cw_open_datum(open_object: CategoryOfCategories.ElementType) -> _WeakCWOpen:
+    """Return the retained weak-CW open carried by one open-category object."""
+    return cast(_WeakCWOpen, cast(Any, open_object).point().datum())
+
+
 @cache
 def projective_space(stage: int) -> ProjectiveSpacePresentation:
     """Return ``CP^stage`` with its retained standard CW topology."""
@@ -212,7 +222,7 @@ def _stage_conjugation(stage: int) -> TopologicalSpacesCategory.MorphismType:
     def preimage(
         open_object: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
-        open_set = cast(CWOpen, cast(Any, open_object).point().datum())
+        open_set = _cw_open_datum(open_object)
         conjugate_open = CWOpen(
             stage,
             ("conjugate", open_set),
@@ -239,10 +249,10 @@ def _standard_inclusion(source_stage: int, target_stage: int) -> TopologicalSpac
     source, target = projective_space(source_stage), projective_space(target_stage)
     underlying = Mor(Sets)(source.space.carrier(), target.space.carrier())(lambda point: _pad_point(point, target_stage))
     inverse = Fun(target.space.open_category(), source.space.open_category())(
-        lambda target_open: source.open(_restrict_open(cast(Any, target_open).point().datum(), source_stage)),
+        lambda target_open: source.open(_restrict_open(_cw_open_datum(target_open), source_stage)),
         lambda inclusion: Mor(source.space.open_category())(
-            source.open(_restrict_open(cast(Any, inclusion.domain()).point().datum(), source_stage)),
-            source.open(_restrict_open(cast(Any, inclusion.codomain()).point().datum(), source_stage)),
+            source.open(_restrict_open(_cw_open_datum(inclusion.domain()), source_stage)),
+            source.open(_restrict_open(_cw_open_datum(inclusion.codomain()), source_stage)),
         )(),
     )
     return TopologicalSpaces().morphism_with_inverse_image(source.space, target.space, underlying, inverse)
@@ -318,10 +328,10 @@ def _projective_infinity_leg(
     source = projective_space(stage)
     underlying = set_colimit.leg(vertex)
     inverse = Fun(space.open_category(), source.space.open_category())(
-        lambda target_open: source.open(cast(_WeakCWOpen, cast(Any, target_open).point().datum()).stage_open(stage)),
+        lambda target_open: source.open(cast(_WeakCWOpen, _cw_open_datum(target_open)).stage_open(stage)),
         lambda inclusion: Mor(source.space.open_category())(
-            source.open(cast(_WeakCWOpen, cast(Any, inclusion.domain()).point().datum()).stage_open(stage)),
-            source.open(cast(_WeakCWOpen, cast(Any, inclusion.codomain()).point().datum()).stage_open(stage)),
+            source.open(cast(_WeakCWOpen, _cw_open_datum(inclusion.domain())).stage_open(stage)),
+            source.open(cast(_WeakCWOpen, _cw_open_datum(inclusion.codomain())).stage_open(stage)),
         )(),
     )
     return TopologicalSpaces().morphism_with_inverse_image(source.space, space, underlying, inverse)

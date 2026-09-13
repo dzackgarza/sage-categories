@@ -61,12 +61,6 @@ def _retain_transformation_recipe(value: MorphismCategory.ObjectType, recipe: Tr
     _transformation_recipes[value] = recipe
 
 
-def _transformation_recipe(
-    value: MorphismCategory.ObjectType,
-) -> TransformationRecipe | None:
-    return _transformation_recipes[value] if value in _transformation_recipes else None
-
-
 def ensure_native_category(owner: Category) -> object:
     """Return the Catlab model of this exact owned category."""
     if has_native_category(owner):
@@ -130,7 +124,7 @@ def _retain_transformation(
 def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:
     if has_native_transformation(value):
         return retained_native_transformation(value).native
-    recipe = _transformation_recipe(value)
+    recipe = _transformation_recipes[value] if value in _transformation_recipes else None
     if recipe is None:
         recipe = (
             "callable",

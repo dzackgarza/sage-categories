@@ -1774,3 +1774,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `LimitsCategory.limit_functor()` stored its single per-instance result in `_limit_functor: MonoDict` keyed by `self`, then repeated lookup/insertion logic around the actual construction. The category already imports Sage `cached_method`, and the result is determined solely by the instance.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `limit_functor()` with `cached_method`, keep full-image/product registration inside its first evaluation, and remove the one-entry identity table.
+
+## Slice-property defining arrows used a one-entry identity cache
+
+- **Evidence and impact:** `SliceProperty.defining_arrow()` allocated `_retained: MonoDict`, keyed it by the slice-property instance, and stored exactly one structural functor. The method result is nullary and immutable for the instance, while Sage `cached_method` is already the cache owner in the module.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache `defining_arrow()` with `cached_method` and remove the one-entry `_retained` table.

@@ -419,7 +419,6 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
     def __init__(self, ambient: SliceLikeCategory | SliceProperty, property_category: Category) -> None:
         self._property_category = property_category
-        self._retained: MonoDict = MonoDict()
         self._product_subobjects: SubobjectsOfProduct | None = None
         super().__init__(ambient)
 
@@ -434,11 +433,10 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
         (monomorphism,) = self.structure_functors()
         return monomorphism
 
+    @cached_method
     def defining_arrow(self) -> Functor:
         """This pullback's projection to the arrows: the slice's defining-arrow functor after the subcategory monomorphism, retained once."""
-        if self not in self._retained:
-            self._retained[self] = self._ambient.defining_arrow() * self.subcategory_monomorphism()
-        return self._retained[self]
+        return self._ambient.defining_arrow() * self.subcategory_monomorphism()
 
     def defining_arrow_of(self, candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         return self._ambient.defining_arrow_of(candidate)

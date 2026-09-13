@@ -13,6 +13,7 @@ import os
 import subprocess
 import sys
 from collections.abc import Callable, Iterable, Iterator
+from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
 from shutil import which
@@ -136,70 +137,111 @@ def _project_parse_only_surfaces(package: str, output_directory: Path) -> None:
         stub_path.write_text(ast.unparse(ast.fix_missing_locations(tree)) + "\n", encoding="utf-8")
 
 
-def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> tuple[Path, ...]:
-    """Project declarations and return only formatter/linter-conforming stubs."""
+@dataclass(frozen=True, slots=True)
+class _StubProjectionContext:
+    """Package-wide source facts consumed by the final static-projection pass."""
+
+    canonical_exports: dict[str, str]
+    inheritance: dict[str, dict[str, tuple[str, ...]]]
+    runtime_aliases: dict[str, dict[str, str]]
+    source_modules: frozenset[str]
+    category_parameter_counts: dict[str, int]
+    category_modules: dict[str, str]
+    source_class_parameters: dict[str, tuple[str, ...]]
+    hoisted_role_providers: dict[str, str]
+    generic_category_bases: frozenset[str]
+
+
+def _stub_projection_context(
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+) -> _StubProjectionContext:
+    """Derive the compiler/source metadata shared by every projected stub module."""
     from sage_categories.kernel.compiler import compiler
 
-    sources = tuple(sorted(output_directory.rglob("*.py")))
-    for source in sources:
-        if _bootstrap_source(output_directory, source):
-            import_module(_module_name(package, output_directory, source))
     canonical_exports = _canonical_exports(package, output_directory, sources)
-    _run_parse_only_stubgen(output_directory, sources)
-    _project_parse_only_surfaces(package, output_directory)
-    _refresh_internal_static_definitions(package, output_directory, sources)
     inheritance = compiler().declared_inheritance()
     runtime_aliases = _source_role_aliases(package, output_directory, sources, inheritance)
     source_modules = frozenset(_module_name(package, output_directory, source) for source in sources)
     category_parameter_counts = _source_category_parameter_counts(sources)
     category_modules = _source_category_modules(package, output_directory, sources)
-    source_class_parameters = _source_class_type_parameters(package, output_directory, sources)
     hoisted_role_providers = _source_hoisted_role_providers(package, output_directory, sources)
     source_class_parameters = _include_hoisted_role_parameters(
-        source_class_parameters,
+        _source_class_type_parameters(package, output_directory, sources),
         hoisted_role_providers,
     )
-    generic_category_bases = _source_generic_category_bases(sources, category_parameter_counts)
+    return _StubProjectionContext(
+        canonical_exports,
+        inheritance,
+        runtime_aliases,
+        source_modules,
+        category_parameter_counts,
+        category_modules,
+        source_class_parameters,
+        hoisted_role_providers,
+        _source_generic_category_bases(sources, category_parameter_counts),
+    )
+
+
+def _project_package_stub(
+    package: str,
+    output_directory: Path,
+    stub_path: Path,
+    ruff_config: Path,
+    context: _StubProjectionContext,
+) -> None:
+    """Apply the package-wide declaration projection to one generated stub module."""
+    module = _module_name(package, output_directory, stub_path)
+    providers = _providers_in_module(context.inheritance, module)
+    source_path = stub_path.with_suffix(".py")
+    source_tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+    tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
+    _project_public_exports(tree, source_tree)
+    _canonicalize_imports(tree, package, context.canonical_exports)
+    projected_generic_aliases = _project_class_aliases(tree, source_tree)
+    match module in context.runtime_aliases:
+        case True:
+            module_runtime_aliases = context.runtime_aliases[module]
+        case False:
+            module_runtime_aliases = {}
+    _project_runtime_class_aliases(tree, module_runtime_aliases, context.source_modules)
+    if providers:
+        _project_provider_bases(tree, module, providers, context.source_modules, context.hoisted_role_providers)
+    _project_exact_morphism_endpoints(tree)
+    _hoist_lexically_cyclic_nested_classes(tree, module)
+    _project_category_role_parameters(
+        tree,
+        source_tree,
+        module,
+        context.category_parameter_counts,
+        context.category_modules,
+        context.generic_category_bases,
+        context.source_class_parameters,
+        context.source_modules,
+    )
+    _project_hoisted_role_defaults(tree, module, context.hoisted_role_providers)
+    _mark_projected_generic_aliases(tree, projected_generic_aliases)
+    _publicize_private_type_parameters(tree)
+    _unquote_stub_annotations(tree)
+    _normalize_stub_class_bodies(tree)
+    _localize_self_references(tree, module)
+    stub_path.write_text(_render_stub_source(tree, package, stub_path, ruff_config), encoding="utf-8")
+
+
+def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> tuple[Path, ...]:
+    """Project declarations and return only formatter/linter-conforming stubs."""
+    sources = tuple(sorted(output_directory.rglob("*.py")))
+    for source in sources:
+        if _bootstrap_source(output_directory, source):
+            import_module(_module_name(package, output_directory, source))
+    _run_parse_only_stubgen(output_directory, sources)
+    _project_parse_only_surfaces(package, output_directory)
+    _refresh_internal_static_definitions(package, output_directory, sources)
+    context = _stub_projection_context(package, output_directory, sources)
     for stub_path in output_directory.rglob("*.pyi"):
-        module = _module_name(package, output_directory, stub_path)
-        providers = _providers_in_module(inheritance, module)
-        source_path = stub_path.with_suffix(".py")
-        source_tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
-        tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
-        _project_public_exports(tree, source_tree)
-        _canonicalize_imports(tree, package, canonical_exports)
-        projected_generic_aliases = _project_class_aliases(tree, source_tree)
-        match module in runtime_aliases:
-            case True:
-                module_runtime_aliases = runtime_aliases[module]
-            case False:
-                module_runtime_aliases = {}
-        _project_runtime_class_aliases(tree, module_runtime_aliases, source_modules)
-        if providers:
-            _project_provider_bases(tree, module, providers, source_modules, hoisted_role_providers)
-        _project_exact_morphism_endpoints(tree)
-        _hoist_lexically_cyclic_nested_classes(tree, module)
-        _project_category_role_parameters(
-            tree,
-            source_tree,
-            module,
-            category_parameter_counts,
-            category_modules,
-            generic_category_bases,
-            source_class_parameters,
-            source_modules,
-        )
-        _project_hoisted_role_defaults(tree, module, hoisted_role_providers)
-        _mark_projected_generic_aliases(tree, projected_generic_aliases)
-        _publicize_private_type_parameters(tree)
-        _unquote_stub_annotations(tree)
-        _normalize_stub_class_bodies(tree)
-        _localize_self_references(tree, module)
-        stub_path.write_text(
-            _render_stub_source(tree, package, stub_path, ruff_config),
-            encoding="utf-8",
-        )
-    projected_modules = frozenset(category_modules.values())
+        _project_package_stub(package, output_directory, stub_path, ruff_config, context)
+    projected_modules = frozenset(context.category_modules.values())
     _remove_non_projection_stubs(package, output_directory, projected_modules)
     stubs = tuple(sorted(output_directory.rglob("*.pyi")))
     assert stubs, "static projection emitted no stubs"

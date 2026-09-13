@@ -1960,3 +1960,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/presented_modules.py` stored `_cokernel_differences[projection] = first-second` solely so a later colift could recover the native difference from the selected projection. The owned coequalizer presentation already retains the defining parallel diagram, and `abelian.coequalizer_mediator()` explicitly locates that exact presentation before crossing the engine boundary. The reverse registry therefore duplicated universal-construction provenance and kept a second source of truth for which pair a projection coequalizes.
 
 - **Repair link and acceptance:** `bloat-cokernel-difference-registry`. Pass the retained public pair to the CAP colift boundary, reconstruct its native difference from the already-retained native morphisms, and delete `_cokernel_differences` entirely.
+
+## Relative tensor stored fake coequalizer provenance for the strict unit case
+
+- **Evidence and impact:** when both balancing actions are the selected unit actions, `relative_tensor()` returns the literal identity on the ordinary tensor product. `_identity_coequalizers` nevertheless stored that identity in a side registry so the generic additive `coequalizer_mediator()` would pretend it came from a retained cokernel presentation. The stored action pair was never read. This mechanism should not exist: the strict unit simplification belongs to the relative-tensor owner, while the additive coequalizer API should remain about actual retained coequalizers.
+
+- **Repair link and acceptance:** `bloat-relative-identity-coequalizer-registry`. Delete the marker and its writes; factor internal relative-tensor maps directly through the cached identity in the strict unit case, and send every nonidentity relative projection through the real additive coequalizer mediator.

@@ -178,7 +178,6 @@ class _IndexedPairTensorData:
 _presentations: MonoDict = MonoDict()
 _tensor_data: MonoDict = MonoDict()
 _indexed_free_data: MonoDict = MonoDict()
-_identity_coequalizers: MonoDict = MonoDict()
 
 
 def _structure() -> MonoidalStructuresCategory.ObjectType:
@@ -678,10 +677,6 @@ def coequalizer_mediator(
     coequalizing: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Factor ``coequalizing`` through the retained coequalizer presentation of ``projection``."""
-    if projection in _identity_coequalizers:
-        assert projection.domain() is projection.codomain()
-        assert coequalizing.domain() is projection.domain()
-        return coequalizing
     family = AbelianGroups().Colimits(Cat().WalkingParallelPair())
     matching = tuple(
         diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
@@ -697,6 +692,25 @@ def coequalizer_mediator(
     # The matching presentation above establishes ownership; the retained CAP colift
     # checks and constructs the universal factor on the exact public endpoints.
     return _coequalizer_mediator(projection, coequalizing, first, second)
+
+
+def _factor_relative_projection(
+    projection: MorphismCategory.ObjectType,
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Factor through a relative-tensor quotient, including its strict unit case.
+
+    ``relative_tensor`` returns the literal identity when both balancing actions are the
+    selected unit actions.  That case belongs to the relative-tensor owner and needs no
+    pretend coequalizer provenance: factoring through an identity is just ``arrow``.
+    Every nonidentity relative projection is an actual retained additive coequalizer.
+    """
+    assert arrow.domain() is projection.domain()
+    if projection.domain() is projection.codomain():
+        identity = Mor(AbelianGroups())(projection.domain(), projection.domain()).one()
+        if projection is identity:
+            return arrow
+    return coequalizer_mediator(projection, arrow)
 
 
 def _pair_vector(
@@ -1174,9 +1188,7 @@ def relative_tensor(
     selected_left = monoidal.left_unitor().component(second)
     if right_action is selected_right and left_action is selected_left:
         product = _tensor_object(first, second)
-        projection = Mor(base)(product, product).one()
-        _identity_coequalizers[projection] = (right_action, left_action)
-        return projection
+        return Mor(base)(product, product).one()
     scalars = _tensor_data[left_action.domain()].first
     triples = monoidal.associator().domain().domain()
     rebracket = monoidal.associator().component(triples((first, scalars, second)))
@@ -1206,7 +1218,7 @@ def relative_tensor_mediator(
     makes its mediator out of ``X (x) Y`` coequalize the two maps this quotient identifies.
     """
     factors = _tensor_data[projection.domain()]
-    return coequalizer_mediator(projection, tensor_mediator(factors.first, factors.second, target, balanced))
+    return _factor_relative_projection(projection, tensor_mediator(factors.first, factors.second, target, balanced))
 
 
 def _colift_presented_epimorphism(
@@ -1304,7 +1316,7 @@ def _unitor(
     a point to its tensor with the unit.  Both composites are checked here, so the pair is
     an isomorphism of ``Ab`` by what it does rather than by a declaration.
     """
-    forward = coequalizer_mediator(projection, action)
+    forward = _factor_relative_projection(projection, action)
     quotient, carrier = projection.codomain(), action.codomain()
     backward = abelian_homomorphism(carrier, quotient, lambda datum: into_the_tensor(datum).datum())
     assert ask(forward * backward == Mor(AbelianGroups())(carrier, carrier).one()) is True
@@ -1401,12 +1413,12 @@ def _bimodule_associator_components(
         tensor_morphism(abelian_tensor, first_second_projection, identity_third),
         forward_from_unbalanced,
     )
-    forward_underlying = coequalizer_mediator(source_projection, through_first_quotient)
+    forward_underlying = _factor_relative_projection(source_projection, through_first_quotient)
     through_second_quotient = _colift_presented_epimorphism(
         tensor_morphism(abelian_tensor, identity_first, second_third_projection),
         backward_from_unbalanced,
     )
-    backward_underlying = coequalizer_mediator(target_projection, through_second_quotient)
+    backward_underlying = _factor_relative_projection(target_projection, through_second_quotient)
     assert ask(forward_underlying * backward_underlying == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()) is True
     assert ask(backward_underlying * forward_underlying == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()) is True
     return (

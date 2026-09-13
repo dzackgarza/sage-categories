@@ -131,6 +131,9 @@ def test_r5_6_results_have_their_exact_semantic_owners() -> None:
     assert inverse_image is Cat().Pullbacks().chosen_object(inverse_diagram)
 
 
-for name, value in tuple(globals().items()):
-    if name.startswith("test_"):
-        value()
+test_r5_1_domain_evaluation_is_the_retained_evaluation_functor()
+test_r5_2_fully_faithful_identity_uses_its_exact_proposition_and_same_value()
+test_r5_3_terminal_constant_cospan_retains_its_universal_presentation()
+test_r5_4_property_intersection_retains_both_projections_and_ambient_monomorphism()
+test_r5_5_identity_inverse_image_retains_both_projections_and_ambient_monomorphism()
+test_r5_6_results_have_their_exact_semantic_owners()

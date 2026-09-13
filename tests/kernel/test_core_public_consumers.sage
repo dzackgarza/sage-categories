@@ -300,6 +300,11 @@ def test_images_requested_after_the_functor_action_recognize_the_retained_values
     assert square.component(Cat().Simplex(1)(1)) is arrow
 
 
-for name, value in tuple(globals().items()):
-    if name.startswith("test_"):
-        value()
+test_selected_initialization_order_is_local_to_each_declaration()
+test_an_axiom_declared_on_a_property_retains_its_owner()
+test_typed_queries_return_owned_answers_and_defer_comparisons()
+test_unrelated_state_owners_are_distinct_even_for_equal_values()
+test_two_selected_targets_supply_one_inherited_property()
+test_product_elements_and_universal_functor_actions()
+test_coproduct_presentation_retains_the_original_diagram()
+test_images_requested_after_the_functor_action_recognize_the_retained_values()

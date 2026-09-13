@@ -367,6 +367,14 @@ def test_shape_indexed_functor_properties_are_public_axioms() -> None:
     assert created_at_shape != created_at_other
 
 
-for name, value in tuple(globals().items()):
-    if name.startswith("test_"):
-        value()
+test_axiom_application_has_three_valued_public_semantics()
+test_positive_evidence_refines_the_same_public_value()
+test_property_construction_and_query_use_public_surfaces()
+test_predicate_subclassing_uses_owned_sympy_atoms()
+test_exact_handler_dispatch_and_sympy_errors_keep_their_meaning()
+test_equality_uses_the_category_owned_predicate()
+test_axioms_propagate_along_retained_structure_functors()
+test_narrowed_construction_containment_is_retained_and_navigable()
+test_opposite_narrowing_constructs_into_each_selected_root()
+test_functor_property_axioms_have_retained_containments()
+test_shape_indexed_functor_properties_are_public_axioms()

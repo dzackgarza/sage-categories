@@ -1227,3 +1227,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `dual_functor_category_equivalence` separately constructed the unit and its retained inverse on `Fun(I,C)`, then repeated the same endofunctor/identity/transformation/inverse-retention scaffold for the counit on the opposite dual category. Only the component rule differs: ordinary identity transformations on the source versus opposite identity transformations on the target.
 
 - **Repair link and acceptance:** `bloat-dual-functor-round-trip`. Put the retained `Id ≅ round_trip` scaffold in `_identity_round_trip()` and express source unit and target counit through their two component rules, retaining the same inverses and equivalence data.
+
+## Projective-infinity construction hid topology maps inside one long initializer
+
+- **Evidence and impact:** `geometry/cw.py::projective_infinity` mixed object initialization with three independent universal-map responsibilities: finite-stage topological legs, stagewise weak-open preimages, and cocone descent. The resulting constructor exceeded one hundred lines and made the weak-topology equations available only as nested closures rather than named operations.
+
+- **Repair link and acceptance:** `bloat-projective-infinity-maps`. Extract `_projective_infinity_leg`, `_projective_infinity_preimage`, and `_projective_infinity_descent`; leave `projective_infinity()` responsible for constructing/retaining the object and wiring those named universal maps into its colimit presentation.

@@ -308,6 +308,83 @@ def _weak_open_space(
     return opens, Thin(opens, _open_order)
 
 
+def _projective_infinity_leg(
+    space: TopologicalSpacesCategory.ObjectType,
+    set_colimit: Any,
+    vertex: CategoryOfCategories.ElementType,
+) -> TopologicalSpacesCategory.MorphismType:
+    """Lift one finite-stage set-colimit leg to the weak CW topology."""
+    stage = _diagram_stage(vertex)
+    source = projective_space(stage)
+    underlying = set_colimit.leg(vertex)
+    inverse = Fun(space.open_category(), source.space.open_category())(
+        lambda target_open: source.open(cast(_WeakCWOpen, cast(Any, target_open).point().datum()).stage_open(stage)),
+        lambda inclusion: Mor(source.space.open_category())(
+            source.open(cast(_WeakCWOpen, cast(Any, inclusion.domain()).point().datum()).stage_open(stage)),
+            source.open(cast(_WeakCWOpen, cast(Any, inclusion.codomain()).point().datum()).stage_open(stage)),
+        )(),
+    )
+    return TopologicalSpaces().morphism_with_inverse_image(source.space, space, underlying, inverse)
+
+
+def _projective_infinity_preimage(
+    presentation: ProjectiveInfinityPresentation,
+    candidate: CategoryOfCategories.ElementType,
+    target_open: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    """The weak-CW preimage of one open under a compatible cocone."""
+    weak = _WeakCWOpen(
+        presentation,
+        lambda stage: cast(
+            CWOpen,
+            cast(
+                Any,
+                cast(
+                    TopologicalSpacesCategory.MorphismType,
+                    cast(Any, candidate).component(omega.object_at(omega.object_set().point(stage + 1))),
+                )
+                .inverse_image()
+                .on_object(target_open),
+            )
+            .point()
+            .datum(),
+        ),
+        ("preimage", target_open),
+    )
+    return presentation.open(weak)
+
+
+def _projective_infinity_descent(
+    presentation: ProjectiveInfinityPresentation,
+    space: TopologicalSpacesCategory.ObjectType,
+    underlying_diagram: Functor,
+    set_colimit: Any,
+    candidate: CategoryOfCategories.ElementType,
+) -> TopologicalSpacesCategory.MorphismType:
+    """Descend one compatible topological cocone through the weak CW colimit."""
+    target = cast(TopologicalSpacesCategory.ObjectType, cast(Any, candidate).apex())
+    set_candidate = cocones(underlying_diagram)(
+        cocone(
+            underlying_diagram,
+            target.carrier(),
+            lambda vertex: cast(
+                TopologicalSpacesCategory.MorphismType,
+                cast(Any, candidate).component(vertex),
+            ).underlying_map(),
+        )
+    )
+    underlying = set_colimit.lift(set_candidate)
+
+    def preimage(target_open: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+        return _projective_infinity_preimage(presentation, candidate, target_open)
+
+    inverse = Fun(target.open_category(), space.open_category())(
+        preimage,
+        lambda inclusion: Mor(space.open_category())(preimage(inclusion.domain()), preimage(inclusion.codomain()))(),
+    )
+    return TopologicalSpaces().morphism_with_inverse_image(space, target, underlying, inverse)
+
+
 _projective_infinity: ProjectiveInfinityPresentation | None = None
 
 
@@ -363,70 +440,10 @@ def projective_infinity() -> ProjectiveInfinityPresentation:
 
     set_colimit = Sets.Colimits(omega).universal_data(underlying_diagram)
 
-    def leg(
-        vertex: CategoryOfCategories.ElementType,
-    ) -> TopologicalSpacesCategory.MorphismType:
-        stage = _diagram_stage(vertex)
-        source = projective_space(stage)
-        underlying = set_colimit.leg(vertex)
-        inverse = Fun(space.open_category(), source.space.open_category())(
-            lambda target_open: source.open(cast(_WeakCWOpen, cast(Any, target_open).point().datum()).stage_open(stage)),
-            lambda inclusion: Mor(source.space.open_category())(
-                source.open(cast(_WeakCWOpen, cast(Any, inclusion.domain()).point().datum()).stage_open(stage)),
-                source.open(cast(_WeakCWOpen, cast(Any, inclusion.codomain()).point().datum()).stage_open(stage)),
-            )(),
-        )
-        return spaces.morphism_with_inverse_image(source.space, space, underlying, inverse)
-
-    def descend(
-        candidate: CategoryOfCategories.ElementType,
-    ) -> TopologicalSpacesCategory.MorphismType:
-        target = cast(TopologicalSpacesCategory.ObjectType, cast(Any, candidate).apex())
-        set_candidate = cocones(underlying_diagram)(
-            cocone(
-                underlying_diagram,
-                target.carrier(),
-                lambda vertex: cast(
-                    TopologicalSpacesCategory.MorphismType,
-                    cast(Any, candidate).component(vertex),
-                ).underlying_map(),
-            )
-        )
-        underlying = set_colimit.lift(set_candidate)
-
-        def preimage(
-            target_open: CategoryOfCategories.ElementType,
-        ) -> CategoryOfCategories.ElementType:
-            weak = _WeakCWOpen(
-                presentation,
-                lambda stage: cast(
-                    CWOpen,
-                    cast(
-                        Any,
-                        cast(
-                            TopologicalSpacesCategory.MorphismType,
-                            cast(Any, candidate).component(omega.object_at(omega.object_set().point(stage + 1))),
-                        )
-                        .inverse_image()
-                        .on_object(target_open),
-                    )
-                    .point()
-                    .datum(),
-                ),
-                ("preimage", target_open),
-            )
-            return presentation.open(weak)
-
-        inverse = Fun(target.open_category(), space.open_category())(
-            preimage,
-            lambda inclusion: Mor(space.open_category())(preimage(inclusion.domain()), preimage(inclusion.codomain()))(),
-        )
-        return spaces.morphism_with_inverse_image(space, target, underlying, inverse)
-
     spaces.Colimits(omega).with_universal_data(
         diagram,
         space,
-        cocone(diagram, space, leg),
-        descend,
+        cocone(diagram, space, lambda vertex: _projective_infinity_leg(space, set_colimit, vertex)),
+        lambda candidate: _projective_infinity_descent(presentation, space, underlying_diagram, set_colimit, candidate),
     )
     return presentation

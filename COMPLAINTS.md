@@ -850,3 +850,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/cells.py` binds `MorphismCategory` at module scope, then re-imported the same class inside `_root_owner`, `native_object`, and `boundary`. Those local imports neither break a cycle nor delay an otherwise absent dependency; they duplicate an already-established owner binding in three execution paths.
 
 - **Repair link and acceptance:** `bloat-cell-morphism-imports`. Remove the three local re-imports and use the module-level `MorphismCategory` binding for root-owner traversal, object lowering, and boundary reconstruction.
+
+## Presented-module reconstruction repeated the additive-owner import
+
+- **Evidence and impact:** `engines/presented_modules.py` imported the private additive `_group_from_engine` reconstruction separately in cokernel and tensor-product object reconstruction. The import must remain delayed because the additive owner calls back into this CAP adapter, but both paths cross the same native-to-owned object boundary.
+
+- **Repair link and acceptance:** `bloat-presented-group-reconstruction-boundary`. Put the delayed reconstruction behind `_owned_group_from_engine()` and route both cokernel and tensor-product object reconstruction through it.

@@ -101,6 +101,13 @@ def _coordinates(value: object):
     return retained_coordinates(value)
 
 
+def _owned_group_from_engine(engine: object):
+    """Reconstruct an owned ``Ab`` object through the cycle-safe additive boundary."""
+    from sage_categories.algebra.abelian import _group_from_engine
+
+    return _group_from_engine(engine)
+
+
 def _native_object(value: object) -> GapElement:
     if has_presented_native_object(value):
         return presented_native_object(value).native
@@ -409,8 +416,6 @@ def homomorphism_from_rule(source: object, target: object, rule):
 
 def coequalizer_projection(first: object, second: object):
     """Return CAP's selected cokernel of ``first-second`` as an owned ``Ab`` map."""
-    from sage_categories.algebra.abelian import _group_from_engine
-
     source, target = first.domain(), first.codomain()
     assert second.domain() is source and second.codomain() is target
     native_difference = libgap.SubtractionForMorphisms(
@@ -421,7 +426,7 @@ def coequalizer_projection(first: object, second: object):
     native_apex = libgap.Range(native_projection)
 
     free, engine = _public_engine_from_native(native_apex)
-    apex = _group_from_engine(engine)
+    apex = _owned_group_from_engine(engine)
     retain_presented_native_object(
         apex,
         native_apex,
@@ -555,14 +560,12 @@ def zero_morphism(source: object, target: object):
 
 def tensor_object(first: object, second: object):
     """Return CAP's selected tensor product as the same public owned ``Ab`` object."""
-    from sage_categories.algebra.abelian import _group_from_engine
-
     native = libgap.TensorProductOnObjects(
         _native_object(first),
         _native_object(second),
     )
     free, engine = _public_engine_from_native(native)
-    result = _group_from_engine(engine)
+    result = _owned_group_from_engine(engine)
     retain_presented_native_object(result, native, _PresentationBridge(free, engine))
     return result, engine
 

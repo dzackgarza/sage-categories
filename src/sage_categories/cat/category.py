@@ -334,7 +334,6 @@ class CategoryDeclaration[
         from sage_categories.kernel.construction import retain_category_universe
 
         retain_category_universe(self, universe)
-        self._narrowings: dict[tuple[int, ...], Category[MorphismData, TwoMorphismData]] = {}
         self._identities: MonoDict = MonoDict()
         self._inverses: MonoDict = MonoDict()
         self._biproduct_constructor: Callable[[object, object], object] | None = None
@@ -1245,9 +1244,15 @@ class CategoryDeclaration[
             belongs = root.narrowing_base() is self or is_subcategory(root, self)
             if belongs and tuple(member.ordinal() for member in self.closed_roots((root,))) == key:
                 return root
-        if key not in self._narrowings:
-            self._narrowings[key] = self.narrowing_type()(self, selected)
-        return self._narrowings[key]
+        return self._narrowing(selected)
+
+    @cached_method(key=lambda self, selected: identity_key(*selected))
+    def _narrowing(
+        self,
+        selected: tuple[Category[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole], ...],
+    ) -> Category[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]:
+        """Construct the canonical narrowing for one exact closed root family."""
+        return self.narrowing_type()(self, selected)
 
     def closed_roots(
         self, roots: tuple[Category[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole], ...]

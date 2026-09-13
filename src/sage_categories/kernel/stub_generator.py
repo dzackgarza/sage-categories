@@ -1162,6 +1162,66 @@ def _module_name(package: str, output_directory: Path, stub_path: Path) -> str:
     return ".".join((package, *parts))
 
 
+def _static_source_trees(
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+) -> tuple[dict[str, ast.Module], dict[str, frozenset[str]]]:
+    """Parse package sources once and retain each module's declared top-level names."""
+    trees: dict[str, ast.Module] = {}
+    declarations: dict[str, frozenset[str]] = {}
+    for source in sources:
+        module = _module_name(package, output_directory, source)
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        trees[module] = tree
+        declarations[module] = frozenset(_declared_names(tree))
+    return trees, declarations
+
+
+def _internal_module_aliases(
+    tree: ast.Module,
+    modules: frozenset[str],
+    declarations: dict[str, frozenset[str]],
+    references: dict[str, set[str]],
+) -> dict[str, str]:
+    """Record direct sibling imports and return module aliases used by attributes."""
+    module_aliases: dict[str, str] = {}
+    for statement in ast.walk(tree):
+        match statement:
+            case ast.ImportFrom(module=imported, level=0) if imported is not None:
+                if imported in modules:
+                    for alias in statement.names:
+                        if alias.name in declarations[imported]:
+                            _set_bucket(references, imported).add(alias.name)
+                for alias in statement.names:
+                    candidate = f"{imported}.{alias.name}"
+                    if candidate in modules:
+                        module_aliases[alias.asname or alias.name] = candidate
+            case ast.Import(names=aliases):
+                for alias in aliases:
+                    if alias.name in modules:
+                        module_aliases[alias.asname or alias.name.rsplit(".", 1)[-1]] = alias.name
+            case _:
+                pass
+    return module_aliases
+
+
+def _record_internal_attribute_references(
+    tree: ast.Module,
+    module_aliases: dict[str, str],
+    declarations: dict[str, frozenset[str]],
+    references: dict[str, set[str]],
+) -> None:
+    """Record declarations reached through one imported package-module alias."""
+    for expression in ast.walk(tree):
+        if not isinstance(expression, ast.Attribute) or not isinstance(expression.value, ast.Name):
+            continue
+        imported = module_aliases.get(expression.value.id)
+        if imported is None or expression.attr not in declarations[imported]:
+            continue
+        _set_bucket(references, imported).add(expression.attr)
+
+
 def _internal_static_names(
     package: str,
     output_directory: Path,
@@ -1175,41 +1235,12 @@ def _internal_static_names(
     package-internal surface distinct: this relation comes from actual source
     imports, not from adding private machinery to ``__all__``.
     """
-    modules = {_module_name(package, output_directory, source): source for source in sources}
-    declarations: dict[str, frozenset[str]] = {}
-    trees: dict[str, ast.Module] = {}
-    for module, source in modules.items():
-        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
-        trees[module] = tree
-        declarations[module] = frozenset(_declared_names(tree))
-
+    trees, declarations = _static_source_trees(package, output_directory, sources)
+    modules = frozenset(trees)
     references: dict[str, set[str]] = {}
-    for module, tree in trees.items():
-        module_aliases: dict[str, str] = {}
-        for statement in ast.walk(tree):
-            if isinstance(statement, ast.ImportFrom) and statement.level == 0:
-                imported = statement.module
-                if imported in modules:
-                    for alias in statement.names:
-                        if alias.name in declarations[imported]:
-                            _set_bucket(references, imported).add(alias.name)
-                if imported is not None:
-                    for alias in statement.names:
-                        candidate = f"{imported}.{alias.name}"
-                        if candidate in modules:
-                            module_aliases[alias.asname or alias.name] = candidate
-            elif isinstance(statement, ast.Import):
-                for alias in statement.names:
-                    if alias.name in modules:
-                        module_aliases[alias.asname or alias.name.rsplit(".", 1)[-1]] = alias.name
-
-        for expression in ast.walk(tree):
-            if not isinstance(expression, ast.Attribute) or not isinstance(expression.value, ast.Name):
-                continue
-            imported = module_aliases.get(expression.value.id)
-            if imported is None or expression.attr not in declarations[imported]:
-                continue
-            _set_bucket(references, imported).add(expression.attr)
+    for tree in trees.values():
+        aliases = _internal_module_aliases(tree, modules, declarations, references)
+        _record_internal_attribute_references(tree, aliases, declarations, references)
 
     return {module: frozenset(names) for module, names in references.items()}
 

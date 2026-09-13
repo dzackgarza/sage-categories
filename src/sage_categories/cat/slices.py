@@ -73,8 +73,13 @@ def _structure_of(member_object: SliceLikeCategory.ObjectType) -> MorphismCatego
     return member_object.arrow()
 
 
+def _is_slice_over(category: SliceLikeCategory) -> bool:
+    """Whether this specialization fixes the codomain rather than the domain."""
+    return category._fixed_label == 1
+
+
 def _varying_of(triangle: SliceLikeCategory.MorphismType) -> MorphismCategory.ObjectType:
-    return triangle.first() if triangle.base_category().narrowing_base()._fixed_label == 1 else triangle.second()
+    return triangle.first() if _is_slice_over(triangle.base_category().narrowing_base()) else triangle.second()
 
 
 # ``slice_member(t, C/x)``: ``t`` is an object of the slice or coslice: a morphism of

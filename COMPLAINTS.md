@@ -1608,3 +1608,10 @@ Ideas, to be weighed, not obligations.*
   The public `component()` operation already owns lazy component realization and identity caching, so the engine boundary bypassed the retained semantics it should consume.
 
 - **Repair link and acceptance:** `bloat-catlab-transformation-boundary`. Supply the bound public `component` method to Catlab's callable transformation model instead of reading `_assignment` directly.
+
+
+## Homotopy-cell inverse retention duplicated generator-strengthening error handling
+
+- **Evidence and impact:** `engines/cells.py::retain_inverses()` repeated the same `strengthen_invertibility` call and string-filtered `ValueError` handling for both the forward native cell and an already-cached backward cell. The special case is one homotopy-core boundary rule — composites cannot be strengthened as generators — and should not have two copies.
+
+- **Repair link and acceptance:** `bloat-cell-invertibility-strengthening`. Centralize the native strengthening/error boundary in `_strengthen_generator_invertibility` and invoke it for both directions.

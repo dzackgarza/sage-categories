@@ -1702,9 +1702,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-slice-projection-caches`. Make both projection accessors `cached_method`s and construct their functors directly; lift retention continues to call the cached varying projection.
 
-
 ## Universal-construction categories hand-rolled nullable functor caches
 
-- **Evidence and impact:** universal-construction owners carried nullable `_image_factor`, `_limit_adjunction`, and `_colimit_functor` fields with explicit first-call mutation. These are per-instance method results and Sage `cached_method` already owns that lifecycle, including identity-keyed arguments where the image factor depends on its defining functor.
+- **Evidence and impact:** universal-construction owners carried nullable `_image_factor`, `_limit_adjunction`, and `_colimit_functor` fields with explicit first-call mutation.
+  These are per-instance method results and Sage `cached_method` already owns that lifecycle, including identity-keyed arguments where the image factor depends on its defining functor.
 
 - **Repair link and acceptance:** `bloat-universal-construction-functor-caches`. Cache those three accessors with Sage, retaining full-image and coproduct registration inside the first cached construction.
+
+
+## Inverse-image subcategories hand-rolled a nullable projection cache
+
+- **Evidence and impact:** `InverseImageSubcategory.target_projection()` stored a nullable `_target_projection` and mutated it on first use even though this is an ordinary per-instance structural-functor accessor. Sage `cached_method` already owns that lifecycle and is already imported in the module.
+
+- **Repair link and acceptance:** `bloat-inverse-image-projection-cache`. Make `target_projection()` a `cached_method`, return the constructed restricted functor directly, and retain monomorphism/isofibration refinement inside that first cached construction.

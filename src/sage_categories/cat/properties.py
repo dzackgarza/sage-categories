@@ -243,7 +243,6 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
     def __init__(self, functor: Functor, target_subcategory: Category) -> None:
         self._functor = functor
         self._target_subcategory = target_subcategory
-        self._target_projection: Functor | None = None
         self._inverse_image_predicate = property_predicate("inverse_image", self)
         super().__init__(functor.domain())
         register_handler(self._inverse_image_predicate, self._decide_membership)
@@ -257,6 +256,7 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
     def subcategory_monomorphism(self) -> Functor:
         return _functors().full_subcategory_monomorphism(self, self._ambient)
 
+    @cached_method
     def target_projection(self) -> Functor:
         """The restriction of ``F`` to ``P``, the second projection of the retained pullback.
 
@@ -266,29 +266,27 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
         2026-09-02), so when ``F`` is declared a subcategory monomorphism this projection
         is one too, and placement traces through the square (POL-FUN-036).
         """
-        if self._target_projection is None:
-            target = self._target_subcategory
-            defining = self._functor
+        target = self._target_subcategory
+        defining = self._functor
 
-            def on_object(
-                value: CategoryOfCategories.ElementType,
-            ) -> CategoryOfCategories.ElementType:
-                image = defining.on_object(value)
-                refine(image, target)
-                return image
+        def on_object(
+            value: CategoryOfCategories.ElementType,
+        ) -> CategoryOfCategories.ElementType:
+            image = defining.on_object(value)
+            refine(image, target)
+            return image
 
-            def on_morphism(
-                morphism: MorphismCategory.ObjectType,
-            ) -> MorphismCategory.ObjectType:
-                image = defining.on_morphism(morphism)
-                refine(image, target.morphism_category(1))
-                return image
+        def on_morphism(
+            morphism: MorphismCategory.ObjectType,
+        ) -> MorphismCategory.ObjectType:
+            image = defining.on_morphism(morphism)
+            refine(image, target.morphism_category(1))
+            return image
 
-            projections = _functors()(self, target)
-            if _functors().declares_subcategory(defining):
-                projections = projections.Monomorphisms().Isofibrations()
-            self._target_projection = projections(on_object, on_morphism)
-        return self._target_projection
+        projections = _functors()(self, target)
+        if _functors().declares_subcategory(defining):
+            projections = projections.Monomorphisms().Isofibrations()
+        return projections(on_object, on_morphism)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (self.subcategory_monomorphism(), self.target_projection())

@@ -42,18 +42,19 @@ def complete_constructions() -> Iterator[None]:
     token = _completions.set(pending)
     try:
         yield
-        declarations: dict[int, tuple[Category, tuple[Functor, ...]]] = {}
+        declarations: dict[tuple[tuple[int, Category], ...], tuple[Category, tuple[Functor, ...]]] = {}
         while pending:
             category = pending.popleft()
-            declarations[id(category)] = (category, category._complete_declarations())
-        dependencies = {
-            key: tuple(
-                id(functor.codomain())
-                for functor in functors
-                if id(functor.codomain()) in declarations and functor.codomain() is not category
-            )
-            for key, (category, functors) in declarations.items()
-        }
+            declarations[identity_key(category)] = (category, category._complete_declarations())
+        dependencies = {}
+        for key, (category, functors) in declarations.items():
+            targets = []
+            for functor in functors:
+                target = functor.codomain()
+                target_key = identity_key(target)
+                if target_key in declarations and target is not category:
+                    targets.append(target_key)
+            dependencies[key] = tuple(targets)
         for key in TopologicalSorter(dependencies).static_order():
             category, functors = declarations[key]
             category._recompile_category(functors)

@@ -1,10 +1,27 @@
 """Isomorphisms of Cat retain executable inverse functors."""
 
+from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
-from sage_categories.cat.declarations import NN, omega
 from sage_categories.kernel.refinement import refine
 from sage_categories.sets.finite import Sets
+
+
+class DataFreeCategory(Category):
+    """A category whose arrows have endpoints and no further datum."""
+
+    class ObjectType:
+        def __init__(self, label: str) -> None:
+            self.label = label
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __call__(self, label: str) -> CategoryOfCategories.ElementType:
+        return self.ObjectType(label)
 
 
 def test_cat_isomorphism_requires_retained_executable_inverse() -> None:
@@ -39,11 +56,12 @@ def test_cat_isomorphism_requires_retained_executable_inverse() -> None:
 
 
 def test_data_free_category_keeps_symbolic_inverse() -> None:
-    vertex = omega(NN.point(1))
-    arrow = Mor(omega)(vertex, vertex).Isomorphisms()()
+    category = DataFreeCategory()
+    source, target = category("source"), category("target")
+    arrow = Mor(category)(source, target).Isomorphisms()()
     inverse = arrow.inverse()
-    assert inverse.domain() is vertex
-    assert inverse.codomain() is vertex
+    assert inverse.domain() is target
+    assert inverse.codomain() is source
 
 
 test_cat_isomorphism_requires_retained_executable_inverse()

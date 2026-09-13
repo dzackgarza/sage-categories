@@ -216,6 +216,12 @@ class MagmaCategory(InserterCategory):
     """
 
     class ObjectType:
+        def carrier(self) -> CategoryOfCategories.ElementType:
+            return self.family_component(0)
+
+        def structure(self) -> MorphismCategory.ObjectType:
+            return self.family_component(1).arrow()
+
         def operation(self) -> MorphismCategory.ObjectType:
             """The operation ``μ_X: X ⊗ X -> X``, the algebra structure of the endofunctor ``X ↦ X ⊗ X``."""
             return self.structure()
@@ -224,7 +230,8 @@ class MagmaCategory(InserterCategory):
         pass
 
     class MorphismType:
-        pass
+        def underlying_morphism(self) -> MorphismCategory.ObjectType:
+            return self.family_component(0)
 
     def __init__(self, diagram: Functor, tensor: Functor) -> None:
         self._tensor = tensor

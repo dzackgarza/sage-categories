@@ -1,8 +1,8 @@
 """Magmas over the cartesian monoidal structure on sets: an asymmetric product and a homomorphism."""
 
-from sage_categories.all import Cat, Fun, Mor, Sets, Cartesian, ask
-from sage_categories.cat.structured_objects import Magmas
+from sage_categories.all import Cartesian, Mor, Sets, ask
 from sage_categories.cat.calculus import binary_product_data
+from sage_categories.cat.structured_objects import Magmas
 
 
 def test_left_zero_magma_and_nonidentity_homomorphism() -> None:
@@ -18,9 +18,12 @@ def test_left_zero_magma_and_nonidentity_homomorphism() -> None:
     magma = Magmas(structure).algebra(carrier, left_zero)
     assert magma in Magmas(structure)
     assert magma.carrier() is carrier
+    assert magma.structure() is left_zero
+    assert magma.operation() is left_zero
 
     swap = Mor(Sets)(carrier, carrier)(lambda value: {0: 1, 1: 0, 2: 2}[value])
     homomorphism = Magmas(structure).homomorphism(magma, magma, swap)
+    assert homomorphism.underlying_morphism() is swap
     forgetful = Magmas(structure).forgetful()
     assert forgetful.on_object(magma) is carrier
     image = forgetful.on_morphism(homomorphism)(carrier.point(0))

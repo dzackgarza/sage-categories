@@ -801,12 +801,11 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-topological-space-projection`. Put the shared projection at the topological-space owner and let both named structure functors delegate to it while retaining their existing category-specific names.
 
-## Magma repeated accessors already owned by its inserter base
+## Magma accessor duplication was a false audit finding
 
-- **Evidence and impact:** `cat/structured_objects.py::MagmaCategory` repeated `carrier()`, `structure()`, and `underlying_morphism()` byte-for-byte with `InserterCategory`, even though `MagmaCategory` subclasses that owner.
-  The overrides added a second state-reading surface with no changed semantics and made later subclasses look as though Magma owned those generic inserter operations.
+- **Evidence and impact:** The earlier audit treated ordinary Python subclassing `MagmaCategory(InserterCategory)` as if it also inherited `InserterCategory.ObjectType` and `MorphismType`.  That is not this repository's category model: `kernel/roles.py::_require_declarations` requires each category to write its own role declarations (`POL-CAT-053`, `POL-CAT-057`), and the compiler derives executable role inheritance from selected structure functors rather than the category class MRO.  After `carrier()`, `structure()`, and `underlying_morphism()` were deleted from the Magma declarations, `tests/geometry/test_ringed_spaces.sage::test_ringed_map_does_not_enumerate_a_represented_open_category` failed during `Rings(Sets)` construction because the constructed magma had no `carrier()` method.
 
-- **Repair link and acceptance:** `bloat-magma-inherited-accessors`. Delete the redundant overrides and inherit the exact inserter implementations; keep only Magma's mathematical `operation()` alias on the object role.
+- **Repair link and acceptance:** `bloat-magma-inherited-accessors`. Restore the three Magma-local role declarations instead of changing the compiler or weakening the consumer.  `tests/algebra/test_magma_scaffold.sage::test_left_zero_magma_and_nonidentity_homomorphism` must observe the exact carrier, operation/structure, nonidentity underlying morphism, and forgetful images through the public Magma owner.
 
 ## Pullback pair categories repeated faithful factor projections
 

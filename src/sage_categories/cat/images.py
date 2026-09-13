@@ -186,13 +186,6 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
         assert first in self.morphism_category(1) and second in self.morphism_category(1)
         return self._retain_morphism(self.target().compose_morphisms(second, first))
 
-    def compose_morphisms(
-        self,
-        second: MorphismCategory.ObjectType,
-        first: MorphismCategory.ObjectType,
-    ) -> MorphismCategory.ObjectType:
-        return self.composite(second, first)
-
     def __repr__(self) -> str:
         return f"{self.target()!r}.{type(self).__name__.removesuffix('Category')}({self._defining_functor!r})"
 

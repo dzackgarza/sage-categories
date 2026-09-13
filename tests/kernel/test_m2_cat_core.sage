@@ -769,6 +769,9 @@ def test_applying_a_functor_whose_full_image_exists_retains_the_image_and_places
     # so an arbitrary one is a morphism of it and is no value of ``early``.
     spanned = Mor(TOKENS)(source, target)("spanned")
     assert spanned in early_image.morphism_category(1)
+    target_identity = early_image.morphism_category(1)(target, target).one()
+    assert early_image.compose_morphisms(spanned, identity) is spanned
+    assert early_image.compose_morphisms(target_identity, spanned) is spanned
 
     # The application, then the image, then the application again.
     late = Fun(MARKS, TOKENS)(*token_actions("late full "))

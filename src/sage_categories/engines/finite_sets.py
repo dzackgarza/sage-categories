@@ -285,6 +285,24 @@ def _parallel_pair_leg(
     return leg
 
 
+def _parallel_pair_data(
+    diagram: Functor,
+) -> tuple[
+    tuple[MorphismCategory.ObjectType, ...],
+    object,
+    object,
+    GapElement,
+    list[GapElement],
+]:
+    """Lower one walking parallel pair to its shared owned/native endpoint data."""
+    arrows = tuple(diagram.domain().generating_morphisms())
+    maps = tuple(diagram.on_morphism(arrow) for arrow in arrows)
+    assert len(maps) == 2
+    source, target = maps[0].domain(), maps[0].codomain()
+    assert all(arrow.domain() is source and arrow.codomain() is target for arrow in maps)
+    return arrows, source, target, _category(), [_native_morphism(arrow) for arrow in maps]
+
+
 def _native_diagram(diagram: Functor):
     finite = _finite_category_data(diagram.domain())
     assert finite is not Unknown, "native finite-set execution requires exact finite structural data"
@@ -461,12 +479,8 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
 def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     cones = _cones()
 
-    arrows = diagram.domain().generating_morphisms()
-    first, second = (diagram.on_morphism(arrow) for arrow in arrows)
-    source, target = first.domain(), first.codomain()
-    category = _category()
+    arrows, source, target, category, native_maps = _parallel_pair_data(diagram)
     native_source = _native_object(source)
-    native_maps = [_native_morphism(first), _native_morphism(second)]
     computed_apex = libgap.Equalizer(category, native_source, native_maps)
     computed_embedding = libgap.EmbeddingOfEqualizerWithGivenEqualizer(category, native_source, native_maps, computed_apex)
     source_record = finite_native_object(source)
@@ -565,12 +579,8 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
 def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     cones = _cones()
 
-    arrows = diagram.domain().generating_morphisms()
-    first, second = (diagram.on_morphism(arrow) for arrow in arrows)
-    source, target = first.domain(), first.codomain()
-    category = _category()
+    arrows, source, target, category, native_maps = _parallel_pair_data(diagram)
     native_target = _native_object(target)
-    native_maps = [_native_morphism(first), _native_morphism(second)]
     computed_apex = libgap.Coequalizer(category, native_target, native_maps)
     computed_projection = libgap.ProjectionOntoCoequalizerWithGivenCoequalizer(category, native_target, native_maps, computed_apex)
     projection_graph = _graph(computed_projection)

@@ -26,6 +26,7 @@ from sage_categories.cat.native import (
     native_transformation as retained_native_transformation,
 )
 from sage_categories.engines.julia_bridge import catlab_bridge as _bridge
+from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
@@ -46,28 +47,14 @@ __all__ = [
     "presented_coproduct_path_image",
     "presented_functor",
     "presented_functor_morphism_image",
-    "retain_composite_functor",
     "transformation_component",
     "whisker_left",
     "whisker_right",
 ]
 
-type FunctorRecipe = tuple[str, tuple[object, ...]]
 type TransformationRecipe = tuple[str, tuple[object, ...]]
 
-_functor_recipes: MonoDict = MonoDict()
 _transformation_recipes: MonoDict = MonoDict()
-
-
-def _retain_functor_recipe(value: MorphismCategory.ObjectType, recipe: FunctorRecipe) -> None:
-    if value in _functor_recipes:
-        assert _functor_recipes[value] == recipe
-        return
-    _functor_recipes[value] = recipe
-
-
-def _functor_recipe(value: MorphismCategory.ObjectType) -> FunctorRecipe | None:
-    return _functor_recipes[value] if value in _functor_recipes else None
 
 
 def _retain_transformation_recipe(value: MorphismCategory.ObjectType, recipe: TransformationRecipe) -> None:
@@ -103,21 +90,19 @@ def ensure_native_functor(functor: MorphismCategory.ObjectType) -> object:
         return retained_native_functor(functor).native
     source, target = functor.domain(), functor.codomain()
     bridge = _bridge()
-    recipe = _functor_recipe(functor)
-    match recipe:
-        case ("identity", (owner,)):
-            native = bridge.identity_functor(ensure_native_category(owner))
-        case ("compose", (first, second)):
-            native = bridge.compose_functors(ensure_native_functor(first), ensure_native_functor(second))
-        case None:
-            native = bridge.callable_functor(
-                functor._declared_object_image,
-                functor._declared_morphism_image,
-                ensure_native_category(source),
-                ensure_native_category(target),
-            )
-        case _:
-            raise AssertionError(f"unknown Catlab functor recipe {recipe!r}")
+    base = functor.base_category()
+    if is_placed(functor, base.morphism_category(1).Identity()):
+        native = bridge.identity_functor(ensure_native_category(source))
+    elif functor.is_composite():
+        first, second = functor.factors()
+        native = bridge.compose_functors(ensure_native_functor(first), ensure_native_functor(second))
+    else:
+        native = bridge.callable_functor(
+            functor._declared_object_image,
+            functor._declared_morphism_image,
+            ensure_native_category(source),
+            ensure_native_category(target),
+        )
     retain_native_functor(functor, source, target, native)
     return native
 
@@ -132,18 +117,6 @@ def functor_morphism_image(functor: MorphismCategory.ObjectType, value: object) 
 
 def compose_functors(first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> object:
     return _bridge().compose_functors(ensure_native_functor(first), ensure_native_functor(second))
-
-
-def retain_composite_functor(
-    value: MorphismCategory.ObjectType,
-    first: MorphismCategory.ObjectType,
-    second: MorphismCategory.ObjectType,
-) -> None:
-    _retain_functor_recipe(value, ("compose", (first, second)))
-
-
-def identity_functor(value: MorphismCategory.ObjectType, owner: Category) -> None:
-    _retain_functor_recipe(value, ("identity", (owner,)))
 
 
 def _retain_transformation(

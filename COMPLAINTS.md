@@ -1972,3 +1972,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat_kernel/axioms.py` stored `(owner, application_name) -> axiom` in `_derived_applications` even though the generated method itself is installed on that exact owner and can retain the declaring axiom directly. The registry duplicated ownership state solely so compiler collision checks could recover information already attached to the declaration.
 
 - **Repair link and acceptance:** `bloat-axiom-application-registry`. Retain the declaring axiom on the generated function, make `application_axiom()` read the owner's exact namespace and function state, and delete `_derived_applications` without changing generated predicate semantics or collision handling.
+
+## Catlab functors kept a second provenance graph beside the owned category theory
+
+- **Evidence and impact:** `_functor_recipes` recorded whether an owned functor was an identity or a composite solely so lazy Catlab materialization could choose Catlab's identity/composition constructors. Those facts are already authoritative public structure: identity functors are placed in the morphism category's `Identity()` subcategory, and composites retain their exact factors through `MorphismType.retain_factors`. The recipe registry therefore duplicated semantic provenance, with two writers in `CategoryOfCategories.construct_identity` and `_composite_functor` that had to stay synchronized with the public declarations.
+
+- **Repair link and acceptance:** `bloat-catlab-functor-recipes`. Remove the functor recipe table and its writer API; when Catlab materializes a functor, read identity placement or retained factors from the owned functor itself, and use the declared callable actions only for primitive functors.

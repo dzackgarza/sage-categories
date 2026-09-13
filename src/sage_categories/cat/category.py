@@ -1964,7 +1964,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def construct_identity(self, category: CategoryOfCategories.ObjectType) -> CategoryOfCategories.MorphismType:
         Fun = _functors()
-        catlab = _catlab_engine()
 
         def on_object(
             value: CategoryOfCategories.ElementType,
@@ -1977,7 +1976,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return value
 
         identity = self.construct_morphism(category, category, on_object, on_morphism)
-        catlab.identity_functor(identity, category)
         cells = _cells_engine()
 
         cells.retain_identity(self, identity)
@@ -2040,7 +2038,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         hand-written identity table.
         """
         assert factors == (*_composite_sequence(first), *_composite_sequence(second))
-        catlab = _catlab_engine()
 
         def on_object(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             return second.on_object(first.on_object(value))
@@ -2049,7 +2046,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return second.on_morphism(first.on_morphism(value))
 
         composite = self.construct_morphism(first.domain(), second.codomain(), on_object, on_morphism)
-        catlab.retain_composite_functor(composite, first, second)
         composite.retain_factors(first, second)
         _cells_engine().retain_composite(self, composite, first, second)
         return composite

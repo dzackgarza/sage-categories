@@ -164,6 +164,50 @@ class SchemesCategory(Category[Any, Any]):
         self._affine_wrappers[affine] = value
         return value
 
+    def _native_two_chart_gluing(
+        self,
+        left: AffineSchemesCategory.ObjectType,
+        right: AffineSchemesCategory.ObjectType,
+        left_open: AffineOpenCategory.ObjectType,
+        right_open: AffineOpenCategory.ObjectType,
+        left_to_right_pullback: MorphismCategory.ObjectType,
+        right_to_left_pullback: MorphismCategory.ObjectType,
+    ) -> tuple[OscarHandle, OscarHandle, OscarHandle]:
+        """Construct OSCAR's native two-chart gluing from the owned overlap maps."""
+        native_left = native_affine_scheme(cast(CategoryOfCategories.ElementType, left)).native
+        native_right = native_affine_scheme(cast(CategoryOfCategories.ElementType, right)).native
+        native_left_to_right = oscar.affine_morphism_direct(
+            left_open.native(),
+            right_open.native(),
+            oscar_morphism_handle(left_to_right_pullback),
+        )
+        native_right_to_left = oscar.affine_morphism_direct(
+            right_open.native(),
+            left_open.native(),
+            oscar_morphism_handle(right_to_left_pullback),
+        )
+        native_gluing = oscar.simple_gluing(native_left, native_right, native_left_to_right, native_right_to_left)
+        return native_left, native_right, oscar.glued_covered_scheme(native_left, native_right, native_gluing)
+
+    def _covered_chart_inclusion(
+        self,
+        affine: AffineSchemesCategory.ObjectType,
+        native_affine: OscarHandle,
+        glued: SchemesCategory.ObjectType,
+        native_glued: OscarHandle,
+    ) -> SchemesCategory.MorphismType:
+        """Reconstruct one owned chart inclusion of a retained two-chart gluing."""
+        affine_scheme = self.affine(affine)
+        return self._from_native_morphism(
+            affine_scheme,
+            glued,
+            oscar.covered_chart_inclusion(
+                native_scheme(cast(CategoryOfCategories.ElementType, affine_scheme)).native,
+                native_affine,
+                native_glued,
+            ),
+        )
+
     def glue_two_affines(
         self,
         left: AffineSchemesCategory.ObjectType,
@@ -182,20 +226,14 @@ class SchemesCategory(Category[Any, Any]):
         assert left_to_right_pullback.codomain() is left_open.section_ring()
         assert right_to_left_pullback.domain() is left_open.section_ring()
         assert right_to_left_pullback.codomain() is right_open.section_ring()
-        native_left = native_affine_scheme(cast(CategoryOfCategories.ElementType, left)).native
-        native_right = native_affine_scheme(cast(CategoryOfCategories.ElementType, right)).native
-        native_left_to_right = oscar.affine_morphism_direct(
-            left_open.native(),
-            right_open.native(),
-            oscar_morphism_handle(left_to_right_pullback),
+        native_left, native_right, native_glued = self._native_two_chart_gluing(
+            left,
+            right,
+            left_open,
+            right_open,
+            left_to_right_pullback,
+            right_to_left_pullback,
         )
-        native_right_to_left = oscar.affine_morphism_direct(
-            right_open.native(),
-            left_open.native(),
-            oscar_morphism_handle(right_to_left_pullback),
-        )
-        native_gluing = oscar.simple_gluing(native_left, native_right, native_left_to_right, native_right_to_left)
-        native_glued = oscar.glued_covered_scheme(native_left, native_right, native_gluing)
         construction = TwoChartGluing(
             left,
             right,
@@ -205,25 +243,8 @@ class SchemesCategory(Category[Any, Any]):
             right_to_left_pullback,
         )
         glued = self._from_native(construction, native_glued)
-        left_scheme, right_scheme = self.affine(left), self.affine(right)
-        left_inclusion = self._from_native_morphism(
-            left_scheme,
-            glued,
-            oscar.covered_chart_inclusion(
-                native_scheme(cast(CategoryOfCategories.ElementType, left_scheme)).native,
-                native_left,
-                native_glued,
-            ),
-        )
-        right_inclusion = self._from_native_morphism(
-            right_scheme,
-            glued,
-            oscar.covered_chart_inclusion(
-                native_scheme(cast(CategoryOfCategories.ElementType, right_scheme)).native,
-                native_right,
-                native_glued,
-            ),
-        )
+        left_inclusion = self._covered_chart_inclusion(left, native_left, glued, native_glued)
+        right_inclusion = self._covered_chart_inclusion(right, native_right, glued, native_glued)
         return glued, left_inclusion, right_inclusion
 
     def gluing_mediator(

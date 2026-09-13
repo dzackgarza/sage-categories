@@ -1335,9 +1335,9 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-shape-point-object-data`. Keep one private `_PointObjectData` record and let both point-indexed shape object classes consume it while retaining their separate category and morphism logic.
 
-
 ## Point-indexed shapes duplicated the same object surface
 
-- **Evidence and impact:** after consolidating their payload record, `DiscreteCategory.ObjectType` and `ThinCategory.ObjectType` still repeated the same initialization, `point()` accessor, and representation for that retained point. The shape distinction lives in the enclosing category and its morphism rules, not in this object surface.
+- **Evidence and impact:** after consolidating their payload record, `DiscreteCategory.ObjectType` and `ThinCategory.ObjectType` still repeated the same initialization, `point()` accessor, and representation for that retained point.
+  The shape distinction lives in the enclosing category and its morphism rules, not in this object surface.
 
 - **Repair link and acceptance:** `bloat-shape-point-object-surface`. Put the shared object behavior on `_PointShapeObject` and let both nested object roles inherit it.

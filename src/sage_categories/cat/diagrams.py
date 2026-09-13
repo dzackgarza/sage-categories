@@ -55,7 +55,7 @@ from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import Decision, Unknown, ask
 from sage_categories.cat.shapes import DiscreteCategory
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, cached_function
+from sage_categories.kernel.sage_runtime import cached_function
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -309,23 +309,19 @@ def _pointwise_limit_data(
     from sage_categories.cat.calculus import transpose
 
     transposed = transpose(diagram)
-    composites: MonoDict = MonoDict()
 
+    @cached_function(key=identity_key)
     def at(vertex: CategoryOfCategories.ElementType) -> LimitConesCategory.ObjectType:
         """The limiting cone of the pointwise diagram at ``vertex``."""
-        if vertex not in composites:
-            presentation = _constructed_data(limits, transposed.on_object(vertex))
-            assert isinstance(presentation, LimitConesCategory.ObjectType)
-            composites[vertex] = presentation
-        return composites[vertex]
+        presentation = _constructed_data(limits, transposed.on_object(vertex))
+        assert isinstance(presentation, LimitConesCategory.ObjectType)
+        return presentation
 
     apex = limits.limit_functor() * transposed
-    projections: MonoDict = MonoDict()
 
+    @cached_function(key=identity_key)
     def projection(vertex: CategoryOfCategories.ElementType) -> NaturalTransformation:
-        if vertex not in projections:
-            projections[vertex] = functors.morphism_category(1)(apex, diagram.on_object(vertex))(lambda index_object: at(index_object).leg(vertex))
-        return projections[vertex]
+        return functors.morphism_category(1)(apex, diagram.on_object(vertex))(lambda index_object: at(index_object).leg(vertex))
 
     def mediator(candidate_cone: NaturalTransformation) -> NaturalTransformation:
         source = cone_apex(candidate_cone)

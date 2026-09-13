@@ -221,7 +221,12 @@ def test_functors_and_two_morphisms_are_owned_and_distinct() -> None:
     assert left_whisker.boundary("target") is left_whisker.target_functor()
     assert right_whisker.boundary("source") is right_whisker.source_functor()
     assert right_whisker.boundary("target") is right_whisker.target_functor()
-    assert eta.horizontal(theta).source_functor().domain() is category
+    horizontal = eta.horizontal(theta)
+    horizontal.typecheck_cell()
+    assert horizontal.cell_dimension() == 2
+    assert horizontal.boundary("source") is horizontal.source_functor()
+    assert horizontal.boundary("target") is horizontal.target_functor()
+    assert horizontal.source_functor().domain() is category
 
 
 def test_walking_arrow_evaluation_acts_on_objects_and_two_morphisms() -> None:

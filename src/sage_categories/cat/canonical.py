@@ -206,7 +206,10 @@ class FinitePresentedCategory(Category[[Word], []]):
         if native is None:
             return Unknown
         labels = self.labels()
-        return tuple(self.construct_morphism(self(labels[source]), self(labels[target]), word) for source, target, word in native)
+        # ``fp_categories.finite_morphisms`` already returns canonical native words.
+        # Re-entering ``construct_morphism`` would ask the same engine to normalize
+        # them again while this finite enumeration is still being established.
+        return tuple(self._retained_path(self(labels[source]), self(labels[target]), word) for source, target, word in native)
 
     @cached_method
     def Terminal(self) -> FinitePresentedCategory.ObjectType:

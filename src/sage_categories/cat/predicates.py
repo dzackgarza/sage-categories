@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from sympy import And, Implies, Not, Or
 from sympy import ask as sympy_ask
+from sympy.assumptions import global_assumptions
 from sympy.logic.boolalg import Boolean, BooleanAtom
 
 from sage_categories.kernel.predicates import (
@@ -262,8 +263,6 @@ def _owned_application(proposition: Proposition) -> bool:
 
 def unconditional(assumptions: Proposition) -> bool:
     """Whether nothing is assumed, locally or in the global context."""
-    from sympy.assumptions import global_assumptions
-
     return isinstance(assumptions, BooleanAtom | bool) and bool(assumptions) and not global_assumptions
 
 
@@ -282,16 +281,12 @@ def established(application: Decision | Proposition) -> bool:
 
 def assume(proposition: Proposition) -> None:
     """Record a SymPy proposition and apply its positive property refinement."""
-    from sympy.assumptions import global_assumptions
-
     global_assumptions.add(proposition)
     assume_property(proposition)
 
 
 def retract(proposition: Proposition) -> None:
     """Withdraw a proposition from SymPy's active assumption context."""
-    from sympy.assumptions import global_assumptions
-
     global_assumptions.discard(proposition)
 
 

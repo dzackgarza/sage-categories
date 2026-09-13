@@ -898,3 +898,21 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/category.py` already imports `refine` with `is_placed` and `is_subcategory` at module scope, but eleven identity, inverse, morphism, 2-cell, functor-identity, and functor-composition methods re-imported `refine` locally. Those imports neither break a cycle nor defer an absent dependency; they duplicate the binding the module already established.
 
 - **Repair link and acceptance:** `bloat-category-refine-reimports`. Delete every function-local `refine` import from `cat/category.py` and use the existing module-level binding throughout category-core execution.
+
+## Finite-category dispatch mixed bootstrap-stable and delayed category kinds
+
+- **Evidence and impact:** `cat/finite_categories.py::_evaluate` handled bootstrap-stable categories and the cycle-sensitive `GrothendieckCategory`/`SliceLikeCategory` declarations in one large match, forcing both delayed imports on every finite-category evaluation and leaving the dispatcher above the repository complexity threshold. The delayed imports are required, but only for those two runtime-only category kinds.
+
+- **Repair link and acceptance:** `bloat-finite-category-dispatch`. Keep the bootstrap-stable cases in `_evaluate` and move only the delayed indexed/slice cases to `_evaluate_runtime_category`, so ordinary finite-category evaluation never opens those imports and both dispatchers stay below the complexity threshold.
+
+## Predicate assumption helpers repeated the same SymPy owner import
+
+- **Evidence and impact:** `cat/predicates.py` imported `sympy.assumptions.global_assumptions` independently in `unconditional`, `assume`, and `retract` even though SymPy is already a module-level dependency of the predicate owner. The three local imports protected no cycle and gave one mutable assumption context three bindings.
+
+- **Repair link and acceptance:** `bloat-predicate-global-assumptions`. Bind `global_assumptions` once beside the other SymPy predicate imports and let all three assumption helpers share that binding.
+
+## Functor limit lifting repeated the discrete-shape import
+
+- **Evidence and impact:** `CategoryOfCategories.MorphismType` imported `Discrete` separately when retaining a family-wide limit lifting and when looking one up for a concrete discrete shape. Both operations use the same delayed shape-family owner because `shapes` depends on category core during bootstrap.
+
+- **Repair link and acceptance:** `bloat-category-discrete-shape-boundary`. Put the delayed `Discrete` lookup behind `_discrete_shape_family()` and let limit-lifting registration and lookup share it.

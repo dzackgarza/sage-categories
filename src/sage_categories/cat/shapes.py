@@ -66,17 +66,19 @@ class _PointObjectData:
     point: CategoryOfCategories.ElementType
 
 
-class _PointShapeObject:
-    """Shared retained-point surface for objects of point-indexed shapes."""
+def _initialize_point_shape_object(member_object: object, data: _PointObjectData) -> None:
+    """Install the retained carrier point on one compiled point-shape object."""
+    member_object._point = data.point
 
-    def __init__(self, data: _PointObjectData) -> None:
-        self._point = data.point
 
-    def point(self) -> CategoryOfCategories.ElementType:
-        return self._point
+def _point_shape_point(member_object: object) -> CategoryOfCategories.ElementType:
+    """Return the carrier point retained by one compiled point-shape object."""
+    return member_object._point
 
-    def __repr__(self) -> str:
-        return f"{self._point!r} in {self.category()!r}"
+
+def _point_shape_repr(member_object: object) -> str:
+    """Represent one compiled point-shape object through its retained point and owner."""
+    return f"{member_object._point!r} in {member_object.category()!r}"
 
 
 def _point_shape_object_at(category: Category, point: CategoryOfCategories.ElementType):
@@ -107,8 +109,12 @@ def _point_shape_construct(
 class DiscreteCategory(Category[[], []]):
     """The discrete category on a set."""
 
-    class ObjectType(_PointShapeObject):
+    class ObjectType:
         """An object of ``Discrete(S)``: a point of ``S``."""
+
+        __init__ = _initialize_point_shape_object
+        point = _point_shape_point
+        __repr__ = _point_shape_repr
 
     class MorphismType:
         """The only morphisms of a discrete category: identities."""
@@ -175,10 +181,10 @@ class DiscreteCategory(Category[[], []]):
         assumptions: Proposition,
     ) -> bool | None:
         """Objects are equal when their points are; morphisms when their domains are."""
-        if is_placed(first, self) and is_placed(candidate, self):
+        if first._is_object() and candidate._is_object() and is_placed(first, self) and is_placed(candidate, self):
             return sympy_ask(first.point() == candidate.point(), assumptions)
         morphisms = self.morphism_category(1)
-        if is_placed(first, morphisms) and is_placed(candidate, morphisms):
+        if first._is_morphism() and candidate._is_morphism() and is_placed(first, morphisms) and is_placed(candidate, morphisms):
             return sympy_ask(first.domain() == candidate.domain(), assumptions)
         return None
 
@@ -341,8 +347,12 @@ class ThinMorphisms(MorphismCategory[[], []]):
 class ThinCategory(Category[[], []]):
     """The thin category of a preorder ``(P, leq)``."""
 
-    class ObjectType(_PointShapeObject):
+    class ObjectType:
         """An object of ``Thin(P, leq)``: a point of ``P``."""
+
+        __init__ = _initialize_point_shape_object
+        point = _point_shape_point
+        __repr__ = _point_shape_repr
 
     class MorphismType:
         """The unique morphism ``x -> y`` of a thin category, present when ``x <= y``."""
@@ -406,10 +416,10 @@ class ThinCategory(Category[[], []]):
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        if is_placed(first, self) and is_placed(candidate, self):
+        if first._is_object() and candidate._is_object() and is_placed(first, self) and is_placed(candidate, self):
             return sympy_ask(first.point() == candidate.point(), assumptions)
         morphisms = self.morphism_category(1)
-        if is_placed(first, morphisms) and is_placed(candidate, morphisms):
+        if first._is_morphism() and candidate._is_morphism() and is_placed(first, morphisms) and is_placed(candidate, morphisms):
             return sympy_ask(
                 (first.domain() == candidate.domain()) & (first.codomain() == candidate.codomain()),
                 assumptions,

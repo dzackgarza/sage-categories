@@ -718,3 +718,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `AdjunctionsCategory.ObjectType.transpose()` and `untranspose()` each imported `Mor` locally even though `cat/adjunctions.py` already imports `MorphismCategory` from the same owner at module scope. No import cycle is avoided by delaying only the sibling name, so both directions carried unnecessary dependency boilerplate.
 
 - **Repair link and acceptance:** `bloat-adjunction-mor-imports`. Import `Mor` with `MorphismCategory` once and let both transposition directions use the shared binding while preserving their exact fixed-endpoint Hom checks.
+
+## Finite-category evaluation repeatedly imported its discrete-shape type
+
+- **Evidence and impact:** `cat/finite_categories.py` imported `DiscreteCategory` independently in `finite_objects`, `_evaluate`, and `_limit`, although `cat/shapes.py` has no dependency back on the finite evaluator. The three delayed imports therefore protected no cycle and obscured that discrete-shape recognition is a module-wide evaluator dependency.
+
+- **Repair link and acceptance:** `bloat-finite-discrete-imports`. Bind `DiscreteCategory` once at module scope and share it across finite object enumeration, representation dispatch, and finite-product specialization.

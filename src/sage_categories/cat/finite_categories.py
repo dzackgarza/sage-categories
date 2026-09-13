@@ -19,6 +19,7 @@ from sage_categories.cat.functors import Cat, FunctorCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import OppositeCategory, opposite_morphism
 from sage_categories.cat.predicates import Unknown, UnknownClass, ask
+from sage_categories.cat.shapes import DiscreteCategory
 from sage_categories.kernel.sage_runtime import MonoDict
 
 
@@ -57,8 +58,6 @@ def finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategor
 
 def finite_objects(category: Category) -> tuple[CategoryOfCategories.ElementType, ...] | UnknownClass:
     """The exact finite object family supplied by a presentation or a chosen enumeration."""
-    from sage_categories.cat.shapes import DiscreteCategory
-
     if isinstance(category, FinitePresentedCategory):
         return tuple(category(label) for label in category.labels())
     if isinstance(category, DiscreteCategory):
@@ -150,7 +149,6 @@ def _opposite(category: OppositeCategory) -> FiniteCategoryData | UnknownClass:
 
 def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
     from sage_categories.cat.indexed import GrothendieckCategory
-    from sage_categories.cat.shapes import DiscreteCategory
     from sage_categories.cat.slices import SliceLikeCategory
 
     match category:
@@ -189,8 +187,6 @@ def _arrows(category: FunctorCategory) -> FiniteCategoryData | UnknownClass:
 
 
 def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
-    from sage_categories.cat.shapes import DiscreteCategory
-
     shape = finite_category(category.shape())
     if shape is Unknown:
         return Unknown

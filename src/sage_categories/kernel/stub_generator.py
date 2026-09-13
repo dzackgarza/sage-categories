@@ -1178,6 +1178,38 @@ def _static_source_trees(
     return trees, declarations
 
 
+def _record_internal_from_import(
+    statement: ast.ImportFrom,
+    modules: frozenset[str],
+    declarations: dict[str, frozenset[str]],
+    references: dict[str, set[str]],
+    module_aliases: dict[str, str],
+) -> None:
+    """Record direct declarations and module aliases from one absolute from-import."""
+    imported = statement.module
+    if imported is None or statement.level != 0:
+        return
+    if imported in modules:
+        for alias in statement.names:
+            if alias.name in declarations[imported]:
+                _set_bucket(references, imported).add(alias.name)
+    for alias in statement.names:
+        candidate = f"{imported}.{alias.name}"
+        if candidate in modules:
+            module_aliases[alias.asname or alias.name] = candidate
+
+
+def _record_internal_import(
+    statement: ast.Import,
+    modules: frozenset[str],
+    module_aliases: dict[str, str],
+) -> None:
+    """Record package-module aliases introduced by one ordinary import."""
+    for alias in statement.names:
+        if alias.name in modules:
+            module_aliases[alias.asname or alias.name.rsplit(".", 1)[-1]] = alias.name
+
+
 def _internal_module_aliases(
     tree: ast.Module,
     modules: frozenset[str],
@@ -1188,19 +1220,10 @@ def _internal_module_aliases(
     module_aliases: dict[str, str] = {}
     for statement in ast.walk(tree):
         match statement:
-            case ast.ImportFrom(module=imported, level=0) if imported is not None:
-                if imported in modules:
-                    for alias in statement.names:
-                        if alias.name in declarations[imported]:
-                            _set_bucket(references, imported).add(alias.name)
-                for alias in statement.names:
-                    candidate = f"{imported}.{alias.name}"
-                    if candidate in modules:
-                        module_aliases[alias.asname or alias.name] = candidate
-            case ast.Import(names=aliases):
-                for alias in aliases:
-                    if alias.name in modules:
-                        module_aliases[alias.asname or alias.name.rsplit(".", 1)[-1]] = alias.name
+            case ast.ImportFrom():
+                _record_internal_from_import(statement, modules, declarations, references, module_aliases)
+            case ast.Import():
+                _record_internal_import(statement, modules, module_aliases)
             case _:
                 pass
     return module_aliases

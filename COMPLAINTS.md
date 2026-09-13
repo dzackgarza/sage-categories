@@ -1609,9 +1609,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-catlab-transformation-boundary`. Supply the bound public `component` method to Catlab's callable transformation model instead of reading `_assignment` directly.
 
-
 ## Homotopy-cell inverse retention duplicated generator-strengthening error handling
 
-- **Evidence and impact:** `engines/cells.py::retain_inverses()` repeated the same `strengthen_invertibility` call and string-filtered `ValueError` handling for both the forward native cell and an already-cached backward cell. The special case is one homotopy-core boundary rule — composites cannot be strengthened as generators — and should not have two copies.
+- **Evidence and impact:** `engines/cells.py::retain_inverses()` repeated the same `strengthen_invertibility` call and string-filtered `ValueError` handling for both the forward native cell and an already-cached backward cell.
+  The special case is one homotopy-core boundary rule — composites cannot be strengthened as generators — and should not have two copies.
 
 - **Repair link and acceptance:** `bloat-cell-invertibility-strengthening`. Centralize the native strengthening/error boundary in `_strengthen_generator_invertibility` and invoke it for both directions.
+
+
+## Finite slice execution leaked endpoint-orientation storage across layers
+
+- **Evidence and impact:** finite-category dispatch and the GAP SliceCategories adapter both read `SliceLikeCategory._fixed_label` directly to distinguish slices over an object from coslices under it. Endpoint orientation is owned by the slice implementation; the engine also repeated a check the finite dispatcher had already made.
+
+- **Repair link and acceptance:** `bloat-slice-dispatch-boundary`. Encapsulate the orientation test in the slice owner for internal dispatch, reuse it in triangle projection, and remove the redundant native-adapter probe.

@@ -14,7 +14,6 @@ __all__ = ["slice_category"]
 def slice_category(category: object, base: object, arrows: tuple[object, ...]):
     """Exact finite data for ``base.SliceOver(x)`` using native slice Hom sets."""
     load_repository_package(SLICE_CATEGORIES)
-    assert category._fixed_label == 1, "native slice execution currently models SliceOver"
     fixed = category.fixed_object()
     native_slice = libgap.SliceCategory(fp_categories.native_object(base, fixed))
 

@@ -266,7 +266,9 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
 
 
 def _slice(category: object) -> FiniteCategoryData | UnknownClass:
-    if category._fixed_label != 1 or not isinstance(category.base_of_slice(), FinitePresentedCategory):
+    from sage_categories.cat.slices import _is_slice_over
+
+    if not _is_slice_over(category) or not isinstance(category.base_of_slice(), FinitePresentedCategory):
         return Unknown
     base = finite_category(category.base_of_slice())
     if base is Unknown:

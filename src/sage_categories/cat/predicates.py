@@ -250,7 +250,7 @@ def decide(proposition: Decision | Proposition, assumptions: Proposition = True)
             undecided = undecided or decision is None
         if not undecided:
             return True
-    elif _owned_application(proposition) and unconditional(assumptions):
+    elif isinstance(proposition, AppliedPredicate) and isinstance(proposition.function, Predicate) and unconditional(assumptions):
         # An owned predicate occurs in none of SymPy's known facts, so with nothing
         # assumed its satisfiability layer can only repeat what this predicate's own
         # handler says.  SymPy reaches that handler only after encoding its whole fact
@@ -258,11 +258,6 @@ def decide(proposition: Decision | Proposition, assumptions: Proposition = True)
         decision = proposition._eval_ask(assumptions)
         return None if decision is None else bool(decision)
     return sympy_ask(proposition, assumptions)
-
-
-def _owned_application(proposition: Proposition) -> bool:
-    """Whether this is an application of a predicate this repository owns."""
-    return isinstance(proposition, AppliedPredicate) and isinstance(proposition.function, Predicate)
 
 
 def unconditional(assumptions: Proposition) -> bool:

@@ -592,3 +592,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/finite_sets.py` duplicated the old presented-module pattern of probing `finite_native_object()` and `finite_native_morphism()` inside `try/except AssertionError` helpers. Native realization registries already own exact identity-based presence, so absence was being encoded as an exception and endpoint lowering repeated presence checks around reconstruction.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Expose the registry's `has()` queries through `sets/_finite_cap.py`; make the FinSets adapter use those predicates directly and reconstruct endpoint records once after `_native_object()` has ensured them.
+
+## Native realization families duplicated identity-store lookup plumbing
+
+- **Evidence and impact:** `NativeObjectRealizations`, `NativeMorphismRealizations`, and `NativeUniversalPresentationRealizations` each repeated the same `_IdentityRecords` initialization plus `has()` and `realization()` forwarding. Their only real distinction is the validation and record construction performed by `retain()`.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Give the three realization families one private generic lookup owner and leave only their mathematically distinct retention checks in the public family classes.

@@ -133,11 +133,26 @@ class _IdentityRecords[Record]:
         return self._records[id(key)][1]
 
 
-class NativeObjectRealizations[Native, Construction]:
-    """Native object records for one mathematical realization family."""
+class _NativeRealizations[Value, Record]:
+    """Shared identity-keyed lookup surface for one native realization family."""
 
     def __init__(self) -> None:
-        self._records: _IdentityRecords[NativeObjectRealization[Native, Construction]] = _IdentityRecords()
+        self._records: _IdentityRecords[Record] = _IdentityRecords()
+
+    def has(self, value: Value) -> bool:
+        return self._records.has(value)
+
+    def realization(self, value: Value) -> Record:
+        return self._records.get(value)
+
+
+class NativeObjectRealizations[Native, Construction](
+    _NativeRealizations[
+        CategoryOfCategories.ElementType,
+        NativeObjectRealization[Native, Construction],
+    ]
+):
+    """Native object records for one mathematical realization family."""
 
     def retain(
         self,
@@ -151,18 +166,14 @@ class NativeObjectRealizations[Native, Construction]:
         self._records.retain(value, record)
         return record
 
-    def has(self, value: CategoryOfCategories.ElementType) -> bool:
-        return self._records.has(value)
 
-    def realization(self, value: CategoryOfCategories.ElementType) -> NativeObjectRealization[Native, Construction]:
-        return self._records.get(value)
-
-
-class NativeMorphismRealizations[Native]:
+class NativeMorphismRealizations[Native](
+    _NativeRealizations[
+        MorphismCategory.ObjectType,
+        NativeMorphismRealization[Native],
+    ]
+):
     """Native arrow records retaining exact mathematical owner and endpoints."""
-
-    def __init__(self) -> None:
-        self._records: _IdentityRecords[NativeMorphismRealization[Native]] = _IdentityRecords()
 
     def retain(
         self,
@@ -181,18 +192,14 @@ class NativeMorphismRealizations[Native]:
         self._records.retain(value, record)
         return record
 
-    def has(self, value: MorphismCategory.ObjectType) -> bool:
-        return self._records.has(value)
 
-    def realization(self, value: MorphismCategory.ObjectType) -> NativeMorphismRealization[Native]:
-        return self._records.get(value)
-
-
-class NativeUniversalPresentationRealizations[NativeDiagram, NativePresentation]:
+class NativeUniversalPresentationRealizations[NativeDiagram, NativePresentation](
+    _NativeRealizations[
+        CategoryOfCategories.ElementType,
+        NativeUniversalPresentationRealization[NativeDiagram, NativePresentation],
+    ]
+):
     """Native records for selected universal presentations, keyed by presentation identity."""
-
-    def __init__(self) -> None:
-        self._records: _IdentityRecords[NativeUniversalPresentationRealization[NativeDiagram, NativePresentation]] = _IdentityRecords()
 
     def retain(
         self,
@@ -222,14 +229,6 @@ class NativeUniversalPresentationRealizations[NativeDiagram, NativePresentation]
         )
         self._records.retain(presentation, record)
         return record
-
-    def has(self, presentation: CategoryOfCategories.ElementType) -> bool:
-        return self._records.has(presentation)
-
-    def realization(
-        self, presentation: CategoryOfCategories.ElementType
-    ) -> NativeUniversalPresentationRealization[NativeDiagram, NativePresentation]:
-        return self._records.get(presentation)
 
 
 _native_categories: _IdentityRecords[NativeCategoryRealization[object]] = _IdentityRecords()

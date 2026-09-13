@@ -708,8 +708,6 @@ def runtime_semantic_bases(
 _installed_root_declarations: dict[type[CategoryPoint], type[CategoryPoint]] = {}
 
 
-_UNRESOLVED = object()
-
 type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[Node, object]]
 
 

@@ -7,6 +7,7 @@ from sage.libs.gap.libgap import libgap
 from sage_categories.cat.functors import Cat
 from sage_categories.cat.morphisms import Mor
 from sage_categories.engines import fp_categories
+from sage_categories.kernel.sage_runtime import MonoDict
 from sage_categories.engines.gap import FUNCTOR_CATEGORIES, load_repository_package
 
 __all__ = ["arrow_category"]
@@ -20,9 +21,9 @@ def arrow_category(category: object, target: object, arrows: tuple[object, ...])
         fp_categories.native_category(interval),
         fp_categories.native_category(target),
     )
-    native_objects: dict[int, object] = {}
+    native_objects: MonoDict = MonoDict()
     for arrow in arrows:
-        native_objects[id(arrow)] = libgap.AsObjectInFunctorCategoryByValues(
+        native_objects[arrow] = libgap.AsObjectInFunctorCategoryByValues(
             native,
             [
                 fp_categories.native_object(target, arrow.domain()),
@@ -36,8 +37,8 @@ def arrow_category(category: object, target: object, arrows: tuple[object, ...])
         for destination in arrows:
             transformations = libgap.MorphismsOfExternalHom(
                 native,
-                native_objects[id(source)],
-                native_objects[id(destination)],
+                native_objects[source],
+                native_objects[destination],
             )
             for transformation in transformations:
                 components = tuple(fp_categories.owned_morphism(target, component) for component in libgap.ValuesOnAllObjects(transformation))

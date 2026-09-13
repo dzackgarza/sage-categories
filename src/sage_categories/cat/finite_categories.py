@@ -275,6 +275,69 @@ def _slice(category: object) -> FiniteCategoryData | UnknownClass:
     return FiniteCategoryData(objects, morphisms)
 
 
+def _comma_objects(
+    category: CommaCategory,
+    data: FiniteCategoryData,
+    pair_vertex: CategoryOfCategories.ElementType,
+    arrow_vertex: CategoryOfCategories.ElementType,
+) -> tuple[
+    tuple[CategoryOfCategories.ElementType, ...],
+    dict[tuple[int, int, int], CategoryOfCategories.ElementType],
+]:
+    """Reconstruct owned comma objects from the finite pullback families."""
+    objects: list[CategoryOfCategories.ElementType] = []
+    by_components: dict[tuple[int, int, int], CategoryOfCategories.ElementType] = {}
+    for value in data.objects:
+        pair = value.family_component(pair_vertex)
+        arrow = value.family_component(arrow_vertex)
+        first_value = pair.family_component(0)
+        second_value = pair.family_component(1)
+        owned = category.from_arrow(first_value, second_value, arrow)
+        objects.append(owned)
+        by_components[(id(first_value), id(second_value), id(arrow))] = owned
+    return tuple(objects), by_components
+
+
+def _comma_endpoint(
+    family: CategoryOfCategories.ElementType,
+    pair_vertex: CategoryOfCategories.ElementType,
+    arrow_vertex: CategoryOfCategories.ElementType,
+    by_components: dict[tuple[int, int, int], CategoryOfCategories.ElementType],
+) -> CategoryOfCategories.ElementType:
+    """Recover one owned comma endpoint from its retained pullback components."""
+    pair_object = family.family_component(pair_vertex)
+    arrow_object = family.family_component(arrow_vertex)
+    return by_components[
+        (
+            id(pair_object.family_component(0)),
+            id(pair_object.family_component(1)),
+            id(arrow_object),
+        )
+    ]
+
+
+def _comma_morphisms(
+    category: CommaCategory,
+    data: FiniteCategoryData,
+    pair_vertex: CategoryOfCategories.ElementType,
+    arrow_vertex: CategoryOfCategories.ElementType,
+    by_components: dict[tuple[int, int, int], CategoryOfCategories.ElementType],
+) -> tuple[CategoryOfCategories.ElementType, ...]:
+    """Reconstruct owned comma morphisms from the finite pullback family maps."""
+    morphisms = []
+    for value in data.morphisms:
+        pair = value.family_component(pair_vertex)
+        morphisms.append(
+            category.morphism_from_pair(
+                _comma_endpoint(value.domain(), pair_vertex, arrow_vertex, by_components),
+                _comma_endpoint(value.codomain(), pair_vertex, arrow_vertex, by_components),
+                pair.family_component(0),
+                pair.family_component(1),
+            )
+        )
+    return tuple(morphisms)
+
+
 def _comma(category: CommaCategory) -> FiniteCategoryData | UnknownClass:
     from sage_categories.cat.diagrams import cospan_diagram
 
@@ -292,40 +355,6 @@ def _comma(category: CommaCategory) -> FiniteCategoryData | UnknownClass:
         return Unknown
 
     pair_vertex, arrow_vertex = cospan(0), cospan(1)
-    objects = []
-    by_components: dict[tuple[int, int, int], CategoryOfCategories.ElementType] = {}
-    for value in data.objects:
-        pair = value.family_component(pair_vertex)
-        arrow = value.family_component(arrow_vertex)
-        first_value = pair.family_component(0)
-        second_value = pair.family_component(1)
-        owned = category.from_arrow(first_value, second_value, arrow)
-        objects.append(owned)
-        by_components[(id(first_value), id(second_value), id(arrow))] = owned
-
-    morphisms = []
-    for value in data.morphisms:
-        pair = value.family_component(pair_vertex)
-        source_family = value.domain()
-        target_family = value.codomain()
-
-        def comma_endpoint(family: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-            pair_object = family.family_component(pair_vertex)
-            arrow_object = family.family_component(arrow_vertex)
-            return by_components[
-                (
-                    id(pair_object.family_component(0)),
-                    id(pair_object.family_component(1)),
-                    id(arrow_object),
-                )
-            ]
-
-        morphisms.append(
-            category.morphism_from_pair(
-                comma_endpoint(source_family),
-                comma_endpoint(target_family),
-                pair.family_component(0),
-                pair.family_component(1),
-            )
-        )
-    return FiniteCategoryData(tuple(objects), tuple(morphisms))
+    objects, by_components = _comma_objects(category, data, pair_vertex, arrow_vertex)
+    morphisms = _comma_morphisms(category, data, pair_vertex, arrow_vertex, by_components)
+    return FiniteCategoryData(objects, morphisms)

@@ -59,8 +59,8 @@ __all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "carrier_comp
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class DiscreteObjectData:
-    """The local state introduced by a discrete-category object."""
+class _PointObjectData:
+    """The local state of a point-indexed shape object."""
 
     point: CategoryOfCategories.ElementType
 
@@ -71,7 +71,7 @@ class DiscreteCategory(Category[[], []]):
     class ObjectType:
         """An object of ``Discrete(S)``: a point of ``S``."""
 
-        def __init__(self, data: DiscreteObjectData) -> None:
+        def __init__(self, data: _PointObjectData) -> None:
             self._point = data.point
 
         def point(self) -> CategoryOfCategories.ElementType:
@@ -128,7 +128,7 @@ class DiscreteCategory(Category[[], []]):
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
         assert point in self._index_set, f"{point!r} is not a point of {self._index_set!r}"
         if point not in self._objects:
-            self._objects[point] = self.ObjectType(DiscreteObjectData(point))
+            self._objects[point] = self.ObjectType(_PointObjectData(point))
         return self._objects[point]
 
     def construct_morphism(self, domain: DiscreteCategory.ObjectType, codomain: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
@@ -279,13 +279,6 @@ def carrier_comparison(
 # -- Thin(P, leq) --------------------------------------------------------------------
 
 
-@dataclass(frozen=True, eq=False, slots=True)
-class ThinObjectData:
-    """The local state introduced by a thin-category object."""
-
-    point: CategoryOfCategories.ElementType
-
-
 # ``comparable(f, T)``: the endpoints of the comparison ``f`` of ``T`` satisfy ``T``'s order.
 class _ComparablePredicate(Predicate):
     name = "comparable"
@@ -332,7 +325,7 @@ class ThinCategory(Category[[], []]):
     class ObjectType:
         """An object of ``Thin(P, leq)``: a point of ``P``."""
 
-        def __init__(self, data: ThinObjectData) -> None:
+        def __init__(self, data: _PointObjectData) -> None:
             self._point = data.point
 
         def point(self) -> CategoryOfCategories.ElementType:
@@ -381,7 +374,7 @@ class ThinCategory(Category[[], []]):
         """The object at a point of ``P``, one object per retained point."""
         assert point in self._carrier, f"{point!r} is not a point of {self._carrier!r}"
         if point not in self._objects:
-            self._objects[point] = self.ObjectType(ThinObjectData(point))
+            self._objects[point] = self.ObjectType(_PointObjectData(point))
         return self._objects[point]
 
     def construct_morphism(self, domain: ThinCategory.ObjectType, codomain: ThinCategory.ObjectType) -> ThinCategory.MorphismType:

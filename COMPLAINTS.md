@@ -1323,6 +1323,14 @@ Ideas, to be weighed, not obligations.*
 
 ## Applied-query SymPy conversion re-imported an already-bound kernel owner
 
-- **Evidence and impact:** `cat/predicates.py` already imports its predicate/query execution surface from `kernel.predicates`, but `AppliedQuery._sympy_()` performed a second local import of `_owned_atom` from that same module. The local import avoids no cycle and obscures that all predicate/query-to-SymPy conversion crosses the same kernel boundary.
+- **Evidence and impact:** `cat/predicates.py` already imports its predicate/query execution surface from `kernel.predicates`, but `AppliedQuery._sympy_()` performed a second local import of `_owned_atom` from that same module.
+  The local import avoids no cycle and obscures that all predicate/query-to-SymPy conversion crosses the same kernel boundary.
 
 - **Repair link and acceptance:** `bloat-predicate-owned-atom-import`. Bind `_owned_atom` once with the other kernel predicate operations and let `AppliedQuery._sympy_()` use that shared module-level owner.
+
+
+## Discrete and thin shapes duplicated the same retained point record
+
+- **Evidence and impact:** `cat/shapes.py` defined separate `DiscreteObjectData` and `ThinObjectData` dataclasses with the same sole `point` field, and both object constructors copied that field into identical retained state. The distinction between the two shapes is in morphism admission/order semantics, not in their point payload.
+
+- **Repair link and acceptance:** `bloat-shape-point-object-data`. Keep one private `_PointObjectData` record and let both point-indexed shape object classes consume it while retaining their separate category and morphism logic.

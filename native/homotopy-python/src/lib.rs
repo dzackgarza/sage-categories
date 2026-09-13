@@ -112,6 +112,10 @@ impl PyCell {
         }
     }
 
+    fn is_generator(&self) -> bool {
+        self.generator.is_some()
+    }
+
     fn inverse(&self) -> PyResult<Self> {
         match &self.diagram {
             Diagram::Diagram0(_) => Err(PyValueError::new_err("a 0-cell has no inverse diagram")),

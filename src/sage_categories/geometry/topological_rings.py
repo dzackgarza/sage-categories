@@ -26,6 +26,7 @@ __all__ = [
     "TopologicalRingsCategory",
 ]
 
+
 @dataclass(frozen=True, eq=False, slots=True)
 class ProductTopologyOpen:
     """A represented open in the binary product topology of one space with itself."""

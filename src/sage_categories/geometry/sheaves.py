@@ -13,6 +13,8 @@ from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import ask
 from sage_categories.geometry._ring_categories import (
     commutative_rings as _rings,
+)
+from sage_categories.geometry._ring_categories import (
     rings as _ambient_rings,
 )
 from sage_categories.geometry.spaces import TopologicalSpacesCategory
@@ -24,6 +26,7 @@ __all__ = [
     "ring_presheaf_from_functor",
     "ring_sheaf",
 ]
+
 
 def _open_data(open_object: CategoryOfCategories.ElementType) -> frozenset[Hashable]:
     return cast(frozenset[Hashable], cast(Any, open_object).point().datum())

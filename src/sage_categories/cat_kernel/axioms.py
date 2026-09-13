@@ -13,6 +13,7 @@ while ``Cat`` is still loading.
 from __future__ import annotations
 
 from collections import ChainMap
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 from sage_categories.kernel.compiler import install_on_declaration
@@ -33,6 +34,13 @@ _base_axioms: list[Axiom] = []
 
 # The axiom each generated application came from, by the declaration it landed on.
 _derived_applications: dict[tuple[type[CategoryOfCategories.ElementType], str], Axiom] = {}
+
+
+def _predicates() -> ModuleType:
+    """Load public axiom declarations at the one cycle-safe kernel/Cat boundary."""
+    from sage_categories.cat import predicates
+
+    return predicates
 
 
 def application_axiom(owner: type[CategoryOfCategories.ElementType], name: str) -> Axiom | None:
@@ -58,14 +66,13 @@ def install_base_applications(owner: type[CategoryOfCategories.ElementType]) -> 
 
 def install_subclass_applications(declaring_class: type[Category]) -> None:
     """Bind the class's inherited axiom declarations to its own object declaration."""
-    from sage_categories.cat.predicates import Axiom
-
+    axiom_type = _predicates().Axiom
     if not all(role.value in vars(declaring_class) for role in Role):
         return
     owner = vars(declaring_class)["ObjectType"]
     declarations = ChainMap(*(vars(base) for base in declaring_class.__mro__))
     for declared in declarations.values():
-        if isinstance(declared, Axiom) and declared.application_owner() is not None:
+        if isinstance(declared, axiom_type) and declared.application_owner() is not None:
             _install_application(declared, owner)
 
 
@@ -81,14 +88,12 @@ def _install_application(axiom: Axiom, owner: type[CategoryOfCategories.ElementT
         value: CategoryOfCategories.ElementType,
         *parameters: CategoryOfCategories.ElementType,
     ) -> Proposition:
-        from sage_categories.cat.predicates import declared_axiom
-
         role = role_of(value)
         placement = category_of(value, role)
         base = placement.narrowing_base()
         if role is Role.MORPHISM:
             base = value.base_category().morphism_category(1)(value.domain(), value.codomain())
-        if declared_axiom(base, axiom.name()) is axiom:
+        if _predicates().declared_axiom(base, axiom.name()) is axiom:
             placement = base
         return axiom._declared_on(placement, *parameters).membership_proposition(value)
 

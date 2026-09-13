@@ -1000,3 +1000,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/roles.py` delayed imports from `kernel.construction` in identity initialization, object/morphism placement, and `role_of`, while compiler imports were repeated in category construction, compile/recompile, and object-role-source callbacks. The delays are required because roles are the stable bottom of both runtime cycles; repeating each symbol import hid those two actual boundaries behind eight local import sites.
 
 - **Repair link and acceptance:** `bloat-role-kernel-boundaries`. Put the delayed modules behind `_construction()` and `_compiler()` and route all role callbacks through those two cycle-safe owners, with no direct function-local imports of either module remaining.
+
+## Axiom installation reopened the predicate declaration boundary
+
+- **Evidence and impact:** `cat_kernel/axioms.py` imports public predicate declarations only after `Cat` exists, but subclass application installation imported `Axiom` locally while each generated application imported `declared_axiom` again. Both are reads from the same cycle-sensitive public predicate owner.
+
+- **Repair link and acceptance:** `bloat-axiom-predicate-boundary`. Put the delayed predicate module behind `_predicates()` and use it for both axiom-type recognition and generated application lookup.

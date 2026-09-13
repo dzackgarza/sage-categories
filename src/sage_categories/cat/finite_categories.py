@@ -154,26 +154,33 @@ def _opposite(category: OppositeCategory) -> FiniteCategoryData | UnknownClass:
 
 
 def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
-    from sage_categories.cat.indexed import GrothendieckCategory
-    from sage_categories.cat.slices import SliceLikeCategory
-
     match category:
         case DiscreteCategory():
             return _discrete(category)
-        case GrothendieckCategory():
-            return _grothendieck(category)
         case FinitePresentedCategory():
             return _presented(category)
         case OppositeCategory():
             return _opposite(category)
         case FunctorCategory() if category.domain() is Cat().Simplex(1):
             return _arrows(category)
-        case SliceLikeCategory():
-            return _slice(category)
         case CommaCategory():
             return _comma(category)
         case LimitCategory():
             return _limit(category)
+        case _:
+            return _evaluate_runtime_category(category)
+
+
+def _evaluate_runtime_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
+    """Evaluate finite category kinds whose declarations are imported only after bootstrap."""
+    from sage_categories.cat.indexed import GrothendieckCategory
+    from sage_categories.cat.slices import SliceLikeCategory
+
+    match category:
+        case GrothendieckCategory():
+            return _grothendieck(category)
+        case SliceLikeCategory():
+            return _slice(category)
         case _:
             return Unknown
 

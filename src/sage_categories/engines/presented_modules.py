@@ -13,6 +13,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
+from types import ModuleType
 
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
@@ -69,6 +70,13 @@ class _DirectSumBridge:
 _cokernel_differences: dict[int, tuple[object, GapElement]] = {}
 
 
+def _abelian_owner() -> ModuleType:
+    """Load the additive owner at the one cycle-safe presented-module boundary."""
+    from sage_categories.algebra import abelian
+
+    return abelian
+
+
 @cache
 def _ring() -> GapElement:
     load_packages(PRESENTED_MODULE_PACKAGES)
@@ -96,16 +104,12 @@ def _homalg_matrix(rows: tuple[tuple[int, ...], ...], columns: int) -> GapElemen
 
 def _coordinates(value: object):
     """Read the retained public coordinate bridge through the one lazy owner import."""
-    from sage_categories.algebra.abelian import _coordinates as retained_coordinates
-
-    return retained_coordinates(value)
+    return _abelian_owner()._coordinates(value)
 
 
 def _owned_group_from_engine(engine: object):
     """Reconstruct an owned ``Ab`` object through the cycle-safe additive boundary."""
-    from sage_categories.algebra.abelian import _group_from_engine
-
-    return _group_from_engine(engine)
+    return _abelian_owner()._group_from_engine(engine)
 
 
 def _native_object(value: object) -> GapElement:
@@ -361,13 +365,10 @@ def _public_engine_from_native(native_object: GapElement):
 
 
 def _owned_morphism_from_native(source: object, target: object, native: GapElement):
-    from sage_categories.algebra.abelian import (
-        AbelianGroups,
-        _rule_abelian_homomorphism,
-    )
     from sage_categories.cat.morphisms import Mor
     from sage_categories.kernel.refinement import refine
 
+    abelian = _abelian_owner()
     source_form = _coordinates(source)
     target_form = _coordinates(target)
     native_matrix = matrix(ZZ, _integer_matrix_rows(libgap.UnderlyingMatrix(native)))
@@ -379,8 +380,8 @@ def _owned_morphism_from_native(source: object, target: object, native: GapEleme
         public_target = _public_coordinates_from_raw(target, raw_target)
         return target_form.element(public_target)
 
-    owned = _rule_abelian_homomorphism(source, target, evaluate)
-    refine(owned, Mor(AbelianGroups())(source, target))
+    owned = abelian._rule_abelian_homomorphism(source, target, evaluate)
+    refine(owned, Mor(abelian.AbelianGroups())(source, target))
     retain_presented_native_morphism(owned, native)
     return owned
 

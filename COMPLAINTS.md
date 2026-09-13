@@ -976,3 +976,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `algebra/indexed_modules.py` already imports its additive construction owners at module scope, but finite free modules, matrix presentations, basis elements, and cokernel factors reopened `algebra.abelian` locally. Three of those paths still imported the removed public `presentation()` accessor, so they would fail when exercised after the native-additive cleanup. The retained Smith conversion is now the private `_coordinates` boundary used by the CAP adapter itself.
 
 - **Repair link and acceptance:** `bloat-indexed-module-additive-boundary`. Bind the required additive operations once at module scope, replace the stale `presentation()` calls by `_coordinates()`, and remove every function-local `algebra.abelian` import from the integer-module presentation path.
+
+## Presented-module execution reopened its additive owner in three forms
+
+- **Evidence and impact:** `engines/presented_modules.py` lazily imported additive coordinates, object reconstruction, and the exact `Ab` Hom constructor through three separate `algebra.abelian` import sites. The delay is required by the owner/engine cycle, but all three operations cross the same additive reconstruction boundary.
+
+- **Repair link and acceptance:** `bloat-presented-module-additive-boundary`. Put the delayed additive module behind `_abelian_owner()` and route coordinate lookup, object reconstruction, and native-morphism reconstruction through it.

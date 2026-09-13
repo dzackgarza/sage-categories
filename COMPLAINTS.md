@@ -1659,9 +1659,17 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-local-field-rational-embedding-fallback`. Extract the rational payload explicitly, assert it exists, and embed exactly that value.
 
-
 ## Runtime reflection used generic attribute probes where representations are fixed
 
-- **Evidence and impact:** `CategoryDeclaration.__init__()` used `hasattr(self, "_ordinal")` to detect an already initialized owned category, and predicate-domain extraction used `hasattr(handler, "__func__")` to distinguish bound methods. Both representations are fixed locally: initialized category state lives in the instance namespace and bound handlers are Python `MethodType` objects. Generic probing makes unrelated descriptors participate in control flow.
+- **Evidence and impact:** `CategoryDeclaration.__init__()` used `hasattr(self, "_ordinal")` to detect an already initialized owned category, and predicate-domain extraction used `hasattr(handler, "__func__")` to distinguish bound methods.
+  Both representations are fixed locally: initialized category state lives in the instance namespace and bound handlers are Python `MethodType` objects.
+  Generic probing makes unrelated descriptors participate in control flow.
 
 - **Repair link and acceptance:** `bloat-runtime-reflection-probes`. Use exact instance-namespace membership for category state and `MethodType` for bound-handler recognition.
+
+
+## Kernel role ownership repeated first-writer registry mutation
+
+- **Evidence and impact:** `kernel/roles.py` inserted declaration owners with identical `setdefault` calls in both category subclass preparation and declaration validation. The first-writer rule is semantic — one written role declaration has one mathematical owner — and deserves one named mutation path rather than two incidental dictionary operations.
+
+- **Repair link and acceptance:** `bloat-role-declaration-owner-retention`. Centralize first-owner retention in `_retain_declaration_owner` and invoke it from both paths.

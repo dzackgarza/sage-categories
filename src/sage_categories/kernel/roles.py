@@ -165,7 +165,7 @@ def prepare_category_subclass(category_class: type[CategoryPoint]) -> None:
     for role in Role:
         declared = vars(category_class).get(role.value)
         if isinstance(declared, type):
-            _declaration_owners.setdefault(declared, (category_class, role))
+            _retain_declaration_owner(declared, category_class, role)
     _install_category_initializer(category_class)
 
 
@@ -273,6 +273,16 @@ _DECLARATION_BASES = frozenset({*_BASES.values(), CategoryPoint, Generic, object
 _declaration_owners: dict[type[CategoryPoint], tuple[type[CategoryPoint], Role]] = {}
 
 
+def _retain_declaration_owner(
+    declaration: type[CategoryPoint],
+    category_class: type[CategoryPoint],
+    role: Role,
+) -> None:
+    """Retain the first mathematical owner of one written role declaration."""
+    if declaration not in _declaration_owners:
+        _declaration_owners[declaration] = (category_class, role)
+
+
 def _written_class(runtime_class: type[CategoryPoint]) -> type[CategoryPoint]:
     """Return the category class that writes all three local role declarations."""
     return next(found for found in runtime_class.__mro__ if all(role.value in vars(found) for role in Role))
@@ -341,7 +351,7 @@ def _require_declarations(
     for role in Role:
         declared = vars(category_class)[role.value]
         if declared not in _BASES.values() and declared is not CategoryPoint:
-            _declaration_owners.setdefault(declared, (category_class, role))
+            _retain_declaration_owner(declared, category_class, role)
 
 
 def install_category_declaration_root(

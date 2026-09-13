@@ -682,3 +682,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/stub_generator.py::_stub_import_groups` computed declaration liveness, filtered imports, merged unaliased from-imports, classified isort sections, and ordered every result in one 19-complexity function. Those are separate projector invariants, and changes to one import rule forced reasoning through the entire rendering pipeline.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Split loaded-name discovery, retained-import projection, module extraction, section classification, and ordering into named private helpers; keep `_stub_import_groups` as the four-section assembly only.
+
+## Magma repeated accessors already owned by its inserter base
+
+- **Evidence and impact:** `cat/structured_objects.py::MagmaCategory` repeated `carrier()`, `structure()`, and `underlying_morphism()` byte-for-byte with `InserterCategory`, even though `MagmaCategory` subclasses that owner. The overrides added a second state-reading surface with no changed semantics and made later subclasses look as though Magma owned those generic inserter operations.
+
+- **Repair link and acceptance:** `bloat-magma-inherited-accessors`. Delete the redundant overrides and inherit the exact inserter implementations; keep only Magma's mathematical `operation()` alias on the object role.

@@ -1894,3 +1894,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `Category.element_from_defining_morphism()` used `_elements: MonoDict` only for categories without an ambient, with explicit lookup/construct/store under the exact defining morphism. The ambient delegation is semantic, but the local retention lifecycle duplicates the same identity-keyed Sage method cache now used elsewhere in `Category`.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Keep membership validation and ambient delegation public, move local element construction to an identity-keyed cached helper, and remove `_elements`.
+
+## Walking-arrow diagrams hand-rolled an identity-keyed method cache
+
+- **Evidence and impact:** `Category.arrow_functor(morphism)` maintained `_arrows: MonoDict` and open-coded lookup/construct/store even though the `[1] -> C` diagram is determined solely by the exact morphism identity. The table added a category field and a second cache protocol around a pure method result.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache `arrow_functor` directly with Sage `cached_method(key=identity_key(...))`, remove `_arrows`, and keep its endpoint identities and nonidentity arrow action unchanged.

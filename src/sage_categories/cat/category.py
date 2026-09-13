@@ -337,7 +337,6 @@ class CategoryDeclaration[
         self._narrowings: dict[tuple[int, ...], Category[MorphismData, TwoMorphismData]] = {}
         self._identities: MonoDict = MonoDict()
         self._inverses: MonoDict = MonoDict()
-        self._arrows: MonoDict = MonoDict()
         self._biproduct_constructor: Callable[[object, object], object] | None = None
         self._zero_morphism_constructor: Callable[[object, object], object] | None = None
         self._colimit_constructors: MonoDict = MonoDict()
@@ -897,12 +896,10 @@ class CategoryDeclaration[
         assert context is not None, f"{self!r}.Point() selects the object under construction, and none is being constructed here"
         return self.point_functor(context.canonical_image)
 
+    @cached_method(key=lambda self, morphism: identity_key(morphism))
     def arrow_functor(self, morphism: MorphismRole) -> Functor:
         """The diagram ``[1] -> self`` of shape the walking arrow that ``morphism`` denotes."""
         Fun = _functors()
-
-        if morphism in self._arrows:
-            return self._arrows[morphism]
         walking_arrow = Cat().Simplex(1)
         endpoints = {0: morphism.domain(), 1: morphism.codomain()}
 
@@ -921,8 +918,7 @@ class CategoryDeclaration[
                 return self.morphism_category(1)(endpoint, endpoint).one()
             return morphism
 
-        self._arrows[morphism] = Fun(walking_arrow, self)(on_object, on_morphism)
-        return self._arrows[morphism]
+        return Fun(walking_arrow, self)(on_object, on_morphism)
 
     # -- universal constructions, declared once (D31, POL-CAT-050/092, POL-CAT-093) --------
     #

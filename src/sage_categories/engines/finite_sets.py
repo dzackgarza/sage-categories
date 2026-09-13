@@ -313,6 +313,14 @@ def _finite_discrete_factors(
     return factors, [_native_object(factor) for factor in factors], _category(), identity_positions(vertices)
 
 
+def _native_components(
+    candidate: ConeCategory.ObjectType,
+    vertices: tuple[object, ...],
+) -> list[GapElement]:
+    """Lower a cone/cocone component family to the retained native finite maps."""
+    return [_native_morphism(candidate.component(vertex)) for vertex in vertices]
+
+
 def _native_diagram(diagram: Functor):
     finite = _finite_category_data(diagram.domain())
     assert finite is not Unknown, "native finite-set execution requires exact finite structural data"
@@ -362,7 +370,7 @@ def finite_limit(diagram: Functor) -> object:
                 apex,
                 lambda value: tuple(_owned_map_value(component, value) for component in components),
             )
-        tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
+        tau = _native_components(candidate, vertices)
         computed = libgap.UniversalMorphismIntoLimitWithGivenLimit(category, native_factors, decorated, native_source, tau, computed_apex)
         return _native_map_on_owned_endpoints(source, apex, computed)
 
@@ -416,7 +424,7 @@ def finite_colimit(diagram: Functor) -> object:
                 return _owned_map_value(components[factor_index], datum)
 
             return diagram.codomain().construct_morphism(apex, target, evaluate)
-        tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
+        tau = _native_components(candidate, vertices)
         computed = libgap.UniversalMorphismFromColimitWithGivenColimit(category, native_factors, decorated, native_target, tau, computed_apex)
         return _native_map_on_owned_endpoints(apex, target, computed)
 
@@ -467,7 +475,7 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
                 apex,
                 lambda value: tuple(_owned_map_value(component, value) for component in components),
             )
-        tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
+        tau = _native_components(candidate, vertices)
         computed = libgap.UniversalMorphismIntoDirectProductWithGivenDirectProduct(category, native_factors, native_source, tau, computed_apex)
         return _native_map_on_owned_endpoints(source, apex, computed)
 
@@ -564,7 +572,7 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
         if native_target is None:
             components = tuple(candidate.component(vertex) for vertex in vertices)
             return diagram.codomain().construct_morphism(apex, target, lambda tagged: _owned_map_value(components[tagged[0]], tagged[1]))
-        tau = [_native_morphism(candidate.component(vertex)) for vertex in vertices]
+        tau = _native_components(candidate, vertices)
         computed = libgap.UniversalMorphismFromCoproductWithGivenCoproduct(category, native_factors, native_target, tau, computed_apex)
         return _native_map_on_owned_endpoints(apex, target, computed)
 

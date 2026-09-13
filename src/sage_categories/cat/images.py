@@ -12,7 +12,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition, register_handler
 from sage_categories.cat.properties import PredicateSubcategory
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 
 __all__ = [
     "EssentialImageCategory",
@@ -75,8 +75,6 @@ class ImageCategory[**MorphismData, **TwoMorphismData](
         self._morphism_members: MonoDict = MonoDict()
         self._object_predicate: Predicate = _ImageObjectPredicate()
         self._morphism_predicate: Predicate = _ImageMorphismPredicate()
-        self._inclusion: Functor | None = None
-        self._factor: Functor | None = None
         register_handler(self._object_predicate, self._object_membership)
         register_handler(self._morphism_predicate, self._morphism_membership)
         super().__init__()
@@ -157,16 +155,14 @@ class ImageCategory[**MorphismData, **TwoMorphismData](
         self.object_image(source.codomain())
         return self._retain_morphism(self._defining_functor.on_morphism(source))
 
+    @cached_method
     def factor_functor(self) -> Functor:
         """The defining functor with its codomain restricted to this image."""
-        if self._factor is None:
-            self._factor = Fun(self._defining_functor.domain(), self)(self.object_image, self.morphism_image)
-        return self._factor
+        return Fun(self._defining_functor.domain(), self)(self.object_image, self.morphism_image)
 
+    @cached_method
     def inclusion_functor(self) -> Functor:
-        if self._inclusion is None:
-            self._inclusion = self._construct_inclusion()
-        return self._inclusion
+        return self._construct_inclusion()
 
     def factorization(self) -> tuple[Functor, Functor]:
         """The retained factor followed by the identity-on-values inclusion."""
@@ -304,7 +300,6 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](
             f"{defining_functor!r} does not land in {ambient!r}, so {ambient!r} states no essential image of it"
         )
         self._defining_functor = defining_functor
-        self._factor: Functor | None = None
         super().__init__(ambient, name, full_subcategory_of)
 
     def defining_functor(self) -> Functor:
@@ -335,14 +330,13 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](
         refine(image, self.morphism_category(1))
         return image
 
+    @cached_method
     def factor_functor(self) -> Functor:
         """The essentially-surjective factor from the source into this image."""
-        if self._factor is None:
-            self._factor = Fun(self._defining_functor.domain(), self).EssentiallySurjective()(
-                self.object_image,
-                self.morphism_image,
-            )
-        return self._factor
+        return Fun(self._defining_functor.domain(), self).EssentiallySurjective()(
+            self.object_image,
+            self.morphism_image,
+        )
 
     def inclusion_functor(self) -> Functor:
         """The fully-faithful inclusion into the original target."""

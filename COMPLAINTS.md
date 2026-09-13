@@ -1681,9 +1681,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-binary-relations-forgetful-cache`. Make `to_sets()` a `cached_method` and return the constructed functor directly.
 
-
 ## Indexed categories hand-rolled two nullable structural-functor caches
 
-- **Evidence and impact:** `IndexedCategoriesCategory` stored `_grothendieck_functor: Functor | None`, and each `GrothendieckCategory` stored `_projection: Functor | None`, with explicit first-call branches mutating those fields. Sage `cached_method` already owns per-instance method caching and is used throughout this module, so the nullable state duplicated the repository cache mechanism.
+- **Evidence and impact:** `IndexedCategoriesCategory` stored `_grothendieck_functor: Functor | None`, and each `GrothendieckCategory` stored `_projection: Functor | None`, with explicit first-call branches mutating those fields.
+  Sage `cached_method` already owns per-instance method caching and is used throughout this module, so the nullable state duplicated the repository cache mechanism.
 
 - **Repair link and acceptance:** `bloat-indexed-structural-functor-caches`. Make both structural-functor accessors `cached_method`s; construct the projection locally, install its cartesian lifts before returning it, and delete both nullable cache fields.
+
+
+## Image categories hand-rolled nullable functor caches
+
+- **Evidence and impact:** strict/full image owners kept nullable `_factor` and `_inclusion` fields, and essential-image owners kept another nullable `_factor`, with repeated first-call branches around functor construction. Sage `cached_method` already owns per-instance method retention and removes the extra mutable cache state.
+
+- **Repair link and acceptance:** `bloat-image-functor-caches`. Cache image factor/inclusion accessors with `cached_method` and return the constructed functors directly.

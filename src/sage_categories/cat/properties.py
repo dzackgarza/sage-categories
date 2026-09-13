@@ -76,6 +76,13 @@ def _functors() -> FunctorsCategory:
     return Fun
 
 
+def _categories() -> CategoryOfCategories:
+    """Load ``Cat`` through the one cycle-safe functor bootstrap boundary."""
+    from sage_categories.cat.functors import Cat
+
+    return Cat
+
+
 def _morphisms() -> ModuleType:
     from sage_categories.cat import morphisms
 
@@ -86,9 +93,8 @@ def _subcategory_pullback_runtime():
     """Load pullback construction helpers at the cycle-safe subcategory boundary."""
     from sage_categories.cat.constructions import cone, cone_apex
     from sage_categories.cat.diagrams import cospan_diagram
-    from sage_categories.cat.functors import Cat, Fun
 
-    return cone, cone_apex, cospan_diagram, Cat, Fun
+    return cone, cone_apex, cospan_diagram, _categories(), _functors()
 
 
 class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):
@@ -331,9 +337,7 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
     of ``D`` by ``P`` (POL-CAT-084): one category, the placement the kernel joins with,
     whose monomorphisms into ``D`` and into ``P`` are the two projections.
     """
-    from sage_categories.cat.functors import Cat
-
-    key = (functor, target_subcategory, Cat())
+    key = (functor, target_subcategory, _categories()())
     if key in _inverse_images:
         return _inverse_images[key]
     if target_subcategory is functor.codomain():

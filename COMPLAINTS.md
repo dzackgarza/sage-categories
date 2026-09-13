@@ -940,3 +940,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/functors.py` imported `cat.diagrams` independently for evaluation, constant and diagonal diagrams, object-rule diagrams, commuting-square sets and points, and pointwise limits. The delay is intentional because the diagram layer depends back on the functor owner during bootstrap, but seven local imports gave that one cycle-safe execution boundary seven spellings.
 
 - **Repair link and acceptance:** `bloat-functor-diagram-boundary`. Put the delayed diagram module behind `_diagrams()` and route all seven functor-category operations through it while preserving their existing public methods.
+
+## Property pullbacks reopened the functor bootstrap owner
+
+- **Evidence and impact:** `cat/properties.py` already had `_functors()` as the delayed `Fun` owner, but `_subcategory_pullback_runtime()` imported both `Cat` and `Fun` again and `inverse_image()` imported `Cat` a third time. The delay is required by the property/functor bootstrap cycle; the repeated owner lookup is not.
+
+- **Repair link and acceptance:** `bloat-property-functor-bootstrap`. Add one `_categories()` owner beside `_functors()`, let the pullback runtime compose those two existing boundaries, and make inverse-image keys use the same `Cat` binding.

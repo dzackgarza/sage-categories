@@ -157,16 +157,13 @@ def _components_agree_along_diagram(
         return None
     if limit.shape().generating_morphisms() is Unknown:
         return None
-    if candidate in limit._agreement:
-        # The constructor decided this family's compatibility and the components it read
-        # are fixed, so the decision is the retained one; deriving it again walks every
-        # generating morphism of the shape and every equation under it, which is what
-        # makes a containment test cost a traversal.
-        return limit._agreement[candidate]
-    decision = decide(limit._agrees(candidate.family_component), assumptions)
+    retained = limit._unconditional_agreement
+    if retained.is_in_cache(candidate):
+        # An unconditional compatibility decision is stable under later assumptions.
+        return retained(candidate)
     if unconditional(assumptions):
-        limit._agreement[candidate] = decision
-    return decision
+        return retained(candidate)
+    return decide(limit._agrees(candidate.family_component), assumptions)
 
 
 register_handler(components_agree, _components_agree_along_diagram)
@@ -212,10 +209,6 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
-        # The compatibility decision of each family this category has been asked about
-        # (``_components_agree_along_diagram``): an undecided family keeps ``None`` here
-        # and stays undecided, so retention changes speed and not the answer.
-        self._agreement: MonoDict = MonoDict()
         super().__init__()
         register_handler(self._equality, self._equal_objects)
         register_handler(self._equality, self._equal_morphisms)
@@ -238,6 +231,11 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         """
         carrier = carrier_comparison(first, second)
         return None if carrier is None else decide(carrier, assumptions)
+
+    @cached_method(key=lambda self, candidate: identity_key(candidate))
+    def _unconditional_agreement(self, candidate: CategoryOfCategories.ElementType) -> bool | None:
+        """The retained compatibility decision with no local assumptions."""
+        return decide(self._agrees(candidate.family_component), True)
 
     def shape(self) -> Category:
         return self._diagram.domain()

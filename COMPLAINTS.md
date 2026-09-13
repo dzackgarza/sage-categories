@@ -1906,3 +1906,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `Axiom.subcategory(category, *parameters)` maintained `_constructed` under `identity_key(...)` and duplicated lookup/construct/store solely to retain one property category per exact argument tuple. Its only extra reader, `is_constructed`, needs a no-side-effect cache-presence query, which Sage `cached_method` already exposes.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Make `subcategory` an identity-keyed cached method, implement `is_constructed` with `subcategory.is_in_cache(...)`, and remove `_constructed` without changing axiom construction or inverse-image semantics.
+
+## Strict-limit compatibility hand-rolled an identity decision cache
+
+- **Evidence and impact:** `LimitCategory` stored unconditional component-agreement decisions in `_agreement: MonoDict` and the predicate handler manually checked, computed, and retained them. The cached value is a pure result of the exact candidate family under no assumptions; conditional decisions deliberately remain uncached.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Put unconditional compatibility behind an identity-keyed cached method, use `is_in_cache` to reuse it under later assumptions without constructing anything, and remove `_agreement` while leaving conditional predicate evaluation unchanged.

@@ -1264,3 +1264,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `RingCategory.to_semiring` and `to_additive_group` rebuilt the same faithful isofibration factor projections that `cat_constructions._faithful_isofibration_projection` already owns and that neighboring structured-object/bimodule limits already use. The duplicate code stated no ring-specific mathematics.
 
 - **Repair link and acceptance:** `bloat-ring-factor-projections`. Route both ring structure legs through `_faithful_isofibration_projection(self, index)` so the limit-projection owner is shared with the rest of the category-product implementation.
+
+## Profunctor unitor components fused descent and inverse injection
+
+- **Evidence and impact:** `cat/profunctors.py::_unitor_components` built both halves of the co-Yoneda isomorphism in one long function: weighted-colimit descent through the profunctor action and the inverse map from the identity arrow. Those are distinct universal-map constructions and each had its own nested rule over points.
+
+- **Repair link and acceptance:** `bloat-profunctor-unitor-components`. Extract `_unitor_descent_component()` and `_unitor_inverse_component()` so `_unitor_components()` only pairs the two named maps and retains their inverse relation.

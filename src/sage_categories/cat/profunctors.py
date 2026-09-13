@@ -165,13 +165,54 @@ def identity_profunctor(category: Category, sets: Category) -> Functor:
     return hom_functor(category, sets)
 
 
-@cached_function(key=identity_key)
-def _unitor_components(
+def _unitor_descent_component(
     profunctor: Functor,
     hom: Functor,
     left: bool,
     outer: CategoryOfCategories.ElementType,
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    index: CategoryOfCategories.ElementType,
+    point: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """One co-Yoneda descent component from the weighted integrand to the profunctor value."""
+    first, second = (hom, profunctor) if left else (profunctor, hom)
+    sets = profunctor.codomain()
+    target = profunctor.on_object(outer)
+    a, c = outer.family_component(0), outer.family_component(1)
+    p = first.on_object(first.domain()((a, index.family_component(1))))
+    q = second.on_object(second.domain()((index.family_component(0), c)))
+    product = binary_product_data(sets, p, q)
+    connecting = point.datum()
+
+    def action(datum: Hashable) -> Hashable:
+        value = product.apex().point(datum)
+        x, y = product.leg(0)(value), product.leg(1)(value)
+        pairs = profunctor.domain()
+        if left:
+            arrow = connecting * x.datum()
+            transport = pairs.construct_morphism(
+                pairs((index.family_component(0), c)),
+                outer,
+                (opposite_morphism(arrow), Mor(pairs.factor(1))(c, c).one()),
+            )
+            return profunctor.on_morphism(transport)(y).datum()
+        arrow = y.datum() * connecting
+        transport = pairs.construct_morphism(
+            pairs((a, index.family_component(1))),
+            outer,
+            (Mor(pairs.factor(0))(a, a).one(), arrow),
+        )
+        return profunctor.on_morphism(transport)(x).datum()
+
+    return Mor(sets)(product.apex(), target)(action)
+
+
+def _unitor_inverse_component(
+    profunctor: Functor,
+    hom: Functor,
+    left: bool,
+    outer: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """The inverse co-Yoneda component induced by the identity arrow at the outer endpoint."""
     first, second = (hom, profunctor) if left else (profunctor, hom)
     composite = compose_profunctors(first, second, hom)
     diagram, weight = _integrand(first, second, outer), coend_weight(hom)
@@ -179,36 +220,6 @@ def _unitor_components(
     target = profunctor.on_object(outer)
     a, c = outer.family_component(0), outer.family_component(1)
     middle = hom.domain().factor(1)
-
-    def component(index: CategoryOfCategories.ElementType, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        p = first.on_object(first.domain()((a, index.family_component(1))))
-        q = second.on_object(second.domain()((index.family_component(0), c)))
-        product = binary_product_data(sets, p, q)
-        connecting = point.datum()
-
-        def action(datum: Hashable) -> Hashable:
-            value = product.apex().point(datum)
-            x, y = product.leg(0)(value), product.leg(1)(value)
-            pairs = profunctor.domain()
-            if left:
-                arrow = connecting * x.datum()
-                transport = pairs.construct_morphism(
-                    pairs((index.family_component(0), c)),
-                    outer,
-                    (opposite_morphism(arrow), Mor(pairs.factor(1))(c, c).one()),
-                )
-                return profunctor.on_morphism(transport)(y).datum()
-            arrow = y.datum() * connecting
-            transport = pairs.construct_morphism(
-                pairs((a, index.family_component(1))),
-                outer,
-                (Mor(pairs.factor(0))(a, a).one(), arrow),
-            )
-            return profunctor.on_morphism(transport)(x).datum()
-
-        return Mor(sets)(product.apex(), target)(action)
-
-    forward = weighted_colimit_desc(weight, diagram, target, component)
     vertex = a if left else c
     index = hom.domain()((vertex, vertex))
     identity = Mor(middle)(vertex, vertex).one()
@@ -229,7 +240,27 @@ def _unitor_components(
         )
         return injection(paired).datum()
 
-    inverse = Mor(sets)(target, composite.on_object(outer))(inverse_action)
+    return Mor(sets)(target, composite.on_object(outer))(inverse_action)
+
+
+@cached_function(key=identity_key)
+def _unitor_components(
+    profunctor: Functor,
+    hom: Functor,
+    left: bool,
+    outer: CategoryOfCategories.ElementType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    first, second = (hom, profunctor) if left else (profunctor, hom)
+    diagram, weight = _integrand(first, second, outer), coend_weight(hom)
+    sets = profunctor.codomain()
+    target = profunctor.on_object(outer)
+    forward = weighted_colimit_desc(
+        weight,
+        diagram,
+        target,
+        lambda index, point: _unitor_descent_component(profunctor, hom, left, outer, index, point),
+    )
+    inverse = _unitor_inverse_component(profunctor, hom, left, outer)
     sets.retain_inverses(forward, inverse)
     return forward, inverse
 

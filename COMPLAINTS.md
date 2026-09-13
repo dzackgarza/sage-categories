@@ -598,3 +598,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `NativeObjectRealizations`, `NativeMorphismRealizations`, and `NativeUniversalPresentationRealizations` each repeated the same `_IdentityRecords` initialization plus `has()` and `realization()` forwarding. Their only real distinction is the validation and record construction performed by `retain()`.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give the three realization families one private generic lookup owner and leave only their mathematically distinct retention checks in the public family classes.
+
+## Ringed-space code duplicated sheaf boundary helpers
+
+- **Evidence and impact:** `geometry/ringed_spaces.py` repeated `geometry/sheaves.py`'s lazy commutative-ring category lookup and exact open-object datum extraction byte-for-byte even though ringed spaces already depend on the sheaf module. That gave the same sheaf boundary two private implementation owners.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Reuse the sheaf module's existing `_rings` and `_open_data` owners from ringed spaces; keep only ringed-space-specific transformation and transport logic locally.

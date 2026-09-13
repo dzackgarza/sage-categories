@@ -1864,3 +1864,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `DiscreteCategory` and `ThinCategory` each allocated `_objects: MonoDict` and routed construction through `_point_shape_construct(category, objects, point)`, which open-coded one object per exact carrier point. The cache is necessary because owned point equality is proposition-valued, but both categories already import Sage `cached_method` and the repository `identity_key` policy.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache both point constructors directly by point identity, remove the two `_objects` tables and the cache parameter from `_point_shape_construct`, and preserve their distinct morphism-admission/equality rules.
+
+## Finite presented paths hand-rolled a canonical-result dictionary
+
+- **Evidence and impact:** `FinitePresentedCategory.construct_morphism()` maintained `_paths` and open-coded lookup/construct/store under the already-canonical mathematical key `(source label, reduced word)`. The reduction and endpoint validation are genuine mathematics; the dictionary lifecycle is not, and Sage `cached_method` can retain exactly one result for that canonical key.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Keep validation and native reduction in `construct_morphism`, move reduced-path construction to a cached helper keyed by source label and reduced word, and remove `_paths`.

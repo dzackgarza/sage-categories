@@ -124,9 +124,6 @@ class FinitePresentedCategory(Category[[Word], []]):
                 source, target = first if first is not None else second
                 assert source == target, "a path equal to an identity must be a loop"
         self._relations = relations
-        # One retained path per (source label, reduced word) (specs/functor.md, "Canonical objects of Cat"): a morphism of a
-        # finitely presented category exists once by identity.
-        self._paths: dict[tuple[Hashable, Word], FinitePresentedCategory.MorphismType] = {}
         super().__init__()
         self._vertices = {label: self.ObjectType(VertexData(label)) for label in labels}
         register_handler(self._equality, self._equal_objects)
@@ -246,20 +243,22 @@ class FinitePresentedCategory(Category[[Word], []]):
             assert source == position, f"{name} does not start at {position!r}"
             position = target
         assert position == self.label(codomain), f"the path ends at {position!r}, not at {codomain!r}"
-        key = (self.label(domain), self._reduce(domain, codomain, word))
-        if key not in self._paths:
-            path = self.MorphismType(
-                domain=domain,
-                codomain=codomain,
-                data=PathData(key[1]),
-            )
-            # Positive invertibility comes from the native quotient category; absence of a
-            # native decision leaves refinement open rather than manufacturing an inverse.
-            if path.word() and self._relations:
-                if _fp_categories_engine().is_isomorphism(self, path) is True:
-                    refine(path, self.morphism_category(1).Isomorphisms())
-            self._paths[key] = path
-        return self._paths[key]
+        return self._retained_path(domain, codomain, self._reduce(domain, codomain, word))
+
+    @cached_method(key=lambda self, domain, codomain, word: (self.label(domain), word))
+    def _retained_path(
+        self,
+        domain: FinitePresentedCategory.ObjectType,
+        codomain: FinitePresentedCategory.ObjectType,
+        word: Word,
+    ) -> FinitePresentedCategory.MorphismType:
+        """The one retained morphism with this source label and reduced path word."""
+        path = self.MorphismType(domain=domain, codomain=codomain, data=PathData(word))
+        # Positive invertibility comes from the native quotient category; absence of a
+        # native decision leaves refinement open rather than manufacturing an inverse.
+        if path.word() and self._relations and _fp_categories_engine().is_isomorphism(self, path) is True:
+            refine(path, self.morphism_category(1).Isomorphisms())
+        return path
 
     def construct_identity(self, vertex: FinitePresentedCategory.ObjectType) -> FinitePresentedCategory.MorphismType:
         return self.construct_morphism(vertex, vertex, ())

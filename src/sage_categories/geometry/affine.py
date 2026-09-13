@@ -30,7 +30,8 @@ from sage_categories.cat.native import (
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.engines import oscar
 from sage_categories.engines.julia_bridge import OscarHandle
-from sage_categories.geometry.sheaves import RingPresheaf, _rings, ring_presheaf_from_functor
+from sage_categories.geometry._ring_categories import commutative_rings as _rings
+from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
 
 __all__ = [
     "AffineOpen",

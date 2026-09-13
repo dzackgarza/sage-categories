@@ -4,15 +4,17 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable, Mapping
 from dataclasses import dataclass
-from importlib import import_module
 from typing import Any, cast
 
 from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import ask
+from sage_categories.geometry._ring_categories import (
+    commutative_rings as _rings,
+    rings as _ambient_rings,
+)
 from sage_categories.geometry.spaces import TopologicalSpacesCategory
 
 __all__ = [
@@ -22,15 +24,6 @@ __all__ = [
     "ring_presheaf_from_functor",
     "ring_sheaf",
 ]
-
-
-def _rings() -> Any:
-    return import_module("sage_categories.cat.structured_objects").Rings(Sets).Commutative()
-
-
-def _ambient_rings() -> Any:
-    return import_module("sage_categories.cat.structured_objects").Rings(Sets)
-
 
 def _open_data(open_object: CategoryOfCategories.ElementType) -> frozenset[Hashable]:
     return cast(frozenset[Hashable], cast(Any, open_object).point().datum())

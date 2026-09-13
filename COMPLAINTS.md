@@ -634,3 +634,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/diagrams.py::evaluate_path` built a linear list of boxes with mutable `current` state, rebuilt the same endpoint family for token lookup, then manually folded `>>` across the boxes. The mutable setup inflated the function's branch complexity even though the path is already an ordered tuple.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Derive the endpoint chain once, construct boxes and token values from that immutable chain, and use the standard `reduce(rshift, ...)` fold for nonempty paths while retaining the explicit empty-path identity case.
+
+## Geometry modules repeated the lazy ring-category import boundary
+
+- **Evidence and impact:** sheaves and topological rings each implemented their own lazy `Rings(Sets)` lookup, while affine and ringed-space code had begun reusing the sheaf helper solely to avoid duplicating it. The lazy import exists to break the structured-object import cycle, not because sheaves mathematically own every geometry module's ring category.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Move the lazy ordinary/commutative ring-category accessors to one private geometry boundary module and let sheaves, affine schemes, ringed spaces, and topological rings depend on that owner directly.

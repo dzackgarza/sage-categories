@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from importlib import import_module
 from typing import Any, cast
 
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import ask
+from sage_categories.geometry._ring_categories import rings as _rings
 from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
@@ -22,11 +21,6 @@ __all__ = [
     "TopologicalRings",
     "TopologicalRingsCategory",
 ]
-
-
-def _rings() -> Any:
-    return import_module("sage_categories.cat.structured_objects").Rings(Sets)
-
 
 @dataclass(frozen=True, eq=False, slots=True)
 class ProductTopologyOpen:

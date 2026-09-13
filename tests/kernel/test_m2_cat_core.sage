@@ -1020,6 +1020,9 @@ def test_the_restriction_of_a_functor_places_its_images_in_the_core_it_was_decla
         image.inverse(),
         Mor(MARKS)(functor.on_object(Y), functor.on_object(X)).Isomorphisms(),
     )
+    inverse_between = Mor(target_core)(functor.on_object(Y), functor.on_object(X))
+    assert image.inverse().category() is inverse_between
+    assert is_placed(image.inverse(), inverse_between)
     assert image.inverse().inverse() is image
 
     # The core is closed under the operation that defines a groupoid, so the inverse of one
@@ -1030,8 +1033,10 @@ def test_the_restriction_of_a_functor_places_its_images_in_the_core_it_was_decla
 
     # Two images compose inside the core, because the core is the category that holds both.
     composite = restricted.on_morphism(onward) * image
+    composite_between = Mor(target_core)(functor.on_object(X), functor.on_object(Z))
+    assert composite.category() is composite_between
     assert is_placed(composite, Mor(target_core))
-    assert is_placed(composite, Mor(target_core)(functor.on_object(X), functor.on_object(Z)))
+    assert is_placed(composite, composite_between)
 
 
 for name, value in tuple(globals().items()):

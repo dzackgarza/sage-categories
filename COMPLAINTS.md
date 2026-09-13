@@ -1311,3 +1311,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** after separating its structure sheaf, `projective_line()` still carried the two chart pullbacks, chart maps into the glued scheme, gluing mediator, and induced overlap localization automorphism for the involution exchanging the two affine charts. This is one named automorphism with its own exact pullback data, not part of constructing the cover itself.
 
 - **Repair link and acceptance:** `bloat-projective-line-swap`. Move the chart-swap and overlap automorphism into `_projective_line_swap()`; keep `projective_line()` responsible for constructing charts/overlap/gluing and packaging the returned swap data.
+
+## Free-associative substitution fused source linearization with algebra lifting
+
+- **Evidence and impact:** `free_associative_substitution()` both computed the indexed-free-module endomorphism determined by generator images and then lifted that map through the retained bimodule and monoid owners. Those are two distinct owner boundaries, and the public substitution constructor obscured which layer was responsible for which step.
+
+- **Repair link and acceptance:** `bloat-free-associative-substitution-layers`. Extract `_free_associative_linear_substitution()` and `_free_associative_algebra_substitution()`; leave the public function to validate generator images and compose those two named owner transitions.

@@ -126,7 +126,6 @@ class NonstrictMonoidalModel[Object, Arrow]:
         self._inverse = inverse
         self._comparison = comparison
         self._wire_values: dict[str, Object] = {}
-        self._wire_tokens: MonoDict = MonoDict()
         self._next_wire = 0
         self._object_type: type[_ObjectValue] = type(
             f"_NonstrictObject_{id(self)}",
@@ -151,16 +150,17 @@ class NonstrictMonoidalModel[Object, Arrow]:
                     value = self._tensor_object(value, following)
         return self._object_type(word, value)
 
+    @cached_method(key=lambda self, value: identity_key(value))
+    def _wire_token(self, value: Object) -> str:
+        """Allocate the stable DisCoPy token for one exact owned object."""
+        token = f"w{self._next_wire}"
+        self._next_wire += 1
+        self._wire_values[token] = value
+        return token
+
     def wire(self, value: Object) -> Any:
         """A stable DisCoPy atomic wire retaining one exact owned object."""
-        if value in self._wire_tokens:
-            token = self._wire_tokens[value]
-        else:
-            token = f"w{self._next_wire}"
-            self._next_wire += 1
-            self._wire_tokens[value] = token
-            self._wire_values[token] = value
-        return _discopy_monoidal().Ty(token)
+        return _discopy_monoidal().Ty(self._wire_token(value))
 
     def box(
         self,

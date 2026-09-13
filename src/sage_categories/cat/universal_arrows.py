@@ -32,6 +32,13 @@ type Factor = Callable[[CategoryOfCategories.ElementType], MorphismCategory.Obje
 type Choice = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
 
 
+def _adjunctions():
+    """Load the adjunction category at the cycle-safe universal-arrow boundary."""
+    from sage_categories.cat.adjunctions import Adjunctions
+
+    return Adjunctions
+
+
 class TerminalObjectsCategory(FullSubcategory):
     """Terminal objects equipped with their unique incoming arrows."""
 
@@ -124,8 +131,6 @@ class RightUniversalArrows:
 
     @cached_method
     def adjunction(self) -> CategoryOfCategories.ElementType:
-        from sage_categories.cat.adjunctions import Adjunctions
-
         forward, inverse = self.forward, self.functor()
         source, target = forward.domain(), forward.codomain()
         unit = Mor(Fun(source, source))(Fun(source, source).one(), inverse * forward)(
@@ -136,7 +141,7 @@ class RightUniversalArrows:
             )
         )
         counit = Mor(Fun(target, target))(forward * inverse, Fun(target, target).one())(lambda value: self.presentation(value).arrow())
-        return Adjunctions(forward, inverse)(unit, counit)
+        return _adjunctions()(forward, inverse)(unit, counit)
 
 
 @dataclass(eq=False)
@@ -177,8 +182,6 @@ class LeftUniversalArrows:
 
     @cached_method
     def adjunction(self) -> CategoryOfCategories.ElementType:
-        from sage_categories.cat.adjunctions import Adjunctions
-
         forward, inverse = self.functor(), self.inverse
         source, target = forward.domain(), forward.codomain()
         unit = Mor(Fun(source, source))(Fun(source, source).one(), inverse * forward)(lambda value: self.presentation(value).arrow())
@@ -189,7 +192,7 @@ class LeftUniversalArrows:
                 Mor(source)(inverse.on_object(value), inverse.on_object(value)).one(),
             )
         )
-        return Adjunctions(forward, inverse)(unit, counit)
+        return _adjunctions()(forward, inverse)(unit, counit)
 
 
 def right_mate(

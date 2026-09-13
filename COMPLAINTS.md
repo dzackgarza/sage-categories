@@ -826,3 +826,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/weighted.py::yoneda` and `coyoneda` each imported the same kernel `refine` operation locally immediately before marking the constructed embedding fully faithful. The module already depends on the refinement-independent category layer at import time, and the kernel refinement owner has no reverse dependency on weighted constructions, so the duplicate delayed imports protect no cycle.
 
 - **Repair link and acceptance:** `bloat-weighted-refinement-import`. Bind `refine` once at module scope and let both Yoneda constructions use the shared owner while retaining their separate curry/transpose formulas.
+
+## Universal-arrow adjunctions repeated the same delayed owner import
+
+- **Evidence and impact:** `RightUniversalArrows.adjunction()` and `LeftUniversalArrows.adjunction()` each imported `Adjunctions` locally immediately before constructing their unit/counit pair. The delay is required because the adjunction module consumes universal arrows, but duplicating the same cycle break gave one mathematical owner two runtime import sites.
+
+- **Repair link and acceptance:** `bloat-universal-arrow-adjunction-boundary`. Put the delayed `Adjunctions` lookup behind one `_adjunctions()` helper and let both universal-arrow directions share it while retaining their distinct unit/counit formulas.

@@ -213,6 +213,10 @@ def test_functors_and_two_morphisms_are_owned_and_distinct() -> None:
         lambda x: category.morphism_category(1)(x, x).one()
     )
     assert transformation.component(category(0)) is transformation.component(category(0))
+    transformation.typecheck_cell()
+    assert transformation.cell_dimension() == 2
+    assert transformation.boundary("source") is first
+    assert transformation.boundary("target") is second
 
     eta = _identity_transformation(first)
     theta = _identity_transformation(second)

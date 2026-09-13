@@ -1270,3 +1270,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/profunctors.py::_unitor_components` built both halves of the co-Yoneda isomorphism in one long function: weighted-colimit descent through the profunctor action and the inverse map from the identity arrow. Those are distinct universal-map constructions and each had its own nested rule over points.
 
 - **Repair link and acceptance:** `bloat-profunctor-unitor-components`. Extract `_unitor_descent_component()` and `_unitor_inverse_component()` so `_unitor_components()` only pairs the two named maps and retains their inverse relation.
+
+## Finite-category matching mixed owned-value indexing with the CAP equalizer
+
+- **Evidence and impact:** `engines/category_limits.py::matching_triples` both converted owned values to skeletal indices and built the full native product/equalizer diagram selecting triples `(x,y,φ)`. The public adapter therefore mixed reconstruction concerns with the CAP computation it delegates.
+
+- **Repair link and acceptance:** `bloat-matching-triples-native`. Move the skeletal finite-set product, three projections, compatibility maps, equalizer and selected-index extraction into `_matching_native_selection()`; keep `matching_triples()` responsible for owned-value graph conversion and reconstruction only.

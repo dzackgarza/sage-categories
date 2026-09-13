@@ -116,26 +116,20 @@ def identified_objects(
     return int(libgap.Cardinality(apex)), mappings
 
 
-def matching_triples(
-    source_values: tuple[object, ...],
-    target_values: tuple[object, ...],
-    morphisms: tuple[object, ...],
-    reindex: Callable[[object], object],
-    domain: Callable[[object], object],
-    codomain: Callable[[object], object],
-    locate: Callable[[tuple[object, ...], object], int],
-) -> tuple[tuple[object, object, object], ...]:
-    """Native finite join for triples ``(x, y, phi)`` with ``phi: x -> P(f)(y)``.
-
-    CAP owns the product and equalizer computation. Python supplies only the
-    already-owned finite values and converts their retained identities to skeletal
-    indices.
-    """
+def _matching_native_selection(
+    source_count: int,
+    target_count: int,
+    morphism_count: int,
+    domain_graph: list[int],
+    codomain_graph: list[int],
+    reindex_graph: list[int],
+) -> tuple[tuple[int, ...], tuple[tuple[int, ...], ...]]:
+    """Select matching triples as an equalizer in skeletal finite sets."""
     load_packages(FINITE_SETS_PACKAGES)
     category = libgap.SkeletalFinSets
-    native_source = libgap.FinSet(len(source_values))
-    native_target = libgap.FinSet(len(target_values))
-    native_morphisms = libgap.FinSet(len(morphisms))
+    native_source = libgap.FinSet(source_count)
+    native_target = libgap.FinSet(target_count)
+    native_morphisms = libgap.FinSet(morphism_count)
     factors = [native_source, native_target, native_morphisms]
     product = libgap.DirectProduct(category, factors)
     projections = tuple(
@@ -144,23 +138,9 @@ def matching_triples(
         )
         for index in range(3)
     )
-
-    def graph(
-        values: tuple[object, ...],
-        target: tuple[object, ...],
-        action: Callable[[object], object],
-    ) -> list[int]:
-        return [locate(target, action(value)) for value in values]
-
-    domain_map = libgap.MapOfFinSets(
-        native_morphisms, graph(morphisms, source_values, domain), native_source
-    )
-    codomain_map = libgap.MapOfFinSets(
-        native_morphisms, graph(morphisms, source_values, codomain), native_source
-    )
-    reindex_map = libgap.MapOfFinSets(
-        native_target, graph(target_values, source_values, reindex), native_source
-    )
+    domain_map = libgap.MapOfFinSets(native_morphisms, domain_graph, native_source)
+    codomain_map = libgap.MapOfFinSets(native_morphisms, codomain_graph, native_source)
+    reindex_map = libgap.MapOfFinSets(native_target, reindex_graph, native_source)
     left_components = [
         projections[0],
         libgap.PreCompose(category, projections[2], codomain_map),
@@ -178,13 +158,44 @@ def matching_triples(
         category, pair_target_factors, product, right_components, pair_target
     )
     equalizer = libgap.Equalizer(category, product, [left, right])
-    embedding = libgap.EmbeddingOfEqualizerWithGivenEqualizer(
-        category, product, [left, right], equalizer
-    )
+    embedding = libgap.EmbeddingOfEqualizerWithGivenEqualizer(category, product, [left, right], equalizer)
     selected = tuple(int(value) for value in libgap.AsList(embedding))
     projection_graphs = tuple(
         tuple(int(value) for value in libgap.AsList(projection))
         for projection in projections
+    )
+    return selected, projection_graphs
+
+
+def matching_triples(
+    source_values: tuple[object, ...],
+    target_values: tuple[object, ...],
+    morphisms: tuple[object, ...],
+    reindex: Callable[[object], object],
+    domain: Callable[[object], object],
+    codomain: Callable[[object], object],
+    locate: Callable[[tuple[object, ...], object], int],
+) -> tuple[tuple[object, object, object], ...]:
+    """Native finite join for triples ``(x, y, phi)`` with ``phi: x -> P(f)(y)``.
+
+    CAP owns the product and equalizer computation. Python supplies only the
+    already-owned finite values and converts their retained identities to skeletal
+    indices.
+    """
+    def graph(
+        values: tuple[object, ...],
+        target: tuple[object, ...],
+        action: Callable[[object], object],
+    ) -> list[int]:
+        return [locate(target, action(value)) for value in values]
+
+    selected, projection_graphs = _matching_native_selection(
+        len(source_values),
+        len(target_values),
+        len(morphisms),
+        graph(morphisms, source_values, domain),
+        graph(morphisms, source_values, codomain),
+        graph(target_values, source_values, reindex),
     )
     return tuple(
         (

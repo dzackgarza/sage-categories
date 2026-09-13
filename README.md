@@ -4,7 +4,8 @@
 It uses explicit categories, functors, and universal constructions as its reuse model.
 Sage and other computation systems remain private engines.
 
-The public API is not stable. [System architecture](specs/system.md) describes the mathematical foundation and production order.
+The public API is not stable.
+[System architecture](specs/system.md) describes the mathematical foundation and production order.
 
 ## Public import
 

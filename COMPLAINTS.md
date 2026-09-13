@@ -952,3 +952,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `right_kan_adjunction` and `left_kan_adjunction` each imported their two universal-arrow category constructors directly from `cat.universal_arrows`. The delay is required because universal arrows consume Kan-related category machinery, but the right/left directions crossed the same cycle-safe module boundary independently.
 
 - **Repair link and acceptance:** `bloat-kan-universal-arrow-boundary`. Put the delayed module behind `_universal_arrows()` and let both Kan adjunction directions select their directional constructors from that one owner.
+
+## Yoneda embeddings reopened the calculus module independently
+
+- **Evidence and impact:** `yoneda` and `coyoneda` imported `curry`/`transpose` separately from `cat.calculus`. The import remains delayed because weighted constructions and calculus meet through the functor bootstrap, but both embeddings cross the same execution boundary.
+
+- **Repair link and acceptance:** `bloat-weighted-calculus-boundary`. Put the delayed calculus module behind `_calculus()` and let both Yoneda embeddings select their required operations from that one owner.

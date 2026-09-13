@@ -31,6 +31,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
+from types import ModuleType
 
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import cocone, cocones, cone, cones
@@ -49,6 +50,13 @@ type WeightedComponents = Callable[
     [CategoryOfCategories.ElementType, CategoryOfCategories.ElementType],
     MorphismCategory.ObjectType,
 ]
+
+
+def _calculus() -> ModuleType:
+    """Load curry/transpose at the cycle-safe weighted/calculus boundary."""
+    from sage_categories.cat import calculus
+
+    return calculus
 
 
 @cached_function(key=identity_key)
@@ -193,9 +201,8 @@ def hom_functor(category: Category, sets: Category) -> Functor:
 @cached_function(key=identity_key)
 def yoneda(category: Category, sets: Category) -> Functor:
     """The covariant Yoneda embedding ``C -> Fun(C.op(), Sets)``."""
-    from sage_categories.cat.calculus import curry, transpose
-
-    result = transpose(curry(hom_functor(category, sets)))
+    calculus = _calculus()
+    result = calculus.transpose(calculus.curry(hom_functor(category, sets)))
     refine(result, Fun.FullyFaithful())
     return result
 
@@ -203,9 +210,7 @@ def yoneda(category: Category, sets: Category) -> Functor:
 @cached_function(key=identity_key)
 def coyoneda(category: Category, sets: Category) -> Functor:
     """The covariant-hom embedding ``C.op() -> Fun(C, Sets)``."""
-    from sage_categories.cat.calculus import curry
-
-    result = curry(hom_functor(category, sets))
+    result = _calculus().curry(hom_functor(category, sets))
     refine(result, Fun.FullyFaithful())
     return result
 

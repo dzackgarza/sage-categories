@@ -2279,6 +2279,157 @@ def _project_provider_bases(
     _ensure_module_imports(tree, required_modules)
 
 
+def _local_projected_class_name(
+    expression: ast.expr,
+    module: str,
+    class_names: frozenset[str],
+) -> str | None:
+    """Resolve one projected base expression to a class declared in this module."""
+    while isinstance(expression, ast.Subscript):
+        expression = expression.value
+    name = _dotted_name(expression)
+    if name is None:
+        return None
+    if name in class_names:
+        return name
+    local = f"{module}.{name}"
+    return local if local in class_names else None
+
+
+def _lexical_class_dependencies(
+    classes: dict[str, ast.ClassDef],
+    top_level: dict[str, ast.ClassDef],
+    module: str,
+) -> dict[str, set[str]]:
+    """Return nominal base edges plus lexical nested-owner availability edges."""
+    class_names = frozenset(classes)
+    dependencies: dict[str, set[str]] = {name: set() for name in classes}
+    for name, node in classes.items():
+        for base in node.bases:
+            dependency = _local_projected_class_name(base, module, class_names)
+            if dependency is not None:
+                dependencies[name].add(dependency)
+        relative = name.removeprefix(f"{module}.")
+        if "." not in relative:
+            continue
+        lexical_owner_name = f"{module}.{relative.split('.', 1)[0]}"
+        if lexical_owner_name in top_level:
+            dependencies[name].add(lexical_owner_name)
+    return dependencies
+
+
+def _dependency_reaches(
+    dependencies: dict[str, set[str]],
+    start: str,
+    target: str,
+) -> bool:
+    """Whether ``target`` is reachable from ``start`` in one retained dependency graph."""
+    frontier = list(dependencies[start])
+    seen: set[str] = set()
+    while frontier:
+        current = frontier.pop()
+        if current == target:
+            return True
+        if current in seen:
+            continue
+        seen.add(current)
+        frontier.extend(dependencies[current] - seen)
+    return False
+
+
+def _cyclic_nested_role_owners(
+    classes: dict[str, ast.ClassDef],
+    top_level: dict[str, ast.ClassDef],
+    dependencies: dict[str, set[str]],
+    module: str,
+) -> dict[str, list[ast.ClassDef]]:
+    """Group directly nested role classes whose lexical dependency graph is cyclic."""
+    owners: dict[str, list[ast.ClassDef]] = {}
+    for name in classes:
+        if not _dependency_reaches(dependencies, name, name):
+            continue
+        relative = name.removeprefix(f"{module}.")
+        if relative.count(".") != 1:
+            continue
+        owner_name, nested_name = relative.split(".")
+        owner_class = top_level.get(f"{module}.{owner_name}")
+        if owner_class is None:
+            continue
+        nested = next(
+            (statement for statement in owner_class.body if isinstance(statement, ast.ClassDef) and statement.name == nested_name),
+            None,
+        )
+        if nested is not None:
+            _list_bucket(owners, owner_name).append(nested)
+    return owners
+
+
+def _hoist_cyclic_role_owners(
+    owners: dict[str, list[ast.ClassDef]],
+    top_level: dict[str, ast.ClassDef],
+    module: str,
+) -> tuple[dict[str, ast.expr], list[ast.ClassDef]]:
+    """Move cyclic nested roles into helper bases and return base replacements/helpers."""
+    replacements: dict[str, ast.expr] = {}
+    helpers: list[ast.ClassDef] = []
+    for owner_name, nested_classes in sorted(owners.items()):
+        owner_class = top_level[f"{module}.{owner_name}"]
+        nested_names = {nested.name for nested in nested_classes}
+        owner_class.body[:] = [
+            statement
+            for statement in owner_class.body
+            if not (isinstance(statement, ast.ClassDef) and statement.name in nested_names)
+        ]
+        helper_name = f"_StaticRoles_{owner_name}"
+        helper = ast.ClassDef(
+            name=helper_name,
+            bases=[],
+            keywords=[],
+            body=list(nested_classes),
+            decorator_list=[],
+            type_params=[],
+        )
+        helpers.append(helper)
+        owner_class.bases.append(ast.Name(id=helper_name, ctx=ast.Load()))
+        for nested in nested_classes:
+            replacements[f"{module}.{owner_name}.{nested.name}"] = ast.Attribute(
+                value=ast.Name(id=helper_name, ctx=ast.Load()),
+                attr=nested.name,
+                ctx=ast.Load(),
+            )
+    return replacements, helpers
+
+
+def _rewrite_hoisted_role_bases(
+    tree: ast.Module,
+    module: str,
+    class_names: frozenset[str],
+    replacements: dict[str, ast.expr],
+) -> None:
+    """Redirect bases that named moved nested roles to the inherited helper declaration."""
+    for entry in _classes(tree.body, module):
+        rewritten: list[ast.expr] = []
+        for base in entry.node.bases:
+            qualified = _local_projected_class_name(base, module, class_names)
+            replacement = replacements.get(qualified) if qualified is not None else None
+            if replacement is None:
+                rewritten.append(base)
+            elif isinstance(base, ast.Subscript):
+                rewritten.append(ast.Subscript(value=replacement, slice=base.slice, ctx=ast.Load()))
+            else:
+                rewritten.append(replacement)
+        entry.node.bases = rewritten
+
+
+def _insert_static_role_helpers(tree: ast.Module, helpers: list[ast.ClassDef]) -> None:
+    """Insert hoisted role helpers immediately before the generated class declarations."""
+    insertion = next(
+        (index for index, statement in enumerate(tree.body) if isinstance(statement, ast.ClassDef)),
+        len(tree.body),
+    )
+    tree.body[insertion:insertion] = helpers
+
+
 def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> None:
     """Hoist nested classes whose provider ancestry is lexically cyclic.
 
@@ -2294,121 +2445,15 @@ def _hoist_lexically_cyclic_nested_classes(tree: ast.Module, module: str) -> Non
     classes = {entry.name: entry.node for entry in _classes(tree.body, module)}
     if not classes:
         return
-
     top_level = {f"{module}.{statement.name}": statement for statement in tree.body if isinstance(statement, ast.ClassDef)}
-
-    def base_name(expression: ast.expr) -> str | None:
-        while isinstance(expression, ast.Subscript):
-            expression = expression.value
-        parts: list[str] = []
-        while isinstance(expression, ast.Attribute):
-            parts.append(expression.attr)
-            expression = expression.value
-        if not isinstance(expression, ast.Name):
-            return None
-        parts.append(expression.id)
-        name = ".".join(reversed(parts))
-        if name in classes:
-            return name
-        local = f"{module}.{name}"
-        return local if local in classes else None
-
-    dependencies: dict[str, set[str]] = {name: set() for name in classes}
-    for name, node in classes.items():
-        for base in node.bases:
-            dependency = base_name(base)
-            if dependency is not None:
-                dependencies[name].add(dependency)
-        relative = name.removeprefix(f"{module}.")
-        if "." in relative:
-            lexical_owner_name = f"{module}.{relative.split('.', 1)[0]}"
-            if lexical_owner_name in top_level:
-                dependencies[name].add(lexical_owner_name)
-
-    def reaches(start: str, target: str) -> bool:
-        frontier = list(dependencies[start])
-        seen: set[str] = set()
-        while frontier:
-            current = frontier.pop()
-            if current == target:
-                return True
-            if current in seen:
-                continue
-            seen.add(current)
-            frontier.extend(dependencies[current] - seen)
-        return False
-
-    cyclic = {name for name in classes if reaches(name, name)}
-    owners: dict[str, list[ast.ClassDef]] = {}
-    for name in cyclic:
-        relative = name.removeprefix(f"{module}.")
-        if relative.count(".") != 1:
-            continue
-        owner_name, nested_name = relative.split(".")
-        owner_class = top_level.get(f"{module}.{owner_name}")
-        if owner_class is None:
-            continue
-        nested = next(
-            (statement for statement in owner_class.body if isinstance(statement, ast.ClassDef) and statement.name == nested_name),
-            None,
-        )
-        if nested is not None:
-            _list_bucket(owners, owner_name).append(nested)
-
+    dependencies = _lexical_class_dependencies(classes, top_level, module)
+    owners = _cyclic_nested_role_owners(classes, top_level, dependencies, module)
     if not owners:
         return
-
-    replacements: dict[str, ast.expr] = {}
-    helpers: list[ast.ClassDef] = []
-    for owner_name, nested_classes in sorted(owners.items()):
-        owner_class = top_level[f"{module}.{owner_name}"]
-        nested_names = {nested.name for nested in nested_classes}
-        owner_class.body[:] = [statement for statement in owner_class.body if not (isinstance(statement, ast.ClassDef) and statement.name in nested_names)]
-        helper_name = f"_StaticRoles_{owner_name}"
-        helper_body: list[ast.stmt] = []
-        helper_body.extend(nested_classes)
-        helper = ast.ClassDef(
-            name=helper_name,
-            bases=[],
-            keywords=[],
-            body=helper_body,
-            decorator_list=[],
-            type_params=[],
-        )
-        helpers.append(helper)
-        owner_class.bases.append(ast.Name(id=helper_name, ctx=ast.Load()))
-        for nested in nested_classes:
-            replacements[f"{module}.{owner_name}.{nested.name}"] = ast.Attribute(
-                value=ast.Name(id=helper_name, ctx=ast.Load()),
-                attr=nested.name,
-                ctx=ast.Load(),
-            )
-
-    for entry in _classes(tree.body, module):
-        rewritten: list[ast.expr] = []
-        for base in entry.node.bases:
-            qualified_base_name = base_name(base)
-            replacement = replacements.get(qualified_base_name) if qualified_base_name is not None else None
-            if replacement is None:
-                rewritten.append(base)
-                continue
-            if isinstance(base, ast.Subscript):
-                rewritten.append(
-                    ast.Subscript(
-                        value=replacement,
-                        slice=base.slice,
-                        ctx=ast.Load(),
-                    )
-                )
-            else:
-                rewritten.append(replacement)
-        entry.node.bases = rewritten
-
-    insertion = next(
-        (index for index, statement in enumerate(tree.body) if isinstance(statement, ast.ClassDef)),
-        len(tree.body),
-    )
-    tree.body[insertion:insertion] = helpers
+    class_names = frozenset(classes)
+    replacements, helpers = _hoist_cyclic_role_owners(owners, top_level, module)
+    _rewrite_hoisted_role_bases(tree, module, class_names, replacements)
+    _insert_static_role_helpers(tree, helpers)
 
 
 class _QualifiedClass:

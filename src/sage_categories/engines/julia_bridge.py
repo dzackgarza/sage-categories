@@ -28,15 +28,10 @@ def _cache_root() -> Path:
     return Path(os.environ["XDG_CACHE_HOME"]) if "XDG_CACHE_HOME" in os.environ else Path.home() / ".cache"
 
 
-def _catlab_project_directory() -> Path:
-    """The JuliaPkg project dedicated to the pinned Catlab/GATlab runtime."""
-    return _cache_root() / "sage-categories" / "catlab-juliapkg"
-
-
 @cache
 def _main() -> Any:
     if "PYTHON_JULIAPKG_PROJECT" not in os.environ:
-        project = _catlab_project_directory()
+        project = _cache_root() / "sage-categories" / "catlab-juliapkg"
         project.mkdir(parents=True, exist_ok=True)
         os.environ["PYTHON_JULIAPKG_PROJECT"] = str(project)
     juliacall = import_module("juliacall")

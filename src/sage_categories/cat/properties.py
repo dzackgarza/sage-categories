@@ -387,6 +387,64 @@ def _declared_inclusion(subcategory: Category, ambient: Category) -> Functor:
     return declared
 
 
+def _inverse_image_mediator(realization: Category, shape: Category, cone_apex, Fun):
+    """Build the pullback mediator that refines a candidate cone into ``realization``."""
+
+    def mediator(candidate_cone):
+        source = cone_apex(candidate_cone)
+        to_source = candidate_cone.component(shape(0))
+
+        def on_object(value):
+            image = to_source.on_object(value)
+            refine(image, realization)
+            return image
+
+        def on_morphism(morphism):
+            image = to_source.on_morphism(morphism)
+            refine(image, realization.morphism_category(1))
+            return image
+
+        return Fun(source, realization)(on_object, on_morphism)
+
+    return mediator
+
+
+def _retain_inverse_image_comparisons(
+    functor: Functor,
+    target_subcategory: Category,
+    diagram: Functor,
+    cat: Category,
+    cospan_diagram,
+    pullbacks: Category,
+) -> None:
+    """Propagate retained pullback comparisons along declared target containments."""
+    containments = (
+        *target_subcategory.selected_functors(),
+        *pullbacks._pullback_comparisons_from(target_subcategory),
+    )
+    for containment in containments:
+        if not _functors().declares_subcategory(containment):
+            continue
+        if containment.codomain() is functor.codomain():
+            continue
+        target_key = (functor, containment.codomain(), cat)
+        target_inclusion = next(
+            (
+                candidate
+                for candidate in containment.codomain().selected_functors()
+                if candidate.codomain() is functor.codomain() and _functors().declares_subcategory(candidate)
+            ),
+            None,
+        )
+        if target_inclusion is None:
+            continue
+        target_diagram = cospan_diagram(cat, functor, target_inclusion)
+        if target_key in _inverse_images:
+            assert pullbacks.has_construction(target_diagram)
+            assert pullbacks.chosen_object(target_diagram) is _inverse_images[target_key]
+        pullbacks._retain_pullback_comparison(diagram, target_diagram, containment)
+
+
 def retain_inverse_image(
     functor: Functor,
     target_subcategory: Category,
@@ -415,54 +473,15 @@ def retain_inverse_image(
     }
     limiting_cone = cone(diagram, realization, lambda vertex: projections[shape.label(vertex)])
 
-    def mediator(candidate_cone):
-        source = cone_apex(candidate_cone)
-        to_source = candidate_cone.component(shape(0))
-
-        def on_object(value):
-            image = to_source.on_object(value)
-            refine(image, realization)
-            return image
-
-        def on_morphism(morphism):
-            image = to_source.on_morphism(morphism)
-            refine(image, realization.morphism_category(1))
-            return image
-
-        return Fun(source, realization)(on_object, on_morphism)
-
     pullbacks = cat.Pullbacks()
-    pullbacks.with_universal_data(diagram, realization, limiting_cone, mediator)
-    pullbacks._apply_pullback_comparisons_at(diagram)
-    containments = (
-        *target_subcategory.selected_functors(),
-        *pullbacks._pullback_comparisons_from(target_subcategory),
+    pullbacks.with_universal_data(
+        diagram,
+        realization,
+        limiting_cone,
+        _inverse_image_mediator(realization, shape, cone_apex, Fun),
     )
-    for containment in containments:
-        if not _functors().declares_subcategory(containment):
-            continue
-        if containment.codomain() is functor.codomain():
-            continue
-        target_key = (functor, containment.codomain(), cat)
-        target_inclusion = next(
-            (
-                candidate
-                for candidate in containment.codomain().selected_functors()
-                if candidate.codomain() is functor.codomain() and _functors().declares_subcategory(candidate)
-            ),
-            None,
-        )
-        if target_inclusion is None:
-            continue
-        target_diagram = cospan_diagram(
-            cat,
-            functor,
-            target_inclusion,
-        )
-        if target_key in _inverse_images:
-            assert pullbacks.has_construction(target_diagram)
-            assert pullbacks.chosen_object(target_diagram) is _inverse_images[target_key]
-        pullbacks._retain_pullback_comparison(diagram, target_diagram, containment)
+    pullbacks._apply_pullback_comparisons_at(diagram)
+    _retain_inverse_image_comparisons(functor, target_subcategory, diagram, cat, cospan_diagram, pullbacks)
 
 
 class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):

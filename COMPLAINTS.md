@@ -1552,9 +1552,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-construction-order-identity-keys`. Use `identity_key(category)` for declaration and dependency nodes throughout the completion pass.
 
-
 ## The static projector converted AST-node identity to integers unnecessarily
 
-- **Evidence and impact:** `kernel/stub_generator.py` tracked projected aliases as `id(statement)` integers and used dictionaries keyed by `id(statement)` merely to deduplicate repeated declaration references. Python AST nodes already have object-identity hashing/equality, so the integer layer adds bookkeeping and obscures the actual retained object.
+- **Evidence and impact:** `kernel/stub_generator.py` tracked projected aliases as `id(statement)` integers and used dictionaries keyed by `id(statement)` merely to deduplicate repeated declaration references.
+  Python AST nodes already have object-identity hashing/equality, so the integer layer adds bookkeeping and obscures the actual retained object.
 
 - **Repair link and acceptance:** `bloat-stub-ast-identity-ids`. Store projected `ast.Assign` nodes directly and deduplicate declaration statements with ordered dictionary keys on the nodes themselves.
+
+
+## DisCoPy path tokens exposed Python object ids as names
+
+- **Evidence and impact:** `evaluate_path()` named temporary DisCoPy objects with `str(id(value))` and reconstructed owned values through a reverse dictionary keyed by those memory-derived strings. DisCoPy needs only stable equality of tokens within one interpretation, not Python addresses; the id spelling leaks an implementation detail and duplicates the identity map already used for semantic objects.
+
+- **Repair link and acceptance:** `bloat-discopy-path-token-ids`. Allocate sequential local object tokens through `MonoDict` and retain the reverse token map needed by the DisCoPy functor.

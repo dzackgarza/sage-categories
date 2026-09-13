@@ -248,22 +248,25 @@ def evaluate_path(
     targets = tuple(arrow.codomain() for arrow in arrows)
     chain = (domain, *targets)
     assert chain[-1] is codomain
+    tokens: MonoDict = MonoDict()
+    token_values: dict[str, object] = {}
+
+    def token(value: object) -> str:
+        if value not in tokens:
+            name = f"o{len(token_values)}"
+            tokens[value] = name
+            token_values[name] = value
+        return tokens[value]
+
     boxes = tuple(
         cat.Box(
             f"a{index}",
-            cat.Ob(str(id(source))),
-            cat.Ob(str(id(target))),
+            cat.Ob(token(source)),
+            cat.Ob(token(target)),
             data=arrow,
         )
         for index, (source, target, arrow) in enumerate(zip(chain, chain[1:], arrows, strict=True))
     )
-    token_values = {
-        str(id(value)): value
-        for value in (
-            *chain,
-            *(arrow.domain() for arrow in arrows),
-        )
-    }
     functor = cat.Functor(
         lambda token: ob(token_values[token.name]),
         lambda box: ArrowValue(ob(box.data.domain()), ob(box.data.codomain()), box.data),

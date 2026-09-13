@@ -123,9 +123,13 @@ def parallel_pair(first: MorphismCategory.ObjectType, second: MorphismCategory.O
 type LimitChoice = Callable[[Functor], LimitConesCategory.ObjectType]
 
 
-def _basis_data(diagram: Functor, choose: LimitChoice, indexing: DiagramPresentation) -> LimitConesCategory.ObjectType:
-    objects = choose(diagram * indexing.vertices)
-    targets = choose(diagram * indexing.vertices * indexing.target)
+def _basis_parallel_maps(
+    diagram: Functor,
+    indexing: DiagramPresentation,
+    objects: LimitConesCategory.ObjectType,
+    targets: LimitConesCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The source/target maps whose equalizer imposes the diagram equations."""
     source_map = targets.lift(
         cones(targets.diagram())(
             cone(
@@ -144,45 +148,73 @@ def _basis_data(diagram: Functor, choose: LimitChoice, indexing: DiagramPresenta
             )
         )
     )
+    return source_map, target_map
+
+
+def _basis_index(
+    diagram: Functor,
+    indexing: DiagramPresentation,
+    vertex: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    """The indexing-object representing one vertex of the original diagram."""
+    indices = indexing.vertices.domain()
+    if isinstance(indices, FinitePresentedCategory):
+        return next(indices(label) for label in indices.labels() if ask(indexing.vertices.on_object(indices(label)) == vertex) is True)
+    return indices(diagram.domain().object_point(vertex))
+
+
+def _basis_lift(
+    candidate: ConeCategory.ObjectType,
+    *,
+    indexing: DiagramPresentation,
+    objects: LimitConesCategory.ObjectType,
+    equalizer: LimitConesCategory.ObjectType,
+    source_map: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Factor a candidate cone through the product/equalizer basis presentation."""
+    into_product = objects.lift(
+        cones(objects.diagram())(
+            cone(
+                objects.diagram(),
+                candidate.apex(),
+                lambda index: candidate.leg(indexing.vertices.on_object(index)),
+            )
+        )
+    )
+    maps = (into_product, source_map * into_product)
+    return equalizer.lift(
+        cones(equalizer.diagram())(
+            cone(
+                equalizer.diagram(),
+                candidate.apex(),
+                lambda vertex: maps[equalizer.diagram().domain().label(vertex)],
+            )
+        )
+    )
+
+
+def _basis_data(diagram: Functor, choose: LimitChoice, indexing: DiagramPresentation) -> LimitConesCategory.ObjectType:
+    objects = choose(diagram * indexing.vertices)
+    targets = choose(diagram * indexing.vertices * indexing.target)
+    source_map, target_map = _basis_parallel_maps(diagram, indexing, objects, targets)
     equalizer = choose(parallel_pair(source_map, target_map))
     inclusion = equalizer.leg(0)
-
-    def index_of(
-        vertex: CategoryOfCategories.ElementType,
-    ) -> CategoryOfCategories.ElementType:
-        indices = indexing.vertices.domain()
-        if isinstance(indices, FinitePresentedCategory):
-            return next(indices(label) for label in indices.labels() if ask(indexing.vertices.on_object(indices(label)) == vertex) is True)
-        return indices(diagram.domain().object_point(vertex))
 
     presentation = cone(
         diagram,
         equalizer.apex(),
-        lambda vertex: objects.leg(index_of(vertex)) * inclusion,
+        lambda vertex: objects.leg(_basis_index(diagram, indexing, vertex)) * inclusion,
     )
-
-    def lift(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        into_product = objects.lift(
-            cones(objects.diagram())(
-                cone(
-                    objects.diagram(),
-                    candidate.apex(),
-                    lambda index: candidate.leg(indexing.vertices.on_object(index)),
-                )
-            )
-        )
-        maps = (into_product, source_map * into_product)
-        return equalizer.lift(
-            cones(equalizer.diagram())(
-                cone(
-                    equalizer.diagram(),
-                    candidate.apex(),
-                    lambda vertex: maps[equalizer.diagram().domain().label(vertex)],
-                )
-            )
-        )
-
-    return limit_cones(diagram).with_universal_data(presentation, lift)
+    return limit_cones(diagram).with_universal_data(
+        presentation,
+        lambda candidate: _basis_lift(
+            candidate,
+            indexing=indexing,
+            objects=objects,
+            equalizer=equalizer,
+            source_map=source_map,
+        ),
+    )
 
 
 def limit_from_products_equalizers(

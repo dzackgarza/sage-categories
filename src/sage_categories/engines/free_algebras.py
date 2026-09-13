@@ -30,10 +30,8 @@ def _native_word(algebra, word: Word):
 
 
 def _word(native_word) -> Word:
-    positions: list[int] = []
-    for position, exponent in native_word._element_list:
-        positions.extend([int(position)] * int(exponent))
-    return tuple(positions)
+    generators = {generator: position for position, generator in enumerate(native_word.parent().gens())}
+    return tuple(generators[generator] for generator in native_word.to_list())
 
 
 def _element(algebra, terms: Terms):

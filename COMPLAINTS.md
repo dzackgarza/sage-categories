@@ -1573,9 +1573,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-local-field-rational-valuation`. Delegate the two nonzero integer multiplicities to SymPy and keep only the field-specific difference and the existing valuation of zero.
 
-
 ## Additive tensors hand-rolled generic integer scalar multiplication
 
-- **Evidence and impact:** `algebra/abelian.py::_integer_multiple()` implemented its own recursive negative case and binary double-and-add loop over generic additive-group points. Sage already supplies `sage.groups.generic.multiple`, including negative exponents and the same binary algorithm, and this leaf adds no distinct mathematics by owning another implementation.
+- **Evidence and impact:** `algebra/abelian.py::_integer_multiple()` implemented its own recursive negative case and binary double-and-add loop over generic additive-group points.
+  Sage already supplies `sage.groups.generic.multiple`, including negative exponents and the same binary algorithm, and this leaf adds no distinct mathematics by owning another implementation.
 
 - **Repair link and acceptance:** `bloat-additive-integer-multiple`. Delegate to Sage `multiple` with the owned group zero, unary negation, and addition operation.
+
+
+## Free-algebra serialization inspected Sage FreeMonoid private state
+
+- **Evidence and impact:** `engines/free_algebras.py::_word()` decoded native free-monoid words through the private `_element_list` field and reimplemented exponent expansion. Sage exposes `FreeMonoidElement.to_list()` as the public conversion to its generator word, so this boundary depended on an internal representation without need.
+
+- **Repair link and acceptance:** `bloat-free-algebra-word-serialization`. Decode through `to_list()` and the parent's public generator tuple, preserving the repository's tuple-of-generator-positions serialization.

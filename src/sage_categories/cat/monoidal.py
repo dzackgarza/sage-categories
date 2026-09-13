@@ -81,6 +81,16 @@ def tensor_morphism(tensor: Functor, first: MorphismCategory.ObjectType, second:
     )
 
 
+def _identity_only_morphism[Morphism](
+    source: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    constructor: Callable[..., Morphism],
+) -> Morphism:
+    """Construct the unique arrow of a discrete category of supplied structures."""
+    assert source is target, "a morphism in this discrete category is an identity"
+    return constructor(domain=source, codomain=target)
+
+
 def _word_interpretation(
     monoidal: MonoidalStructuresCategory.ObjectType,
     word: tuple[CategoryOfCategories.ElementType, ...],
@@ -332,8 +342,7 @@ class MonoidalStructuresCategory[
         return self.ObjectType(_MonoidalData(tensor, unit, associator, left_unitor, right_unitor))
 
     def construct_morphism(self, source: MonoidalStructuresCategory.ObjectType, target: MonoidalStructuresCategory.ObjectType) -> MonoidalStructuresCategory.MorphismType:
-        assert source is target, "a morphism in this discrete category is an identity"
-        return self.MorphismType(domain=source, codomain=target)
+        return _identity_only_morphism(source, target, self.MorphismType)
 
 
 @cached_function(key=identity_key)
@@ -622,8 +631,7 @@ class ActionsCategory[
         return self.ObjectType(_ActionData(action, associator, unitor))
 
     def construct_morphism(self, source: ActionsCategory.ObjectType, target: ActionsCategory.ObjectType) -> ActionsCategory.MorphismType:
-        assert source is target, "a morphism in this discrete category is an identity"
-        return self.MorphismType(domain=source, codomain=target)
+        return _identity_only_morphism(source, target, self.MorphismType)
 
 
 @cached_function(key=identity_key)

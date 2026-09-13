@@ -922,3 +922,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/stub_generator.py` imported `mypy.stubgen.main` independently in the public projection pass and the private package-internal refresh pass. The import should stay delayed so importing `sage_categories` does not require the development-only mypy runtime, but both projection phases cross the same tool boundary.
 
 - **Repair link and acceptance:** `bloat-stubgen-runtime-boundary`. Put the delayed import behind `_stubgen_main()` and let both projection phases invoke the same boundary without making mypy a package-import dependency.
+
+## Monoidal choices repeated the same discrete-category morphism constructor
+
+- **Evidence and impact:** `MonoidalStructuresCategory.construct_morphism` and `ActionsCategory.construct_morphism` contained byte-for-byte copies of the same identity-only arrow rule. These are both discrete categories of supplied coherence data, so duplicating the assertion and constructor obscured the fact that they share one categorical admission rule.
+
+- **Repair link and acceptance:** `bloat-monoidal-discrete-morphism`. Put the identity-only arrow construction behind `_identity_only_morphism()` and let both supplied-structure categories retain only their distinct object construction.

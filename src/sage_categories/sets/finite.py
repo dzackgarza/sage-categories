@@ -51,8 +51,8 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.cat.shapes import realize_discrete_object
 from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
-from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, cached_function, cached_method
+from sage_categories.kernel.retention import identity_key, identity_positions
+from sage_categories.kernel.sage_runtime import cached_function, cached_method
 from sage_categories.kernel.type_aliases import ContainmentInput
 
 type Map = Callable[[Hashable], Hashable]
@@ -863,9 +863,7 @@ class SetsCategory(Category[[Map], []]):
         """
         factors = tuple(diagram.on_object(vertex) for vertex in vertices)
         apex = self.from_membership(_ProductRule(factors))
-        position: MonoDict = MonoDict()
-        for index, vertex in enumerate(vertices):
-            position[vertex] = index
+        position = identity_positions(vertices)
 
         def leg(
             vertex: CategoryOfCategories.ElementType,

@@ -2014,3 +2014,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/cells.py` stored `_cell_owners[value] = proposed_owner` on the first native-cell operation so later refinement would reuse that first owner. The owner is not independent retained data: the supplied category already states which category owns construction through `construction_owner()`, and a cell's higher `Mor` levels peel to that same root category. The registry therefore duplicated category ownership solely to defend against later placement changes.
 
 - **Repair link and acceptance:** `bloat-cell-owner-registry`. Normalize every supplied cell owner by peeling the `MorphismCategory` tower and taking the public `construction_owner()`, then delete `_cell_owners` and `_cell_owner`; native state remains keyed only by that canonical construction owner.
+
+## Represented products kept another local identity-position loop
+
+- **Evidence and impact:** `SetsCategory._represented_product()` still built a local `MonoDict` by enumerating its retained vertices even after the same identity-indexing mechanism was centralized in `kernel.retention.identity_positions`. This left represented products with a fourth copy of a repository-level retention primitive and an otherwise unnecessary direct `MonoDict` dependency.
+
+- **Repair link and acceptance:** `bloat-represented-product-shared-position-helper`. Use `identity_positions(vertices)` for represented-product projection lookup, drop the local `MonoDict` import, and preserve the exact retained vertex-to-component positions.

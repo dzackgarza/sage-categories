@@ -339,7 +339,6 @@ class CategoryDeclaration[
         self._narrowings: dict[tuple[int, ...], Category[MorphismData, TwoMorphismData]] = {}
         self._identities: MonoDict = MonoDict()
         self._inverses: MonoDict = MonoDict()
-        self._points: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
         self._elements: MonoDict = MonoDict()
         self._composites: TripleDict = TripleDict(weak_values=False)
@@ -856,6 +855,7 @@ class CategoryDeclaration[
         """
         raise AssertionError(f"{self!r} declares no morphism from its terminal object selecting a point")
 
+    @cached_method(key=lambda self, member_object: identity_key(member_object))
     def point_functor(self, member_object: ObjectRole) -> Functor:
         """The point ``* -> self`` selecting the object ``member_object``.
 
@@ -872,16 +872,15 @@ class CategoryDeclaration[
         """
         Fun = _functors()
 
-        if member_object not in self._points:
-            # The identity is the morphism action's own result, computed when the action
-            # runs.  A point selected by a class under construction is the arrow that
-            # places its object, so the arrow exists before the object is an object of
-            # ``self`` (D154, D169).
-            self._points[member_object] = Fun(Cat().Terminal(), self).Monomorphisms()(
-                lambda vertex: member_object,
-                lambda path: self.morphism_category(1)(member_object, member_object).one(),
-            )
-        return self._points[member_object]
+        # The identity is the morphism action's own result, computed when the action
+        # runs.  A point selected by a class under construction is the arrow that places
+        # its object, so the arrow exists before the object is an object of ``self``
+        # (D154, D169).  The identity-keyed Sage method cache retains the one point
+        # functor for that exact object without invoking proposition-valued equality.
+        return Fun(Cat().Terminal(), self).Monomorphisms()(
+            lambda vertex: member_object,
+            lambda path: self.morphism_category(1)(member_object, member_object).one(),
+        )
 
     def Point(self) -> Functor:
         """The point functor ``* -> self`` selecting the object under construction (D154).

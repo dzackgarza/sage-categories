@@ -1822,3 +1822,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `CategoryOfCategories.Point(member)` maintained `_point_categories: MonoDict` and open-coded lookup/construct/store around the one-object category determined solely by `member`. Object identity is the correct key, but Sage `cached_method` already supports the repository `identity_key` contract and removes the extra registry protocol.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Move the member case to an identity-keyed cached `_point_category(member)` helper and remove `_point_categories`; the nullary `Point()` declaration case remains unchanged.
+
+## Category point functors hand-rolled a parameterized identity cache
+
+- **Evidence and impact:** `Category.point_functor(member_object)` maintained `_points: MonoDict` and open-coded lookup/construct/store for a result determined only by the exact member-object identity. The cache is necessary because point functors are selected during object construction before placement completes, but the table implementation is not: Sage `cached_method` already accepts the repository `identity_key` policy and preserves one result per exact argument without invoking proposition-valued equality.
+
+- **Repair link and acceptance:** `bloat-point-functor-cache`. Make `point_functor` an identity-keyed Sage cached method, delete `_points`, and preserve the existing runtime consumer that repeated point selection returns the same functor while distinct objects receive distinct point functors.

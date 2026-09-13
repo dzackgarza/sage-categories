@@ -70,7 +70,7 @@ from sympy import Q, false, true
 from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.cones import ConeCategory, cocone, cone
+from sage_categories.cat.cones import ConeCategory, cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.limit_basis import parallel_pair
@@ -482,8 +482,6 @@ def indexed_free_abelian_coproduct(
     selected = cocone(diagram, apex, leg)
 
     def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        from sage_categories.cat.cones import cocone_apex
-
         target = cocone_apex(candidate)
 
         def component(index: Hashable) -> MorphismCategory.ObjectType:
@@ -558,8 +556,6 @@ def _biproduct(
 
     def product_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         components = tuple(candidate.component(shape(index)) for index in (0, 1))
-        from sage_categories.cat.cones import cone_apex
-
         source = cone_apex(candidate)
         return direct_sum_product_lift((first, second), apex, source, components)
 

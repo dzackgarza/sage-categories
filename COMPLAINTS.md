@@ -928,3 +928,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `MonoidalStructuresCategory.construct_morphism` and `ActionsCategory.construct_morphism` contained byte-for-byte copies of the same identity-only arrow rule. These are both discrete categories of supplied coherence data, so duplicating the assertion and constructor obscured the fact that they share one categorical admission rule.
 
 - **Repair link and acceptance:** `bloat-monoidal-discrete-morphism`. Put the identity-only arrow construction behind `_identity_only_morphism()` and let both supplied-structure categories retain only their distinct object construction.
+
+## Additive universal maps re-imported cone accessors already owned by the module
+
+- **Evidence and impact:** `algebra/abelian.py` already imports its cone/cocone constructors from `cat.cones`, but the indexed coproduct mediator and biproduct product lift re-imported `cocone_apex` and `cone_apex` locally. Those delayed imports protect no cycle because the same owner is already bound at module import time.
+
+- **Repair link and acceptance:** `bloat-additive-cone-accessors`. Bind `cone_apex` and `cocone_apex` beside the existing cone imports and remove both function-local re-imports.

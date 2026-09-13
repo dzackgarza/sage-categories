@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Callable, Iterable
-from functools import partial
+from functools import cache, partial
 from types import ModuleType
 from typing import TYPE_CHECKING
 
@@ -192,25 +192,21 @@ class AppliedQuery:
         return f"{self._query}({', '.join(map(repr, self._arguments))})"
 
 
-_query_comparisons: dict[str, Predicate] = {}
-
-
+@cache
 def _query_comparison(operation: str) -> Predicate:
     """Defer a comparison to the query's owned answer and its mathematical operation."""
-    if operation not in _query_comparisons:
-        predicate = owned_predicate(f"query_{operation}")
-        compare = getattr(operator, operation)
+    predicate = owned_predicate(f"query_{operation}")
+    compare = getattr(operator, operation)
 
-        def evaluate(left: AppliedQuery, right: CategoryOfCategories.ElementType, assumptions: Proposition) -> PredicateDecision:
-            answer = ask_query(left)
-            if answer is Unknown:
-                return None
-            assert right in left.query().result_category()
-            return sympy_ask(compare(answer, right), assumptions)
+    def evaluate(left: AppliedQuery, right: CategoryOfCategories.ElementType, assumptions: Proposition) -> PredicateDecision:
+        answer = ask_query(left)
+        if answer is Unknown:
+            return None
+        assert right in left.query().result_category()
+        return sympy_ask(compare(answer, right), assumptions)
 
-        register_handler(predicate, evaluate)
-        _query_comparisons[operation] = predicate
-    return _query_comparisons[operation]
+    register_handler(predicate, evaluate)
+    return predicate
 
 
 def conjunction(parts: Iterable[bool | Proposition]) -> Proposition:

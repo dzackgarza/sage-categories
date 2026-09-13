@@ -705,21 +705,24 @@ class SetsCategory(Category[[Map], []]):
         vertices = _finite_category_engine().finite_objects(shape)
         if vertices is Unknown:
             return Unknown
-        enumerations: dict[CategoryOfCategories.ElementType, MorphismCategory.ObjectType] = {}
         for vertex in vertices:
-            enumeration = self.chosen_enumeration(diagram.on_object(vertex))
-            if enumeration is Unknown:
+            if self.chosen_enumeration(diagram.on_object(vertex)) is Unknown:
                 return Unknown
-            enumerations[vertex] = enumeration
-        indices = Fun(shape, self).from_object_rule(lambda vertex: enumerations[vertex].domain())
+
+        def enumeration_at(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            enumeration = self.chosen_enumeration(diagram.on_object(vertex))
+            assert enumeration is not Unknown
+            return enumeration
+
+        indices = Fun(shape, self).from_object_rule(lambda vertex: enumeration_at(vertex).domain())
         family = self.Limits(shape)
         limit = family.limit_functor()
         index_product = limit.on_object(indices)
         index_enumeration = self._finite_enumeration(index_product)
         if index_enumeration is Unknown:
             return Unknown
-        forward = Mor(Fun(shape, self))(indices, diagram)(lambda vertex: enumerations[vertex])
-        backward = Mor(Fun(shape, self))(diagram, indices)(lambda vertex: enumerations[vertex].inverse())
+        forward = Mor(Fun(shape, self))(indices, diagram)(enumeration_at)
+        backward = Mor(Fun(shape, self))(diagram, indices)(lambda vertex: enumeration_at(vertex).inverse())
         enumeration = limit.on_morphism(forward) * index_enumeration
         inverse = index_enumeration.inverse() * limit.on_morphism(backward)
         self.retain_inverses(enumeration, inverse)

@@ -118,6 +118,16 @@ def _construction_membership_proposition(
     return member(candidate, family)
 
 
+def _construction_shape(family: Category) -> Category:
+    """Return the retained diagram shape of one chosen construction family."""
+    return family._shape
+
+
+def _construction_diagrams(family: Category) -> Category:
+    """Return the functor category of diagrams accepted by one construction family."""
+    return _diagram_category(family.ambient(), _construction_shape(family))
+
+
 def _diagram_category(ambient: Category, shape: Category) -> Category:
     """The owned category of ``shape``-diagrams landing in ``ambient``."""
     return Fun(shape, ambient)
@@ -476,10 +486,10 @@ class LimitsCategory(ApexCategory):
             ambient.Products().retain_full_image(self)
 
     def shape(self) -> Category:
-        return self._shape
+        return _construction_shape(self)
 
     def diagrams(self) -> Category:
-        return _diagram_category(self.ambient(), self._shape)
+        return _construction_diagrams(self)
 
     def __call__(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         """``C.Limits(I)(diagram)``: the chosen limit, through ``C.limit_construction(I)``.
@@ -797,10 +807,10 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         return _construction_membership_proposition(self, candidate)
 
     def shape(self) -> Category:
-        return self._shape
+        return _construction_shape(self)
 
     def diagrams(self) -> Category:
-        return _diagram_category(self.ambient(), self._shape)
+        return _construction_diagrams(self)
 
     def accepts(self, diagram: Functor) -> None:
         assert diagram in self.universe().morphism_category(1) and diagram.domain() is self._shape, f"{diagram!r} is not a diagram of shape {self._shape!r}"

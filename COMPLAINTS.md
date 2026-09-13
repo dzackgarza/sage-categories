@@ -1342,9 +1342,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-shape-point-object-surface`. Put the shared object behavior on `_PointShapeObject` and let both nested object roles inherit it.
 
-
 ## Point-indexed shapes repeated point conversion and identity construction
 
-- **Evidence and impact:** `DiscreteCategory` and `ThinCategory` each repeated the same `object_at`, `object_point`, and identity-arrow construction after their shared point payload/object surface had already been consolidated. Those operations depend only on the common point-indexed shape contract; their actual distinction is morphism admission and equality.
+- **Evidence and impact:** `DiscreteCategory` and `ThinCategory` each repeated the same `object_at`, `object_point`, and identity-arrow construction after their shared point payload/object surface had already been consolidated.
+  Those operations depend only on the common point-indexed shape contract; their actual distinction is morphism admission and equality.
 
 - **Repair link and acceptance:** `bloat-shape-point-navigation`. Keep the typed public wrappers but route their implementation through shared point/object and identity helpers.
+
+
+## Limit and colimit families repeated retained shape access
+
+- **Evidence and impact:** `LimitsCategory` and `ColimitsCategory` each repeated the same `shape()` read from `_shape` and the same construction of `Fun(shape, ambient)` for `diagrams()`. Directionality enters only in their universal data and mediator logic, not in these accessors.
+
+- **Repair link and acceptance:** `bloat-construction-shape-accessors`. Share retained-shape and diagram-category helpers while preserving the separate limit/colimit construction paths.

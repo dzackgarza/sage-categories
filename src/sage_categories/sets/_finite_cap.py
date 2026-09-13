@@ -39,9 +39,7 @@ def retain_finite_native_object(
     indexing: tuple[Hashable, ...],
 ):
     """Retain a native finite set without changing ``value``'s public enumeration."""
-    assert len(indexing) == len(value), (
-        f"private finite indexing has {len(indexing)} representatives for a set of size {len(value)}"
-    )
+    assert len(indexing) == len(value), f"private finite indexing has {len(indexing)} representatives for a set of size {len(value)}"
     return _objects.retain(Sets, value, native, FiniteIndexing(indexing))
 
 

@@ -192,14 +192,14 @@ def retained_objects(category: Category) -> tuple[ObjectOfCategory, ...]:
 def retained_values() -> tuple[CategoryPoint, ...]:
     """Every live value with a retained kernel construction input, once by identity."""
     values: list[CategoryPoint] = []
-    seen: set[int] = set()
+    seen: MonoDict = MonoDict()
     for table in (_object_inputs, _element_inputs, _morphism_inputs):
         for item in table.items():
             construction_input = item[1]
             value = construction_input.canonical_image
-            if id(value) in seen:
+            if value in seen:
                 continue
-            seen.add(id(value))
+            seen[value] = True
             values.append(value)
     return tuple(values)
 

@@ -1524,9 +1524,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-sheaf-gluing-phases`. Move cover/local compatibility to `_validate_gluing_family()` and returned-section restriction/uniqueness checks to `_verify_gluing_result()`; leave `RingSheaf.glue()` as the three-step orchestration around the retained gluing rule.
 
-
 ## Limit-basis diagram presentation exposed raw object ids
 
-- **Evidence and impact:** `diagram_presentation()` in `cat/limit_basis.py` mapped retained shape objects to discrete presentation positions through `id(value)` integers and repeated those conversions while constructing generator source/target diagrams. The lookup is identity-based and Sage `MonoDict` already owns that contract.
+- **Evidence and impact:** `diagram_presentation()` in `cat/limit_basis.py` mapped retained shape objects to discrete presentation positions through `id(value)` integers and repeated those conversions while constructing generator source/target diagrams.
+  The lookup is identity-based and Sage `MonoDict` already owns that contract.
 
 - **Repair link and acceptance:** `bloat-limit-basis-position-map`. Store retained object positions directly in `MonoDict` and address them by their owned objects.
+
+
+## Kernel retained-value deduplication used a bare-id set
+
+- **Evidence and impact:** `kernel.construction.retained_values()` deduplicated values encountered across object, element, and morphism input tables by putting `id(value)` integers in a Python set. The surrounding tables already use Sage `MonoDict`; direct identity membership is clearer and retains the exact value whose identity justifies each seen marker.
+
+- **Repair link and acceptance:** `bloat-construction-retained-value-dedup`. Use a local `MonoDict` as the seen table and key it directly by each canonical constructed value.

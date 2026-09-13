@@ -398,66 +398,74 @@ def _mark_projected_generic_aliases(tree: ast.Module, projected_aliases: frozens
     rewrite(tree.body, nested=False)
 
 
+class _PrivateTypeParameterRenamer(ast.NodeTransformer):
+    """Rename references to one scope's projected private type parameters."""
+
+    def __init__(self, names: dict[str, str]) -> None:
+        self._names = names
+
+    def visit_Name(self, node: ast.Name) -> ast.expr:
+        replacement = self._names.get(node.id)
+        if replacement is None:
+            return node
+        return ast.copy_location(ast.Name(id=replacement, ctx=node.ctx), node)
+
+
+def _private_type_parameter_names(parameters: list[ast.type_param]) -> dict[str, str]:
+    """Return the public spellings of private type parameters in one lexical scope."""
+    names = {
+        parameter.name: parameter.name.lstrip("_")
+        for parameter in parameters
+        if parameter.name.startswith("_") and parameter.name.lstrip("_")
+    }
+    assert len(set(names.values())) == len(names), "type-parameter rename collision"
+    return names
+
+
+def _rewrite_private_type_parameters(
+    parameters: list[ast.type_param],
+    renamer: _PrivateTypeParameterRenamer,
+    names: dict[str, str],
+) -> None:
+    """Rename declarations plus bounds/defaults for one private parameter scope."""
+    for parameter in parameters:
+        if parameter.name in names:
+            parameter.name = names[parameter.name]
+        if isinstance(parameter, ast.TypeVar) and parameter.bound is not None:
+            parameter.bound = renamer.visit(parameter.bound)
+        if parameter.default_value is not None:
+            parameter.default_value = renamer.visit(parameter.default_value)
+
+
+def _publicize_private_type_parameter_scope(
+    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
+) -> None:
+    """Rewrite one generic declaration, then recurse into its nested declarations."""
+    names = _private_type_parameter_names(node.type_params)
+    if names:
+        renamer = _PrivateTypeParameterRenamer(names)
+        _rewrite_private_type_parameters(node.type_params, renamer, names)
+        match node:
+            case ast.ClassDef():
+                node.bases = [renamer.visit(base) for base in node.bases]
+                node.keywords = [
+                    ast.keyword(arg=keyword.arg, value=renamer.visit(keyword.value))
+                    for keyword in node.keywords
+                ]
+            case ast.FunctionDef() | ast.AsyncFunctionDef():
+                node.args = renamer.visit(node.args)
+                node.returns = renamer.visit(node.returns) if node.returns is not None else None
+        node.body = [renamer.visit(statement) for statement in node.body]
+    for statement in node.body:
+        if isinstance(statement, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+            _publicize_private_type_parameter_scope(statement)
+
+
 def _publicize_private_type_parameters(tree: ast.Module) -> None:
     """Rename scoped private PEP-695 parameters without changing their meaning."""
-
-    class Renamer(ast.NodeTransformer):
-        def __init__(self, names: dict[str, str]) -> None:
-            self._names = names
-
-        def visit_Name(self, node: ast.Name) -> ast.expr:
-            replacement = self._names.get(node.id)
-            if replacement is None:
-                return node
-            return ast.copy_location(ast.Name(id=replacement, ctx=node.ctx), node)
-
-    def parameter_names(parameters: list[ast.type_param]) -> dict[str, str]:
-        names = {parameter.name: parameter.name.lstrip("_") for parameter in parameters if parameter.name.startswith("_") and parameter.name.lstrip("_")}
-        assert len(set(names.values())) == len(names), "type-parameter rename collision"
-        return names
-
-    def rewrite_parameters(parameters: list[ast.type_param], renamer: Renamer, names: dict[str, str]) -> None:
-        for parameter in parameters:
-            if parameter.name in names:
-                parameter.name = names[parameter.name]
-            if isinstance(parameter, ast.TypeVar) and parameter.bound is not None:
-                parameter.bound = renamer.visit(parameter.bound)
-            if parameter.default_value is not None:
-                parameter.default_value = renamer.visit(parameter.default_value)
-
-    def rewrite_function(node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        names = parameter_names(node.type_params)
-        if names:
-            renamer = Renamer(names)
-            rewrite_parameters(node.type_params, renamer, names)
-            node.args = renamer.visit(node.args)
-            node.returns = renamer.visit(node.returns) if node.returns is not None else None
-            node.body = [renamer.visit(statement) for statement in node.body]
-        for statement in node.body:
-            if isinstance(statement, ast.ClassDef):
-                rewrite_class(statement)
-            elif isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
-                rewrite_function(statement)
-
-    def rewrite_class(node: ast.ClassDef) -> None:
-        names = parameter_names(node.type_params)
-        if names:
-            renamer = Renamer(names)
-            rewrite_parameters(node.type_params, renamer, names)
-            node.bases = [renamer.visit(base) for base in node.bases]
-            node.keywords = [ast.keyword(arg=keyword.arg, value=renamer.visit(keyword.value)) for keyword in node.keywords]
-            node.body = [renamer.visit(statement) for statement in node.body]
-        for statement in node.body:
-            if isinstance(statement, ast.ClassDef):
-                rewrite_class(statement)
-            elif isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
-                rewrite_function(statement)
-
     for statement in tree.body:
-        if isinstance(statement, ast.ClassDef):
-            rewrite_class(statement)
-        elif isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
-            rewrite_function(statement)
+        if isinstance(statement, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+            _publicize_private_type_parameter_scope(statement)
 
 
 def _unquote_stub_annotations(tree: ast.Module) -> None:

@@ -1483,13 +1483,21 @@ Ideas, to be weighed, not obligations.*
 
 ## Predicate atoms kept a parallel integer-id value registry
 
-- **Evidence and impact:** `kernel/predicates.py` already retained the exact owned value in the `MonoDict` that selects its current private SymPy atom, but also kept a second `dict[int, Argument]` keyed by `id(value)` solely so an atom could be decoded later. The atom itself is hashable private identity data and can own that reverse lookup directly; the integer table was a second identity registry with no independent mathematical role.
+- **Evidence and impact:** `kernel/predicates.py` already retained the exact owned value in the `MonoDict` that selects its current private SymPy atom, but also kept a second `dict[int, Argument]` keyed by `id(value)` solely so an atom could be decoded later.
+  The atom itself is hashable private identity data and can own that reverse lookup directly; the integer table was a second identity registry with no independent mathematical role.
 
 - **Repair link and acceptance:** `bloat-predicate-atom-value-map`. Retain each private atom directly with its owned value and decode by atom identity/structure, while preserving the integer identity payload used inside SymPy and the ability of pre-refinement expressions to resolve their older atom class.
 
-
 ## Represented set products used raw ids for projection positions
 
-- **Evidence and impact:** `SetsCategory._represented_product()` mapped discrete vertices to projection positions through a plain `dict` keyed by `id(vertex)`, then repeated the raw-id lookup in each projection leg. The vertices are owned values with proposition-valued equality, so the intended operation is identity lookup, already supplied by Sage `MonoDict`.
+- **Evidence and impact:** `SetsCategory._represented_product()` mapped discrete vertices to projection positions through a plain `dict` keyed by `id(vertex)`, then repeated the raw-id lookup in each projection leg.
+  The vertices are owned values with proposition-valued equality, so the intended operation is identity lookup, already supplied by Sage `MonoDict`.
 
 - **Repair link and acceptance:** `bloat-represented-product-position-map`. Store vertex positions directly in `MonoDict` and index by the retained vertex object.
+
+
+## FinSetsForCAP repeated raw-id vertex position tables
+
+- **Evidence and impact:** `engines/finite_sets.py` rebuilt the same `id(vertex) -> position` dictionary in native diagram, product, and coproduct paths and repeated raw-id lookups for endpoints and universal legs. The keys are owned shape objects with identity semantics, which Sage `MonoDict` represents directly without exposing Python integer ids.
+
+- **Repair link and acceptance:** `bloat-finite-set-vertex-position-maps`. Centralize identity-safe position construction in `_identity_positions` and index by retained vertices throughout the finite-set engine.

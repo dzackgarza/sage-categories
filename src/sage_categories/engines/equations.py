@@ -18,6 +18,8 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
+from sage_categories.kernel.sage_runtime import MonoDict
+
 __all__ = ["equal_morphisms", "reduced_word"]
 
 
@@ -105,46 +107,33 @@ class _Encoding:
     """One identity-preserving conversion context for a native equality/reduction."""
 
     def __init__(self) -> None:
-        self._tokens: dict[int, tuple[object, int]] = {}
+        self._tokens: MonoDict = MonoDict()
         self._token_values: list[object | None] = []
-        self._ghost_tokens: dict[int, int] = {}
-        self._objects: dict[int, tuple[object, int]] = {}
+        self._ghost_tokens: MonoDict = MonoDict()
+        self._objects: MonoDict = MonoDict()
 
     def _object_index(self, value: object) -> int:
-        identifier = id(value)
-        match identifier in self._objects:
-            case True:
-                retained, index = self._objects[identifier]
-                assert retained is value
-                return index
-            case False:
-                index = len(self._objects)
-                self._objects[identifier] = (value, index)
-                return index
+        if value in self._objects:
+            return self._objects[value]
+        index = len(self._objects)
+        self._objects[value] = index
+        return index
 
     def _token_index(self, value: object) -> int:
-        identifier = id(value)
-        match identifier in self._tokens:
-            case True:
-                retained, index = self._tokens[identifier]
-                assert retained is value
-                return index
-            case False:
-                index = len(self._token_values)
-                self._tokens[identifier] = (value, index)
-                self._token_values.append(value)
-                return index
+        if value in self._tokens:
+            return self._tokens[value]
+        index = len(self._token_values)
+        self._tokens[value] = index
+        self._token_values.append(value)
+        return index
 
     def _ghost_token_index(self, value: object) -> int:
-        identifier = id(value)
-        match identifier in self._ghost_tokens:
-            case True:
-                return self._ghost_tokens[identifier]
-            case False:
-                index = len(self._token_values)
-                self._ghost_tokens[identifier] = index
-                self._token_values.append(None)
-                return index
+        if value in self._ghost_tokens:
+            return self._ghost_tokens[value]
+        index = len(self._token_values)
+        self._ghost_tokens[value] = index
+        self._token_values.append(None)
+        return index
 
     def expression(self, morphism: object) -> list[Any]:
         """Convert retained structure to native input without reducing it in Python."""

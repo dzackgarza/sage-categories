@@ -1390,9 +1390,27 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-cokernel-difference-identity-cache`. Key the native difference directly by the owned projection in `MonoDict` and remove the integer key plus duplicate owner record.
 
-
 ## Homotopy-cell execution duplicated Sage identity-table machinery
 
-- **Evidence and impact:** `engines/cells.py` maintained four plain dictionaries keyed by `id(...)` for category states, selected cell owners, native objects, and native morphisms. Each table retained the owned key again and manually asserted identity on lookup, duplicating the strong identity-table semantics already provided by Sage `MonoDict`.
+- **Evidence and impact:** `engines/cells.py` maintained four plain dictionaries keyed by `id(...)` for category states, selected cell owners, native objects, and native morphisms.
+  Each table retained the owned key again and manually asserted identity on lookup, duplicating the strong identity-table semantics already provided by Sage `MonoDict`.
 
 - **Repair link and acceptance:** `bloat-cell-identity-caches`. Store all four mappings directly in `MonoDict`, preserving exact owner/state selection while deleting integer keys and duplicate retained-owner tuples.
+
+## Inverse-image retention mixed pullback construction with containment propagation
+
+- **Evidence and impact:** `cat/properties.py::retain_inverse_image` built the retained pullback cone and mediator, then also walked every declared target containment to synthesize and verify comparison pullbacks. Those are distinct responsibilities: constructing the chosen inverse image and propagating it through the subcategory lattice. Keeping both in one function hid the universal-map boundary and made containment changes require editing the pullback constructor itself.
+
+- **Repair link and acceptance:** `bloat-inverse-image-retention-phases`. Move candidate-cone factorization to `_inverse_image_mediator()` and containment propagation to `_retain_inverse_image_comparisons()`; leave `retain_inverse_image()` responsible for the retained key, chosen pullback cone, and invoking those two phases.
+
+## Limit-basis construction mixed product equations with equalizer factorization
+
+- **Evidence and impact:** `cat/limit_basis.py::_basis_data` built the object product, the two parallel equation maps, their equalizer, vertex-index recovery, and candidate-cone factorization in one routine. Those phases have separate invariants and the long function obscured which step owns the universal equations versus the final factorization.
+
+- **Repair link and acceptance:** `bloat-limit-basis-phases`. Give the parallel maps, vertex indexing, and candidate factorization the private owners `_basis_parallel_maps()`, `_basis_index()`, and `_basis_lift()`; leave `_basis_data()` as orchestration of the selected product/equalizer presentation.
+
+## Kernel roles imported a type-only TypeIs at runtime
+
+- **Evidence and impact:** `kernel/roles.py` imported `typing.TypeIs` in the runtime import set even though its only use is the postponed return annotation of `is_category()`. The module already isolates category, functor, and cache annotation dependencies under `TYPE_CHECKING`, so this was an unnecessary runtime typing dependency at the kernel bootstrap boundary.
+
+- **Repair link and acceptance:** `bloat-role-typeis-import`. Import `TypeIs` only under `TYPE_CHECKING`; the runtime role surface keeps the same annotation while no longer binding a type-only helper during bootstrap.

@@ -1903,6 +1903,85 @@ def _project_class_aliases(
     return frozenset(projected_aliases)
 
 
+def _source_module_symbols(module: str, tree: ast.Module) -> dict[str, str]:
+    """Return direct imported and declared symbol paths for one source module."""
+    local: dict[str, str] = {}
+    for statement in tree.body:
+        match statement:
+            case ast.Import(names=names):
+                for alias in names:
+                    bound = alias.asname or alias.name.split(".")[0]
+                    local[bound] = alias.name if alias.asname else bound
+            case ast.ImportFrom(module=imported, names=names, level=0) if imported is not None:
+                for alias in names:
+                    local[alias.asname or alias.name] = f"{imported}.{alias.name}"
+            case ast.ClassDef(name=name) | ast.FunctionDef(name=name) | ast.AsyncFunctionDef(name=name):
+                local[name] = f"{module}.{name}"
+            case _:
+                pass
+    return local
+
+
+def _source_symbol_path(
+    symbols: dict[str, dict[str, str]],
+    module: str,
+    expression: ast.expr | None,
+) -> str | None:
+    """Resolve one lexical name/attribute expression through retained source symbols."""
+    match expression:
+        case ast.Name(id=name):
+            return symbols[module].get(name)
+        case ast.Attribute(value=value, attr=attr):
+            base = _source_symbol_path(symbols, module, value)
+            return None if base is None else f"{base}.{attr}"
+        case _:
+            return None
+
+
+def _resolve_source_symbol_aliases(
+    trees: dict[str, ast.Module],
+    symbols: dict[str, dict[str, str]],
+) -> None:
+    """Close simple source assignments such as ``Cat = _category.Cat``."""
+    changed = True
+    while changed:
+        changed = False
+        for module, tree in trees.items():
+            for statement in tree.body:
+                if not isinstance(statement, ast.Assign) or len(statement.targets) != 1:
+                    continue
+                target = statement.targets[0]
+                if not isinstance(target, ast.Name):
+                    continue
+                resolved = _source_symbol_path(symbols, module, statement.value)
+                if resolved is None or symbols[module].get(target.id) == resolved:
+                    continue
+                symbols[module][target.id] = resolved
+                changed = True
+
+
+def _source_type_tables(
+    trees: dict[str, ast.Module],
+    symbols: dict[str, dict[str, str]],
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
+    """Return written function-result and annotated-value type paths."""
+    function_returns: dict[str, str] = {}
+    annotations: dict[str, dict[str, str]] = {}
+    for module, tree in trees.items():
+        typed_values: dict[str, str] = {}
+        for statement in tree.body:
+            if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
+                resolved = _source_symbol_path(symbols, module, statement.annotation)
+                if resolved is not None:
+                    typed_values[statement.target.id] = resolved
+            if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
+                resolved = _source_symbol_path(symbols, module, statement.returns)
+                if resolved is not None:
+                    function_returns[f"{module}.{statement.name}"] = resolved
+        annotations[module] = typed_values
+    return function_returns, annotations
+
+
 def _source_symbol_tables(
     package: str,
     output_directory: Path,
@@ -1922,67 +2001,13 @@ def _source_symbol_tables(
     """
     trees: dict[str, ast.Module] = {}
     symbols: dict[str, dict[str, str]] = {}
-    annotations: dict[str, dict[str, str]] = {}
-
     for source in sources:
         module = _module_name(package, output_directory, source)
         tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
         trees[module] = tree
-        local: dict[str, str] = {}
-        for statement in tree.body:
-            match statement:
-                case ast.Import(names=names):
-                    for alias in names:
-                        bound = alias.asname or alias.name.split(".")[0]
-                        local[bound] = alias.name if alias.asname else bound
-                case ast.ImportFrom(module=imported, names=names, level=0) if imported is not None:
-                    for alias in names:
-                        local[alias.asname or alias.name] = f"{imported}.{alias.name}"
-                case ast.ClassDef(name=name) | ast.FunctionDef(name=name) | ast.AsyncFunctionDef(name=name):
-                    local[name] = f"{module}.{name}"
-        symbols[module] = local
-
-    def path(module: str, expression: ast.expr | None) -> str | None:
-        match expression:
-            case ast.Name(id=name):
-                return symbols[module].get(name)
-            case ast.Attribute(value=value, attr=attr):
-                base = path(module, value)
-                return None if base is None else f"{base}.{attr}"
-            case _:
-                return None
-
-    # Resolve simple source aliases such as ``Cat = _category.Cat`` before
-    # reading annotations and function returns that refer to them.
-    changed = True
-    while changed:
-        changed = False
-        for module, tree in trees.items():
-            for statement in tree.body:
-                if not isinstance(statement, ast.Assign) or len(statement.targets) != 1:
-                    continue
-                target = statement.targets[0]
-                if not isinstance(target, ast.Name):
-                    continue
-                resolved = path(module, statement.value)
-                if resolved is None or symbols[module].get(target.id) == resolved:
-                    continue
-                symbols[module][target.id] = resolved
-                changed = True
-
-    function_returns: dict[str, str] = {}
-    for module, tree in trees.items():
-        typed_values: dict[str, str] = {}
-        for statement in tree.body:
-            if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
-                resolved = path(module, statement.annotation)
-                if resolved is not None:
-                    typed_values[statement.target.id] = resolved
-            if isinstance(statement, ast.FunctionDef | ast.AsyncFunctionDef):
-                resolved = path(module, statement.returns)
-                if resolved is not None:
-                    function_returns[f"{module}.{statement.name}"] = resolved
-        annotations[module] = typed_values
+        symbols[module] = _source_module_symbols(module, tree)
+    _resolve_source_symbol_aliases(trees, symbols)
+    function_returns, annotations = _source_type_tables(trees, symbols)
     return symbols, function_returns, annotations, trees
 
 

@@ -710,6 +710,8 @@ def test_strict_and_full_image_inclusions_are_the_direct_zero_argument_call() ->
 
     strict = strict_image(TOKENS, defining)
     assert strict_image(TOKENS, defining) is strict
+    strict_member = defining.on_object(MARKS("strict member"))
+    assert strict_member in strict
     strict_inclusion = strict.inclusion_functor()
     assert strict_inclusion is Fun(strict, TOKENS).Monomorphisms()()
     assert is_placed(strict_inclusion, Fun(strict, TOKENS).Monomorphisms())
@@ -753,6 +755,7 @@ def test_applying_a_functor_whose_full_image_exists_retains_the_image_and_places
     early_image = full_image(TOKENS, early)
     source, target = early.on_object(MARKS("a")), early.on_object(MARKS("b"))
     assert source is early.on_object(MARKS("a"))
+    assert early._image_cache.has_object_image(source)
     assert ask(early_image.membership_proposition(source)) is True
     assert source in early_image
 
@@ -777,6 +780,7 @@ def test_applying_a_functor_whose_full_image_exists_retains_the_image_and_places
     late = Fun(MARKS, TOKENS)(*token_actions("late full "))
     before = late.on_object(MARKS("a"))
     late_image = full_image(TOKENS, late)
+    assert before in late_image
     after = late.on_object(MARKS("b"))
     assert before is late.on_object(MARKS("a"))
     assert ask(late_image.membership_proposition(after)) is True

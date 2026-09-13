@@ -68,7 +68,6 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
             name = f"{self._image_name}_morphism"
 
         self._defining_functor = defining_functor
-        self._object_members: MonoDict = MonoDict()
         self._morphism_members: MonoDict = MonoDict()
         self._object_predicate: Predicate = _ImageObjectPredicate()
         self._morphism_predicate: Predicate = _ImageMorphismPredicate()
@@ -107,7 +106,7 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        if candidate in self._object_members or self._defining_functor._image_cache.has_object_image(candidate):
+        if self._defining_functor._image_cache.has_object_image(candidate):
             return True
         return None
 
@@ -119,14 +118,6 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
         if candidate in self._morphism_members or self._defining_functor._image_cache.has_morphism_image(candidate):
             return True
         return None
-
-    def _retain_object(
-        self,
-        member_object: CategoryOfCategories.ElementType,
-    ) -> CategoryOfCategories.ElementType:
-        assert member_object in self.target(), f"{member_object!r} is not an object of {self.target()!r}"
-        self._object_members[member_object] = True
-        return member_object
 
     def _retain_morphism(
         self,
@@ -140,7 +131,7 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
         self,
         source: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
-        return self._retain_object(self._defining_functor.on_object(source))
+        return self._defining_functor.on_object(source)
 
     def morphism_image(
         self,
@@ -338,20 +329,9 @@ def retain_object_image(
 ) -> None:
     """Retain a completed public object image in each constructed image category."""
     target = defining_functor.codomain()
-    if strict_image.is_in_cache(target, defining_functor):
-        strict_image(target, defining_functor)._retain_object(image)
     if full_image.is_in_cache(target, defining_functor):
         retained_full_image = full_image(target, defining_functor)
-        if isinstance(retained_full_image, FullImageCategory):
-            # An object isomorphic to a value ``F(X)`` need not be one, so the full image
-            # is not replete and its inclusion is not an isofibration (D169).  Placement
-            # needs a monomorphism that is an isofibration (``POL-FUN-036``), so nothing
-            # presents this subcategory to placement and the retention is the whole
-            # record: ``image in D.FullImage(F)`` answers ``True`` from the membership
-            # proposition, which is the definition.  Placement is only ever a sufficient
-            # route to ``True`` (``POL-CAT-068``).  This is the strict image's route.
-            retained_full_image._retain_object(image)
-        else:
+        if not isinstance(retained_full_image, FullImageCategory):
             # A category that registered itself as the full image of its own defining
             # functor -- ``C.Limits(I)`` of its chosen limit functor, for one -- is a
             # declared subcategory of the target with its own placement monomorphism, and

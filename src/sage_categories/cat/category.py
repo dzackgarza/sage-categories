@@ -1849,7 +1849,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def __init__(self) -> None:
         self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
-        self._point_categories: MonoDict = MonoDict()
         self._declared_functors: TripleDict = TripleDict(weak_values=False)
         self._exponential_actions: TripleDict = TripleDict(weak_values=False)
         self._declarations: dict[str, Category | CategoryFamily] = {}
@@ -2342,12 +2341,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             case None:
                 return CategoryDeclaration.Point(self)
             case _:
-                from sage_categories.cat.points import PointCategory
+                return self._point_category(member)
 
-                assert member._is_object(), f"{member!r} is not an object of a category"
-                if member not in self._point_categories:
-                    self._point_categories[member] = PointCategory(member)
-                return self._point_categories[member]
+    @cached_method(key=lambda self, member: identity_key(member))
+    def _point_category(self, member: CategoryOfCategories.ElementType) -> PointCategory:
+        """The retained one-object category on ``member``."""
+        from sage_categories.cat.points import PointCategory
+
+        assert member._is_object(), f"{member!r} is not an object of a category"
+        return PointCategory(member)
 
     def Simplex(self, dimension: int | Integer) -> FinitePresentedCategory:
         canonical = _canonical_categories()

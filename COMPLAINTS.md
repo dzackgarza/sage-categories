@@ -1816,3 +1816,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** strict and full images genuinely need retained construction identity: an image category can be requested before or after a functor action, and `register_full_image` can install a universal-construction category as the already-selected full image. What did not need to exist was the parallel `_strict_images`/`_full_images` `MonoDict` implementation of that cache lifecycle; Sage `cached_function` already supports identity-safe keys, cache-presence queries, and explicit `set_cache` registration.
 
 - **Repair link and acceptance:** `bloat-image-category-registry-cache`. Make `strict_image` and `full_image` identity-keyed Sage cached functions, use `is_in_cache` for no-side-effect retention checks and `set_cache` for externally supplied full images, and delete both module registries.
+
+## Cat point categories hand-rolled an identity-keyed method cache
+
+- **Evidence and impact:** `CategoryOfCategories.Point(member)` maintained `_point_categories: MonoDict` and open-coded lookup/construct/store around the one-object category determined solely by `member`. Object identity is the correct key, but Sage `cached_method` already supports the repository `identity_key` contract and removes the extra registry protocol.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Move the member case to an identity-keyed cached `_point_category(member)` helper and remove `_point_categories`; the nullary `Point()` declaration case remains unchanged.

@@ -886,3 +886,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/category.py` reopened the native cell adapter throughout identity/inverse/composite retention and transformation calculus, and reopened Catlab throughout functor images, identities, composition, transformations, and whiskering. These imports are intentionally delayed until the category core has established owned runtime classes, but twenty execution sites repeated two bootstrap boundaries rather than naming those boundaries once.
 
 - **Repair link and acceptance:** `bloat-category-native-engine-boundaries`. Put Catlab and homotopy-cell loading behind `_catlab_engine()` and `_cells_engine()` and route every category-core native execution site through those two owners.
+
+## Cat repeatedly reopened its canonical finite-category constructor module
+
+- **Evidence and impact:** `Cat()` imported `cat.canonical` independently for presented categories, the initial category, simplices, boundaries, horns, the walking isomorphism, and the walking parallel pair. Those imports are deliberately delayed until the `Cat` owner exists, but seven constructors repeated the same bootstrap boundary.
+
+- **Repair link and acceptance:** `bloat-category-canonical-boundary`. Put the delayed canonical-constructor module behind `_canonical_categories()` and route every canonical `Cat()` constructor through that owner.

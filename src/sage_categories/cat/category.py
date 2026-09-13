@@ -177,6 +177,13 @@ def _catlab_engine():
     return catlab_engine
 
 
+def _canonical_categories():
+    """Load canonical finite category constructors after the ``Cat`` owner exists."""
+    from sage_categories.cat import canonical as canonical_module
+
+    return canonical_module
+
+
 def _declares_subcategory(functor: MorphismCategory.ObjectType) -> bool:
     """Whether ``functor`` is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
 
@@ -2317,7 +2324,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         relations: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...],
     ) -> FinitePresentedCategory:
         """``Cat()(labels, generators, relations)``: the category presented by finitely many objects, generating morphisms, and relations."""
-        from sage_categories.cat import canonical
+        canonical = _canonical_categories()
 
         return canonical.FinitePresentedCategory(
             f"Presented{tuple(labels)!r}",
@@ -2328,7 +2335,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def Initial(self) -> FinitePresentedCategory:
         """The empty category, the initial object of ``Cat()`` (``specs/functor.md``, "Canonical objects of Cat")."""
-        from sage_categories.cat import canonical
+        canonical = _canonical_categories()
 
         if ("empty", ()) not in self._canonical:
             self._canonical["empty", ()] = canonical.empty_category()
@@ -2357,7 +2364,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 return self._point_categories[member]
 
     def Simplex(self, dimension: int | Integer) -> FinitePresentedCategory:
-        from sage_categories.cat import canonical
+        canonical = _canonical_categories()
 
         assert dimension >= 0
         if ("simplex", (dimension,)) not in self._canonical:
@@ -2365,7 +2372,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         return self._canonical["simplex", (dimension,)]
 
     def Boundary(self, dimension: int | Integer) -> FinitePresentedCategory:
-        from sage_categories.cat import canonical
+        canonical = _canonical_categories()
 
         assert dimension == 2, "Cat owns the boundary of the 2-simplex only"
         if ("boundary", (dimension,)) not in self._canonical:
@@ -2373,7 +2380,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         return self._canonical["boundary", (dimension,)]
 
     def Horn(self, dimension: int, omitted_face: int) -> FinitePresentedCategory:
-        from sage_categories.cat import canonical
+        canonical = _canonical_categories()
 
         assert dimension == 2 and 0 <= omitted_face <= 2, "Cat owns the horns of the 2-simplex only"
         if omitted_face == 1:
@@ -2386,7 +2393,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         return self._canonical["horn", (dimension, omitted_face)]
 
     def WalkingIsomorphism(self) -> FinitePresentedCategory:
-        from sage_categories.cat import canonical
+        canonical = _canonical_categories()
 
         if ("walking isomorphism", ()) not in self._canonical:
             self._canonical["walking isomorphism", ()] = canonical.walking_isomorphism()
@@ -2401,7 +2408,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         return self.Horn(2, 2)
 
     def WalkingParallelPair(self) -> FinitePresentedCategory:
-        from sage_categories.cat import canonical
+        canonical = _canonical_categories()
 
         if ("walking parallel pair", ()) not in self._canonical:
             self._canonical["walking parallel pair", ()] = canonical.walking_parallel_pair()

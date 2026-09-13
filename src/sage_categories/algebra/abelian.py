@@ -316,11 +316,7 @@ class _OwnedIndexFacade(Parent):
         Parent.__init__(self, facade=True, category=SageSets())
 
     def __contains__(self, datum: ContainmentInput) -> bool:
-        try:
-            self._owned_index_set.representative(datum)
-        except AssertionError, TypeError, ValueError:
-            return False
-        return True
+        return datum in self._owned_index_set
 
     def _element_constructor_(self, datum: Hashable) -> Hashable:
         return self._owned_index_set.representative(datum)

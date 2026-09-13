@@ -1299,3 +1299,9 @@ Ideas, to be weighed, not obligations.*
   That mathematical comparison is independent of constructing the tensor functor/unit and made the public monoidal-structure constructor carry both responsibilities.
 
 - **Repair link and acceptance:** `bloat-bimodule-associator`. Move the quotient descent and inverse verification to `_bimodule_associator_components(tensor, triple)`; retain only a cached delegating component family and natural-isomorphism wiring inside `AbelianBimoduleTensor()`.
+
+## Free-associative construction embedded native multiplication descent
+
+- **Evidence and impact:** `integer_free_associative_algebra()` built the word module/bimodule object and also carried the complete multiplication implementation: conversion of both operands to word coefficients, native Sage free-algebra multiplication, re-embedding into the indexed module, relative-tensor mediation, and bimodule wrapping. That is one independent operation of the algebra, not part of choosing its carrier.
+
+- **Repair link and acceptance:** `bloat-free-associative-multiplication`. Move native multiplication plus relative-tensor descent into `_free_associative_multiplication()`; keep the public constructor responsible for selecting carrier/actions/unit and retaining the resulting monoid object.

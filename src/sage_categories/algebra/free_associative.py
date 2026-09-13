@@ -25,7 +25,7 @@ from sage_categories.algebra.indexed_modules import (
 from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.modules import ModuleCategory
-from sage_categories.cat.monoidal import tensor_object
+from sage_categories.cat.monoidal import MonoidalStructuresCategory, tensor_object
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.native import NativeObjectRealizations
 from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoids
@@ -76,6 +76,36 @@ def _datum(record, terms: Mapping[Word, int]):
     return _source_module_point(record, terms).datum()
 
 
+def _free_associative_multiplication(
+    native: object,
+    word_module: ModuleCategory.ObjectType,
+    bimodule: CategoryOfCategories.ElementType,
+    structure: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    carrier: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """Descend native free-algebra multiplication through the relative tensor quotient."""
+    bimodules = structure.underlying_category()
+
+    def multiply(left, right):
+        record_terms_left = indexed_free_integer_coefficients(word_module, word_module.point(left))
+        record_terms_right = indexed_free_integer_coefficients(word_module, word_module.point(right))
+        terms = free_algebras.multiply(native, record_terms_left, record_terms_right)
+        return indexed_free_integer_element(word_module, terms).datum()
+
+    underlying_multiplication = relative_tensor_mediator(
+        projection,
+        carrier,
+        multiply,
+    )
+    tensor_square = tensor_object(structure.tensor(), bimodule, bimodule)
+    return bimodules.homomorphism(
+        tensor_square,
+        bimodule,
+        underlying_multiplication,
+    )
+
+
 def integer_free_associative_algebra(
     names: Sequence[str] = ("x", "y"),
 ) -> MonoidCategory.ObjectType:
@@ -101,23 +131,13 @@ def integer_free_associative_algebra(
     bimodule = bimodules(left_action, right_action)
     structure = AbelianBimoduleTensor(scalars)
     projection = relative_tensor(bimodule.right_action(), bimodule.left_action())
-
-    def multiply(left, right):
-        record_terms_left = indexed_free_integer_coefficients(word_module, word_module.point(left))
-        record_terms_right = indexed_free_integer_coefficients(word_module, word_module.point(right))
-        terms = free_algebras.multiply(native, record_terms_left, record_terms_right)
-        return indexed_free_integer_element(word_module, terms).datum()
-
-    underlying_multiplication = relative_tensor_mediator(
+    multiplication = _free_associative_multiplication(
+        native,
+        word_module,
+        bimodule,
+        structure,
         projection,
         carrier,
-        multiply,
-    )
-    tensor_square = tensor_object(structure.tensor(), bimodule, bimodule)
-    multiplication = bimodules.homomorphism(
-        tensor_square,
-        bimodule,
-        underlying_multiplication,
     )
     additive_unit = indexed_free_abelian_injection(carrier, ())
     unit = bimodules.homomorphism(structure.unit(), bimodule, additive_unit)

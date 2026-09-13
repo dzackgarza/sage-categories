@@ -39,7 +39,7 @@ from sage_categories.cat.properties import (
 )
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, cached_method
+from sage_categories.kernel.sage_runtime import LazyFamily, cached_method
 
 __all__ = [
     "CreatesLimitsCategory",
@@ -310,7 +310,6 @@ class FunctorCategory[
         domain: DomainCategory,
         codomain: CodomainCategory,
     ) -> None:
-        self._constant_values: MonoDict = MonoDict()
         super().__init__(morphisms, domain, codomain)
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
@@ -386,12 +385,13 @@ class FunctorCategory[
         return total_cones(self)
 
     def has_constant_value(self, diagram: Functor) -> bool:
-        return diagram in self._constant_values
+        return bool(diagram._constant_diagram_value)
 
     def constant_value(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         """The object at which a retained constant diagram is constant."""
-        assert diagram in self._constant_values, f"{diagram!r} is not a retained constant diagram"
-        return self._constant_values[diagram]
+        values = diagram._constant_diagram_value
+        assert len(values) == 1, f"{diagram!r} is not a retained constant diagram"
+        return values[0]
 
     def from_object_rule(self, rule: OnObject) -> Functor:
         """A diagram over a discrete shape from its object rule alone."""

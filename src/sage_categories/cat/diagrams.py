@@ -112,7 +112,8 @@ def constant(functors: FunctorCategory, value: CategoryOfCategories.ElementType)
         lambda vertex: value,
         lambda morphism: functors.codomain().morphism_category(1)(value, value).one(),
     )
-    functors._constant_values[diagram] = value
+    assert not diagram._constant_diagram_value, f"{diagram!r} already retains a constant value"
+    diagram._constant_diagram_value = (value,)
     return diagram
 
 

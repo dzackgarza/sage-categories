@@ -1990,3 +1990,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `geometry/cw.py::_cw_open_datum()` called itself unconditionally, so every finite-stage open preimage routed through infinite recursion. The projective-infinity path then bypassed the separately declared `_weak_cw_open_datum()` and cast the broken finite helper's result back to a weak open, leaving the refactor's two typed boundaries inconsistent and its weak helper dead.
 
 - **Repair link and acceptance:** `bloat-cw-open-datum-regression`. Restore the finite helper to unwrap `point().datum()`, route weak-colimit inverse images through `_weak_cw_open_datum()`, and preserve the distinct finite/weak open representations without repeated cast chains.
+
+## Primitive Catlab transformations duplicated data already owned by NaturalTransformationData
+
+- **Evidence and impact:** every `_construct_transformation()` created a `NaturalTransformationData(assignment, source_functor, target_functor)` and then immediately copied the same three values into Catlab's `_transformation_recipes` as a `"callable"` recipe. Lazy Catlab execution already has a no-recipe path that reads `source_functor()`, `target_functor()`, and `component` directly from the transformation, so the primitive recipe did not provide a second capability; specialized identity/composition/whiskering/horizontal recipes are distinct because they select Catlab-native structural operations.
+
+- **Repair link and acceptance:** `bloat-catlab-callable-transformation-recipe`. Delete the primitive callable-recipe writer and engine export, leave primitive transformations with only their owned `NaturalTransformationData`, and keep the specialized structural recipes for native Catlab operations.

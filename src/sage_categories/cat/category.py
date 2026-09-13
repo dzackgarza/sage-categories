@@ -1572,6 +1572,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._limit_liftings: MonoDict = MonoDict()
             self._cartesian_lift_rule = None
             self._cocartesian_lift_rule = None
+            self._constant_diagram_value: tuple[CategoryOfCategories.ElementType, ...] = ()
             self._initialize_functor_image_cache()
 
         # The admission condition is the one the image construction needs.  A retained
@@ -2061,8 +2062,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """Construct one owned transformation and its Catlab callable semantics."""
         from sage_categories.cat.functors import NaturalTransformationData, diagram_of
 
-        catlab = _catlab_engine()
-
         functors = self.morphism_category(1)
         source_functor = diagram_of(source) if source_functor is None else source_functor
         target_functor = diagram_of(target) if target_functor is None else target_functor
@@ -2073,7 +2072,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             codomain=target,
             data=NaturalTransformationData(assignment, source_functor, target_functor),
         )
-        catlab.callable_transformation(transformation, source_functor, target_functor, assignment)
         return transformation
 
     def construct_two_morphism(

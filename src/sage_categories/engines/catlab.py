@@ -30,7 +30,6 @@ from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
-    "callable_transformation",
     "compose_functors",
     "compose_transformations",
     "ensure_native_category",
@@ -126,15 +125,6 @@ def _retain_transformation(
 ) -> object:
     retain_native_transformation(value, source, target, native)
     return native
-
-
-def callable_transformation(
-    value: MorphismCategory.ObjectType,
-    source: MorphismCategory.ObjectType,
-    target: MorphismCategory.ObjectType,
-    component: object,
-) -> None:
-    _retain_transformation_recipe(value, ("callable", (source, target, component)))
 
 
 def _native_transformation(value: MorphismCategory.ObjectType) -> object:

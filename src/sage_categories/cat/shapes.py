@@ -65,21 +65,24 @@ class _PointObjectData:
     point: CategoryOfCategories.ElementType
 
 
+class _PointShapeObject:
+    """Shared retained-point surface for objects of point-indexed shapes."""
+
+    def __init__(self, data: _PointObjectData) -> None:
+        self._point = data.point
+
+    def point(self) -> CategoryOfCategories.ElementType:
+        return self._point
+
+    def __repr__(self) -> str:
+        return f"{self._point!r} in {self.category()!r}"
+
+
 class DiscreteCategory(Category[[], []]):
     """The discrete category on a set."""
 
-    class ObjectType:
+    class ObjectType(_PointShapeObject):
         """An object of ``Discrete(S)``: a point of ``S``."""
-
-        def __init__(self, data: _PointObjectData) -> None:
-            self._point = data.point
-
-        def point(self) -> CategoryOfCategories.ElementType:
-            """The point of the index set that this object is."""
-            return self._point
-
-        def __repr__(self) -> str:
-            return f"{self._point!r} in {self.category()!r}"
 
     class MorphismType:
         """The only morphisms of a discrete category: identities."""
@@ -322,17 +325,8 @@ class ThinMorphisms(MorphismCategory[[], []]):
 class ThinCategory(Category[[], []]):
     """The thin category of a preorder ``(P, leq)``."""
 
-    class ObjectType:
+    class ObjectType(_PointShapeObject):
         """An object of ``Thin(P, leq)``: a point of ``P``."""
-
-        def __init__(self, data: _PointObjectData) -> None:
-            self._point = data.point
-
-        def point(self) -> CategoryOfCategories.ElementType:
-            return self._point
-
-        def __repr__(self) -> str:
-            return f"{self._point!r} in {self.category()!r}"
 
     class MorphismType:
         """The unique morphism ``x -> y`` of a thin category, present when ``x <= y``."""

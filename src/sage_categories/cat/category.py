@@ -1379,7 +1379,6 @@ _cocartesian_rules: MonoDict = MonoDict()
 # ``Cat()``: an explicit composite names its construction (``specs/functor.md``,
 # "Structural inheritance": a selected composite retains its factor functors).
 _composite_factors: MonoDict = MonoDict()
-_composites: MonoDict = MonoDict()
 
 
 def retain_composite_factors(
@@ -2006,32 +2005,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         assert first in self.morphism_category(1) and second in self.morphism_category(1)
         assert first.codomain() is second.domain()
-        table = _composites
-        for factor in (*_composite_sequence(first), *_composite_sequence(second)):
-            if factor not in table:
-                table[factor] = MonoDict()
-            table = table[factor]
-        if self not in table:
-            catlab = _catlab_engine()
-
-            def on_object(
-                value: CategoryOfCategories.ElementType,
-            ) -> CategoryOfCategories.ElementType:
-                return second.on_object(first.on_object(value))
-
-            def on_morphism(
-                value: MorphismCategory.ObjectType,
-            ) -> MorphismCategory.ObjectType:
-                return second.on_morphism(first.on_morphism(value))
-
-            composite = self.construct_morphism(first.domain(), second.codomain(), on_object, on_morphism)
-            catlab.retain_composite_functor(composite, first, second)
-            composite.retain_factors(first, second)
-            cells = _cells_engine()
-
-            cells.retain_composite(self, composite, first, second)
-            table[self] = composite
-        composite = table[self]
+        factors = (*_composite_sequence(first), *_composite_sequence(second))
+        composite = self._composite_functor(factors, first, second)
         # Full, faithful, fully faithful, essentially surjective, and equivalence
         # functors compose (Mathlib ``Functor.FullyFaithful.comp``, ``Full.comp``,
         # ``Faithful.comp``, ``EssSurj.comp``, and ``Functor.IsEquivalence.comp``;
@@ -2047,6 +2022,35 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         ):
             if is_placed(first, property_category) and is_placed(second, property_category):
                 refine(composite, property_category)
+        return composite
+
+    @cached_method(key=lambda self, factors, first, second: identity_key(*factors))
+    def _composite_functor(
+        self,
+        factors: tuple[Functor, ...],
+        first: CategoryOfCategories.MorphismType,
+        second: CategoryOfCategories.MorphismType,
+    ) -> CategoryOfCategories.MorphismType:
+        """Construct the canonical composite for one exact flattened factor sequence.
+
+        ``first`` and ``second`` record the binary presentation that first constructed
+        this value.  The cache key is the flattened factor sequence, preserving the
+        existing strict associativity of selected functor composition without a nested
+        hand-written identity table.
+        """
+        assert factors == (*_composite_sequence(first), *_composite_sequence(second))
+        catlab = _catlab_engine()
+
+        def on_object(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            return second.on_object(first.on_object(value))
+
+        def on_morphism(value: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            return second.on_morphism(first.on_morphism(value))
+
+        composite = self.construct_morphism(first.domain(), second.codomain(), on_object, on_morphism)
+        catlab.retain_composite_functor(composite, first, second)
+        composite.retain_factors(first, second)
+        _cells_engine().retain_composite(self, composite, first, second)
         return composite
 
     def _construct_transformation(

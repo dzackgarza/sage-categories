@@ -9,7 +9,6 @@ from typing import Any, cast
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import ask
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.sheaves import RingSheaf, _open_data
 from sage_categories.geometry.spaces import (
@@ -29,13 +28,6 @@ type SheafComponentRule = Callable[[frozenset[Hashable]], MorphismCategory.Objec
 class _RingedSpaceData:
     space: TopologicalSpacesCategory.ObjectType
     sheaf: RingSheaf
-
-
-def _component(
-    transformation: NaturalTransformation,
-    open_object: CategoryOfCategories.ElementType,
-) -> MorphismCategory.ObjectType:
-    return cast(MorphismCategory.ObjectType, cast(Any, transformation).component(open_object))
 
 
 class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
@@ -99,18 +91,11 @@ class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
             assert arrow.codomain() is pushed_source.on_object(open_object)
             return arrow
 
+        # ``Mor(Fun(...))`` is the mathematical owner of natural transformations;
+        # its component assignment is trusted (``specs/functor.md``, "Naturality is
+        # trusted").  Do not enumerate the represented open category here: ringed-space
+        # morphisms must also work for topologies supplied by ``from_open_category``.
         transformation = Mor(Fun(target_sheaf.domain(), _rings()))(target_sheaf, pushed_source)(component)
-        opens = target.space().open_category()
-        objects = tuple(opens(point) for point in cast(Any, target.space().opens()).carrier())
-        for smaller in objects:
-            for larger in objects:
-                if not (_open_data(smaller) <= _open_data(larger)):
-                    continue
-                inclusion = Mor(opens)(smaller, larger)()
-                opposite = inclusion.op()
-                left = pushed_source.on_morphism(opposite) * _component(transformation, larger)
-                right = _component(transformation, smaller) * target_sheaf.on_morphism(opposite)
-                assert ask(left == right) is True
         return cast(
             RingedSpacesCategory.MorphismType,
             cast(Any, self).MorphismType(domain=source, codomain=target, data=(continuous, transformation)),

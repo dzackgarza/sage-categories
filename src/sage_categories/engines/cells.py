@@ -15,7 +15,8 @@ import sage_categories_homotopy as homotopy
 
 from sage_categories.cat.category import Category, composite_factors, is_composite
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
 __all__ = [
     "boundary",
@@ -41,7 +42,6 @@ class _CellState:
     morphisms: MonoDict = field(default_factory=MonoDict)
 
 
-_states: MonoDict = MonoDict()
 _cell_owners: MonoDict = MonoDict()
 
 
@@ -59,13 +59,11 @@ def _root_owner(owner: Category) -> Category:
     return root
 
 
+@cached_function(key=lambda owner: identity_key(_root_owner(owner)))
 def _state(owner: Category) -> _CellState:
+    """The native homotopy-core state of one exact root category."""
     owner = _root_owner(owner)
-    if owner in _states:
-        return _states[owner]
-    state = _CellState(owner, homotopy.Signature())
-    _states[owner] = state
-    return state
+    return _CellState(owner, homotopy.Signature())
 
 
 def native_signature(owner: Category) -> homotopy.Signature:

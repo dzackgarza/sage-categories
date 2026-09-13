@@ -49,18 +49,19 @@ def _rational_padic_valuation(place: int, rational: Fraction) -> int | float:
 
 def _expression_valuation(value: ExactLocalValue) -> int | float | None:
     """Evaluate valuation from the retained non-rational expression tree."""
-    match value.expression.operation:
+    expression = value._expression
+    match expression.operation:
         case "atom":
-            return cast(int | None, value.expression.arguments[1])
+            return cast(int | None, expression.arguments[1])
         case "negate":
-            return cast(ExactLocalValue, value.expression.arguments[0]).valuation()
+            return cast(ExactLocalValue, expression.arguments[0]).valuation()
         case "multiply":
-            first = cast(ExactLocalValue, value.expression.arguments[0]).valuation()
-            second = cast(ExactLocalValue, value.expression.arguments[1]).valuation()
+            first = cast(ExactLocalValue, expression.arguments[0]).valuation()
+            second = cast(ExactLocalValue, expression.arguments[1]).valuation()
             return None if first is None or second is None else first + second
         case "add":
-            first = cast(ExactLocalValue, value.expression.arguments[0]).valuation()
-            second = cast(ExactLocalValue, value.expression.arguments[1]).valuation()
+            first = cast(ExactLocalValue, expression.arguments[0]).valuation()
+            second = cast(ExactLocalValue, expression.arguments[1]).valuation()
             match first, second:
                 case (None, _) | (_, None):
                     return None
@@ -77,7 +78,7 @@ class ExactLocalValue:
     """An exact local value, distinct from any finite-precision approximation."""
 
     place: str | int
-    expression: _ExactExpression
+    _expression: _ExactExpression
 
     @staticmethod
     def rational(place: str | int, value: Fraction | int) -> ExactLocalValue:
@@ -92,19 +93,20 @@ class ExactLocalValue:
         return ExactLocalValue(place, _ExactExpression("atom", (name, valuation)))
 
     def rational_value(self) -> Fraction | None:
-        match self.expression.operation:
+        expression = self._expression
+        match expression.operation:
             case "rational":
-                return cast(Fraction, self.expression.arguments[0])
+                return cast(Fraction, expression.arguments[0])
             case "negate":
-                value = cast(ExactLocalValue, self.expression.arguments[0]).rational_value()
+                value = cast(ExactLocalValue, expression.arguments[0]).rational_value()
                 return None if value is None else -value
             case "add":
-                first = cast(ExactLocalValue, self.expression.arguments[0]).rational_value()
-                second = cast(ExactLocalValue, self.expression.arguments[1]).rational_value()
+                first = cast(ExactLocalValue, expression.arguments[0]).rational_value()
+                second = cast(ExactLocalValue, expression.arguments[1]).rational_value()
                 return None if first is None or second is None else first + second
             case "multiply":
-                first = cast(ExactLocalValue, self.expression.arguments[0]).rational_value()
-                second = cast(ExactLocalValue, self.expression.arguments[1]).rational_value()
+                first = cast(ExactLocalValue, expression.arguments[0]).rational_value()
+                second = cast(ExactLocalValue, expression.arguments[1]).rational_value()
                 return None if first is None or second is None else first * second
             case _:
                 return None

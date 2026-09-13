@@ -1439,16 +1439,23 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-discopy-wire-identity-cache`. Key `_wire_tokens` directly by the owned object in `MonoDict`; preserve the token string sequence and reverse `_wire_values` mapping used by DisCoPy readback.
 
-
 ## GAP slice and functor adapters used raw ids for local native maps
 
 - **Evidence and impact:** `engines/slice_categories.py` and `engines/functor_categories.py` built temporary object-to-native lookup tables as `dict[int, object]` keyed by `id(...)`. The actual contract is identity-keyed owned-value lookup, already represented directly by Sage `MonoDict`; carrying raw integer identities obscures that contract.
 
 - **Repair link and acceptance:** `bloat-gap-local-identity-maps`. Use `MonoDict` keyed by the owned slice objects and functor-category arrows while leaving the GAP reconstruction itself unchanged.
 
-
 ## DisCoPy word caching used bare object ids without retaining the word
 
-- **Evidence and impact:** `NonstrictMonoidalModel._word()` cached interpreted wire words under a tuple of bare `id(value)` integers. Unlike the adjacent retained wire-token map, that key did not keep its owned objects alive, so Python id reuse could alias a later word after the original objects were released. The repository already has `identity_key` for exactly this cache-key contract.
+- **Evidence and impact:** `NonstrictMonoidalModel._word()` cached interpreted wire words under a tuple of bare `id(value)` integers.
+  Unlike the adjacent retained wire-token map, that key did not keep its owned objects alive, so Python id reuse could alias a later word after the original objects were released.
+  The repository already has `identity_key` for exactly this cache-key contract.
 
 - **Repair link and acceptance:** `bloat-discopy-word-identity-key`. Key `_word_cache` by `identity_key(*word)`, preserving ordered identity semantics while retaining the values that justify those identities.
+
+
+## DisCoPy path evaluation kept a second raw-id object cache
+
+- **Evidence and impact:** `evaluate_path()` wrapped owned objects for its local DisCoPy category through a plain dictionary keyed by `id(value)`, even though the lookup contract is direct Python identity and Sage `MonoDict` is already imported in this engine. The separate stringified-id map is required by DisCoPy token names, but the semantic wrapper cache is not.
+
+- **Repair link and acceptance:** `bloat-discopy-path-object-cache`. Key the local semantic-object wrappers directly by owned values in `MonoDict` and leave the external DisCoPy token map untouched.

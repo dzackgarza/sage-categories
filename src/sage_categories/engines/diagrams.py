@@ -238,13 +238,12 @@ def evaluate_path(
 
     cat = _discopy_cat()
     category = cat.Category(ObjectValue, ArrowValue)
-    objects: dict[int, ObjectValue] = {}
+    objects: MonoDict = MonoDict()
 
     def ob(value: object) -> ObjectValue:
-        key = id(value)
-        if key not in objects:
-            objects[key] = ObjectValue(value)
-        return objects[key]
+        if value not in objects:
+            objects[value] = ObjectValue(value)
+        return objects[value]
 
     targets = tuple(arrow.codomain() for arrow in arrows)
     chain = (domain, *targets)

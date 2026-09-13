@@ -1602,9 +1602,9 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-presented-category-public-boundary`. Recover generator/relation endpoints from `category.generator(name).domain()/codomain()` and `category.label(...)` in both native adapters.
 
-
 ## Catlab fallback materialization bypassed natural-transformation component access
 
-- **Evidence and impact:** `engines/catlab.py::ensure_native_transformation()` fell back to a natural transformation's private `_assignment` callback when no native recipe had been retained. The public `component()` operation already owns lazy component realization and identity caching, so the engine boundary bypassed the retained semantics it should consume.
+- **Evidence and impact:** `engines/catlab.py::ensure_native_transformation()` fell back to a natural transformation's private `_assignment` callback when no native recipe had been retained.
+  The public `component()` operation already owns lazy component realization and identity caching, so the engine boundary bypassed the retained semantics it should consume.
 
 - **Repair link and acceptance:** `bloat-catlab-transformation-boundary`. Supply the bound public `component` method to Catlab's callable transformation model instead of reading `_assignment` directly.

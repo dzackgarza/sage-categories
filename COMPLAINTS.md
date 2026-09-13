@@ -1006,3 +1006,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat_kernel/axioms.py` imports public predicate declarations only after `Cat` exists, but subclass application installation imported `Axiom` locally while each generated application imported `declared_axiom` again. Both are reads from the same cycle-sensitive public predicate owner.
 
 - **Repair link and acceptance:** `bloat-axiom-predicate-boundary`. Put the delayed predicate module behind `_predicates()` and use it for both axiom-type recognition and generated application lookup.
+
+## Compiler execution reopened the refinement graph at separate call sites
+
+- **Evidence and impact:** `kernel/compiler.py` imported `traces_inheritance` when reading selected inheritance edges and separately imported `declares_point`/`is_placed` during category compilation. The compiler and refinement modules intentionally meet through a delayed cycle boundary, but both operations query the same retained refinement graph.
+
+- **Repair link and acceptance:** `bloat-compiler-refinement-boundary`. Put the delayed refinement module behind `_refinement()` and route inheritance tracing plus selected-functor placement/point checks through that one owner.

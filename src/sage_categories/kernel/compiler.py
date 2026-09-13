@@ -6,7 +6,7 @@ import inspect
 import logging
 from collections.abc import Callable, Iterator
 from itertools import count
-from types import FunctionType, GenericAlias
+from types import FunctionType, GenericAlias, ModuleType
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple, cast
 
 from sage_categories.kernel.construction import (
@@ -88,6 +88,13 @@ _LOGGER = logging.getLogger(__name__)
 type MethodResultProjection = tuple[str, tuple[tuple[int, int], ...]]
 type MethodResultProjectionReader = Callable[[], dict[str, MethodResultProjection]]
 _method_result_projection_reader: MethodResultProjectionReader | None = None
+
+
+def _refinement() -> ModuleType:
+    """Load refinement graph queries at the compiler/refinement cycle boundary."""
+    from sage_categories.kernel import refinement
+
+    return refinement
 
 
 def install_method_result_projection_reader(
@@ -275,9 +282,7 @@ def inheriting_functors(category: Category) -> tuple[Functor, ...]:
     isofibration, so this reads it out, and what it carries is the categorical level shift
     along the inclusion its image generates (D154, D161, D169; ``refinement.place``).
     """
-    from sage_categories.kernel.refinement import traces_inheritance
-
-    return tuple(functor for functor in category.selected_functors() if traces_inheritance(functor))
+    return tuple(functor for functor in category.selected_functors() if _refinement().traces_inheritance(functor))
 
 
 def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
@@ -1248,12 +1253,11 @@ def _debug_unresolved_diamonds(category: Category) -> None:
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
     """Compile the three role classes of ``category`` from its local declarations and its selected functors."""
-    from sage_categories.kernel.refinement import declares_point, is_placed
-
+    refinement = _refinement()
     for functor in functors:
         functor_category = category.universe().morphism_category(1)
-        assert is_placed(functor, functor_category), f"{functor!r} is not an object of {functor_category!r}"
-        if declares_point(functor):
+        assert refinement.is_placed(functor, functor_category), f"{functor!r} is not an object of {functor_category!r}"
+        if refinement.declares_point(functor):
             # A selected point functor is the arrow ``* -> D`` that places this category
             # as an object of ``D``; it starts at the terminal category, not here, and
             # what it carries is the level shift rather than an implementation edge

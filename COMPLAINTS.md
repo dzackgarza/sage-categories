@@ -1417,3 +1417,16 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/roles.py` imported `typing.TypeIs` in the runtime import set even though its only use is the postponed return annotation of `is_category()`. The module already isolates category, functor, and cache annotation dependencies under `TYPE_CHECKING`, so this was an unnecessary runtime typing dependency at the kernel bootstrap boundary.
 
 - **Repair link and acceptance:** `bloat-role-typeis-import`. Import `TypeIs` only under `TYPE_CHECKING`; the runtime role surface keeps the same annotation while no longer binding a type-only helper during bootstrap.
+
+## Ring-presheaf construction mixed restriction validation with functor assembly
+
+- **Evidence and impact:** `geometry/sheaves.py::ring_presheaf` validated the complete finite restriction calculus—section-ring ownership, exact endpoints, identities, and triple-composition laws—and then also assembled the contravariant section functor. Validation and construction have different invariants, so the public constructor carried both the presheaf laws and the resulting functor wiring.
+
+- **Repair link and acceptance:** `bloat-ring-presheaf-validation`. Move the finite section/restriction checks to `_validate_ring_presheaf_data()` and leave `ring_presheaf()` responsible for assembling the already-validated contravariant functor and presentation.
+
+
+## Covered schemes hand-rolled an identity cache for affine wrappers
+
+- **Evidence and impact:** `SchemesCategory` cached the covered-scheme wrapper of an affine chart in a plain dictionary under `id(affine)`, retained the affine object again beside the wrapper, and matched identity on every lookup. This duplicates Sage `MonoDict`, which is already the repository owner for retained identity maps.
+
+- **Repair link and acceptance:** `bloat-scheme-affine-wrapper-identity-cache`. Key the wrapper directly by the owned affine scheme in `MonoDict` and delete the integer key plus duplicate retained owner.

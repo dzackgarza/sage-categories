@@ -36,6 +36,7 @@ from sage_categories.geometry.affine import (
     native_affine_scheme,
 )
 from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
     "ProjectiveLinePresentation",
@@ -119,7 +120,7 @@ class SchemesCategory(Category[Any, Any]):
         pass
 
     def __init__(self) -> None:
-        self._affine_wrappers: dict[int, tuple[AffineSchemesCategory.ObjectType, SchemesCategory.ObjectType]] = {}
+        self._affine_wrappers: MonoDict = MonoDict()
         super().__init__()
 
     def _from_native(self, construction: object, native: OscarHandle) -> SchemesCategory.ObjectType:
@@ -156,15 +157,12 @@ class SchemesCategory(Category[Any, Any]):
 
     def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType:
         """The affine scheme as a scheme, preserving its exact OSCAR chart."""
-        key = id(affine)
-        match self._affine_wrappers.get(key):
-            case (retained, value) if retained is affine:
-                return value
-            case _:
-                native = oscar.covered_scheme(native_affine_scheme(cast(CategoryOfCategories.ElementType, affine)).native)
-                value = self._from_native(_AffineSchemeConstruction(affine), native)
-                self._affine_wrappers[key] = (affine, value)
-                return value
+        if affine in self._affine_wrappers:
+            return self._affine_wrappers[affine]
+        native = oscar.covered_scheme(native_affine_scheme(cast(CategoryOfCategories.ElementType, affine)).native)
+        value = self._from_native(_AffineSchemeConstruction(affine), native)
+        self._affine_wrappers[affine] = value
+        return value
 
     def glue_two_affines(
         self,

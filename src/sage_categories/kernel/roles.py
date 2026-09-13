@@ -7,9 +7,11 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import Enum
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeIs, cast
+from typing import TYPE_CHECKING, Any, Generic, Protocol, cast
 
 if TYPE_CHECKING:
+    from typing import TypeIs
+
     from sage_categories.cat.category import Category
     from sage_categories.cat.functors import Functor
     from sage_categories.kernel.functor_cache import FunctorImageCache

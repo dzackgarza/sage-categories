@@ -18,7 +18,7 @@ from sage_categories.cat.declarations import Sets
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Unknown, UnknownClass
 from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.retention import identity_positions
 from sage_categories.sets._finite_cap import (
     finite_native_morphism,
     finite_native_object,
@@ -50,14 +50,6 @@ __all__ = [
     "primitive_colimit",
     "primitive_limit",
 ]
-
-
-def _identity_positions(values: tuple[object, ...]) -> MonoDict:
-    """Map retained values to their positions without invoking mathematical equality."""
-    positions: MonoDict = MonoDict()
-    for index, value in enumerate(values):
-        positions[value] = index
-    return positions
 
 
 def _owned_map_value(arrow: MorphismCategory.ObjectType, datum: object) -> object:
@@ -283,7 +275,7 @@ def _native_diagram(diagram: Functor):
     finite = _finite_category_data(diagram.domain())
     assert finite is not Unknown, "native finite-set execution requires exact finite structural data"
     vertices = tuple(finite.objects)
-    positions = _identity_positions(vertices)
+    positions = identity_positions(vertices)
     factors = tuple(diagram.on_object(vertex) for vertex in vertices)
     native_factors = [_native_object(factor) for factor in factors]
     decorated = []
@@ -416,7 +408,7 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
     )
     apex = Sets(apex_data)
     native_apex = _native_object(apex)
-    positions = _identity_positions(vertices)
+    positions = identity_positions(vertices)
     legs = tuple(
         _native_map_on_owned_endpoints(
             apex,
@@ -525,7 +517,7 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
     assert all(label is not None for label in apex_labels)
     apex = Sets(tuple(apex_labels))
     native_apex = _native_object(apex)
-    positions = _identity_positions(vertices)
+    positions = identity_positions(vertices)
     legs = tuple(
         _native_map_on_owned_endpoints(
             factors[index],

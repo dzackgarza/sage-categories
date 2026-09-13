@@ -14,18 +14,26 @@ from functools import partial, wraps
 from graphlib import TopologicalSorter
 from typing import TYPE_CHECKING
 
-from sage_categories.kernel.sage_runtime import cached_function
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.cat.functors import Functor
 
-__all__ = ["category_construction_functors", "complete_constructions", "deferred_category", "identity_key", "retained_involution"]
+__all__ = ["category_construction_functors", "complete_constructions", "deferred_category", "identity_key", "identity_positions", "retained_involution"]
 
 
 def identity_key[Value](*values: Value) -> tuple[tuple[int, Value], ...]:
     """Keep each argument alive and compare its identity before its equality."""
     return tuple((id(value), value) for value in values)
+
+
+def identity_positions[Value](values: tuple[Value, ...]) -> MonoDict:
+    """Map retained values to tuple positions without invoking mathematical equality."""
+    positions: MonoDict = MonoDict()
+    for index, value in enumerate(values):
+        positions[value] = index
+    return positions
 
 
 _deferred_category: ContextVar[Category | None] = ContextVar("deferred category", default=None)

@@ -1996,3 +1996,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** every `_construct_transformation()` created a `NaturalTransformationData(assignment, source_functor, target_functor)` and then immediately copied the same three values into Catlab's `_transformation_recipes` as a `"callable"` recipe. Lazy Catlab execution already has a no-recipe path that reads `source_functor()`, `target_functor()`, and `component` directly from the transformation, so the primitive recipe did not provide a second capability; specialized identity/composition/whiskering/horizontal recipes are distinct because they select Catlab-native structural operations.
 
 - **Repair link and acceptance:** `bloat-catlab-callable-transformation-recipe`. Delete the primitive callable-recipe writer and engine export, leave primitive transformations with only their owned `NaturalTransformationData`, and keep the specialized structural recipes for native Catlab operations.
+
+## Finite engine adapters duplicated the same identity-position helper
+
+- **Evidence and impact:** both `engines/finite_sets.py` and `engines/category_limits.py` defined the same `_identity_positions(values)` loop that built a Sage `MonoDict` mapping retained values to tuple positions. The code exists only to enforce identity-keyed indexing without invoking proposition-valued equality, which is a repository-wide retention primitive rather than engine-specific mathematics.
+
+- **Repair link and acceptance:** `bloat-shared-identity-positions`. Move the identity-position construction beside `identity_key` in `kernel.retention`, delete both engine-local implementations, and route finite-set and category-limit lowering through the shared owner.

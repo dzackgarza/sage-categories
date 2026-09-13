@@ -1804,3 +1804,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/images.py::ImageCategory._identity_morphism_` repeated check/cache/store against the inherited `_identities` table even though `Category._identity_morphism_` is already the repository owner of once-per-object identity retention. The image layer only needs to specialize `construct_identity`; its duplicate lifecycle also skipped the generic owner's native-cell identity retention, self-inverse retention, and `Mor(C).Identity()` refinement.
 
 - **Repair link and acceptance:** `bloat-image-identity-override`. Delete the image override and let the generic owner call the image-specific `construct_identity`; pin repeated identity, image membership, retained self-inverse, and `Identity()` placement in the full-image consumer.
+
+## Category slice constructors hand-rolled two identity-keyed method caches
+
+- **Evidence and impact:** `Category.SliceOver()` and `CosliceUnder()` carried `_slices` and `_coslices` `MonoDict`s and duplicated identity lookup/construct/store around results determined only by the fixed object. The object identity key is required, but Sage `cached_method` already accepts the repository `identity_key` policy.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache both parameterized slice constructors with `cached_method(key=identity_key(...))`, remove `_slices`/`_coslices`, and keep their mathematical constructors unchanged.

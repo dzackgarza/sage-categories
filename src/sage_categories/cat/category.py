@@ -343,8 +343,6 @@ class CategoryDeclaration[
         self._arrows: MonoDict = MonoDict()
         self._elements: MonoDict = MonoDict()
         self._composites: TripleDict = TripleDict(weak_values=False)
-        self._slices: MonoDict = MonoDict()
-        self._coslices: MonoDict = MonoDict()
         self._biproduct_constructor: Callable[[object, object], object] | None = None
         self._zero_morphism_constructor: Callable[[object, object], object] | None = None
         self._colimit_constructors: MonoDict = MonoDict()
@@ -1031,23 +1029,21 @@ class CategoryDeclaration[
 
     # -- slices, coslices, and the categories of subobjects (POL-FUN-029, POL-CAT-095, POL-SCOPE-003) --
 
+    @cached_method(key=lambda self, member_object: identity_key(member_object))
     def SliceOver(self, member_object: ObjectRole) -> Category:
         """``C.SliceOver(x)``: the strict pullback of ``ev_1: Fun([1], C) -> C`` along ``x: * -> C``."""
         from sage_categories.cat.slices import slice_over
 
         assert member_object in self, f"{member_object!r} is not an object of {self!r}"
-        if member_object not in self._slices:
-            self._slices[member_object] = slice_over(self, member_object)
-        return self._slices[member_object]
+        return slice_over(self, member_object)
 
+    @cached_method(key=lambda self, member_object: identity_key(member_object))
     def CosliceUnder(self, member_object: ObjectRole) -> Category:
         """``C.CosliceUnder(x) = C.op().SliceOver(x).op()``."""
         from sage_categories.cat.slices import coslice_under
 
         assert member_object in self, f"{member_object!r} is not an object of {self!r}"
-        if member_object not in self._coslices:
-            self._coslices[member_object] = coslice_under(self, member_object)
-        return self._coslices[member_object]
+        return coslice_under(self, member_object)
 
     # The four fixed-object construction categories, defined once here so that every
     # category inherits them (POL-CAT-092).  The ambient named in the call fixes the role

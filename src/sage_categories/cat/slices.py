@@ -33,7 +33,7 @@ from sage_categories.cat.predicates import Predicate, Proposition, ask, register
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, cached_method
+from sage_categories.kernel.sage_runtime import cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories

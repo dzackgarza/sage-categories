@@ -201,51 +201,48 @@ def _ruff_executable() -> Path:
     return Path(executable)
 
 
-def _stub_import_groups(tree: ast.Module, package: str) -> tuple[tuple[ast.stmt, ...], ...]:
-    """Return Ruff-isort-ordered import groups for the generated stub.
-
-    The semantic projector owns import presence.  In particular, a parse-only
-    ``_typeshed.Incomplete`` import becomes stale after a projected declaration is
-    replaced by its exact owned type; remove that import only when the projected AST
-    no longer refers to ``Incomplete``.  Every remaining imported alias is emitted as
-    its own statement, matching Ruff's stub import convention.
-    """
-    loaded_names = {
+def _stub_loaded_names(tree: ast.Module) -> frozenset[str]:
+    """Names read by projected declarations after import statements are removed."""
+    return frozenset(
+        {
         node.id
         for statement in tree.body
         if not isinstance(statement, ast.Import | ast.ImportFrom)
         for node in ast.walk(statement)
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
-    }
-    uses_incomplete = "Incomplete" in loaded_names
+        }
+    )
+
+
+def _stub_imports(tree: ast.Module, loaded_names: frozenset[str]) -> tuple[ast.stmt, ...]:
+    """Project exactly the imports still referenced by the generated stub surface."""
     imports: list[ast.stmt] = []
     unaliased_from_imports: dict[tuple[str | None, int], list[ast.alias]] = {}
     for statement in tree.body:
-        if isinstance(statement, ast.Import):
-            imports.extend(ast.Import(names=[copy.deepcopy(alias)]) for alias in statement.names)
-            continue
-        if not isinstance(statement, ast.ImportFrom):
-            continue
-        for alias in statement.names:
-            if statement.module == "_typeshed" and alias.name == "Incomplete" and not uses_incomplete:
-                continue
-            bound = alias.asname or alias.name
-            explicit_reexport = alias.asname == alias.name
-            if statement.module != "__future__" and alias.name != "*" and not explicit_reexport and bound not in loaded_names:
-                continue
-            if alias.asname is None:
-                key = (statement.module, statement.level)
-                if key not in unaliased_from_imports:
-                    unaliased_from_imports[key] = []
-                unaliased_from_imports[key].append(copy.deepcopy(alias))
-                continue
-            imports.append(
-                ast.ImportFrom(
-                    module=statement.module,
-                    names=[copy.deepcopy(alias)],
-                    level=statement.level,
-                )
-            )
+        match statement:
+            case ast.Import(names=aliases):
+                imports.extend(ast.Import(names=[copy.deepcopy(alias)]) for alias in aliases)
+            case ast.ImportFrom(module=module, names=aliases, level=level):
+                for alias in aliases:
+                    match module == "_typeshed" and alias.name == "Incomplete" and "Incomplete" not in loaded_names:
+                        case True:
+                            continue
+                        case False:
+                            pass
+                    bound = alias.asname or alias.name
+                    explicit_reexport = alias.asname == alias.name
+                    match module != "__future__" and alias.name != "*" and not explicit_reexport and bound not in loaded_names:
+                        case True:
+                            continue
+                        case False:
+                            pass
+                    match alias.asname:
+                        case None:
+                            _list_bucket(unaliased_from_imports, (module, level)).append(copy.deepcopy(alias))
+                        case _:
+                            imports.append(ast.ImportFrom(module=module, names=[copy.deepcopy(alias)], level=level))
+            case _:
+                pass
     imports.extend(
         ast.ImportFrom(
             module=module,
@@ -254,39 +251,55 @@ def _stub_import_groups(tree: ast.Module, package: str) -> tuple[tuple[ast.stmt,
         )
         for (module, level), aliases in unaliased_from_imports.items()
     )
+    return tuple(imports)
 
-    def module_name(statement: ast.stmt) -> str:
-        if isinstance(statement, ast.Import):
-            return statement.names[0].name
-        assert isinstance(statement, ast.ImportFrom)
-        return statement.module or ""
 
-    def group_index(statement: ast.stmt) -> int:
-        module = module_name(statement)
-        if isinstance(statement, ast.ImportFrom) and statement.level:
+def _stub_import_module(statement: ast.stmt) -> str:
+    """The module spelling of one normalized import statement."""
+    match statement:
+        case ast.Import(names=[alias]):
+            return alias.name
+        case ast.ImportFrom(module=module):
+            return module or ""
+        case _:
+            raise AssertionError(f"{statement!r} is not a normalized import")
+
+
+def _stub_import_group(statement: ast.stmt, package: str) -> int:
+    """Ruff/isort section index for one normalized generated-stub import."""
+    module = _stub_import_module(statement)
+    match statement:
+        case ast.ImportFrom(level=level) if level:
             return 3
-        if module == "__future__":
+        case _ if module == "__future__":
             return 0
-        root = module.split(".", 1)[0]
-        if root in sys.stdlib_module_names:
+        case _ if module.split(".", 1)[0] in sys.stdlib_module_names:
             return 1
-        if module == package or module.startswith(f"{package}."):
+        case _ if module == package or module.startswith(f"{package}."):
             return 3
-        return 2
+        case _:
+            return 2
 
-    def order_key(statement: ast.stmt) -> tuple[int, str, str, str]:
-        assert isinstance(statement, ast.Import | ast.ImportFrom)
-        alias = statement.names[0]
-        return (
-            0 if isinstance(statement, ast.Import) else 1,
-            module_name(statement),
-            alias.name,
-            alias.asname or "",
-        )
+
+def _stub_import_order(statement: ast.stmt) -> tuple[int, str, str, str]:
+    """Stable Ruff-compatible order key for one normalized import statement."""
+    assert isinstance(statement, ast.Import | ast.ImportFrom)
+    alias = statement.names[0]
+    return (
+        0 if isinstance(statement, ast.Import) else 1,
+        _stub_import_module(statement),
+        alias.name,
+        alias.asname or "",
+    )
+
+
+def _stub_import_groups(tree: ast.Module, package: str) -> tuple[tuple[ast.stmt, ...], ...]:
+    """Return Ruff-isort-ordered import groups for the generated stub."""
+    imports = _stub_imports(tree, _stub_loaded_names(tree))
 
     grouped: list[tuple[ast.stmt, ...]] = []
     for index in range(4):
-        group = tuple(sorted((statement for statement in imports if group_index(statement) == index), key=order_key))
+        group = tuple(sorted((statement for statement in imports if _stub_import_group(statement, package) == index), key=_stub_import_order))
         if group:
             grouped.append(group)
     return tuple(grouped)

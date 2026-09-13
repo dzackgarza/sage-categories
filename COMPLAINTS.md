@@ -676,3 +676,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/compiler.py::apply_level_shift` combined selected-functor reachability, runtime-cache replacement, and per-object class migration in one 12-complexity function. The two graph traversals answer distinct questions: which runtime nodes are affected, and which retained values need rebuilt classes.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give runtime reachability and retained-value migration separate private owners; leave `apply_level_shift` to compute the affected runtime class replacement and hand the migration phase its exact replacement/added-node tables.
+
+## Stub import projection combined liveness, normalization, grouping, and ordering
+
+- **Evidence and impact:** `kernel/stub_generator.py::_stub_import_groups` computed declaration liveness, filtered imports, merged unaliased from-imports, classified isort sections, and ordered every result in one 19-complexity function. Those are separate projector invariants, and changes to one import rule forced reasoning through the entire rendering pipeline.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Split loaded-name discovery, retained-import projection, module extraction, section classification, and ordering into named private helpers; keep `_stub_import_groups` as the four-section assembly only.

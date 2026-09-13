@@ -2329,10 +2329,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def Initial(self) -> FinitePresentedCategory:
         """The empty category, the initial object of ``Cat()`` (``specs/functor.md``, "Canonical objects of Cat")."""
         canonical = _canonical_categories()
-
-        if ("empty", ()) not in self._canonical:
-            self._canonical["empty", ()] = canonical.empty_category()
-        return self._canonical["empty", ()]
+        return self._canonical_shape("empty", (), canonical.empty_category)
 
     def Terminal(self) -> FinitePresentedCategory:
         return self.Simplex(0)
@@ -2360,17 +2357,13 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         canonical = _canonical_categories()
 
         assert dimension >= 0
-        if ("simplex", (dimension,)) not in self._canonical:
-            self._canonical["simplex", (dimension,)] = canonical.simplex(dimension)
-        return self._canonical["simplex", (dimension,)]
+        return self._canonical_shape("simplex", (dimension,), lambda: canonical.simplex(dimension))
 
     def Boundary(self, dimension: int | Integer) -> FinitePresentedCategory:
         canonical = _canonical_categories()
 
         assert dimension == 2, "Cat owns the boundary of the 2-simplex only"
-        if ("boundary", (dimension,)) not in self._canonical:
-            self._canonical["boundary", (dimension,)] = canonical.boundary(dimension)
-        return self._canonical["boundary", (dimension,)]
+        return self._canonical_shape("boundary", (dimension,), lambda: canonical.boundary(dimension))
 
     def Horn(self, dimension: int, omitted_face: int) -> FinitePresentedCategory:
         canonical = _canonical_categories()
@@ -2381,16 +2374,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             # it is the walking composable pair ``[2]`` (nLab "walking structure":
             # the walking composable pair is the (2,1)-horn category; inspected 2026-08-26).
             return self.Simplex(2)
-        if ("horn", (dimension, omitted_face)) not in self._canonical:
-            self._canonical["horn", (dimension, omitted_face)] = canonical.horn(dimension, omitted_face)
-        return self._canonical["horn", (dimension, omitted_face)]
+        return self._canonical_shape("horn", (dimension, omitted_face), lambda: canonical.horn(dimension, omitted_face))
 
     def WalkingIsomorphism(self) -> FinitePresentedCategory:
         canonical = _canonical_categories()
-
-        if ("walking isomorphism", ()) not in self._canonical:
-            self._canonical["walking isomorphism", ()] = canonical.walking_isomorphism()
-        return self._canonical["walking isomorphism", ()]
+        return self._canonical_shape("walking isomorphism", (), canonical.walking_isomorphism)
 
     def WalkingSpan(self) -> FinitePresentedCategory:
         """The free category on ``0 <- 1 -> 2``."""
@@ -2402,10 +2390,19 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def WalkingParallelPair(self) -> FinitePresentedCategory:
         canonical = _canonical_categories()
+        return self._canonical_shape("walking parallel pair", (), canonical.walking_parallel_pair)
 
-        if ("walking parallel pair", ()) not in self._canonical:
-            self._canonical["walking parallel pair", ()] = canonical.walking_parallel_pair()
-        return self._canonical["walking parallel pair", ()]
+    def _canonical_shape(
+        self,
+        name: str,
+        parameters: tuple[int | Integer, ...],
+        construct: Callable[[], FinitePresentedCategory],
+    ) -> FinitePresentedCategory:
+        """Retain one canonical finite shape by its mathematical presentation key."""
+        key = (name, tuple(int(parameter) for parameter in parameters))
+        if key not in self._canonical:
+            self._canonical[key] = construct()
+        return self._canonical[key]
 
     def element_from_defining_morphism(self, defining_functor: Functor) -> CategoryOfCategories.ElementType:
         """The point of a category with domain ``T``, given by a functor ``T -> C``."""

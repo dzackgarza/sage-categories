@@ -1735,3 +1735,10 @@ Ideas, to be weighed, not obligations.*
   This duplicates the standard nullary-cache lifecycle and adds mutable state unrelated to the adelic mathematics.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Use `functools.cache` on `adeles_of_rationals()` and return the constructed presentation directly; remove the nullable global and manual cache branch.
+
+## Canonical Cat shapes repeated the same cache mutation protocol
+
+- **Evidence and impact:** `Cat.Initial`, `Simplex`, `Boundary`, `Horn`, `WalkingIsomorphism`, and `WalkingParallelPair` each re-spelled the same `_canonical` key test, constructor call, assignment, and lookup.
+  The only varying data are the mathematical presentation key and constructor, so six copies obscure the actual shape-specific assertions.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Give `CategoryOfCategories` one `_canonical_shape` retention helper and leave each public shape constructor responsible only for its admissibility rules and canonical constructor.

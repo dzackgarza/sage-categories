@@ -1239,3 +1239,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `geometry/schemes.py::projective_line` constructed the affine gluing and chart-swap map, then embedded a second independent responsibility: the finite cover category, section-ring functor, transported overlap restriction, and ring-presheaf reconstruction. That made the line constructor over one hundred lines and hid the sheaf's exact restriction presentation inside local closures.
 
 - **Repair link and acceptance:** `bloat-projective-line-sheaf`. Move the finite cover, sections, restrictions and `ring_presheaf_from_functor` call into `_projective_line_structure_sheaf()`; keep `projective_line()` responsible for chart rings, gluing/swap data, and assembly of the final presentation.
+
+## Adele construction mixed algebra and topology in one long initializer
+
+- **Evidence and impact:** `adeles_of_rationals()` built the restricted-product carrier, its commutative ring, the topology of basic opens, and continuity witnesses for both ring operations in one function. These are two independent mathematical construction boundaries, and the resulting initializer hid the topology's binary-preimage rule inside a nested closure.
+
+- **Repair link and acceptance:** `bloat-adele-algebra-topology`. Split `_adele_ring()` from `_adele_topological_ring()` so the public constructor only selects the owner, assembles the two retained structures, and packages the final presentation.

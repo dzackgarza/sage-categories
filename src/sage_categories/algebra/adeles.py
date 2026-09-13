@@ -329,16 +329,8 @@ class AdelePresentation:
 _adeles: AdelePresentation | None = None
 
 
-def adeles_of_rationals() -> AdelePresentation:
-    """Return the exact restricted product ``R x product'_p Q_p`` relative to ``Z_p``."""
-    global _adeles
-    match _adeles:
-        case AdelePresentation():
-            return _adeles
-        case None:
-            pass
-
-    owner = object()
+def _adele_ring(owner: object) -> tuple[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType]:
+    """Construct the exact restricted-product carrier and its commutative ring operations."""
     carrier = Sets.from_membership(lambda value: true if isinstance(value, AdeleValue) and value.owner is owner else false)
     zero = AdeleValue(
         owner,
@@ -361,7 +353,15 @@ def adeles_of_rationals() -> AdelePresentation:
         zero,
         one,
     )
+    return carrier, ring
 
+
+def _adele_topological_ring(
+    owner: object,
+    carrier: CategoryOfCategories.ElementType,
+    ring: CategoryOfCategories.ElementType,
+) -> tuple[TopologicalSpacesCategory.ObjectType, TopologicalRingsCategory.ObjectType]:
+    """Install the restricted-product topology and continuity of the two ring operations."""
     opens = Sets.from_membership(lambda value: true if isinstance(value, AdeleOpen) and value.owner is owner else false)
     open_category = Thin(opens, _open_order)
 
@@ -379,10 +379,7 @@ def adeles_of_rationals() -> AdelePresentation:
     addition = cast(MorphismCategory.ObjectType, cast(Any, ring).addition())
     multiplication = cast(MorphismCategory.ObjectType, cast(Any, ring).multiplication())
 
-    def binary_preimage(
-        operation: str,
-        open_object: CategoryOfCategories.ElementType,
-    ) -> ProductTopologyOpen:
+    def binary_preimage(operation: str, open_object: CategoryOfCategories.ElementType) -> ProductTopologyOpen:
         open_set = cast(AdeleOpen, cast(Any, open_object).point().datum())
 
         def membership(pair: tuple[object, object]) -> bool | None:
@@ -409,12 +406,21 @@ def adeles_of_rationals() -> AdelePresentation:
         multiplication,
         lambda open_object: binary_preimage("multiplication", open_object),
     )
-    topological_ring = TopologicalRings()(
-        ring,
-        space,
-        addition_continuity,
-        multiplication_continuity,
-    )
+    return space, TopologicalRings()(ring, space, addition_continuity, multiplication_continuity)
+
+
+def adeles_of_rationals() -> AdelePresentation:
+    """Return the exact restricted product ``R x product'_p Q_p`` relative to ``Z_p``."""
+    global _adeles
+    match _adeles:
+        case AdelePresentation():
+            return _adeles
+        case None:
+            pass
+
+    owner = object()
+    carrier, ring = _adele_ring(owner)
+    space, topological_ring = _adele_topological_ring(owner, carrier, ring)
     empty_open = AdeleOpen(owner, "empty", lambda _value: False, ())
     whole_open = AdeleOpen(owner, "whole", lambda _value: True, ())
     _adeles = AdelePresentation(

@@ -42,21 +42,11 @@ class _CellState:
     morphisms: MonoDict = field(default_factory=MonoDict)
 
 
-_cell_owners: MonoDict = MonoDict()
-
-
-def _cell_owner(value: object, proposed: Category) -> Category:
-    if value in _cell_owners:
-        return _cell_owners[value]
-    _cell_owners[value] = proposed
-    return proposed
-
-
 def _root_owner(owner: Category) -> Category:
     root = owner
     while isinstance(root, MorphismCategory):
         root = root.base_category()
-    return root
+    return root.construction_owner()
 
 
 @cached_function(key=lambda owner: identity_key(_root_owner(owner)))
@@ -100,7 +90,7 @@ def retain_identity(
     value: MorphismCategory.ObjectType,
 ) -> homotopy.Cell:
     """Retain ``value`` as the native identity on its exact owned source cell."""
-    owner = _cell_owner(value, owner)
+    owner = _root_owner(owner)
     state = _state(owner)
     cached = _cached_morphism(state, value)
     match cached is None:
@@ -120,7 +110,7 @@ def retain_composite(
     second: MorphismCategory.ObjectType,
 ) -> homotopy.Cell:
     """Retain ``value = second * first`` via native top-boundary attachment."""
-    owner = _cell_owner(value, owner)
+    owner = _root_owner(owner)
     state = _state(owner)
     cached = _cached_morphism(state, value)
     first_native = native_cell(owner, first)
@@ -142,7 +132,7 @@ def _retain_lower_attachment(
     side: Literal["source", "target"],
 ) -> homotopy.Cell:
     """Retain a whisker as homotopy-core attachment along the 0-dimensional boundary."""
-    owner = _cell_owner(value, owner)
+    owner = _root_owner(owner)
     state = _state(owner)
     transformation_native = native_cell(owner, transformation)
     functor_native = native_object(owner, functor)
@@ -183,7 +173,7 @@ def retain_generator(
     invertibility: Literal["directed", "invertible"] = "directed",
 ) -> homotopy.Cell:
     """Retain one primitive owned cell as a native signature generator."""
-    owner = _cell_owner(value, owner)
+    owner = _root_owner(owner)
     state = _state(owner)
     cached = _cached_morphism(state, value)
     match cached is None:
@@ -244,7 +234,7 @@ def _retain_inverse_partner(
 
 def native_cell(owner: Category, value: MorphismCategory.ObjectType) -> homotopy.Cell:
     """Return the native cell for one exact owned arrow of ``owner``."""
-    owner = _cell_owner(value, owner)
+    owner = _root_owner(owner)
     state = _state(owner)
     cached = _cached_morphism(state, value)
     match cached is None:
@@ -289,9 +279,8 @@ def retain_inverses(
     backward: MorphismCategory.ObjectType,
 ) -> None:
     """Synchronize an exact owned inverse pair with the native signature."""
-    owner = _cell_owner(forward, owner)
-    backward_owner = _cell_owner(backward, owner)
-    assert backward_owner is owner
+    owner = _root_owner(owner)
+    assert _root_owner(backward.base_category()) is owner
     state = _state(owner)
     forward_native = native_cell(owner, forward)
     match forward is backward:
@@ -312,14 +301,14 @@ def retain_inverses(
 
 
 def typecheck(owner: Category, value: MorphismCategory.ObjectType) -> None:
-    owner = _cell_owner(value, owner)
+    owner = _root_owner(owner)
     state = _state(owner)
     state.signature.typecheck(native_cell(owner, value), True)
 
 
 def dimension(owner: Category, value: MorphismCategory.ObjectType) -> int:
     """Native dimension of one owned cell in the root signature."""
-    owner = _cell_owner(value, owner)
+    owner = _root_owner(owner)
     return native_cell(owner, value).dimension()
 
 
@@ -336,7 +325,7 @@ def boundary(
     and the final assertion checks that it is the native boundary, rather than computing
     a second boundary representation in Python.
     """
-    owner = _cell_owner(value, owner)
+    owner = _root_owner(owner)
     assert depth >= 0
     native = native_cell(owner, value).boundary(side, depth)
     current_owner = owner

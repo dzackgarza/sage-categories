@@ -2008,3 +2008,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** after the finite-set and category-limit engine adapters were consolidated on `kernel.retention.identity_positions`, `cat/limit_basis.py::diagram_presentation()` still repeated the same `MonoDict` enumerate/store loop for retained vertices. That left the same identity-indexing mechanism with two owners immediately after its consolidation.
 
 - **Repair link and acceptance:** `bloat-limit-basis-shared-position-helper`. Reuse `identity_positions(values)` for finite diagram presentations and remove the local `MonoDict` dependency without changing the incidence maps.
+
+## Homotopy cells retained a first-owner registry for an owner already determined by category construction
+
+- **Evidence and impact:** `engines/cells.py` stored `_cell_owners[value] = proposed_owner` on the first native-cell operation so later refinement would reuse that first owner. The owner is not independent retained data: the supplied category already states which category owns construction through `construction_owner()`, and a cell's higher `Mor` levels peel to that same root category. The registry therefore duplicated category ownership solely to defend against later placement changes.
+
+- **Repair link and acceptance:** `bloat-cell-owner-registry`. Normalize every supplied cell owner by peeling the `MorphismCategory` tower and taking the public `construction_owner()`, then delete `_cell_owners` and `_cell_owner`; native state remains keyed only by that canonical construction owner.

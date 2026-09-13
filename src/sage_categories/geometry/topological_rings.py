@@ -12,6 +12,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import ask
 from sage_categories.geometry._ring_categories import rings as _rings
 from sage_categories.geometry.spaces import (
+    TopologicalSpaces,
     TopologicalSpacesCategory,
     _topological_space_projection,
 )

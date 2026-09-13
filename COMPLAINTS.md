@@ -988,3 +988,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `algebra/abelian.py` crossed the `ModulePresentationsForCAP` adapter separately for morphism equality/construction, zero maps, biproducts, coequalizers, tensor elements/objects/maps/mediators/comparisons, and epimorphism colifts. The cycle-safe delay is required because the engine reconstructs owned `Ab` values, but thirteen operation-local imports made one allocated computation boundary look like thirteen independent implementations.
 
 - **Repair link and acceptance:** `bloat-additive-presented-module-boundary`. Put the delayed CAP adapter behind `_presented_modules()` and route every presented additive operation through that single engine-module owner.
+
+## Topological-ring identity lost the topology owner binding
+
+- **Evidence and impact:** `geometry/topological_rings.py::construct_identity` constructs the topology-side identity through `TopologicalSpaces()`, but the module imported only `TopologicalSpacesCategory` and `_topological_space_projection`. Ruff therefore reports `F821 Undefined name TopologicalSpaces` on the current public identity path, so any consumer reaching the category identity fails before checking its topology/ring coherence.
+
+- **Repair link and acceptance:** `bloat-topological-ring-identity-owner`. Bind the existing `TopologicalSpaces` owner beside the other topology imports; `construct_identity` then uses the same category owner as the rest of the geometry layer and the file is Ruff-clean.

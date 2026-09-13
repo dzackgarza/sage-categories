@@ -29,7 +29,7 @@ from sage_categories.kernel.predicates import (
     OwnedPredicate as Predicate,
 )
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import Unknown, UnknownClass, uncamelcase
+from sage_categories.kernel.sage_runtime import Unknown, UnknownClass, cached_method, uncamelcase
 from sage_categories.kernel.type_aliases import EqualityInput
 
 if TYPE_CHECKING:
@@ -381,8 +381,6 @@ class Axiom:
         self._deciding = deciding
         self._full_subcategory_of = full_subcategory_of
         self._implementation: type[PropertySubcategory] | None = None
-        # Retained per category and parameter values, by identity (POL-SAGE-013).
-        self._constructed: dict[tuple[tuple[int, CategoryOfCategories.ElementType], ...], Category] = {}
 
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:
         self._declaring_class = declaring_class
@@ -435,12 +433,10 @@ class Axiom:
         )
         self._implementation = implementation
 
+    @cached_method(key=lambda self, category, *parameters: identity_key(category, *parameters))
     def subcategory(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
         """``category.P(*parameters)``: one property subcategory per category and parameter values."""
-        key = identity_key(category, *parameters)
-        if key not in self._constructed:
-            self._constructed[key] = self._construct(category, *parameters)
-        return self._constructed[key]
+        return self._construct(category, *parameters)
 
     def is_constructed(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> bool:
         """Whether ``category.P(*parameters)`` is already retained; asking never constructs it.
@@ -451,7 +447,7 @@ class Axiom:
         constructing one for every functor instead would build a property subcategory per
         functor application.
         """
-        return identity_key(category, *parameters) in self._constructed
+        return self.subcategory.is_in_cache(category, *parameters)
 
     def inverse_image(self, along: Callable[[Category], Functor]) -> Axiom:
         """Transport this axiom along the functor defining each source category."""

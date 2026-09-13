@@ -1900,3 +1900,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `Category.arrow_functor(morphism)` maintained `_arrows: MonoDict` and open-coded lookup/construct/store even though the `[1] -> C` diagram is determined solely by the exact morphism identity. The table added a category field and a second cache protocol around a pure method result.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `arrow_functor` directly with Sage `cached_method(key=identity_key(...))`, remove `_arrows`, and keep its endpoint identities and nonidentity arrow action unchanged.
+
+## Axiom property categories hand-rolled an identity method cache
+
+- **Evidence and impact:** `Axiom.subcategory(category, *parameters)` maintained `_constructed` under `identity_key(...)` and duplicated lookup/construct/store solely to retain one property category per exact argument tuple. Its only extra reader, `is_constructed`, needs a no-side-effect cache-presence query, which Sage `cached_method` already exposes.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Make `subcategory` an identity-keyed cached method, implement `is_constructed` with `subcategory.is_in_cache(...)`, and remove `_constructed` without changing axiom construction or inverse-image semantics.

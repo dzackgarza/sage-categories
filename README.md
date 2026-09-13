@@ -15,6 +15,16 @@ from sage_categories.all import *
 This import selects the package-owned mathematical universe.
 Public operations return owned mathematical values or authorized SymPy proposition expressions.
 
+## Consumer revisions
+
+External Git consumers must pin a full commit SHA that is already reachable from this repository's published `origin` refs.
+A commit that exists only in a local checkout is not a published artifact, even when another local project can see it.
+There is no automatic publication cadence: pushing or merging a branch is an explicit repository-owner action after the applicable push gate, and an agent work unit does not publish history merely to make a downstream pin resolve.
+
+Before changing a consumer pin, verify that the selected SHA is present on the remote.
+If required work exists only locally, record the consumer as blocked on repository owner `dzackgarza` choosing either to publish the relevant branch/history or to select another already-published revision.
+Do not replace the declared Git dependency with a filesystem path to bypass that publication decision.
+
 ## Documentation map
 
 | Subject | Owner |

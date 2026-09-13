@@ -15,6 +15,7 @@ from importlib import import_module
 from operator import rshift
 from typing import Any, Protocol, cast, overload
 
+from sage_categories.kernel.sage_runtime import MonoDict
 from sage_categories.kernel.type_aliases import EqualityInput
 
 
@@ -125,7 +126,7 @@ class NonstrictMonoidalModel[Object, Arrow]:
         self._comparison = comparison
         self._word_cache: dict[tuple[int, ...], _ObjectValue] = {}
         self._wire_values: dict[str, Object] = {}
-        self._wire_tokens: dict[int, tuple[Object, str]] = {}
+        self._wire_tokens: MonoDict = MonoDict()
         self._next_wire = 0
         self._object_type: type[_ObjectValue] = type(
             f"_NonstrictObject_{id(self)}",
@@ -154,14 +155,12 @@ class NonstrictMonoidalModel[Object, Arrow]:
 
     def wire(self, value: Object) -> Any:
         """A stable DisCoPy atomic wire retaining one exact owned object."""
-        identifier = id(value)
-        if identifier in self._wire_tokens:
-            retained, token = self._wire_tokens[identifier]
-            assert retained is value
+        if value in self._wire_tokens:
+            token = self._wire_tokens[value]
         else:
             token = f"w{self._next_wire}"
             self._next_wire += 1
-            self._wire_tokens[identifier] = (value, token)
+            self._wire_tokens[value] = token
             self._wire_values[token] = value
         return _discopy_monoidal().Ty(token)
 

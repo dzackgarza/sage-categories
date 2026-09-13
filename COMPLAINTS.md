@@ -1420,13 +1420,21 @@ Ideas, to be weighed, not obligations.*
 
 ## Ring-presheaf construction mixed restriction validation with functor assembly
 
-- **Evidence and impact:** `geometry/sheaves.py::ring_presheaf` validated the complete finite restriction calculus—section-ring ownership, exact endpoints, identities, and triple-composition laws—and then also assembled the contravariant section functor. Validation and construction have different invariants, so the public constructor carried both the presheaf laws and the resulting functor wiring.
+- **Evidence and impact:** `geometry/sheaves.py::ring_presheaf` validated the complete finite restriction calculus—section-ring ownership, exact endpoints, identities, and triple-composition laws—and then also assembled the contravariant section functor.
+  Validation and construction have different invariants, so the public constructor carried both the presheaf laws and the resulting functor wiring.
 
 - **Repair link and acceptance:** `bloat-ring-presheaf-validation`. Move the finite section/restriction checks to `_validate_ring_presheaf_data()` and leave `ring_presheaf()` responsible for assembling the already-validated contravariant functor and presentation.
 
-
 ## Covered schemes hand-rolled an identity cache for affine wrappers
 
-- **Evidence and impact:** `SchemesCategory` cached the covered-scheme wrapper of an affine chart in a plain dictionary under `id(affine)`, retained the affine object again beside the wrapper, and matched identity on every lookup. This duplicates Sage `MonoDict`, which is already the repository owner for retained identity maps.
+- **Evidence and impact:** `SchemesCategory` cached the covered-scheme wrapper of an affine chart in a plain dictionary under `id(affine)`, retained the affine object again beside the wrapper, and matched identity on every lookup.
+  This duplicates Sage `MonoDict`, which is already the repository owner for retained identity maps.
 
 - **Repair link and acceptance:** `bloat-scheme-affine-wrapper-identity-cache`. Key the wrapper directly by the owned affine scheme in `MonoDict` and delete the integer key plus duplicate retained owner.
+
+
+## DisCoPy wire retention hand-rolled an identity table
+
+- **Evidence and impact:** `NonstrictMonoidalModel` stored wire tokens under `id(value)` in a plain dictionary and retained the owned value again beside each token solely to verify identity on lookup. Stable semantic wires need identity-keyed storage, which Sage `MonoDict` already provides.
+
+- **Repair link and acceptance:** `bloat-discopy-wire-identity-cache`. Key `_wire_tokens` directly by the owned object in `MonoDict`; preserve the token string sequence and reverse `_wire_values` mapping used by DisCoPy readback.

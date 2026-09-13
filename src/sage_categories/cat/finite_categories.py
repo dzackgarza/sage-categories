@@ -9,6 +9,7 @@ This private evaluator supplies finite inputs to the presented colimit engine.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import ModuleType
 
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.cat_constructions import LimitCategory
@@ -45,6 +46,13 @@ def equal(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.
 
 
 _retained: MonoDict = MonoDict()
+
+
+def _category_limits_engine() -> ModuleType:
+    """Load the finite-set limit adapter only when a finite category construction needs it."""
+    from sage_categories.engines import category_limits
+
+    return category_limits
 
 
 def finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
@@ -99,14 +107,12 @@ def _grothendieck(category: Category) -> FiniteCategoryData | UnknownClass:
     concrete_fibers = {key: value for key, value in fibers.items() if value is not Unknown}
     objects = tuple(category(value, point) for value in base.objects for point in concrete_fibers[id(value)].objects)
     by_pair = {(id(value.base_object()), id(value.fiber_object())): value for value in objects}
-    from sage_categories.engines import category_limits
-
     arrows = []
     for arrow in base.morphisms:
         source_fiber = concrete_fibers[id(arrow.domain())]
         target_fiber = concrete_fibers[id(arrow.codomain())]
         reindex = indexed.reindex(arrow)
-        triples = category_limits.matching_triples(
+        triples = _category_limits_engine().matching_triples(
             source_fiber.objects,
             target_fiber.objects,
             source_fiber.morphisms,
@@ -219,8 +225,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
             morphisms.append(category.construct_morphism(domain, codomain, components))
         return FiniteCategoryData(objects, tuple(morphisms))
 
-    from sage_categories.engines import category_limits
-
+    category_limits = _category_limits_engine()
     concrete_factors = tuple(factor for factor in factors if factor is not Unknown)
     diagram = category.defining_diagram()
     object_components = category_limits.compatible_families(

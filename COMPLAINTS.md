@@ -742,3 +742,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `_commutative_rings_oscar.py` dynamically imported `cat.declarations`, `cat.morphisms`, and `cat.structured_objects` in both object and morphism reconstruction, while `_owner()` repeated two of the same imports. These imports are deliberately delayed to the OSCAR reconstruction boundary, but the boundary itself had three spellings.
 
 - **Repair link and acceptance:** `bloat-oscar-runtime-modules`. Keep delayed loading, but make one `_ring_runtime_modules()` owner for the shared declaration/morphism/structured modules and use it in owner lookup plus both reconstruction directions.
+
+## Finite-category evaluation repeated its lazy category-limit engine import
+
+- **Evidence and impact:** `cat/finite_categories.py` imported `engines.category_limits` independently in Grothendieck evaluation and in general strict-limit evaluation. The delay is useful because the public category evaluator should not load GAP adapters until a finite native calculation needs them, but duplicating that delayed import gave the engine boundary two owners.
+
+- **Repair link and acceptance:** `bloat-finite-category-limit-engine`. Preserve delayed loading behind one `_category_limits_engine()` helper and use it for matching triples plus compatible-family evaluation.

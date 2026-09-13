@@ -36,6 +36,11 @@ __all__ = [
 ]
 
 
+def _retained_inhabitation(category: Category) -> Decision:
+    """A retained-data category is inhabited exactly when it already retains an object."""
+    return True if retained_objects(category) else Unknown
+
+
 @dataclass(frozen=True, eq=False, slots=True)
 class AdjunctionData:
     """The unit and counit retained by one adjunction."""
@@ -269,7 +274,7 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         )
 
     def _chosen_inhabitation(self) -> Decision:
-        return True if retained_objects(self) else Unknown
+        return _retained_inhabitation(self)
 
     def __repr__(self) -> str:
         return f"Adjunctions({self._forward!r}, {self._inverse!r})"
@@ -428,7 +433,7 @@ class EquivalencesCategory(Category[[NaturalTransformation], []]):
         )
 
     def _chosen_inhabitation(self) -> Decision:
-        return True if retained_objects(self) else Unknown
+        return _retained_inhabitation(self)
 
     def __repr__(self) -> str:
         return f"Equivalences({self._source!r}, {self._target!r})"

@@ -1261,13 +1261,15 @@ Ideas, to be weighed, not obligations.*
 
 ## Ring projections bypassed the shared faithful-isofibration owner
 
-- **Evidence and impact:** `RingCategory.to_semiring` and `to_additive_group` rebuilt the same faithful isofibration factor projections that `cat_constructions._faithful_isofibration_projection` already owns and that neighboring structured-object/bimodule limits already use. The duplicate code stated no ring-specific mathematics.
+- **Evidence and impact:** `RingCategory.to_semiring` and `to_additive_group` rebuilt the same faithful isofibration factor projections that `cat_constructions._faithful_isofibration_projection` already owns and that neighboring structured-object/bimodule limits already use.
+  The duplicate code stated no ring-specific mathematics.
 
 - **Repair link and acceptance:** `bloat-ring-factor-projections`. Route both ring structure legs through `_faithful_isofibration_projection(self, index)` so the limit-projection owner is shared with the rest of the category-product implementation.
 
 ## Profunctor unitor components fused descent and inverse injection
 
-- **Evidence and impact:** `cat/profunctors.py::_unitor_components` built both halves of the co-Yoneda isomorphism in one long function: weighted-colimit descent through the profunctor action and the inverse map from the identity arrow. Those are distinct universal-map constructions and each had its own nested rule over points.
+- **Evidence and impact:** `cat/profunctors.py::_unitor_components` built both halves of the co-Yoneda isomorphism in one long function: weighted-colimit descent through the profunctor action and the inverse map from the identity arrow.
+  Those are distinct universal-map constructions and each had its own nested rule over points.
 
 - **Repair link and acceptance:** `bloat-profunctor-unitor-components`. Extract `_unitor_descent_component()` and `_unitor_inverse_component()` so `_unitor_components()` only pairs the two named maps and retains their inverse relation.
 
@@ -1279,12 +1281,21 @@ Ideas, to be weighed, not obligations.*
 
 ## Finite limit evaluation duplicated owned-family reconstruction
 
-- **Evidence and impact:** `cat/finite_categories.py::_limit` reconstructed owned limit objects and morphisms twice: once after CAP category products and again after general compatible-family limits. Both branches built the same component-identity index and exact owned morphisms; only the native component computation differs.
+- **Evidence and impact:** `cat/finite_categories.py::_limit` reconstructed owned limit objects and morphisms twice: once after CAP category products and again after general compatible-family limits.
+  Both branches built the same component-identity index and exact owned morphisms; only the native component computation differs.
 
 - **Repair link and acceptance:** `bloat-finite-limit-reconstruction`. Put component-family reconstruction in `_reconstruct_limit_family()` and let the product and general finite-limit branches stop once they have obtained object/morphism component tuples.
 
 ## Bimodule tensor unitors duplicated the same relative-tensor scaffold
 
-- **Evidence and impact:** `AbelianBimoduleTensor()` had separate cached left- and right-unitor component functions, each building the appropriate relative tensor, selecting the corresponding relative unitor, and then wrapping both directions as bimodule homomorphisms. Only the side-specific actions and tensor-factor order differ.
+- **Evidence and impact:** `AbelianBimoduleTensor()` had separate cached left- and right-unitor component functions, each building the appropriate relative tensor, selecting the corresponding relative unitor, and then wrapping both directions as bimodule homomorphisms.
+  Only the side-specific actions and tensor-factor order differ.
 
 - **Repair link and acceptance:** `bloat-bimodule-unitors`. Put side selection in `_bimodule_unitor_components()` and keep one cached `unitor_components(value, side)` inside the monoidal-structure constructor for both natural isomorphisms.
+
+## Bimodule tensor associativity was buried inside monoidal-structure assembly
+
+- **Evidence and impact:** `AbelianBimoduleTensor()` contained the full two-stage quotient descent of the abelian associator, including four relative-tensor projections, rebracketing maps, two CAP colifts, two coequalizer mediators, inverse equations, and bimodule wrapping.
+  That mathematical comparison is independent of constructing the tensor functor/unit and made the public monoidal-structure constructor carry both responsibilities.
+
+- **Repair link and acceptance:** `bloat-bimodule-associator`. Move the quotient descent and inverse verification to `_bimodule_associator_components(tensor, triple)`; retain only a cached delegating component family and natural-isomorphism wiring inside `AbelianBimoduleTensor()`.

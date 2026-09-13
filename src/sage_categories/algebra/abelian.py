@@ -1369,6 +1369,55 @@ def _bimodule_unitor_components(
     )
 
 
+def _bimodule_associator_components(
+    tensor: Functor,
+    triple: CategoryOfCategories.ElementType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """Descend the abelian associator through the two relative-tensor quotient stages."""
+    monoidal = AbelianTensor()
+    abelian_groups, abelian_tensor = monoidal.underlying_category(), monoidal.tensor()
+    bimodules = tensor.codomain()
+    pairs = tensor.domain()
+    forgetful = bimodules.forgetful()
+    first, second, third = (triple.family_component(index) for index in range(3))
+    first_second = tensor.on_object(pairs((first, second)))
+    second_third = tensor.on_object(pairs((second, third)))
+    source = tensor.on_object(pairs((first_second, third)))
+    target = tensor.on_object(pairs((first, second_third)))
+    first_group, second_group, third_group = (forgetful.on_object(value) for value in (first, second, third))
+
+    first_second_projection = relative_tensor(first.right_action(), second.left_action())
+    second_third_projection = relative_tensor(second.right_action(), third.left_action())
+    source_projection = relative_tensor(first_second.right_action(), third.left_action())
+    target_projection = relative_tensor(first.right_action(), second_third.left_action())
+
+    abelian_triples = monoidal.associator().domain().domain()
+    abelian_triple = abelian_triples((first_group, second_group, third_group))
+    rebracket = monoidal.associator().component(abelian_triple)
+    unbracket = monoidal.associator().inverse().component(abelian_triple)
+    identity_first = Mor(abelian_groups)(first_group, first_group).one()
+    identity_third = Mor(abelian_groups)(third_group, third_group).one()
+    forward_from_unbalanced = target_projection * tensor_morphism(abelian_tensor, identity_first, second_third_projection) * rebracket
+    backward_from_unbalanced = source_projection * tensor_morphism(abelian_tensor, first_second_projection, identity_third) * unbracket
+
+    through_first_quotient = _colift_presented_epimorphism(
+        tensor_morphism(abelian_tensor, first_second_projection, identity_third),
+        forward_from_unbalanced,
+    )
+    forward_underlying = coequalizer_mediator(source_projection, through_first_quotient)
+    through_second_quotient = _colift_presented_epimorphism(
+        tensor_morphism(abelian_tensor, identity_first, second_third_projection),
+        backward_from_unbalanced,
+    )
+    backward_underlying = coequalizer_mediator(target_projection, through_second_quotient)
+    assert ask(forward_underlying * backward_underlying == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()) is True
+    assert ask(backward_underlying * forward_underlying == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()) is True
+    return (
+        bimodules.homomorphism(source, target, forward_underlying),
+        bimodules.homomorphism(target, source, backward_underlying),
+    )
+
+
 @cached_function(key=identity_key)
 def AbelianBimoduleTensor(
     scalars: MonoidCategory.ObjectType,
@@ -1381,7 +1430,6 @@ def AbelianBimoduleTensor(
     the regular ``(R,R)``-bimodule.
     """
     monoidal = AbelianTensor()
-    abelian_groups, abelian_tensor = monoidal.underlying_category(), monoidal.tensor()
     bimodules = Bimodules(scalars, scalars, monoidal)
     pairs = Cat().Products()((bimodules, bimodules))
     forgetful = bimodules.forgetful()
@@ -1416,57 +1464,7 @@ def AbelianBimoduleTensor(
     def associator_components(
         triple: CategoryOfCategories.ElementType,
     ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-        first, second, third = (triple.family_component(index) for index in range(3))
-        first_second = tensor.on_object(pairs((first, second)))
-        second_third = tensor.on_object(pairs((second, third)))
-        source = tensor.on_object(pairs((first_second, third)))
-        target = tensor.on_object(pairs((first, second_third)))
-        first_group, second_group, third_group = (forgetful.on_object(value) for value in (first, second, third))
-
-        first_second_projection = relative_tensor(first.right_action(), second.left_action())
-        second_third_projection = relative_tensor(second.right_action(), third.left_action())
-        source_projection = relative_tensor(first_second.right_action(), third.left_action())
-        target_projection = relative_tensor(first.right_action(), second_third.left_action())
-
-        abelian_triples = monoidal.associator().domain().domain()
-        abelian_triple = abelian_triples((first_group, second_group, third_group))
-        rebracket = monoidal.associator().component(abelian_triple)
-        unbracket = monoidal.associator().inverse().component(abelian_triple)
-        identity_first = Mor(abelian_groups)(first_group, first_group).one()
-        identity_third = Mor(abelian_groups)(third_group, third_group).one()
-        forward_from_unbalanced = target_projection * tensor_morphism(abelian_tensor, identity_first, second_third_projection) * rebracket
-        backward_from_unbalanced = source_projection * tensor_morphism(abelian_tensor, first_second_projection, identity_third) * unbracket
-
-        through_first_quotient = _colift_presented_epimorphism(
-            tensor_morphism(
-                abelian_tensor,
-                first_second_projection,
-                identity_third,
-            ),
-            forward_from_unbalanced,
-        )
-        forward_underlying = coequalizer_mediator(
-            source_projection,
-            through_first_quotient,
-        )
-        through_second_quotient = _colift_presented_epimorphism(
-            tensor_morphism(
-                abelian_tensor,
-                identity_first,
-                second_third_projection,
-            ),
-            backward_from_unbalanced,
-        )
-        backward_underlying = coequalizer_mediator(
-            target_projection,
-            through_second_quotient,
-        )
-        assert ask(forward_underlying * backward_underlying == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()) is True
-        assert ask(backward_underlying * forward_underlying == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()) is True
-        return (
-            bimodules.homomorphism(source, target, forward_underlying),
-            bimodules.homomorphism(target, source, backward_underlying),
-        )
+        return _bimodule_associator_components(tensor, triple)
 
     left_parenthesized, right_parenthesized = tensor_parentheses(tensor)
     associator = natural_isomorphism(

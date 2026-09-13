@@ -334,7 +334,6 @@ class CategoryDeclaration[
         from sage_categories.kernel.construction import retain_category_universe
 
         retain_category_universe(self, universe)
-        self._morphism_categories: dict[int, MorphismCategory[MorphismData, TwoMorphismData]] = {}
         self._narrowings: dict[tuple[int, ...], Category[MorphismData, TwoMorphismData]] = {}
         self._identities: MonoDict = MonoDict()
         self._inverses: MonoDict = MonoDict()
@@ -560,6 +559,7 @@ class CategoryDeclaration[
     @overload
     def morphism_category(self, level: int | Integer) -> MorphismCategory[[], []]: ...
 
+    @cached_method
     def morphism_category(
         self, level: int | Integer
     ) -> Category[MorphismData, TwoMorphismData] | MorphismCategory[MorphismData, TwoMorphismData] | MorphismCategory[TwoMorphismData, []] | MorphismCategory[[], []]:
@@ -569,9 +569,7 @@ class CategoryDeclaration[
             return self
         if level > 1:
             return self.morphism_category(level - 1).morphism_category(1)
-        if 1 not in self._morphism_categories:
-            self._morphism_categories[1] = self.morphism_category_type()(self)
-        return self._morphism_categories[1]
+        return self.morphism_category_type()(self)
 
     def morphism_category_type(
         self,

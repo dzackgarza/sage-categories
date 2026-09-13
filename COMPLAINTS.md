@@ -1882,3 +1882,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `Category.composite(second, first)` used `_composites: TripleDict` only for the no-ambient formal-composite case, with explicit identity lookup/construct/store. The composite is determined by the exact ordered factor pair; retaining its factors and native cell belongs to first construction, but the dedicated table lifecycle does not.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Keep composability and ambient delegation in `composite`, move the no-ambient construction to an identity-keyed cached helper, and remove the per-category `_composites` table while preserving retained factors/native composite cells.
+
+## Morphism-tower construction hand-rolled a one-level dictionary cache
+
+- **Evidence and impact:** `Category.morphism_category(level)` carried `_morphism_categories: dict` but only ever stored key `1`; higher levels recurse through the resulting category. The method itself is a pure nullary-by-level construction on one category, so the bespoke dictionary duplicated Sage method caching and retained an otherwise unused field on every category.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache `morphism_category(level)` directly with Sage `cached_method`, remove `_morphism_categories`, and preserve the recursive `Mor(n+1,C)=Mor(Mor(n,C))` construction.

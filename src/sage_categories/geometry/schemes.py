@@ -76,7 +76,7 @@ class ProjectiveLinePresentation:
     left_inclusion: SchemesCategory.MorphismType
     right_inclusion: SchemesCategory.MorphismType
     chart_swap: SchemesCategory.MorphismType
-    structure_sheaf: RingPresheaf
+    structure_sheaf: RingPresheaf[str]
     overlap_swap: MorphismCategory.ObjectType
 
 
@@ -320,7 +320,7 @@ def _projective_line_structure_sheaf(
     left_overlap: AffineOpenCategory.ObjectType,
     right_overlap: AffineOpenCategory.ObjectType,
     right_to_left: MorphismCategory.ObjectType,
-) -> RingPresheaf:
+) -> RingPresheaf[str]:
     """Retain the two-chart structure sheaf after transporting both overlap restrictions to the left chart."""
     cover = FinitePresentedCategory(
         "ProjectiveLineAffineCover",

@@ -316,7 +316,7 @@ Spec: Functor = Fun(_rings().op(), AffineSchemes())(_spec_object, _spec_morphism
 
 def affine_structure_sheaf(
     scheme: AffineSchemesCategory.ObjectType,
-) -> tuple[AffineOpenCategory, RingPresheaf]:
+) -> tuple[AffineOpenCategory, RingPresheaf[AffineOpenCategory.ObjectType]]:
     """The OSCAR structure sheaf on the retained principal-open tree of ``scheme``."""
     opens = AffineOpenCategory(scheme)
     rings = _rings()

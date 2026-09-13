@@ -218,7 +218,7 @@ class AdelePresentation:
 
     owner: object
     ring: CategoryOfCategories.ElementType
-    space: TopologicalSpacesCategory.ObjectType
+    space: TopologicalSpacesCategory.ObjectType[AdeleOpen]
     topological_ring: TopologicalRingsCategory.ObjectType
     rational_field: ExactLocalFieldPresentation
     real_field: ExactLocalFieldPresentation
@@ -355,7 +355,7 @@ def _adele_ring(owner: object) -> tuple[CategoryOfCategories.ElementType, Catego
 
 
 def _binary_adele_preimage(
-    space: TopologicalSpacesCategory.ObjectType,
+    space: TopologicalSpacesCategory.ObjectType[AdeleOpen],
     open_object: CategoryOfCategories.ElementType,
     name: str,
     operation: Callable[[AdeleValue, AdeleValue], AdeleValue],
@@ -377,7 +377,7 @@ def _adele_topological_ring(
     owner: object,
     carrier: CategoryOfCategories.ElementType,
     ring: CategoryOfCategories.ElementType,
-) -> tuple[TopologicalSpacesCategory.ObjectType, TopologicalRingsCategory.ObjectType]:
+) -> tuple[TopologicalSpacesCategory.ObjectType[AdeleOpen], TopologicalRingsCategory.ObjectType]:
     """Install the restricted-product topology and continuity of the two ring operations."""
     opens = Sets.from_membership(lambda value: true if isinstance(value, AdeleOpen) and value.owner is owner else false)
     open_category = Thin(opens, _open_order)

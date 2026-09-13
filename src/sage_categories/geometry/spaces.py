@@ -191,10 +191,10 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         inverse = self._inverse_image_functor(source, target, underlying)
         return self.morphism_with_inverse_image(source, target, underlying, inverse)
 
-    def morphism_with_inverse_image(
+    def morphism_with_inverse_image[SourceKey: Hashable, TargetKey: Hashable](
         self,
-        source: TopologicalSpacesCategory.ObjectType,
-        target: TopologicalSpacesCategory.ObjectType,
+        source: TopologicalSpacesCategory.ObjectType[SourceKey],
+        target: TopologicalSpacesCategory.ObjectType[TargetKey],
         underlying: MorphismCategory.ObjectType,
         inverse: Functor,
     ) -> TopologicalSpacesCategory.MorphismType:
@@ -204,9 +204,9 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         assert inverse.codomain() is source.open_category()
         return self.MorphismType(domain=source, codomain=target, data=(underlying, inverse))
 
-    def construct_identity(
+    def construct_identity[OpenKey: Hashable](
         self,
-        member_object: TopologicalSpacesCategory.ObjectType,
+        member_object: TopologicalSpacesCategory.ObjectType[OpenKey],
     ) -> TopologicalSpacesCategory.MorphismType:
         return self.morphism_with_inverse_image(
             member_object,

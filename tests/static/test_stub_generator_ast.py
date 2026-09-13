@@ -1111,7 +1111,10 @@ def test_generated_geometry_projection_retains_exact_owned_roles() -> None:
     assert "def pullback(self) -> MorphismCategory.ObjectType" in affine
     assert "def AffineSchemes() -> AffineSchemesCategory" in affine
     assert "Spec: Functor" in affine
-    assert "def affine_structure_sheaf(scheme: AffineSchemesCategory.ObjectType) -> tuple[AffineOpenCategory, RingPresheaf]" in affine
+    assert (
+        "def affine_structure_sheaf(scheme: AffineSchemesCategory.ObjectType) -> tuple[AffineOpenCategory, RingPresheaf[AffineOpenCategory.ObjectType]]"
+        in affine
+    )
 
     assert "def domain(self) -> SchemesCategory.ObjectType" in schemes
     assert "def codomain(self) -> SchemesCategory.ObjectType" in schemes

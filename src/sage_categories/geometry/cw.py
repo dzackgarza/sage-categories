@@ -134,7 +134,7 @@ class ProjectiveSpacePresentation:
     """The standard CW presentation of ``CP^stage``."""
 
     stage: int
-    space: TopologicalSpacesCategory.ObjectType
+    space: TopologicalSpacesCategory.ObjectType[CWOpen]
     empty_open: CWOpen
     whole_open: CWOpen
 
@@ -263,7 +263,7 @@ class ProjectiveInfinityPresentation:
     """The full sequential CW colimit ``CP^infinity``."""
 
     diagram: Functor
-    space: TopologicalSpacesCategory.ObjectType
+    space: TopologicalSpacesCategory.ObjectType[_WeakCWOpen]
     weak_opens: CategoryOfCategories.ElementType
     empty_open: _WeakCWOpen
     whole_open: _WeakCWOpen
@@ -319,7 +319,7 @@ def _weak_open_space(
 
 
 def _projective_infinity_leg(
-    space: TopologicalSpacesCategory.ObjectType,
+    space: TopologicalSpacesCategory.ObjectType[_WeakCWOpen],
     set_colimit: Any,
     vertex: CategoryOfCategories.ElementType,
 ) -> TopologicalSpacesCategory.MorphismType:
@@ -366,7 +366,7 @@ def _projective_infinity_preimage(
 
 def _projective_infinity_descent(
     presentation: ProjectiveInfinityPresentation,
-    space: TopologicalSpacesCategory.ObjectType,
+    space: TopologicalSpacesCategory.ObjectType[_WeakCWOpen],
     underlying_diagram: Functor,
     set_colimit: Any,
     candidate: CategoryOfCategories.ElementType,

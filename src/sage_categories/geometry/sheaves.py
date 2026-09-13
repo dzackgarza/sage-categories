@@ -155,7 +155,7 @@ class RingSheaf[OpenKey: Hashable]:
 
 
 def ring_presheaf(
-    space: TopologicalSpacesCategory.ObjectType,
+    space: TopologicalSpacesCategory.ObjectType[frozenset[Hashable]],
     sections: Mapping[frozenset[Hashable], CategoryOfCategories.ElementType],
     restrictions: Mapping[
         tuple[frozenset[Hashable], frozenset[Hashable]],
@@ -190,7 +190,7 @@ def ring_presheaf(
 
 
 def _validate_ring_presheaf_data(
-    space: TopologicalSpacesCategory.ObjectType,
+    space: TopologicalSpacesCategory.ObjectType[frozenset[Hashable]],
     sections: Mapping[frozenset[Hashable], CategoryOfCategories.ElementType],
     restrictions: Mapping[
         tuple[frozenset[Hashable], frozenset[Hashable]],

@@ -40,7 +40,7 @@ def projective_types(presentation: ProjectiveInfinityPresentation) -> None:
     assert_type(projective_infinity(), ProjectiveInfinityPresentation)
     assert_type(projective_space(37), ProjectiveSpacePresentation)
     assert_type(presentation.finite_skeleton(37), ProjectiveSpacePresentation)
-    assert_type(presentation.space, TopologicalSpacesCategory.ObjectType)
+    assert_type(presentation.space.open_object(presentation.empty_open), CategoryOfCategories.ElementType)
     assert_type(presentation.structure_map(37), TopologicalSpacesCategory.MorphismType)
     assert_type(presentation.complex_conjugation(), TopologicalSpacesCategory.MorphismType)
     assert_type(complex_projective_point(1, 1j, 0), ComplexProjectivePoint)
@@ -66,6 +66,7 @@ def adelic_types(
 ) -> None:
     assert_type(adeles_of_rationals(), AdelePresentation)
     assert_type(presentation.ring, CategoryOfCategories.ElementType)
+    assert_type(presentation.space, TopologicalSpacesCategory.ObjectType[AdeleOpen])
     assert_type(presentation.primes, CategoryOfCategories.ElementType)
     assert_type(presentation.topological_ring, TopologicalRingsCategory.ObjectType)
     assert_type(presentation.local_field(5), ExactLocalFieldPresentation)

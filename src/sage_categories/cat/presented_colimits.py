@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.cones import cone, cone_apex
@@ -243,13 +245,21 @@ def _colimit_mediator(
     return opposite_morphism(Fun(colimit, target)(on_object, on_morphism))
 
 
-def presented_colimit_in_opposite(
-    dual_diagram: Functor,
-) -> CategoryOfCategories.ElementType:
-    """Selected finite presented colimit, computed by native presentation engines."""
-    diagram = dual_diagram.op()
-    shape = diagram.domain()
-    vertices, edges = _finite_shape_data(shape)
+@dataclass(frozen=True, slots=True)
+class _PresentedColimitData:
+    """Owned data needed to present and mediate one finite categorical colimit."""
+
+    vertices: tuple[CategoryOfCategories.ElementType, ...]
+    factors: tuple[CategoryOfCategories.ElementType, ...]
+    colimit: FinitePresentedCategory
+    injections: tuple[Functor, ...]
+    representatives: tuple[tuple[int, CategoryOfCategories.ElementType], ...]
+    generator_origins: dict[str, tuple[int, str]]
+
+
+def _presented_colimit_data(diagram: Functor) -> _PresentedColimitData:
+    """Assemble the selected presentation and its factor injections."""
+    vertices, edges = _finite_shape_data(diagram.domain())
     factors, factor_objects = _factor_presentations(diagram, vertices)
     class_count, object_classes = _quotient_object_classes(diagram, vertices, edges, factor_objects)
     colimit, coproduct, generator_origins = _presented_colimit_category(
@@ -261,24 +271,50 @@ def presented_colimit_in_opposite(
         class_count,
         object_classes,
     )
-    injections = tuple(_colimit_injection(index, factors[index], colimit, object_classes, factor_objects, coproduct, factors) for index in range(len(factors)))
-    representatives = _class_representatives(class_count, factor_objects, object_classes)
+    injections = tuple(
+        _colimit_injection(index, factor, colimit, object_classes, factor_objects, coproduct, factors)
+        for index, factor in enumerate(factors)
+    )
+    return _PresentedColimitData(
+        vertices,
+        factors,
+        colimit,
+        injections,
+        _class_representatives(class_count, factor_objects, object_classes),
+        generator_origins,
+    )
 
+
+def _opposite_colimit_cone(dual_diagram: Functor, data: _PresentedColimitData) -> NaturalTransformation:
+    """The limiting cone in the opposite category selected by the factor injections."""
+    return cone(
+        dual_diagram,
+        data.colimit,
+        lambda vertex: opposite_morphism(data.injections[position(data.vertices, vertex)]),
+    )
+
+
+def _opposite_colimit_mediator(candidate: NaturalTransformation, data: _PresentedColimitData) -> MorphismCategory.ObjectType:
+    """Factor one opposite cone through the selected presented colimit."""
+    return _colimit_mediator(
+        candidate,
+        vertices=data.vertices,
+        representatives=data.representatives,
+        generator_origins=data.generator_origins,
+        factors=data.factors,
+        colimit=data.colimit,
+    )
+
+
+def presented_colimit_in_opposite(
+    dual_diagram: Functor,
+) -> CategoryOfCategories.ElementType:
+    """Selected finite presented colimit, computed by native presentation engines."""
+    data = _presented_colimit_data(dual_diagram.op())
     family = Cat().op().Limits(dual_diagram.domain())
     return family.with_universal_data(
         dual_diagram,
-        colimit,
-        cone(
-            dual_diagram,
-            colimit,
-            lambda vertex: opposite_morphism(injections[position(vertices, vertex)]),
-        ),
-        lambda candidate: _colimit_mediator(
-            candidate,
-            vertices=vertices,
-            representatives=representatives,
-            generator_origins=generator_origins,
-            factors=factors,
-            colimit=colimit,
-        ),
+        data.colimit,
+        _opposite_colimit_cone(dual_diagram, data),
+        lambda candidate: _opposite_colimit_mediator(candidate, data),
     )

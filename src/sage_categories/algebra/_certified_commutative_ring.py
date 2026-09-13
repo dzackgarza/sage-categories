@@ -55,16 +55,6 @@ def _certified_additive_group(
     return additive, group
 
 
-def _certified_multiplicative_monoid(
-    carrier: CategoryOfCategories.ElementType,
-    multiplication: MorphismCategory.ObjectType,
-    one: MorphismCategory.ObjectType,
-    monoidal: MonoidalStructuresCategory.ObjectType,
-) -> CategoryOfCategories.ElementType:
-    """Return the named multiplicative monoid certified by the carrier semantics."""
-    return MultiplicativeMonoids(monoidal).renamed(_certified_monoid(carrier, multiplication, one, monoidal))
-
-
 def certified_commutative_ring(
     carrier: CategoryOfCategories.ElementType,
     addition_rule: Callable[[tuple[Hashable, Hashable]], Hashable],
@@ -81,7 +71,7 @@ def certified_commutative_ring(
     one = Mor(Sets)(monoidal.unit(), carrier)(lambda _: one_value)
 
     additive, group = _certified_additive_group(carrier, addition, zero, monoidal)
-    multiplicative = _certified_multiplicative_monoid(carrier, multiplication, one, monoidal)
+    multiplicative = MultiplicativeMonoids(monoidal).renamed(_certified_monoid(carrier, multiplication, one, monoidal))
     semirings = Semirings(Sets)
     pair = semirings._pairs((additive, multiplicative, carrier))
     refine(pair, semirings)

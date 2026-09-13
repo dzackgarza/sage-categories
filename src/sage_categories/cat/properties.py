@@ -32,7 +32,6 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable
-from types import ModuleType
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 from sympy import ask as sympy_ask
@@ -75,12 +74,6 @@ def _functors() -> FunctorsCategory:
     from sage_categories.cat.functors import Fun
 
     return Fun
-
-
-def _morphisms() -> ModuleType:
-    from sage_categories.cat import morphisms
-
-    return morphisms
 
 
 def _subcategory_pullback_runtime():
@@ -825,7 +818,9 @@ class FixedEndpointProperty[**MorphismData, **TwoMorphismData](NarrowedProperty[
         return self._ambient.codomain()
 
     def _chosen_inhabitation(self) -> Decision:
-        return _morphisms().hom_inhabitation(self)
+        from sage_categories.cat import morphisms
+
+        return morphisms.hom_inhabitation(self)
 
     def one(self) -> MorphismCategory.ObjectType:
         """``1_X`` with this property: the unit of ``End_C(X)`` refined into the narrowing (POL-CAT-023, D84)."""

@@ -1913,8 +1913,26 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Put unconditional compatibility behind an identity-keyed cached method, use `is_in_cache` to reuse it under later assumptions without constructing anything, and remove `_agreement` while leaving conditional predicate evaluation unchanged.
 
+## Finite-category evaluation hand-rolled a positive-result identity cache
+
+- **Evidence and impact:** `cat/finite_categories.py::finite_category()` kept a module-level `_retained: MonoDict` and manually implemented lookup/evaluate/store for positive finite evaluations. The cache itself is justified because native finite reconstruction is expensive, while `Unknown` must remain uncached so later retained data can make the same category finite; the parallel container protocol is not justified because Sage's cached-function API already exposes identity keys, cache-presence queries, and explicit `set_cache` for exactly that conditional-retention lifecycle.
+
+- **Repair link and acceptance:** `bloat-finite-category-retention-cache`. Keep positive-only retention semantics, move the cache to an identity-keyed Sage `cached_function`, use `is_in_cache`/`set_cache` so `Unknown` is never retained, and delete the module-level `_retained` registry.
+
 ## Cat singleton used a nullable module-global memoization protocol
 
 - **Evidence and impact:** `cat/category.py` kept `_CAT: CategoryOfCategories | None` solely to store the one bootstrapped `Cat()` object; `bootstrap()` open-coded the empty check and assignment, and `Cat()` was only a getter over that cache. The singleton itself is mathematically required, but this parallel memoization mechanism is not: Sage's nullary `cached_function` already owns one-value retention and explicit `set_cache` installation for externally constructed results.
 
 - **Repair link and acceptance:** `bloat-cat-singleton-cache`. Make `Cat()` a nullary Sage cached function whose uncached body fails before bootstrap, have `bootstrap()` construct the self-referential category once and install it with `set_cache`, and delete `_CAT` entirely while preserving stable singleton identity after import.
+
+## Enumeration index inclusions hand-rolled a second retention cache
+
+- **Evidence and impact:** a chosen enumeration genuinely carries extra mathematical data: its index set embeds into `NN`, and callers may supply that inclusion explicitly, so the association itself should exist. What should not exist is the separate `_enumeration_indices: MonoDict` plus manual lookup/store protocol around it; `SetsCategory.enumeration_index_inclusion()` is already the natural method owner and Sage `cached_method` supports exact identity keys, cache-presence checks, and explicit `set_cache` installation for supplied results.
+
+- **Repair link and acceptance:** `bloat-enumeration-index-cache`. Make `enumeration_index_inclusion()` an identity-keyed cached method, install supplied inclusions through `set_cache`, preserve conflicting re-registration failure, and delete `_enumeration_indices` entirely.
+
+## Canonical narrowing registration still targeted the deleted cache
+
+- **Evidence and impact:** after `_narrowing(selected)` moved canonical narrowing construction to Sage `cached_method`, `Category.retain_intersection()` still read and wrote `self._narrowings`, a table that no longer exists. The external-registration mechanism itself is required because pullback/intersection construction can supply an already-built canonical narrowing, but it must seed the same cache that ordinary `intersection()` reads rather than a parallel or stale registry.
+
+- **Repair link and acceptance:** `bloat-narrowing-registration-cache`. Normalize the supplied roots through `closed_roots`, use `_narrowing.is_in_cache(...)` to verify an existing registration and `_narrowing.set_cache(...)` to install a new one, and remove the final `_narrowings` references.

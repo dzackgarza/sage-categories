@@ -51,6 +51,7 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.cat.shapes import realize_discrete_object
 from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
+from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 from sage_categories.kernel.type_aliases import ContainmentInput
 
@@ -222,7 +223,6 @@ def _finite_data(value: SetsCategory.ObjectType) -> tuple[Hashable, ...] | Unkno
 
 
 _enumerations: MonoDict = MonoDict()
-_enumeration_indices: MonoDict = MonoDict()
 
 
 @dataclass(frozen=True, slots=True)
@@ -728,12 +728,11 @@ class SetsCategory(Category[[Map], []]):
             return Unknown
         return tuple(enumeration(index) for index in enumeration.domain())
 
+    @cached_method(key=lambda self, enumeration: identity_key(enumeration))
     def enumeration_index_inclusion(self, enumeration: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         """The retained inclusion of the enumeration's positive index set into ``NN``."""
-        if enumeration not in _enumeration_indices:
-            assert enumeration in Mor(self).Isomorphisms()
-            _enumeration_indices[enumeration] = Mor(self)(enumeration.domain(), NN).Monomorphisms()(lambda index: index)
-        return _enumeration_indices[enumeration]
+        assert enumeration in Mor(self).Isomorphisms()
+        return Mor(self)(enumeration.domain(), NN).Monomorphisms()(lambda index: index)
 
     def retain_enumeration(
         self,
@@ -748,7 +747,10 @@ class SetsCategory(Category[[Map], []]):
         if value in _enumerations:
             assert _enumerations[value] is enumeration, "this set already has a different chosen enumeration"
         _enumerations[value] = enumeration
-        _enumeration_indices[enumeration] = inclusion
+        if self.enumeration_index_inclusion.is_in_cache(enumeration):
+            assert self.enumeration_index_inclusion(enumeration) is inclusion, "this enumeration already has a different retained index inclusion"
+        else:
+            self.enumeration_index_inclusion.set_cache(inclusion, enumeration)
 
     def constant(self, source: SetsCategory.ObjectType, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
         """The total constant map with the supplied value."""

@@ -337,15 +337,11 @@ def _integer_matrix_rows(native_matrix: GapElement) -> tuple[tuple[int, ...], ..
     return tuple(tuple(entries[row * column_count + column] for column in range(column_count)) for row in range(row_count))
 
 
-def _integer_rows(native_object: GapElement) -> tuple[tuple[int, ...], ...]:
-    return _integer_matrix_rows(libgap.UnderlyingMatrix(native_object))
-
-
 def _public_engine_from_native(native_object: GapElement):
     relation_matrix = libgap.UnderlyingMatrix(native_object)
     rank = int(libgap.NumberColumns(relation_matrix))
     free = FreeModule(ZZ, rank)
-    rows = _integer_rows(native_object)
+    rows = _integer_matrix_rows(relation_matrix)
     relations = tuple(free(vector(ZZ, row)) for row in rows)
     return free, free / free.span(relations)
 

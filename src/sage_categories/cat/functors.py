@@ -820,6 +820,13 @@ NaturalTransformation = Fun.MorphismType
 Fun._bootstrap()
 
 
+def _finite_category_data(category: Category):
+    """Return retained finite-category data through the cycle-safe evaluator boundary."""
+    from sage_categories.cat.finite_categories import finite_category
+
+    return finite_category(category)
+
+
 def _finite_functor_equal(
     first: CategoryOfCategories.MorphismType,
     second: CategoryOfCategories.MorphismType,
@@ -829,11 +836,9 @@ def _finite_functor_equal(
 
     Reference: Mathlib CategoryTheory.Functor.ext.
     """
-    from sage_categories.cat.finite_categories import finite_category
-
     if first.domain() is not second.domain() or first.codomain() is not second.codomain():
         return None
-    data = finite_category(first.domain())
+    data = _finite_category_data(first.domain())
     if data is Unknown:
         return None
     return decide(
@@ -856,12 +861,10 @@ def _finite_transformation_equal(
 
     Reference: Mathlib CategoryTheory.NatTrans.ext.
     """
-    from sage_categories.cat.finite_categories import finite_category
-
     source = first.source_functor().domain()
     if source is not second.source_functor().domain():
         return None
-    data = finite_category(source)
+    data = _finite_category_data(source)
     if data is Unknown:
         return None
     return decide(

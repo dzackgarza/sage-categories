@@ -2050,3 +2050,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/compiler.py::runtime_implementation_class(declaration)` walked every `_node_runtimes` table and compared semantic declarations to recover a compiled class, but no source, test, script, or exported API referenced it. Active compiler paths already address runtime classes through exact `Node` keys and use `runtime_declaration()` only in the opposite direction.
 
 - **Repair link and acceptance:** `bloat-dead-runtime-implementation-lookup`. Delete the unused scan rather than retaining an O(all runtime classes) private API with no owner or consumer.
+
+## Standard Cartesian dispatch accidentally widened the old exact-type contract
+
+- **Evidence and impact:** replacing `_cartesian_comparison_handlers[type(base)]` with `functools.singledispatch` changed dispatch from exact concrete type to MRO-based inheritance. A subclass that had not selected the finite native comparison engine could therefore inherit a handler merely from its Python base class, which is a runtime implementation relation rather than an owned categorical declaration.
+
+- **Repair link and acceptance:** `bloat-cartesian-exact-dispatch-regression`. Keep the standard dispatcher for registration, but guard each registered wrapper with `type(base) is category_type` so unregistered subclasses still fall through to no native comparison.

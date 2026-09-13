@@ -69,7 +69,11 @@ def register_cartesian_comparisons(
         operation: str,
         *arguments: object,
     ) -> MorphismCategory.ObjectType | None:
-        return handler(operation, *arguments)
+        match type(_base) is category_type:
+            case True:
+                return handler(operation, *arguments)
+            case False:
+                return None
 
 
 def tensor_object(tensor: Functor, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:

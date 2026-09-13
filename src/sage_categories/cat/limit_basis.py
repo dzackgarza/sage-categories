@@ -36,7 +36,7 @@ from sage_categories.cat.opposites import OppositeCategory, opposite_morphism
 from sage_categories.cat.predicates import Unknown, ask
 from sage_categories.cat.shapes import Discrete
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_function
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
 
 @dataclass(frozen=True)
@@ -65,7 +65,9 @@ def diagram_presentation(shape: Category) -> DiagramPresentation:
             _finite_discrete(len(values)),
             _finite_discrete(len(generators)),
         )
-        positions = {id(value): index for index, value in enumerate(values)}
+        positions: MonoDict = MonoDict()
+        for index, value in enumerate(values):
+            positions[value] = index
         inclusion = from_object_rule(Fun(vertices, shape), lambda index: values[vertices.label(index)])
 
         def arrow_at(index: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
@@ -73,11 +75,11 @@ def diagram_presentation(shape: Category) -> DiagramPresentation:
 
         source = from_object_rule(
             Fun(edges, vertices),
-            lambda index: vertices(positions[id(arrow_at(index).domain())]),
+            lambda index: vertices(positions[arrow_at(index).domain()]),
         )
         target = from_object_rule(
             Fun(edges, vertices),
-            lambda index: vertices(positions[id(arrow_at(index).codomain())]),
+            lambda index: vertices(positions[arrow_at(index).codomain()]),
         )
     else:
         objects, morphisms = shape.object_set(), ask(shape.morphism_set())

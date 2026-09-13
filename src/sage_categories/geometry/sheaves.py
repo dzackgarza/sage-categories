@@ -90,6 +90,53 @@ type GluingRule = Callable[
 ]
 
 
+def _validate_gluing_family(
+    presheaf: RingPresheaf,
+    open_set: frozenset[Hashable],
+    cover: tuple[frozenset[Hashable], ...],
+    local_sections: tuple[CategoryOfCategories.ElementType, ...],
+) -> None:
+    """Check that one finite local family is well typed and agrees on every overlap."""
+    assert cover and frozenset().union(*cover) == open_set
+    assert len(cover) == len(local_sections)
+    for member, section in zip(cover, local_sections, strict=True):
+        assert section.parent() is presheaf.section_ring(member)
+    for left_index, left in enumerate(cover):
+        for right_index, right in enumerate(cover):
+            overlap = left & right
+            left_restriction = _apply_ring_map(presheaf.restriction(left, overlap), local_sections[left_index])
+            right_restriction = _apply_ring_map(
+                presheaf.restriction(right, overlap),
+                local_sections[right_index],
+            )
+            assert ask(left_restriction == right_restriction) is True
+
+
+def _verify_gluing_result(
+    presheaf: RingPresheaf,
+    open_set: frozenset[Hashable],
+    cover: tuple[frozenset[Hashable], ...],
+    local_sections: tuple[CategoryOfCategories.ElementType, ...],
+    global_section: CategoryOfCategories.ElementType,
+) -> None:
+    """Check restriction and uniqueness of one proposed global section."""
+    global_ring = presheaf.section_ring(open_set)
+    assert global_section.parent() is global_ring
+    for member, local in zip(cover, local_sections, strict=True):
+        assert ask(_apply_ring_map(presheaf.restriction(open_set, member), global_section) == local) is True
+
+    carrier = _ambient_rings().forgetful().on_object(global_ring)
+    matching = []
+    for candidate in tuple(carrier):
+        point = cast(Any, global_ring).point(candidate.datum())
+        if all(
+            ask(_apply_ring_map(presheaf.restriction(open_set, member), point) == local) is True
+            for member, local in zip(cover, local_sections, strict=True)
+        ):
+            matching.append(point)
+    assert len(matching) == 1 and ask(matching[0] == global_section) is True
+
+
 @dataclass(frozen=True, eq=False, slots=True)
 class RingSheaf:
     """A ring presheaf with retained finite-cover gluing."""
@@ -104,34 +151,9 @@ class RingSheaf:
         local_sections: tuple[CategoryOfCategories.ElementType, ...],
     ) -> CategoryOfCategories.ElementType:
         """Glue one compatible finite family and verify its unique global section."""
-        assert cover and frozenset().union(*cover) == open_set
-        assert len(cover) == len(local_sections)
-        for member, section in zip(cover, local_sections, strict=True):
-            assert section.parent() is self.presheaf.section_ring(member)
-        for left_index, left in enumerate(cover):
-            for right_index, right in enumerate(cover):
-                overlap = left & right
-                left_restriction = _apply_ring_map(self.presheaf.restriction(left, overlap), local_sections[left_index])
-                right_restriction = _apply_ring_map(
-                    self.presheaf.restriction(right, overlap),
-                    local_sections[right_index],
-                )
-                assert ask(left_restriction == right_restriction) is True
-
+        _validate_gluing_family(self.presheaf, open_set, cover, local_sections)
         global_section = self.gluing_rule(open_set, cover, local_sections)
-        global_ring = self.presheaf.section_ring(open_set)
-        assert global_section.parent() is global_ring
-        for member, local in zip(cover, local_sections, strict=True):
-            assert ask(_apply_ring_map(self.presheaf.restriction(open_set, member), global_section) == local) is True
-
-        carrier = _ambient_rings().forgetful().on_object(global_ring)
-        candidates = tuple(carrier)
-        matching = []
-        for candidate in candidates:
-            point = cast(Any, global_ring).point(candidate.datum())
-            if all(ask(_apply_ring_map(self.presheaf.restriction(open_set, member), point) == local) is True for member, local in zip(cover, local_sections, strict=True)):
-                matching.append(point)
-        assert len(matching) == 1 and ask(matching[0] == global_section) is True
+        _verify_gluing_result(self.presheaf, open_set, cover, local_sections, global_section)
         return global_section
 
 

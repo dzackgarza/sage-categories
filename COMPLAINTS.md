@@ -1509,9 +1509,24 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-category-limit-position-maps`. Build both position families through a shared `_identity_positions` helper backed by `MonoDict` and address the maps by owned values directly.
 
-
 ## Finite category reconstruction repeated raw Python identity maps
 
-- **Evidence and impact:** finite Grothendieck fibers, limit-component reconstruction, and comma-object reconstruction in `cat/finite_categories.py` all built lookup tables from bare `id(...)` integers. These tables are precisely identity-indexed retained-value maps; some also needed compound identity keys. The repository already owns both cases through Sage `MonoDict` and `kernel.retention.identity_key`.
+- **Evidence and impact:** finite Grothendieck fibers, limit-component reconstruction, and comma-object reconstruction in `cat/finite_categories.py` all built lookup tables from bare `id(...)` integers.
+  These tables are precisely identity-indexed retained-value maps; some also needed compound identity keys.
+  The repository already owns both cases through Sage `MonoDict` and `kernel.retention.identity_key`.
 
 - **Repair link and acceptance:** `bloat-finite-category-identity-maps`. Use `MonoDict` for direct fiber lookup and `identity_key(...)` for ordered compound keys, preserving finite reconstruction semantics without exposing raw Python ids.
+
+## Ring-sheaf gluing mixed family compatibility with result certification
+
+- **Evidence and impact:** `RingSheaf.glue()` checked the finite cover, section parents, every overlap compatibility equation, the supplied global section's restrictions, and uniqueness by carrier enumeration in one method around the actual `gluing_rule` call.
+  The input-family sheaf condition and certification of the returned global section are separate phases with different data dependencies, so keeping both inline obscured the one operation the supplied gluing rule owns.
+
+- **Repair link and acceptance:** `bloat-sheaf-gluing-phases`. Move cover/local compatibility to `_validate_gluing_family()` and returned-section restriction/uniqueness checks to `_verify_gluing_result()`; leave `RingSheaf.glue()` as the three-step orchestration around the retained gluing rule.
+
+
+## Limit-basis diagram presentation exposed raw object ids
+
+- **Evidence and impact:** `diagram_presentation()` in `cat/limit_basis.py` mapped retained shape objects to discrete presentation positions through `id(value)` integers and repeated those conversions while constructing generator source/target diagrams. The lookup is identity-based and Sage `MonoDict` already owns that contract.
+
+- **Repair link and acceptance:** `bloat-limit-basis-position-map`. Store retained object positions directly in `MonoDict` and address them by their owned objects.

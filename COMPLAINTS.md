@@ -1221,3 +1221,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `LimitsCategory.diagrams` and `ColimitsCategory.diagrams` each reconstructed `Fun(shape, ambient)` directly, while the product/coproduct convenience layer had its own discrete helper doing the same thing after an extra shape assertion. The category of diagrams has one mathematical owner independent of limit versus colimit variance.
 
 - **Repair link and acceptance:** `bloat-universal-diagram-category`. Put `Fun(shape, ambient)` behind `_diagram_category()`, use it from both shape-indexed universal families, and let `_discrete_diagrams()` add only its discrete-shape precondition before delegating.
+
+## Dual functor equivalence built the same round-trip isomorphism twice
+
+- **Evidence and impact:** `dual_functor_category_equivalence` separately constructed the unit and its retained inverse on `Fun(I,C)`, then repeated the same endofunctor/identity/transformation/inverse-retention scaffold for the counit on the opposite dual category. Only the component rule differs: ordinary identity transformations on the source versus opposite identity transformations on the target.
+
+- **Repair link and acceptance:** `bloat-dual-functor-round-trip`. Put the retained `Id ≅ round_trip` scaffold in `_identity_round_trip()` and express source unit and target counit through their two component rules, retaining the same inverses and equivalence data.

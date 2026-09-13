@@ -10,9 +10,11 @@ the original direction.  Thus
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from sage_categories.cat.adjunctions import Equivalences, EquivalencesCategory
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.functors import Fun, FunctorCategory, NaturalTransformation
+from sage_categories.cat.functors import Fun, Functor, FunctorCategory, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.kernel.retention import identity_key
@@ -37,6 +39,27 @@ def _identity_transformation(
         )
         .one()
     )
+
+
+def _identity_round_trip(
+    category: Category,
+    round_trip: Functor,
+    component: Callable[
+        [CategoryOfCategories.ElementType, CategoryOfCategories.ElementType],
+        MorphismCategory.ObjectType,
+    ],
+) -> tuple[NaturalTransformation, NaturalTransformation]:
+    """Retain and return both directions of ``Id ≅ round_trip`` from one component rule."""
+    endofunctors = Fun(category, category)
+    identity = endofunctors.one()
+    forward = endofunctors.morphism_category(1)(identity, round_trip)(
+        lambda value: component(value, round_trip.on_object(value))
+    )
+    inverse = endofunctors.morphism_category(1)(round_trip, identity)(
+        lambda value: component(round_trip.on_object(value), value)
+    )
+    endofunctors.retain_inverses(forward, inverse)
+    return forward, inverse
 
 
 @cached_function(key=identity_key)
@@ -73,64 +96,21 @@ def dual_functor_category_equivalence(
 
     inverse = Fun(opposite_dual, source)(inverse_object, inverse_morphism)
 
-    source_endofunctors = Fun(source, source)
-    source_identity = source_endofunctors.one()
     source_round_trip = inverse * forward
-    unit = source_endofunctors.morphism_category(1)(
-        source_identity,
+    unit, _unit_inverse = _identity_round_trip(
+        source,
         source_round_trip,
-    )(
-        lambda diagram: _identity_transformation(
-            source,
-            diagram,
-            source_round_trip.on_object(diagram),
-        )
+        lambda first, second: _identity_transformation(source, first, second),
     )
-    unit_inverse = source_endofunctors.morphism_category(1)(
-        source_round_trip,
-        source_identity,
-    )(
-        lambda diagram: _identity_transformation(
-            source,
-            source_round_trip.on_object(diagram),
-            diagram,
-        )
-    )
-    source_endofunctors.retain_inverses(unit, unit_inverse)
 
-    target_endofunctors = Fun(opposite_dual, opposite_dual)
     target_round_trip = forward * inverse
-    target_identity = target_endofunctors.one()
-
-    def counit_component(
-        diagram: CategoryOfCategories.ElementType,
-    ) -> MorphismCategory.ObjectType:
-        dual_identity = _identity_transformation(
-            dual,
-            diagram,
-            target_round_trip.on_object(diagram),
-        )
-        return opposite_morphism(dual_identity)
-
-    def counit_inverse_component(
-        diagram: CategoryOfCategories.ElementType,
-    ) -> MorphismCategory.ObjectType:
-        dual_identity = _identity_transformation(
-            dual,
-            target_round_trip.on_object(diagram),
-            diagram,
-        )
-        return opposite_morphism(dual_identity)
-
-    counit = target_endofunctors.morphism_category(1)(
+    _counit_inverse, counit = _identity_round_trip(
+        opposite_dual,
         target_round_trip,
-        target_identity,
-    )(counit_component)
-    counit_inverse = target_endofunctors.morphism_category(1)(
-        target_identity,
-        target_round_trip,
-    )(counit_inverse_component)
-    target_endofunctors.retain_inverses(counit, counit_inverse)
+        lambda first, second: opposite_morphism(
+            _identity_transformation(dual, first, second)
+        ),
+    )
 
     return Equivalences(source, opposite_dual)(
         forward,

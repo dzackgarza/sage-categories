@@ -64,13 +64,12 @@ def test_oscar_handles_belong_to_one_worker() -> None:
         bridge._encode_oscar(second_worker, handle)
 
 
-def test_oscar_worker_uses_only_handle_json_boundary() -> None:
-    worker = (ENGINE / "OscarWorker.jl").read_text()
-    assert "__oscar_handle__" in worker
-    assert "using Oscar" in worker
-    assert "using JSON" in worker
-    assert "SageCategoriesOscarBridge" in worker
-    assert 'operation == "version"' in worker
-    assert "Base.pkgversion(Oscar)" in worker
-    assert "using Catlab" not in worker
-    assert "using GATlab" not in worker
+def test_oscar_worker_executes_without_loading_oscar_into_catlab() -> None:
+    bridge = _julia_bridge()
+    main = bridge._main()
+    assert bridge.catlab_bridge() is main.SageCategoriesBridge
+    assert not bool(main.seval("isdefined(Main, :Oscar)"))
+
+    assert bridge.oscar_bridge().text("version") == "1.8.2"
+
+    assert not bool(main.seval("isdefined(Main, :Oscar)"))

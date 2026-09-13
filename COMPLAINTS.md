@@ -1453,9 +1453,22 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-discopy-word-identity-key`. Key `_word_cache` by `identity_key(*word)`, preserving ordered identity semantics while retaining the values that justify those identities.
 
-
 ## DisCoPy path evaluation kept a second raw-id object cache
 
-- **Evidence and impact:** `evaluate_path()` wrapped owned objects for its local DisCoPy category through a plain dictionary keyed by `id(value)`, even though the lookup contract is direct Python identity and Sage `MonoDict` is already imported in this engine. The separate stringified-id map is required by DisCoPy token names, but the semantic wrapper cache is not.
+- **Evidence and impact:** `evaluate_path()` wrapped owned objects for its local DisCoPy category through a plain dictionary keyed by `id(value)`, even though the lookup contract is direct Python identity and Sage `MonoDict` is already imported in this engine.
+  The separate stringified-id map is required by DisCoPy token names, but the semantic wrapper cache is not.
 
 - **Repair link and acceptance:** `bloat-discopy-path-object-cache`. Key the local semantic-object wrappers directly by owned values in `MonoDict` and leave the external DisCoPy token map untouched.
+
+## OSCAR reconstruction duplicated commutative-ring certification
+
+- **Evidence and impact:** `algebra/_commutative_rings_oscar.py::reconstruct_oscar_object` rebuilt the full additive-group, multiplicative-monoid, semiring, ring, and commutativity refinement chain after constructing an OSCAR-backed carrier. `algebra/_certified_commutative_ring.py` already owns that exact theorem-backed reconstruction from a carrier, addition/multiplication rules, zero, and one, so the OSCAR adapter carried a second implementation of the same categorical certification.
+
+- **Repair link and acceptance:** `bloat-oscar-certified-ring-reconstruction`. Keep OSCAR responsible for native membership and the four ring operations/constants, then pass them to `certified_commutative_ring()` and retain only the resulting native realization at the OSCAR boundary.
+
+
+## Indexed-category caches used bare Python ids as retained keys
+
+- **Evidence and impact:** eight `cached_method` declarations in `cat/indexed.py` keyed owned categories, morphisms, functors, and base objects only by `id(...)`. Those caches outlive individual calls, so the bare integer key does not retain the object whose identity it denotes and can alias after Python id reuse. The repository already defines `identity_key` to retain values while comparing identity before mathematical equality.
+
+- **Repair link and acceptance:** `bloat-indexed-cache-identity-keys`. Replace every bare-id cache key in the indexed/Grothendieck owner with `identity_key(...)`, preserving cache partitioning and avoiding proposition-valued equality.

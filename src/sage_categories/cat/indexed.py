@@ -21,6 +21,7 @@ from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformatio
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import Proposition, ask, register_handler
+from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
 
 __all__ = ["Grothendieck", "GrothendieckCategory", "IndexedCategories", "IndexedCategoriesCategory"]
@@ -60,14 +61,14 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
         def codomain(self) -> Category:
             return Cat()
 
-        @cached_method(key=lambda self, value: id(value))
+        @cached_method(key=lambda self, value: identity_key(value))
         def on_object(self, value: CategoryOfCategories.ElementType) -> Category:
             assert value in self.domain()
             result = self._indexed_data.fibers(value)
             assert result in Cat()
             return result
 
-        @cached_method(key=lambda self, morphism: id(morphism))
+        @cached_method(key=lambda self, morphism: identity_key(morphism))
         def reindex(self, morphism: MorphismCategory.ObjectType) -> Functor:
             """The contravariant action on an arrow of the base category."""
             assert morphism in Mor(self.domain().op())
@@ -79,7 +80,7 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
             assert morphism in Mor(self.domain())
             return self.reindex(opposite_morphism(morphism))
 
-        @cached_method(key=lambda self, value: id(value))
+        @cached_method(key=lambda self, value: identity_key(value))
         def unit(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation:
             fiber = self.on_object(value)
             base = self.domain().op()
@@ -89,7 +90,7 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
             assert result in Mor(Fun(fiber, fiber)).Isomorphisms()
             return result
 
-        @cached_method(key=lambda self, second, first: (id(second), id(first)))
+        @cached_method(key=lambda self, second, first: identity_key(second, first))
         def compositor(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> NaturalTransformation:
             """``P(first) P(second) => P(second first)``."""
             assert first.codomain() is second.domain()
@@ -111,13 +112,13 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
         def __init__(self, data: _IndexedTransformationData) -> None:
             self._indexed_transformation = data
 
-        @cached_method(key=lambda self, value: id(value))
+        @cached_method(key=lambda self, value: identity_key(value))
         def component(self, value: CategoryOfCategories.ElementType) -> Functor:
             result = self._indexed_transformation.components(value)
             assert result in Fun(self.domain().on_object(value), self.codomain().on_object(value))
             return result
 
-        @cached_method(key=lambda self, morphism: id(morphism))
+        @cached_method(key=lambda self, morphism: identity_key(morphism))
         def comparison(self, morphism: MorphismCategory.ObjectType) -> NaturalTransformation:
             """``eta_c P(f) => Q(f) eta_d`` for ``f: c -> d``."""
             source = self.component(morphism.domain()) * self.domain().reindex(morphism)
@@ -141,7 +142,7 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
     def __call__(self, fibers: FiberRule, reindexing: ReindexingRule, unit: UnitRule, composition: CompositionRule) -> IndexedCategoriesCategory.ObjectType:
         return self.ObjectType(_IndexedData(fibers, reindexing, unit, composition))
 
-    @cached_method(key=lambda self, functor: id(functor))
+    @cached_method(key=lambda self, functor: identity_key(functor))
     def strict(self, functor: Functor) -> IndexedCategoriesCategory.ObjectType:
         """Regard a strict contravariant functor as an indexed category."""
         assert functor in Fun(self._base.op(), Cat())
@@ -315,7 +316,7 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
         comparison = self._indexed.compositor(lift.base_morphism(), base).component(lift.codomain().fiber_object())
         return self.construct_morphism(arrow.domain(), lift.domain(), base, comparison.inverse() * arrow.fiber_morphism())
 
-    @cached_method(key=lambda self, base: id(base))
+    @cached_method(key=lambda self, base: identity_key(base))
     def fiber_equivalence(self, base: CategoryOfCategories.ElementType) -> EquivalencesCategory.ObjectType:
         """The selected equivalence ``P(c) -> projection.Fiber(c)``."""
         source = self._indexed.on_object(base)

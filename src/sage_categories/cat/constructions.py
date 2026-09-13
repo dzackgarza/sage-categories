@@ -667,11 +667,7 @@ def _presenting_discrete_family(
     kind: str,
 ) -> Category:
     """Return the unique retained discrete family presenting ``apex``."""
-    presentations = tuple(
-        family
-        for family in families
-        if _nontrivial_discrete(family.shape()) is True and ask(family.membership_proposition(apex)) is True
-    )
+    presentations = tuple(family for family in families if _nontrivial_discrete(family.shape()) is True and ask(family.membership_proposition(apex)) is True)
     assert len(presentations) == 1, f"{apex!r} has {len(presentations)} {kind}-family presentations"
     return presentations[0]
 
@@ -685,6 +681,21 @@ def _discrete_sequence_diagram(ambient: Category, sequence: tuple[CategoryOfCate
     for member_object in sequence:
         assert member_object in ambient, f"{member_object!r} is not an object of {ambient!r}"
     return from_sequence(ambient, sequence)
+
+
+def _discrete_construction_diagram(
+    ambient: Category,
+    family: CategoryOfCategories.ElementType | tuple[CategoryOfCategories.ElementType, ...],
+    extra: tuple[CategoryOfCategories.ElementType, ...],
+) -> tuple[Functor, Category]:
+    """Normalize the sequence/diagram input of a product or coproduct and require a nontrivial discrete shape."""
+    if extra:
+        diagram = _discrete_sequence_diagram(ambient, (family, *extra))
+    else:
+        diagram = _discrete_sequence_diagram(ambient, family) if isinstance(family, tuple) else family
+    shape = diagram.domain()
+    assert _nontrivial_discrete(shape) is True, f"{shape!r} is not known to have at least two objects"
+    return diagram, shape
 
 
 class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
@@ -749,13 +760,8 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         *factors: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
         """Construct a known nontrivial discrete limit, or use the sequence form."""
-        if factors:
-            diagram = _discrete_sequence_diagram(self.ambient(), (family, *factors))
-        else:
-            diagram = _discrete_sequence_diagram(self.ambient(), family) if isinstance(family, tuple) else family
-        shape = diagram.domain()
-        assert _nontrivial_discrete(shape) is True, f"{shape!r} is not known to have at least two objects; use {self.ambient()!r}.Limits({shape!r})"
         ambient = self.ambient()
+        diagram, shape = _discrete_construction_diagram(ambient, family, factors)
         return ambient.Limits(shape)(diagram)
 
     def with_universal_data(
@@ -1033,15 +1039,11 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         *summands: CategoryOfCategories.ElementType,
     ) -> CategoryOfCategories.ElementType:
         """Construct a known nontrivial discrete colimit, or use the sequence form."""
-        if summands:
-            diagram = _discrete_sequence_diagram(self.ambient(), (family, *summands))
-        else:
-            diagram = _discrete_sequence_diagram(self.ambient(), family) if isinstance(family, tuple) else family
-        shape = diagram.domain()
-        assert _nontrivial_discrete(shape) is True, f"{shape!r} is not known to have at least two objects; use {self.ambient()!r}.Colimits({shape!r})"
+        ambient = self.ambient()
+        diagram, shape = _discrete_construction_diagram(ambient, family, summands)
         assert diagram in self.universe().morphism_category(1) and diagram.domain() is shape
-        assert is_subcategory(diagram.codomain(), self.ambient()), f"{diagram!r} does not land in {self.ambient()!r}"
-        return self.ambient().Colimits(shape)(diagram)
+        assert is_subcategory(diagram.codomain(), ambient), f"{diagram!r} does not land in {ambient!r}"
+        return ambient.Colimits(shape)(diagram)
 
     def with_universal_data(
         self,

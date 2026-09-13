@@ -1355,9 +1355,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-construction-shape-accessors`. Share retained-shape and diagram-category helpers while preserving the separate limit/colimit construction paths.
 
-
 ## Product and coproduct unions duplicated retained-family registry logic
 
-- **Evidence and impact:** `ProductsCategory` and `CoproductsCategory` repeated identity-based family retention, nontrivial-discrete filtering, and unique presenting-family lookup. Only the direction and family type differ; keeping two registry implementations risks drift in the same POL-SAGE-013 identity semantics.
+- **Evidence and impact:** `ProductsCategory` and `CoproductsCategory` repeated identity-based family retention, nontrivial-discrete filtering, and unique presenting-family lookup.
+  Only the direction and family type differ; keeping two registry implementations risks drift in the same POL-SAGE-013 identity semantics.
 
 - **Repair link and acceptance:** `bloat-discrete-family-registry`. Centralize those three registry operations and keep the product/coproduct classes responsible only for their directional construction data.
+
+
+## Product and coproduct constructors repeated discrete input normalization
+
+- **Evidence and impact:** both union constructors independently converted tuple arguments into a discrete sequence diagram, recovered its shape, and enforced the same nontrivial-discrete admission before branching to limit versus colimit execution. That shared parsing/admission step obscured the actual directional difference.
+
+- **Repair link and acceptance:** `bloat-discrete-construction-input`. Centralize input normalization and shape admission in `_discrete_construction_diagram`; leave only directional execution in the public constructors.

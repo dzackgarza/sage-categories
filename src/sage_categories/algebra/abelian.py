@@ -563,12 +563,7 @@ def _biproduct(
     return apex
 
 
-def _install_additive_operations() -> None:
-    """Install the presented additive operations on the exact category ``Ab``."""
-    AbelianGroups().retain_biproduct_operations(_biproduct, _zero_morphism)
-
-
-_install_additive_operations()
+AbelianGroups().retain_biproduct_operations(_biproduct, _zero_morphism)
 
 
 @cached_function(key=identity_key)

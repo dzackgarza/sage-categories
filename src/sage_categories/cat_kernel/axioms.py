@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from collections import ChainMap
 from types import ModuleType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from sage_categories.kernel.compiler import install_on_declaration
 from sage_categories.kernel.predicates import AxiomLayer, install_axiom_layer
@@ -32,10 +32,6 @@ __all__ = ["application_axiom", "generate_application", "install", "install_base
 # their applications exists (``install_base_applications``).
 _base_axioms: list[Axiom] = []
 
-# The axiom each generated application came from, by the declaration it landed on.
-_derived_applications: dict[tuple[type[CategoryOfCategories.ElementType], str], Axiom] = {}
-
-
 def _predicates() -> ModuleType:
     """Load public axiom declarations at the one cycle-safe kernel/Cat boundary."""
     from sage_categories.cat import predicates
@@ -45,7 +41,13 @@ def _predicates() -> ModuleType:
 
 def application_axiom(owner: type[CategoryOfCategories.ElementType], name: str) -> Axiom | None:
     """The exact axiom that declares a generated application on this object role."""
-    return _derived_applications.get((owner, name))
+    namespace = vars(owner)
+    if name not in namespace:
+        return None
+    member_state = vars(namespace[name])
+    if "_declaring_axiom" not in member_state:
+        return None
+    return cast("Axiom", member_state["_declaring_axiom"])
 
 
 def generate_application(axiom: Axiom) -> None:
@@ -78,7 +80,7 @@ def install_subclass_applications(declaring_class: type[Category]) -> None:
 
 def _install_application(axiom: Axiom, owner: type[CategoryOfCategories.ElementType]) -> None:
     name = axiom.application_name()
-    known = _derived_applications.get((owner, name))
+    known = application_axiom(owner, name)
     assert known is None or known is axiom
     if known is axiom:
         return
@@ -99,7 +101,7 @@ def _install_application(axiom: Axiom, owner: type[CategoryOfCategories.ElementT
 
     application.__name__ = name
     application.__qualname__ = f"{owner.__name__}.{name}"
-    _derived_applications[(owner, name)] = axiom
+    vars(application)["_declaring_axiom"] = axiom
     install_on_declaration(owner, name, application)
 
 

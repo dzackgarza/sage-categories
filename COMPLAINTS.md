@@ -1966,3 +1966,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** when both balancing actions are the selected unit actions, `relative_tensor()` returns the literal identity on the ordinary tensor product. `_identity_coequalizers` nevertheless stored that identity in a side registry so the generic additive `coequalizer_mediator()` would pretend it came from a retained cokernel presentation. The stored action pair was never read. This mechanism should not exist: the strict unit simplification belongs to the relative-tensor owner, while the additive coequalizer API should remain about actual retained coequalizers.
 
 - **Repair link and acceptance:** `bloat-relative-identity-coequalizer-registry`. Delete the marker and its writes; factor internal relative-tensor maps directly through the cached identity in the strict unit case, and send every nonidentity relative projection through the real additive coequalizer mediator.
+
+## Generated axiom applications duplicated their declaration owner in a registry
+
+- **Evidence and impact:** `cat_kernel/axioms.py` stored `(owner, application_name) -> axiom` in `_derived_applications` even though the generated method itself is installed on that exact owner and can retain the declaring axiom directly. The registry duplicated ownership state solely so compiler collision checks could recover information already attached to the declaration.
+
+- **Repair link and acceptance:** `bloat-axiom-application-registry`. Retain the declaring axiom on the generated function, make `application_axiom()` read the owner's exact namespace and function state, and delete `_derived_applications` without changing generated predicate semantics or collision handling.

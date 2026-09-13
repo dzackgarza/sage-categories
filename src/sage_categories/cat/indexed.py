@@ -22,7 +22,7 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import Proposition, ask, register_handler
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
+from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 
 __all__ = ["Grothendieck", "GrothendieckCategory", "IndexedCategories", "IndexedCategoriesCategory"]
 
@@ -238,7 +238,6 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
 
     def __init__(self, indexed: IndexedCategoriesCategory.ObjectType) -> None:
         self._indexed = indexed
-        self._objects: TripleDict = TripleDict(weak_values=False)
         super().__init__()
         register_handler(self._equality, self._equal_objects)
         register_handler(self._equality, self._equal_morphisms)
@@ -252,12 +251,10 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
     def indexed_category(self) -> IndexedCategoriesCategory.ObjectType:
         return self._indexed
 
+    @cached_method(key=lambda self, base, fiber: identity_key(base, fiber))
     def __call__(self, base: CategoryOfCategories.ElementType, fiber: CategoryOfCategories.ElementType) -> GrothendieckCategory.ObjectType:
         assert fiber in self._indexed.on_object(base)
-        key = (base, fiber, self)
-        if key not in self._objects:
-            self._objects[key] = self.ObjectType(_TotalObject(base, fiber))
-        return self._objects[key]
+        return self.ObjectType(_TotalObject(base, fiber))
 
     def construct_morphism(
         self,

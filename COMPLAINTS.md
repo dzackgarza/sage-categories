@@ -1852,3 +1852,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `MorphismCategory(A, B)` stored fixed-endpoint categories in `_fixed_endpoints: TripleDict` and open-coded identity lookup/construct/store. The category is determined solely by the exact endpoint identities, so the table duplicated Sage method caching and kept a dedicated runtime field for one constructor.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Make `MorphismCategory.__call__(domain, codomain)` an identity-keyed `cached_method`, remove `_fixed_endpoints` and its `TripleDict` dependency, and preserve one retained Hom category per exact endpoint pair.
+
+## Grothendieck objects hand-rolled a two-argument identity cache
+
+- **Evidence and impact:** `GrothendieckCategory(base, fiber)` stored objects in `_objects: TripleDict` and open-coded identity lookup/construct/store even though the total object is determined solely by the exact base and fiber objects. The category already uses identity-keyed Sage cached methods for its other retained constructions.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Make the two-argument object constructor an identity-keyed `cached_method`, remove `_objects` and the now-unused `TripleDict` dependency, and preserve one total object per exact base/fiber pair.

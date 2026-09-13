@@ -43,8 +43,8 @@ from sage_categories.cat.properties import (
     PropertySubcategory,
 )
 from sage_categories.kernel.refinement import common_ancestor, is_placed
-from sage_categories.kernel.roles import Role
 from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.roles import Role
 from sage_categories.kernel.sage_runtime import Integer, Unknown, cached_method
 from sage_categories.kernel.type_aliases import EqualityInput
 

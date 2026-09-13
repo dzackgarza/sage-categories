@@ -21,6 +21,7 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import OppositeCategory, opposite_morphism
 from sage_categories.cat.predicates import Unknown, UnknownClass, ask
 from sage_categories.cat.shapes import DiscreteCategory
+from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict
 
 
@@ -105,19 +106,20 @@ def _grothendieck(category: Category) -> FiniteCategoryData | UnknownClass:
             return Unknown
         case _:
             pass
-    fibers = {id(value): finite_category(indexed.on_object(value)) for value in base.objects}
-    match any(fiber is Unknown for fiber in fibers.values()):
+    fibers: MonoDict = MonoDict()
+    for value in base.objects:
+        fibers[value] = finite_category(indexed.on_object(value))
+    match any(fibers[value] is Unknown for value in base.objects):
         case True:
             return Unknown
         case False:
             pass
-    concrete_fibers = {key: value for key, value in fibers.items() if value is not Unknown}
-    objects = tuple(category(value, point) for value in base.objects for point in concrete_fibers[id(value)].objects)
-    by_pair = {(id(value.base_object()), id(value.fiber_object())): value for value in objects}
+    objects = tuple(category(value, point) for value in base.objects for point in fibers[value].objects)
+    by_pair = {identity_key(value.base_object(), value.fiber_object()): value for value in objects}
     arrows = []
     for arrow in base.morphisms:
-        source_fiber = concrete_fibers[id(arrow.domain())]
-        target_fiber = concrete_fibers[id(arrow.codomain())]
+        source_fiber = fibers[arrow.domain()]
+        target_fiber = fibers[arrow.codomain()]
         reindex = indexed.reindex(arrow)
         triples = _category_limits_engine().matching_triples(
             source_fiber.objects,
@@ -130,8 +132,8 @@ def _grothendieck(category: Category) -> FiniteCategoryData | UnknownClass:
         )
         arrows.extend(
             category.construct_morphism(
-                by_pair[(id(arrow.domain()), id(source))],
-                by_pair[(id(arrow.codomain()), id(target))],
+                by_pair[identity_key(arrow.domain(), source)],
+                by_pair[identity_key(arrow.codomain(), target)],
                 arrow,
                 fiber_arrow,
             )
@@ -210,11 +212,11 @@ def _reconstruct_limit_family(
 ) -> FiniteCategoryData:
     """Reconstruct owned limit objects and arrows from their finite component families."""
     objects = tuple(category(components) for components in object_components)
-    by_components = {tuple(id(component) for component in components): value for components, value in zip(object_components, objects, strict=True)}
+    by_components = {identity_key(*components): value for components, value in zip(object_components, objects, strict=True)}
     morphisms = tuple(
         category.construct_morphism(
-            by_components[tuple(id(component.domain()) for component in components)],
-            by_components[tuple(id(component.codomain()) for component in components)],
+            by_components[identity_key(*(component.domain() for component in components))],
+            by_components[identity_key(*(component.codomain() for component in components))],
             components,
         )
         for components in morphism_components
@@ -282,11 +284,11 @@ def _comma_objects(
     arrow_vertex: CategoryOfCategories.ElementType,
 ) -> tuple[
     tuple[CategoryOfCategories.ElementType, ...],
-    dict[tuple[int, int, int], CategoryOfCategories.ElementType],
+    dict[tuple[tuple[int, object], ...], CategoryOfCategories.ElementType],
 ]:
     """Reconstruct owned comma objects from the finite pullback families."""
     objects: list[CategoryOfCategories.ElementType] = []
-    by_components: dict[tuple[int, int, int], CategoryOfCategories.ElementType] = {}
+    by_components: dict[tuple[tuple[int, object], ...], CategoryOfCategories.ElementType] = {}
     for value in data.objects:
         pair = value.family_component(pair_vertex)
         arrow = value.family_component(arrow_vertex)
@@ -294,7 +296,7 @@ def _comma_objects(
         second_value = pair.family_component(1)
         owned = category.from_arrow(first_value, second_value, arrow)
         objects.append(owned)
-        by_components[(id(first_value), id(second_value), id(arrow))] = owned
+        by_components[identity_key(first_value, second_value, arrow)] = owned
     return tuple(objects), by_components
 
 
@@ -302,18 +304,12 @@ def _comma_endpoint(
     family: CategoryOfCategories.ElementType,
     pair_vertex: CategoryOfCategories.ElementType,
     arrow_vertex: CategoryOfCategories.ElementType,
-    by_components: dict[tuple[int, int, int], CategoryOfCategories.ElementType],
+    by_components: dict[tuple[tuple[int, object], ...], CategoryOfCategories.ElementType],
 ) -> CategoryOfCategories.ElementType:
     """Recover one owned comma endpoint from its retained pullback components."""
     pair_object = family.family_component(pair_vertex)
     arrow_object = family.family_component(arrow_vertex)
-    return by_components[
-        (
-            id(pair_object.family_component(0)),
-            id(pair_object.family_component(1)),
-            id(arrow_object),
-        )
-    ]
+    return by_components[identity_key(pair_object.family_component(0), pair_object.family_component(1), arrow_object)]
 
 
 def _comma_morphisms(
@@ -321,7 +317,7 @@ def _comma_morphisms(
     data: FiniteCategoryData,
     pair_vertex: CategoryOfCategories.ElementType,
     arrow_vertex: CategoryOfCategories.ElementType,
-    by_components: dict[tuple[int, int, int], CategoryOfCategories.ElementType],
+    by_components: dict[tuple[tuple[int, object], ...], CategoryOfCategories.ElementType],
 ) -> tuple[CategoryOfCategories.ElementType, ...]:
     """Reconstruct owned comma morphisms from the finite pullback family maps."""
     morphisms = []

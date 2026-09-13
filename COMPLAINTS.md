@@ -1502,9 +1502,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-finite-set-vertex-position-maps`. Centralize identity-safe position construction in `_identity_positions` and index by retained vertices throughout the finite-set engine.
 
-
 ## Finite category-limit lowering exposed raw identity integers
 
-- **Evidence and impact:** `_lower_finite_diagram()` in `engines/category_limits.py` built both vertex and fiber position maps from bare `id(...)` integers, then repeated those integer conversions while assembling native graphs. These are finite identity lookups on retained owned values, exactly the contract of Sage `MonoDict`.
+- **Evidence and impact:** `_lower_finite_diagram()` in `engines/category_limits.py` built both vertex and fiber position maps from bare `id(...)` integers, then repeated those integer conversions while assembling native graphs.
+  These are finite identity lookups on retained owned values, exactly the contract of Sage `MonoDict`.
 
 - **Repair link and acceptance:** `bloat-category-limit-position-maps`. Build both position families through a shared `_identity_positions` helper backed by `MonoDict` and address the maps by owned values directly.
+
+
+## Finite category reconstruction repeated raw Python identity maps
+
+- **Evidence and impact:** finite Grothendieck fibers, limit-component reconstruction, and comma-object reconstruction in `cat/finite_categories.py` all built lookup tables from bare `id(...)` integers. These tables are precisely identity-indexed retained-value maps; some also needed compound identity keys. The repository already owns both cases through Sage `MonoDict` and `kernel.retention.identity_key`.
+
+- **Repair link and acceptance:** `bloat-finite-category-identity-maps`. Use `MonoDict` for direct fiber lookup and `identity_key(...)` for ordered compound keys, preserving finite reconstruction semantics without exposing raw Python ids.

@@ -563,7 +563,12 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         morphism of ``Cat()`` the morphism action ``Fun(I, D) -> Fun(I, E)``
         (``Cat().exponential_on_morphism``).
         """
-        if is_placed(target, self):
+        # The overload is by categorical role, not by current placement.  A category
+        # can itself denote a functor at another stage during bootstrap, but as the
+        # second argument of ``Fun(I, -)`` it still selects the fixed-endpoint functor
+        # category.  Only an actual morphism of ``Cat()`` selects the exponential's
+        # morphism action.
+        if target._is_morphism():
             return self.base_category().exponential_on_morphism(shape, target)
         return super().__call__(shape, target)
 

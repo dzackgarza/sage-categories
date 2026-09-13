@@ -683,6 +683,12 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Split loaded-name discovery, retained-import projection, module extraction, section classification, and ordering into named private helpers; keep `_stub_import_groups` as the four-section assembly only.
 
+## Structured topological categories duplicated their space projection
+
+- **Evidence and impact:** `RingedSpacesCategory.to_spaces()` and `TopologicalRingsCategory.to_spaces()` separately built the same functor to `TopologicalSpaces()` from `value.space()` and `arrow.continuous_map()`. The duplication gives one mathematical forgetful operation two implementations and makes any change to the retained topological boundary require synchronized edits.
+
+- **Repair link and acceptance:** `bloat-topological-space-projection`. Put the shared projection at the topological-space owner and let both named structure functors delegate to it while retaining their existing category-specific names.
+
 ## Magma repeated accessors already owned by its inserter base
 
 - **Evidence and impact:** `cat/structured_objects.py::MagmaCategory` repeated `carrier()`, `structure()`, and `underlying_morphism()` byte-for-byte with `InserterCategory`, even though `MagmaCategory` subclasses that owner. The overrides added a second state-reading surface with no changed semantics and made later subclasses look as though Magma owned those generic inserter operations.

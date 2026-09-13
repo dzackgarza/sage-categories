@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
+from typing import Any, cast
 
 from sympy import false, true
 
@@ -16,6 +17,14 @@ from sage_categories.kernel.sage_runtime import cached_function, cached_method
 from sage_categories.order.posets import BinaryRelations, Posets, Thin
 
 __all__ = ["TopologicalSpaces", "TopologicalSpacesCategory"]
+
+
+def _topological_space_projection(source: Category) -> Functor:
+    """Forget a structured topological category through its retained space/map accessors."""
+    return Fun(source, TopologicalSpaces())(
+        lambda value: cast(Any, value).space(),
+        lambda arrow: cast(Any, arrow).continuous_map(),
+    )
 
 
 @dataclass(frozen=True, eq=False, slots=True)

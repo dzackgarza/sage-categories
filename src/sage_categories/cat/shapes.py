@@ -175,10 +175,10 @@ class DiscreteCategory(Category[[], []]):
         assumptions: Proposition,
     ) -> bool | None:
         """Objects are equal when their points are; morphisms when their domains are."""
-        if first in self and candidate in self:
+        if is_placed(first, self) and is_placed(candidate, self):
             return sympy_ask(first.point() == candidate.point(), assumptions)
         morphisms = self.morphism_category(1)
-        if first in morphisms and candidate in morphisms:
+        if is_placed(first, morphisms) and is_placed(candidate, morphisms):
             return sympy_ask(first.domain() == candidate.domain(), assumptions)
         return None
 
@@ -406,10 +406,10 @@ class ThinCategory(Category[[], []]):
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        if first in self and candidate in self:
+        if is_placed(first, self) and is_placed(candidate, self):
             return sympy_ask(first.point() == candidate.point(), assumptions)
         morphisms = self.morphism_category(1)
-        if first in morphisms and candidate in morphisms:
+        if is_placed(first, morphisms) and is_placed(candidate, morphisms):
             return sympy_ask(
                 (first.domain() == candidate.domain()) & (first.codomain() == candidate.codomain()),
                 assumptions,

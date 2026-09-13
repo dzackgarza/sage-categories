@@ -9,6 +9,7 @@ from math import inf
 from typing import Any, cast
 
 from sympy import false, true
+from sympy.ntheory import multiplicity
 from sympy.ntheory.primetest import isprime
 
 from sage_categories.algebra._certified_commutative_ring import (
@@ -43,15 +44,7 @@ def _rational_padic_valuation(place: int, rational: Fraction) -> int | float:
             return inf
         case False:
             pass
-    numerator, denominator = abs(rational.numerator), rational.denominator
-    value = 0
-    while numerator % place == 0:
-        numerator //= place
-        value += 1
-    while denominator % place == 0:
-        denominator //= place
-        value -= 1
-    return value
+    return int(multiplicity(place, abs(rational.numerator)) - multiplicity(place, rational.denominator))
 
 
 def _expression_valuation(value: ExactLocalValue) -> int | float | None:

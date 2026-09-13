@@ -1559,9 +1559,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-stub-ast-identity-ids`. Store projected `ast.Assign` nodes directly and deduplicate declaration statements with ordered dictionary keys on the nodes themselves.
 
-
 ## DisCoPy path tokens exposed Python object ids as names
 
-- **Evidence and impact:** `evaluate_path()` named temporary DisCoPy objects with `str(id(value))` and reconstructed owned values through a reverse dictionary keyed by those memory-derived strings. DisCoPy needs only stable equality of tokens within one interpretation, not Python addresses; the id spelling leaks an implementation detail and duplicates the identity map already used for semantic objects.
+- **Evidence and impact:** `evaluate_path()` named temporary DisCoPy objects with `str(id(value))` and reconstructed owned values through a reverse dictionary keyed by those memory-derived strings.
+  DisCoPy needs only stable equality of tokens within one interpretation, not Python addresses; the id spelling leaks an implementation detail and duplicates the identity map already used for semantic objects.
 
 - **Repair link and acceptance:** `bloat-discopy-path-token-ids`. Allocate sequential local object tokens through `MonoDict` and retain the reverse token map needed by the DisCoPy functor.
+
+
+## Exact local fields hand-rolled integer prime multiplicity
+
+- **Evidence and impact:** `_rational_padic_valuation()` manually divided a rational numerator and denominator by the selected prime in two while-loops to count their exponents. SymPy, already a fixed dependency of this layer, supplies `ntheory.multiplicity` for exactly this mature arithmetic primitive; keeping a local loop adds algorithmic ownership without adding mathematical semantics.
+
+- **Repair link and acceptance:** `bloat-local-field-rational-valuation`. Delegate the two nonzero integer multiplicities to SymPy and keep only the field-specific difference and the existing valuation of zero.

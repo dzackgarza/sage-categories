@@ -1495,9 +1495,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-represented-product-position-map`. Store vertex positions directly in `MonoDict` and index by the retained vertex object.
 
-
 ## FinSetsForCAP repeated raw-id vertex position tables
 
-- **Evidence and impact:** `engines/finite_sets.py` rebuilt the same `id(vertex) -> position` dictionary in native diagram, product, and coproduct paths and repeated raw-id lookups for endpoints and universal legs. The keys are owned shape objects with identity semantics, which Sage `MonoDict` represents directly without exposing Python integer ids.
+- **Evidence and impact:** `engines/finite_sets.py` rebuilt the same `id(vertex) -> position` dictionary in native diagram, product, and coproduct paths and repeated raw-id lookups for endpoints and universal legs.
+  The keys are owned shape objects with identity semantics, which Sage `MonoDict` represents directly without exposing Python integer ids.
 
 - **Repair link and acceptance:** `bloat-finite-set-vertex-position-maps`. Centralize identity-safe position construction in `_identity_positions` and index by retained vertices throughout the finite-set engine.
+
+
+## Finite category-limit lowering exposed raw identity integers
+
+- **Evidence and impact:** `_lower_finite_diagram()` in `engines/category_limits.py` built both vertex and fiber position maps from bare `id(...)` integers, then repeated those integer conversions while assembling native graphs. These are finite identity lookups on retained owned values, exactly the contract of Sage `MonoDict`.
+
+- **Repair link and acceptance:** `bloat-category-limit-position-maps`. Build both position families through a shared `_identity_positions` helper backed by `MonoDict` and address the maps by owned values directly.

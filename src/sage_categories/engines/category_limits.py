@@ -8,8 +8,17 @@ from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
 
 from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = ["compatible_families", "identified_objects", "matching_triples"]
+
+
+def _identity_positions(values: tuple[object, ...]) -> MonoDict:
+    """Map retained finite values to positions without invoking their equality."""
+    positions: MonoDict = MonoDict()
+    for index, value in enumerate(values):
+        positions[value] = index
+    return positions
 
 
 def _lower_finite_diagram(
@@ -22,19 +31,19 @@ def _lower_finite_diagram(
     """Lower one owned finite diagram to the decorated FinSetsForCAP representation."""
     load_packages(FINITE_SETS_PACKAGES)
     assert len(vertices) == len(families)
-    vertex_positions = {id(vertex): index for index, vertex in enumerate(vertices)}
-    value_positions = tuple({id(value): index for index, value in enumerate(family)} for family in families)
+    vertex_positions = _identity_positions(vertices)
+    value_positions = tuple(_identity_positions(family) for family in families)
     native_factors = [libgap.FinSet(len(family)) for family in families]
     decorated: list[list[object]] = []
     for arrow in arrows:
-        source = vertex_positions[id(arrow.domain())]
-        target = vertex_positions[id(arrow.codomain())]
+        source = vertex_positions[arrow.domain()]
+        target = vertex_positions[arrow.codomain()]
         graph = []
         for value in families[source]:
             result = image(arrow, value)
-            match id(result) in value_positions[target]:
+            match result in value_positions[target]:
                 case True:
-                    graph.append(value_positions[target][id(result)])
+                    graph.append(value_positions[target][result])
                 case False:
                     graph.append(locate(families[target], result))
         decorated.append(

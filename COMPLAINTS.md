@@ -1587,9 +1587,17 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-free-algebra-word-serialization`. Decode through `to_list()` and the parent's public generator tuple, preserving the repository's tuple-of-generator-positions serialization.
 
-
 ## FinSetsForCAP bypassed the owned Sets API for finite data and map evaluation
 
-- **Evidence and impact:** `engines/finite_sets.py` lowered finite objects through the private `_values` field and evaluated owned maps through their private `_action` callbacks in native graph construction and fallback universal mediators. Those operations already have public owners: `set_presentation()` for a chosen finite presentation and ordinary morphism application on owned points. The private probes couple the engine adapter to one implementation of `Sets`.
+- **Evidence and impact:** `engines/finite_sets.py` lowered finite objects through the private `_values` field and evaluated owned maps through their private `_action` callbacks in native graph construction and fallback universal mediators.
+  Those operations already have public owners: `set_presentation()` for a chosen finite presentation and ordinary morphism application on owned points.
+  The private probes couple the engine adapter to one implementation of `Sets`.
 
 - **Repair link and acceptance:** `bloat-finite-set-public-boundary`. Read finite presentation data through `set_presentation()` and route raw-datum evaluation through `_owned_map_value`, which applies the owned morphism to a public source point and returns its target datum.
+
+
+## Native presented-category adapters bypassed the public generator boundary
+
+- **Evidence and impact:** `engines/fp_categories.py` and `engines/catlab.py` read `FinitePresentedCategory._generator_endpoints` and `_path_endpoints` directly to lower generators and relations. The category already exposes each named generator as an owned arrow and exposes object labels, so the adapters were coupled to private presentation dictionaries rather than the mathematical owner.
+
+- **Repair link and acceptance:** `bloat-presented-category-public-boundary`. Recover generator/relation endpoints from `category.generator(name).domain()/codomain()` and `category.label(...)` in both native adapters.

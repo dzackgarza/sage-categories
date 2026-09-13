@@ -277,16 +277,16 @@ def _presented_category_data(
     generators = [
         (
             f"g{index}",
-            label_positions[category._generator_endpoints[name][0]],
-            label_positions[category._generator_endpoints[name][1]],
+            label_positions[category.label(category.generator(name).domain())],
+            label_positions[category.label(category.generator(name).codomain())],
         )
         for index, name in enumerate(names)
     ]
     relations = []
     for left, right in category.relations():
         witness = left or right
-        source, _ = category._path_endpoints(witness)
-        assert source is not None
+        assert witness, "a defining relation cannot equate two empty paths"
+        source = category.label(category.generator(witness[0]).domain())
         relations.append(
             (
                 label_positions[source],

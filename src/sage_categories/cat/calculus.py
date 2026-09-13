@@ -209,14 +209,15 @@ def evaluation(first: Category, target: Category) -> Functor:
     return uncurry(Fun(functors, functors).one())
 
 
-@cached_function(key=identity_key)
-def currying(first: Category, second: Category, target: Category) -> CategoryOfCategories.ElementType:
-    """The selected equivalence of functor categories given by currying."""
-    from sage_categories.cat.adjunctions import Equivalences
-
-    pairs = Cat().Products()((first, second))
-    source, destination = Fun(pairs, target), Fun(first, Fun(second, target))
-    forward = Fun(source, destination)(
+def _currying_forward(
+    second: Category,
+    target: Category,
+    pairs: Category,
+    source: Category,
+    destination: Category,
+) -> Functor:
+    """The forward functor of the currying equivalence, on objects and transformations."""
+    return Fun(source, destination)(
         curry,
         lambda transformation: Mor(destination)(curry(transformation.domain()), curry(transformation.codomain()))(
             lambda value: Mor(Fun(second, target))(
@@ -225,9 +226,13 @@ def currying(first: Category, second: Category, target: Category) -> CategoryOfC
             )(lambda other: transformation.component(pairs((value, other))))
         ),
     )
+
+
+def _currying_inverse(destination: Category, source: Category) -> Functor:
+    """The inverse functor of the currying equivalence."""
     # An object of ``Fun([1], X)`` may be a morphism of ``X``, and one of ``Fun(*, X)``
     # a point; ``destination.diagram`` reads either as the functor it denotes.
-    inverse = Fun(destination, source)(
+    return Fun(destination, source)(
         lambda value: uncurry(destination.diagram(value)),
         lambda transformation: Mor(source)(
             uncurry(destination.diagram(transformation.domain())),
@@ -235,14 +240,40 @@ def currying(first: Category, second: Category, target: Category) -> CategoryOfC
         )(lambda pair: transformation.component(pair.family_component(0)).component(pair.family_component(1))),
     )
 
+
+def _currying_unit(
+    target: Category,
+    source: Category,
+    forward: Functor,
+    inverse: Functor,
+) -> NaturalTransformation:
+    """The unit ``1 -> uncurry ∘ curry`` of the selected currying equivalence."""
+
     @cached_function(key=identity_key)
-    def unit_component(functor: Functor) -> NaturalTransformation:
+    def component(functor: Functor) -> NaturalTransformation:
         roundtrip = uncurry(curry(functor))
 
         def identity(pair: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             return Mor(target)(functor.on_object(pair), functor.on_object(pair)).one()
 
         return natural_isomorphism(functor, roundtrip, identity, identity)
+
+    return natural_isomorphism(
+        Fun(source, source).one(),
+        inverse * forward,
+        component,
+        lambda functor: component(functor).inverse(),
+    )
+
+
+def _currying_counit(
+    second: Category,
+    target: Category,
+    destination: Category,
+    forward: Functor,
+    inverse: Functor,
+) -> NaturalTransformation:
+    """The counit ``curry ∘ uncurry -> 1`` of the selected currying equivalence."""
 
     @cached_function(key=identity_key)
     def counit_component(value: CategoryOfCategories.ElementType) -> NaturalTransformation:
@@ -261,18 +292,25 @@ def currying(first: Category, second: Category, target: Category) -> CategoryOfC
 
         return natural_isomorphism(roundtrip, value, component, lambda other: component(other).inverse())
 
-    unit = natural_isomorphism(
-        Fun(source, source).one(),
-        inverse * forward,
-        unit_component,
-        lambda functor: unit_component(functor).inverse(),
-    )
-    counit = natural_isomorphism(
+    return natural_isomorphism(
         forward * inverse,
         Fun(destination, destination).one(),
         counit_component,
         lambda functor: counit_component(functor).inverse(),
     )
+
+
+@cached_function(key=identity_key)
+def currying(first: Category, second: Category, target: Category) -> CategoryOfCategories.ElementType:
+    """The selected equivalence of functor categories given by currying."""
+    from sage_categories.cat.adjunctions import Equivalences
+
+    pairs = Cat().Products()((first, second))
+    source, destination = Fun(pairs, target), Fun(first, Fun(second, target))
+    forward = _currying_forward(second, target, pairs, source, destination)
+    inverse = _currying_inverse(destination, source)
+    unit = _currying_unit(target, source, forward, inverse)
+    counit = _currying_counit(second, target, destination, forward, inverse)
     return Equivalences(source, destination)(forward, inverse, unit, counit)
 
 

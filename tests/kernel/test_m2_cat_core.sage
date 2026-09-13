@@ -1016,6 +1016,10 @@ def test_the_restriction_of_a_functor_places_its_images_in_the_core_it_was_decla
     assert is_placed(image, between)
     assert image in Mor(MARKS).Isomorphisms()
     assert restricted.on_morphism(arrow.inverse()) is image.inverse()
+    assert is_placed(
+        image.inverse(),
+        Mor(MARKS)(functor.on_object(Y), functor.on_object(X)).Isomorphisms(),
+    )
     assert image.inverse().inverse() is image
 
     # The core is closed under the operation that defines a groupoid, so the inverse of one

@@ -79,6 +79,25 @@ class ProjectiveLinePresentation:
     overlap_swap: MorphismCategory.ObjectType
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class _ProjectiveLineCover:
+    """The two affine charts, overlap localizations, and transition maps of ``P^1``."""
+
+    left_ring: CategoryOfCategories.ElementType
+    right_ring: CategoryOfCategories.ElementType
+    t: CategoryOfCategories.ElementType
+    u: CategoryOfCategories.ElementType
+    left: AffineSchemesCategory.ObjectType
+    right: AffineSchemesCategory.ObjectType
+    left_root: AffineOpenCategory.ObjectType
+    right_root: AffineOpenCategory.ObjectType
+    left_overlap: AffineOpenCategory.ObjectType
+    right_overlap: AffineOpenCategory.ObjectType
+    inverse_t: CategoryOfCategories.ElementType
+    right_to_left: MorphismCategory.ObjectType
+    left_to_right: MorphismCategory.ObjectType
+
+
 _objects: NativeObjectRealizations[OscarHandle, object] = NativeObjectRealizations()
 _morphisms: NativeMorphismRealizations[OscarHandle] = NativeMorphismRealizations()
 
@@ -337,6 +356,39 @@ def _projective_line_structure_sheaf(
     )
 
 
+def _projective_line_cover(field: CategoryOfCategories.ElementType) -> _ProjectiveLineCover:
+    """Construct the standard affine cover of ``P^1`` and its overlap transition maps."""
+    left_ring, (t,) = polynomial_ring(field, ("t",))
+    right_ring, (u,) = polynomial_ring(field, ("u",))
+    left = cast(AffineSchemesCategory.ObjectType, Spec.on_object(left_ring))
+    right = cast(AffineSchemesCategory.ObjectType, Spec.on_object(right_ring))
+    left_opens, _ = affine_structure_sheaf(left)
+    right_opens, _ = affine_structure_sheaf(right)
+    left_root, right_root = left_opens.root(), right_opens.root()
+    left_overlap = left_opens.principal_open(left_root, t)
+    right_overlap = right_opens.principal_open(right_root, u)
+    left_t = left_overlap.restriction_to(left_root)(t)
+    right_u = right_overlap.restriction_to(right_root)(u)
+    inverse_t, inverse_u = inverse_unit(left_t), inverse_unit(right_u)
+    right_to_left_base = presented_ring_homomorphism(right_ring, left_overlap.section_ring(), (inverse_t,))
+    left_to_right_base = presented_ring_homomorphism(left_ring, right_overlap.section_ring(), (inverse_u,))
+    return _ProjectiveLineCover(
+        left_ring,
+        right_ring,
+        t,
+        u,
+        left,
+        right,
+        left_root,
+        right_root,
+        left_overlap,
+        right_overlap,
+        inverse_t,
+        localization_extension(right_overlap.section_ring(), left_overlap.section_ring(), right_to_left_base),
+        localization_extension(left_overlap.section_ring(), right_overlap.section_ring(), left_to_right_base),
+    )
+
+
 def _projective_line_swap(
     glued: SchemesCategory.ObjectType,
     left: AffineSchemesCategory.ObjectType,
@@ -364,63 +416,47 @@ def projective_line(
     field: CategoryOfCategories.ElementType,
 ) -> ProjectiveLinePresentation:
     """The two-chart projective line over ``field`` with its chart-swap automorphism."""
-    left_ring, (t,) = polynomial_ring(field, ("t",))
-    right_ring, (u,) = polynomial_ring(field, ("u",))
-    left, right = Spec.on_object(left_ring), Spec.on_object(right_ring)
-    left_opens, _ = affine_structure_sheaf(cast(AffineSchemesCategory.ObjectType, left))
-    right_opens, _ = affine_structure_sheaf(cast(AffineSchemesCategory.ObjectType, right))
-    left_root, right_root = left_opens.root(), right_opens.root()
-    left_overlap = left_opens.principal_open(left_root, t)
-    right_overlap = right_opens.principal_open(right_root, u)
-    left_t = left_overlap.restriction_to(left_root)(t)
-    right_u = right_overlap.restriction_to(right_root)(u)
-    inverse_t, inverse_u = inverse_unit(left_t), inverse_unit(right_u)
-
-    right_to_left_base = presented_ring_homomorphism(right_ring, left_overlap.section_ring(), (inverse_t,))
-    left_to_right_base = presented_ring_homomorphism(left_ring, right_overlap.section_ring(), (inverse_u,))
-    right_to_left = localization_extension(right_overlap.section_ring(), left_overlap.section_ring(), right_to_left_base)
-    left_to_right = localization_extension(left_overlap.section_ring(), right_overlap.section_ring(), left_to_right_base)
-
+    cover = _projective_line_cover(field)
     schemes = Schemes()
     glued, left_inclusion, right_inclusion = schemes.glue_two_affines(
-        cast(AffineSchemesCategory.ObjectType, left),
-        cast(AffineSchemesCategory.ObjectType, right),
-        left_overlap,
-        right_overlap,
-        right_to_left,
-        left_to_right,
+        cover.left,
+        cover.right,
+        cover.left_overlap,
+        cover.right_overlap,
+        cover.right_to_left,
+        cover.left_to_right,
     )
 
     swap, overlap_swap = _projective_line_swap(
         glued,
-        cast(AffineSchemesCategory.ObjectType, left),
-        cast(AffineSchemesCategory.ObjectType, right),
-        left_ring,
-        right_ring,
-        t,
-        u,
-        left_overlap,
-        inverse_t,
+        cover.left,
+        cover.right,
+        cover.left_ring,
+        cover.right_ring,
+        cover.t,
+        cover.u,
+        cover.left_overlap,
+        cover.inverse_t,
     )
 
     structure_sheaf = _projective_line_structure_sheaf(
         glued,
-        left_ring,
-        right_ring,
-        left_root,
-        right_root,
-        left_overlap,
-        right_overlap,
-        right_to_left,
+        cover.left_ring,
+        cover.right_ring,
+        cover.left_root,
+        cover.right_root,
+        cover.left_overlap,
+        cover.right_overlap,
+        cover.right_to_left,
     )
     return ProjectiveLinePresentation(
         glued,
-        cast(AffineSchemesCategory.ObjectType, left),
-        cast(AffineSchemesCategory.ObjectType, right),
-        t,
-        u,
-        left_overlap,
-        right_overlap,
+        cover.left,
+        cover.right,
+        cover.t,
+        cover.u,
+        cover.left_overlap,
+        cover.right_overlap,
         left_inclusion,
         right_inclusion,
         swap,

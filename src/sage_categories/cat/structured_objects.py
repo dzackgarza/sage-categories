@@ -484,12 +484,6 @@ def _carrier_point(
     return base, base.point_morphism(comparison.on_object(point).point())
 
 
-def _apply(point: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> CategoryOfCategories.ElementType:
-    """``f ∘ x``: an endomorphism of the carrier applied to a point, re-owned by the structured object."""
-    base, x = _carrier_point(point)
-    return point.parent().object_at(base.element_from_defining_morphism(arrow * x))
-
-
 def _combine(
     first: CategoryOfCategories.ElementType,
     second: CategoryOfCategories.ElementType,
@@ -709,7 +703,8 @@ class AdditiveGroupsCategory(NamedOperationCategory):
 
     class ElementType:
         def __neg__(self) -> CategoryOfCategories.ElementType:
-            return _apply(self, self.parent().negation())
+            base, point = _carrier_point(self)
+            return self.parent().object_at(base.element_from_defining_morphism(self.parent().negation() * point))
 
         def __sub__(self, other: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             return self + (-other)

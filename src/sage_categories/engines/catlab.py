@@ -234,8 +234,8 @@ def _presented_category_data(
     generators = [
         (
             f"g{index}",
-            label_positions[category.label(category.generator(name).domain())],
-            label_positions[category.label(category.generator(name).codomain())],
+            label_positions[category.label(category.generator_endpoints(name)[0])],
+            label_positions[category.label(category.generator_endpoints(name)[1])],
         )
         for index, name in enumerate(names)
     ]
@@ -243,7 +243,7 @@ def _presented_category_data(
     for left, right in category.relations():
         witness = left or right
         assert witness, "a defining relation cannot equate two empty paths"
-        source = category.label(category.generator(witness[0]).domain())
+        source = category.label(category.generator_endpoints(witness[0])[0])
         relations.append(
             (
                 label_positions[source],

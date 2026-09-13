@@ -72,7 +72,10 @@ def _ambient_presentation(
     labels = tuple(category.labels())
     names = tuple(category.generator_names())
     positions = {label: index + 1 for index, label in enumerate(labels)}
-    endpoints = tuple((category.label(category.generator(name).domain()), category.label(category.generator(name).codomain())) for name in names)
+    endpoints = tuple(
+        tuple(category.label(endpoint) for endpoint in category.generator_endpoints(name))
+        for name in names
+    )
     quiver = libgap.FinQuiver(
         [
             "sage_categories",
@@ -108,8 +111,8 @@ def _defining_relations(
         witness = left or right
         if not witness:
             raise AssertionError("a defining relation cannot equate two empty paths")
-        source = category.label(category.generator(witness[0]).domain())
-        target = category.label(category.generator(witness[-1]).codomain())
+        source = category.label(category.generator_endpoints(witness[0])[0])
+        target = category.label(category.generator_endpoints(witness[-1])[1])
         source_index = positions[source] - 1
         target_index = positions[target] - 1
         relations.append(

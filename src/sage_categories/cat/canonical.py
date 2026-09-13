@@ -150,13 +150,26 @@ class FinitePresentedCategory(Category[[Word], []]):
         """The names of the generating morphisms, in declaration order."""
         return tuple(self._generator_endpoints)
 
+    def generator_endpoints(
+        self,
+        name: str,
+    ) -> tuple[FinitePresentedCategory.ObjectType, FinitePresentedCategory.ObjectType]:
+        """Return the declared source and target objects of ``name`` without normalization.
+
+        Native presentation engines need the quiver boundary before they can construct
+        the normal-form machinery used by ``generator()`` itself.  This is therefore a
+        presentation-data accessor, not a second morphism constructor.
+        """
+        source, target = self._generator_endpoints[name]
+        return self(source), self(target)
+
     def is_discrete(self) -> bool:
         """A finite presented shape with no nonidentity generators is discrete."""
         return not self._generator_endpoints
 
     def generator(self, name: str) -> FinitePresentedCategory.MorphismType:
-        source, target = self._generator_endpoints[name]
-        return self.construct_morphism(self(source), self(target), (name,))
+        source, target = self.generator_endpoints(name)
+        return self.construct_morphism(source, target, (name,))
 
     # -- the finite set of objects and, for an acyclic quiver, of morphisms (specs/functor.md, "Diagram shapes and universal constructions") -------
     #

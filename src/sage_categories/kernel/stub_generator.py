@@ -1382,11 +1382,7 @@ def _project_internal_definitions(
         raise ValueError(f"private stub projection omitted package-internal declarations: {sorted(unresolved)!r}")
 
     imports = _required_internal_imports(tree, private_tree, _loaded_names_in(additions))
-    insertion = next(
-        (index for index, statement in enumerate(tree.body) if not isinstance(statement, ast.Import | ast.ImportFrom)),
-        len(tree.body),
-    )
-    tree.body[insertion:insertion] = imports
+    _insert_imports(tree, imports)
     tree.body.extend(additions)
 
 
@@ -1582,12 +1578,17 @@ def _source_attribute_aliases(
     return aliases
 
 
-def _insert_imports(tree: ast.Module, imports: list[ast.stmt]) -> None:
-    """Insert imports after the generated import block."""
-    insertion = next(
+def _first_non_import_index(tree: ast.Module) -> int:
+    """Return the insertion point immediately after a module's generated import block."""
+    return next(
         (index for index, statement in enumerate(tree.body) if not isinstance(statement, ast.Import | ast.ImportFrom)),
         len(tree.body),
     )
+
+
+def _insert_imports(tree: ast.Module, imports: list[ast.stmt]) -> None:
+    """Insert imports after the generated import block."""
+    insertion = _first_non_import_index(tree)
     tree.body[insertion:insertion] = imports
 
 
@@ -1721,10 +1722,7 @@ def _project_public_exports(tree: ast.Module, source: ast.Module) -> None:
         if any(isinstance(target, ast.Name) and target.id == "__all__" for target in statement.targets):
             tree.body[index] = projected
             return
-    insertion = next(
-        (index for index, statement in enumerate(tree.body) if not isinstance(statement, ast.Import | ast.ImportFrom)),
-        len(tree.body),
-    )
+    insertion = _first_non_import_index(tree)
     tree.body.insert(insertion, projected)
 
 

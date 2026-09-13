@@ -112,7 +112,19 @@ class _IndexedProductValue:
         return self.rule(vertex.point().datum())
 
 
-class _IndexedProductRule:
+class _DiagramValueRule:
+    """Membership in a represented diagram construction by exact retained diagram identity."""
+
+    value_type: type
+
+    def __init__(self, diagram: Functor) -> None:
+        self.diagram = diagram
+
+    def __call__(self, datum: Hashable) -> Proposition:
+        return true if isinstance(datum, self.value_type) and datum.diagram is self.diagram else false
+
+
+class _IndexedProductRule(_DiagramValueRule):
     """Membership presentation for an arbitrary discrete indexed product.
 
     A value is admitted by construction when it retains a component rule for this exact
@@ -120,11 +132,7 @@ class _IndexedProductRule:
     diagram; it is not discharged by traversing the index set.
     """
 
-    def __init__(self, diagram: Functor) -> None:
-        self.diagram = diagram
-
-    def __call__(self, datum: Hashable) -> Proposition:
-        return true if isinstance(datum, _IndexedProductValue) and datum.diagram is self.diagram else false
+    value_type = _IndexedProductValue
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -136,14 +144,10 @@ class _IndexedCoproductValue:
     value: Hashable
 
 
-class _IndexedCoproductRule:
+class _IndexedCoproductRule(_DiagramValueRule):
     """Membership presentation for a discrete coproduct without index traversal."""
 
-    def __init__(self, diagram: Functor) -> None:
-        self.diagram = diagram
-
-    def __call__(self, datum: Hashable) -> Proposition:
-        return true if isinstance(datum, _IndexedCoproductValue) and datum.diagram is self.diagram else false
+    value_type = _IndexedCoproductValue
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -155,14 +159,10 @@ class _SequentialColimitValue:
     value: Hashable
 
 
-class _SequentialColimitRule:
+class _SequentialColimitRule(_DiagramValueRule):
     """Membership presentation for a colimit over ``omega``."""
 
-    def __init__(self, diagram: Functor) -> None:
-        self.diagram = diagram
-
-    def __call__(self, datum: Hashable) -> Proposition:
-        return true if isinstance(datum, _SequentialColimitValue) and datum.diagram is self.diagram else false
+    value_type = _SequentialColimitValue
 
 
 class _PredicateRule:

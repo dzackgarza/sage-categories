@@ -610,3 +610,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `DiscreteCategory.index_set()`, `object_set()`, and `_chosen_morphism_set()` all read `_index_set` independently, while `ThinCategory.carrier()` and `object_set()` both read `_carrier`. These are intentional mathematical aliases, but reading the storage in every alias creates multiple implementation owners for one retained value.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Keep `index_set()` and `carrier()` as the storage-reading owners and make the corresponding object/morphism-set aliases delegate to them.
+
+## Represented Sets diagram rules repeated one admission mechanism
+
+- **Evidence and impact:** `_IndexedProductRule`, `_IndexedCoproductRule`, and `_SequentialColimitRule` each stored one diagram and implemented the same identity-based admission test, differing only in the retained value class they accept. Three copies of the same constructor and predicate obscure that one invariant owns all represented diagram values.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Put diagram retention and identity-based value admission on one private base rule; keep the three named rule subclasses only to select their distinct retained value type and preserve existing dispatch by presentation class.

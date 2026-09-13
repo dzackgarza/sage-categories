@@ -39,6 +39,7 @@ __all__ = [
     "retain_native_universal_presentation",
 ]
 
+
 @dataclass(frozen=True, eq=False, slots=True)
 class NativeCategoryRealization[Native]:
     """A native category model for one exact owned category."""
@@ -185,9 +186,7 @@ class NativeMorphismRealizations[Native](
     ) -> NativeMorphismRealization[Native]:
         hom = owner.morphism_category(1)(source, target)
         assert value in hom, f"{value!r} is not an object of the exact Hom {hom!r}"
-        assert value.domain() is source and value.codomain() is target, (
-            f"{value!r} does not have retained endpoints {source!r} -> {target!r}"
-        )
+        assert value.domain() is source and value.codomain() is target, f"{value!r} does not have retained endpoints {source!r} -> {target!r}"
         record = NativeMorphismRealization(owner, value, source, target, native)
         self._records.retain(value, record)
         return record
@@ -224,8 +223,16 @@ class NativeUniversalPresentationRealizations[NativeDiagram, NativePresentation]
             assert vertex in diagram.domain(), f"{vertex!r} is not a vertex of {diagram.domain()!r}"
             presentation.leg(vertex)
         record = NativeUniversalPresentationRealization(
-            owner, diagram, presentation, native_diagram, object_correspondence,
-            arrow_correspondence, native_presentation, native_apex, native_legs, mediator,
+            owner,
+            diagram,
+            presentation,
+            native_diagram,
+            object_correspondence,
+            arrow_correspondence,
+            native_presentation,
+            native_apex,
+            native_legs,
+            mediator,
         )
         self._records.retain(presentation, record)
         return record
@@ -236,16 +243,20 @@ _native_functors: _IdentityRecords[NativeFunctorRealization[object]] = _Identity
 _native_transformations: _IdentityRecords[NativeTransformationRealization[object]] = _IdentityRecords()
 _universal_presentations: NativeUniversalPresentationRealizations[object, object] = NativeUniversalPresentationRealizations()
 
+
 def retain_native_category(owner: Category, native: object) -> NativeCategoryRealization[object]:
     record = NativeCategoryRealization(owner, native)
     _native_categories.retain(owner, record)
     return record
 
+
 def has_native_category(owner: Category) -> bool:
     return _native_categories.has(owner)
 
+
 def native_category(owner: Category) -> NativeCategoryRealization[object]:
     return _native_categories.get(owner)
+
 
 def retain_native_functor(
     value: MorphismCategory.ObjectType,
@@ -258,11 +269,14 @@ def retain_native_functor(
     _native_functors.retain(value, record)
     return record
 
+
 def has_native_functor(value: MorphismCategory.ObjectType) -> bool:
     return _native_functors.has(value)
 
+
 def native_functor(value: MorphismCategory.ObjectType) -> NativeFunctorRealization[object]:
     return _native_functors.get(value)
+
 
 def retain_native_transformation(
     value: MorphismCategory.ObjectType,
@@ -274,11 +288,14 @@ def retain_native_transformation(
     _native_transformations.retain(value, record)
     return record
 
+
 def has_native_transformation(value: MorphismCategory.ObjectType) -> bool:
     return _native_transformations.has(value)
 
+
 def native_transformation(value: MorphismCategory.ObjectType) -> NativeTransformationRealization[object]:
     return _native_transformations.get(value)
+
 
 def retain_native_universal_presentation(
     owner: Category,
@@ -294,9 +311,18 @@ def retain_native_universal_presentation(
 ) -> NativeUniversalPresentationRealization[object, object]:
     """Retain native execution data for this exact selected universal presentation."""
     return _universal_presentations.retain(
-        owner, diagram, presentation, native_diagram, object_correspondence,
-        arrow_correspondence, native_presentation, native_apex, native_legs, mediator,
+        owner,
+        diagram,
+        presentation,
+        native_diagram,
+        object_correspondence,
+        arrow_correspondence,
+        native_presentation,
+        native_apex,
+        native_legs,
+        mediator,
     )
+
 
 def native_universal_presentation(
     presentation: CategoryOfCategories.ElementType,

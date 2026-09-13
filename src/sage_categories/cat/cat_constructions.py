@@ -98,9 +98,13 @@ def _sequence_rule[Value](sequence: tuple[Value, ...]) -> Callable[[DiscreteCate
 
 def _faithful_isofibration_projection(limit: LimitCategory, index: int) -> Functor:
     """Project one retained factor when the caller declares that leg faithful and isofibrational."""
-    return Fun(limit, limit.factor(index)).Faithful().Isofibrations()(
-        lambda value: value.family_component(index),
-        lambda arrow: arrow.family_component(index),
+    return (
+        Fun(limit, limit.factor(index))
+        .Faithful()
+        .Isofibrations()(
+            lambda value: value.family_component(index),
+            lambda arrow: arrow.family_component(index),
+        )
     )
 
 

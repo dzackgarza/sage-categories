@@ -169,8 +169,7 @@ def _colimit_mediator(
     legs = tuple(opposite_morphism(candidate.component(vertex)) for vertex in vertices)
     object_images = tuple(legs[factor_index].on_object(value) for factor_index, value in representatives)
     generator_images = tuple(
-        legs[generator_origins[name][0]].on_morphism(factors[generator_origins[name][0]].generator(generator_origins[name][1]))
-        for name in colimit.generator_names()
+        legs[generator_origins[name][0]].on_morphism(factors[generator_origins[name][0]].generator(generator_origins[name][1])) for name in colimit.generator_names()
     )
     native = catlab.presented_functor(colimit, target, object_images, generator_images)
 

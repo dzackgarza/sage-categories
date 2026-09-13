@@ -32,12 +32,14 @@ def _identity_transformation(
     source_diagram = functors.diagram(source)
     target_diagram = functors.diagram(target)
     return functors.morphism_category(1)(source, target)(
-        lambda vertex: source_diagram.codomain()
-        .morphism_category(1)(
-            source_diagram.on_object(vertex),
-            target_diagram.on_object(vertex),
+        lambda vertex: (
+            source_diagram.codomain()
+            .morphism_category(1)(
+                source_diagram.on_object(vertex),
+                target_diagram.on_object(vertex),
+            )
+            .one()
         )
-        .one()
     )
 
 
@@ -52,12 +54,8 @@ def _identity_round_trip(
     """Retain and return both directions of ``Id ≅ round_trip`` from one component rule."""
     endofunctors = Fun(category, category)
     identity = endofunctors.one()
-    forward = endofunctors.morphism_category(1)(identity, round_trip)(
-        lambda value: component(value, round_trip.on_object(value))
-    )
-    inverse = endofunctors.morphism_category(1)(round_trip, identity)(
-        lambda value: component(round_trip.on_object(value), value)
-    )
+    forward = endofunctors.morphism_category(1)(identity, round_trip)(lambda value: component(value, round_trip.on_object(value)))
+    inverse = endofunctors.morphism_category(1)(round_trip, identity)(lambda value: component(round_trip.on_object(value), value))
     endofunctors.retain_inverses(forward, inverse)
     return forward, inverse
 
@@ -107,9 +105,7 @@ def dual_functor_category_equivalence(
     _counit_inverse, counit = _identity_round_trip(
         opposite_dual,
         target_round_trip,
-        lambda first, second: opposite_morphism(
-            _identity_transformation(dual, first, second)
-        ),
+        lambda first, second: opposite_morphism(_identity_transformation(dual, first, second)),
     )
 
     return Equivalences(source, opposite_dual)(

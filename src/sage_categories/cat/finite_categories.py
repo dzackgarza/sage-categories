@@ -199,9 +199,7 @@ def _arrows(category: FunctorCategory) -> FiniteCategoryData | UnknownClass:
         return Unknown
     from sage_categories.engines import functor_categories
 
-    objects, morphisms = functor_categories.arrow_category(
-        category, category.codomain(), target.morphisms
-    )
+    objects, morphisms = functor_categories.arrow_category(category, category.codomain(), target.morphisms)
     return FiniteCategoryData(objects, morphisms)
 
 
@@ -212,10 +210,7 @@ def _reconstruct_limit_family(
 ) -> FiniteCategoryData:
     """Reconstruct owned limit objects and arrows from their finite component families."""
     objects = tuple(category(components) for components in object_components)
-    by_components = {
-        tuple(id(component) for component in components): value
-        for components, value in zip(object_components, objects, strict=True)
-    }
+    by_components = {tuple(id(component) for component in components): value for components, value in zip(object_components, objects, strict=True)}
     morphisms = tuple(
         category.construct_morphism(
             by_components[tuple(id(component.domain()) for component in components)],
@@ -236,9 +231,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
     if any(factor is Unknown for factor in factors):
         return Unknown
 
-    if isinstance(category.shape(), DiscreteCategory) and all(
-        isinstance(category.factor(vertex), FinitePresentedCategory) for vertex in vertices
-    ):
+    if isinstance(category.shape(), DiscreteCategory) and all(isinstance(category.factor(vertex), FinitePresentedCategory) for vertex in vertices):
         from sage_categories.engines import category_products
 
         factor_categories = tuple(category.factor(vertex) for vertex in vertices)
@@ -278,9 +271,7 @@ def _slice(category: object) -> FiniteCategoryData | UnknownClass:
         return Unknown
     from sage_categories.engines import slice_categories
 
-    objects, morphisms = slice_categories.slice_category(
-        category, category.base_of_slice(), base.morphisms
-    )
+    objects, morphisms = slice_categories.slice_category(category, category.base_of_slice(), base.morphisms)
     return FiniteCategoryData(objects, morphisms)
 
 

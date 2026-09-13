@@ -1936,3 +1936,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** after `_narrowing(selected)` moved canonical narrowing construction to Sage `cached_method`, `Category.retain_intersection()` still read and wrote `self._narrowings`, a table that no longer exists. The external-registration mechanism itself is required because pullback/intersection construction can supply an already-built canonical narrowing, but it must seed the same cache that ordinary `intersection()` reads rather than a parallel or stale registry.
 
 - **Repair link and acceptance:** `bloat-narrowing-registration-cache`. Normalize the supplied roots through `closed_roots`, use `_narrowing.is_in_cache(...)` to verify an existing registration and `_narrowing.set_cache(...)` to install a new one, and remove the final `_narrowings` references.
+
+## Chosen enumerations hand-rolled their positive-result cache
+
+- **Evidence and impact:** a chosen enumeration is genuine retained mathematical data because callers may select a noncanonical indexing and later constructions must recover that exact choice. The module-level `_enumerations: MonoDict` and repeated lookup/store branches should not exist, however: the selection is a positive-only cache keyed by the exact set object, and Sage's `cached_function` already supports identity keys, cache-presence checks, and `set_cache` installation without ever caching `Unknown`.
+
+- **Repair link and acceptance:** `bloat-chosen-enumeration-cache`. Replace `_enumerations` with an identity-keyed `_retained_enumeration` cached function whose uncached body is not a constructor; install finite, product, and supplied enumerations through `set_cache`, keep absent/unknown cases uncached, and route all enumeration-presence queries through the cache API.

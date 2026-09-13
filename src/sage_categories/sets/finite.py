@@ -52,7 +52,7 @@ from sage_categories.cat.predicates import (
 from sage_categories.cat.shapes import realize_discrete_object
 from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, cached_method
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function, cached_method
 from sage_categories.kernel.type_aliases import ContainmentInput
 
 type Map = Callable[[Hashable], Hashable]
@@ -222,7 +222,14 @@ def _finite_data(value: SetsCategory.ObjectType) -> tuple[Hashable, ...] | Unkno
 # datum that separates them; otherwise it stays undecided (``specs/sets.md``, "Equality").
 
 
-_enumerations: MonoDict = MonoDict()
+@cached_function(key=identity_key)
+def _retained_enumeration(value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType:
+    """The explicitly retained chosen enumeration of ``value``.
+
+    The uncached function is not a constructor: an enumeration is selected by finite
+    reconstruction or supplied by a caller, both of which install it with ``set_cache``.
+    """
+    raise AssertionError(f"{value!r} has no retained enumeration")
 
 
 @dataclass(frozen=True, slots=True)
@@ -495,7 +502,7 @@ class SetsCategory(Category[[Map], []]):
             finite_sets = _finite_sets_engine()
 
             return finite_sets.equal_morphisms(first, second)
-        if domain in _enumerations:
+        if _retained_enumeration.is_in_cache(domain):
             points = self.finite_points(domain)
             if points is not Unknown:
                 return sympy_ask(
@@ -667,8 +674,8 @@ class SetsCategory(Category[[Map], []]):
 
     def chosen_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass:
         """The retained isomorphism ``e: I -> X`` for the supplied enumeration of ``X``."""
-        if value in _enumerations:
-            return _enumerations[value]
+        if _retained_enumeration.is_in_cache(value):
+            return _retained_enumeration(value)
         placement = value.category()
         for family in (placement, *placement.narrowing_roots()):
             for diagram in family.presenting_diagrams(value):
@@ -679,8 +686,8 @@ class SetsCategory(Category[[Map], []]):
 
     def _finite_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass:
         """Index the defining finite list by ``{1, ..., n}``."""
-        if value in _enumerations:
-            return _enumerations[value]
+        if _retained_enumeration.is_in_cache(value):
+            return _retained_enumeration(value)
         values = _finite_data(value)
         if values is Unknown:
             return Unknown
@@ -689,7 +696,7 @@ class SetsCategory(Category[[Map], []]):
         positions = {datum: index for index, datum in enumerate(values, start=1)}
         inverse = Mor(self)(value, indices)(lambda datum: positions[value.representative(datum)])
         self.retain_inverses(enumeration, inverse)
-        _enumerations[value] = enumeration
+        _retained_enumeration.set_cache(enumeration, value)
         return enumeration
 
     def _product_enumeration(self, diagram: Functor) -> MorphismCategory.ObjectType | UnknownClass:
@@ -716,7 +723,7 @@ class SetsCategory(Category[[Map], []]):
         enumeration = limit.on_morphism(forward) * index_enumeration
         inverse = index_enumeration.inverse() * limit.on_morphism(backward)
         self.retain_inverses(enumeration, inverse)
-        _enumerations[enumeration.codomain()] = enumeration
+        _retained_enumeration.set_cache(enumeration, enumeration.codomain())
         return enumeration
 
     def finite_points(self, value: SetsCategory.ObjectType) -> tuple[SetsCategory.ElementType, ...] | UnknownClass:
@@ -744,9 +751,10 @@ class SetsCategory(Category[[Map], []]):
         assert inclusion in Mor(self).Monomorphisms()
         assert inclusion.domain() is enumeration.domain() and inclusion.codomain() is NN
         value = enumeration.codomain()
-        if value in _enumerations:
-            assert _enumerations[value] is enumeration, "this set already has a different chosen enumeration"
-        _enumerations[value] = enumeration
+        if _retained_enumeration.is_in_cache(value):
+            assert _retained_enumeration(value) is enumeration, "this set already has a different chosen enumeration"
+        else:
+            _retained_enumeration.set_cache(enumeration, value)
         if self.enumeration_index_inclusion.is_in_cache(enumeration):
             assert self.enumeration_index_inclusion(enumeration) is inclusion, "this enumeration already has a different retained index inclusion"
         else:
@@ -1014,8 +1022,8 @@ def _finite_presentation(value: SetsCategory.ObjectType, assumptions: Propositio
         return True
     if isinstance(presentation, _PredicateRule) and sympy_ask(finite_set(presentation.ambient), assumptions) is True:
         return True
-    if value in _enumerations:
-        index_presentation = _enumerations[value].domain().set_presentation()
+    if _retained_enumeration.is_in_cache(value):
+        index_presentation = _retained_enumeration(value).domain().set_presentation()
         while isinstance(index_presentation, _PredicateRule):
             index_presentation = index_presentation.ambient.set_presentation()
         if isinstance(index_presentation, tuple):

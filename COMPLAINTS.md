@@ -1399,13 +1399,16 @@ Ideas, to be weighed, not obligations.*
 
 ## Inverse-image retention mixed pullback construction with containment propagation
 
-- **Evidence and impact:** `cat/properties.py::retain_inverse_image` built the retained pullback cone and mediator, then also walked every declared target containment to synthesize and verify comparison pullbacks. Those are distinct responsibilities: constructing the chosen inverse image and propagating it through the subcategory lattice. Keeping both in one function hid the universal-map boundary and made containment changes require editing the pullback constructor itself.
+- **Evidence and impact:** `cat/properties.py::retain_inverse_image` built the retained pullback cone and mediator, then also walked every declared target containment to synthesize and verify comparison pullbacks.
+  Those are distinct responsibilities: constructing the chosen inverse image and propagating it through the subcategory lattice.
+  Keeping both in one function hid the universal-map boundary and made containment changes require editing the pullback constructor itself.
 
 - **Repair link and acceptance:** `bloat-inverse-image-retention-phases`. Move candidate-cone factorization to `_inverse_image_mediator()` and containment propagation to `_retain_inverse_image_comparisons()`; leave `retain_inverse_image()` responsible for the retained key, chosen pullback cone, and invoking those two phases.
 
 ## Limit-basis construction mixed product equations with equalizer factorization
 
-- **Evidence and impact:** `cat/limit_basis.py::_basis_data` built the object product, the two parallel equation maps, their equalizer, vertex-index recovery, and candidate-cone factorization in one routine. Those phases have separate invariants and the long function obscured which step owns the universal equations versus the final factorization.
+- **Evidence and impact:** `cat/limit_basis.py::_basis_data` built the object product, the two parallel equation maps, their equalizer, vertex-index recovery, and candidate-cone factorization in one routine.
+  Those phases have separate invariants and the long function obscured which step owns the universal equations versus the final factorization.
 
 - **Repair link and acceptance:** `bloat-limit-basis-phases`. Give the parallel maps, vertex indexing, and candidate factorization the private owners `_basis_parallel_maps()`, `_basis_index()`, and `_basis_lift()`; leave `_basis_data()` as orchestration of the selected product/equalizer presentation.
 

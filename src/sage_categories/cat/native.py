@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
     "NativeCategoryRealization",
@@ -114,24 +115,20 @@ class _IdentityRecords[Record]:
     """Identity-keyed records that keep the key alive and never invoke its equality."""
 
     def __init__(self) -> None:
-        self._records: dict[int, tuple[object, Record]] = {}
+        self._records: MonoDict = MonoDict()
 
     def retain(self, key: object, record: Record) -> None:
-        identifier = id(key)
-        if identifier in self._records:
-            retained_key, retained = self._records[identifier]
-            assert retained_key is key
-            assert retained is record, f"{key!r} already retains a different native realization"
+        if key in self._records:
+            assert self._records[key] is record, f"{key!r} already retains a different native realization"
             return
-        self._records[identifier] = (key, record)
+        self._records[key] = record
 
     def has(self, key: object) -> bool:
-        identifier = id(key)
-        return identifier in self._records and self._records[identifier][0] is key
+        return key in self._records
 
     def get(self, key: object) -> Record:
         assert self.has(key), f"{key!r} retains no native realization"
-        return self._records[id(key)][1]
+        return self._records[key]
 
 
 class _NativeRealizations[Value, Record]:

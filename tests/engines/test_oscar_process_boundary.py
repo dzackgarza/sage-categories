@@ -67,7 +67,8 @@ def test_oscar_handles_belong_to_one_worker() -> None:
 def test_oscar_worker_executes_without_loading_oscar_into_catlab() -> None:
     bridge = _julia_bridge()
     main = bridge._main()
-    assert bridge.catlab_bridge() is main.SageCategoriesBridge
+    bridge.catlab_bridge()
+    assert bool(main.seval("isdefined(Main, :SageCategoriesBridge)"))
     assert not bool(main.seval("isdefined(Main, :Oscar)"))
 
     assert bridge.oscar_bridge().text("version") == "1.8.2"

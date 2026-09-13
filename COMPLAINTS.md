@@ -1834,3 +1834,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `NaturalTransformation.MorphismType` allocated `_components: MonoDict` and open-coded identity lookup/compute/store in `_component_from_assignment`, then wrapped that method in Sage `LazyFamily`. `LazyFamily` is intentionally lazy but does not memoize `__getitem__`; component retention is therefore needed, but Sage `cached_method` already provides exactly that identity-keyed method cache through `identity_key`.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `_component_from_assignment(member_object)` with `cached_method(key=identity_key(...))`, remove `_components`, and leave `LazyFamily` as the public indexed-family facade.
+
+## Functor-property reflection carried three hand-rolled method caches
+
+- **Evidence and impact:** `FunctorPropertyCategory` used a `TripleDict` for `identity_on_values(source, target)` and two `MonoDict`s for placement-level inheritance/subcategory decisions. All three are pure method results keyed by owned category identity; their lookup/insert branches duplicated Sage method caching while obscuring that the queue/bootstrap state, not the caches, is the only mutable declaration phase.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Use identity-keyed `cached_method` for `identity_on_values` and for the two post-bootstrap placement decisions; remove `_shared_value_functors`, `_declaring`, and `_inheriting` while leaving pending bootstrap declarations unchanged.

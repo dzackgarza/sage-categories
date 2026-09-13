@@ -39,7 +39,7 @@ from sage_categories.cat.properties import (
 )
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict, cached_method
+from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, cached_method
 
 __all__ = [
     "CreatesLimitsCategory",
@@ -477,9 +477,9 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             """``eta_X: F(X) -> G(X)``, retained lazily as an indexed Sage family.
 
             The public declaration remains the rule ``X |-> eta_X``.  ``LazyFamily`` owns
-            the potentially infinite indexed assignment, while ``MonoDict`` retains each
-            realized component by source-object identity because owned equality is
-            proposition-valued (D60, POL-SAGE-013).
+            the potentially infinite indexed assignment, while the identity-keyed cached
+            component method retains each realized value without invoking proposition-valued
+            equality (D60, POL-SAGE-013).
             """
             assert member_object in self.source_functor().domain(), f"{member_object!r} is not an object of {self.source_functor().domain()!r}"
             return self._component_family[member_object]
@@ -515,10 +515,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         # ``source`` is a subcategory of ``target``; the declaration a leaf makes is
         # placement in ``Fun(S, T).Monomorphisms().Isofibrations()``, and that placement,
         # not this table, is what placement follows (POL-FUN-036).
-        self._shared_value_functors: TripleDict = TripleDict(weak_values=False)
         self._pending: list[tuple[Functor, bool]] = []
-        self._declaring: MonoDict = MonoDict()
-        self._inheriting: MonoDict = MonoDict()
         super().__init__(base)
 
     def fixed_endpoint_type(self) -> type[FunctorCategory]:
@@ -677,6 +674,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
     # at the foot of this section; both declare the same property, and both reach the one
     # identity-on-values functor the leaf's own declaration reaches.
 
+    @cached_method(key=lambda self, source, target: identity_key(source, target))
     def identity_on_values(self, source: Category, target: Category) -> Functor:
         """The one functor ``source -> target`` that is the identity on the values they share, retained by identity (POL-FUN-027).
 
@@ -684,10 +682,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         states nothing about which relation holds: the caller declares that by placing the
         result, and a placement made twice for one pair narrows the one retained value.
         """
-        key = (source, target, self)
-        if key not in self._shared_value_functors:
-            self._shared_value_functors[key] = self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
-        return self._shared_value_functors[key]
+        return self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
 
     def _shared_value_functor(self, source: Category, target: Category, full: bool) -> Functor:
         """The identity-on-values functor ``source -> target``, placed in the declared property.
@@ -725,10 +720,12 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return True
         if not self._bootstrapped:
             return False
-        placement = functor.category()
-        if placement not in self._inheriting:
-            self._inheriting[placement] = is_subcategory(placement, self.Isofibrations())
-        return self._inheriting[placement]
+        return self._placement_declares_inheritance(functor.category())
+
+    @cached_method(key=lambda self, placement: identity_key(placement))
+    def _placement_declares_inheritance(self, placement: Category) -> bool:
+        """Whether one fixed functor placement carries isofibration inheritance."""
+        return is_subcategory(placement, self.Isofibrations())
 
     def declares_subcategory(self, functor: Functor) -> bool:
         """Whether ``functor`` is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
@@ -745,11 +742,13 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             return False
         # The answer depends only on the placement, whose roots are fixed once the
         # category exists, so it is decided once per placement rather than per functor.
-        placement = functor.category()
-        if placement not in self._declaring:
-            roots = placement.narrowing_roots()
-            self._declaring[placement] = any(root is self.Monomorphisms() for root in roots) and any(root is self.Isofibrations() for root in roots)
-        return self._declaring[placement]
+        return self._placement_declares_subcategory(functor.category())
+
+    @cached_method(key=lambda self, placement: identity_key(placement))
+    def _placement_declares_subcategory(self, placement: Category) -> bool:
+        """Whether one fixed placement declares a monic isofibration into its codomain."""
+        roots = placement.narrowing_roots()
+        return any(root is self.Monomorphisms() for root in roots) and any(root is self.Isofibrations() for root in roots)
 
     def declares_point(self, functor: Functor) -> bool:
         """Whether ``functor`` is declared a point ``* -> C``: a monomorphism whose domain is the terminal category (D146, D154, D162).

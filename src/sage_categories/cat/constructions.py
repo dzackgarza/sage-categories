@@ -298,6 +298,23 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
         assert diagram in self._constructed, f"{self!r} constructed nothing for {diagram!r}"
         return self._constructed[diagram]
 
+    def _reserve_chosen_object(
+        self,
+        diagram: Functor,
+        constructed: CategoryOfCategories.ElementType,
+    ) -> None:
+        """Expose a known chosen apex while its universal presentation is assembled.
+
+        Some universal presentations ask for the same construction while their cone
+        is being built.  The apex is already selected at that point, so retain that
+        selection in this family's ordinary chosen-object table rather than in a
+        parallel owner-specific registry.  ``_retain`` installs the complete
+        presentation for the same diagram afterward.
+        """
+        assert not self.has_construction(diagram), f"{self!r} already chose an object for {diagram!r}"
+        assert constructed in self.ambient(), f"{constructed!r} is not an object of {self.ambient()!r}"
+        self._constructed[diagram] = constructed
+
     def universal_data(self, diagram: Functor) -> UniversalPresentation:
         """The universal data retained for ``diagram``: its diagram, cone or cocone, and mediator rule."""
         if diagram not in self._data and diagram in self._constructed:

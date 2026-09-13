@@ -79,6 +79,49 @@ def _integrand(first: Functor, second: Functor, outer: CategoryOfCategories.Elem
     return Fun(middle_pairs, sets)(lambda value: tensor.on_object(factors(value)), on_morphism)
 
 
+def _profunctor_composition_integrand_map(
+    first: Functor,
+    second: Functor,
+    middle: Category,
+    tensor: Functor,
+    arrow: MorphismCategory.ObjectType,
+) -> NaturalTransformation:
+    """The map between coend integrands induced by one outer morphism."""
+    start, end = (
+        _integrand(first, second, arrow.domain()),
+        _integrand(first, second, arrow.codomain()),
+    )
+
+    def component(value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        left, right = first.domain(), second.domain()
+        p = left.construct_morphism(
+            left((arrow.domain().family_component(0), value.family_component(1))),
+            left((arrow.codomain().family_component(0), value.family_component(1))),
+            (
+                arrow.family_component(0),
+                Mor(middle)(value.family_component(1), value.family_component(1)).one(),
+            ),
+        )
+        q = right.construct_morphism(
+            right((value.family_component(0), arrow.domain().family_component(1))),
+            right((value.family_component(0), arrow.codomain().family_component(1))),
+            (
+                Mor(middle.op())(value.family_component(0), value.family_component(0)).one(),
+                arrow.family_component(1),
+            ),
+        )
+        factors = tensor.domain()
+        return tensor.on_morphism(
+            factors.construct_morphism(
+                factors((first.on_object(p.domain()), second.on_object(q.domain()))),
+                factors((first.on_object(p.codomain()), second.on_object(q.codomain()))),
+                (first.on_morphism(p), second.on_morphism(q)),
+            )
+        )
+
+    return Mor(Fun(start.domain(), first.codomain()))(start, end)(component)
+
+
 @cached_function(key=identity_key)
 def compose_profunctors(first: Functor, second: Functor, hom: Functor) -> Functor:
     """``(P ; Q)(a,c) = integral^b P(a,b) × Q(b,c)``."""
@@ -90,41 +133,7 @@ def compose_profunctors(first: Functor, second: Functor, hom: Functor) -> Functo
     source = Cat().Products()((first.domain().factor(0), second.domain().factor(1)))
 
     def on_morphism(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        start, end = (
-            _integrand(first, second, arrow.domain()),
-            _integrand(first, second, arrow.codomain()),
-        )
-
-        def component(
-            value: CategoryOfCategories.ElementType,
-        ) -> MorphismCategory.ObjectType:
-            left, right = first.domain(), second.domain()
-            p = left.construct_morphism(
-                left((arrow.domain().family_component(0), value.family_component(1))),
-                left((arrow.codomain().family_component(0), value.family_component(1))),
-                (
-                    arrow.family_component(0),
-                    Mor(middle)(value.family_component(1), value.family_component(1)).one(),
-                ),
-            )
-            q = right.construct_morphism(
-                right((value.family_component(0), arrow.domain().family_component(1))),
-                right((value.family_component(0), arrow.codomain().family_component(1))),
-                (
-                    Mor(middle.op())(value.family_component(0), value.family_component(0)).one(),
-                    arrow.family_component(1),
-                ),
-            )
-            factors = tensor.domain()
-            return tensor.on_morphism(
-                factors.construct_morphism(
-                    factors((first.on_object(p.domain()), second.on_object(q.domain()))),
-                    factors((first.on_object(p.codomain()), second.on_object(q.codomain()))),
-                    (first.on_morphism(p), second.on_morphism(q)),
-                )
-            )
-
-        transformation = Mor(Fun(hom.domain(), sets))(start, end)(component)
+        transformation = _profunctor_composition_integrand_map(first, second, middle, tensor, arrow)
         return weighted_colimit_map(coend_weight(hom), transformation)
 
     return Fun(source, sets)(lambda value: coend(_integrand(first, second, value), hom), on_morphism)

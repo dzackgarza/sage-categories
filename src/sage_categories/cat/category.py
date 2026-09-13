@@ -334,7 +334,6 @@ class CategoryDeclaration[
         from sage_categories.kernel.construction import retain_category_universe
 
         retain_category_universe(self, universe)
-        self._identities: MonoDict = MonoDict()
         self._inverses: MonoDict = MonoDict()
         self._biproduct_constructor: Callable[[object, object], object] | None = None
         self._zero_morphism_constructor: Callable[[object, object], object] | None = None
@@ -626,6 +625,7 @@ class CategoryDeclaration[
     # not full, and a category whose morphisms carry data it composes, state their own
     # (``cat/core.py``, ``cat/shapes.py``, ``Sets()`` under D132).
 
+    @cached_method(key=lambda self, member_object: identity_key(member_object))
     def _identity_morphism_(self, member_object: ObjectRole) -> MorphismRole:
         """The private construction of ``1_X``, run once per object (POL-CAT-083).
 
@@ -639,15 +639,13 @@ class CategoryDeclaration[
         (POL-CAT-079/081).
         """
 
-        if member_object not in self._identities:
-            identity = self.construct_identity(member_object)
-            self._identities[member_object] = identity
-            cells = _cells_engine()
+        identity = self.construct_identity(member_object)
+        cells = _cells_engine()
 
-            cells.retain_identity(self, identity)
-            self.retain_inverses(identity, identity)
-            refine(identity, self.morphism_category(1).Identity())
-        return self._identities[member_object]
+        cells.retain_identity(self, identity)
+        self.retain_inverses(identity, identity)
+        refine(identity, self.morphism_category(1).Identity())
+        return identity
 
     def retained_inverse(self, morphism: MorphismRole) -> MorphismRole | None:
         """The inverse this category retained for ``morphism``, or ``None``; it constructs nothing.
@@ -681,9 +679,9 @@ class CategoryDeclaration[
     def compose_morphisms(self, second: MorphismRole, first: MorphismRole) -> MorphismRole:
         """``second * first`` through the owned composition; a composite of retained-invertible morphisms retains ``first⁻¹ * second⁻¹``."""
         assert first.codomain() is second.domain()
-        if first.domain() in self._identities and self._identities[first.domain()] is first:
+        if self._identity_morphism_.is_in_cache(first.domain()) and self._identity_morphism_(first.domain()) is first:
             return second
-        if second.domain() in self._identities and self._identities[second.domain()] is second:
+        if self._identity_morphism_.is_in_cache(second.domain()) and self._identity_morphism_(second.domain()) is second:
             return first
         composite = self.composite(second, first)
         if first in self._inverses and second in self._inverses and composite not in self._inverses:

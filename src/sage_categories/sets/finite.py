@@ -392,10 +392,9 @@ class SetsCategory(Category[[Map], []]):
             if isinstance(presentation, tuple):
                 if datum in self._lookup:
                     return self._lookup[datum]
-                for value in presentation:
-                    if _equal_datum(value, datum):
-                        return value
-                raise AssertionError(f"{datum!r} is outside the finite codomain")
+                matches = tuple(value for value in presentation if _equal_datum(value, datum))
+                assert matches, f"{datum!r} is outside the finite codomain"
+                return matches[0]
             if isinstance(presentation, _IndexedProductRule):
                 if isinstance(datum, _IndexedProductValue):
                     assert datum.diagram is presentation.diagram, "indexed family belongs to another product"

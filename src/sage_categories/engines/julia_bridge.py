@@ -23,8 +23,22 @@ def _bridge_source(name: str) -> Path:
     return Path(__file__).with_name(name)
 
 
+def _cache_root() -> Path:
+    """The private cache root shared by this repository's Julia boundaries."""
+    return Path(os.environ["XDG_CACHE_HOME"]) if "XDG_CACHE_HOME" in os.environ else Path.home() / ".cache"
+
+
+def _catlab_project_directory() -> Path:
+    """The JuliaPkg project dedicated to the pinned Catlab/GATlab runtime."""
+    return _cache_root() / "sage-categories" / "catlab-juliapkg"
+
+
 @cache
 def _main() -> Any:
+    if "PYTHON_JULIAPKG_PROJECT" not in os.environ:
+        project = _catlab_project_directory()
+        project.mkdir(parents=True, exist_ok=True)
+        os.environ["PYTHON_JULIAPKG_PROJECT"] = str(project)
     juliacall = import_module("juliacall")
     return juliacall.Main
 
@@ -46,8 +60,7 @@ class OscarHandle:
 
 
 def _oscar_cache_directory() -> Path:
-    root = Path(os.environ["XDG_CACHE_HOME"]) if "XDG_CACHE_HOME" in os.environ else Path.home() / ".cache"
-    return root / "sage-categories" / "oscar-1.8.2"
+    return _cache_root() / "sage-categories" / "oscar-1.8.2"
 
 
 def _oscar_project() -> Path:

@@ -1645,9 +1645,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-finite-partial-order-laws`. Move finite relation validation to an engine adapter around Sage `Poset` and delete the local cubic law implementation from the mathematical owner.
 
-
 ## BinaryRelations bypassed its own retained carrier and map surface
 
-- **Evidence and impact:** `order/posets.py` exposed `carrier()` and `underlying_map()` as the mathematical accessors, but its forgetful functor, morphism validation, identities, and composition still read `_carrier`, `_underlying_map`, and the underlying set map's private `_action` directly. That creates two operational paths for the same structure and couples order code to Sets internals.
+- **Evidence and impact:** `order/posets.py` exposed `carrier()` and `underlying_map()` as the mathematical accessors, but its forgetful functor, morphism validation, identities, and composition still read `_carrier`, `_underlying_map`, and the underlying set map's private `_action` directly.
+  That creates two operational paths for the same structure and couples order code to Sets internals.
 
 - **Repair link and acceptance:** `bloat-binary-relations-public-surface`. Route those operations through the existing accessors and ordinary owned set-map application.
+
+
+## Exact rational embedding silently replaced unresolved values by zero
+
+- **Evidence and impact:** `ExactLocalFieldPresentation.embed_rational()` used `rational_value() or Fraction(0)`, so any source value without a rational payload would be embedded as zero. The source object is the exact rational field, so unresolved/non-rational input is an invariant violation, not a defaultable value.
+
+- **Repair link and acceptance:** `bloat-local-field-rational-embedding-fallback`. Extract the rational payload explicitly, assert it exists, and embed exactly that value.

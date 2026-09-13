@@ -181,9 +181,12 @@ class ExactLocalFieldPresentation:
         target_carrier = rings.forgetful().on_object(self.ring)
         from sage_categories.cat.morphisms import Mor
 
-        carrier_map = Mor(Sets)(source_carrier, target_carrier)(
-            lambda value: ExactLocalValue.rational(self.place, cast(ExactLocalValue, value).rational_value() or Fraction(0))
-        )
+        def embed(value: ExactLocalValue) -> ExactLocalValue:
+            rational = value.rational_value()
+            assert rational is not None, f"{value!r} is not an exact rational value"
+            return ExactLocalValue.rational(self.place, rational)
+
+        carrier_map = Mor(Sets)(source_carrier, target_carrier)(embed)
         return rings.homomorphism(rational_ring, self.ring, carrier_map)
 
 

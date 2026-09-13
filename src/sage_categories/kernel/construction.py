@@ -142,8 +142,13 @@ class MorphismConstructionInput[Value: MorphismOfCategory, Datum]:
     datum: Datum
 
 
-# Identity-keyed storage is necessary because mathematical equality can be
-# proposition-valued.  The retained input is the input of the value's own root node.
+# These are provenance registries, not constructor-result caches.  Later refinement,
+# exact-category augmentation, and selected-functor initialization must recover the root
+# datum from an already existing value even after its compiled runtime class has changed.
+# Sage CachedRepresentation caches a class call by the equality/hash of its arguments,
+# while UniqueRepresentation additionally imposes equality-by-identity; neither contract
+# matches category-owned proposition-valued equality or this post-construction lookup.
+# See specs/resolution.md, "Construction retention versus Sage representation caches".
 _object_inputs: MonoDict = MonoDict()
 _element_inputs: MonoDict = MonoDict()
 _morphism_inputs: MonoDict = MonoDict()
@@ -231,11 +236,14 @@ def retained_morphism_input[Value: MorphismOfCategory, Datum](value: Value) -> M
     return _morphism_inputs[value]
 
 
-# One object per datum, for each category that constructs objects from a datum.  The
-# outer key is the constructing category, by identity.  The inner key is the datum, and
-# D111 assigns the table by its equality: an owned datum has proposition-valued equality
-# and is keyed by identity in a Sage ``MonoDict``; any other datum is an ordinary exact
-# key and is kept in a dict, which is the equality that datum itself defines.
+# One object per datum, for each category that constructs objects from a datum.  This
+# canonicalization survives recompilation of the category's dynamic ObjectType class, so
+# it cannot be a CachedRepresentation cache attached to that transient class.  The outer
+# key is the constructing category, by identity.  D111 assigns the inner key by the
+# datum's equality: an owned datum has proposition-valued equality and is keyed by
+# identity in a Sage ``MonoDict``; any other datum is an ordinary exact key and is kept
+# in a dict.  See specs/resolution.md, "Construction retention versus Sage representation
+# caches".
 _objects_by_owned_datum: MonoDict = MonoDict()
 _objects_by_datum: MonoDict = MonoDict()
 

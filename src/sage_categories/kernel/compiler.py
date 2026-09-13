@@ -183,6 +183,10 @@ class _RuntimeImplementationCategory(SageCategory):
         return self._make_named_class("parent_class", "ParentMethods", cache=True)
 
 
+# These tables map an owned category identity to mutable/rebuilt private runtime state;
+# they are not caches of instances constructed from class arguments.  The runtime class
+# itself is already delegated to Sage ``dynamic_class(..., cache=True)``.  See
+# specs/resolution.md, "Construction retention versus Sage representation caches".
 _runtime_categories: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 _RUNTIME_CACHE_NAMES = (
@@ -620,6 +624,8 @@ class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
     written: bool
 
 
+# Per-node initializers are replaced when declarations are recompiled/augmented, so this
+# identity map is runtime metadata rather than a representation cache.
 _node_runtimes: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 

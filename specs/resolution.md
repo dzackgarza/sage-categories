@@ -216,6 +216,57 @@ Use Sage cache facilities according to key equality:
 These caches preserve runtime identity only.
 They do not own mathematical equality or categorical structure.
 
+### Construction retention versus Sage representation caches
+
+Sage's ``CachedRepresentation`` is a weak cache of *class construction calls*: its
+cache key is formed from constructor arguments and compares those arguments by their
+ordinary equality and hash. ``UniqueRepresentation`` adds ``WithEqualityById`` to that
+contract, so instances compare equal exactly when they are identical. Neither is a
+replacement for the kernel's construction-retention tables.
+
+The distinction is concrete here:
+
+- ``construction._object_inputs``, ``_element_inputs``, and ``_morphism_inputs`` are
+  provenance registries for values that already exist. Refinement and exact-category
+  augmentation later recover the original root datum from the same value in order to
+  initialize newly reached role nodes. The value's compiled Python class may have been
+  rebuilt or replaced by then. A class-call cache does not provide this post-construction
+  provenance, and ``UniqueRepresentation`` would additionally contradict the public
+  category-owned ``__eq__``, which returns a proposition and can identify distinct
+  instances mathematically.
+- ``construction._objects_by_owned_datum`` and ``_objects_by_datum`` implement D111's
+  one-object-per-datum rule *for an owned category*, independently of the current dynamic
+  ``ObjectType`` class. Recompilation can replace that class while the already retained
+  object must remain canonical. For an owned datum, D111 also requires identity rather
+  than its proposition-valued mathematical equality. ``CachedRepresentation`` is
+  class-local and equality/hash-keyed, so using it would change both persistence and key
+  semantics.
+- ``compiler._runtime_categories`` and ``_node_runtimes`` map owned category identities
+  to runtime metadata that is deliberately rebuilt or replaced. Sage already owns the
+  actual dynamic-class identity through ``dynamic_class(..., cache=True)``; these maps are
+  not duplicate instance constructors.
+- ``FunctorImageCache`` retains the chosen action image of an already-existing source
+  object or morphism. Its identity key is required because two mathematically equal
+  owned values can still be distinct inputs whose retained functor images must not be
+  silently merged.
+- ``predicates._atoms`` maps an existing owned value to the private SymPy atom for its
+  *current* semantic class. Refinement can change that class in place, and the atom is
+  then replaced while still resolving to the same value. A constructor-representation
+  cache cannot express that replacement lifecycle.
+
+There are also construction paths that intentionally do not pass through an ordinary
+class call: the ``Cat()`` bootstrap allocates its provisional value with ``__new__``
+directly, staged categories are allocated before declaration completion, and exact
+implementations can replace a retained category's ``__class__`` in place. Therefore no
+kernel invariant may depend on ``ClasscallMetaclass`` having mediated every retained
+value. Engine-backed leaves add a second separation: the owned value and the external
+native object are constructed on opposite sides of the adapter and associated only after
+the owned value exists.
+
+For ordinary exact, instance-local memoization, use Sage's cache machinery directly.
+In particular, ``SchemesCategory.affine()`` is a ``cached_method``; it does not maintain a
+parallel ``MonoDict``.
+
 `kernel.retention` completes mutually identified constructions after registering their identities.
 A staged category first receives its local state, runtime roles, and placement.
 The kernel then reads all pending declarations and compiles their selected targets before their sources, using Python's `TopologicalSorter`.

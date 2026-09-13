@@ -14,7 +14,14 @@ __all__: list[str] = []
 
 
 class FunctorImageCache:
-    """One functor's retained object and morphism images."""
+    """One functor's retained object and morphism images.
+
+    The keys are already-existing owned values whose mathematical equality is
+    proposition-valued; this is an action-image registry, not instance construction.
+    CachedRepresentation/UniqueRepresentation therefore do not own this cache; see
+    ``specs/resolution.md`` under "Construction retention versus Sage representation
+    caches".
+    """
 
     def __init__(self) -> None:
         self._objects: MonoDict = MonoDict()

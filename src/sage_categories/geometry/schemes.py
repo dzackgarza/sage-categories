@@ -36,7 +36,7 @@ from sage_categories.geometry.affine import (
     native_affine_scheme,
 )
 from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.sage_runtime import cached_method
 
 __all__ = [
     "ProjectiveLinePresentation",
@@ -119,10 +119,6 @@ class SchemesCategory(Category[Any, Any]):
     class MorphismType:
         pass
 
-    def __init__(self) -> None:
-        self._affine_wrappers: MonoDict = MonoDict()
-        super().__init__()
-
     def _from_native(self, construction: object, native: OscarHandle) -> SchemesCategory.ObjectType:
         value = self.ObjectType(construction)
         _objects.retain(self, cast(CategoryOfCategories.ElementType, value), native, construction)
@@ -155,14 +151,11 @@ class SchemesCategory(Category[Any, Any]):
         )
         return arrow
 
+    @cached_method
     def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType:
         """The affine scheme as a scheme, preserving its exact OSCAR chart."""
-        if affine in self._affine_wrappers:
-            return self._affine_wrappers[affine]
         native = oscar.covered_scheme(native_affine_scheme(cast(CategoryOfCategories.ElementType, affine)).native)
-        value = self._from_native(_AffineSchemeConstruction(affine), native)
-        self._affine_wrappers[affine] = value
-        return value
+        return self._from_native(_AffineSchemeConstruction(affine), native)
 
     def _native_two_chart_gluing(
         self,

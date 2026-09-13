@@ -84,6 +84,11 @@ class _OwnedValueAtom(AtomicExpr):
         return AtomicExpr.__new__(cls, Integer(identity))
 
 
+# A value can be refined in place, changing the semantic class that its private SymPy
+# atom must carry.  The identity registry therefore replaces the atom for an existing
+# value when its type changes; a constructor-argument representation cache cannot express
+# that lifecycle.  See specs/resolution.md, "Construction retention versus Sage
+# representation caches".
 _atoms: MonoDict = MonoDict()
 _atom_values: dict[_OwnedValueAtom, Argument] = {}
 _atom_types: dict[type, type[_OwnedValueAtom]] = {}

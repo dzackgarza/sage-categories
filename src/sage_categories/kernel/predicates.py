@@ -84,7 +84,7 @@ class _OwnedValueAtom(AtomicExpr):
 
 
 _atoms: MonoDict = MonoDict()
-_values: dict[int, Argument] = {}
+_atom_values: dict[_OwnedValueAtom, Argument] = {}
 _atom_types: dict[type, type[_OwnedValueAtom]] = {}
 _property_categories: dict[OwnedPredicate, Category] = {}
 _identity_predicates: set[OwnedPredicate] = set()
@@ -123,9 +123,9 @@ def _owned_atom(value: Argument) -> _OwnedValueAtom:
     """
     atom_type = _atom_type(type(value))
     if value not in _atoms or type(_atoms[value]) is not atom_type:
-        identity = id(value)
-        _values[identity] = value
-        _atoms[value] = atom_type(identity)
+        atom = atom_type(id(value))
+        _atom_values[atom] = value
+        _atoms[value] = atom
     return _atoms[value]
 
 
@@ -182,7 +182,7 @@ def owned_predicate(name: str) -> OwnedPredicate:
 
 def _owned_argument(argument: Basic) -> Argument:
     if isinstance(argument, _OwnedValueAtom):
-        return _values[int(argument.args[0])]
+        return _atom_values[argument]
     if isinstance(argument, Integer):
         return int(argument)
     raise TypeError(f"{argument!r} is not an owned predicate argument")

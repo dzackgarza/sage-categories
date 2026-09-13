@@ -1018,3 +1018,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/compiler.py` already imports its stable role declarations at module scope, but inheritance projection re-imported `category_universal_class`/`declared_roles` and exact-category implementation re-imported `role_of`. Unlike the refinement boundary, no cycle is protected here: the roles module is already a compiler import dependency.
 
 - **Repair link and acceptance:** `bloat-compiler-role-reimports`. Bind those three role helpers with the existing module-level role imports and remove the redundant local imports.
+
+## Finite-category evaluation reopened the slice-category module twice
+
+- **Evidence and impact:** `cat/finite_categories.py` delays slice imports because the evaluator is itself consumed while category constructions bootstrap. Runtime dispatch imported `SliceLikeCategory`, while comma-category evaluation independently imported the slice endpoint/pair functors. Both reads cross the same delayed slice-category owner.
+
+- **Repair link and acceptance:** `bloat-finite-category-slice-boundary`. Put the delayed slice module behind `_slices()` and use it for both runtime slice recognition and comma-category endpoint/pair construction.

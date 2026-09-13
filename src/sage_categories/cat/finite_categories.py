@@ -55,6 +55,13 @@ def _category_limits_engine() -> ModuleType:
     return category_limits
 
 
+def _slices() -> ModuleType:
+    """Load slice-category declarations at the finite-evaluator bootstrap boundary."""
+    from sage_categories.cat import slices
+
+    return slices
+
+
 def finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
     if category in _retained:
         return _retained[category]
@@ -174,12 +181,11 @@ def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData 
 def _evaluate_runtime_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
     """Evaluate finite category kinds whose declarations are imported only after bootstrap."""
     from sage_categories.cat.indexed import GrothendieckCategory
-    from sage_categories.cat.slices import SliceLikeCategory
 
     match category:
         case GrothendieckCategory():
             return _grothendieck(category)
-        case SliceLikeCategory():
+        case _ if isinstance(category, _slices().SliceLikeCategory):
             return _slice(category)
         case _:
             return Unknown
@@ -281,14 +287,14 @@ def _slice(category: object) -> FiniteCategoryData | UnknownClass:
 
 def _comma(category: CommaCategory) -> FiniteCategoryData | UnknownClass:
     from sage_categories.cat.diagrams import cospan_diagram
-    from sage_categories.cat.slices import _endpoint_functor, _pair_functor
 
+    slices = _slices()
     first, second = category.comma_functors()
     cospan = Cat().WalkingCospan()
     diagram = cospan_diagram(
         Cat(),
-        _pair_functor(first, second),
-        _endpoint_functor(first.codomain()),
+        slices._pair_functor(first, second),
+        slices._endpoint_functor(first.codomain()),
     )
     pullback = LimitCategory(diagram)
     data = finite_category(pullback)

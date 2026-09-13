@@ -226,10 +226,7 @@ class SliceLikeCategory(CommaSpecialization):
     @cached_method(key=lambda self, property_category: identity_key(property_category))
     def _property(self, property_category: Category) -> Category:
         """The pullback of a property subcategory of ``Mor(C)`` along the defining-arrow functor, retained per property."""
-        family = self.property_type(property_category)(self, property_category)
-        if self._fixed_label == 1 and property_category is self._base_of_slice.morphism_category(1).Monomorphisms() and self._fixed in self._base_of_slice.Products():
-            family._product_subobjects = SubobjectsOfProduct(family, property_category)
-        return family
+        return self.property_type(property_category)(self, property_category)
 
     def Monomorphisms(self) -> Category:
         return self._property(self._base_of_slice.morphism_category(1).Monomorphisms())
@@ -418,7 +415,6 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
 
     def __init__(self, ambient: SliceLikeCategory | SliceProperty, property_category: Category) -> None:
         self._property_category = property_category
-        self._product_subobjects: SubobjectsOfProduct | None = None
         super().__init__(ambient)
 
     def property_category(self) -> Category:
@@ -443,14 +439,34 @@ class SliceProperty(FullSubcategory[[MorphismCategory.ObjectType], []]):
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return self._ambient.membership_proposition(candidate) & has_morphism_property(candidate, self)
 
+    @cached_method
+    def _product_subobject_family(self) -> SubobjectsOfProduct | None:
+        """The additional product-subobject refinement this family induces, when any.
+
+        This is derived from the slice declaration itself rather than injected later as
+        nullable private state by ``SliceLikeCategory._property``.  The secondary family
+        is needed only for subobjects of a chosen product, where it contributes the
+        inherited ``product_projection`` surface (POL-CAT-094).
+        """
+        if isinstance(self, SubobjectsOfProduct) or not isinstance(self._ambient, SliceLikeCategory):
+            return None
+        ambient = self._ambient
+        monomorphisms = ambient.base_of_slice().morphism_category(1).Monomorphisms()
+        if not _is_slice_over(ambient) or self._property_category is not monomorphisms:
+            return None
+        if ambient.fixed_object() not in ambient.base_of_slice().Products():
+            return None
+        return SubobjectsOfProduct(self, self._property_category)
+
     def __call__(self, value: CategoryOfCategories.ElementType) -> SliceLikeCategory.ObjectType:
         """The object of a morphism with the property: the trusted constructor of the property on it (POL-MATH-037), rejected only when decided false."""
         assert ask(has_morphism_property(value, self)) is not False, f"{value!r} is not in {self._property_category!r}"
         refine(self.defining_arrow_of(value), self._property_category)
         member_object = self._ambient(value)
         refine(member_object, self)
-        if self._product_subobjects is not None:
-            refine(member_object, self._product_subobjects)
+        product_subobjects = self._product_subobject_family()
+        if product_subobjects is not None:
+            refine(member_object, product_subobjects)
         return member_object
 
     def __repr__(self) -> str:

@@ -604,3 +604,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `geometry/ringed_spaces.py` repeated `geometry/sheaves.py`'s lazy commutative-ring category lookup and exact open-object datum extraction byte-for-byte even though ringed spaces already depend on the sheaf module. That gave the same sheaf boundary two private implementation owners.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Reuse the sheaf module's existing `_rings` and `_open_data` owners from ringed spaces; keep only ringed-space-specific transformation and transport logic locally.
+
+## Shape aliases reread the same retained carrier state
+
+- **Evidence and impact:** `DiscreteCategory.index_set()`, `object_set()`, and `_chosen_morphism_set()` all read `_index_set` independently, while `ThinCategory.carrier()` and `object_set()` both read `_carrier`. These are intentional mathematical aliases, but reading the storage in every alias creates multiple implementation owners for one retained value.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Keep `index_set()` and `carrier()` as the storage-reading owners and make the corresponding object/morphism-set aliases delegate to them.

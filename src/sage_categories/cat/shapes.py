@@ -105,7 +105,7 @@ class DiscreteCategory(Category[[], []]):
     # The objects are the points of ``S`` and the morphisms their identities (specs/functor.md, "Diagram shapes and universal constructions").
 
     def object_set(self) -> CategoryOfCategories.ElementType:
-        return self._index_set
+        return self.index_set()
 
     def object_at(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.ObjectType:
         return self(point)
@@ -114,7 +114,7 @@ class DiscreteCategory(Category[[], []]):
         return member_object.point()
 
     def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
-        return self._index_set
+        return self.index_set()
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.MorphismType:
         vertex = self.object_at(point)
@@ -369,7 +369,7 @@ class ThinCategory(Category[[], []]):
     # The objects are the points of ``P``; no finite family of comparisons is chosen.
 
     def object_set(self) -> CategoryOfCategories.ElementType:
-        return self._carrier
+        return self.carrier()
 
     def object_at(self, point: CategoryOfCategories.ElementType) -> ThinCategory.ObjectType:
         return self(point)

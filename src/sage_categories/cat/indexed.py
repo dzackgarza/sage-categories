@@ -22,7 +22,7 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import Proposition, ask, register_handler
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, cached_method
+from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 __all__ = ["Grothendieck", "GrothendieckCategory", "IndexedCategories", "IndexedCategoriesCategory"]
 
@@ -371,13 +371,9 @@ def _induced_functor(transformation: IndexedCategoriesCategory.MorphismType) -> 
     return Fun(source, target)(on_object, on_morphism)
 
 
-_indexed_categories: MonoDict = MonoDict()
-
-
+@cached_function(key=identity_key)
 def IndexedCategories(base: Category) -> IndexedCategoriesCategory:
-    if base not in _indexed_categories:
-        _indexed_categories[base] = IndexedCategoriesCategory(base)
-    return _indexed_categories[base]
+    return IndexedCategoriesCategory(base)
 
 
 def Grothendieck(indexed: IndexedCategoriesCategory.ObjectType) -> GrothendieckCategory:

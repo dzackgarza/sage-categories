@@ -53,10 +53,7 @@ def _worker_command() -> list[str]:
             if _has_maude(local):
                 return [str(local), str(_worker_path())]
             uv = shutil.which("uv")
-            assert uv is not None, (
-                "Maude execution requires either SAGE_CATEGORIES_MAUDE_PYTHON, "
-                "a project .venv containing maude, or uv"
-            )
+            assert uv is not None, "Maude execution requires either SAGE_CATEGORIES_MAUDE_PYTHON, a project .venv containing maude, or uv"
             return [
                 uv,
                 "run",
@@ -86,9 +83,7 @@ class _Worker:
     def request(self, operation: str, **payload: object) -> object:
         request = {"op": operation, **payload}
         with self._lock:
-            assert self._process.poll() is None, (
-                "the Maude worker terminated unexpectedly"
-            )
+            assert self._process.poll() is None, "the Maude worker terminated unexpectedly"
             self._process.stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
             self._process.stdin.flush()
             line = self._process.stdout.readline()

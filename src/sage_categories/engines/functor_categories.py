@@ -7,8 +7,8 @@ from sage.libs.gap.libgap import libgap
 from sage_categories.cat.functors import Cat
 from sage_categories.cat.morphisms import Mor
 from sage_categories.engines import fp_categories
-from sage_categories.kernel.sage_runtime import MonoDict
 from sage_categories.engines.gap import FUNCTOR_CATEGORIES, load_repository_package
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = ["arrow_category"]
 

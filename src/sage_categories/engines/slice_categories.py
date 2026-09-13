@@ -5,8 +5,8 @@ from __future__ import annotations
 from sage.libs.gap.libgap import libgap
 
 from sage_categories.engines import fp_categories
-from sage_categories.kernel.sage_runtime import MonoDict
 from sage_categories.engines.gap import SLICE_CATEGORIES, load_repository_package
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = ["slice_category"]
 

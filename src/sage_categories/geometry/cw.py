@@ -176,8 +176,8 @@ def projective_space(stage: int) -> ProjectiveSpacePresentation:
     empty = CWOpen(stage, "empty", lambda _: False)
     whole = CWOpen(stage, "whole", lambda _: True)
 
-    def open_point(key: object) -> CategoryOfCategories.ElementType:
-        assert isinstance(key, CWOpen) and key.stage == stage
+    def open_point(key: CWOpen) -> CategoryOfCategories.ElementType:
+        assert key.stage == stage
         return cast(CategoryOfCategories.ElementType, cast(Any, opens).point(key))
 
     space = TopologicalSpaces().from_open_category(
@@ -422,8 +422,8 @@ def projective_infinity() -> ProjectiveInfinityPresentation:
     )
     opens, open_category = _weak_open_space(presentation)
 
-    def open_point(key: object) -> CategoryOfCategories.ElementType:
-        assert isinstance(key, _WeakCWOpen) and key.presentation is presentation
+    def open_point(key: _WeakCWOpen) -> CategoryOfCategories.ElementType:
+        assert key.presentation is presentation
         return cast(CategoryOfCategories.ElementType, cast(Any, opens).point(key))
 
     space = spaces.from_open_category(

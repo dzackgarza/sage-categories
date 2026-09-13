@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -21,26 +21,26 @@ from sage_categories.kernel.sage_runtime import cached_function, cached_method
 __all__ = ["RingedSpaces", "RingedSpacesCategory"]
 
 
-type SheafComponentRule = Callable[[object], MorphismCategory.ObjectType]
+type SheafComponentRule[OpenKey: Hashable] = Callable[[OpenKey], MorphismCategory.ObjectType]
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class _RingedSpaceData:
-    space: TopologicalSpacesCategory.ObjectType
-    sheaf: RingSheaf
+class _RingedSpaceData[OpenKey: Hashable]:
+    space: TopologicalSpacesCategory.ObjectType[OpenKey]
+    sheaf: RingSheaf[OpenKey]
 
 
 class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
     """Spaces equipped with sheaves of commutative rings."""
 
-    class ObjectType:
-        def __init__(self, data: _RingedSpaceData) -> None:
+    class ObjectType[OpenKey: Hashable = Hashable]:
+        def __init__(self, data: _RingedSpaceData[OpenKey]) -> None:
             self._space, self._sheaf = data.space, data.sheaf
 
-        def space(self) -> TopologicalSpacesCategory.ObjectType:
+        def space(self) -> TopologicalSpacesCategory.ObjectType[OpenKey]:
             return self._space
 
-        def sheaf(self) -> RingSheaf:
+        def sheaf(self) -> RingSheaf[OpenKey]:
             return self._sheaf
 
     class ElementType:
@@ -63,20 +63,20 @@ class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
     def structure_functors(self) -> tuple[Functor, ...]:
         return (*super().structure_functors(), self.to_spaces())
 
-    def __call__(
+    def __call__[OpenKey: Hashable](
         self,
-        space: TopologicalSpacesCategory.ObjectType,
-        sheaf: RingSheaf,
-    ) -> RingedSpacesCategory.ObjectType:
+        space: TopologicalSpacesCategory.ObjectType[OpenKey],
+        sheaf: RingSheaf[OpenKey],
+    ) -> RingedSpacesCategory.ObjectType[OpenKey]:
         assert sheaf.presheaf.space is space
         return self.ObjectType(_RingedSpaceData(space, sheaf))
 
-    def homomorphism(
+    def homomorphism[SourceKey: Hashable, TargetKey: Hashable](
         self,
-        source: RingedSpacesCategory.ObjectType,
-        target: RingedSpacesCategory.ObjectType,
+        source: RingedSpacesCategory.ObjectType[SourceKey],
+        target: RingedSpacesCategory.ObjectType[TargetKey],
         continuous: MorphismCategory.ObjectType,
-        component_rule: SheafComponentRule,
+        component_rule: SheafComponentRule[TargetKey],
     ) -> RingedSpacesCategory.MorphismType:
         """A morphism ``X -> Y`` with ``O_Y -> O_X (f^-1)^op`` as an actual natural transformation."""
         assert continuous.domain() is source.space() and continuous.codomain() is target.space()

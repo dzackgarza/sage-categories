@@ -334,8 +334,8 @@ def affine_structure_sheaf(
             case False:
                 return smaller.restriction_to(larger)
 
-    def key_to_open(key: object) -> CategoryOfCategories.ElementType:
-        return cast(CategoryOfCategories.ElementType, cast(AffineOpenCategory.ObjectType, key))
+    def key_to_open(key: AffineOpenCategory.ObjectType) -> CategoryOfCategories.ElementType:
+        return key
 
     functor = Fun(opens.op(), rings)(on_object, on_morphism)
     presheaf = ring_presheaf_from_functor(

@@ -28,19 +28,19 @@ def _topological_space_projection(source: Category) -> Functor:
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class _TopologyData:
+class _TopologyData[OpenKey: Hashable]:
     carrier: CategoryOfCategories.ElementType
     opens: CategoryOfCategories.ElementType
     open_category: Category
-    open_point_rule: Callable[[object], CategoryOfCategories.ElementType]
-    open_object_rule: Callable[[object], CategoryOfCategories.ElementType]
+    open_point_rule: Callable[[OpenKey], CategoryOfCategories.ElementType]
+    open_object_rule: Callable[[OpenKey], CategoryOfCategories.ElementType]
 
 
 class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
     """Represented topological spaces; the first executable domain is a finite topology."""
 
-    class ObjectType:
-        def __init__(self, data: _TopologyData) -> None:
+    class ObjectType[OpenKey: Hashable = Hashable]:
+        def __init__(self, data: _TopologyData[OpenKey]) -> None:
             self._carrier = data.carrier
             self._opens = data.opens
             self._open_category = data.open_category
@@ -58,10 +58,10 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
             """The thin category ``O(X)`` of represented opens and inclusions."""
             return self._open_category
 
-        def open_point(self, key: object) -> CategoryOfCategories.ElementType:
+        def open_point(self, key: OpenKey) -> CategoryOfCategories.ElementType:
             return self._open_point_rule(key)
 
-        def open_object(self, key: object) -> CategoryOfCategories.ElementType:
+        def open_object(self, key: OpenKey) -> CategoryOfCategories.ElementType:
             return self._open_object_rule(key)
 
     class ElementType:
@@ -95,7 +95,7 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         self,
         carrier: CategoryOfCategories.ElementType,
         opens: tuple[frozenset[Hashable], ...],
-    ) -> TopologicalSpacesCategory.ObjectType:
+    ) -> TopologicalSpacesCategory.ObjectType[frozenset[Hashable]]:
         """The finite topology on ``carrier`` with exactly the supplied open subsets."""
         values = frozenset(point.datum() for point in carrier)
         family = tuple(dict.fromkeys(opens))
@@ -112,10 +112,9 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         open_category = Thin.on_object(open_poset)
         open_points = {point.datum(): point for point in open_poset.carrier()}
 
-        def open_point(key: object) -> CategoryOfCategories.ElementType:
-            subset = frozenset(key)
-            assert subset in open_points, f"{subset!r} is not a represented open"
-            return open_points[subset]
+        def open_point(key: frozenset[Hashable]) -> CategoryOfCategories.ElementType:
+            assert key in open_points, f"{key!r} is not a represented open"
+            return open_points[key]
 
         return self.ObjectType(
             _TopologyData(
@@ -127,14 +126,14 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
             )
         )
 
-    def from_open_category(
+    def from_open_category[OpenKey: Hashable](
         self,
         carrier: CategoryOfCategories.ElementType,
         opens: CategoryOfCategories.ElementType,
         open_category: Category,
-        open_point_rule: Callable[[object], CategoryOfCategories.ElementType],
-        open_object_rule: Callable[[object], CategoryOfCategories.ElementType],
-    ) -> TopologicalSpacesCategory.ObjectType:
+        open_point_rule: Callable[[OpenKey], CategoryOfCategories.ElementType],
+        open_object_rule: Callable[[OpenKey], CategoryOfCategories.ElementType],
+    ) -> TopologicalSpacesCategory.ObjectType[OpenKey]:
         """Retain a topology whose opens and inclusion category are represented without enumeration."""
         return self.ObjectType(
             _TopologyData(
@@ -148,8 +147,8 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
 
     def _inverse_image_functor(
         self,
-        source: TopologicalSpacesCategory.ObjectType,
-        target: TopologicalSpacesCategory.ObjectType,
+        source: TopologicalSpacesCategory.ObjectType[frozenset[Hashable]],
+        target: TopologicalSpacesCategory.ObjectType[frozenset[Hashable]],
         underlying: MorphismCategory.ObjectType,
     ) -> Functor:
         source_data = tuple(point.datum() for point in source.carrier())
@@ -184,8 +183,8 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
 
     def construct_morphism(
         self,
-        source: TopologicalSpacesCategory.ObjectType,
-        target: TopologicalSpacesCategory.ObjectType,
+        source: TopologicalSpacesCategory.ObjectType[frozenset[Hashable]],
+        target: TopologicalSpacesCategory.ObjectType[frozenset[Hashable]],
         underlying: MorphismCategory.ObjectType,
     ) -> TopologicalSpacesCategory.MorphismType:
         assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()

@@ -359,12 +359,18 @@ def _projective_line_structure_sheaf(
                 raise AssertionError(f"unexpected projective-line restriction path {path!r}")
 
     sheaf_functor = Fun(cover.op(), rings)(sections, restriction)
+    def key_to_open(key: str) -> CategoryOfCategories.ElementType:
+        return cover(key)
+
+    def open_to_key(open_object: CategoryOfCategories.ElementType) -> str:
+        return cover.label(cast(FinitePresentedCategory.ObjectType, open_object))
+
     return ring_presheaf_from_functor(
         glued,
         cover,
         sheaf_functor,
-        lambda key: cast(CategoryOfCategories.ElementType, cover(cast(str, key))),
-        lambda open_object: cover.label(cast(FinitePresentedCategory.ObjectType, open_object)),
+        key_to_open,
+        open_to_key,
     )
 
 

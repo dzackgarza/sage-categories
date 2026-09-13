@@ -46,22 +46,22 @@ def _apply_ring_map(
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class RingPresheaf:
+class RingPresheaf[OpenKey: Hashable]:
     """A retained functor ``O(X)^op -> CRing`` on an arbitrary owned open category."""
 
     space: object
-    opens: Any
+    opens: Category
     functor: Functor
-    open_object_rule: Callable[[object], CategoryOfCategories.ElementType]
-    open_key_rule: Callable[[CategoryOfCategories.ElementType], object]
+    open_object_rule: Callable[[OpenKey], CategoryOfCategories.ElementType]
+    open_key_rule: Callable[[CategoryOfCategories.ElementType], OpenKey]
 
-    def open_object(self, key: object) -> CategoryOfCategories.ElementType:
+    def open_object(self, key: OpenKey) -> CategoryOfCategories.ElementType:
         return self.open_object_rule(key)
 
-    def open_key(self, open_object: CategoryOfCategories.ElementType) -> object:
+    def open_key(self, open_object: CategoryOfCategories.ElementType) -> OpenKey:
         return self.open_key_rule(open_object)
 
-    def section_ring(self, open_set: object) -> CategoryOfCategories.ElementType:
+    def section_ring(self, open_set: OpenKey) -> CategoryOfCategories.ElementType:
         return cast(
             CategoryOfCategories.ElementType,
             self.functor.on_object(self.open_object(open_set)),
@@ -69,8 +69,8 @@ class RingPresheaf:
 
     def restriction(
         self,
-        larger: object,
-        smaller: object,
+        larger: OpenKey,
+        smaller: OpenKey,
     ) -> MorphismCategory.ObjectType:
         """The owned ring map ``F(larger) -> F(smaller)`` for ``smaller <= larger``."""
         inclusion = Mor(self.opens)(self.open_object(smaller), self.open_object(larger))()
@@ -80,10 +80,10 @@ class RingPresheaf:
         )
 
 
-type GluingRule = Callable[
+type GluingRule[OpenKey: Hashable] = Callable[
     [
-        frozenset[Hashable],
-        tuple[frozenset[Hashable], ...],
+        OpenKey,
+        tuple[OpenKey, ...],
         tuple[CategoryOfCategories.ElementType, ...],
     ],
     CategoryOfCategories.ElementType,
@@ -91,7 +91,7 @@ type GluingRule = Callable[
 
 
 def _validate_gluing_family(
-    presheaf: RingPresheaf,
+    presheaf: RingPresheaf[frozenset[Hashable]],
     open_set: frozenset[Hashable],
     cover: tuple[frozenset[Hashable], ...],
     local_sections: tuple[CategoryOfCategories.ElementType, ...],
@@ -113,7 +113,7 @@ def _validate_gluing_family(
 
 
 def _verify_gluing_result(
-    presheaf: RingPresheaf,
+    presheaf: RingPresheaf[frozenset[Hashable]],
     open_set: frozenset[Hashable],
     cover: tuple[frozenset[Hashable], ...],
     local_sections: tuple[CategoryOfCategories.ElementType, ...],
@@ -135,14 +135,14 @@ def _verify_gluing_result(
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class RingSheaf:
+class RingSheaf[OpenKey: Hashable]:
     """A ring presheaf with retained finite-cover gluing."""
 
-    presheaf: RingPresheaf
-    gluing_rule: GluingRule
+    presheaf: RingPresheaf[OpenKey]
+    gluing_rule: GluingRule[OpenKey]
 
     def glue(
-        self,
+        self: RingSheaf[frozenset[Hashable]],
         open_set: frozenset[Hashable],
         cover: tuple[frozenset[Hashable], ...],
         local_sections: tuple[CategoryOfCategories.ElementType, ...],
@@ -161,7 +161,7 @@ def ring_presheaf(
         tuple[frozenset[Hashable], frozenset[Hashable]],
         MorphismCategory.ObjectType,
     ],
-) -> RingPresheaf:
+) -> RingPresheaf[frozenset[Hashable]]:
     """Construct a commutative-ring presheaf after checking its restriction identities and composites."""
     rings = _validate_ring_presheaf_data(space, sections, restrictions)
 
@@ -184,7 +184,7 @@ def ring_presheaf(
         space,
         space.open_category(),
         Fun(source, rings)(on_object, on_morphism),
-        lambda key: space.open_object(cast(frozenset[Hashable], key)),
+        space.open_object,
         _open_data,
     )
 
@@ -218,19 +218,19 @@ def _validate_ring_presheaf_data(
     return rings
 
 
-def ring_presheaf_from_functor(
-    space: object,
-    opens: Any,
+def ring_presheaf_from_functor[OpenKey: Hashable](
+    space: TopologicalSpacesCategory.ObjectType[OpenKey],
+    opens: Category,
     functor: Functor,
-    open_object_rule: Callable[[object], CategoryOfCategories.ElementType],
-    open_key_rule: Callable[[CategoryOfCategories.ElementType], object],
-) -> RingPresheaf:
+    open_object_rule: Callable[[OpenKey], CategoryOfCategories.ElementType],
+    open_key_rule: Callable[[CategoryOfCategories.ElementType], OpenKey],
+) -> RingPresheaf[OpenKey]:
     """Retain an arbitrary represented ring presheaf from its actual contravariant functor."""
     assert functor.domain() is opens.op()
     assert functor.codomain() is _rings()
     return RingPresheaf(space, opens, functor, open_object_rule, open_key_rule)
 
 
-def ring_sheaf(presheaf: RingPresheaf, gluing_rule: GluingRule) -> RingSheaf:
+def ring_sheaf[OpenKey: Hashable](presheaf: RingPresheaf[OpenKey], gluing_rule: GluingRule[OpenKey]) -> RingSheaf[OpenKey]:
     """Retain the supplied finite-cover gluing operation on this ring presheaf."""
     return RingSheaf(presheaf, gluing_rule)

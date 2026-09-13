@@ -382,8 +382,8 @@ def _adele_topological_ring(
     opens = Sets.from_membership(lambda value: true if isinstance(value, AdeleOpen) and value.owner is owner else false)
     open_category = Thin(opens, _open_order)
 
-    def open_point(key: object) -> CategoryOfCategories.ElementType:
-        assert isinstance(key, AdeleOpen) and key.owner is owner
+    def open_point(key: AdeleOpen) -> CategoryOfCategories.ElementType:
+        assert key.owner is owner
         return cast(CategoryOfCategories.ElementType, cast(Any, opens).point(key))
 
     space = TopologicalSpaces().from_open_category(

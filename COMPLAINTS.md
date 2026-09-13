@@ -1728,3 +1728,10 @@ Ideas, to be weighed, not obligations.*
   The extra state duplicated standard cache lifecycle with no mathematical role.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Make `projective_infinity()` a nullary `@cache` construction and remove the parallel nullable global and manual first-call branch.
+
+## The adelic presentation hand-rolled the same singleton cache pattern
+
+- **Evidence and impact:** `algebra/adeles.py::adeles_of_rationals` kept a nullable module-global `_adeles`, matched it on every call, and reassigned it after constructing the immutable restricted-product presentation.
+  This duplicates the standard nullary-cache lifecycle and adds mutable state unrelated to the adelic mathematics.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Use `functools.cache` on `adeles_of_rationals()` and return the constructed presentation directly; remove the nullable global and manual cache branch.

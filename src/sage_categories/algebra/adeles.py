@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from fractions import Fraction
+from functools import cache
 from typing import Any, cast
 
 from sympy import false, true
@@ -326,9 +327,6 @@ class AdelePresentation:
         return self.space.open_object(open_set)
 
 
-_adeles: AdelePresentation | None = None
-
-
 def _adele_ring(owner: object) -> tuple[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType]:
     """Construct the exact restricted-product carrier and its commutative ring operations."""
     carrier = Sets.from_membership(lambda value: true if isinstance(value, AdeleValue) and value.owner is owner else false)
@@ -411,21 +409,15 @@ def _adele_topological_ring(
     return space, TopologicalRings()(ring, space, addition_continuity, multiplication_continuity)
 
 
+@cache
 def adeles_of_rationals() -> AdelePresentation:
     """Return the exact restricted product ``R x product'_p Q_p`` relative to ``Z_p``."""
-    global _adeles
-    match _adeles:
-        case AdelePresentation():
-            return _adeles
-        case None:
-            pass
-
     owner = object()
     carrier, ring = _adele_ring(owner)
     space, topological_ring = _adele_topological_ring(owner, carrier, ring)
     empty_open = AdeleOpen(owner, "empty", lambda _value: False, ())
     whole_open = AdeleOpen(owner, "whole", lambda _value: True, ())
-    _adeles = AdelePresentation(
+    return AdelePresentation(
         owner,
         ring,
         space,
@@ -436,4 +428,3 @@ def adeles_of_rationals() -> AdelePresentation:
         empty_open,
         whole_open,
     )
-    return _adeles

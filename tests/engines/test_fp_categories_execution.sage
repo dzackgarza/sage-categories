@@ -6,6 +6,7 @@ from sage_categories.cat.canonical import (
     walking_isomorphism,
 )
 from sage_categories.cat.predicates import Unknown, ask
+from sage_categories.engines import fp_categories
 
 
 def test_native_finite_presented_category_paths() -> None:
@@ -22,6 +23,7 @@ def test_native_finite_presented_category_paths() -> None:
     )
 
     iso = walking_isomorphism()
+    assert fp_categories.is_isomorphism(iso, iso.generator("f")) is True
     assert (iso.generator("g") * iso.generator("f")).word() == ()
     assert (iso.generator("f") * iso.generator("g")).word() == ()
     assert iso.inverse_morphism(iso.generator("f")) is iso.generator("g")
@@ -44,6 +46,7 @@ def test_native_finite_presented_category_paths() -> None:
         (("x", "v", "v"),),
         ((("x", "x"), ("x",)),),
     )
+    assert fp_categories.is_isomorphism(idempotent, idempotent.generator("x")) is None
     assert (idempotent.generator("x") * idempotent.generator("x")) is idempotent.generator("x")
     finite = idempotent.finite_morphisms()
     assert finite is not Unknown and len(finite) == 2

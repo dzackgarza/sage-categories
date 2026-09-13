@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
-from sage.libs.gap.util import GAPError
 
 from sage_categories.engines.gap import FINITE_CATEGORY_PACKAGES, load_packages
 from sage_categories.kernel.sage_runtime import MonoDict
@@ -72,10 +71,7 @@ def _ambient_presentation(
     labels = tuple(category.labels())
     names = tuple(category.generator_names())
     positions = {label: index + 1 for index, label in enumerate(labels)}
-    endpoints = tuple(
-        tuple(category.label(endpoint) for endpoint in category.generator_endpoints(name))
-        for name in names
-    )
+    endpoints = tuple(tuple(category.label(endpoint) for endpoint in category.generator_endpoints(name)) for name in names)
     quiver = libgap.FinQuiver(
         [
             "sage_categories",
@@ -223,12 +219,11 @@ def inverse_morphism(category: object, morphism: object) -> object:
 
 def is_isomorphism(category: object, morphism: object) -> bool | None:
     """Native isomorphism decision when ``FpCategories`` has an applicable method."""
-    try:
-        return bool(libgap.IsIsomorphism(native_morphism(category, morphism)))
-    except GAPError as error:
-        if "no method found" in str(error):
-            return None
-        raise
+    native = native_morphism(category, morphism)
+    method = libgap.ApplicableMethod(libgap.IsIsomorphism, [native])
+    if method == libgap.fail:
+        return None
+    return bool(libgap.IsIsomorphism(native))
 
 
 def finite_morphisms(category: object) -> tuple[tuple[int, int, tuple[str, ...]], ...] | None:

@@ -2044,3 +2044,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `SetsCategory.MorphismType._table` rebuilt `{datum: image}` by evaluating every value of an enumerated domain, but no source or test caller read the property. Besides being dead surface, the accessor encoded eager materialization directly on a morphism whose ordinary execution already lives in `_action` and whose finite native realization has its own engine boundary.
 
 - **Repair link and acceptance:** `bloat-dead-set-map-table`. Delete `_table` entirely and leave finite map tabulation/native lowering at their actual construction owners.
+
+## The compiler retained an unused whole-runtime implementation scan
+
+- **Evidence and impact:** `kernel/compiler.py::runtime_implementation_class(declaration)` walked every `_node_runtimes` table and compared semantic declarations to recover a compiled class, but no source, test, script, or exported API referenced it. Active compiler paths already address runtime classes through exact `Node` keys and use `runtime_declaration()` only in the opposite direction.
+
+- **Repair link and acceptance:** `bloat-dead-runtime-implementation-lookup`. Delete the unused scan rather than retaining an O(all runtime classes) private API with no owner or consumer.

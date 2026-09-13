@@ -118,6 +118,13 @@ def _construction_membership_proposition(
     return member(candidate, family)
 
 
+def _register_construction_full_image(functor: Functor, family: Category) -> None:
+    """Register one chosen-construction image through the cycle-safe image boundary."""
+    from sage_categories.cat.images import register_full_image
+
+    register_full_image(functor, family)
+
+
 def _nontrivial_discrete(shape: Category) -> bool | None:
     """Return whether the owned object-set cardinality proves a nontrivial discrete shape; ``None`` while undecided."""
     if not shape.is_discrete():
@@ -507,9 +514,7 @@ class LimitsCategory(ApexCategory):
         """The total chosen limit functor, when ``C`` declares an ``I``-limit construction."""
         if self not in self._limit_functor:
             self._limit_functor[self] = limit_functor(self)
-            from sage_categories.cat.images import register_full_image
-
-            register_full_image(self._limit_functor[self], self)
+            _register_construction_full_image(self._limit_functor[self], self)
         if self._shape.is_discrete():
             self.ambient().Products().retain_full_image(self)
         return self._limit_functor[self]
@@ -918,9 +923,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         """``Colim_I: Fun(I, C) -> C``, derived from the opposite limit functor."""
         if self._colimit_functor is None:
             self._colimit_functor = self._dual_limits.limit_functor().op() * self._duality.forward()
-            from sage_categories.cat.images import register_full_image
-
-            register_full_image(self._colimit_functor, self)
+            _register_construction_full_image(self._colimit_functor, self)
         if self._shape.is_discrete():
             self.ambient().Coproducts().retain_full_image(self)
         return self._colimit_functor

@@ -784,3 +784,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/canonical.py::FinitePresentedCategory` imported `engines.fp_categories` independently for finite Hom enumeration, terminal selection, path reduction, isomorphism detection, composition, and inversion. The delay is necessary because the engine reconstructs owned canonical-category values, but six local imports gave one native execution boundary six owners.
 
 - **Repair link and acceptance:** `bloat-canonical-fp-engine-boundary`. Keep FpCategories loading delayed behind one `_fp_categories_engine()` helper and route every native presented-category operation through it.
+
+## Limit and colimit families repeated full-image registration imports
+
+- **Evidence and impact:** `cat/constructions.py` imported `register_full_image` separately when constructing the chosen limit functor and the dualized chosen colimit functor. The delay is required because the image layer depends back on categorical constructions, but two local imports gave the same registration boundary two owners.
+
+- **Repair link and acceptance:** `bloat-construction-full-image-boundary`. Put the delayed registration behind one `_register_construction_full_image()` helper and let both chosen-construction functors delegate to it.

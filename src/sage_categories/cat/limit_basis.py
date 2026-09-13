@@ -35,8 +35,8 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import OppositeCategory, opposite_morphism
 from sage_categories.cat.predicates import Unknown, ask
 from sage_categories.cat.shapes import Discrete
-from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, cached_function
+from sage_categories.kernel.retention import identity_key, identity_positions
+from sage_categories.kernel.sage_runtime import cached_function
 
 
 @dataclass(frozen=True)
@@ -65,9 +65,7 @@ def diagram_presentation(shape: Category) -> DiagramPresentation:
             _finite_discrete(len(values)),
             _finite_discrete(len(generators)),
         )
-        positions: MonoDict = MonoDict()
-        for index, value in enumerate(values):
-            positions[value] = index
+        positions = identity_positions(values)
         inclusion = from_object_rule(Fun(vertices, shape), lambda index: values[vertices.label(index)])
 
         def arrow_at(index: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:

@@ -2002,3 +2002,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** both `engines/finite_sets.py` and `engines/category_limits.py` defined the same `_identity_positions(values)` loop that built a Sage `MonoDict` mapping retained values to tuple positions. The code exists only to enforce identity-keyed indexing without invoking proposition-valued equality, which is a repository-wide retention primitive rather than engine-specific mathematics.
 
 - **Repair link and acceptance:** `bloat-shared-identity-positions`. Move the identity-position construction beside `identity_key` in `kernel.retention`, delete both engine-local implementations, and route finite-set and category-limit lowering through the shared owner.
+
+## Finite diagram presentations kept a third identity-position loop
+
+- **Evidence and impact:** after the finite-set and category-limit engine adapters were consolidated on `kernel.retention.identity_positions`, `cat/limit_basis.py::diagram_presentation()` still repeated the same `MonoDict` enumerate/store loop for retained vertices. That left the same identity-indexing mechanism with two owners immediately after its consolidation.
+
+- **Repair link and acceptance:** `bloat-limit-basis-shared-position-helper`. Reuse `identity_positions(values)` for finite diagram presentations and remove the local `MonoDict` dependency without changing the incidence maps.

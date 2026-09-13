@@ -214,6 +214,12 @@ def test_functors_and_two_morphisms_are_owned_and_distinct() -> None:
     assert right_whisker.source_functor().domain() is category
     left_whisker.typecheck_cell()
     right_whisker.typecheck_cell()
+    assert left_whisker.cell_dimension() == 2
+    assert right_whisker.cell_dimension() == 2
+    assert left_whisker.boundary("source") is left_whisker.source_functor()
+    assert left_whisker.boundary("target") is left_whisker.target_functor()
+    assert right_whisker.boundary("source") is right_whisker.source_functor()
+    assert right_whisker.boundary("target") is right_whisker.target_functor()
     assert eta.horizontal(theta).source_functor().domain() is category
 
 

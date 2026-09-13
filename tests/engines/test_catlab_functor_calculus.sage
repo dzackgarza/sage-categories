@@ -112,6 +112,15 @@ def test_catlab_functor_calculus() -> None:
         component_between(parallel1, parallel2, "theta")
     )
     assert not has_native_transformation(eta)
+    # Exercise the homotopy-cell boundary before any public component lookup.  Primitive
+    # transformations have no parallel Catlab recipe, so this order pins the bootstrap
+    # path that reconstructs their boundaries from the retained declaration assignment.
+    eta.typecheck_cell()
+    assert eta.cell_dimension() == 2
+    assert eta.boundary("source") is parallel0
+    assert eta.boundary("target") is parallel1
+    assert eta.boundary("source", 1) is SOURCE
+    assert eta.boundary("target", 1) is TARGET
     primitive_component = eta.component(SOURCE(10**8))
     assert primitive_component.label() == "eta"
     assert has_native_transformation(eta)
@@ -126,16 +135,10 @@ def test_catlab_functor_calculus() -> None:
     assert has_native_transformation(theta)
     assert has_native_transformation(vertical)
     assert not is_placed(eta, Mor(Fun(SOURCE, TARGET)).Isomorphisms())
-    assert eta.cell_dimension() == 2
     assert theta.cell_dimension() == 2
     assert vertical.cell_dimension() == 2
-    assert eta.boundary("source") is parallel0
-    assert eta.boundary("target") is parallel1
     assert vertical.boundary("source") is parallel0
     assert vertical.boundary("target") is parallel2
-    assert eta.boundary("source", 1) is SOURCE
-    assert eta.boundary("target", 1) is TARGET
-    eta.typecheck_cell()
     vertical.typecheck_cell()
 
 

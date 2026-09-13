@@ -72,10 +72,6 @@ def _terms(record, datum) -> dict[Word, int]:
     return indexed_free_integer_coefficients(record.construction.word_module, point)
 
 
-def _datum(record, terms: Mapping[Word, int]):
-    return _source_module_point(record, terms).datum()
-
-
 def _free_associative_multiplication(
     native: object,
     word_module: ModuleCategory.ObjectType,
@@ -232,7 +228,7 @@ def free_associative_substitution(
 
     def basis_image(word: Word):
         terms = free_algebras.substitute(record.native, {word: 1}, image_terms)
-        return source_module.point(_datum(record, terms))
+        return _source_module_point(record, terms)
 
     source_linear = indexed_free_integer_homomorphism(
         source_module,

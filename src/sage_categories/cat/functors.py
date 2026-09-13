@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from types import ModuleType
 from typing import overload
 
 from sympy import ask as sympy_ask
@@ -49,6 +50,13 @@ __all__ = [
     "NaturalTransformation",
     "PreservesLimitsCategory",
 ]
+
+
+def _diagrams() -> ModuleType:
+    """Load diagram execution at the cycle-safe functor/diagram boundary."""
+    from sage_categories.cat import diagrams
+
+    return diagrams
 
 
 def identity_on_values(
@@ -346,9 +354,7 @@ class FunctorCategory[
 
     def evaluation(self, vertex: CategoryOfCategories.ElementType) -> Functor:
         """``ev_i: Fun(I, C) -> C``, the evaluation at the object ``i`` of the shape."""
-        from sage_categories.cat.diagrams import evaluation
-
-        return evaluation(self, vertex)
+        return _diagrams().evaluation(self, vertex)
 
     def ev(self, vertex: CategoryOfCategories.ElementType | int) -> Functor:
         """The retained evaluation at a shape object or its finite label."""
@@ -358,9 +364,7 @@ class FunctorCategory[
 
     def constant(self, value: CategoryOfCategories.ElementType) -> Functor:
         """The constant diagram at an object of the codomain."""
-        from sage_categories.cat.diagrams import constant
-
-        return constant(self, value)
+        return _diagrams().constant(self, value)
 
     def Terminal(self) -> Functor:
         """The terminal functor ``C -> D``: the constant diagram at ``D``'s terminal object.
@@ -373,9 +377,7 @@ class FunctorCategory[
 
     def diagonal(self) -> Functor:
         """The diagonal functor from the codomain into this functor category."""
-        from sage_categories.cat.diagrams import diagonal
-
-        return diagonal(self)
+        return _diagrams().diagonal(self)
 
     def TotalCones(self) -> Category:
         """The total category of cones over diagrams in this functor category."""
@@ -393,9 +395,7 @@ class FunctorCategory[
 
     def from_object_rule(self, rule: OnObject) -> Functor:
         """A diagram over a discrete shape from its object rule alone."""
-        from sage_categories.cat.diagrams import from_object_rule
-
-        return from_object_rule(self, rule)
+        return _diagrams().from_object_rule(self, rule)
 
     # -- ``Fun([1], C)``: its finite data and its fibration lifts (POL-FUN-029, specs/functor.md, "Diagram shapes and universal constructions") -----------
 
@@ -412,16 +412,12 @@ class FunctorCategory[
 
     def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
         """For ``I = [1]``: the finite set of commuting squares, when ``C`` chooses a finite set of morphisms."""
-        from sage_categories.cat.diagrams import square_set
-
         if self.domain() is not Cat().Simplex(1) or ask(self.codomain().morphism_set()) is Unknown:
             return Unknown
-        return square_set(self)
+        return _diagrams().square_set(self)
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> NaturalTransformation:
-        from sage_categories.cat.diagrams import square_at
-
-        return square_at(self, point)
+        return _diagrams().square_at(self, point)
 
     # -- functor properties (POL-FUN-024) -----------------------------------------------
 
@@ -795,9 +791,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         shape: Category,
     ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
         """``Fun(I, C)`` has the ``J``-limits that ``C`` has, computed by evaluation."""
-        from sage_categories.cat.diagrams import pointwise_limit
-
-        return pointwise_limit
+        return _diagrams().pointwise_limit
 
     def __repr__(self) -> str:
         return "Fun"

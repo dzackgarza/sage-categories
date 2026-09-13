@@ -934,3 +934,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `algebra/abelian.py` already imports its cone/cocone constructors from `cat.cones`, but the indexed coproduct mediator and biproduct product lift re-imported `cocone_apex` and `cone_apex` locally. Those delayed imports protect no cycle because the same owner is already bound at module import time.
 
 - **Repair link and acceptance:** `bloat-additive-cone-accessors`. Bind `cone_apex` and `cocone_apex` beside the existing cone imports and remove both function-local re-imports.
+
+## Functor categories repeatedly reopened the diagram execution boundary
+
+- **Evidence and impact:** `cat/functors.py` imported `cat.diagrams` independently for evaluation, constant and diagonal diagrams, object-rule diagrams, commuting-square sets and points, and pointwise limits. The delay is intentional because the diagram layer depends back on the functor owner during bootstrap, but seven local imports gave that one cycle-safe execution boundary seven spellings.
+
+- **Repair link and acceptance:** `bloat-functor-diagram-boundary`. Put the delayed diagram module behind `_diagrams()` and route all seven functor-category operations through it while preserving their existing public methods.

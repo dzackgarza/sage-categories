@@ -1792,3 +1792,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/diagrams.py` wrote candidate quadruples and commuting-square subsets into `FunctorCategory._finite_data` under the strings `"quadruples"` and `"squares"`. That made an unrelated category object carry module-private state, used an identity dictionary for symbolic tags, and split one cached construction across two modules.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache the pair as `_square_data(functors)` with the repository identity-key contract, remove `FunctorCategory._finite_data`, and make `square_set`/`square_at` consume that one owner.
+
+## Slice property families hand-rolled an identity-keyed method cache
+
+- **Evidence and impact:** `SliceLikeCategory._property()` maintained `_properties: MonoDict` and open-coded lookup/construct/store around a result determined only by the property-category argument. The identity key is required because category equality is proposition-valued, but that key policy is already supported by Sage `cached_method` through the repository `identity_key` helper.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache `_property(property_category)` with `cached_method(key=identity_key(...))`, retain the product-subobject specialization inside first construction, and remove `_properties`.

@@ -32,6 +32,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition, ask, register_handler
 from sage_categories.cat.properties import FullSubcategory
 from sage_categories.kernel.refinement import is_placed, refine
+from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 
 if TYPE_CHECKING:
@@ -131,7 +132,6 @@ class SliceLikeCategory(CommaSpecialization):
         self._base_of_slice = base
         self._fixed = fixed
         self._fixed_label = fixed_label
-        self._properties: MonoDict = MonoDict()
         # A functor out of this category exists only once this category does, and
         # ``structure_functors`` runs inside that construction, so both projections are
         # built there and retained (``cat/points.py`` makes the same call at the same
@@ -223,14 +223,13 @@ class SliceLikeCategory(CommaSpecialization):
             return self._base_of_slice.subobjects_type()
         return SliceProperty
 
+    @cached_method(key=lambda self, property_category: identity_key(property_category))
     def _property(self, property_category: Category) -> Category:
         """The pullback of a property subcategory of ``Mor(C)`` along the defining-arrow functor, retained per property."""
-        if property_category not in self._properties:
-            family = self.property_type(property_category)(self, property_category)
-            if self._fixed_label == 1 and property_category is self._base_of_slice.morphism_category(1).Monomorphisms() and self._fixed in self._base_of_slice.Products():
-                family._product_subobjects = SubobjectsOfProduct(family, property_category)
-            self._properties[property_category] = family
-        return self._properties[property_category]
+        family = self.property_type(property_category)(self, property_category)
+        if self._fixed_label == 1 and property_category is self._base_of_slice.morphism_category(1).Monomorphisms() and self._fixed in self._base_of_slice.Products():
+            family._product_subobjects = SubobjectsOfProduct(family, property_category)
+        return family
 
     def Monomorphisms(self) -> Category:
         return self._property(self._base_of_slice.morphism_category(1).Monomorphisms())

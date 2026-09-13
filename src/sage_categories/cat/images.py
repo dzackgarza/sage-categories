@@ -353,7 +353,7 @@ def retain_morphism_image(
         refine(image, defining_functor.codomain().EssentialImage(defining_functor).morphism_category(1))
 
 
-@cached_function(key=lambda target, defining_functor: identity_key(target, defining_functor))
+@cached_function(key=identity_key)
 def strict_image(target: Category, defining_functor: Functor) -> StrictImageCategory:
     """Return the retained strict image of ``defining_functor`` in its target."""
     assert defining_functor.codomain() is target
@@ -372,7 +372,7 @@ def register_full_image(defining_functor: Functor, image: Category) -> None:
     full_image.set_cache(image, codomain, defining_functor)
 
 
-@cached_function(key=lambda target, defining_functor: identity_key(target, defining_functor))
+@cached_function(key=identity_key)
 def full_image(target: Category, defining_functor: Functor) -> Category:
     """Return the retained full image of ``defining_functor`` in its target."""
     assert defining_functor.codomain() is target

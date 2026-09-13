@@ -170,7 +170,7 @@ def from_sequence(ambient: Category, sequence: tuple[CategoryOfCategories.Elemen
 # -- the commuting squares of ``Fun([1], C)`` as a finite set (specs/functor.md, "Diagram shapes and universal constructions") ---------------------------
 
 
-@cached_function(key=lambda functors: identity_key(functors))
+@cached_function(key=identity_key)
 def _square_data(
     functors: FunctorCategory,
 ) -> tuple[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType]:

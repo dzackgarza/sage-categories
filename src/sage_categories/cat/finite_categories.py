@@ -60,7 +60,7 @@ def _slices() -> ModuleType:
     return slices
 
 
-@cached_function(key=lambda category: identity_key(category))
+@cached_function(key=identity_key)
 def _retained_finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData:
     """A positive finite-category evaluation retained by exact category identity."""
     result = _evaluate(category)

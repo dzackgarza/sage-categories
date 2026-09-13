@@ -128,7 +128,7 @@ def _construction_diagrams(family: Category) -> Category:
     return _diagram_category(family.ambient(), _construction_shape(family))
 
 
-@cached_function(key=lambda family, diagram: identity_key(family, diagram))
+@cached_function(key=identity_key)
 def _lower_construction_diagram(family: Category, diagram: Functor) -> Functor:
     """Regard a diagram in a declared subcategory as a diagram in the family ambient."""
     ambient = family.ambient()

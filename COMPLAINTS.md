@@ -730,3 +730,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/finite_sets.py` performed eight function-local `from sage_categories.sets.finite import Sets` imports across morphism reconstruction, image factorization, and every primitive finite universal construction. The engine needs the owned `Sets` declaration whose implementation has already been installed by the caller, not a repeated dependency on the leaf implementation module itself.
 
 - **Repair link and acceptance:** `bloat-finite-sets-owner-import`. Bind `Sets` once from `cat.declarations` at the engine boundary and remove every reverse import of `sets/finite.py`, preserving the existing native object/morphism reconstruction operations.
+
+## Presented-module retention repeated the same lazy Ab owner lookup
+
+- **Evidence and impact:** `algebra/_presented_modules_cap.py` imported `AbelianGroups` separately inside object-retention and morphism-retention functions solely to avoid importing the leaf during bootstrap. Both paths need the same exact owner; duplicating the cycle-breaking import makes that boundary implicit in two places.
+
+- **Repair link and acceptance:** `bloat-presented-module-owner`. Put the lazy `AbelianGroups()` lookup behind one `_owner()` helper and let both native retention families use it, preserving the bootstrap boundary and exact Hom ownership.

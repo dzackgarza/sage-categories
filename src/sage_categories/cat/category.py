@@ -338,7 +338,6 @@ class CategoryDeclaration[
         self._identities: MonoDict = MonoDict()
         self._inverses: MonoDict = MonoDict()
         self._arrows: MonoDict = MonoDict()
-        self._elements: MonoDict = MonoDict()
         self._biproduct_constructor: Callable[[object, object], object] | None = None
         self._zero_morphism_constructor: Callable[[object, object], object] | None = None
         self._colimit_constructors: MonoDict = MonoDict()
@@ -731,9 +730,12 @@ class CategoryDeclaration[
         assert defining_morphism in self.morphism_category(1), f"{defining_morphism!r} is not a morphism of {self!r}"
         if self.has_ambient():
             return self.ambient().element_from_defining_morphism(defining_morphism)
-        if defining_morphism not in self._elements:
-            self._elements[defining_morphism] = self.ElementType(defining_morphism)
-        return self._elements[defining_morphism]
+        return self._retained_element(defining_morphism)
+
+    @cached_method(key=lambda self, defining_morphism: identity_key(defining_morphism))
+    def _retained_element(self, defining_morphism: MorphismRole) -> ElementRole:
+        """The one generalized element retained by an exact defining morphism."""
+        return self.ElementType(defining_morphism)
 
     def construct_morphism(
         self,

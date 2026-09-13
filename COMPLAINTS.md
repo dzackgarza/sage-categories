@@ -1888,3 +1888,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `Category.morphism_category(level)` carried `_morphism_categories: dict` but only ever stored key `1`; higher levels recurse through the resulting category. The method itself is a pure nullary-by-level construction on one category, so the bespoke dictionary duplicated Sage method caching and retained an otherwise unused field on every category.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `morphism_category(level)` directly with Sage `cached_method`, remove `_morphism_categories`, and preserve the recursive `Mor(n+1,C)=Mor(Mor(n,C))` construction.
+
+## Generalized elements hand-rolled an identity-keyed method cache
+
+- **Evidence and impact:** `Category.element_from_defining_morphism()` used `_elements: MonoDict` only for categories without an ambient, with explicit lookup/construct/store under the exact defining morphism. The ambient delegation is semantic, but the local retention lifecycle duplicates the same identity-keyed Sage method cache now used elsewhere in `Category`.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Keep membership validation and ambient delegation public, move local element construction to an identity-keyed cached helper, and remove `_elements`.

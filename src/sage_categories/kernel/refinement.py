@@ -272,5 +272,9 @@ def refine[Value: ObjectOfCategory](value: Value, target: Category) -> Value:
         return value
     role = role_of(value)
     assert role in (Role.OBJECT, Role.MORPHISM), f"{value!r} is not refinable: only objects and morphisms are placed"
+    constraints = (target, *target.narrowing_roots())
+    assert all(category._refinement_admissible(value) for category in constraints), (
+        f"{value!r} cannot be refined into {target!r}: the property requires retained execution data"
+    )
     place(value, _join(category_of(value, role), target))
     return value

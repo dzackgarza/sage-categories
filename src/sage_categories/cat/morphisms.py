@@ -499,6 +499,19 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](PropertySubcategor
             """The inverse: the retained one when the construction supplied it, else the category-owned one."""
             return self.base_category().inverse_morphism(self)
 
+    def _refinement_admissible(self, candidate: CategoryOfCategories.ElementType) -> bool:
+        """Require executable inverse data for isomorphisms of ``Cat()``.
+
+        A morphism of ``Cat()`` is a functor, so its inverse is another public functor
+        and must carry executable object and morphism actions.  ``Cat().retain_inverses``
+        records that functor before refining either direction into this property.  Other
+        categories retain the generic symbolic inversion permitted for data-free arrows.
+        """
+        base = self.base_category()
+        if isinstance(base, _category.CategoryOfCategories):
+            return base.retained_inverse(candidate) is not None
+        return True
+
 
 class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcategory[MorphismData, TwoMorphismData]):
     """``Mor(C).Endomorphisms()``: the implementation of the ``Endomorphisms`` axiom of ``Mor(C)``.

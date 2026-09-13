@@ -542,6 +542,15 @@ class CategoryDeclaration[
         )
         return bool(decision)
 
+    def _refinement_admissible(self, candidate: CategoryOfCategories.ElementType) -> bool:
+        """Whether ``candidate`` may be placed in this exact category by refinement.
+
+        Ordinary subcategory refinement is trusted construction data, so the default is
+        unrestricted.  A category whose property would otherwise expose an operation
+        without the data needed to execute it overrides this at that property owner.
+        """
+        return True
+
     # -- the Mor(n, C) tower ----------------------------------------------------
 
     @overload
@@ -1984,16 +1993,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         # with ``IsEquivalence`` of the identity (inspected 2026-08-26).
         refine(identity, Fun.Equivalences())
         return identity
-
-    def _symbolic_inverse_(self, functor: CategoryOfCategories.MorphismType) -> CategoryOfCategories.MorphismType:
-        """The inverse of a functor placed in ``Fun.Isomorphisms()`` by declaration: its actions have no executable rule."""
-
-        def no_action(
-            value: CategoryOfCategories.ElementType,
-        ) -> CategoryOfCategories.ElementType:
-            assert False, f"the inverse of {functor!r} has no executable action; its equations hold by placement in Isomorphisms()"
-
-        return self.morphism_category(1)(functor.codomain(), functor.domain()).Isomorphisms()(no_action, no_action)
 
     def composite(
         self,

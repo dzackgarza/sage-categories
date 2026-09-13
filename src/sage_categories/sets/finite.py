@@ -61,6 +61,13 @@ type MembershipRule = Callable[[Hashable], Proposition]
 type MapData = Map | Lambda | SageExpression | Mapping[Hashable, Hashable]
 
 
+def _finite_sets_engine():
+    """Load the FinSetsForCAP adapter at the one cycle-safe execution boundary."""
+    from sage_categories.engines import finite_sets
+
+    return finite_sets
+
+
 class FinitePredicate(Predicate):
     name = "finite_set"
 
@@ -478,7 +485,7 @@ class SetsCategory(Category[[Map], []]):
         values = _finite_data(domain)
         target_values = _finite_data(first.codomain())
         if values is not Unknown and target_values is not Unknown:
-            from sage_categories.engines import finite_sets
+            finite_sets = _finite_sets_engine()
 
             return finite_sets.equal_morphisms(first, second)
         if domain in _enumerations:
@@ -523,7 +530,7 @@ class SetsCategory(Category[[Map], []]):
     def _injective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
         """Monic: no two points identified, read off the table, a separating pair of samples, or the solved inverse."""
         if isinstance(arrow.domain().set_presentation(), tuple):
-            from sage_categories.engines import finite_sets
+            finite_sets = _finite_sets_engine()
 
             return finite_sets.is_monomorphism(arrow)
         samples = tuple(islice(_samples(arrow.domain()), 16))
@@ -535,7 +542,7 @@ class SetsCategory(Category[[Map], []]):
     def _surjective(self, arrow: SetsCategory.MorphismType, assumptions: Proposition) -> bool | None:
         """Epic: every codomain point is a value, read off the tables or from the solved inverse."""
         if isinstance(arrow.domain().set_presentation(), tuple) and isinstance(arrow.codomain().set_presentation(), tuple):
-            from sage_categories.engines import finite_sets
+            finite_sets = _finite_sets_engine()
 
             return finite_sets.is_epimorphism(arrow)
         return self._symbolic_surjective(arrow)
@@ -620,9 +627,7 @@ class SetsCategory(Category[[Map], []]):
         if self.retained_inverse(morphism) is None:
             domain, codomain = morphism.domain(), morphism.codomain()
             if isinstance(domain.set_presentation(), tuple) and isinstance(codomain.set_presentation(), tuple) and self._bijective(morphism, true) is True:
-                from sage_categories.engines import finite_sets
-
-                self.retain_inverses(morphism, finite_sets.inverse_morphism(morphism))
+                self.retain_inverses(morphism, _finite_sets_engine().inverse_morphism(morphism))
             elif (rule := self._solved_inverse(morphism)) is not None:
                 self.retain_inverses(
                     morphism,
@@ -810,7 +815,7 @@ class SetsCategory(Category[[Map], []]):
         if shape.is_discrete() or shape is Cat().WalkingParallelPair() or shape.op() is Cat().WalkingParallelPair():
             return self._primitive_limit
         from sage_categories.cat.finite_categories import finite_category
-        from sage_categories.engines import finite_sets
+        finite_sets = _finite_sets_engine()
 
         if finite_category(shape) is not Unknown:
             return finite_sets.finite_limit
@@ -822,7 +827,7 @@ class SetsCategory(Category[[Map], []]):
         if shape.is_discrete() or shape is Cat().WalkingParallelPair() or shape.op() is Cat().WalkingParallelPair():
             return self._primitive_colimit
         from sage_categories.cat.finite_categories import finite_category
-        from sage_categories.engines import finite_sets
+        finite_sets = _finite_sets_engine()
 
         if finite_category(shape) is not Unknown:
             return finite_sets.finite_colimit
@@ -898,7 +903,7 @@ class SetsCategory(Category[[Map], []]):
 
     def _primitive_limit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         from sage_categories.cat.finite_categories import finite_category
-        from sage_categories.engines import finite_sets
+        finite_sets = _finite_sets_engine()
 
         shape = diagram.domain()
         if shape.is_discrete():
@@ -963,7 +968,7 @@ class SetsCategory(Category[[Map], []]):
 
     def _primitive_colimit(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         from sage_categories.cat.finite_categories import finite_category
-        from sage_categories.engines import finite_sets
+        finite_sets = _finite_sets_engine()
 
         shape = diagram.domain()
         if shape.is_discrete():
@@ -977,13 +982,13 @@ class SetsCategory(Category[[Map], []]):
 
     def image_factorization(self, arrow: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
         """The surjection onto the image and its inclusion into the codomain."""
-        from sage_categories.engines import finite_sets
+        finite_sets = _finite_sets_engine()
 
         return finite_sets.image_factorization(arrow)
 
     def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False]:
         assert mono.codomain() is arrow.codomain()
-        from sage_categories.engines import finite_sets
+        finite_sets = _finite_sets_engine()
 
         return finite_sets.factor_through_monomorphism(mono, arrow)
 
@@ -993,7 +998,7 @@ class SetsCategory(Category[[Map], []]):
         source: CategoryOfCategories.ElementType,
         target: CategoryOfCategories.ElementType,
     ) -> tuple[MorphismCategory.ObjectType, ...]:
-        from sage_categories.engines import finite_sets
+        finite_sets = _finite_sets_engine()
 
         return finite_sets.hom_morphisms(source, target)
 
@@ -1060,7 +1065,7 @@ register_handler(Mor(Sets).Isomorphisms().predicate(), Sets._bijective)
 
 
 def _finite_cartesian_comparison(operation: str, *arguments: object) -> MorphismCategory.ObjectType | None:
-    from sage_categories.engines import finite_sets
+    finite_sets = _finite_sets_engine()
 
     if any(_finite_data(argument) is Unknown for argument in arguments):
         return None

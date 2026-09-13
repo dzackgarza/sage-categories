@@ -754,3 +754,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/finite_sets.py` imported `finite_category` independently in native diagram lowering, primitive finite limits, and primitive finite colimits, and imported `Unknown` separately in two of those finite-admission paths. The category evaluator is intentionally delayed to avoid import-cycle pressure, but the delay had three separate spellings.
 
 - **Repair link and acceptance:** `bloat-finite-sets-category-evaluator`. Keep evaluator loading lazy behind `_finite_category_data()`, bind `Unknown` once, and route all finite shape/diagram evaluation through that one private boundary.
+
+## Sets repeatedly reopened the same FinSetsForCAP engine boundary
+
+- **Evidence and impact:** `sets/finite.py` imported `engines.finite_sets` independently in equality, mono/epi/inverse checks, limit/colimit dispatch, primitive universal constructions, image factorization, Hom enumeration, and cartesian comparisons. The delay is necessary because the engine reaches back through the finite-set retention layer, but twelve separate import sites gave one cycle-breaking boundary twelve owners.
+
+- **Repair link and acceptance:** `bloat-sets-finite-engine-boundary`. Keep the import delayed behind one `_finite_sets_engine()` helper and route every finite-set engine call through that boundary without changing which operations remain native or represented.

@@ -850,12 +850,14 @@ class SetsCategory(Category[[Map], []]):
         """
         factors = tuple(diagram.on_object(vertex) for vertex in vertices)
         apex = self.from_membership(_ProductRule(factors))
-        position = {id(vertex): index for index, vertex in enumerate(vertices)}
+        position: MonoDict = MonoDict()
+        for index, vertex in enumerate(vertices):
+            position[vertex] = index
 
         def leg(
             vertex: CategoryOfCategories.ElementType,
         ) -> MorphismCategory.ObjectType:
-            index = position[id(vertex)]
+            index = position[vertex]
             structure = _structure(apex)
             symbolic = Lambda((structure,), structure[index])
             return Mor(self)(apex, diagram.on_object(vertex))(_SetMap(lambda value: value[index], symbolic))

@@ -1474,9 +1474,22 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-indexed-cache-identity-keys`. Replace every bare-id cache key in the indexed/Grothendieck owner with `identity_key(...)`, preserving cache partitioning and avoiding proposition-valued equality.
 
-
 ## Category-theory caches re-spelled the identity-key protocol locally
 
-- **Evidence and impact:** several retained `cached_function`/`cached_method` sites in `cat/diagrams.py`, `cat/category.py`, `cat/cat_constructions.py`, and `cat/properties.py` manually rebuilt `(id(value), value)` keys or bare per-sequence variants. The repository already owns this exact retain-before-equality contract in `kernel.retention.identity_key`, so the local spellings duplicated a subtle invariant and could drift.
+- **Evidence and impact:** several retained `cached_function`/`cached_method` sites in `cat/diagrams.py`, `cat/category.py`, `cat/cat_constructions.py`, and `cat/properties.py` manually rebuilt `(id(value), value)` keys or bare per-sequence variants.
+  The repository already owns this exact retain-before-equality contract in `kernel.retention.identity_key`, so the local spellings duplicated a subtle invariant and could drift.
 
 - **Repair link and acceptance:** `bloat-theory-cache-identity-keys`. Route those cache keys through `identity_key(...)` while preserving argument order and the existing per-owner cache boundaries.
+
+## Predicate atoms kept a parallel integer-id value registry
+
+- **Evidence and impact:** `kernel/predicates.py` already retained the exact owned value in the `MonoDict` that selects its current private SymPy atom, but also kept a second `dict[int, Argument]` keyed by `id(value)` solely so an atom could be decoded later. The atom itself is hashable private identity data and can own that reverse lookup directly; the integer table was a second identity registry with no independent mathematical role.
+
+- **Repair link and acceptance:** `bloat-predicate-atom-value-map`. Retain each private atom directly with its owned value and decode by atom identity/structure, while preserving the integer identity payload used inside SymPy and the ability of pre-refinement expressions to resolve their older atom class.
+
+
+## Represented set products used raw ids for projection positions
+
+- **Evidence and impact:** `SetsCategory._represented_product()` mapped discrete vertices to projection positions through a plain `dict` keyed by `id(vertex)`, then repeated the raw-id lookup in each projection leg. The vertices are owned values with proposition-valued equality, so the intended operation is identity lookup, already supplied by Sage `MonoDict`.
+
+- **Repair link and acceptance:** `bloat-represented-product-position-map`. Store vertex positions directly in `MonoDict` and index by the retained vertex object.

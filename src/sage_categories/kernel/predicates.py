@@ -91,12 +91,17 @@ _identity_predicates: set[OwnedPredicate] = set()
 _query_dispatchers: dict[Query, tuple[Dispatcher, Function]] = {}
 
 
+def _semantic_bases(domain: type) -> tuple[type, ...] | None:
+    """Read compiler semantic ancestry through the cycle-safe predicate boundary."""
+    from sage_categories.kernel.compiler import runtime_semantic_bases
+
+    return runtime_semantic_bases(domain)
+
+
 def _atom_type(domain: type) -> type[_OwnedValueAtom]:
     if domain in _atom_types:
         return _atom_types[domain]
-    from sage_categories.kernel.compiler import runtime_semantic_bases
-
-    semantic_bases = runtime_semantic_bases(domain) or domain.__bases__
+    semantic_bases = _semantic_bases(domain) or domain.__bases__
     inherited = tuple(_atom_type(base) for base in semantic_bases)
     if not inherited:
         result = _OwnedValueAtom
@@ -207,9 +212,7 @@ def _matches_handler_domain(domain: type, argument: Argument) -> bool:
         return True
     if not isinstance(argument, CategoryPoint):
         return False
-    from sage_categories.kernel.compiler import runtime_semantic_bases
-
-    semantic_bases = runtime_semantic_bases(type(argument))
+    semantic_bases = _semantic_bases(type(argument))
     return semantic_bases is not None and domain in semantic_bases
 
 

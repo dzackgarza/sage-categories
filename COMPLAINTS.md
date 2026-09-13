@@ -832,3 +832,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `RightUniversalArrows.adjunction()` and `LeftUniversalArrows.adjunction()` each imported `Adjunctions` locally immediately before constructing their unit/counit pair. The delay is required because the adjunction module consumes universal arrows, but duplicating the same cycle break gave one mathematical owner two runtime import sites.
 
 - **Repair link and acceptance:** `bloat-universal-arrow-adjunction-boundary`. Put the delayed `Adjunctions` lookup behind one `_adjunctions()` helper and let both universal-arrow directions share it while retaining their distinct unit/counit formulas.
+
+## Predicate dispatch repeated compiler-ancestry imports
+
+- **Evidence and impact:** `kernel/predicates.py` imported `runtime_semantic_bases` independently while building owned-value atom types and while checking whether a runtime argument inhabits a declared predicate domain. The import is deliberately delayed because compiler construction consumes predicate machinery, but both operations read the same semantic ancestry relation.
+
+- **Repair link and acceptance:** `bloat-predicate-semantic-bases-boundary`. Put the delayed compiler lookup behind `_semantic_bases()` and let atom construction plus argument-domain matching share it.

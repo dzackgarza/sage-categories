@@ -159,7 +159,7 @@ def _stage_open_space(stage: int) -> tuple[CategoryOfCategories.ElementType, Any
 
 def _cw_open_datum(open_object: CategoryOfCategories.ElementType) -> CWOpen:
     """Return the retained finite-stage open carried by one open-category object."""
-    return _cw_open_datum(open_object)
+    return cast(CWOpen, cast(Any, open_object).point().datum())
 
 
 def _weak_cw_open_datum(open_object: CategoryOfCategories.ElementType) -> _WeakCWOpen:
@@ -328,10 +328,10 @@ def _projective_infinity_leg(
     source = projective_space(stage)
     underlying = set_colimit.leg(vertex)
     inverse = Fun(space.open_category(), source.space.open_category())(
-        lambda target_open: source.open(cast(_WeakCWOpen, _cw_open_datum(target_open)).stage_open(stage)),
+        lambda target_open: source.open(_weak_cw_open_datum(target_open).stage_open(stage)),
         lambda inclusion: Mor(source.space.open_category())(
-            source.open(cast(_WeakCWOpen, _cw_open_datum(inclusion.domain())).stage_open(stage)),
-            source.open(cast(_WeakCWOpen, _cw_open_datum(inclusion.codomain())).stage_open(stage)),
+            source.open(_weak_cw_open_datum(inclusion.domain()).stage_open(stage)),
+            source.open(_weak_cw_open_datum(inclusion.codomain()).stage_open(stage)),
         )(),
     )
     return TopologicalSpaces().morphism_with_inverse_image(source.space, space, underlying, inverse)

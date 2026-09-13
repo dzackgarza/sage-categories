@@ -1984,3 +1984,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/predicates.py::_atom_type(domain)` maintained `_atom_types: dict[type, type[_OwnedValueAtom]]` with explicit lookup/store around a pure result of the exact runtime type and its retained semantic bases. The dictionary duplicated Python's standard function-cache protocol without carrying independent mathematical state.
 
 - **Repair link and acceptance:** `bloat-predicate-atom-type-cache`. Make `_atom_type` `functools.cache`-owned, remove `_atom_types`, and preserve recursive semantic-base atom construction plus owned-value refinement behavior.
+
+## The centralized CW-open datum boundary recursed into itself
+
+- **Evidence and impact:** `geometry/cw.py::_cw_open_datum()` called itself unconditionally, so every finite-stage open preimage routed through infinite recursion. The projective-infinity path then bypassed the separately declared `_weak_cw_open_datum()` and cast the broken finite helper's result back to a weak open, leaving the refactor's two typed boundaries inconsistent and its weak helper dead.
+
+- **Repair link and acceptance:** `bloat-cw-open-datum-regression`. Restore the finite helper to unwrap `point().datum()`, route weak-colimit inverse images through `_weak_cw_open_datum()`, and preserve the distinct finite/weak open representations without repeated cast chains.

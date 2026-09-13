@@ -1630,9 +1630,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-cw-open-datum-boundary`. Centralize finite and weak open extraction in two typed helpers and use them throughout inverse-image construction.
 
-
 ## Adelic continuity encoded ring operations as internal strings
 
-- **Evidence and impact:** `_adele_topological_ring()` sent the strings `"addition"` and `"multiplication"` into a local `binary_preimage` function, which matched those strings to recover the actual ring operation. This is a second, stringly typed dispatch table for operations already present as callables and makes an impossible unknown-operation state representable.
+- **Evidence and impact:** `_adele_topological_ring()` sent the strings `"addition"` and `"multiplication"` into a local `binary_preimage` function, which matched those strings to recover the actual ring operation.
+  This is a second, stringly typed dispatch table for operations already present as callables and makes an impossible unknown-operation state representable.
 
 - **Repair link and acceptance:** `bloat-adele-binary-preimage-dispatch`. Share the topology construction in `_binary_adele_preimage` and pass addition/multiplication as callables; keep the name only as retained presentation metadata.
+
+
+## Finite poset validation reimplemented reflexive/transitive closure in Python
+
+- **Evidence and impact:** `_decide_partial_order()` enumerated all points, all pairs, and all triples to check reflexivity, antisymmetry, and transitivity directly. Sage already ships its mature finite `Poset` implementation: it rejects cyclic/antisymmetry failures and completes reflexive/transitive closure. The repository only needs to ask whether that completed relation equals the supplied relation.
+
+- **Repair link and acceptance:** `bloat-finite-partial-order-laws`. Move finite relation validation to an engine adapter around Sage `Poset` and delete the local cubic law implementation from the mathematical owner.

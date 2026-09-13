@@ -97,13 +97,11 @@ def _decide_partial_order(
     assumptions: Proposition,
 ) -> bool | None:
     """Reflexivity, antisymmetry, and transitivity of a finite relation (Mathlib ``PartialOrder``)."""
+    from sage_categories.engines.order_relations import is_partial_order
+
     carrier = relation_object.carrier()
     data = tuple(point.datum() for point in carrier)
-    pairs = _related_pairs(relation_object)
-    reflexive = all((value, value) in pairs for value in data)
-    antisymmetric = all(first == second for first in data for second in data if (first, second) in pairs and (second, first) in pairs)
-    transitive = all((first, third) in pairs for first in data for second in data for third in data if (first, second) in pairs and (second, third) in pairs)
-    return reflexive and antisymmetric and transitive
+    return is_partial_order(data, _related_pairs(relation_object))
 
 
 class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):

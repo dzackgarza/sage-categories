@@ -2,7 +2,7 @@
 
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor
-from sage_categories.cat.shapes import Discrete
+from sage_categories.cat.declarations import NN, omega
 from sage_categories.kernel.refinement import refine
 from sage_categories.sets.finite import Sets
 
@@ -39,10 +39,8 @@ def test_cat_isomorphism_requires_retained_executable_inverse() -> None:
 
 
 def test_data_free_category_keeps_symbolic_inverse() -> None:
-    labels = Sets(("x",))
-    discrete = Discrete(labels)
-    vertex = discrete(labels.point("x"))
-    arrow = Mor(discrete)(vertex, vertex).Isomorphisms()()
+    vertex = omega(NN.point(1))
+    arrow = Mor(omega)(vertex, vertex).Isomorphisms()()
     inverse = arrow.inverse()
     assert inverse.domain() is vertex
     assert inverse.codomain() is vertex

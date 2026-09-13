@@ -1341,3 +1341,10 @@ Ideas, to be weighed, not obligations.*
   The shape distinction lives in the enclosing category and its morphism rules, not in this object surface.
 
 - **Repair link and acceptance:** `bloat-shape-point-object-surface`. Put the shared object behavior on `_PointShapeObject` and let both nested object roles inherit it.
+
+
+## Point-indexed shapes repeated point conversion and identity construction
+
+- **Evidence and impact:** `DiscreteCategory` and `ThinCategory` each repeated the same `object_at`, `object_point`, and identity-arrow construction after their shared point payload/object surface had already been consolidated. Those operations depend only on the common point-indexed shape contract; their actual distinction is morphism admission and equality.
+
+- **Repair link and acceptance:** `bloat-shape-point-navigation`. Keep the typed public wrappers but route their implementation through shared point/object and identity helpers.

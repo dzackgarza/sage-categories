@@ -78,6 +78,21 @@ class _PointShapeObject:
         return f"{self._point!r} in {self.category()!r}"
 
 
+def _point_shape_object_at(category: Category, point: CategoryOfCategories.ElementType):
+    """Return the point-indexed object selected by ``category`` at ``point``."""
+    return category(point)
+
+
+def _point_shape_object_point(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+    """Return the retained carrier point of a point-indexed shape object."""
+    return member_object.point()
+
+
+def _point_shape_identity(category: Category, member_object: CategoryOfCategories.ElementType):
+    """Construct the unique identity arrow of one point-indexed shape object."""
+    return category.MorphismType(member_object, member_object)
+
+
 class DiscreteCategory(Category[[], []]):
     """The discrete category on a set."""
 
@@ -111,10 +126,10 @@ class DiscreteCategory(Category[[], []]):
         return self.index_set()
 
     def object_at(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.ObjectType:
-        return self(point)
+        return _point_shape_object_at(self, point)
 
     def object_point(self, member_object: DiscreteCategory.ObjectType) -> CategoryOfCategories.ElementType:
-        return member_object.point()
+        return _point_shape_object_point(member_object)
 
     def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
         return self.index_set()
@@ -140,7 +155,7 @@ class DiscreteCategory(Category[[], []]):
         return self.MorphismType(domain, codomain)
 
     def construct_identity(self, member_object: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
-        return self.MorphismType(member_object, member_object)
+        return _point_shape_identity(self, member_object)
 
     def composite(self, second: DiscreteCategory.MorphismType, first: DiscreteCategory.MorphismType) -> DiscreteCategory.MorphismType:
         return _thin_composite(self, second, first)
@@ -359,10 +374,10 @@ class ThinCategory(Category[[], []]):
         return self.carrier()
 
     def object_at(self, point: CategoryOfCategories.ElementType) -> ThinCategory.ObjectType:
-        return self(point)
+        return _point_shape_object_at(self, point)
 
     def object_point(self, member_object: ThinCategory.ObjectType) -> CategoryOfCategories.ElementType:
-        return member_object.point()
+        return _point_shape_object_point(member_object)
 
     def __call__(self, point: CategoryOfCategories.ElementType) -> ThinCategory.ObjectType:
         """The object at a point of ``P``, one object per retained point."""
@@ -377,7 +392,7 @@ class ThinCategory(Category[[], []]):
         return self.MorphismType(domain, codomain)
 
     def construct_identity(self, member_object: ThinCategory.ObjectType) -> ThinCategory.MorphismType:
-        return self.MorphismType(member_object, member_object)
+        return _point_shape_identity(self, member_object)
 
     def composite(self, second: ThinCategory.MorphismType, first: ThinCategory.MorphismType) -> ThinCategory.MorphismType:
         return _thin_composite(self, second, first)

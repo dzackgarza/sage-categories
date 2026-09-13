@@ -139,33 +139,44 @@ def compose_profunctors(first: Functor, second: Functor, hom: Functor) -> Functo
     return Fun(source, sets)(lambda value: coend(_integrand(first, second, value), hom), on_morphism)
 
 
+def _profunctor_transformation_integrand_map(
+    first: NaturalTransformation,
+    second: NaturalTransformation,
+    hom: Functor,
+    outer: CategoryOfCategories.ElementType,
+) -> NaturalTransformation:
+    """The pointwise map of coend integrands induced by two profunctor transformations."""
+    start, end = (
+        _integrand(first.domain(), second.domain(), outer),
+        _integrand(first.codomain(), second.codomain(), outer),
+    )
+    tensor = product_functor(hom.codomain())
+
+    def component(value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        p = first.component(first.domain().domain()((outer.family_component(0), value.family_component(1))))
+        q = second.component(second.domain().domain()((value.family_component(0), outer.family_component(1))))
+        pairs = tensor.domain()
+        return tensor.on_morphism(
+            pairs.construct_morphism(
+                pairs((p.domain(), q.domain())),
+                pairs((p.codomain(), q.codomain())),
+                (p, q),
+            )
+        )
+
+    return Mor(Fun(hom.domain(), hom.codomain()))(start, end)(component)
+
+
 def compose_profunctor_transformations(first: NaturalTransformation, second: NaturalTransformation, hom: Functor) -> NaturalTransformation:
     """Horizontal composition of transformations of profunctors."""
     source = compose_profunctors(first.domain(), second.domain(), hom)
     target = compose_profunctors(first.codomain(), second.codomain(), hom)
-    tensor = product_functor(hom.codomain())
 
     def component(
         outer: CategoryOfCategories.ElementType,
     ) -> MorphismCategory.ObjectType:
-        start, end = (
-            _integrand(first.domain(), second.domain(), outer),
-            _integrand(first.codomain(), second.codomain(), outer),
-        )
-
-        def at(value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-            p = first.component(first.domain().domain()((outer.family_component(0), value.family_component(1))))
-            q = second.component(second.domain().domain()((value.family_component(0), outer.family_component(1))))
-            pairs = tensor.domain()
-            return tensor.on_morphism(
-                pairs.construct_morphism(
-                    pairs((p.domain(), q.domain())),
-                    pairs((p.codomain(), q.codomain())),
-                    (p, q),
-                )
-            )
-
-        return weighted_colimit_map(coend_weight(hom), Mor(Fun(hom.domain(), hom.codomain()))(start, end)(at))
+        transformation = _profunctor_transformation_integrand_map(first, second, hom, outer)
+        return weighted_colimit_map(coend_weight(hom), transformation)
 
     return Mor(Fun(source.domain(), source.codomain()))(source, target)(component)
 

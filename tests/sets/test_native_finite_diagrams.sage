@@ -89,4 +89,47 @@ def test_native_finite_limit_and_colimit_over_three_vertices() -> None:
     assert infinite_descent(selected_colimit.leg(2)(C.point("c1"))).datum() == 11
 
 
+def test_native_parallel_pair_equalizer_and_coequalizer() -> None:
+    shape = Cat().WalkingParallelPair()
+    first_name, second_name = shape.generator_names()
+    source = shape.generator(first_name).domain()
+    target = shape.generator(first_name).codomain()
+    A = Sets((0, 1, 2, 3))
+    B = Sets((0, 1))
+    first = Mor(Sets)(A, B)({0: 0, 1: 1, 2: 0, 3: 1})
+    second = Mor(Sets)(A, B)({0: 0, 1: 0, 2: 1, 3: 1})
+    objects = {id(source): A, id(target): B}
+    arrows = {first_name: first, second_name: second}
+
+    def on_morphism(arrow):
+        domain = objects[id(arrow.domain())]
+        if not arrow.word():
+            return Mor(Sets)(domain, domain).one()
+        return arrows[arrow.word()[0]]
+
+    diagram = Fun(shape, Sets)(lambda vertex: objects[id(vertex)], on_morphism)
+
+    equalizer = Sets.Limits(shape)(diagram)
+    selected_limit = Sets.Limits(shape).universal_data(diagram)
+    assert {point.datum() for point in equalizer} == {0, 3}
+    X = Sets(("left", "right"))
+    to_a = Mor(Sets)(X, A)({"left": 0, "right": 3})
+    to_b = first * to_a
+    candidate = cone(diagram, X, lambda vertex: to_a if vertex is source else to_b)
+    lift = selected_limit.lift(cones(diagram)(candidate))
+    assert ask(selected_limit.leg(source) * lift == to_a) is True
+
+    coequalizer = Sets.Colimits(shape)(diagram)
+    selected_colimit = Sets.Colimits(shape).universal_data(diagram)
+    assert len(tuple(coequalizer)) == 1
+    assert selected_colimit.leg(target)(B.point(0)) == selected_colimit.leg(target)(B.point(1))
+    C = Sets(("class",))
+    from_b = Mor(Sets)(B, C)({0: "class", 1: "class"})
+    from_a = from_b * first
+    cocandidate = cocone(diagram, C, lambda vertex: from_a if vertex is source else from_b)
+    descent = selected_colimit.lift(cocones(diagram)(cocandidate))
+    assert ask(descent * selected_colimit.leg(target) == from_b) is True
+
+
 test_native_finite_limit_and_colimit_over_three_vertices()
+test_native_parallel_pair_equalizer_and_coequalizer()

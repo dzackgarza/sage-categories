@@ -1667,9 +1667,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-runtime-reflection-probes`. Use exact instance-namespace membership for category state and `MethodType` for bound-handler recognition.
 
-
 ## Kernel role ownership repeated first-writer registry mutation
 
-- **Evidence and impact:** `kernel/roles.py` inserted declaration owners with identical `setdefault` calls in both category subclass preparation and declaration validation. The first-writer rule is semantic — one written role declaration has one mathematical owner — and deserves one named mutation path rather than two incidental dictionary operations.
+- **Evidence and impact:** `kernel/roles.py` inserted declaration owners with identical `setdefault` calls in both category subclass preparation and declaration validation.
+  The first-writer rule is semantic — one written role declaration has one mathematical owner — and deserves one named mutation path rather than two incidental dictionary operations.
 
 - **Repair link and acceptance:** `bloat-role-declaration-owner-retention`. Centralize first-owner retention in `_retain_declaration_owner` and invoke it from both paths.
+
+
+## BinaryRelations hand-rolled a nullable functor cache
+
+- **Evidence and impact:** `BinaryRelationsCategory.to_sets()` carried a `_forgetful: Functor | None` field, checked it on every call, and mutated it on first use. Sage `cached_method`, already the repository cache owner for category methods, provides the same once-per-instance semantics without nullable state or a second cache protocol.
+
+- **Repair link and acceptance:** `bloat-binary-relations-forgetful-cache`. Make `to_sets()` a `cached_method` and return the constructed functor directly.

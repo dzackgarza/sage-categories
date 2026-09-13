@@ -30,7 +30,7 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete, ThinCategory
-from sage_categories.kernel.sage_runtime import cached_function
+from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 type OrderRule = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType], Proposition]
 
@@ -106,8 +106,6 @@ def _decide_partial_order(
 
 class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
     """Sets equipped with a binary endorelation, and relation-preserving maps."""
-
-    _forgetful: Functor | None = None
 
     class ObjectType:
         def __init__(self, relation: CategoryOfCategories.ElementType) -> None:
@@ -231,23 +229,22 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         self.retain_inverses(forward, backward)
         return forward
 
+    @cached_method
     def to_sets(self) -> Functor:
         """The faithful isofibration ``(X, R) |-> X`` forgetting the relation (D163).
 
         It carries the chosen lift of a discrete set limit: the componentwise order on
         the selected set apex (D183, ``specs/ordered-sets.md``, "Products").
         """
-        if self._forgetful is None:
-            self._forgetful = (
-                Fun(self, Sets)
-                .Faithful()
-                .Isofibrations()(
-                    lambda relation_object: relation_object.carrier(),
-                    lambda arrow: arrow.underlying_map(),
-                )
-                .with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
+        return (
+            Fun(self, Sets)
+            .Faithful()
+            .Isofibrations()(
+                lambda relation_object: relation_object.carrier(),
+                lambda arrow: arrow.underlying_map(),
             )
-        return self._forgetful
+            .with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
+        )
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (self.to_sets(),)

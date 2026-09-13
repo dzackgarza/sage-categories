@@ -1,9 +1,11 @@
 """Ringed-space morphisms retain their continuous map and natural sheaf action."""
 
-from sage_categories.all import Mor, Sets, Cartesian
+from sage_categories import omega
+from sage_categories.all import Fun, Mor, NN, Sets, Cartesian
 from sage_categories.cat.calculus import binary_product_data
 from sage_categories.cat.structured_objects import Rings
 from sage_categories.geometry import RingedSpaces, TopologicalSpaces, ring_presheaf, ring_sheaf
+from sage_categories.geometry.sheaves import ring_presheaf_from_functor
 
 
 def residue_ring(modulus):
@@ -69,4 +71,43 @@ def test_ringed_map_has_natural_sheaf_action_with_exact_endpoints() -> None:
     assert sheaf_component.codomain() is source_sheaf.presheaf.section_ring(frozenset((0,)))
 
 
+def test_ringed_map_does_not_enumerate_a_represented_open_category() -> None:
+    spaces = TopologicalSpaces()
+    space = spaces.from_open_category(
+        NN,
+        NN,
+        omega,
+        lambda key: NN.point(key),
+        lambda key: omega(NN.point(key)),
+    )
+    ring, _ = residue_ring(5)
+    rings = Rings(Sets)
+    presheaf = ring_presheaf_from_functor(
+        space,
+        omega,
+        Fun(omega.op(), rings).constant(ring),
+        lambda key: omega(NN.point(key)),
+        lambda open_object: open_object.point().datum(),
+    )
+    sheaf = ring_sheaf(presheaf, lambda _open, _cover, local: local[0])
+    ringed = RingedSpaces()
+    ringed_space = ringed(space, sheaf)
+    continuous = spaces.morphism_with_inverse_image(
+        space,
+        space,
+        Mor(Sets)(NN, NN).one(),
+        Fun(omega, omega).one(),
+    )
+    morphism = ringed.homomorphism(
+        ringed_space,
+        ringed_space,
+        continuous,
+        lambda _key: Mor(rings)(ring, ring).one(),
+    )
+    assert morphism.domain() is ringed_space and morphism.codomain() is ringed_space
+    assert morphism.continuous_map() is continuous
+    assert morphism.sheaf_map().component(omega(NN.point(37))).domain() is ring
+
+
 test_ringed_map_has_natural_sheaf_action_with_exact_endpoints()
+test_ringed_map_does_not_enumerate_a_represented_open_category()

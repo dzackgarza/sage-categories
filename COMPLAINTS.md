@@ -646,3 +646,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/finite_categories.py::_evaluate` contained every category-kind dispatch branch and the full finite Grothendieck construction in one 15-complexity function. The dispatcher therefore owned both selection and the most involved evaluator, obscuring which code changes when a new finite category representation is added.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Split discrete, Grothendieck, presented, and opposite evaluation into named owners and make `_evaluate` a category-kind match whose cases only select the corresponding evaluator; keep slice/comma/limit and arrow-category adapters unchanged.
+
+## Cartesian monoidal construction embedded all comparison execution
+
+- **Evidence and impact:** `cat/monoidal.py::Cartesian` assembled the selected monoidal structure while also containing full associator rebracketing and two nearly identical left/right unitor native/fallback implementations. This made the constructor a 22-complexity owner for both declaration and execution details.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Move associator and shared unitor component execution to private helpers; leave `Cartesian` responsible only for assembling the tensor, unit, and natural isomorphisms from those component owners.

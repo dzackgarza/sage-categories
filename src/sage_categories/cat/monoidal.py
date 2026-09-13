@@ -341,104 +341,99 @@ def MonoidalStructures[BaseCategory: "Category[..., ...]"](base: BaseCategory) -
     return MonoidalStructuresCategory(base)
 
 
+def _cartesian_rebracket(
+    base: Category,
+    triple: CategoryOfCategories.ElementType,
+    forward: bool,
+) -> MorphismCategory.ObjectType:
+    """One component of the cartesian associator, native when available and universal otherwise."""
+    x, y, z = (triple.family_component(index) for index in range(3))
+    xy, yz = binary_product_data(base, x, y), binary_product_data(base, y, z)
+    left_product = binary_product_data(base, xy.apex(), z)
+    right_product = binary_product_data(base, x, yz.apex())
+    operation = "associator_forward" if forward else "associator_inverse"
+    native = _native_cartesian_comparison(
+        base,
+        operation,
+        x,
+        y,
+        z,
+        left_product.apex(),
+        right_product.apex(),
+    )
+    match native:
+        case None:
+            pass
+        case _:
+            return native
+    match forward:
+        case True:
+            source = left_product
+            return pair_maps(base, xy.leg(0) * source.leg(0), pair_maps(base, xy.leg(1) * source.leg(0), source.leg(1)))
+        case False:
+            source = right_product
+            return pair_maps(base, pair_maps(base, source.leg(0), yz.leg(0) * source.leg(1)), yz.leg(1) * source.leg(1))
+
+
+def _cartesian_unitor_component(
+    base: Category,
+    unit: CategoryOfCategories.ElementType,
+    value: CategoryOfCategories.ElementType,
+    side: str,
+    forward: bool,
+) -> MorphismCategory.ObjectType:
+    """One cartesian unitor component, sharing native/fallback selection for both sides."""
+    match side:
+        case "left":
+            product = binary_product_data(base, unit, value)
+            forward_leg = 1
+        case "right":
+            product = binary_product_data(base, value, unit)
+            forward_leg = 0
+        case _:
+            raise AssertionError(f"unknown cartesian unitor side {side!r}")
+    operation = f"{side}_unitor_{'forward' if forward else 'inverse'}"
+    native = _native_cartesian_comparison(base, operation, value, product.apex())
+    match native:
+        case None:
+            pass
+        case _:
+            return native
+    match side, forward:
+        case _, True:
+            return product.leg(forward_leg)
+        case "left", False:
+            return pair_maps(base, terminal_map(base, value), Mor(base)(value, value).one())
+        case "right", False:
+            return pair_maps(base, Mor(base)(value, value).one(), terminal_map(base, value))
+        case _:
+            raise AssertionError(f"unknown cartesian unitor direction {side!r}, {forward!r}")
+
+
 @cached_function(key=identity_key)
 def Cartesian(base: Category) -> MonoidalStructuresCategory.ObjectType:
     tensor, unit = product_functor(base), base.Terminal()
     left, right = tensor_parentheses(tensor)
-
-    def rebracket(triple: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
-        x, y, z = (triple.family_component(index) for index in range(3))
-        xy, yz = binary_product_data(base, x, y), binary_product_data(base, y, z)
-        left_product = binary_product_data(base, xy.apex(), z)
-        right_product = binary_product_data(base, x, yz.apex())
-        match forward:
-            case True:
-                operation = "associator_forward"
-            case False:
-                operation = "associator_inverse"
-        native = _native_cartesian_comparison(
-            base,
-            operation,
-            x,
-            y,
-            z,
-            left_product.apex(),
-            right_product.apex(),
-        )
-        match native is None:
-            case False:
-                return native
-            case True:
-                pass
-        match forward:
-            case True:
-                source = left_product
-                return pair_maps(base, xy.leg(0) * source.leg(0), pair_maps(base, xy.leg(1) * source.leg(0), source.leg(1)))
-            case False:
-                source = right_product
-                return pair_maps(base, pair_maps(base, source.leg(0), yz.leg(0) * source.leg(1)), yz.leg(1) * source.leg(1))
-
-    associator = natural_isomorphism(left, right, lambda triple: rebracket(triple, True), lambda triple: rebracket(triple, False))
+    associator = natural_isomorphism(
+        left,
+        right,
+        lambda triple: _cartesian_rebracket(base, triple, True),
+        lambda triple: _cartesian_rebracket(base, triple, False),
+    )
     left_unit, right_unit = tensor_units(tensor, unit)
     identity = Fun(base, base).one()
-
-    def left_unitor_component(x: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
-        product = binary_product_data(base, unit, x)
-        match forward:
-            case True:
-                operation = "left_unitor_forward"
-            case False:
-                operation = "left_unitor_inverse"
-        native = _native_cartesian_comparison(
-            base,
-            operation,
-            x,
-            product.apex(),
-        )
-        match native is None:
-            case False:
-                return native
-            case True:
-                match forward:
-                    case True:
-                        return product.leg(1)
-                    case False:
-                        return pair_maps(base, terminal_map(base, x), Mor(base)(x, x).one())
-
-    def right_unitor_component(x: CategoryOfCategories.ElementType, forward: bool) -> MorphismCategory.ObjectType:
-        product = binary_product_data(base, x, unit)
-        match forward:
-            case True:
-                operation = "right_unitor_forward"
-            case False:
-                operation = "right_unitor_inverse"
-        native = _native_cartesian_comparison(
-            base,
-            operation,
-            x,
-            product.apex(),
-        )
-        match native is None:
-            case False:
-                return native
-            case True:
-                match forward:
-                    case True:
-                        return product.leg(0)
-                    case False:
-                        return pair_maps(base, Mor(base)(x, x).one(), terminal_map(base, x))
 
     left_unitor = natural_isomorphism(
         left_unit,
         identity,
-        lambda x: left_unitor_component(x, True),
-        lambda x: left_unitor_component(x, False),
+        lambda x: _cartesian_unitor_component(base, unit, x, "left", True),
+        lambda x: _cartesian_unitor_component(base, unit, x, "left", False),
     )
     right_unitor = natural_isomorphism(
         right_unit,
         identity,
-        lambda x: right_unitor_component(x, True),
-        lambda x: right_unitor_component(x, False),
+        lambda x: _cartesian_unitor_component(base, unit, x, "right", True),
+        lambda x: _cartesian_unitor_component(base, unit, x, "right", False),
     )
     return MonoidalStructures(base)(tensor, unit, associator, left_unitor, right_unitor)
 

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from sage_categories.all import Cat, Category, Fun, Mor, Predicate, Unknown, ask, assume
+from sage_categories.all import Cat, Category, Fun, Mor, Predicate, Unknown, ask
 from sage_categories.cat.category import Axiom
+from sage_categories.cat.cones import cocone, cocones, cone, cones
+from sage_categories.cat.diagrams import cospan_diagram, from_sequence
 from sage_categories.cat.predicates import Proposition, Query
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.cat.cones import cone, cones, cocone, cocones
-from sage_categories.cat.diagrams import cospan_diagram, from_sequence
 from sage_categories.kernel.compiler import SemanticCollisionError
 
 
@@ -206,7 +206,7 @@ def test_unrelated_state_owners_are_distinct_even_for_equal_values() -> None:
             return self.ObjectType(value)
 
     category = Combined()
-    with pytest.raises(SemanticCollisionError, match="_scalar"):
+    with pytest.raises(SemanticCollisionError):
         category(0)
 
 

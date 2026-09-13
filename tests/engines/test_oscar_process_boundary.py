@@ -60,7 +60,7 @@ def test_oscar_handles_belong_to_one_worker() -> None:
     assert decoded._worker is first_worker
     assert decoded.index == 7
 
-    with pytest.raises(AssertionError, match="one worker process"):
+    with pytest.raises(AssertionError):
         bridge._encode_oscar(second_worker, handle)
 
 

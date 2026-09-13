@@ -1490,40 +1490,61 @@ def _public_names(tree: ast.Module) -> tuple[str, ...]:
     return ()
 
 
-def _project_source_value_aliases(tree: ast.Module, source: ast.Module) -> None:
-    """Restore exact source re-exports that parse-only stubgen cannot infer.
+def _existing_import_bindings(tree: ast.Module) -> set[str]:
+    """Return local names already bound by generated imports."""
+    return {
+        alias.asname or alias.name
+        for statement in tree.body
+        if isinstance(statement, ast.Import | ast.ImportFrom)
+        for alias in statement.names
+    }
 
-    This covers both value aliases such as ``Cat = _category.Cat`` and imported
-    re-exports whose public spelling differs from the imported one, such as
-    ``cones as Cones``.  Both are source declarations; neither is a second static
-    authority.
-    """
-    public = frozenset(_public_names(source))
-    existing_imports = {alias.asname or alias.name for statement in tree.body if isinstance(statement, ast.Import | ast.ImportFrom) for alias in statement.names}
-    imported_aliases: list[ast.ImportFrom] = []
+
+def _public_import_aliases(
+    source: ast.Module,
+    public: frozenset[str],
+    existing: set[str],
+) -> list[ast.ImportFrom]:
+    """Project public renamed from-imports omitted by parse-only stubgen."""
+    aliases: list[ast.ImportFrom] = []
     for statement in source.body:
         if not isinstance(statement, ast.ImportFrom) or statement.module is None or statement.level != 0:
             continue
         for alias in statement.names:
             bound = alias.asname or alias.name
-            if bound in public and alias.asname is not None and bound not in existing_imports:
-                imported_aliases.append(
-                    ast.ImportFrom(
-                        module=statement.module,
-                        names=[ast.alias(name=alias.name, asname=bound)],
-                        level=0,
-                    )
+            if bound not in public or alias.asname is None or bound in existing:
+                continue
+            aliases.append(
+                ast.ImportFrom(
+                    module=statement.module,
+                    names=[ast.alias(name=alias.name, asname=bound)],
+                    level=0,
                 )
+            )
+    return aliases
 
+
+def _source_module_aliases(source: ast.Module) -> dict[str, str]:
+    """Map source-local import spellings to their fully qualified modules/names."""
     module_aliases: dict[str, str] = {}
     for statement in source.body:
-        if isinstance(statement, ast.Import):
-            for alias in statement.names:
-                module_aliases[alias.asname or alias.name.split(".", 1)[0]] = alias.name
-        elif isinstance(statement, ast.ImportFrom) and statement.module is not None and statement.level == 0:
-            for alias in statement.names:
-                module_aliases[alias.asname or alias.name] = f"{statement.module}.{alias.name}"
+        match statement:
+            case ast.Import(names=aliases):
+                for alias in aliases:
+                    module_aliases[alias.asname or alias.name.split(".", 1)[0]] = alias.name
+            case ast.ImportFrom(module=module, level=0) if module is not None:
+                for alias in statement.names:
+                    module_aliases[alias.asname or alias.name] = f"{module}.{alias.name}"
+            case _:
+                pass
+    return module_aliases
 
+
+def _source_attribute_aliases(
+    source: ast.Module,
+    module_aliases: dict[str, str],
+) -> dict[str, tuple[str, str]]:
+    """Return source assignments of the form ``Public = imported_module.name``."""
     aliases: dict[str, tuple[str, str]] = {}
     for statement in source.body:
         if not isinstance(statement, ast.Assign) or len(statement.targets) != 1:
@@ -1535,6 +1556,29 @@ def _project_source_value_aliases(tree: ast.Module, source: ast.Module) -> None:
         module = module_aliases.get(value.value.id)
         if module is not None:
             aliases[target.id] = (module, value.attr)
+    return aliases
+
+
+def _insert_imports(tree: ast.Module, imports: list[ast.stmt]) -> None:
+    """Insert imports after the generated import block."""
+    insertion = next(
+        (index for index, statement in enumerate(tree.body) if not isinstance(statement, ast.Import | ast.ImportFrom)),
+        len(tree.body),
+    )
+    tree.body[insertion:insertion] = imports
+
+
+def _project_source_value_aliases(tree: ast.Module, source: ast.Module) -> None:
+    """Restore exact source re-exports that parse-only stubgen cannot infer.
+
+    This covers both value aliases such as ``Cat = _category.Cat`` and imported
+    re-exports whose public spelling differs from the imported one, such as
+    ``cones as Cones``.  Both are source declarations; neither is a second static
+    authority.
+    """
+    public = frozenset(_public_names(source))
+    imported_aliases = _public_import_aliases(source, public, _existing_import_bindings(tree))
+    aliases = _source_attribute_aliases(source, _source_module_aliases(source))
     if not aliases and not imported_aliases:
         return
 
@@ -1548,11 +1592,7 @@ def _project_source_value_aliases(tree: ast.Module, source: ast.Module) -> None:
         for target, (module, name) in sorted(aliases.items())
     ]
     imports.extend(imported_aliases)
-    insertion = next(
-        (index for index, statement in enumerate(tree.body) if not isinstance(statement, ast.Import | ast.ImportFrom)),
-        len(tree.body),
-    )
-    tree.body[insertion:insertion] = imports
+    _insert_imports(tree, imports)
 
 
 def _project_quoted_type_parameter_references(

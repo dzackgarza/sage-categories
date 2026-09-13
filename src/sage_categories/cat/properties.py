@@ -499,8 +499,9 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         if connection is None:
             return
         declaring_class, name = connection
-        assert hasattr(declaring_class, name), f"{declaring_class.__name__}.{name} does not exist"
-        axiom = getattr(declaring_class, name)
+        declarations = vars(declaring_class)
+        assert name in declarations, f"{declaring_class.__name__}.{name} does not exist"
+        axiom = declarations[name]
         assert isinstance(axiom, Axiom), f"{declaring_class.__name__}.{name} is not an axiom, so {cls.__name__} cannot implement it"
         axiom.implemented_by(cls)
 

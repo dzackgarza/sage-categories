@@ -1203,3 +1203,9 @@ Ideas, to be weighed, not obligations.*
   Since `Fun` is exactly `Mor(Cat)`, its base category is the owned `Cat` object; a second constructor import duplicates both the bootstrap boundary and the mathematical source of truth.
 
 - **Repair link and acceptance:** `bloat-property-cat-derivation`. Recover `Cat` through `_functors().base_category()`, pass that retained category object through pullback construction, and remove the separate `Cat` import/call path.
+
+## Property-subcategory registration probed a declaration with hasattr/getattr
+
+- **Evidence and impact:** `PropertySubcategory.__init_subclass__` receives the exact class and axiom spelling in `_base_category_class_and_axiom`, yet it used `hasattr` followed by `getattr`. That permits inherited or descriptor-mediated lookup where the contract names a declaration owner, and repeats a dynamic probe instead of reading the stated class namespace once.
+
+- **Repair link and acceptance:** `bloat-property-axiom-declaration-probe`. Read `vars(declaring_class)` once, require the named axiom to be present in that exact declaration namespace, and bind the implementation from that value with no `hasattr`/`getattr` probe.

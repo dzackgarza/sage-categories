@@ -1328,9 +1328,9 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-predicate-owned-atom-import`. Bind `_owned_atom` once with the other kernel predicate operations and let `AppliedQuery._sympy_()` use that shared module-level owner.
 
-
 ## Discrete and thin shapes duplicated the same retained point record
 
-- **Evidence and impact:** `cat/shapes.py` defined separate `DiscreteObjectData` and `ThinObjectData` dataclasses with the same sole `point` field, and both object constructors copied that field into identical retained state. The distinction between the two shapes is in morphism admission/order semantics, not in their point payload.
+- **Evidence and impact:** `cat/shapes.py` defined separate `DiscreteObjectData` and `ThinObjectData` dataclasses with the same sole `point` field, and both object constructors copied that field into identical retained state.
+  The distinction between the two shapes is in morphism admission/order semantics, not in their point payload.
 
 - **Repair link and acceptance:** `bloat-shape-point-object-data`. Keep one private `_PointObjectData` record and let both point-indexed shape object classes consume it while retaining their separate category and morphism logic.

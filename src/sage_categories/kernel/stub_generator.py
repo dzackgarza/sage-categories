@@ -468,75 +468,95 @@ def _publicize_private_type_parameters(tree: ast.Module) -> None:
             _publicize_private_type_parameter_scope(statement)
 
 
-def _unquote_stub_annotations(tree: ast.Module) -> None:
-    """Replace source forward-reference strings by their Python 3.14 type syntax."""
+class _ForwardReferenceUnquoter(ast.NodeTransformer):
+    """Unquote type-expression strings while preserving Literal/Annotated payloads."""
 
-    class ForwardReferences(ast.NodeTransformer):
-        def visit_Constant(self, node: ast.Constant) -> ast.expr:
-            if not isinstance(node.value, str):
-                return node
-            try:
-                expression = ast.parse(node.value, mode="eval").body
-            except SyntaxError:
-                return node
-            return ast.copy_location(expression, node)
+    def visit_Constant(self, node: ast.Constant) -> ast.expr:
+        if not isinstance(node.value, str):
+            return node
+        try:
+            expression = ast.parse(node.value, mode="eval").body
+        except SyntaxError:
+            return node
+        return ast.copy_location(expression, node)
 
-        def visit_Subscript(self, node: ast.Subscript) -> ast.expr:
-            name = _dotted_name(node.value)
-            if name is not None and name.rsplit(".", 1)[-1] == "Literal":
+    def visit_Subscript(self, node: ast.Subscript) -> ast.expr:
+        name = _dotted_name(node.value)
+        special = name.rsplit(".", 1)[-1] if name is not None else None
+        match special:
+            case "Literal":
                 return node
-            if name is not None and name.rsplit(".", 1)[-1] == "Annotated":
-                if isinstance(node.slice, ast.Tuple) and node.slice.elts:
-                    first, *metadata = node.slice.elts
-                    node.slice = ast.Tuple(elts=[self.visit(first), *metadata], ctx=node.slice.ctx)
-                else:
-                    node.slice = self.visit(node.slice)
+            case "Annotated":
+                node.slice = _unquote_annotated_slice(self, node.slice)
                 node.value = self.visit(node.value)
                 return node
-            return self.generic_visit(node)
+            case _:
+                return self.generic_visit(node)
 
-    forward = ForwardReferences()
 
-    def type_expression(expression: ast.expr | None) -> ast.expr | None:
-        return forward.visit(expression) if expression is not None else None
+def _unquote_annotated_slice(
+    unquoter: _ForwardReferenceUnquoter,
+    slice_expression: ast.expr,
+) -> ast.expr:
+    """Unquote only the type operand of ``Annotated[T, metadata...]``."""
+    if isinstance(slice_expression, ast.Tuple) and slice_expression.elts:
+        first, *metadata = slice_expression.elts
+        return ast.Tuple(elts=[unquoter.visit(first), *metadata], ctx=slice_expression.ctx)
+    return unquoter.visit(slice_expression)
 
-    def type_parameters(parameters: list[ast.type_param]) -> None:
-        for parameter in parameters:
-            if isinstance(parameter, ast.TypeVar):
-                parameter.bound = type_expression(parameter.bound)
-            parameter.default_value = type_expression(parameter.default_value)
 
-    class Annotations(ast.NodeTransformer):
-        def visit_arg(self, node: ast.arg) -> ast.arg:
-            node.annotation = type_expression(node.annotation)
-            return node
+_FORWARD_REFERENCE_UNQUOTER = _ForwardReferenceUnquoter()
 
-        def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> ast.stmt:
-            type_parameters(node.type_params)
-            node.returns = type_expression(node.returns)
-            return self.generic_visit(node)
 
-        def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.stmt:
-            return self._visit_function(node)
+def _unquoted_type_expression(expression: ast.expr | None) -> ast.expr | None:
+    """Return one annotation expression with parseable forward references unquoted."""
+    return _FORWARD_REFERENCE_UNQUOTER.visit(expression) if expression is not None else None
 
-        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.stmt:
-            return self._visit_function(node)
 
-        def visit_ClassDef(self, node: ast.ClassDef) -> ast.stmt:
-            type_parameters(node.type_params)
-            node.bases = [type_expression(base) for base in node.bases]
-            return self.generic_visit(node)
+def _unquote_type_parameters(parameters: list[ast.type_param]) -> None:
+    """Unquote bounds and defaults on one PEP-695 parameter list."""
+    for parameter in parameters:
+        if isinstance(parameter, ast.TypeVar):
+            parameter.bound = _unquoted_type_expression(parameter.bound)
+        parameter.default_value = _unquoted_type_expression(parameter.default_value)
 
-        def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.stmt:
-            node.annotation = type_expression(node.annotation)
-            return self.generic_visit(node)
 
-        def visit_TypeAlias(self, node: ast.TypeAlias) -> ast.stmt:
-            type_parameters(node.type_params)
-            node.value = type_expression(node.value)
-            return self.generic_visit(node)
+class _StubAnnotationUnquoter(ast.NodeTransformer):
+    """Apply forward-reference unquoting only at static type-expression positions."""
 
-    Annotations().visit(tree)
+    def visit_arg(self, node: ast.arg) -> ast.arg:
+        node.annotation = _unquoted_type_expression(node.annotation)
+        return node
+
+    def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> ast.stmt:
+        _unquote_type_parameters(node.type_params)
+        node.returns = _unquoted_type_expression(node.returns)
+        return self.generic_visit(node)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.stmt:
+        return self._visit_function(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.stmt:
+        return self._visit_function(node)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> ast.stmt:
+        _unquote_type_parameters(node.type_params)
+        node.bases = [_unquoted_type_expression(base) for base in node.bases]
+        return self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.stmt:
+        node.annotation = _unquoted_type_expression(node.annotation)
+        return self.generic_visit(node)
+
+    def visit_TypeAlias(self, node: ast.TypeAlias) -> ast.stmt:
+        _unquote_type_parameters(node.type_params)
+        node.value = _unquoted_type_expression(node.value)
+        return self.generic_visit(node)
+
+
+def _unquote_stub_annotations(tree: ast.Module) -> None:
+    """Replace source forward-reference strings by their Python 3.14 type syntax."""
+    _StubAnnotationUnquoter().visit(tree)
 
 
 def _normalize_stub_class_bodies(tree: ast.Module) -> None:

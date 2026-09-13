@@ -472,7 +472,6 @@ class LimitsCategory(ApexCategory):
     ) -> None:
         assert shape in Cat(), f"{shape!r} is not a shape"
         self._shape = shape
-        self._limit_functor: MonoDict = MonoDict()
         self._pullback_transformations: TripleDict = TripleDict(weak_values=False)
         super().__init__(
             ambient,
@@ -522,14 +521,14 @@ class LimitsCategory(ApexCategory):
         assert diagram in self.diagrams() and presentation in limit_cones(diagram)
         return self._retain(diagram, presentation.apex(), presentation)
 
+    @cached_method
     def limit_functor(self) -> Functor:
         """The total chosen limit functor, when ``C`` declares an ``I``-limit construction."""
-        if self not in self._limit_functor:
-            self._limit_functor[self] = limit_functor(self)
-            _register_construction_full_image(self._limit_functor[self], self)
+        result = limit_functor(self)
+        _register_construction_full_image(result, self)
         if self._shape.is_discrete():
             self.ambient().Products().retain_full_image(self)
-        return self._limit_functor[self]
+        return result
 
     def defining_functor(self) -> Functor:
         return self.limit_functor()

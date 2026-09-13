@@ -1768,3 +1768,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `FinitePresentedCategory.object_set()` and `_chosen_morphism_set()` each allocated a per-instance `MonoDict`, then keyed that table by the instance itself to retain exactly one nullary result. The identity table added an extra container and mutation protocol around values already determined solely by the category instance.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache both nullary set-valued accessors with Sage `cached_method` and remove the two one-entry `MonoDict` fields.
+
+## Limit categories wrapped one nullary structural functor in a one-entry MonoDict
+
+- **Evidence and impact:** `LimitsCategory.limit_functor()` stored its single per-instance result in `_limit_functor: MonoDict` keyed by `self`, then repeated lookup/insertion logic around the actual construction. The category already imports Sage `cached_method`, and the result is determined solely by the instance.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache `limit_functor()` with `cached_method`, keep full-image/product registration inside its first evaluation, and remove the one-entry identity table.

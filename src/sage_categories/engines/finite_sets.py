@@ -15,6 +15,7 @@ from sage.libs.gap.libgap import libgap
 
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.predicates import Unknown, UnknownClass
 from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
 from sage_categories.sets._finite_cap import (
     finite_native_morphism,
@@ -26,7 +27,9 @@ from sage_categories.sets._finite_cap import (
 )
 
 if TYPE_CHECKING:
+    from sage_categories.cat.category import CategoryOfCategories
     from sage_categories.cat.cones import ConeCategory
+    from sage_categories.cat.finite_categories import FiniteCategoryData
     from sage_categories.cat.functors import Functor
 
 __all__ = [
@@ -51,6 +54,15 @@ __all__ = [
 def _category() -> GapElement:
     load_packages(FINITE_SETS_PACKAGES)
     return libgap.SkeletalFinSets
+
+
+def _finite_category_data(
+    category: CategoryOfCategories.ElementType,
+) -> FiniteCategoryData | UnknownClass:
+    """Evaluate a finite category lazily so this engine does not enter the category evaluator during import."""
+    from sage_categories.cat.finite_categories import finite_category
+
+    return finite_category(category)
 
 
 def _index(realization: object, datum: object) -> int:
@@ -80,7 +92,6 @@ def _native_object_if_finite(value: object) -> GapElement | None:
     arbitrary owned sets.  Their source/target is lowered only when the owned finite-set
     evaluator applies on that endpoint.
     """
-    from sage_categories.cat.predicates import Unknown
     from sage_categories.sets.finite import _finite_data
 
     if _finite_data(value) is Unknown:
@@ -245,10 +256,7 @@ def _native_map_on_owned_endpoints(
 
 
 def _native_diagram(diagram: Functor):
-    from sage_categories.cat.finite_categories import finite_category
-    from sage_categories.cat.predicates import Unknown
-
-    finite = finite_category(diagram.domain())
+    finite = _finite_category_data(diagram.domain())
     assert finite is not Unknown, "native finite-set execution requires exact finite structural data"
     vertices = tuple(finite.objects)
     positions = {id(vertex): index for index, vertex in enumerate(vertices)}
@@ -466,10 +474,8 @@ def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
 
 
 def primitive_limit(diagram: Functor) -> object:
-    from sage_categories.cat.finite_categories import finite_category
-
     shape = diagram.domain()
-    vertices = tuple(finite_category(shape).objects)
+    vertices = tuple(_finite_category_data(shape).objects)
     if shape.is_discrete():
         return _product(diagram, vertices)
     return _equalizer(diagram, vertices)
@@ -576,10 +582,8 @@ def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
 
 
 def primitive_colimit(diagram: Functor) -> object:
-    from sage_categories.cat.finite_categories import finite_category
-
     shape = diagram.domain()
-    vertices = tuple(finite_category(shape).objects)
+    vertices = tuple(_finite_category_data(shape).objects)
     if shape.is_discrete():
         return _coproduct(diagram, vertices)
     return _coequalizer(diagram, vertices)

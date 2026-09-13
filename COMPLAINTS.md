@@ -748,3 +748,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/finite_categories.py` imported `engines.category_limits` independently in Grothendieck evaluation and in general strict-limit evaluation. The delay is useful because the public category evaluator should not load GAP adapters until a finite native calculation needs them, but duplicating that delayed import gave the engine boundary two owners.
 
 - **Repair link and acceptance:** `bloat-finite-category-limit-engine`. Preserve delayed loading behind one `_category_limits_engine()` helper and use it for matching triples plus compatible-family evaluation.
+
+## FinSetsForCAP repeated its lazy finite-category evaluator boundary
+
+- **Evidence and impact:** `engines/finite_sets.py` imported `finite_category` independently in native diagram lowering, primitive finite limits, and primitive finite colimits, and imported `Unknown` separately in two of those finite-admission paths. The category evaluator is intentionally delayed to avoid import-cycle pressure, but the delay had three separate spellings.
+
+- **Repair link and acceptance:** `bloat-finite-sets-category-evaluator`. Keep evaluator loading lazy behind `_finite_category_data()`, bind `Unknown` once, and route all finite shape/diagram evaluation through that one private boundary.

@@ -70,9 +70,6 @@ def _denoted_morphism(candidate: CategoryOfCategories.ElementType) -> CategoryOf
     return candidate
 
 
-def _structure_of(member_object: SliceLikeCategory.ObjectType) -> MorphismCategory.ObjectType:
-    return member_object.arrow()
-
 
 def _is_slice_over(category: SliceLikeCategory) -> bool:
     """Whether this specialization fixes the codomain rather than the domain."""

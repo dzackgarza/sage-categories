@@ -12,7 +12,7 @@ import copy
 import os
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from importlib import import_module
 from pathlib import Path
 from shutil import which
@@ -1259,6 +1259,84 @@ def _statement_names(statement: ast.stmt) -> frozenset[str]:
             return frozenset()
 
 
+def _top_level_declarations(tree: ast.Module) -> dict[str, list[ast.stmt]]:
+    """Index one module's top-level declarations by every name they bind."""
+    declarations: dict[str, list[ast.stmt]] = {}
+    for statement in tree.body:
+        for name in _statement_names(statement):
+            _list_bucket(declarations, name).append(statement)
+    return declarations
+
+
+def _loaded_names_in(statements: Iterable[ast.stmt]) -> set[str]:
+    """Return names loaded anywhere in the supplied statements."""
+    return {
+        expression.id
+        for statement in statements
+        for expression in ast.walk(statement)
+        if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
+    }
+
+
+def _internal_definition_closure(
+    declarations: dict[str, list[ast.stmt]],
+    names: frozenset[str],
+) -> set[str]:
+    """Close explicitly requested internal declarations under top-level name dependencies."""
+    required = set(names)
+    while True:
+        selected = {
+            id(statement): statement
+            for name in required
+            if name in declarations
+            for statement in declarations[name]
+        }
+        added = (_loaded_names_in(selected.values()) & declarations.keys()) - required
+        if not added:
+            return required
+        required.update(added)
+
+
+def _bound_import_name(alias: ast.alias, *, from_import: bool) -> str:
+    """The local name bound by one ordinary or from-import alias."""
+    if alias.asname is not None:
+        return alias.asname
+    return alias.name if from_import else alias.name.split(".", 1)[0]
+
+
+def _required_internal_imports(
+    tree: ast.Module,
+    private_tree: ast.Module,
+    required_names: set[str],
+) -> list[ast.stmt]:
+    """Project imports needed by copied internal definitions and not already bound."""
+    already_imported = {
+        _bound_import_name(alias, from_import=isinstance(statement, ast.ImportFrom))
+        for statement in tree.body
+        if isinstance(statement, ast.Import | ast.ImportFrom)
+        for alias in statement.names
+    }
+    imports: list[ast.stmt] = []
+    for statement in private_tree.body:
+        if not isinstance(statement, ast.Import | ast.ImportFrom):
+            continue
+        from_import = isinstance(statement, ast.ImportFrom)
+        aliases = [
+            copy.deepcopy(alias)
+            for alias in statement.names
+            if _bound_import_name(alias, from_import=from_import) in required_names - already_imported
+        ]
+        if not aliases:
+            continue
+        match statement:
+            case ast.ImportFrom():
+                imports.append(ast.ImportFrom(module=statement.module, names=aliases, level=statement.level))
+            case ast.Import():
+                imports.append(ast.Import(names=aliases))
+        already_imported.update(_bound_import_name(alias, from_import=from_import) for alias in aliases)
+    return imports
+
+
 def _project_internal_definitions(
     tree: ast.Module,
     private_tree: ast.Module,
@@ -1268,22 +1346,8 @@ def _project_internal_definitions(
     if not names:
         return
     existing = {name for statement in tree.body for name in _statement_names(statement)}
-    declarations: dict[str, list[ast.stmt]] = {}
-    for statement in private_tree.body:
-        for name in _statement_names(statement):
-            _list_bucket(declarations, name).append(statement)
-
-    required = set(names)
-    while True:
-        selected = {id(statement): statement for name in required if name in declarations for statement in declarations[name]}
-        loaded = {
-            expression.id for statement in selected.values() for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
-        }
-        added = (loaded & declarations.keys()) - required
-        if not added:
-            break
-        required.update(added)
-
+    declarations = _top_level_declarations(private_tree)
+    required = _internal_definition_closure(declarations, names)
     missing = required - existing
     if not missing:
         return
@@ -1294,41 +1358,7 @@ def _project_internal_definitions(
     if unresolved:
         raise ValueError(f"private stub projection omitted package-internal declarations: {sorted(unresolved)!r}")
 
-    required_import_names = {
-        expression.id for statement in additions for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
-    }
-
-    def bound_name(alias: ast.alias, *, from_import: bool) -> str:
-        if alias.asname is not None:
-            return alias.asname
-        return alias.name if from_import else alias.name.split(".", 1)[0]
-
-    already_imported = {
-        bound_name(alias, from_import=isinstance(statement, ast.ImportFrom))
-        for statement in tree.body
-        if isinstance(statement, ast.Import | ast.ImportFrom)
-        for alias in statement.names
-    }
-    imports: list[ast.stmt] = []
-    for statement in private_tree.body:
-        if not isinstance(statement, ast.Import | ast.ImportFrom):
-            continue
-        from_import = isinstance(statement, ast.ImportFrom)
-        aliases = [copy.deepcopy(alias) for alias in statement.names if bound_name(alias, from_import=from_import) in required_import_names - already_imported]
-        if not aliases:
-            continue
-        if isinstance(statement, ast.ImportFrom):
-            imports.append(
-                ast.ImportFrom(
-                    module=statement.module,
-                    names=aliases,
-                    level=statement.level,
-                )
-            )
-        else:
-            imports.append(ast.Import(names=aliases))
-        already_imported.update(bound_name(alias, from_import=from_import) for alias in aliases)
-
+    imports = _required_internal_imports(tree, private_tree, _loaded_names_in(additions))
     insertion = next(
         (index for index, statement in enumerate(tree.body) if not isinstance(statement, ast.Import | ast.ImportFrom)),
         len(tree.body),

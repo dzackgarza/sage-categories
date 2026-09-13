@@ -212,7 +212,6 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
     def __init__(self, diagram: Functor) -> None:
         self._diagram = diagram
-        self._finite_data: MonoDict = MonoDict()
         # The compatibility decision of each family this category has been asked about
         # (``_components_agree_along_diagram``): an undecided family keeps ``None`` here
         # and stays undecided, so retention changes speed and not the answer.
@@ -279,16 +278,22 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         """``Discrete(Ob(I))``: the index of the family products, one position per object of the shape."""
         return Discrete(self.shape().object_set())
 
-    def _families(
+    def _family_product(
         self,
-        kind: str,
         factor_set: Callable[[Category], CategoryOfCategories.ElementType],
     ) -> CategoryOfCategories.ElementType:
-        if kind not in self._finite_data:
-            shape = self.shape()
-            diagram = Fun(self._positions(), Sets).from_object_rule(lambda position: factor_set(self.factor(shape.object_at(position.point()))))
-            self._finite_data[kind] = Sets.Products()(diagram)
-        return self._finite_data[kind]
+        """The product of one selected set-valued family over the shape objects."""
+        shape = self.shape()
+        diagram = Fun(self._positions(), Sets).from_object_rule(lambda position: factor_set(self.factor(shape.object_at(position.point()))))
+        return Sets.Products()(diagram)
+
+    @cached_method
+    def _object_families(self) -> CategoryOfCategories.ElementType:
+        return self._family_product(lambda factor: factor.object_set())
+
+    @cached_method
+    def _morphism_families(self) -> CategoryOfCategories.ElementType:
+        return self._family_product(lambda factor: ask(factor.morphism_set()))
 
     def _component_at(
         self,
@@ -315,35 +320,34 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
     def _compatible_family_subset(
         self,
-        kind: str,
         families: CategoryOfCategories.ElementType,
         rule: Callable[[CategoryOfCategories.ElementType], ObjectRule | MorphismRule],
     ) -> CategoryOfCategories.ElementType:
-        """Retain the subfamily whose components satisfy the shape's generator equations."""
+        """Return the subfamily whose components satisfy the shape's generator equations."""
         if not self._generators():
             return families
-        if kind not in self._finite_data:
-            self._finite_data[kind] = families.subset_from(lambda datum: ask(self._agrees(rule(families.point(datum)))))
-        return self._finite_data[kind]
+        return families.subset_from(lambda datum: ask(self._agrees(rule(families.point(datum)))))
 
+    @cached_method
     def object_set(self) -> CategoryOfCategories.ElementType:
-        families = self._families("objects", lambda factor: factor.object_set())
-        return self._compatible_family_subset("object set", families, lambda point: self._object_rule(families, point))
+        families = self._object_families()
+        return self._compatible_family_subset(families, lambda point: self._object_rule(families, point))
 
     def object_at(self, point: CategoryOfCategories.ElementType) -> LimitCategory.ObjectType:
-        return self(self._object_rule(self._families("objects", lambda factor: factor.object_set()), point))
+        return self(self._object_rule(self._object_families(), point))
 
+    @cached_method
     def _chosen_morphism_set(self) -> CategoryOfCategories.ElementType | UnknownClass:
         vertices = self._vertices()
         if vertices is Unknown:
             return Unknown
         if any(ask(self.factor(vertex).morphism_set()) is Unknown for vertex in vertices):
             return Unknown
-        families = self._families("morphisms", lambda factor: ask(factor.morphism_set()))
-        return self._compatible_family_subset("morphism set", families, lambda point: self._morphism_rule(families, point))
+        families = self._morphism_families()
+        return self._compatible_family_subset(families, lambda point: self._morphism_rule(families, point))
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> LimitCategory.MorphismType:
-        rule = self._morphism_rule(self._families("morphisms", lambda factor: ask(factor.morphism_set())), point)
+        rule = self._morphism_rule(self._morphism_families(), point)
         return self.construct_morphism(
             self(lambda vertex: rule(vertex).domain()),
             self(lambda vertex: rule(vertex).codomain()),

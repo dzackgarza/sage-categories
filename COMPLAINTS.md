@@ -1780,3 +1780,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `SliceProperty.defining_arrow()` allocated `_retained: MonoDict`, keyed it by the slice-property instance, and stored exactly one structural functor. The method result is nullary and immutable for the instance, while Sage `cached_method` is already the cache owner in the module.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `defining_arrow()` with `cached_method` and remove the one-entry `_retained` table.
+
+## Finite Cat limits multiplexed four nullary results through string cache keys
+
+- **Evidence and impact:** `LimitCategory` stored object-family products, morphism-family products, and their two compatibility subsets in one `_finite_data: MonoDict` addressed by the strings `"objects"`, `"morphisms"`, `"object set"`, and `"morphism set"`. The four values are distinct nullary results of the category instance; the string dispatch obscured their types and used an identity table for symbolic tags.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Give object/morphism family products and compatible object/morphism sets named cached methods, remove `_finite_data`, and leave compatibility-subset construction free of internal string dispatch.

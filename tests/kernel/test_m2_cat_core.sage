@@ -10,7 +10,9 @@ from sage_categories.cat.morphisms import FixedEndpointCategory, Mor, MorphismCa
 from sage_categories.cat.opposites import Op, op_squared_isomorphism
 from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import Proposition, Unknown, register_handler
+from sage_categories.cat.shapes import Discrete
 from sage_categories.kernel.refinement import _join
+from sage_categories.sets.finite import Sets
 
 
 def test_point_category_uses_generic_empty_structure_surface() -> None:
@@ -199,6 +201,11 @@ def test_the_three_role_types_a_functor_and_a_transformation_are_one_tower() -> 
 
 def test_functors_and_two_morphisms_are_owned_and_distinct() -> None:
     category = Cat().Simplex(1)
+    indices = Sets((0, 1))
+    discrete = Discrete(indices)
+    zero = discrete.object_at(indices.point(0))
+    assert zero.point().datum() == 0
+    assert zero.category() is discrete
     first = _identity_functor(category)
     second = _identity_functor(category)
     assert first is not second

@@ -111,16 +111,6 @@ def compose_functors(first: MorphismCategory.ObjectType, second: MorphismCategor
     return _bridge().compose_functors(ensure_native_functor(first), ensure_native_functor(second))
 
 
-def _retain_transformation(
-    value: MorphismCategory.ObjectType,
-    source: MorphismCategory.ObjectType,
-    target: MorphismCategory.ObjectType,
-    native: object,
-) -> object:
-    retain_native_transformation(value, source, target, native)
-    return native
-
-
 def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:
     if has_native_transformation(value):
         return retained_native_transformation(value).native
@@ -163,7 +153,8 @@ def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:
             )
         case _:
             raise AssertionError(f"unknown Catlab transformation recipe {recipe!r}")
-    return _retain_transformation(value, source, target, native)
+    retain_native_transformation(value, source, target, native)
+    return native
 
 
 def transformation_component(value: MorphismCategory.ObjectType, member_object: object) -> object:

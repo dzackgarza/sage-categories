@@ -1633,11 +1633,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         ) -> MorphismCategory.ObjectType:
             source, target = self.domain(), self.codomain()
             if is_placed(morphism, source.morphism_category(1).Isomorphisms()):
-                refine(image, target.morphism_category(1).Isomorphisms())
                 inverse = source.retained_inverse(morphism)
                 if inverse is not None and target.retained_inverse(image) is None:
                     inverse_image = self._cached_morphism_image(inverse, on_object, construct)
                     target.retain_inverses(image, inverse_image)
+                refine(image, target.morphism_category(1).Isomorphisms())
             return image
 
         def on_morphism(self, morphism: DomainMorphism) -> CodomainMorphism:

@@ -330,6 +330,7 @@ class ElementConstructionContext(_ConstructionContext):
     nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
 
+
 @dataclass(slots=True)
 class MorphismConstructionContext(_ConstructionContext):
     """One morphism identity and the closed node steps of its C3 constructor chain."""
@@ -339,6 +340,7 @@ class MorphismConstructionContext(_ConstructionContext):
     cat_element_identity: CategoryPointIdentity
     nodes: tuple[Node, ...]
     initialized: list[Node] = field(default_factory=list)
+
 
 _object_context: ContextVar[ObjectConstructionContext | None] = ContextVar("object construction context", default=None)
 _element_context: ContextVar[ElementConstructionContext | None] = ContextVar("element construction context", default=None)

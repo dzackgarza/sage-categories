@@ -210,11 +210,11 @@ def _stub_loaded_names(tree: ast.Module) -> frozenset[str]:
     """Names read by projected declarations after import statements are removed."""
     return frozenset(
         {
-        node.id
-        for statement in tree.body
-        if not isinstance(statement, ast.Import | ast.ImportFrom)
-        for node in ast.walk(statement)
-        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
+            node.id
+            for statement in tree.body
+            if not isinstance(statement, ast.Import | ast.ImportFrom)
+            for node in ast.walk(statement)
+            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
         }
     )
 
@@ -418,11 +418,7 @@ class _PrivateTypeParameterRenamer(ast.NodeTransformer):
 
 def _private_type_parameter_names(parameters: list[ast.type_param]) -> dict[str, str]:
     """Return the public spellings of private type parameters in one lexical scope."""
-    names = {
-        parameter.name: parameter.name.lstrip("_")
-        for parameter in parameters
-        if parameter.name.startswith("_") and parameter.name.lstrip("_")
-    }
+    names = {parameter.name: parameter.name.lstrip("_") for parameter in parameters if parameter.name.startswith("_") and parameter.name.lstrip("_")}
     assert len(set(names.values())) == len(names), "type-parameter rename collision"
     return names
 
@@ -453,10 +449,7 @@ def _publicize_private_type_parameter_scope(
         match node:
             case ast.ClassDef():
                 node.bases = [renamer.visit(base) for base in node.bases]
-                node.keywords = [
-                    ast.keyword(arg=keyword.arg, value=renamer.visit(keyword.value))
-                    for keyword in node.keywords
-                ]
+                node.keywords = [ast.keyword(arg=keyword.arg, value=renamer.visit(keyword.value)) for keyword in node.keywords]
             case ast.FunctionDef() | ast.AsyncFunctionDef():
                 node.args = renamer.visit(node.args)
                 node.returns = renamer.visit(node.returns) if node.returns is not None else None
@@ -1298,12 +1291,7 @@ def _top_level_declarations(tree: ast.Module) -> dict[str, list[ast.stmt]]:
 
 def _loaded_names_in(statements: Iterable[ast.stmt]) -> set[str]:
     """Return names loaded anywhere in the supplied statements."""
-    return {
-        expression.id
-        for statement in statements
-        for expression in ast.walk(statement)
-        if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
-    }
+    return {expression.id for statement in statements for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)}
 
 
 def _internal_definition_closure(
@@ -1313,12 +1301,7 @@ def _internal_definition_closure(
     """Close explicitly requested internal declarations under top-level name dependencies."""
     required = set(names)
     while True:
-        selected = {
-            id(statement): statement
-            for name in required
-            if name in declarations
-            for statement in declarations[name]
-        }
+        selected = {id(statement): statement for name in required if name in declarations for statement in declarations[name]}
         added = (_loaded_names_in(selected.values()) & declarations.keys()) - required
         if not added:
             return required
@@ -1349,11 +1332,7 @@ def _required_internal_imports(
         if not isinstance(statement, ast.Import | ast.ImportFrom):
             continue
         from_import = isinstance(statement, ast.ImportFrom)
-        aliases = [
-            copy.deepcopy(alias)
-            for alias in statement.names
-            if _bound_import_name(alias, from_import=from_import) in required_names - already_imported
-        ]
+        aliases = [copy.deepcopy(alias) for alias in statement.names if _bound_import_name(alias, from_import=from_import) in required_names - already_imported]
         if not aliases:
             continue
         match statement:
@@ -1514,12 +1493,7 @@ def _public_names(tree: ast.Module) -> tuple[str, ...]:
 
 def _existing_import_bindings(tree: ast.Module) -> set[str]:
     """Return local names already bound by generated imports."""
-    return {
-        alias.asname or alias.name
-        for statement in tree.body
-        if isinstance(statement, ast.Import | ast.ImportFrom)
-        for alias in statement.names
-    }
+    return {alias.asname or alias.name for statement in tree.body if isinstance(statement, ast.Import | ast.ImportFrom) for alias in statement.names}
 
 
 def _public_import_aliases(
@@ -2136,11 +2110,7 @@ def _direct_hoisted_role_expression(
     if not isinstance(expression, ast.Constant) or not isinstance(expression.value, str):
         return expression
     spelling = expression.value
-    matches = [
-        helper
-        for public, helper in hoisted_role_providers.items()
-        if public.endswith(f".{spelling}") or public == spelling
-    ]
+    matches = [helper for public, helper in hoisted_role_providers.items() if public.endswith(f".{spelling}") or public == spelling]
     if not matches:
         return expression
     assert len(matches) == 1, f"ambiguous quoted role default {spelling!r}: {matches!r}"
@@ -2173,12 +2143,7 @@ def _rewrite_hoisted_legacy_typevar_defaults(
         if not isinstance(statement, ast.Assign) or not isinstance(statement.value, ast.Call):
             continue
         call = statement.value
-        if not (
-            isinstance(call.func, ast.Attribute)
-            and isinstance(call.func.value, ast.Name)
-            and call.func.value.id == "_typing"
-            and call.func.attr == "TypeVar"
-        ):
+        if not (isinstance(call.func, ast.Attribute) and isinstance(call.func.value, ast.Name) and call.func.value.id == "_typing" and call.func.attr == "TypeVar"):
             continue
         for keyword in call.keywords:
             if keyword.arg != "default":
@@ -2376,11 +2341,7 @@ def _hoist_cyclic_role_owners(
     for owner_name, nested_classes in sorted(owners.items()):
         owner_class = top_level[f"{module}.{owner_name}"]
         nested_names = {nested.name for nested in nested_classes}
-        owner_class.body[:] = [
-            statement
-            for statement in owner_class.body
-            if not (isinstance(statement, ast.ClassDef) and statement.name in nested_names)
-        ]
+        owner_class.body[:] = [statement for statement in owner_class.body if not (isinstance(statement, ast.ClassDef) and statement.name in nested_names)]
         helper_name = f"_StaticRoles_{owner_name}"
         helper = ast.ClassDef(
             name=helper_name,

@@ -1531,9 +1531,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-limit-basis-position-map`. Store retained object positions directly in `MonoDict` and address them by their owned objects.
 
-
 ## Kernel retained-value deduplication used a bare-id set
 
-- **Evidence and impact:** `kernel.construction.retained_values()` deduplicated values encountered across object, element, and morphism input tables by putting `id(value)` integers in a Python set. The surrounding tables already use Sage `MonoDict`; direct identity membership is clearer and retains the exact value whose identity justifies each seen marker.
+- **Evidence and impact:** `kernel.construction.retained_values()` deduplicated values encountered across object, element, and morphism input tables by putting `id(value)` integers in a Python set.
+  The surrounding tables already use Sage `MonoDict`; direct identity membership is clearer and retains the exact value whose identity justifies each seen marker.
 
 - **Repair link and acceptance:** `bloat-construction-retained-value-dedup`. Use a local `MonoDict` as the seen table and key it directly by each canonical constructed value.
+
+
+## Property axioms duplicated the kernel identity-key helper
+
+- **Evidence and impact:** `cat/predicates.py::_retention_key()` independently rebuilt the same tuple of `(id(value), value)` pairs owned by `kernel.retention.identity_key`, and both construction/lookup paths depended on that local duplicate. Maintaining two spellings of POL-SAGE-013 makes the retention invariant easier to drift.
+
+- **Repair link and acceptance:** `bloat-predicate-retention-key`. Delete `_retention_key` and call the kernel identity-key owner directly.

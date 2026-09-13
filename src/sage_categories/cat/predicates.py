@@ -28,6 +28,7 @@ from sage_categories.kernel.predicates import (
 from sage_categories.kernel.predicates import (
     OwnedPredicate as Predicate,
 )
+from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import Unknown, UnknownClass, uncamelcase
 from sage_categories.kernel.type_aliases import EqualityInput
 
@@ -440,7 +441,7 @@ class Axiom:
 
     def subcategory(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
         """``category.P(*parameters)``: one property subcategory per category and parameter values."""
-        key = _retention_key(category, *parameters)
+        key = identity_key(category, *parameters)
         if key not in self._constructed:
             self._constructed[key] = self._construct(category, *parameters)
         return self._constructed[key]
@@ -454,7 +455,7 @@ class Axiom:
         constructing one for every functor instead would build a property subcategory per
         functor application.
         """
-        return _retention_key(category, *parameters) in self._constructed
+        return identity_key(category, *parameters) in self._constructed
 
     def inverse_image(self, along: Callable[[Category], Functor]) -> Axiom:
         """Transport this axiom along the functor defining each source category."""
@@ -610,14 +611,6 @@ def declared_axiom(category: Category, name: str) -> Axiom | None:
         if inherited is not None:
             return inherited
     return None
-
-
-def _retention_key(
-    category: Category,
-    *parameters: CategoryOfCategories.ElementType,
-) -> tuple[tuple[int, CategoryOfCategories.ElementType], ...]:
-    """The category and its parameter values, by identity, holding each alive (POL-SAGE-013)."""
-    return tuple((id(value), value) for value in (category, *parameters))
 
 
 def _application_name(identifier: str) -> str:

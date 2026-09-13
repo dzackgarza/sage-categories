@@ -256,9 +256,7 @@ def evaluate_path(
             cat.Ob(str(id(target))),
             data=arrow,
         )
-        for index, (source, target, arrow) in enumerate(
-            zip(chain, chain[1:], arrows, strict=True)
-        )
+        for index, (source, target, arrow) in enumerate(zip(chain, chain[1:], arrows, strict=True))
     )
     token_values = {
         str(id(value)): value

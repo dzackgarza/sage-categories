@@ -11,6 +11,7 @@ from sage_categories.engines.gap import FUNCTOR_CATEGORIES, load_repository_pack
 
 __all__ = ["arrow_category"]
 
+
 def arrow_category(category: object, target: object, arrows: tuple[object, ...]):
     """Exact finite data for ``Fun([1], target)`` with native naturality checks."""
     load_repository_package(FUNCTOR_CATEGORIES)
@@ -39,16 +40,7 @@ def arrow_category(category: object, target: object, arrows: tuple[object, ...])
                 native_objects[id(destination)],
             )
             for transformation in transformations:
-                components = tuple(
-                    fp_categories.owned_morphism(target, component)
-                    for component in libgap.ValuesOnAllObjects(transformation)
-                )
+                components = tuple(fp_categories.owned_morphism(target, component) for component in libgap.ValuesOnAllObjects(transformation))
                 assert len(components) == 2
-                morphisms.append(
-                    Mor(category)(source, destination)(
-                        lambda vertex, components=components: (
-                            components[0] if vertex is zero else components[1]
-                        )
-                    )
-                )
+                morphisms.append(Mor(category)(source, destination)(lambda vertex, components=components: components[0] if vertex is zero else components[1]))
     return tuple(arrows), tuple(morphisms)

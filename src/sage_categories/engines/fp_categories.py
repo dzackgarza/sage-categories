@@ -38,6 +38,8 @@ class _Presentation:
 
 
 _presentations: dict[int, _Presentation] = {}
+
+
 def _presentation(category: object) -> _Presentation:
     identifier = id(category)
     if identifier in _presentations:

@@ -9,6 +9,7 @@ from sage_categories.engines.gap import SLICE_CATEGORIES, load_repository_packag
 
 __all__ = ["slice_category"]
 
+
 def slice_category(category: object, base: object, arrows: tuple[object, ...]):
     """Exact finite data for ``base.SliceOver(x)`` using native slice Hom sets."""
     load_repository_package(SLICE_CATEGORIES)

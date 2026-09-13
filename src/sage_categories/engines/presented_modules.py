@@ -245,13 +245,7 @@ def _parsed_matrix_rows(native_matrix: GapElement, parser) -> tuple[tuple[object
     column_count = int(libgap.NumberColumns(native_matrix))
     entries = tuple(libgap.EntriesOfHomalgMatrix(native_matrix))
     assert len(entries) == row_count * column_count
-    return tuple(
-        tuple(
-            parser(str(entries[row * column_count + column]))
-            for column in range(column_count)
-        )
-        for row in range(row_count)
-    )
+    return tuple(tuple(parser(str(entries[row * column_count + column])) for column in range(column_count)) for row in range(row_count))
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -312,12 +306,8 @@ def kernel_presentation(
     source_rank = int(source_rank)
     target_rank = int(target_rank)
     morphism_rows = tuple(tuple(row) for row in morphism_rows)
-    if len(morphism_rows) != source_rank or any(
-        len(row) != target_rank for row in morphism_rows
-    ):
-        raise ValueError(
-            "the CAP morphism matrix has the wrong selected framing dimensions"
-        )
+    if len(morphism_rows) != source_rank or any(len(row) != target_rank for row in morphism_rows):
+        raise ValueError("the CAP morphism matrix has the wrong selected framing dimensions")
     category = libgap.LeftPresentations(ring)
     source = libgap.AsLeftPresentation(
         category,
@@ -333,9 +323,8 @@ def kernel_presentation(
         target,
     )
     embedding = libgap.KernelEmbedding(morphism)
-    return KernelPresentation(
-        owned_ring, ring, category, source, target, morphism, embedding
-    )
+    return KernelPresentation(owned_ring, ring, category, source, target, morphism, embedding)
+
 
 def equal_morphisms(first: object, second: object) -> bool:
     """CAP's equality decision for two owned presented-module morphisms."""

@@ -23,9 +23,7 @@ def _lower_finite_diagram(
     load_packages(FINITE_SETS_PACKAGES)
     assert len(vertices) == len(families)
     vertex_positions = {id(vertex): index for index, vertex in enumerate(vertices)}
-    value_positions = tuple(
-        {id(value): index for index, value in enumerate(family)} for family in families
-    )
+    value_positions = tuple({id(value): index for index, value in enumerate(family)} for family in families)
     native_factors = [libgap.FinSet(len(family)) for family in families]
     decorated: list[list[object]] = []
     for arrow in arrows:
@@ -42,9 +40,7 @@ def _lower_finite_diagram(
         decorated.append(
             [
                 source,
-                libgap.MapOfFinSets(
-                    native_factors[source], graph, native_factors[target]
-                ),
+                libgap.MapOfFinSets(native_factors[source], graph, native_factors[target]),
                 target,
             ]
         )
@@ -64,9 +60,7 @@ def compatible_families(
     object or morphism.  GAP owns the compatibility computation; Python only
     translates retained values to and from skeletal finite-set indices.
     """
-    native_factors, decorated = _lower_finite_diagram(
-        vertices, arrows, families, image, locate
-    )
+    native_factors, decorated = _lower_finite_diagram(vertices, arrows, families, image, locate)
     apex = libgap.Limit(libgap.SkeletalFinSets, native_factors, decorated)
     projections = tuple(
         libgap.ProjectionInFactorOfLimitWithGivenLimit(
@@ -78,17 +72,8 @@ def compatible_families(
         )
         for index in range(len(vertices))
     )
-    graphs = tuple(
-        tuple(int(value) for value in libgap.AsList(projection))
-        for projection in projections
-    )
-    return tuple(
-        tuple(
-            families[index][graphs[index][native_index]]
-            for index in range(len(vertices))
-        )
-        for native_index in range(int(libgap.Cardinality(apex)))
-    )
+    graphs = tuple(tuple(int(value) for value in libgap.AsList(projection)) for projection in projections)
+    return tuple(tuple(families[index][graphs[index][native_index]] for index in range(len(vertices))) for native_index in range(int(libgap.Cardinality(apex))))
 
 
 def identified_objects(
@@ -99,20 +84,10 @@ def identified_objects(
     locate: Callable[[tuple[object, ...], object], int],
 ) -> tuple[int, tuple[tuple[int, ...], ...]]:
     """Native finite colimit of object families, returned as factor-to-class maps."""
-    native_factors, decorated = _lower_finite_diagram(
-        vertices, arrows, families, image, locate
-    )
+    native_factors, decorated = _lower_finite_diagram(vertices, arrows, families, image, locate)
     apex = libgap.Colimit(libgap.SkeletalFinSets, native_factors, decorated)
-    injections = tuple(
-        libgap.InjectionOfCofactorOfColimitWithGivenColimit(
-            libgap.SkeletalFinSets, native_factors, decorated, index, apex
-        )
-        for index in range(len(vertices))
-    )
-    mappings = tuple(
-        tuple(int(value) for value in libgap.AsList(injection))
-        for injection in injections
-    )
+    injections = tuple(libgap.InjectionOfCofactorOfColimitWithGivenColimit(libgap.SkeletalFinSets, native_factors, decorated, index, apex) for index in range(len(vertices)))
+    mappings = tuple(tuple(int(value) for value in libgap.AsList(injection)) for injection in injections)
     return int(libgap.Cardinality(apex)), mappings
 
 
@@ -132,12 +107,7 @@ def _matching_native_selection(
     native_morphisms = libgap.FinSet(morphism_count)
     factors = [native_source, native_target, native_morphisms]
     product = libgap.DirectProduct(category, factors)
-    projections = tuple(
-        libgap.ProjectionInFactorOfDirectProductWithGivenDirectProduct(
-            category, factors, index + 1, product
-        )
-        for index in range(3)
-    )
+    projections = tuple(libgap.ProjectionInFactorOfDirectProductWithGivenDirectProduct(category, factors, index + 1, product) for index in range(3))
     domain_map = libgap.MapOfFinSets(native_morphisms, domain_graph, native_source)
     codomain_map = libgap.MapOfFinSets(native_morphisms, codomain_graph, native_source)
     reindex_map = libgap.MapOfFinSets(native_target, reindex_graph, native_source)
@@ -151,19 +121,12 @@ def _matching_native_selection(
     ]
     pair_target_factors = [native_source, native_source]
     pair_target = libgap.DirectProduct(category, pair_target_factors)
-    left = libgap.UniversalMorphismIntoDirectProductWithGivenDirectProduct(
-        category, pair_target_factors, product, left_components, pair_target
-    )
-    right = libgap.UniversalMorphismIntoDirectProductWithGivenDirectProduct(
-        category, pair_target_factors, product, right_components, pair_target
-    )
+    left = libgap.UniversalMorphismIntoDirectProductWithGivenDirectProduct(category, pair_target_factors, product, left_components, pair_target)
+    right = libgap.UniversalMorphismIntoDirectProductWithGivenDirectProduct(category, pair_target_factors, product, right_components, pair_target)
     equalizer = libgap.Equalizer(category, product, [left, right])
     embedding = libgap.EmbeddingOfEqualizerWithGivenEqualizer(category, product, [left, right], equalizer)
     selected = tuple(int(value) for value in libgap.AsList(embedding))
-    projection_graphs = tuple(
-        tuple(int(value) for value in libgap.AsList(projection))
-        for projection in projections
-    )
+    projection_graphs = tuple(tuple(int(value) for value in libgap.AsList(projection)) for projection in projections)
     return selected, projection_graphs
 
 
@@ -182,6 +145,7 @@ def matching_triples(
     already-owned finite values and converts their retained identities to skeletal
     indices.
     """
+
     def graph(
         values: tuple[object, ...],
         target: tuple[object, ...],

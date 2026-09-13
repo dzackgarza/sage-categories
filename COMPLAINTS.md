@@ -856,3 +856,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/presented_modules.py` imported the private additive `_group_from_engine` reconstruction separately in cokernel and tensor-product object reconstruction. The import must remain delayed because the additive owner calls back into this CAP adapter, but both paths cross the same native-to-owned object boundary.
 
 - **Repair link and acceptance:** `bloat-presented-group-reconstruction-boundary`. Put the delayed reconstruction behind `_owned_group_from_engine()` and route both cokernel and tensor-product object reconstruction through it.
+
+## Relative tensor descent repeated CAP colift imports
+
+- **Evidence and impact:** `algebra/abelian.py` imported `colift_along_epimorphism` separately for induced left actions, induced right actions, and relative-tensor associator descent. All three operations factor already-owned maps through a retained CAP epimorphism; the import must remain delayed because the CAP adapter imports the additive owner, but the same descent boundary appeared three times.
+
+- **Repair link and acceptance:** `bloat-additive-colift-boundary`. Put the delayed CAP colift behind `_colift_presented_epimorphism()` and route action descent plus associator descent through it.

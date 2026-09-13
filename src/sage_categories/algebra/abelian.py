@@ -1239,6 +1239,16 @@ def relative_tensor_mediator(
     return coequalizer_mediator(projection, tensor_mediator(factors.first, factors.second, target, balanced))
 
 
+def _colift_presented_epimorphism(
+    epimorphism: MorphismCategory.ObjectType,
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Colift through a retained CAP epimorphism at the cycle-safe additive boundary."""
+    from sage_categories.engines.presented_modules import colift_along_epimorphism
+
+    return colift_along_epimorphism(epimorphism, arrow)
+
+
 def induced_left_action(
     projection: MorphismCategory.ObjectType,
     left_action: MorphismCategory.ObjectType,
@@ -1262,9 +1272,7 @@ def induced_left_action(
         Mor(base)(scalars, scalars).one(),
         projection,
     )
-    from sage_categories.engines.presented_modules import colift_along_epimorphism
-
-    return colift_along_epimorphism(tensorized_projection, acting)
+    return _colift_presented_epimorphism(tensorized_projection, acting)
 
 
 def induced_right_action(
@@ -1286,9 +1294,7 @@ def induced_right_action(
         projection,
         Mor(base)(scalars, scalars).one(),
     )
-    from sage_categories.engines.presented_modules import colift_along_epimorphism
-
-    return colift_along_epimorphism(tensorized_projection, acting)
+    return _colift_presented_epimorphism(tensorized_projection, acting)
 
 
 def relative_tensor_morphism(
@@ -1427,9 +1433,7 @@ def AbelianBimoduleTensor(
         forward_from_unbalanced = target_projection * tensor_morphism(abelian_tensor, identity_first, second_third_projection) * rebracket
         backward_from_unbalanced = source_projection * tensor_morphism(abelian_tensor, first_second_projection, identity_third) * unbracket
 
-        from sage_categories.engines.presented_modules import colift_along_epimorphism
-
-        through_first_quotient = colift_along_epimorphism(
+        through_first_quotient = _colift_presented_epimorphism(
             tensor_morphism(
                 abelian_tensor,
                 first_second_projection,
@@ -1441,7 +1445,7 @@ def AbelianBimoduleTensor(
             source_projection,
             through_first_quotient,
         )
-        through_second_quotient = colift_along_epimorphism(
+        through_second_quotient = _colift_presented_epimorphism(
             tensor_morphism(
                 abelian_tensor,
                 identity_first,

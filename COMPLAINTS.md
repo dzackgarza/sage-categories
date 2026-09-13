@@ -880,3 +880,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/category.py` imported `Fun` independently in ten methods spanning structural-declaration queries, exponentials, point/arrow functors, restriction/lift registration, identities, and composition. All ten imports serve the same deliberate bootstrap rule: `Fun` cannot be imported until the core category declaration exists. Repeating the cycle break across the core obscured that single dependency boundary.
 
 - **Repair link and acceptance:** `bloat-category-functor-boundary`. Put the delayed functor-category owner behind `_functors()` and route every exact `Fun` import in `cat/category.py` through that one bootstrap boundary.
+
+## Category core repeated native Catlab and cell-engine imports
+
+- **Evidence and impact:** `cat/category.py` reopened the native cell adapter throughout identity/inverse/composite retention and transformation calculus, and reopened Catlab throughout functor images, identities, composition, transformations, and whiskering. These imports are intentionally delayed until the category core has established owned runtime classes, but twenty execution sites repeated two bootstrap boundaries rather than naming those boundaries once.
+
+- **Repair link and acceptance:** `bloat-category-native-engine-boundaries`. Put Catlab and homotopy-cell loading behind `_catlab_engine()` and `_cells_engine()` and route every category-core native execution site through those two owners.

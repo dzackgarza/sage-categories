@@ -1383,9 +1383,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-catlab-recipe-identity-cache`. Key both recipe tables directly by the owned morphism in `MonoDict`, preserving transformation-recipe replacement only before native materialization.
 
-
 ## CAP cokernel mediator state used a manual id-keyed table
 
-- **Evidence and impact:** `engines/presented_modules.py` retained the native difference associated to a selected cokernel projection under `id(projection)`, stored the projection again beside it, then manually checked identity on lookup. This is the same identity-table protocol already owned by Sage `MonoDict`.
+- **Evidence and impact:** `engines/presented_modules.py` retained the native difference associated to a selected cokernel projection under `id(projection)`, stored the projection again beside it, then manually checked identity on lookup.
+  This is the same identity-table protocol already owned by Sage `MonoDict`.
 
 - **Repair link and acceptance:** `bloat-cokernel-difference-identity-cache`. Key the native difference directly by the owned projection in `MonoDict` and remove the integer key plus duplicate owner record.
+
+
+## Homotopy-cell execution duplicated Sage identity-table machinery
+
+- **Evidence and impact:** `engines/cells.py` maintained four plain dictionaries keyed by `id(...)` for category states, selected cell owners, native objects, and native morphisms. Each table retained the owned key again and manually asserted identity on lookup, duplicating the strong identity-table semantics already provided by Sage `MonoDict`.
+
+- **Repair link and acceptance:** `bloat-cell-identity-caches`. Store all four mappings directly in `MonoDict`, preserving exact owner/state selection while deleting integer keys and duplicate retained-owner tuples.

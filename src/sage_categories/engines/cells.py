@@ -15,6 +15,7 @@ import sage_categories_homotopy as homotopy
 
 from sage_categories.cat.category import Category, composite_factors, is_composite
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
     "boundary",
@@ -36,24 +37,19 @@ __all__ = [
 class _CellState:
     owner: Category
     signature: homotopy.Signature
-    objects: dict[int, tuple[object, homotopy.Cell]] = field(default_factory=dict)
-    morphisms: dict[int, tuple[object, homotopy.Cell]] = field(default_factory=dict)
+    objects: MonoDict = field(default_factory=MonoDict)
+    morphisms: MonoDict = field(default_factory=MonoDict)
 
 
-_states: dict[int, tuple[Category, _CellState]] = {}
-_cell_owners: dict[int, tuple[object, Category]] = {}
+_states: MonoDict = MonoDict()
+_cell_owners: MonoDict = MonoDict()
 
 
 def _cell_owner(value: object, proposed: Category) -> Category:
-    identifier = id(value)
-    match identifier in _cell_owners:
-        case True:
-            retained, owner = _cell_owners[identifier]
-            assert retained is value
-            return owner
-        case False:
-            _cell_owners[identifier] = (value, proposed)
-            return proposed
+    if value in _cell_owners:
+        return _cell_owners[value]
+    _cell_owners[value] = proposed
+    return proposed
 
 
 def _root_owner(owner: Category) -> Category:
@@ -65,16 +61,11 @@ def _root_owner(owner: Category) -> Category:
 
 def _state(owner: Category) -> _CellState:
     owner = _root_owner(owner)
-    identifier = id(owner)
-    match identifier in _states:
-        case True:
-            retained, state = _states[identifier]
-            assert retained is owner
-            return state
-        case False:
-            state = _CellState(owner, homotopy.Signature())
-            _states[identifier] = (owner, state)
-            return state
+    if owner in _states:
+        return _states[owner]
+    state = _CellState(owner, homotopy.Signature())
+    _states[owner] = state
+    return state
 
 
 def native_signature(owner: Category) -> homotopy.Signature:
@@ -88,34 +79,22 @@ def native_object(owner: Category, value: object) -> homotopy.Cell:
         case Category():
             pass
     state = _state(owner)
-    identifier = id(value)
-    match identifier in state.objects:
-        case True:
-            retained, native = state.objects[identifier]
-            assert retained is value
-            return native
-        case False:
-            assert value in owner, f"{value!r} is not an object of {owner!r}"
-            native = state.signature.add_object()
-            state.objects[identifier] = (value, native)
-            return native
+    if value in state.objects:
+        return state.objects[value]
+    assert value in owner, f"{value!r} is not an object of {owner!r}"
+    native = state.signature.add_object()
+    state.objects[value] = native
+    return native
 
 
 def _retain_morphism(state: _CellState, value: MorphismCategory.ObjectType, native: homotopy.Cell) -> homotopy.Cell:
     state.signature.typecheck(native, True)
-    state.morphisms[id(value)] = (value, native)
+    state.morphisms[value] = native
     return native
 
 
 def _cached_morphism(state: _CellState, value: MorphismCategory.ObjectType) -> homotopy.Cell | None:
-    identifier = id(value)
-    match identifier in state.morphisms:
-        case True:
-            retained, native = state.morphisms[identifier]
-            assert retained is value
-            return native
-        case False:
-            return None
+    return state.morphisms[value] if value in state.morphisms else None
 
 
 def retain_identity(
@@ -260,7 +239,7 @@ def _retain_inverse_partner(
             pass
     match _cached_morphism(state, inverse):
         case None:
-            _retain_morphism(state, inverse, state.morphisms[id(value)][1].inverse())
+            _retain_morphism(state, inverse, state.morphisms[value].inverse())
         case _:
             pass
 

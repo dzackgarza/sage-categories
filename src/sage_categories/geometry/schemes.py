@@ -337,6 +337,29 @@ def _projective_line_structure_sheaf(
     )
 
 
+def _projective_line_swap(
+    glued: SchemesCategory.ObjectType,
+    left: AffineSchemesCategory.ObjectType,
+    right: AffineSchemesCategory.ObjectType,
+    left_ring: CategoryOfCategories.ElementType,
+    right_ring: CategoryOfCategories.ElementType,
+    t: CategoryOfCategories.ElementType,
+    u: CategoryOfCategories.ElementType,
+    left_overlap: AffineOpenCategory.ObjectType,
+    inverse_t: CategoryOfCategories.ElementType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The chart-swap automorphism of ``P^1`` and its induced overlap automorphism."""
+    schemes = Schemes()
+    swap_left_pullback = presented_ring_homomorphism(right_ring, left_ring, (t,))
+    swap_right_pullback = presented_ring_homomorphism(left_ring, right_ring, (u,))
+    left_to_glued = schemes.chart_map(left, glued, right, swap_left_pullback)
+    right_to_glued = schemes.chart_map(right, glued, left, swap_right_pullback)
+    swap = schemes.gluing_mediator(glued, glued, left_to_glued, right_to_glued)
+    swap_overlap_base = presented_ring_homomorphism(left_ring, left_overlap.section_ring(), (inverse_t,))
+    overlap_swap = localization_extension(left_overlap.section_ring(), left_overlap.section_ring(), swap_overlap_base)
+    return swap, overlap_swap
+
+
 def projective_line(
     field: CategoryOfCategories.ElementType,
 ) -> ProjectiveLinePresentation:
@@ -368,21 +391,17 @@ def projective_line(
         left_to_right,
     )
 
-    swap_left_pullback = presented_ring_homomorphism(right_ring, left_ring, (t,))
-    swap_right_pullback = presented_ring_homomorphism(left_ring, right_ring, (u,))
-    left_to_glued = schemes.chart_map(
-        cast(AffineSchemesCategory.ObjectType, left),
-        glued,
-        cast(AffineSchemesCategory.ObjectType, right),
-        swap_left_pullback,
-    )
-    right_to_glued = schemes.chart_map(
-        cast(AffineSchemesCategory.ObjectType, right),
+    swap, overlap_swap = _projective_line_swap(
         glued,
         cast(AffineSchemesCategory.ObjectType, left),
-        swap_right_pullback,
+        cast(AffineSchemesCategory.ObjectType, right),
+        left_ring,
+        right_ring,
+        t,
+        u,
+        left_overlap,
+        inverse_t,
     )
-    swap = schemes.gluing_mediator(glued, glued, left_to_glued, right_to_glued)
 
     structure_sheaf = _projective_line_structure_sheaf(
         glued,
@@ -394,8 +413,6 @@ def projective_line(
         right_overlap,
         right_to_left,
     )
-    swap_overlap_base = presented_ring_homomorphism(left_ring, left_overlap.section_ring(), (inverse_t,))
-    overlap_swap = localization_extension(left_overlap.section_ring(), left_overlap.section_ring(), swap_overlap_base)
     return ProjectiveLinePresentation(
         glued,
         cast(AffineSchemesCategory.ObjectType, left),

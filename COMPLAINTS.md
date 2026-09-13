@@ -1305,3 +1305,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `integer_free_associative_algebra()` built the word module/bimodule object and also carried the complete multiplication implementation: conversion of both operands to word coefficients, native Sage free-algebra multiplication, re-embedding into the indexed module, relative-tensor mediation, and bimodule wrapping. That is one independent operation of the algebra, not part of choosing its carrier.
 
 - **Repair link and acceptance:** `bloat-free-associative-multiplication`. Move native multiplication plus relative-tensor descent into `_free_associative_multiplication()`; keep the public constructor responsible for selecting carrier/actions/unit and retaining the resulting monoid object.
+
+## Projective-line constructor still embedded chart-swap construction
+
+- **Evidence and impact:** after separating its structure sheaf, `projective_line()` still carried the two chart pullbacks, chart maps into the glued scheme, gluing mediator, and induced overlap localization automorphism for the involution exchanging the two affine charts. This is one named automorphism with its own exact pullback data, not part of constructing the cover itself.
+
+- **Repair link and acceptance:** `bloat-projective-line-swap`. Move the chart-swap and overlap automorphism into `_projective_line_swap()`; keep `projective_line()` responsible for constructing charts/overlap/gluing and packaging the returned swap data.

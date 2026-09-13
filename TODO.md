@@ -262,83 +262,54 @@ Multiple prerequisites are conjunctive.
 | `bloat-dead-set-map-table` | **Closed.** Delete the unused finite-set morphism table property rather than materializing every domain value behind a private accessor nobody calls. **Acceptance:** `SetsCategory.MorphismType` has no `_table` property, finite/native map execution continues through `_action` and retained finite presentations, and no source/test `_table` reference remains | `type-paydown` |
 | `bloat-dead-runtime-implementation-lookup` | **Closed.** Delete the unused compiler scan that searched every runtime table for a declaration's compiled class. **Acceptance:** `runtime_implementation_class` is absent from `kernel/compiler.py`, no source/test/docs reference remains, and active runtime lookup continues through exact runtime nodes and `runtime_declaration()` | `type-paydown` |
 | `bloat-cartesian-exact-dispatch-regression` | **Closed.** Preserve the old exact concrete-category admission while using standard single-dispatch registration. **Acceptance:** a registered handler executes only when `type(base) is category_type`; an unregistered subclass falls through to `None` rather than inheriting a native engine it did not select | `bloat-cartesian-comparison-dispatch` |
-| `kernel-cat-bootstrap-regression` | **Closed.** The whiskering bridge was lowering its functor operand as a native object even though a functor is a 1-cell of `Cat`; this erased the `Mor(Cat)` level and caused fresh bootstrap to reject `Functor(Cat -> Cat)` while constructing the doubled-opposite comparison. The bridge now lowers the operand through `native_cell`, with no recipe registry restored. **Acceptance:** fresh declared-runtime import/bootstrap completes, and `test_functors_and_two_morphisms_are_owned_and_distinct` typechecks both left and right whiskers through the native homotopy-cell path | `type-paydown` |
+| `kernel-cat-bootstrap-regression` | **Repair banked; acceptance pending.** The homotopy-cell adapter was collapsing every supplied `Mor`-level owner to the root category before reconstructing boundaries. That makes a natural transformation's boundary functor look like a 0-cell of `Cat`, producing the observed `Functor(Cat -> Cat) is not an object of Cat` failure. Native state remains shared at the root signature, but cell construction now preserves the supplied owner level so `native_object(Mor(C), f)` recursively lowers the 1-cell boundary while transformations remain 2-cells; no provenance registry is restored. **Acceptance:** fresh declared-runtime import/bootstrap completes, and `test_functors_and_two_morphisms_are_owned_and_distinct` typechecks both left and right whiskers through the native homotopy-cell path | `type-paydown` |
 | `current-head-acceptance` | Re-establish acceptance for the current branch after post-acceptance refactors. The earlier `acceptance` node remains evidence for its accepted revision; it is not a certificate for later commits. Do not blanket-rerun or reopen unrelated operation families: follow the concrete bootstrap regression and any dependency it invalidates, then exercise the nearest affected public consumers at current HEAD. **Acceptance:** `kernel-cat-bootstrap-regression` is closed, the package imports in the declared runtime, and the affected Cat/functor/transformation public consumers still satisfy the original acceptance claims without restoring superseded duplicate machinery. | `acceptance`, `kernel-cat-bootstrap-regression` |
 | `bloat-audit-loop` | Terminal convergence loop; it never closes. Run the rotating interpretive audits in [Terminal convergence audit](#terminal-convergence-audit), repair small findings directly, and explode broad findings into explicit DAG children. A no-change pass is successful evidence of convergence and produces no commit or complaint entry. Never close this node merely because one pass is clean | `type-paydown`, `bloat-finite-diagram-lowering`, `bloat-point-member-alias`, `bloat-magma-inherited-accessors`, `bloat-topological-space-projection`, `bloat-faithful-factor-projections`, `bloat-finite-power-data`, `bloat-calculus-cone-imports`, `bloat-adjunction-mor-imports`, `bloat-finite-discrete-imports`, `bloat-finite-sets-owner-import`, `bloat-presented-module-owner`, `bloat-oscar-runtime-modules`, `bloat-finite-category-limit-engine`, `bloat-finite-sets-category-evaluator`, `bloat-sets-finite-engine-boundary`, `bloat-sets-finite-category-boundary`, `bloat-functor-finite-category-boundary`, `bloat-diagram-constructed-data-boundary`, `bloat-canonical-fp-engine-boundary`, `bloat-construction-full-image-boundary`, `bloat-kan-adjunction-runtime`, `bloat-morphism-engine-boundaries`, `bloat-cone-terminal-boundary`, `bloat-finite-sets-cone-boundaries`, `bloat-property-pullback-runtime`, `bloat-weighted-refinement-import`, `bloat-universal-arrow-adjunction-boundary`, `bloat-predicate-semantic-bases-boundary`, `bloat-functor-declaration-boundary`, `bloat-cell-morphism-imports`, `bloat-presented-group-reconstruction-boundary`, `bloat-additive-colift-boundary`, `bloat-oscar-reconstruction-boundary`, `bloat-category-finite-evaluator-boundary`, `bloat-category-functor-boundary`, `bloat-category-native-engine-boundaries`, `bloat-category-canonical-boundary`, `bloat-category-refine-reimports`, `bloat-finite-category-dispatch`, `bloat-predicate-global-assumptions`, `bloat-category-discrete-shape-boundary`, `bloat-stubgen-runtime-boundary`, `bloat-monoidal-discrete-morphism`, `bloat-additive-cone-accessors`, `bloat-functor-diagram-boundary`, `bloat-property-functor-bootstrap`, `bloat-kan-universal-arrow-boundary`, `bloat-weighted-calculus-boundary`, `bloat-predicate-property-boundary`, `bloat-cone-opposite-boundary`, `bloat-indexed-module-additive-boundary`, `bloat-presented-module-additive-boundary`, `bloat-additive-presented-module-boundary`, `bloat-topological-ring-identity-owner`, `bloat-role-kernel-boundaries`, `bloat-axiom-predicate-boundary`, `bloat-compiler-refinement-boundary`, `bloat-compiler-role-reimports`, `bloat-finite-category-slice-boundary`, `bloat-finite-sets-cone-module`, `bloat-property-cat-derivation`, `bloat-property-axiom-declaration-probe`, `bloat-adjunction-inhabitation`, `bloat-universal-diagram-category`, `bloat-dual-functor-round-trip`, `bloat-projective-infinity-maps`, `bloat-projective-line-sheaf`, `bloat-adele-algebra-topology`, `bloat-semiring-law-equations`, `bloat-ring-factor-projections`, `bloat-profunctor-unitor-components`, `bloat-matching-triples-native`, `bloat-finite-limit-reconstruction`, `bloat-bimodule-unitors`, `bloat-bimodule-associator`, `bloat-free-associative-multiplication`, `bloat-projective-line-swap`, `bloat-free-associative-substitution-layers`, `bloat-presented-colimit-phases`, `bloat-predicate-owned-atom-import`, `bloat-shape-point-object-data`, `bloat-shape-point-object-surface`, `bloat-shape-point-navigation`, `bloat-construction-shape-accessors`, `bloat-discrete-family-registry`, `bloat-discrete-construction-input`, `bloat-fp-presentation-identity-cache`, `bloat-catlab-recipe-identity-cache`, `bloat-cokernel-difference-identity-cache`, `bloat-cell-identity-caches`, `bloat-inverse-image-retention-phases`, `bloat-limit-basis-phases`, `bloat-role-typeis-import`, `bloat-ring-presheaf-validation`, `bloat-scheme-affine-wrapper-identity-cache`, `bloat-discopy-wire-identity-cache`, `bloat-gap-local-identity-maps`, `bloat-discopy-word-identity-key`, `bloat-discopy-path-object-cache`, `bloat-oscar-certified-ring-reconstruction`, `bloat-indexed-cache-identity-keys`, `bloat-theory-cache-identity-keys`, `bloat-predicate-atom-value-map`, `bloat-represented-product-position-map`, `bloat-finite-set-vertex-position-maps`, `bloat-category-limit-position-maps`, `bloat-finite-category-identity-maps`, `bloat-sheaf-gluing-phases`, `bloat-limit-basis-position-map`, `bloat-construction-retained-value-dedup`, `bloat-predicate-retention-key`, `bloat-construction-order-identity-keys`, `bloat-stub-ast-identity-ids`, `bloat-discopy-path-token-ids`, `bloat-local-field-rational-valuation`, `bloat-additive-integer-multiple`, `bloat-free-algebra-word-serialization`, `bloat-finite-set-public-boundary`, `bloat-presented-category-public-boundary`, `bloat-catlab-transformation-boundary`, `bloat-cell-invertibility-strengthening`, `bloat-slice-dispatch-boundary`, `bloat-cw-open-datum-boundary`, `bloat-adele-binary-preimage-dispatch`, `bloat-finite-partial-order-laws`, `bloat-binary-relations-public-surface`, `bloat-local-field-rational-embedding-fallback`, `bloat-runtime-reflection-probes`, `bloat-role-declaration-owner-retention`, `bloat-binary-relations-forgetful-cache`, `bloat-indexed-structural-functor-caches`, `bloat-image-functor-caches`, `bloat-slice-projection-caches`, `bloat-universal-construction-functor-caches`, `bloat-inverse-image-projection-cache`, `bloat-image-identity-override`, `bloat-image-category-registry-cache`, `bloat-point-functor-cache`, `bloat-cat-singleton-cache`, `bloat-enumeration-index-cache`, `bloat-chosen-enumeration-cache`, `bloat-presented-group-engine-registry`, `bloat-indexed-module-data-registry`, `bloat-cokernel-difference-registry`, `bloat-relative-identity-coequalizer-registry`, `bloat-catlab-functor-recipes`, `bloat-catlab-callable-transformation-recipe`, `bloat-finite-category-retention-cache`, `bloat-narrowing-registration-cache`, `bloat-axiom-application-registry`, `bloat-predicate-atom-type-cache`, `bloat-cw-open-datum-regression`, `bloat-shared-identity-positions`, `bloat-cell-owner-registry`, `bloat-limit-basis-shared-position-helper`, `bloat-represented-product-shared-position-helper`, `bloat-cartesian-comparison-dispatch`, `bloat-additive-dead-point-map`, `bloat-catlab-dead-native-transformation-wrapper`, `bloat-dead-set-map-table`, `bloat-dead-runtime-implementation-lookup`, `bloat-cartesian-exact-dispatch-regression`, `current-head-acceptance` |
 | `acceptance` | **Closed at its accepted revision; not a current-HEAD certificate.** Section 20 in full. The required public consumers are retained by the closed prerequisite nodes; displaced additive `Presentation`/`LinearForm` execution and the generic `Sets` map-form engine are deleted, presented Hom validation/equality and coequalizer arithmetic execute through ModulePresentationsForCAP, presented group words execute through Sage/GAP, and the Catlab/DisCoPy/native-cell integration paths remain the sole selected execution paths for their allocated operations. **Acceptance:** the native nonidentity coequalizer/mediator consumer and both exact-Hom consumers pass after the removal, `just generate-stubs` regenerates the reduced public surface cleanly, and the ownership boundary is recorded in `specs/resolution.md` | `host-headroom`, `monodict-autofix`, `runtime`, `sets`, `functors`, `paths`, `universal`, `indexed`, `diagrams`, `refinement`, `inverses`, `isofibrations`, `named`, `additive`, `tensor`, `relative`, `actions`, `kan`, `orders`, `groups`, `modules`, `module-sums`, `algebras`, `rings`, `spaces-sheaves`, `affine`, `gluing`, `topological-colimit`, `adeles`, `gate`, `python-runtime`, `static` |
 
 ## Terminal convergence audit
 
-`bloat-audit-loop` is the permanent post-acceptance quality programme. It is active only when
-`current-head-acceptance` is closed: a current import/bootstrap or affected-public-consumer
-regression is substantive repair work, not an audit finding to work around. Its purpose is not to
-keep a worker busy or to generate complaints; it is to keep asking independent, increasingly
-difficult questions until clean passes accumulate evidence that the repository is complete,
-correct, idiomatic, dependency-aware, and maintainable.
+`bloat-audit-loop` is the permanent post-acceptance quality programme.
+It is active only when `current-head-acceptance` is closed: a current import/bootstrap or affected-public-consumer regression is substantive repair work, not an audit finding to work around.
+Its purpose is not to keep a worker busy or to generate complaints; it is to keep asking independent, increasingly difficult questions until clean passes accumulate evidence that the repository is complete, correct, idiomatic, dependency-aware, and maintainable.
 
-Every pass starts by rereading `AGENTS.md`, `CONTRIBUTING.md`, `specs/resolution.md`, the relevant
-vault plan/decision material under `.agents/`, and the audit skills under
-`~/ai/opencode/skills/`: `addressing-shallow-work`, `policy-index`, `anti-slop`, `fixing-slop`,
-`bespoke-software-policy`, `code-patterns`, `thermo-nuclear-code-quality-review`, `brooks-audit`,
-`brooks-debt`, `test-guidelines`, `test-writing`, `known-solution-first`, `epistemic-integrity`,
-`reality-grounded-debugging`, `reviewing-llm-code`, `quality-control`, and `general-cleanup`.
-Read the policy index's bridge-burning references as policy, not as a bag of token-local lint
-rules. These skills are lenses; the pass must synthesize the repository's mathematical and
-architectural contract before editing anything.
+Every pass starts by rereading `AGENTS.md`, `CONTRIBUTING.md`, `specs/resolution.md`, the relevant vault plan/decision material under `.agents/`, and the audit skills under `~/ai/opencode/skills/`: `addressing-shallow-work`, `policy-index`, `anti-slop`, `fixing-slop`, `bespoke-software-policy`, `code-patterns`, `thermo-nuclear-code-quality-review`, `brooks-audit`, `brooks-debt`, `test-guidelines`, `test-writing`, `known-solution-first`, `epistemic-integrity`, `reality-grounded-debugging`, `reviewing-llm-code`, `quality-control`, and `general-cleanup`. Read the policy index's bridge-burning references as policy, not as a bag of token-local lint rules.
+These skills are lenses; the pass must synthesize the repository's mathematical and architectural contract before editing anything.
 
 Rotate among these audit tasks rather than repeating whichever grep produced the previous commit:
 
-1. **Vault-plan / live-contract audit.** Compare the closed nodes in this DAG and their actual
-   public consumers against `.agents/plans/features/FEATURE-functor-owned-category-framework/`
-   and `PLAN-native-engine-remediation`, plus `specs/resolution.md`. A checked box or stale vault
-   status is not evidence either way. Reopen/hydrate work only when a required mathematical
-   behavior or consumer is genuinely absent; if the live code satisfies the old plan, leave the
-   historical plan alone rather than manufacturing synchronization work.
-2. **Dependency-offload and reinvention audit.** Before improving local machinery, search the
-   pinned/current Sage APIs and the relevant mature owners — GAP/CAP, Catlab/GATlab, OSCAR, SymPy,
-   Python stdlib or another declared dependency. Look especially for local caching, enumeration,
-   quotient/presentation, group/category, diagram, rewriting, serialization and algorithm layers
-   that can disappear or become thin adapters. The question is whether the mechanism should exist,
-   not whether its current container can be prettier.
-3. **Architecture and ownership audit.** Use the Brooks/thermo-nuclear lenses to look for duplicate
-   sources of truth, derivable retained state, thin pass-through wrappers, giant modules, cycle-
-   driven lazy imports, misplaced mathematical operations, private-field probes, duplicated
-   semantic provenance, scattered special cases, and abstractions whose only consumer is the code
-   that created them. Prefer deleting complexity or moving it to its mathematical/dependency owner
-   over rearranging it.
-4. **Type and public-API audit.** Inspect runtime/static-projection agreement, optional/union state,
-   casts, dynamic attribute probes, equality/identity assumptions, role/category ownership,
-   endpoint types, and APIs that leak backend representations or option bags. A typing change is
-   useful only when it makes the mathematical/runtime contract easier to understand and harder to
-   misuse; checker-golf is not progress.
-5. **Proof-bearing test audit.** Load `test-guidelines` and `test-writing`; sample tests across the
-   public consumers. Replace source-text, private-helper, mock, call-count, tautological, or
-   implementation-shaped assertions with real mathematical/runtime proof where necessary. A test
-   should falsify behavior through the public owner and a nontrivial fixture, especially at native
-   engine boundaries and retained universal constructions.
-6. **Slop and burned-bridge audit.** Use `policy-index`, `anti-slop`, `fixing-slop`, and
-   `reviewing-llm-code` to find compatibility shims, silent fallbacks, guessed state, exception-
-   driven ordinary control flow, deprecated parallel APIs, defaults that hide missing structure,
-   one-off helpers, generated-artifact ownership mistakes, and other states the repository's
-   policies intend to make unrepresentable. Fix the architecture rather than laundering the
-   symptom into another exception.
-7. **Maintainability / deletion audit.** Search for dead exports, unreachable wrappers, stale
-   recipes, orphaned registries, duplicate docs/spec implementations, unused dependency-boundary
-   glue, and code made obsolete by earlier remediation. Confirm by call graph and public consumer
-   before deleting; absence from one grep is not proof of deadness.
+1. **Vault-plan / live-contract audit.** Compare the closed nodes in this DAG and their actual public consumers against `.agents/plans/features/FEATURE-functor-owned-category-framework/` and `PLAN-native-engine-remediation`, plus `specs/resolution.md`. A checked box or stale vault status is not evidence either way.
+   Reopen/hydrate work only when a required mathematical behavior or consumer is genuinely absent; if the live code satisfies the old plan, leave the historical plan alone rather than manufacturing synchronization work.
 
-A small, well-supported finding is repaired in the same pass with the nearest behavioral or
-mathematical regression and committed as one coherent change. If a finding spans multiple owners,
-requires several independently reviewable repairs, or exposes a missing substantive capability,
-hydrate this execution DAG with explicit child nodes and dependency edges before continuing; do
-not bury a large programme in one audit turn. New nodes inherit the same dependency-first and
-public-consumer acceptance standard.
+2. **Dependency-offload and reinvention audit.** Before improving local machinery, search the pinned/current Sage APIs and the relevant mature owners — GAP/CAP, Catlab/GATlab, OSCAR, SymPy, Python stdlib or another declared dependency.
+   Look especially for local caching, enumeration, quotient/presentation, group/category, diagram, rewriting, serialization and algorithm layers that can disappear or become thin adapters.
+   The question is whether the mechanism should exist, not whether its current container can be prettier.
 
-A full pass may legitimately find nothing. In that case make **no code change, no TODO tick, no
-COMPLAINTS.md entry, and no empty audit commit**. The clean pass is evidence that the repository has
-converged under that particular lens. The terminal node remains open; a later pass changes lens or
-revisits one after other code has moved. Repeated clean passes across independent lenses increase
-confidence. They do not create a shortcut for declaring the loop complete.
+3. **Architecture and ownership audit.** Use the Brooks/thermo-nuclear lenses to look for duplicate sources of truth, derivable retained state, thin pass-through wrappers, giant modules, cycle- driven lazy imports, misplaced mathematical operations, private-field probes, duplicated semantic provenance, scattered special cases, and abstractions whose only consumer is the code that created them.
+   Prefer deleting complexity or moving it to its mathematical/dependency owner over rearranging it.
+
+4. **Type and public-API audit.** Inspect runtime/static-projection agreement, optional/union state, casts, dynamic attribute probes, equality/identity assumptions, role/category ownership, endpoint types, and APIs that leak backend representations or option bags.
+   A typing change is useful only when it makes the mathematical/runtime contract easier to understand and harder to misuse; checker-golf is not progress.
+
+5. **Proof-bearing test audit.** Load `test-guidelines` and `test-writing`; sample tests across the public consumers.
+   Replace source-text, private-helper, mock, call-count, tautological, or implementation-shaped assertions with real mathematical/runtime proof where necessary.
+   A test should falsify behavior through the public owner and a nontrivial fixture, especially at native engine boundaries and retained universal constructions.
+
+6. **Slop and burned-bridge audit.** Use `policy-index`, `anti-slop`, `fixing-slop`, and `reviewing-llm-code` to find compatibility shims, silent fallbacks, guessed state, exception- driven ordinary control flow, deprecated parallel APIs, defaults that hide missing structure, one-off helpers, generated-artifact ownership mistakes, and other states the repository's policies intend to make unrepresentable.
+   Fix the architecture rather than laundering the symptom into another exception.
+
+7. **Maintainability / deletion audit.** Search for dead exports, unreachable wrappers, stale recipes, orphaned registries, duplicate docs/spec implementations, unused dependency-boundary glue, and code made obsolete by earlier remediation.
+   Confirm by call graph and public consumer before deleting; absence from one grep is not proof of deadness.
+
+A small, well-supported finding is repaired in the same pass with the nearest behavioral or mathematical regression and committed as one coherent change.
+If a finding spans multiple owners, requires several independently reviewable repairs, or exposes a missing substantive capability, hydrate this execution DAG with explicit child nodes and dependency edges before continuing; do not bury a large programme in one audit turn.
+New nodes inherit the same dependency-first and public-consumer acceptance standard.
+
+A full pass may legitimately find nothing.
+In that case make **no code change, no TODO tick, no COMPLAINTS.md entry, and no empty audit commit**. The clean pass is evidence that the repository has converged under that particular lens.
+The terminal node remains open; a later pass changes lens or revisits one after other code has moved.
+Repeated clean passes across independent lenses increase confidence.
+They do not create a shortcut for declaring the loop complete.
 
 ## Use the graph at the consumer boundary
 

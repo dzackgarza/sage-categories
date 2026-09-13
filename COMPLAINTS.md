@@ -1369,9 +1369,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-discrete-construction-input`. Centralize input normalization and shape admission in `_discrete_construction_diagram`; leave only directional execution in the public constructors.
 
-
 ## FpCategories kept a hand-rolled identity cache beside Sage MonoDict
 
-- **Evidence and impact:** `engines/fp_categories.py` keyed native presentation records by `id(category)` in a plain dictionary and separately retained/asserted the owner object to defend against id reuse. The repository already uses Sage `MonoDict` precisely for identity-keyed state with strong key retention, so this duplicated lower-level identity bookkeeping.
+- **Evidence and impact:** `engines/fp_categories.py` keyed native presentation records by `id(category)` in a plain dictionary and separately retained/asserted the owner object to defend against id reuse.
+  The repository already uses Sage `MonoDict` precisely for identity-keyed state with strong key retention, so this duplicated lower-level identity bookkeeping.
 
 - **Repair link and acceptance:** `bloat-fp-presentation-identity-cache`. Store presentation records directly in `MonoDict` under the owned category and delete the integer-key/owner-assertion protocol.
+
+
+## Catlab recipe retention reimplemented identity maps with integer keys
+
+- **Evidence and impact:** `engines/catlab.py` stored functor and transformation recipes in plain dictionaries keyed by `id(value)`, retaining the owned morphism again beside each recipe and asserting identity on every read. Sage `MonoDict` already owns exactly this identity-keyed strong-reference behavior, so both recipe tables duplicated the same low-level protocol.
+
+- **Repair link and acceptance:** `bloat-catlab-recipe-identity-cache`. Key both recipe tables directly by the owned morphism in `MonoDict`, preserving transformation-recipe replacement only before native materialization.

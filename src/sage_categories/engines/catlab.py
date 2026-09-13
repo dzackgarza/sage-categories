@@ -26,6 +26,7 @@ from sage_categories.cat.native import (
     native_transformation as retained_native_transformation,
 )
 from sage_categories.engines.julia_bridge import catlab_bridge as _bridge
+from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
     "callable_transformation",
@@ -54,48 +55,31 @@ __all__ = [
 type FunctorRecipe = tuple[str, tuple[object, ...]]
 type TransformationRecipe = tuple[str, tuple[object, ...]]
 
-_functor_recipes: dict[int, tuple[object, FunctorRecipe]] = {}
-_transformation_recipes: dict[int, tuple[object, TransformationRecipe]] = {}
+_functor_recipes: MonoDict = MonoDict()
+_transformation_recipes: MonoDict = MonoDict()
 
 
 def _retain_functor_recipe(value: MorphismCategory.ObjectType, recipe: FunctorRecipe) -> None:
-    identifier = id(value)
-    if identifier in _functor_recipes:
-        retained, existing = _functor_recipes[identifier]
-        assert retained is value and existing == recipe
+    if value in _functor_recipes:
+        assert _functor_recipes[value] == recipe
         return
-    _functor_recipes[identifier] = (value, recipe)
+    _functor_recipes[value] = recipe
 
 
 def _functor_recipe(value: MorphismCategory.ObjectType) -> FunctorRecipe | None:
-    identifier = id(value)
-    if identifier not in _functor_recipes:
-        return None
-    retained, recipe = _functor_recipes[identifier]
-    assert retained is value
-    return recipe
+    return _functor_recipes[value] if value in _functor_recipes else None
 
 
 def _retain_transformation_recipe(value: MorphismCategory.ObjectType, recipe: TransformationRecipe) -> None:
-    identifier = id(value)
-    if identifier in _transformation_recipes:
-        retained, _ = _transformation_recipes[identifier]
-        assert retained is value
+    if value in _transformation_recipes:
         assert not has_native_transformation(value), f"{value!r} already materialized its Catlab transformation"
-        _transformation_recipes[identifier] = (value, recipe)
-        return
-    _transformation_recipes[identifier] = (value, recipe)
+    _transformation_recipes[value] = recipe
 
 
 def _transformation_recipe(
     value: MorphismCategory.ObjectType,
 ) -> TransformationRecipe | None:
-    identifier = id(value)
-    if identifier not in _transformation_recipes:
-        return None
-    retained, recipe = _transformation_recipes[identifier]
-    assert retained is value
-    return recipe
+    return _transformation_recipes[value] if value in _transformation_recipes else None
 
 
 def ensure_native_category(owner: Category) -> object:

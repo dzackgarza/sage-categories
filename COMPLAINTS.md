@@ -1566,9 +1566,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-discopy-path-token-ids`. Allocate sequential local object tokens through `MonoDict` and retain the reverse token map needed by the DisCoPy functor.
 
-
 ## Exact local fields hand-rolled integer prime multiplicity
 
-- **Evidence and impact:** `_rational_padic_valuation()` manually divided a rational numerator and denominator by the selected prime in two while-loops to count their exponents. SymPy, already a fixed dependency of this layer, supplies `ntheory.multiplicity` for exactly this mature arithmetic primitive; keeping a local loop adds algorithmic ownership without adding mathematical semantics.
+- **Evidence and impact:** `_rational_padic_valuation()` manually divided a rational numerator and denominator by the selected prime in two while-loops to count their exponents.
+  SymPy, already a fixed dependency of this layer, supplies `ntheory.multiplicity` for exactly this mature arithmetic primitive; keeping a local loop adds algorithmic ownership without adding mathematical semantics.
 
 - **Repair link and acceptance:** `bloat-local-field-rational-valuation`. Delegate the two nonzero integer multiplicities to SymPy and keep only the field-specific difference and the existing valuation of zero.
+
+
+## Additive tensors hand-rolled generic integer scalar multiplication
+
+- **Evidence and impact:** `algebra/abelian.py::_integer_multiple()` implemented its own recursive negative case and binary double-and-add loop over generic additive-group points. Sage already supplies `sage.groups.generic.multiple`, including negative exponents and the same binary algorithm, and this leaf adds no distinct mathematics by owning another implementation.
+
+- **Repair link and acceptance:** `bloat-additive-integer-multiple`. Delegate to Sage `multiple` with the owned group zero, unary negation, and addition operation.

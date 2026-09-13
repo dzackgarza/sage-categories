@@ -52,11 +52,13 @@ __all__ = [
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import partial
+from operator import add, neg
 from types import ModuleType
 from typing import Literal
 
 from sage.categories.sets_cat import Sets as SageSets
 from sage.combinat.free_module import CombinatorialFreeModule
+from sage.groups.generic import multiple
 from sage.groups.additive_abelian.additive_abelian_group import (
     AdditiveAbelianGroup_class,
 )
@@ -451,26 +453,15 @@ def _integer_multiple(
     coefficient: int,
     point: CategoryOfCategories.ElementType,
 ) -> CategoryOfCategories.ElementType:
-    """Return ``coefficient * point`` using only the selected additive-group operations."""
-    coefficient = int(coefficient)
-    match coefficient < 0:
-        case True:
-            return _integer_multiple(group, -coefficient, -point)
-        case False:
-            pass
-    result = group.zero()
-    addend = point
-    remaining = coefficient
-    while remaining:
-        match remaining % 2:
-            case 1:
-                result = result + addend
-            case 0:
-                pass
-        remaining //= 2
-        if remaining:
-            addend = addend + addend
-    return result
+    """Return ``coefficient * point`` through Sage's generic additive-group multiple."""
+    return multiple(
+        point,
+        int(coefficient),
+        operation="other",
+        identity=group.zero(),
+        inverse=neg,
+        op=add,
+    )
 
 
 def indexed_free_abelian_coproduct(

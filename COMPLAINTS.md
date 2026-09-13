@@ -1756,3 +1756,9 @@ Ideas, to be weighed, not obligations.*
   Keeping the two copies makes the object and morphism compatibility semantics easier to drift apart.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Move the shared compatibility-subset lifecycle to `_compatible_family_subset` and leave object/morphism accessors to supply only their respective retained component rules.
+
+## Finite presented categories hand-rolled two per-instance caches
+
+- **Evidence and impact:** `FinitePresentedCategory` carried nullable `_finite_arrows` and `_terminal` fields and open-coded first-call mutation in `finite_morphisms()` and `Terminal()`. Both are immutable per-instance query results, while Sage `cached_method` is already the repository owner for exactly this lifecycle. The duplicate protocol added state and branches without mathematical meaning.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache `finite_morphisms()` and `Terminal()` with Sage `cached_method`; remove both nullable fields and return the native reconstruction directly on first evaluation.

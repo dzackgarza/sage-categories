@@ -38,7 +38,7 @@ from sage_categories.cat.predicates import (
     register_handler,
 )
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.sage_runtime import MonoDict, cached_function
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -129,8 +129,6 @@ class FinitePresentedCategory(Category[[Word], []]):
         self._paths: dict[tuple[Hashable, Word], FinitePresentedCategory.MorphismType] = {}
         self._object_set: MonoDict = MonoDict()
         self._morphism_set: MonoDict = MonoDict()
-        self._finite_arrows: tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass | None = None
-        self._terminal: FinitePresentedCategory.ObjectType | None = None
         super().__init__()
         self._vertices = {label: self.ObjectType(VertexData(label)) for label in labels}
         register_handler(self._equality, self._equal_objects)
@@ -194,26 +192,22 @@ class FinitePresentedCategory(Category[[Word], []]):
             self._morphism_set[self] = Sets.Finite()(tuple((self.label(arrow.domain()), arrow.word()) for arrow in arrows))
         return self._morphism_set[self]
 
+    @cached_method
     def finite_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass:
         """The exact finite path enumeration supplied by FpCategories."""
-        if self._finite_arrows is None:
-            fp_categories = _fp_categories_engine()
-            native = fp_categories.finite_morphisms(self)
-            if native is None:
-                self._finite_arrows = Unknown
-                return Unknown
-            labels = self.labels()
-            self._finite_arrows = tuple(self.construct_morphism(self(labels[source]), self(labels[target]), word) for source, target, word in native)
-        return self._finite_arrows
+        fp_categories = _fp_categories_engine()
+        native = fp_categories.finite_morphisms(self)
+        if native is None:
+            return Unknown
+        labels = self.labels()
+        return tuple(self.construct_morphism(self(labels[source]), self(labels[target]), word) for source, target, word in native)
 
+    @cached_method
     def Terminal(self) -> FinitePresentedCategory.ObjectType:
         """A retained terminal vertex certified by native finite Hom sets."""
-        if self._terminal is None:
-            fp_categories = _fp_categories_engine()
-            selected = fp_categories.terminal_object(self)
-            assert selected is not None, f"{self!r} declares no native-computable terminal object"
-            self._terminal = selected
-        return self._terminal
+        selected = _fp_categories_engine().terminal_object(self)
+        assert selected is not None, f"{self!r} declares no native-computable terminal object"
+        return selected
 
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> FinitePresentedCategory.MorphismType:
         source, word = enumerated_datum(ask(self.morphism_set()), point)

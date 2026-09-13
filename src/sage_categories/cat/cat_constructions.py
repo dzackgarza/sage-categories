@@ -73,7 +73,7 @@ from sage_categories.cat.shapes import (
     carrier_comparison,
 )
 from sage_categories.kernel.refinement import is_placed
-from sage_categories.kernel.retention import complete_constructions, deferred_category
+from sage_categories.kernel.retention import complete_constructions, deferred_category, identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_method
 
 if TYPE_CHECKING:
@@ -371,7 +371,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         assert ask(components_agree(result, self)) is not False, f"{rule!r} is no compatible family over {self._diagram!r}"
         return result
 
-    @cached_method(key=lambda self, sequence: tuple((id(member_object), member_object) for member_object in sequence))
+    @cached_method(key=lambda self, sequence: identity_key(*sequence))
     def _from_sequence(self, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> LimitCategory.ObjectType:
         rule = _sequence_rule(sequence)
         vertices = self._vertices()

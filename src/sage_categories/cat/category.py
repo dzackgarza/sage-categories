@@ -1731,12 +1731,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
             return base_change(self, defining_functor)
 
-        @cached_method(
-            key=lambda self, source, target: (
-                (id(source), source),
-                (id(target), target),
-            )
-        )
+        @cached_method(key=lambda self, source, target: identity_key(source, target))
         def restrict(self, source: Category, target: Category) -> Functor:
             """Restrict both actions along supplied subcategory inclusions.
 

@@ -51,6 +51,7 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
 from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import TripleDict, cached_method
 
 if TYPE_CHECKING:
@@ -292,7 +293,7 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory
     def structure_functors(self) -> tuple[Functor, ...]:
         return (self.subcategory_monomorphism(), self.target_projection())
 
-    @cached_method(key=lambda self, candidate: (id(candidate), candidate))
+    @cached_method(key=lambda self, candidate: identity_key(candidate))
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         return self._ambient.membership_proposition(candidate) & self._inverse_image_predicate(candidate)
 
@@ -597,7 +598,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         """
         return _axiom_layer().subcategory_inclusions(self)
 
-    @cached_method(key=lambda self, candidate: (id(candidate), candidate))
+    @cached_method(key=lambda self, candidate: identity_key(candidate))
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """Membership in the ambient and the property's own predicate.
 

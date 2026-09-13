@@ -157,12 +157,7 @@ def sequence_position(vertex: DiscreteCategory.ObjectType) -> int:
     return position(vertices, vertex)
 
 
-@cached_function(
-    key=lambda ambient, sequence: (
-        (id(ambient), ambient),
-        tuple((id(member_object), member_object) for member_object in sequence),
-    )
-)
+@cached_function(key=lambda ambient, sequence: identity_key(ambient, *sequence))
 def from_sequence(ambient: Category, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> Functor:
     """The finite discrete sequence diagram used before the owned Sets leaf exists."""
     from sage_categories.cat.canonical import _finite_discrete

@@ -1462,13 +1462,21 @@ Ideas, to be weighed, not obligations.*
 
 ## OSCAR reconstruction duplicated commutative-ring certification
 
-- **Evidence and impact:** `algebra/_commutative_rings_oscar.py::reconstruct_oscar_object` rebuilt the full additive-group, multiplicative-monoid, semiring, ring, and commutativity refinement chain after constructing an OSCAR-backed carrier. `algebra/_certified_commutative_ring.py` already owns that exact theorem-backed reconstruction from a carrier, addition/multiplication rules, zero, and one, so the OSCAR adapter carried a second implementation of the same categorical certification.
+- **Evidence and impact:** `algebra/_commutative_rings_oscar.py::reconstruct_oscar_object` rebuilt the full additive-group, multiplicative-monoid, semiring, ring, and commutativity refinement chain after constructing an OSCAR-backed carrier.
+  `algebra/_certified_commutative_ring.py` already owns that exact theorem-backed reconstruction from a carrier, addition/multiplication rules, zero, and one, so the OSCAR adapter carried a second implementation of the same categorical certification.
 
 - **Repair link and acceptance:** `bloat-oscar-certified-ring-reconstruction`. Keep OSCAR responsible for native membership and the four ring operations/constants, then pass them to `certified_commutative_ring()` and retain only the resulting native realization at the OSCAR boundary.
 
-
 ## Indexed-category caches used bare Python ids as retained keys
 
-- **Evidence and impact:** eight `cached_method` declarations in `cat/indexed.py` keyed owned categories, morphisms, functors, and base objects only by `id(...)`. Those caches outlive individual calls, so the bare integer key does not retain the object whose identity it denotes and can alias after Python id reuse. The repository already defines `identity_key` to retain values while comparing identity before mathematical equality.
+- **Evidence and impact:** eight `cached_method` declarations in `cat/indexed.py` keyed owned categories, morphisms, functors, and base objects only by `id(...)`. Those caches outlive individual calls, so the bare integer key does not retain the object whose identity it denotes and can alias after Python id reuse.
+  The repository already defines `identity_key` to retain values while comparing identity before mathematical equality.
 
 - **Repair link and acceptance:** `bloat-indexed-cache-identity-keys`. Replace every bare-id cache key in the indexed/Grothendieck owner with `identity_key(...)`, preserving cache partitioning and avoiding proposition-valued equality.
+
+
+## Category-theory caches re-spelled the identity-key protocol locally
+
+- **Evidence and impact:** several retained `cached_function`/`cached_method` sites in `cat/diagrams.py`, `cat/category.py`, `cat/cat_constructions.py`, and `cat/properties.py` manually rebuilt `(id(value), value)` keys or bare per-sequence variants. The repository already owns this exact retain-before-equality contract in `kernel.retention.identity_key`, so the local spellings duplicated a subtle invariant and could drift.
+
+- **Repair link and acceptance:** `bloat-theory-cache-identity-keys`. Route those cache keys through `identity_key(...)` while preserving argument order and the existing per-owner cache boundaries.

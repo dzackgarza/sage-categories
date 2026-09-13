@@ -2020,3 +2020,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `SetsCategory._represented_product()` still built a local `MonoDict` by enumerating its retained vertices even after the same identity-indexing mechanism was centralized in `kernel.retention.identity_positions`. This left represented products with a fourth copy of a repository-level retention primitive and an otherwise unnecessary direct `MonoDict` dependency.
 
 - **Repair link and acceptance:** `bloat-represented-product-shared-position-helper`. Use `identity_positions(vertices)` for represented-product projection lookup, drop the local `MonoDict` import, and preserve the exact retained vertex-to-component positions.
+
+## Cartesian comparison execution hand-rolled exact-type dispatch
+
+- **Evidence and impact:** `cat/monoidal.py` maintained `_cartesian_comparison_handlers: dict[type[Category], handler]`, manually registered leaf handlers, and manually dispatched on `type(base)`. This is ordinary single-dispatch behavior with no independent mathematical state, while Python already supplies the registration and dispatch mechanism.
+
+- **Repair link and acceptance:** `bloat-cartesian-comparison-dispatch`. Make `_native_cartesian_comparison` a `functools.singledispatch` function, register each leaf category type through its standard registry, and delete the parallel handler dictionary without changing the finite-set native comparison implementation.

@@ -8,6 +8,7 @@ https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Mono
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import singledispatch
 from typing import NamedTuple
 
 from sage_categories.cat.calculus import (
@@ -44,7 +45,16 @@ __all__ = [
 
 
 type CartesianComparisonHandler = Callable[..., MorphismCategory.ObjectType]
-_cartesian_comparison_handlers: dict[type[Category], CartesianComparisonHandler] = {}
+
+
+@singledispatch
+def _native_cartesian_comparison(
+    base: Category,
+    operation: str,
+    *arguments: object,
+) -> MorphismCategory.ObjectType | None:
+    """Use the native Cartesian comparison selected for ``base``'s concrete category type."""
+    return None
 
 
 def register_cartesian_comparisons(
@@ -52,19 +62,14 @@ def register_cartesian_comparisons(
     handler: CartesianComparisonHandler,
 ) -> None:
     """Register one leaf category's native Cartesian comparison engine."""
-    _cartesian_comparison_handlers[category_type] = handler
 
-
-def _native_cartesian_comparison(
-    base: Category,
-    operation: str,
-    *arguments: object,
-) -> MorphismCategory.ObjectType | None:
-    match type(base) in _cartesian_comparison_handlers:
-        case True:
-            return _cartesian_comparison_handlers[type(base)](operation, *arguments)
-        case False:
-            return None
+    @_native_cartesian_comparison.register(category_type)
+    def comparison(
+        _base: Category,
+        operation: str,
+        *arguments: object,
+    ) -> MorphismCategory.ObjectType | None:
+        return handler(operation, *arguments)
 
 
 def tensor_object(tensor: Functor, first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:

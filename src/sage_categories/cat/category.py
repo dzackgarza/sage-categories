@@ -1372,9 +1372,6 @@ type LiftRule = Callable[
     MorphismCategory.ObjectType,
 ]
 
-_cartesian_rules: MonoDict = MonoDict()
-_cocartesian_rules: MonoDict = MonoDict()
-
 # The factors ``(first, second)`` of every composite ``second * first`` constructed by
 # ``Cat()``: an explicit composite names its construction (``specs/functor.md``,
 # "Structural inheritance": a selected composite retains its factor functors).
@@ -1573,6 +1570,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._on_object = data.on_object
             self._on_morphism = data.on_morphism
             self._limit_liftings: dict[Category | Functor, tuple[LimitApexLift, LimitMorphismLift]] = {}
+            self._cartesian_lift_rule = None
+            self._cocartesian_lift_rule = None
             self._initialize_functor_image_cache()
 
         # The admission condition is the one the image construction needs.  A retained
@@ -1803,13 +1802,13 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def retain_cartesian_lifts(self, rule: LiftRule) -> None:
             """Retain the rule constructing the cartesian lift of ``f: y -> p(e)`` at ``e`` over the class of morphisms the owner states."""
-            assert self not in _cartesian_rules, f"{self!r} already retains its cartesian lifts"
-            _cartesian_rules[self] = rule
+            assert self._cartesian_lift_rule is None, f"{self!r} already retains its cartesian lifts"
+            self._cartesian_lift_rule = rule
 
         def retain_cocartesian_lifts(self, rule: LiftRule) -> None:
             """Retain the rule constructing the cocartesian lift of ``f: p(e) -> y`` at ``e`` over the class of morphisms the owner states."""
-            assert self not in _cocartesian_rules, f"{self!r} already retains its cocartesian lifts"
-            _cocartesian_rules[self] = rule
+            assert self._cocartesian_lift_rule is None, f"{self!r} already retains its cocartesian lifts"
+            self._cocartesian_lift_rule = rule
 
         @cached_method(key=lambda self, morphism, member_object: identity_key(morphism, member_object))
         def cartesian_lift(
@@ -1818,10 +1817,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             member_object: CategoryOfCategories.ElementType,
         ) -> MorphismCategory.ObjectType:
             """The cartesian lift of ``morphism: y -> p(e)`` at ``e``: a morphism of the domain ending at ``e`` over ``morphism``, retained once per pair."""
-            assert self in _cartesian_rules, f"{self!r} retains no cartesian lifts"
+            rule = self._cartesian_lift_rule
+            assert rule is not None, f"{self!r} retains no cartesian lifts"
             assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
             assert morphism.codomain() is self.on_object(member_object), f"{morphism!r} does not end at the image of {member_object!r}"
-            return _cartesian_rules[self](morphism, member_object)
+            return rule(morphism, member_object)
 
         @cached_method(key=lambda self, morphism, member_object: identity_key(morphism, member_object))
         def cocartesian_lift(
@@ -1830,10 +1830,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             member_object: CategoryOfCategories.ElementType,
         ) -> MorphismCategory.ObjectType:
             """The cocartesian lift of ``morphism: p(e) -> y`` at ``e``: a morphism of the domain starting at ``e`` over ``morphism``, retained once per pair."""
-            assert self in _cocartesian_rules, f"{self!r} retains no cocartesian lifts"
+            rule = self._cocartesian_lift_rule
+            assert rule is not None, f"{self!r} retains no cocartesian lifts"
             assert morphism in self.codomain().morphism_category(1), f"{morphism!r} is not a morphism of {self.codomain()!r}"
             assert morphism.domain() is self.on_object(member_object), f"{morphism!r} does not start at the image of {member_object!r}"
-            return _cocartesian_rules[self](morphism, member_object)
+            return rule(morphism, member_object)
 
         def __repr__(self) -> str:
             return f"Functor({self.domain()!r} -> {self.codomain()!r})"

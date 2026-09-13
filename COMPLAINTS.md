@@ -868,3 +868,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `algebra/_commutative_rings_oscar.py` imported `engines.oscar` separately while reconstructing native ring objects and native ring morphisms. Both operations already share the same cycle-safe owner/runtime module bundle, so duplicating the OSCAR adapter import split one reconstruction boundary across two functions.
 
 - **Repair link and acceptance:** `bloat-oscar-reconstruction-boundary`. Put the delayed OSCAR adapter lookup behind `_oscar_runtime()` and let object and morphism reconstruction share it.
+
+## Category finite-morphism queries repeated evaluator imports
+
+- **Evidence and impact:** `cat/category.py` imported `finite_category` independently in `morphisms()` and `hom_morphisms()` after the primary morphism-set query failed to provide an exact set. Both paths invoke the same finite structural evaluator and keep it delayed only to avoid the category/evaluator bootstrap cycle.
+
+- **Repair link and acceptance:** `bloat-category-finite-evaluator-boundary`. Put the delayed evaluator behind `_finite_category_data()` and let both finite morphism-query fallbacks share it.

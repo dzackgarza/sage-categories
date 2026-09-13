@@ -196,6 +196,13 @@ def _declares_implementation(functor: MorphismCategory.ObjectType) -> Category |
     return domain if functor is Fun(domain, domain).one() else None
 
 
+def _finite_category_data(category: Category):
+    """Read exact finite structural data through the cycle-safe category evaluator."""
+    from sage_categories.cat.finite_categories import finite_category
+
+    return finite_category(category)
+
+
 class CategoryDeclaration[
     **MorphismData,
     **TwoMorphismData,
@@ -1090,9 +1097,7 @@ class CategoryDeclaration[
         morphisms = ask(self.morphism_set())
         if morphisms is not Unknown:
             return tuple(self.morphism_at(point) for point in morphisms)
-        from sage_categories.cat.finite_categories import finite_category
-
-        finite = finite_category(self)
+        finite = _finite_category_data(self)
         return Unknown if finite is Unknown else finite.morphisms
 
     def hom_morphisms(
@@ -1101,9 +1106,7 @@ class CategoryDeclaration[
         target: ObjectRole,
     ) -> tuple[MorphismRole, ...] | UnknownClass:
         """An exact finite enumeration of a hom, when owned evaluation supplies it."""
-        from sage_categories.cat.finite_categories import finite_category
-
-        finite = finite_category(self)
+        finite = _finite_category_data(self)
         if finite is Unknown:
             return Unknown
         return tuple(arrow for arrow in finite.morphisms if arrow.domain() is source and arrow.codomain() is target)

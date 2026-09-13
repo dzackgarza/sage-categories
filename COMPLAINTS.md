@@ -1233,3 +1233,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `geometry/cw.py::projective_infinity` mixed object initialization with three independent universal-map responsibilities: finite-stage topological legs, stagewise weak-open preimages, and cocone descent. The resulting constructor exceeded one hundred lines and made the weak-topology equations available only as nested closures rather than named operations.
 
 - **Repair link and acceptance:** `bloat-projective-infinity-maps`. Extract `_projective_infinity_leg`, `_projective_infinity_preimage`, and `_projective_infinity_descent`; leave `projective_infinity()` responsible for constructing/retaining the object and wiring those named universal maps into its colimit presentation.
+
+## Projective-line construction embedded the entire chart sheaf in its initializer
+
+- **Evidence and impact:** `geometry/schemes.py::projective_line` constructed the affine gluing and chart-swap map, then embedded a second independent responsibility: the finite cover category, section-ring functor, transported overlap restriction, and ring-presheaf reconstruction. That made the line constructor over one hundred lines and hid the sheaf's exact restriction presentation inside local closures.
+
+- **Repair link and acceptance:** `bloat-projective-line-sheaf`. Move the finite cover, sections, restrictions and `ring_presheaf_from_functor` call into `_projective_line_structure_sheaf()`; keep `projective_line()` responsible for chart rings, gluing/swap data, and assembly of the final presentation.

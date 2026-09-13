@@ -454,11 +454,6 @@ def Groups(
 # declared faithful isofibration (``specs/magmas-monoids-semirings.md``, "Named operations").
 
 
-def _symbol_category(symbol: str) -> Category:
-    """``1_s``: the one-object category on the formal symbol ``s``, the discrete category of ``{s}``."""
-    return Discrete(Sets((symbol,)))
-
-
 @complete_constructions()
 def _named_copy(neutral: Category, symbol: str, category_type: type[NamedOperationCategory]) -> NamedOperationCategory:
     """``neutral × 1_s`` in ``Cat``, retained as ``category_type`` with its projections.
@@ -466,7 +461,7 @@ def _named_copy(neutral: Category, symbol: str, category_type: type[NamedOperati
     Its first projection and the section defined by the product's universal property
     are mutually inverse functors.
     """
-    diagram = from_sequence(Cat(), (neutral, _symbol_category(symbol)))
+    diagram = from_sequence(Cat(), (neutral, Discrete(Sets((symbol,)))))
     family = Cat().Limits(diagram.domain())
     copy = limit_of_categories(diagram, family, category_type)
     legs = (

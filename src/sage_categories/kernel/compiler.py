@@ -46,12 +46,15 @@ from sage_categories.kernel.roles import (
     ObjectOfCategory,
     Role,
     building_role_classes,
+    category_universal_class,
     declaration_role,
+    declared_roles,
     install_cat_element_root,
     install_category_declaration_root,
     install_category_object_class,
     kernel_base,
     record_attribute_writes,
+    role_of,
 )
 from sage_categories.kernel.sage_runtime import (
     MonoDict,
@@ -396,8 +399,6 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
             continue
         current = relations[provider_name]
         relations[provider_name] = tuple(name for name in current if name in entry)
-    from sage_categories.kernel.roles import category_universal_class, declared_roles
-
     universal = cast(
         type[CategoryPoint],
         vars(category_universal_class())[Role.ELEMENT.value],
@@ -1373,8 +1374,6 @@ def implement_category(
         *additions,
     )
     category._selected_functors = (*category.selected_functors(), *additions)
-
-    from sage_categories.kernel.roles import role_of
 
     for role in Role:
         declaration = vars(implementation)[role.value]

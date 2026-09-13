@@ -1012,3 +1012,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/compiler.py` imported `traces_inheritance` when reading selected inheritance edges and separately imported `declares_point`/`is_placed` during category compilation. The compiler and refinement modules intentionally meet through a delayed cycle boundary, but both operations query the same retained refinement graph.
 
 - **Repair link and acceptance:** `bloat-compiler-refinement-boundary`. Put the delayed refinement module behind `_refinement()` and route inheritance tracing plus selected-functor placement/point checks through that one owner.
+
+## Compiler re-imported role helpers from a module already bound at import time
+
+- **Evidence and impact:** `kernel/compiler.py` already imports its stable role declarations at module scope, but inheritance projection re-imported `category_universal_class`/`declared_roles` and exact-category implementation re-imported `role_of`. Unlike the refinement boundary, no cycle is protected here: the roles module is already a compiler import dependency.
+
+- **Repair link and acceptance:** `bloat-compiler-role-reimports`. Bind those three role helpers with the existing module-level role imports and remove the redundant local imports.

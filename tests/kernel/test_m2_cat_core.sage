@@ -6,7 +6,7 @@ from sage_categories.cat.category import Axiom, Cat, Category, CategoryOfCategor
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.images import full_image, strict_image
-from sage_categories.cat.morphisms import Mor, MorphismCategory
+from sage_categories.cat.morphisms import FixedEndpointCategory, Mor, MorphismCategory
 from sage_categories.cat.opposites import Op, op_squared_isomorphism
 from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import Proposition, Unknown, register_handler
@@ -173,6 +173,8 @@ def test_the_three_role_types_a_functor_and_a_transformation_are_one_tower() -> 
     assert Mor(TOKENS).ObjectType is TOKENS.MorphismType
     assert Mor(2, TOKENS).ObjectType is Mor(TOKENS).MorphismType
     assert isinstance(arrow, Mor(TOKENS).ObjectType)
+    assert FixedEndpointCategory.narrowing_base is Category.narrowing_base
+    assert FixedEndpointCategory.narrowing_roots is Category.narrowing_roots
 
     # A functor is an object of ``Mor(Cat())`` and of the fixed-endpoint category.
     functors = Fun(TOKENS, TOKENS)

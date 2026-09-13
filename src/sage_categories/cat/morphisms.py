@@ -573,15 +573,6 @@ class FixedEndpointCategory[
     def codomain(self) -> CodomainType:
         return self._codomain_object
 
-    # A fixed-endpoint category is its own base for narrowing: ``Mor(C)(A, B).P()`` is a
-    # narrowing of it, of the type it declares, and never a root of ``Mor(C)``.
-
-    def narrowing_base(self) -> Category:
-        return self
-
-    def narrowing_roots(self) -> tuple[Category, ...]:
-        return ()
-
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """A morphism of ``Mor(C)`` with these endpoints (POL-CAT-087: the ambient decides which values are its morphisms)."""
         return self.ambient().membership_proposition(candidate) & endpoints(candidate, self._domain_object, self._codomain_object)

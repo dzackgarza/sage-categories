@@ -5,6 +5,7 @@ from __future__ import annotations
 import operator
 from collections.abc import Callable, Iterable
 from functools import partial
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 from sympy import And, Implies, Not, Or
@@ -90,6 +91,13 @@ type Proposition = Boolean
 # that already exist there (D142, D148).  It is unbound when the class body reads it,
 # so its first parameter is the declaring category.
 type DecidingProposition = Callable[[Category, CategoryOfCategories.ElementType], Proposition]
+
+
+def _properties() -> ModuleType:
+    """Load property-subcategory execution at the predicate/property cycle boundary."""
+    from sage_categories.cat import properties
+
+    return properties
 
 
 def property_predicate(name: str, category: Category) -> Predicate:
@@ -298,9 +306,7 @@ def _property_subcategory() -> type[PropertySubcategory]:
     (``cat/category.py``, ``Cat().Inhabited()``).  The class it returns is read on first
     construction, which is after that module is imported.
     """
-    from sage_categories.cat.properties import PropertySubcategory
-
-    return PropertySubcategory
+    return _properties().PropertySubcategory
 
 
 class Axiom:
@@ -471,8 +477,8 @@ class Axiom:
                 return defining_functor.inverse_image(self._declared_on(defining_functor.codomain(), *parameters))
         if _class_declaration(category, self._name) is not self:
             from sage_categories.cat.functors import Fun
-            from sage_categories.cat.properties import retain_inverse_image
 
+            properties = _properties()
             routes = tuple(
                 (functor, self._declared_on(functor.codomain(), *parameters))
                 for functor in category.selected_functors()
@@ -494,7 +500,7 @@ class Axiom:
             for functor, target in routes[1:]:
                 projection = functor.restrict(result, target)
                 result._retain_structure_functor(projection)
-                retain_inverse_image(functor, target, result, source_projection, projection)
+                properties.retain_inverse_image(functor, target, result, source_projection, projection)
             return result
         return self._construct_declared(category, *parameters)
 

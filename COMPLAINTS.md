@@ -958,3 +958,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `yoneda` and `coyoneda` imported `curry`/`transpose` separately from `cat.calculus`. The import remains delayed because weighted constructions and calculus meet through the functor bootstrap, but both embeddings cross the same execution boundary.
 
 - **Repair link and acceptance:** `bloat-weighted-calculus-boundary`. Put the delayed calculus module behind `_calculus()` and let both Yoneda embeddings select their required operations from that one owner.
+
+## Predicate axioms reopened the property runtime boundary
+
+- **Evidence and impact:** `cat/predicates.py` imported `PropertySubcategory` when selecting the default axiom implementation and separately imported `retain_inverse_image` when transporting an inherited axiom. Both imports are intentionally delayed because predicates sit below property-category construction during bootstrap, but they cross the same property runtime boundary.
+
+- **Repair link and acceptance:** `bloat-predicate-property-boundary`. Put the delayed property module behind `_properties()` and use it for both default subcategory construction and retained inverse-image transport.

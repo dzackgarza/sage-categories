@@ -2011,6 +2011,54 @@ def _source_symbol_tables(
     return symbols, function_returns, annotations, trees
 
 
+def _source_value_type(
+    module: str,
+    expression: ast.expr,
+    symbols: dict[str, dict[str, str]],
+    function_returns: dict[str, str],
+    annotations: dict[str, dict[str, str]],
+) -> str | None:
+    """Resolve the written type of a named value or simple constructor call."""
+    match expression:
+        case ast.Name(id=name):
+            return annotations[module].get(name)
+        case ast.Call(func=func):
+            callable_name = _source_symbol_path(symbols, module, func)
+            return None if callable_name is None else function_returns.get(callable_name)
+        case _:
+            return None
+
+
+def _module_role_aliases(
+    module: str,
+    tree: ast.Module,
+    providers: set[str],
+    symbols: dict[str, dict[str, str]],
+    function_returns: dict[str, str],
+    annotations: dict[str, dict[str, str]],
+) -> dict[str, str]:
+    """Return public aliases in one module that name written role declarations."""
+    public = frozenset(_public_names(tree))
+    aliases: dict[str, str] = {}
+    roles = {"ObjectType", "ElementType", "MorphismType"}
+    for statement in tree.body:
+        if not isinstance(statement, ast.Assign) or len(statement.targets) != 1:
+            continue
+        target = statement.targets[0]
+        value = statement.value
+        if not isinstance(target, ast.Name) or target.id not in public:
+            continue
+        if not isinstance(value, ast.Attribute) or value.attr not in roles:
+            continue
+        owner = _source_value_type(module, value.value, symbols, function_returns, annotations)
+        if owner is None:
+            continue
+        declaration = f"{owner}.{value.attr}"
+        if declaration in providers:
+            aliases[target.id] = declaration
+    return aliases
+
+
 def _source_role_aliases(
     package: str,
     output_directory: Path,
@@ -2021,49 +2069,8 @@ def _source_role_aliases(
     symbols, function_returns, annotations, trees = _source_symbol_tables(package, output_directory, sources)
     providers = {provider for relations in inheritance.values() for provider in relations}
     result: dict[str, dict[str, str]] = {}
-
-    def symbol_path(module: str, expression: ast.expr) -> str | None:
-        match expression:
-            case ast.Name(id=name):
-                return symbols[module].get(name)
-            case ast.Attribute(value=value, attr=attr):
-                base = symbol_path(module, value)
-                return None if base is None else f"{base}.{attr}"
-            case _:
-                return None
-
-    def value_type(module: str, expression: ast.expr) -> str | None:
-        match expression:
-            case ast.Name(id=name):
-                return annotations[module].get(name)
-            case ast.Call(func=func):
-                callable_name = symbol_path(module, func)
-                return None if callable_name is None else function_returns.get(callable_name)
-            case _:
-                return None
-
     for module, tree in trees.items():
-        public = frozenset(_public_names(tree))
-        aliases: dict[str, str] = {}
-        for statement in tree.body:
-            if not isinstance(statement, ast.Assign) or len(statement.targets) != 1:
-                continue
-            target = statement.targets[0]
-            if not isinstance(target, ast.Name) or target.id not in public:
-                continue
-            value = statement.value
-            if not isinstance(value, ast.Attribute) or value.attr not in {
-                "ObjectType",
-                "ElementType",
-                "MorphismType",
-            }:
-                continue
-            owner = value_type(module, value.value)
-            if owner is None:
-                continue
-            declaration = f"{owner}.{value.attr}"
-            if declaration in providers:
-                aliases[target.id] = declaration
+        aliases = _module_role_aliases(module, tree, providers, symbols, function_returns, annotations)
         if aliases:
             result[module] = aliases
     return result

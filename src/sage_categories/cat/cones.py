@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Hashable
+from types import ModuleType
 
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import CommaSpecialization
@@ -32,6 +33,13 @@ type Components = Callable[[CategoryOfCategories.ElementType], MorphismCategory.
 type Lift = Callable[[ConeCategory.ObjectType], MorphismCategory.ObjectType]
 
 
+def _opposites() -> ModuleType:
+    """Load opposite-category operations at the cycle-safe cone boundary."""
+    from sage_categories.cat import opposites
+
+    return opposites
+
+
 def _terminal_category_and_star() -> tuple[Category, CategoryOfCategories.ElementType]:
     """Load ``Cat().Terminal()`` once at the cycle-safe cone construction boundary."""
     from sage_categories.cat.functors import Cat
@@ -56,12 +64,10 @@ def cocone(
     components: Components,
 ) -> NaturalTransformation:
     """Construct the cocone ``diagram => constant(apex)`` through ``Op``."""
-    from sage_categories.cat.opposites import opposite_morphism
-
     dual_cone = cone(
         diagram.op(),
         apex,
-        lambda vertex: opposite_morphism(components(vertex)),
+        lambda vertex: _opposites().opposite_morphism(components(vertex)),
     )
     return dual_cone.op()
 
@@ -85,9 +91,8 @@ def vertex_of(
     if ask(shape.membership_proposition(index)) is True:
         return index
     from sage_categories.cat.canonical import FinitePresentedCategory
-    from sage_categories.cat.opposites import OppositeCategory
 
-    if isinstance(shape, OppositeCategory):
+    if isinstance(shape, _opposites().OppositeCategory):
         if ask(shape.original().membership_proposition(index)) is True:
             return index
         return vertex_of(shape.original(), index)

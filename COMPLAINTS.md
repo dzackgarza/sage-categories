@@ -964,3 +964,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/predicates.py` imported `PropertySubcategory` when selecting the default axiom implementation and separately imported `retain_inverse_image` when transporting an inherited axiom. Both imports are intentionally delayed because predicates sit below property-category construction during bootstrap, but they cross the same property runtime boundary.
 
 - **Repair link and acceptance:** `bloat-predicate-property-boundary`. Put the delayed property module behind `_properties()` and use it for both default subcategory construction and retained inverse-image transport.
+
+## Cone utilities reopened the opposite-category boundary
+
+- **Evidence and impact:** `cat/cones.py` imported `opposite_morphism` in cocone construction and `OppositeCategory` independently in vertex resolution. Both operations must remain below the opposite-category layer during bootstrap, but they cross one delayed module boundary rather than two unrelated dependencies.
+
+- **Repair link and acceptance:** `bloat-cone-opposite-boundary`. Put the delayed opposite-category module behind `_opposites()` and use it for both cocone arrow reversal and opposite-shape recognition.

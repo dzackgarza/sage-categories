@@ -1623,9 +1623,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-slice-dispatch-boundary`. Encapsulate the orientation test in the slice owner for internal dispatch, reuse it in triangle projection, and remove the redundant native-adapter probe.
 
-
 ## CW topology maps repeated the same open-object unwrapping casts
 
-- **Evidence and impact:** finite-stage restriction, finite conjugation, and weak-colimit inverse-image paths in `geometry/cw.py` repeatedly spelled nested `cast(Any, open_object).point().datum()` chains. The representation boundary is one operation — recover the retained `CWOpen` or `_WeakCWOpen` from an open-category object — and scattering the casts obscures the actual topology logic.
+- **Evidence and impact:** finite-stage restriction, finite conjugation, and weak-colimit inverse-image paths in `geometry/cw.py` repeatedly spelled nested `cast(Any, open_object).point().datum()` chains.
+  The representation boundary is one operation — recover the retained `CWOpen` or `_WeakCWOpen` from an open-category object — and scattering the casts obscures the actual topology logic.
 
 - **Repair link and acceptance:** `bloat-cw-open-datum-boundary`. Centralize finite and weak open extraction in two typed helpers and use them throughout inverse-image construction.
+
+
+## Adelic continuity encoded ring operations as internal strings
+
+- **Evidence and impact:** `_adele_topological_ring()` sent the strings `"addition"` and `"multiplication"` into a local `binary_preimage` function, which matched those strings to recover the actual ring operation. This is a second, stringly typed dispatch table for operations already present as callables and makes an impossible unknown-operation state representable.
+
+- **Repair link and acceptance:** `bloat-adele-binary-preimage-dispatch`. Share the topology construction in `_binary_adele_preimage` and pass addition/multiplication as callables; keep the name only as retained presentation metadata.

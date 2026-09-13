@@ -356,6 +356,25 @@ def _adele_ring(owner: object) -> tuple[CategoryOfCategories.ElementType, Catego
     return carrier, ring
 
 
+def _binary_adele_preimage(
+    space: TopologicalSpacesCategory.ObjectType,
+    open_object: CategoryOfCategories.ElementType,
+    name: str,
+    operation: Callable[[AdeleValue, AdeleValue], AdeleValue],
+) -> ProductTopologyOpen:
+    """The product-topology preimage of one adelic open under a binary ring operation."""
+    open_set = cast(AdeleOpen, cast(Any, open_object).point().datum())
+
+    def membership(pair: tuple[object, object]) -> bool | None:
+        return open_set.contains(operation(cast(AdeleValue, pair[0]), cast(AdeleValue, pair[1])))
+
+    return ProductTopologyOpen(
+        space,
+        membership,
+        ("restricted-product-preimage", name, open_set),
+    )
+
+
 def _adele_topological_ring(
     owner: object,
     carrier: CategoryOfCategories.ElementType,
@@ -379,32 +398,15 @@ def _adele_topological_ring(
     addition = cast(MorphismCategory.ObjectType, cast(Any, ring).addition())
     multiplication = cast(MorphismCategory.ObjectType, cast(Any, ring).multiplication())
 
-    def binary_preimage(operation: str, open_object: CategoryOfCategories.ElementType) -> ProductTopologyOpen:
-        open_set = cast(AdeleOpen, cast(Any, open_object).point().datum())
-
-        def membership(pair: tuple[object, object]) -> bool | None:
-            first, second = cast(AdeleValue, pair[0]), cast(AdeleValue, pair[1])
-            match operation:
-                case "addition":
-                    return open_set.contains(first + second)
-                case "multiplication":
-                    return open_set.contains(first * second)
-
-        return ProductTopologyOpen(
-            space,
-            membership,
-            ("restricted-product-preimage", operation, open_set),
-        )
-
     addition_continuity = BinaryContinuity(
         space,
         addition,
-        lambda open_object: binary_preimage("addition", open_object),
+        lambda open_object: _binary_adele_preimage(space, open_object, "addition", lambda first, second: first + second),
     )
     multiplication_continuity = BinaryContinuity(
         space,
         multiplication,
-        lambda open_object: binary_preimage("multiplication", open_object),
+        lambda open_object: _binary_adele_preimage(space, open_object, "multiplication", lambda first, second: first * second),
     )
     return space, TopologicalRings()(ring, space, addition_continuity, multiplication_continuity)
 

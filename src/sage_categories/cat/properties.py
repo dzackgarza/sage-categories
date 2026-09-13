@@ -52,7 +52,7 @@ from sage_categories.cat.predicates import (
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_method
+from sage_categories.kernel.sage_runtime import TripleDict, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -219,6 +219,9 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return arrows
 
 
+_inverse_images: TripleDict = TripleDict(weak_values=False)
+
+
 class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``F.inverse_image(P)``: the full same-value subcategory ``D ×_C P``.
 
@@ -331,18 +334,15 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
     of ``D`` by ``P`` (POL-CAT-084): one category, the placement the kernel joins with,
     whose monomorphisms into ``D`` and into ``P`` are the two projections.
     """
+    key = (functor, target_subcategory, _categories())
+    if key in _inverse_images:
+        return _inverse_images[key]
     if target_subcategory is functor.codomain():
         # ``F⁻¹(C) = D``: the whole codomain pulls back to the whole domain.
         return functor.domain()
     if functor.domain() is target_subcategory and _functors().declares_subcategory(functor):
         # ``ι⁻¹(P) = P`` along the inclusion ``ι: P -> C`` of ``P`` itself.
         return target_subcategory
-
-    _, _, cospan_diagram, cat, _ = _subcategory_pullback_runtime()
-    diagram = cospan_diagram(cat, functor, _declared_inclusion(target_subcategory, functor.codomain()))
-    pullbacks = cat.Pullbacks()
-    if pullbacks.has_construction(diagram):
-        return pullbacks.chosen_object(diagram)
 
     if _functors().declares_subcategory(functor):
         narrowing = functor.domain().property_subcategory(target_subcategory)
@@ -426,6 +426,7 @@ def _retain_inverse_image_comparisons(
             continue
         if containment.codomain() is functor.codomain():
             continue
+        target_key = (functor, containment.codomain(), cat)
         target_inclusion = next(
             (
                 candidate
@@ -437,6 +438,9 @@ def _retain_inverse_image_comparisons(
         if target_inclusion is None:
             continue
         target_diagram = cospan_diagram(cat, functor, target_inclusion)
+        if target_key in _inverse_images:
+            assert pullbacks.has_construction(target_diagram)
+            assert pullbacks.chosen_object(target_diagram) is _inverse_images[target_key]
         pullbacks._retain_pullback_comparison(diagram, target_diagram, containment)
 
 
@@ -456,6 +460,9 @@ def retain_inverse_image(
     """
     cone, cone_apex, cospan_diagram, cat, Fun = _subcategory_pullback_runtime()
 
+    key = (functor, target_subcategory, cat)
+    assert key not in _inverse_images, f"an inverse image of {target_subcategory!r} along {functor!r} is already retained"
+    _inverse_images[key] = realization
     diagram = cospan_diagram(cat, functor, _declared_inclusion(target_subcategory, functor.codomain()))
     shape = diagram.domain()
     projections = {
@@ -466,7 +473,6 @@ def retain_inverse_image(
     limiting_cone = cone(diagram, realization, lambda vertex: projections[shape.label(vertex)])
 
     pullbacks = cat.Pullbacks()
-    assert not pullbacks.has_construction(diagram), f"an inverse image of {target_subcategory!r} along {functor!r} is already retained"
     pullbacks.with_universal_data(
         diagram,
         realization,

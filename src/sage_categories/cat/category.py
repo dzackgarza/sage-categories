@@ -1848,7 +1848,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def __init__(self) -> None:
         self._declared_functors: TripleDict = TripleDict(weak_values=False)
-        self._exponential_actions: TripleDict = TripleDict(weak_values=False)
         self._declarations: dict[str, Category | CategoryFamily] = {}
         self._implementations: dict[str, type[Category]] = {}
         self._open_declarations: MonoDict = MonoDict()
@@ -2277,6 +2276,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return self.compose_morphisms(functor, diagram)
         return functor(diagram)
 
+    @cached_method(key=lambda self, exponent, functor: identity_key(exponent, functor))
     def exponential_on_morphism(self, exponent: Category, functor: Functor) -> Functor:
         """``Fun(I, F): Fun(I, D) -> Fun(I, E)`` for ``F: D -> E``: the action of ``(-) ** I`` on a morphism of ``Cat()``.
 
@@ -2290,16 +2290,13 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         ``(exponent, functor)``, retained by identity.
         """
         assert functor in self.morphism_category(1)
-        key = (exponent, functor, self)
-        if key not in self._exponential_actions:
-            self._exponential_actions[key] = self.morphism_category(1)(
-                self.exponential(exponent, functor.domain()),
-                self.exponential(exponent, functor.codomain()),
-            )(
-                lambda diagram: self.postcompose(functor, diagram),
-                lambda transformation: self.whisker_left(functor, transformation),
-            )
-        return self._exponential_actions[key]
+        return self.morphism_category(1)(
+            self.exponential(exponent, functor.domain()),
+            self.exponential(exponent, functor.codomain()),
+        )(
+            lambda diagram: self.postcompose(functor, diagram),
+            lambda transformation: self.whisker_left(functor, transformation),
+        )
 
     # -- finite presented shapes and canonical objects (POL-CAT-083) ----------------
 

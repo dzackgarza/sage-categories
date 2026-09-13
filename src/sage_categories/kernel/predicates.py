@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import partial
+from functools import cache, partial
 from inspect import get_annotations, signature
 from itertools import count
 from types import MethodType
@@ -91,7 +91,6 @@ class _OwnedValueAtom(AtomicExpr):
 # representation caches".
 _atoms: MonoDict = MonoDict()
 _atom_values: dict[_OwnedValueAtom, Argument] = {}
-_atom_types: dict[type, type[_OwnedValueAtom]] = {}
 _property_categories: dict[OwnedPredicate, Category] = {}
 _identity_predicates: set[OwnedPredicate] = set()
 _query_dispatchers: dict[Query, tuple[Dispatcher, Function]] = {}
@@ -104,18 +103,15 @@ def _semantic_bases(domain: type) -> tuple[type, ...] | None:
     return runtime_semantic_bases(domain)
 
 
+@cache
 def _atom_type(domain: type) -> type[_OwnedValueAtom]:
-    if domain in _atom_types:
-        return _atom_types[domain]
+    """Return the private SymPy atom class for one exact owned runtime type."""
     semantic_bases = _semantic_bases(domain) or domain.__bases__
     inherited = tuple(_atom_type(base) for base in semantic_bases)
     if not inherited:
-        result = _OwnedValueAtom
-    else:
-        bases = tuple(base for base in inherited if not any(other is not base and issubclass(other, base) for other in inherited))
-        result = type(f"_{domain.__name__}Atom", bases, {})
-    _atom_types[domain] = result
-    return result
+        return _OwnedValueAtom
+    bases = tuple(base for base in inherited if not any(other is not base and issubclass(other, base) for other in inherited))
+    return type(f"_{domain.__name__}Atom", bases, {})
 
 
 def _owned_atom(value: Argument) -> _OwnedValueAtom:

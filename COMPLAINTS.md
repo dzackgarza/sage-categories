@@ -1978,3 +1978,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `_functor_recipes` recorded whether an owned functor was an identity or a composite solely so lazy Catlab materialization could choose Catlab's identity/composition constructors. Those facts are already authoritative public structure: identity functors are placed in the morphism category's `Identity()` subcategory, and composites retain their exact factors through `MorphismType.retain_factors`. The recipe registry therefore duplicated semantic provenance, with two writers in `CategoryOfCategories.construct_identity` and `_composite_functor` that had to stay synchronized with the public declarations.
 
 - **Repair link and acceptance:** `bloat-catlab-functor-recipes`. Remove the functor recipe table and its writer API; when Catlab materializes a functor, read identity placement or retained factors from the owned functor itself, and use the declared callable actions only for primitive functors.
+
+## Predicate atom classes hand-rolled a plain type cache
+
+- **Evidence and impact:** `kernel/predicates.py::_atom_type(domain)` maintained `_atom_types: dict[type, type[_OwnedValueAtom]]` with explicit lookup/store around a pure result of the exact runtime type and its retained semantic bases. The dictionary duplicated Python's standard function-cache protocol without carrying independent mathematical state.
+
+- **Repair link and acceptance:** `bloat-predicate-atom-type-cache`. Make `_atom_type` `functools.cache`-owned, remove `_atom_types`, and preserve recursive semantic-base atom construction plus owned-value refinement behavior.

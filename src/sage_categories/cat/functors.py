@@ -38,7 +38,8 @@ from sage_categories.cat.properties import (
     PropertySubcategory,
 )
 from sage_categories.kernel.refinement import is_placed, is_subcategory, refine
-from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import LazyFamily, MonoDict, TripleDict, cached_method
 
 __all__ = [
     "CreatesLimitsCategory",
@@ -454,7 +455,6 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             self._assignment = data.assignment
             self._source_functor = data.source
             self._target_functor = data.target
-            self._components: MonoDict = MonoDict()
             self._component_family = LazyFamily(self.source_functor().domain(), self._component_from_assignment)
 
         def source_functor(self) -> Functor:
@@ -463,16 +463,14 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         def target_functor(self) -> Functor:
             return self._target_functor
 
+        @cached_method(key=lambda self, member_object: identity_key(member_object))
         def _component_from_assignment(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-            if member_object in self._components:
-                return self._components[member_object]
             source, target = self.source_functor(), self.target_functor()
             from sage_categories.engines import catlab
 
             component = catlab.transformation_component(self, member_object)
             expected = source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
             assert component in expected, f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
-            self._components[member_object] = component
             return component
 
         def component(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:

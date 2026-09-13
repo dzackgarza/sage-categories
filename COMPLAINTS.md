@@ -1828,3 +1828,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `Category.point_functor(member_object)` maintained `_points: MonoDict` and open-coded lookup/construct/store for a result determined only by the exact member-object identity. The cache is necessary because point functors are selected during object construction before placement completes, but the table implementation is not: Sage `cached_method` already accepts the repository `identity_key` policy and preserves one result per exact argument without invoking proposition-valued equality.
 
 - **Repair link and acceptance:** `bloat-point-functor-cache`. Make `point_functor` an identity-keyed Sage cached method, delete `_points`, and preserve the existing runtime consumer that repeated point selection returns the same functor while distinct objects receive distinct point functors.
+
+## Natural transformations hand-rolled an identity-keyed component cache under LazyFamily
+
+- **Evidence and impact:** `NaturalTransformation.MorphismType` allocated `_components: MonoDict` and open-coded identity lookup/compute/store in `_component_from_assignment`, then wrapped that method in Sage `LazyFamily`. `LazyFamily` is intentionally lazy but does not memoize `__getitem__`; component retention is therefore needed, but Sage `cached_method` already provides exactly that identity-keyed method cache through `identity_key`.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache `_component_from_assignment(member_object)` with `cached_method(key=identity_key(...))`, remove `_components`, and leave `LazyFamily` as the public indexed-family facade.

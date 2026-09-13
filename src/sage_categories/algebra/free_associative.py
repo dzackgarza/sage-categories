@@ -63,15 +63,6 @@ def _record(algebra):
     return _objects.realization(algebra)
 
 
-def _source_module_point(record, terms: Mapping[Word, int]):
-    return indexed_free_integer_element(record.construction.word_module, terms)
-
-
-def _terms(record, datum) -> dict[Word, int]:
-    point = record.construction.word_module.point(datum)
-    return indexed_free_integer_coefficients(record.construction.word_module, point)
-
-
 def _free_associative_multiplication(
     native: object,
     word_module: ModuleCategory.ObjectType,
@@ -164,7 +155,7 @@ def _underlying_module_functor(algebra):
 def free_associative_element(algebra: MonoidCategory.ObjectType, terms: Mapping[Word, int]) -> ModuleCategory.ElementType:
     """Return the underlying-module element with the supplied finite word coefficients."""
     record = _record(algebra)
-    source_point = _source_module_point(record, terms)
+    source_point = indexed_free_integer_element(record.construction.word_module, terms)
     return free_associative_underlying_module(algebra).point(source_point.datum())
 
 
@@ -223,12 +214,15 @@ def free_associative_substitution(
         raise ValueError("one image is required for every free generator")
     if any(image.parent() is not module for image in images):
         raise ValueError("generator images belong to the algebra's underlying module")
-    image_terms = tuple(_terms(record, image.datum()) for image in images)
     source_module = record.construction.word_module
+    image_terms = tuple(
+        indexed_free_integer_coefficients(source_module, source_module.point(image.datum()))
+        for image in images
+    )
 
     def basis_image(word: Word):
         terms = free_algebras.substitute(record.native, {word: 1}, image_terms)
-        return _source_module_point(record, terms)
+        return indexed_free_integer_element(source_module, terms)
 
     source_linear = indexed_free_integer_homomorphism(
         source_module,

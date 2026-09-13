@@ -15,7 +15,7 @@ from sympy import ask as sympy_ask
 
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import (
     Decision,
     Proposition,
@@ -104,8 +104,6 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
             arrow: MorphismCategory.ObjectType,
         ) -> MorphismCategory.ObjectType:
             """Transpose ``F(source) -> target`` to ``source -> G(target)``."""
-            from sage_categories.cat.morphisms import Mor
-
             assert arrow in Mor(self.forward().codomain())(self.forward().on_object(source), target)
             return self.inverse().on_morphism(arrow) * self.unit().component(source)
 
@@ -116,8 +114,6 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
             arrow: MorphismCategory.ObjectType,
         ) -> MorphismCategory.ObjectType:
             """Transpose ``source -> G(target)`` to ``F(source) -> target``."""
-            from sage_categories.cat.morphisms import Mor
-
             assert arrow in Mor(self.forward().domain())(source, self.inverse().on_object(target))
             return self.counit().component(target) * self.forward().on_morphism(arrow)
 

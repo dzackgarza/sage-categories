@@ -712,3 +712,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/calculus.py` imported `LimitConesCategory` from `cat.cones` at module scope, but `pair_maps`, `terminal_map`, and `power_functor` each performed additional local imports of `cone`/`cones`; `pair_maps` even split the two names into separate imports around an assertion. Because the module dependency is already established, these local imports add no cycle protection and obscure the actual dependencies of the calculus layer.
 
 - **Repair link and acceptance:** `bloat-calculus-cone-imports`. Import the cone constructors once with `LimitConesCategory` and remove the repeated function-local imports without changing the universal-construction calls.
+
+## Adjunction transposition repeated a morphism-owner import
+
+- **Evidence and impact:** `AdjunctionsCategory.ObjectType.transpose()` and `untranspose()` each imported `Mor` locally even though `cat/adjunctions.py` already imports `MorphismCategory` from the same owner at module scope. No import cycle is avoided by delaying only the sibling name, so both directions carried unnecessary dependency boilerplate.
+
+- **Repair link and acceptance:** `bloat-adjunction-mor-imports`. Import `Mor` with `MorphismCategory` once and let both transposition directions use the shared binding while preserving their exact fixed-endpoint Hom checks.

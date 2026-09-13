@@ -1349,9 +1349,15 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-shape-point-navigation`. Keep the typed public wrappers but route their implementation through shared point/object and identity helpers.
 
-
 ## Limit and colimit families repeated retained shape access
 
 - **Evidence and impact:** `LimitsCategory` and `ColimitsCategory` each repeated the same `shape()` read from `_shape` and the same construction of `Fun(shape, ambient)` for `diagrams()`. Directionality enters only in their universal data and mediator logic, not in these accessors.
 
 - **Repair link and acceptance:** `bloat-construction-shape-accessors`. Share retained-shape and diagram-category helpers while preserving the separate limit/colimit construction paths.
+
+
+## Product and coproduct unions duplicated retained-family registry logic
+
+- **Evidence and impact:** `ProductsCategory` and `CoproductsCategory` repeated identity-based family retention, nontrivial-discrete filtering, and unique presenting-family lookup. Only the direction and family type differ; keeping two registry implementations risks drift in the same POL-SAGE-013 identity semantics.
+
+- **Repair link and acceptance:** `bloat-discrete-family-registry`. Centralize those three registry operations and keep the product/coproduct classes responsible only for their directional construction data.

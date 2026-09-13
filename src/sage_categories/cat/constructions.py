@@ -642,6 +642,40 @@ def _discrete_family_predicate(
     return False
 
 
+def _retain_discrete_family(
+    families: list[LimitsCategory] | list[ColimitsCategory],
+    family: Category,
+    expected_type: type[LimitsCategory] | type[ColimitsCategory],
+) -> None:
+    """Retain one discrete construction family by identity."""
+    assert isinstance(family, expected_type)
+    assert family.shape().is_discrete()
+    if not any(family is known for known in families):
+        families.append(family)
+
+
+def _discrete_full_images(
+    families: list[LimitsCategory] | list[ColimitsCategory],
+) -> tuple[Category, ...]:
+    """Return the retained nontrivial discrete construction families."""
+    return tuple(family for family in families if _nontrivial_discrete(family.shape()) is True)
+
+
+def _presenting_discrete_family(
+    families: list[LimitsCategory] | list[ColimitsCategory],
+    apex: CategoryOfCategories.ElementType,
+    kind: str,
+) -> Category:
+    """Return the unique retained discrete family presenting ``apex``."""
+    presentations = tuple(
+        family
+        for family in families
+        if _nontrivial_discrete(family.shape()) is True and ask(family.membership_proposition(apex)) is True
+    )
+    assert len(presentations) == 1, f"{apex!r} has {len(presentations)} {kind}-family presentations"
+    return presentations[0]
+
+
 def _discrete_diagrams(ambient: Category, shape: Category) -> Category:
     assert shape.is_discrete(), f"{shape!r} is not a discrete shape"
     return _diagram_category(ambient, shape)
@@ -689,16 +723,11 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         super().__init__(ambient, name, full_subcategory_of)
 
     def retain_full_image(self, family: Category) -> None:
-        assert isinstance(family, LimitsCategory)
-        assert family.shape().is_discrete()
-        # Families are retained by identity: list containment would ask the
-        # proposition-valued equality of two distinct families (POL-SAGE-013).
-        if not any(family is known for known in self._candidate_families):
-            self._candidate_families.append(family)
+        _retain_discrete_family(self._candidate_families, family, LimitsCategory)
 
     def full_images(self) -> tuple[Category, ...]:
         """Return the full-image families whose union this category owns."""
-        return tuple(family for family in self._candidate_families if _nontrivial_discrete(family.shape()) is True)
+        return _discrete_full_images(self._candidate_families)
 
     def _predicate(
         self,
@@ -709,9 +738,7 @@ class ProductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]):
         return _discrete_family_predicate(candidate, self._candidate_families)
 
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> Category:
-        families = tuple(family for family in self._candidate_families if _nontrivial_discrete(family.shape()) is True and ask(family.membership_proposition(apex)) is True)
-        assert len(families) == 1, f"{apex!r} has {len(families)} product-family presentations"
-        return families[0]
+        return _presenting_discrete_family(self._candidate_families, apex, "product")
 
     def diagrams(self, shape: Category) -> Category:
         return _discrete_diagrams(self.ambient(), shape)
@@ -980,15 +1007,10 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         super().__init__(ambient, name, full_subcategory_of)
 
     def retain_full_image(self, family: Category) -> None:
-        assert isinstance(family, ColimitsCategory)
-        assert family.shape().is_discrete()
-        # Families are retained by identity: list containment would ask the
-        # proposition-valued equality of two distinct families (POL-SAGE-013).
-        if not any(family is known for known in self._candidate_families):
-            self._candidate_families.append(family)
+        _retain_discrete_family(self._candidate_families, family, ColimitsCategory)
 
     def full_images(self) -> tuple[Category, ...]:
-        return tuple(family for family in self._candidate_families if _nontrivial_discrete(family.shape()) is True)
+        return _discrete_full_images(self._candidate_families)
 
     def _predicate(
         self,
@@ -998,9 +1020,9 @@ class CoproductsCategory(PredicateSubcategory[[MorphismCategory.ObjectType], []]
         return _discrete_family_predicate(candidate, self._candidate_families)
 
     def presenting_family(self, apex: CategoryOfCategories.ElementType) -> ColimitsCategory:
-        families = tuple(family for family in self._candidate_families if _nontrivial_discrete(family.shape()) is True and ask(family.membership_proposition(apex)) is True)
-        assert len(families) == 1, f"{apex!r} has {len(families)} coproduct-family presentations"
-        return families[0]
+        family = _presenting_discrete_family(self._candidate_families, apex, "coproduct")
+        assert isinstance(family, ColimitsCategory)
+        return family
 
     def diagrams(self, shape: Category) -> Category:
         return _discrete_diagrams(self.ambient(), shape)

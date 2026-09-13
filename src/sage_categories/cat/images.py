@@ -177,14 +177,6 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
         identity = self.target().morphism_category(1)(member_object, member_object).one()
         return self._retain_morphism(identity)
 
-    def _identity_morphism_(
-        self,
-        member_object: CategoryOfCategories.ElementType,
-    ) -> MorphismCategory.ObjectType:
-        if member_object not in self._identities:
-            self._identities[member_object] = self.construct_identity(member_object)
-        return self._identities[member_object]
-
     def composite(
         self,
         second: MorphismCategory.ObjectType,

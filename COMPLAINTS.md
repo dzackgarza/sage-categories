@@ -1798,3 +1798,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `SliceLikeCategory._property()` maintained `_properties: MonoDict` and open-coded lookup/construct/store around a result determined only by the property-category argument. The identity key is required because category equality is proposition-valued, but that key policy is already supported by Sage `cached_method` through the repository `identity_key` helper.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `_property(property_category)` with `cached_method(key=identity_key(...))`, retain the product-subobject specialization inside first construction, and remove `_properties`.
+
+## Image categories reimplemented the generic identity cache
+
+- **Evidence and impact:** `cat/images.py::ImageCategory._identity_morphism_` repeated check/cache/store against the inherited `_identities` table even though `Category._identity_morphism_` is already the repository owner of once-per-object identity retention. The image layer only needs to specialize `construct_identity`; its duplicate lifecycle also skipped the generic owner's native-cell identity retention, self-inverse retention, and `Mor(C).Identity()` refinement.
+
+- **Repair link and acceptance:** `bloat-image-identity-override`. Delete the image override and let the generic owner call the image-specific `construct_identity`; pin repeated identity, image membership, retained self-inverse, and `Identity()` placement in the full-image consumer.

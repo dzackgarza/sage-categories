@@ -39,7 +39,6 @@ __all__ = [
     "functor_morphism_image",
     "functor_object_image",
     "horizontal_composite",
-    "identity_functor",
     "identity_transformation",
     "presented_coproduct",
     "presented_coproduct_data",

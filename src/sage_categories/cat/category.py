@@ -1847,7 +1847,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return f"Functor({self.domain()!r} -> {self.codomain()!r})"
 
     def __init__(self) -> None:
-        self._declared_functors: TripleDict = TripleDict(weak_values=False)
         self._declarations: dict[str, Category | CategoryFamily] = {}
         self._implementations: dict[str, type[Category]] = {}
         self._open_declarations: MonoDict = MonoDict()
@@ -1954,6 +1953,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         return FunctorsCategory
 
+    @cached_method(key=lambda self, domain, codomain, on_object, on_morphism: identity_key(domain, codomain, on_object, on_morphism))
     def construct_morphism(
         self,
         domain: CategoryOfCategories.ObjectType,
@@ -1963,17 +1963,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     ) -> CategoryOfCategories.MorphismType:
         """``Fun(C, D)(on_object, on_morphism)``: the functor selected by its four identity components (POL-FUN-001/027)."""
         assert domain in self and codomain in self
-        key = (domain, codomain, on_object)
-        if key not in self._declared_functors:
-            self._declared_functors[key] = MonoDict()
-        by_morphism_action = self._declared_functors[key]
-        if on_morphism not in by_morphism_action:
-            by_morphism_action[on_morphism] = self.MorphismType(
-                domain=domain,
-                codomain=codomain,
-                data=FunctorData(on_object, on_morphism),
-            )
-        return by_morphism_action[on_morphism]
+        return self.MorphismType(
+            domain=domain,
+            codomain=codomain,
+            data=FunctorData(on_object, on_morphism),
+        )
 
     def construct_identity(self, category: CategoryOfCategories.ObjectType) -> CategoryOfCategories.MorphismType:
         Fun = _functors()

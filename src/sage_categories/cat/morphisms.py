@@ -134,6 +134,8 @@ def _endpoints_by_equality(
     codomain: CategoryOfCategories.ElementType,
     assumptions: Proposition,
 ) -> bool | None:
+    if morphism.domain() is domain and morphism.codomain() is codomain:
+        return True
     return sympy_ask((morphism.domain() == domain) & (morphism.codomain() == codomain), assumptions)
 
 

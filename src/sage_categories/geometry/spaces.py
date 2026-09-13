@@ -110,7 +110,7 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         )
         open_poset = Posets()(relation.relation())
         open_category = Thin.on_object(open_poset)
-        open_points = {point.datum(): point for point in open_poset.carrier()}
+        open_points = {key: open_poset.point(key) for key in family}
 
         def open_point(key: frozenset[Hashable]) -> CategoryOfCategories.ElementType:
             assert key in open_points, f"{key!r} is not a represented open"
@@ -177,7 +177,9 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
 
         inverse = Fun(target_opens, source_opens)(on_object, on_morphism)
         for point in target.opens().carrier():
-            target_open = target_opens(point)
+            open_key = point.datum()
+            assert isinstance(open_key, frozenset)
+            target_open = target.open_object(open_key)
             source.open_point(inverse_subset(target_open))
         return inverse
 

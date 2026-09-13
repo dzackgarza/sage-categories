@@ -24,22 +24,18 @@ def residue_ring(modulus):
     return Rings(Sets)(addition, zero, multiplication, one), carrier
 
 
-def constant_ring_sheaf(space):
+def constant_ring_sheaf(space, ring_data):
     opens = tuple(point.datum() for point in space.opens().carrier())
+    ring, _ = ring_data
     rings = Rings(Sets)
-    section_data = {open_set: residue_ring(5) for open_set in opens}
-    sections = {open_set: value[0] for open_set, value in section_data.items()}
-    restrictions = {}
-    for larger in opens:
-        for smaller in opens:
-            if smaller <= larger:
-                source, source_carrier = section_data[larger]
-                target, target_carrier = section_data[smaller]
-                restrictions[(larger, smaller)] = rings.homomorphism(
-                    source,
-                    target,
-                    Mor(Sets)(source_carrier, target_carrier)(lambda value: value),
-                )
+    sections = {open_set: ring for open_set in opens}
+    identity = rings.morphism_category(1)(ring, ring).one()
+    restrictions = {
+        (larger, smaller): identity
+        for larger in opens
+        for smaller in opens
+        if smaller <= larger
+    }
     presheaf = ring_presheaf(space, sections, restrictions)
     return ring_sheaf(presheaf, lambda open_set, cover, local: sections[open_set].point(local[0].datum()))
 
@@ -50,7 +46,9 @@ def test_ringed_map_has_natural_sheaf_action_with_exact_endpoints() -> None:
     source_space = spaces(one, (frozenset(), frozenset((0,))))
     two = Sets((0, 1))
     target_space = spaces(two, (frozenset(), frozenset((1,)), frozenset((0, 1))))
-    source_sheaf, target_sheaf = constant_ring_sheaf(source_space), constant_ring_sheaf(target_space)
+    ring_data = residue_ring(5)
+    source_sheaf = constant_ring_sheaf(source_space, ring_data)
+    target_sheaf = constant_ring_sheaf(target_space, ring_data)
     ringed = RingedSpaces()
     source, target = ringed(source_space, source_sheaf), ringed(target_space, target_sheaf)
     continuous = Mor(spaces)(source_space, target_space)(Mor(Sets)(one, two)(lambda _: 1))
@@ -59,13 +57,8 @@ def test_ringed_map_has_natural_sheaf_action_with_exact_endpoints() -> None:
         source_open = continuous.inverse_image().on_object(target_space.open_object(target_open)).point().datum()
         source_ring = target_sheaf.presheaf.section_ring(target_open)
         target_ring = source_sheaf.presheaf.section_ring(source_open)
-        source_carrier = Rings(Sets).forgetful().on_object(source_ring)
-        target_carrier = Rings(Sets).forgetful().on_object(target_ring)
-        return Rings(Sets).homomorphism(
-            source_ring,
-            target_ring,
-            Mor(Sets)(source_carrier, target_carrier)(lambda value: value),
-        )
+        assert source_ring is target_ring
+        return Rings(Sets).morphism_category(1)(source_ring, target_ring).one()
 
     morphism = ringed.homomorphism(source, target, continuous, component)
     assert morphism.domain() is source and morphism.codomain() is target
@@ -78,20 +71,30 @@ def test_ringed_map_has_natural_sheaf_action_with_exact_endpoints() -> None:
 
 def test_ringed_map_does_not_enumerate_a_represented_open_category() -> None:
     spaces = TopologicalSpaces()
+
+    def represented_open_point(key):
+        assert key[0] == "stage"
+        return NN.point(key[1])
+
+    def represented_open_object(key):
+        assert key[0] == "stage"
+        return omega(represented_open_point(key))
+
     space = spaces.from_open_category(
         NN,
         NN,
         omega,
-        lambda key: NN.point(key),
-        lambda key: omega(NN.point(key)),
+        represented_open_point,
+        represented_open_object,
     )
     ring, _ = residue_ring(5)
-    rings = Rings(Sets)
+    rings = Rings(Sets).Commutative()
+    assert ring in rings
     presheaf = ring_presheaf_from_functor(
         space,
         omega,
         Fun(omega.op(), rings).constant(ring),
-        lambda key: omega(NN.point(key)),
+        represented_open_object,
         lambda open_object: ("stage", open_object.point().datum()),
     )
     sheaf = ring_sheaf(presheaf, lambda _open, _cover, local: local[0])

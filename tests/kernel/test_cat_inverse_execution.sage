@@ -2,7 +2,8 @@
 
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun
-from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.morphisms import Mor, endpoints
+from sage_categories.cat.predicates import ask
 from sage_categories.kernel.refinement import refine
 from sage_categories.sets.finite import Sets
 
@@ -55,6 +56,18 @@ def test_cat_isomorphism_requires_retained_executable_inverse() -> None:
     assert forward.inverse().on_morphism(identity) is identity
 
 
+def test_exact_functor_endpoints_are_decided_by_identity_without_evaluation() -> None:
+    def no_object_action(_value):
+        raise AssertionError("exact endpoint admission evaluated the functor")
+
+    def no_morphism_action(_arrow):
+        raise AssertionError("exact endpoint admission evaluated the functor")
+
+    sets = Sets()
+    functor = Fun(sets, sets)(no_object_action, no_morphism_action)
+    assert ask(endpoints(functor, sets, sets)) is True
+
+
 def test_data_free_category_keeps_symbolic_inverse() -> None:
     category = DataFreeCategory()
     source, target = category("source"), category("target")
@@ -65,4 +78,5 @@ def test_data_free_category_keeps_symbolic_inverse() -> None:
 
 
 test_cat_isomorphism_requires_retained_executable_inverse()
+test_exact_functor_endpoints_are_decided_by_identity_without_evaluation()
 test_data_free_category_keeps_symbolic_inverse()

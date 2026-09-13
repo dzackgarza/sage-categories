@@ -137,8 +137,14 @@ def is_placed(candidate: RoleCandidate, category: Category) -> bool:
     # narrowing base, so recognize it directly without traversing the category graph on
     # every placement query.
     placement = category_of(candidate, role)
-    if role in (Role.OBJECT, Role.MORPHISM) and placement.narrowing_base() is category:
-        return True
+    if role in (Role.OBJECT, Role.MORPHISM):
+        if placement.narrowing_base() is category:
+            return True
+        if placement.narrowing_base() is category.narrowing_base():
+            placed_roots = placement.narrowing_roots()
+            target_roots = category.narrowing_roots()
+            if target_roots and all(any(root is known for known in placed_roots) for root in target_roots):
+                return True
     target = compiler.node(category, Role.OBJECT)
     placements = [_placement_node(candidate)]
     if role is Role.OBJECT:

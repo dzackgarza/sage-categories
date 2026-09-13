@@ -716,14 +716,14 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
 
         Also include the same narrowing in every category containing the base, each once.
 
-        Dropping one root at a time reaches the narrowing by every subset of the roots,
-        which is what this category is a full subcategory of and what D83 requires it to
-        declare rather than leave to be induced.  ``1_X`` for ``X`` in ``C.P()`` is placed
-        in ``Mor(C.P()).Isomorphisms()`` as its own inverse and in ``Mor(C.P()).Identity()``
-        as an identity, so it lands in the narrowing by all three roots; without the
-        monomorphism into the narrowing by ``{Mor(C.P()), Identity}`` no reader can see
-        that it is an identity of ``C.P()``, and the word an equality reads stops dropping
-        it (D84, D86, ``POL-CAT-023``, D169).
+        A narrowing by more roots is placed in every weakening obtained by dropping
+        roots because ``is_placed`` reads the canonical closed-root inclusion directly.
+        Those weakenings add no operations of their own, so constructing their whole
+        subset lattice here would duplicate the same ambient/root inheritance and grow
+        exponentially.  ``1_X`` for ``X`` in ``C.P()`` can therefore be placed in the
+        narrowing by ``{Mor(C.P()), Isomorphisms, Identity}`` while still being recognized
+        in ``Mor(C.P()).Identity()`` without constructing that intermediate weakening
+        solely as an edge (D84, D86, ``POL-CAT-023``, D169).
 
         The last group runs over every structure functor the base declares as a
         subcategory monomorphism, not the first of them.  ``D.P()`` is one category
@@ -740,13 +740,6 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         their containers, which is exponential in a value's refinement history.
         """
         targets: list[Category] = [self._ambient, *self._roots]
-        own = {root.ordinal() for root in self._roots}
-        for omitted in self._roots:
-            kept = self._ambient.closed_roots(tuple(root for root in self._roots if root is not omitted))
-            # A root can carry the omitted one among its own roots, so the closure of the
-            # remaining roots can be this category again, which declares nothing.
-            if kept and {root.ordinal() for root in kept} != own:
-                targets.append(self._ambient.intersection(kept))
         for functor in self._ambient.selected_functors():
             if _functors().declares_subcategory(functor):
                 targets.append(functor.codomain().intersection(self._roots))

@@ -12,7 +12,8 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition, register_handler
 from sage_categories.cat.properties import PredicateSubcategory
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.sage_runtime import MonoDict, cached_method
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function, cached_method
 
 __all__ = [
     "EssentialImageCategory",
@@ -328,10 +329,6 @@ class EssentialImageCategory[**MorphismData, **TwoMorphismData](PredicateSubcate
         return f"{self.ambient()!r}.{self.name()}({self._defining_functor!r})"
 
 
-_strict_images: MonoDict = MonoDict()
-_full_images: MonoDict = MonoDict()
-
-
 def _has_essential_image(defining_functor: Functor) -> bool:
     """Whether ``D.EssentialImage(F)`` was already asked for; asking here constructs none.
 
@@ -347,11 +344,12 @@ def retain_object_image(
     image: CategoryOfCategories.ElementType,
 ) -> None:
     """Retain a completed public object image in each constructed image category."""
-    if defining_functor in _strict_images:
-        _strict_images[defining_functor]._retain_object(image)
-    if defining_functor in _full_images:
-        full_image = _full_images[defining_functor]
-        if isinstance(full_image, FullImageCategory):
+    target = defining_functor.codomain()
+    if strict_image.is_in_cache(target, defining_functor):
+        strict_image(target, defining_functor)._retain_object(image)
+    if full_image.is_in_cache(target, defining_functor):
+        retained_full_image = full_image(target, defining_functor)
+        if isinstance(retained_full_image, FullImageCategory):
             # An object isomorphic to a value ``F(X)`` need not be one, so the full image
             # is not replete and its inclusion is not an isofibration (D169).  Placement
             # needs a monomorphism that is an isofibration (``POL-FUN-036``), so nothing
@@ -359,13 +357,13 @@ def retain_object_image(
             # record: ``image in D.FullImage(F)`` answers ``True`` from the membership
             # proposition, which is the definition.  Placement is only ever a sufficient
             # route to ``True`` (``POL-CAT-068``).  This is the strict image's route.
-            full_image._retain_object(image)
+            retained_full_image._retain_object(image)
         else:
             # A category that registered itself as the full image of its own defining
             # functor -- ``C.Limits(I)`` of its chosen limit functor, for one -- is a
             # declared subcategory of the target with its own placement monomorphism, and
             # placement follows that declaration.
-            refine(image, full_image)
+            refine(image, retained_full_image)
     if _has_essential_image(defining_functor):
         refine(image, defining_functor.codomain().EssentialImage(defining_functor))
 
@@ -375,18 +373,18 @@ def retain_morphism_image(
     image: MorphismCategory.ObjectType,
 ) -> None:
     """Retain a completed public morphism image in each constructed image category."""
-    if defining_functor in _strict_images:
-        _strict_images[defining_functor]._retain_morphism(image)
+    target = defining_functor.codomain()
+    if strict_image.is_in_cache(target, defining_functor):
+        strict_image(target, defining_functor)._retain_morphism(image)
     if _has_essential_image(defining_functor):
         refine(image, defining_functor.codomain().EssentialImage(defining_functor).morphism_category(1))
 
 
+@cached_function(key=lambda target, defining_functor: identity_key(target, defining_functor))
 def strict_image(target: Category, defining_functor: Functor) -> StrictImageCategory:
     """Return the retained strict image of ``defining_functor`` in its target."""
     assert defining_functor.codomain() is target
-    if defining_functor not in _strict_images:
-        _strict_images[defining_functor] = StrictImageCategory(defining_functor)
-    return _strict_images[defining_functor]
+    return StrictImageCategory(defining_functor)
 
 
 def register_full_image(defining_functor: Functor, image: Category) -> None:
@@ -395,13 +393,14 @@ def register_full_image(defining_functor: Functor, image: Category) -> None:
     assert codomain is image or codomain is image.narrowing_base() or (image.has_ambient() and codomain is image.ambient()), (
         f"{defining_functor!r} does not land in {image!r}, its narrowing base, or its ambient"
     )
-    assert defining_functor not in _full_images or _full_images[defining_functor] is image
-    _full_images[defining_functor] = image
+    if full_image.is_in_cache(codomain, defining_functor):
+        assert full_image(codomain, defining_functor) is image
+        return
+    full_image.set_cache(image, codomain, defining_functor)
 
 
+@cached_function(key=lambda target, defining_functor: identity_key(target, defining_functor))
 def full_image(target: Category, defining_functor: Functor) -> Category:
     """Return the retained full image of ``defining_functor`` in its target."""
     assert defining_functor.codomain() is target
-    if defining_functor not in _full_images:
-        _full_images[defining_functor] = FullImageCategory(defining_functor)
-    return _full_images[defining_functor]
+    return FullImageCategory(defining_functor)

@@ -705,12 +705,14 @@ def test_strict_and_full_image_inclusions_are_the_direct_zero_argument_call() ->
     defining = Fun(MARKS, TOKENS)(*token_actions("image "))
 
     strict = strict_image(TOKENS, defining)
+    assert strict_image(TOKENS, defining) is strict
     strict_inclusion = strict.inclusion_functor()
     assert strict_inclusion is Fun(strict, TOKENS).Monomorphisms()()
     assert is_placed(strict_inclusion, Fun(strict, TOKENS).Monomorphisms())
     assert ask(Fun.Isofibrations().membership_proposition(strict_inclusion)) is Unknown
 
     full = full_image(TOKENS, defining)
+    assert full_image(TOKENS, defining) is full
     full_inclusion = full.inclusion_functor()
     assert full_inclusion is Fun(full, TOKENS).FullyFaithful().Monomorphisms()()
     assert is_placed(full_inclusion, Fun(full, TOKENS).Monomorphisms())

@@ -2,6 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 import sage_categories.cat.category
+import sage_categories.cat.comma
 import sage_categories.cat.morphisms
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
@@ -25,12 +26,12 @@ type Factor = Callable[[CategoryOfCategories.ElementType], MorphismCategory.Obje
 type Choice = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
 
 class _StaticRoles_TerminalObjectsCategory(sage_categories.cat.properties._StaticRoles_FullSubcategory):
-    class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType(sage_categories.cat.comma._StaticRoles_CommaCategory.ObjectType):
         def unique_from(self, source: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType: ...
 
-    class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
+    class ElementType(sage_categories.cat.comma._StaticRoles_CommaCategory.ElementType): ...
 
-    class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
+    class MorphismType(sage_categories.cat.comma._StaticRoles_CommaCategory.MorphismType):
         def domain(self) -> TerminalObjectsCategory.ObjectType: ...
         def codomain(self) -> TerminalObjectsCategory.ObjectType: ...
 

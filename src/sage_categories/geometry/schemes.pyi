@@ -54,6 +54,7 @@ from sage_categories.geometry.sheaves import RingPresheaf as RingPresheaf
 from sage_categories.geometry.sheaves import (
     ring_presheaf_from_functor as ring_presheaf_from_functor,
 )
+from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
 __all__ = ["ProjectiveLinePresentation", "Schemes", "SchemesCategory", "TwoChartGluing", "native_scheme", "native_scheme_morphism", "projective_line"]
 
@@ -78,7 +79,7 @@ class ProjectiveLinePresentation:
     left_inclusion: SchemesCategory.MorphismType
     right_inclusion: SchemesCategory.MorphismType
     chart_swap: SchemesCategory.MorphismType
-    structure_sheaf: RingPresheaf
+    structure_sheaf: RingPresheaf[str]
     overlap_swap: MorphismCategory.ObjectType
 
 class _StaticRoles_SchemesCategory:
@@ -96,7 +97,7 @@ class SchemesCategory(
     _StaticRoles_SchemesCategory,
     Category[Any, Any, _StaticRoles_SchemesCategory.ObjectType, _StaticRoles_SchemesCategory.ElementType, _StaticRoles_SchemesCategory.MorphismType],
 ):
-    def __init__(self) -> None: ...
+    @cached_method
     def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType: ...
     def glue_two_affines(
         self,

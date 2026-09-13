@@ -47,7 +47,7 @@ from sage_categories.kernel.roles import (
 )
 from sage_categories.kernel.sage_runtime import Integer as Integer
 from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
-from sage_categories.kernel.sage_runtime import TripleDict as TripleDict
+from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 from sage_categories.kernel.type_aliases import ContainmentInput as ContainmentInput
 from sage_categories.kernel.type_aliases import EqualityInput as EqualityInput
@@ -294,6 +294,7 @@ class CategoryOfCategories(
     def WalkingParallelPair(self) -> FinitePresentedCategory: ...
     def element_from_defining_morphism(self, defining_functor: Functor) -> CategoryOfCategories.ElementType: ...
 
+@cached_function
 def Cat() -> CategoryOfCategories: ...
 
 concrete_category: Predicate

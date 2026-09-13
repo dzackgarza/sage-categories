@@ -33,9 +33,9 @@ from sage_categories.cat.properties import PropertySubcategory as PropertySubcat
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.refinement import is_subcategory as is_subcategory
 from sage_categories.kernel.refinement import refine as refine
+from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import LazyFamily as LazyFamily
-from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
-from sage_categories.kernel.sage_runtime import TripleDict as TripleDict
+from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
 __all__ = ["CreatesLimitsCategory", "Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation", "PreservesLimitsCategory"]
 
@@ -52,10 +52,10 @@ class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [A
     def shape(self) -> Category | Functor: ...
 
 class _StaticRoles_FunctorProperty(sage_categories.cat.properties._StaticRoles_FixedEndpointProperty):
-    class ObjectType(_StaticRoles_FunctorCategory.ObjectType, sage_categories.cat.properties._StaticRoles_PropertySubcategory.ObjectType): ...
-    class ElementType(_StaticRoles_FunctorCategory.ElementType, sage_categories.cat.properties._StaticRoles_PropertySubcategory.ElementType): ...
+    class ObjectType(_StaticRoles_FunctorCategory.ObjectType): ...
+    class ElementType(_StaticRoles_FunctorCategory.ElementType): ...
 
-    class MorphismType(_StaticRoles_FunctorCategory.MorphismType, sage_categories.cat.properties._StaticRoles_PropertySubcategory.MorphismType):
+    class MorphismType(_StaticRoles_FunctorCategory.MorphismType):
         def domain(self) -> FunctorProperty.ObjectType: ...
         def codomain(self) -> FunctorProperty.ObjectType: ...
 

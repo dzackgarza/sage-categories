@@ -26,7 +26,6 @@ from sage_categories.algebra.commutative_rings import (
 from sage_categories.algebra.commutative_rings import prime_ideal as prime_ideal
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
-from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.morphisms import Mor as Mor
@@ -142,4 +141,4 @@ def native_affine_morphism(value: MorphismCategory.ObjectType) -> NativeMorphism
 
 Spec: Functor
 
-def affine_structure_sheaf(scheme: AffineSchemesCategory.ObjectType) -> tuple[AffineOpenCategory, RingPresheaf]: ...
+def affine_structure_sheaf(scheme: AffineSchemesCategory.ObjectType) -> tuple[AffineOpenCategory, RingPresheaf[AffineOpenCategory.ObjectType]]: ...

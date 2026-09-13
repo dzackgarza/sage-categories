@@ -15,7 +15,9 @@ from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.cones import ConeCategory as ConeCategory
 from sage_categories.cat.cones import cocone as cocone
+from sage_categories.cat.cones import cocone_apex as cocone_apex
 from sage_categories.cat.cones import cone as cone
+from sage_categories.cat.cones import cone_apex as cone_apex
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.diagrams import from_sequence as from_sequence
 from sage_categories.cat.diagrams import sequence_position as sequence_position
@@ -127,7 +129,6 @@ class _CoordinateBridge:
     def zero_datum(self) -> Hashable: ...
 
 def _coordinates(group: CategoryOfCategories.ElementType) -> _CoordinateBridge: ...
-def _group_from_engine(engine: Engine) -> CategoryOfCategories.ElementType: ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _IndexedFreeAbelianData:

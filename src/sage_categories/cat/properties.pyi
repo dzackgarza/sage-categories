@@ -22,7 +22,7 @@ from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.predicates import property_predicate as property_predicate
 from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.kernel.refinement import refine as refine
-from sage_categories.kernel.sage_runtime import TripleDict as TripleDict
+from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
 __all__ = [
@@ -94,6 +94,7 @@ class InverseImageSubcategory[**MorphismData, **TwoMorphismData](
     def defining_functor(self) -> Functor: ...
     def target_subcategory(self) -> Category: ...
     def subcategory_monomorphism(self) -> Functor: ...
+    @cached_method
     def target_projection(self) -> Functor: ...
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...
@@ -170,21 +171,14 @@ class NarrowedProperty[
 
 class _StaticRoles_FixedEndpointProperty(_StaticRoles_NarrowedProperty):
     class ObjectType(
-        _StaticRoles_NarrowedProperty.ObjectType,
-        sage_categories.cat.morphisms._StaticRoles_IsomorphismsCategory.ObjectType,
-        sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory.ObjectType,
-        sage_categories.cat.constructions._StaticRoles_LimitsCategory.ElementType,
+        sage_categories.cat.morphisms._StaticRoles_IsomorphismsCategory.ObjectType, sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory.ObjectType
     ): ...
     class ElementType(
-        _StaticRoles_NarrowedProperty.ElementType,
-        sage_categories.cat.morphisms._StaticRoles_IsomorphismsCategory.ElementType,
-        sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory.ElementType,
+        sage_categories.cat.morphisms._StaticRoles_IsomorphismsCategory.ElementType, sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory.ElementType
     ): ...
 
     class MorphismType(
-        _StaticRoles_NarrowedProperty.MorphismType,
-        sage_categories.cat.morphisms._StaticRoles_IsomorphismsCategory.MorphismType,
-        sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory.MorphismType,
+        sage_categories.cat.morphisms._StaticRoles_IsomorphismsCategory.MorphismType, sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory.MorphismType
     ):
         def domain(self) -> FixedEndpointProperty.ObjectType: ...
         def codomain(self) -> FixedEndpointProperty.ObjectType: ...

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from _typeshed import Incomplete
+
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
@@ -19,19 +21,16 @@ from sage_categories.cat.predicates import UnknownClass as UnknownClass
 from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.kernel.refinement import is_placed as is_placed
-from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
+from sage_categories.kernel.retention import identity_key as identity_key
+from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
 __all__ = ["Discrete", "DiscreteCategory", "Thin", "ThinCategory", "carrier_comparison", "discrete_functor", "omega"]
 
-@dataclass(frozen=True, eq=False, slots=True)
-class DiscreteObjectData:
-    point: CategoryOfCategories.ElementType
-
 class _StaticRoles_DiscreteCategory:
     class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
-        def __init__(self, data: DiscreteObjectData) -> None: ...
-        def point(self) -> CategoryOfCategories.ElementType: ...
+        __init__: Incomplete
+        point: Incomplete
 
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
@@ -63,10 +62,6 @@ Discrete: Functor
 
 def carrier_comparison(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> Proposition | None: ...
 
-@dataclass(frozen=True, eq=False, slots=True)
-class ThinObjectData:
-    point: CategoryOfCategories.ElementType
-
 class _StaticRoles_ThinMorphisms(sage_categories.cat.morphisms._StaticRoles_MorphismCategory):
     class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
@@ -82,8 +77,8 @@ class ThinMorphisms(
 
 class _StaticRoles_ThinCategory:
     class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
-        def __init__(self, data: ThinObjectData) -> None: ...
-        def point(self) -> CategoryOfCategories.ElementType: ...
+        __init__: Incomplete
+        point: Incomplete
 
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
@@ -108,6 +103,14 @@ class ThinCategory(
 
 def Thin(carrier: CategoryOfCategories.ElementType, order: Predicate) -> ThinCategory: ...
 def omega() -> Category: ...
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _PointObjectData:
+    point: CategoryOfCategories.ElementType
+
+def _initialize_point_shape_object(member_object: object, data: _PointObjectData) -> None: ...
+def _point_shape_point(member_object: object) -> CategoryOfCategories.ElementType: ...
+def _point_shape_repr(member_object: object) -> str: ...
 
 class _StaticRoles_DiscreteObjectCategory(_StaticRoles_DiscreteCategory):
     class ObjectType(sage_categories.sets.finite._StaticRoles_SetsCategory.ElementType, sage_categories.kernel.roles.ObjectOfCategory):

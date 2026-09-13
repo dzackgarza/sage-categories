@@ -3,7 +3,6 @@ from typing import Literal, overload
 from _typeshed import Incomplete
 
 import sage_categories.cat.category as _category
-import sage_categories.cat.functors
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
 from sage_categories.cat.category import Category as Category
@@ -30,10 +29,11 @@ from sage_categories.cat.properties import PropertySubcategory as PropertySubcat
 from sage_categories.kernel.refinement import common_ancestor as common_ancestor
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.refinement import refine as refine
+from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.roles import Role as Role
 from sage_categories.kernel.sage_runtime import Integer as Integer
-from sage_categories.kernel.sage_runtime import TripleDict as TripleDict
 from sage_categories.kernel.sage_runtime import Unknown as Unknown
+from sage_categories.kernel.sage_runtime import cached_method as cached_method
 from sage_categories.kernel.type_aliases import EqualityInput as EqualityInput
 
 __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "endpoints", "endpoints_in", "hom_inhabitation"]
@@ -144,10 +144,10 @@ class IsomorphismsCategory[**MorphismData, **TwoMorphismData](
 ): ...
 
 class _StaticRoles_EndomorphismsCategory(sage_categories.cat.properties._StaticRoles_PredicateSubcategory):
-    class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.MorphismType, sage_categories.kernel.roles.ObjectOfCategory): ...
-    class ElementType(sage_categories.cat.functors._StaticRoles_FunctorsCategory.ElementType): ...
+    class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...
+    class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
-    class MorphismType(sage_categories.cat.functors._StaticRoles_FunctorsCategory.MorphismType):
+    class MorphismType(_StaticRoles_MorphismCategory.ObjectType):
         def domain(self) -> EndomorphismsCategory.ObjectType: ...
         def codomain(self) -> EndomorphismsCategory.ObjectType: ...
 
@@ -163,7 +163,7 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](
 ): ...
 
 class _StaticRoles_FixedEndpointCategory(sage_categories.cat.properties._StaticRoles_FullSubcategory):
-    class ObjectType(sage_categories.cat.functors._StaticRoles_FunctorCategory.MorphismType, sage_categories.kernel.roles.ObjectOfCategory): ...
+    class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...
     class ElementType(_StaticRoles_MorphismCategory.ElementType): ...
 
     class MorphismType(_StaticRoles_MorphismCategory.MorphismType):

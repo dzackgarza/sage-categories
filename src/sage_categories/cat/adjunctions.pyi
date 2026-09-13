@@ -9,6 +9,7 @@ from sage_categories.cat.category import CategoryOfCategories as CategoryOfCateg
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
+from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Decision as Decision
 from sage_categories.cat.predicates import Proposition as Proposition

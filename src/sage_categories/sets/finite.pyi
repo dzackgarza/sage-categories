@@ -37,7 +37,9 @@ from sage_categories.cat.shapes import (
 )
 from sage_categories.cat.slices import SliceLikeCategory as SliceLikeCategory
 from sage_categories.cat.slices import SliceProperty as SliceProperty
-from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
+from sage_categories.kernel.retention import identity_key as identity_key
+from sage_categories.kernel.retention import identity_positions as identity_positions
+from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 from sage_categories.kernel.type_aliases import ContainmentInput as ContainmentInput
 

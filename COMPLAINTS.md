@@ -1215,3 +1215,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `AdjunctionsCategory` and `EquivalencesCategory` each implemented `_chosen_inhabitation` with the identical retained-object test. These categories differ in their mathematical data, but their chosen inhabitation semantics are the same private retention rule.
 
 - **Repair link and acceptance:** `bloat-adjunction-inhabitation`. Put the retained-object decision in `_retained_inhabitation()` and let both category owners delegate to it without changing their public category structure.
+
+## Universal-construction families repeated diagram-category construction
+
+- **Evidence and impact:** `LimitsCategory.diagrams` and `ColimitsCategory.diagrams` each reconstructed `Fun(shape, ambient)` directly, while the product/coproduct convenience layer had its own discrete helper doing the same thing after an extra shape assertion. The category of diagrams has one mathematical owner independent of limit versus colimit variance.
+
+- **Repair link and acceptance:** `bloat-universal-diagram-category`. Put `Fun(shape, ambient)` behind `_diagram_category()`, use it from both shape-indexed universal families, and let `_discrete_diagrams()` add only its discrete-shape precondition before delegating.

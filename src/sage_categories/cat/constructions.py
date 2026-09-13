@@ -118,6 +118,11 @@ def _construction_membership_proposition(
     return member(candidate, family)
 
 
+def _diagram_category(ambient: Category, shape: Category) -> Category:
+    """The owned category of ``shape``-diagrams landing in ``ambient``."""
+    return Fun(shape, ambient)
+
+
 def _register_construction_full_image(functor: Functor, family: Category) -> None:
     """Register one chosen-construction image through the cycle-safe image boundary."""
     from sage_categories.cat.images import register_full_image
@@ -474,7 +479,7 @@ class LimitsCategory(ApexCategory):
         return self._shape
 
     def diagrams(self) -> Category:
-        return Fun(self._shape, self.ambient())
+        return _diagram_category(self.ambient(), self._shape)
 
     def __call__(self, diagram: Functor) -> CategoryOfCategories.ElementType:
         """``C.Limits(I)(diagram)``: the chosen limit, through ``C.limit_construction(I)``.
@@ -629,7 +634,7 @@ def _discrete_family_predicate(
 
 def _discrete_diagrams(ambient: Category, shape: Category) -> Category:
     assert shape.is_discrete(), f"{shape!r} is not a discrete shape"
-    return Fun(shape, ambient)
+    return _diagram_category(ambient, shape)
 
 
 def _discrete_sequence_diagram(ambient: Category, sequence: tuple[CategoryOfCategories.ElementType, ...]) -> Functor:
@@ -795,7 +800,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         return self._shape
 
     def diagrams(self) -> Category:
-        return Fun(self._shape, self.ambient())
+        return _diagram_category(self.ambient(), self._shape)
 
     def accepts(self, diagram: Functor) -> None:
         assert diagram in self.universe().morphism_category(1) and diagram.domain() is self._shape, f"{diagram!r} is not a diagram of shape {self._shape!r}"

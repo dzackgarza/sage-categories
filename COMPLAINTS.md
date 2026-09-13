@@ -1595,9 +1595,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-finite-set-public-boundary`. Read finite presentation data through `set_presentation()` and route raw-datum evaluation through `_owned_map_value`, which applies the owned morphism to a public source point and returns its target datum.
 
-
 ## Native presented-category adapters bypassed the public generator boundary
 
-- **Evidence and impact:** `engines/fp_categories.py` and `engines/catlab.py` read `FinitePresentedCategory._generator_endpoints` and `_path_endpoints` directly to lower generators and relations. The category already exposes each named generator as an owned arrow and exposes object labels, so the adapters were coupled to private presentation dictionaries rather than the mathematical owner.
+- **Evidence and impact:** `engines/fp_categories.py` and `engines/catlab.py` read `FinitePresentedCategory._generator_endpoints` and `_path_endpoints` directly to lower generators and relations.
+  The category already exposes each named generator as an owned arrow and exposes object labels, so the adapters were coupled to private presentation dictionaries rather than the mathematical owner.
 
 - **Repair link and acceptance:** `bloat-presented-category-public-boundary`. Recover generator/relation endpoints from `category.generator(name).domain()/codomain()` and `category.label(...)` in both native adapters.
+
+
+## Catlab fallback materialization bypassed natural-transformation component access
+
+- **Evidence and impact:** `engines/catlab.py::ensure_native_transformation()` fell back to a natural transformation's private `_assignment` callback when no native recipe had been retained. The public `component()` operation already owns lazy component realization and identity caching, so the engine boundary bypassed the retained semantics it should consume.
+
+- **Repair link and acceptance:** `bloat-catlab-transformation-boundary`. Supply the bound public `component` method to Catlab's callable transformation model instead of reading `_assignment` directly.

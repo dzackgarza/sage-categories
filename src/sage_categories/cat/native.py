@@ -281,6 +281,7 @@ def retain_native_transformation(
     target: MorphismCategory.ObjectType,
     native: object,
 ) -> NativeTransformationRealization[object]:
+    assert value.domain() is source and value.codomain() is target
     record = NativeTransformationRealization(value, source, target, native)
     _native_transformations.retain(value, record)
     return record

@@ -47,7 +47,8 @@ from sage_categories.cat.predicates import (
     register_handler,
 )
 from sage_categories.kernel.refinement import is_placed
-from sage_categories.kernel.sage_runtime import MonoDict, cached_method
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -188,11 +189,6 @@ class DiscreteCategory(Category[[], []]):
         return f"Discrete({self._index_set!r})"
 
 
-# The retained images of the ``Discrete`` functor, keyed by identity.
-_discrete_categories: MonoDict = MonoDict()
-_discrete_functors: MonoDict = MonoDict()
-
-
 def _thin_composite(
     category: Category,
     second: MorphismCategory.ObjectType,
@@ -203,20 +199,18 @@ def _thin_composite(
     return category.MorphismType(first.domain(), second.codomain())
 
 
+@cached_function(key=identity_key)
 def _discrete_on_object(index_set: CategoryOfCategories.ElementType) -> DiscreteCategory:
-    if index_set not in _discrete_categories:
-        _discrete_categories[index_set] = DiscreteCategory(index_set)
-    return _discrete_categories[index_set]
+    return DiscreteCategory(index_set)
 
 
+@cached_function(key=identity_key)
 def _discrete_on_morphism(set_map: MorphismCategory.ObjectType) -> Functor:
-    if set_map not in _discrete_functors:
-        source, target = _discrete_on_object(set_map.domain()), _discrete_on_object(set_map.codomain())
-        _discrete_functors[set_map] = Fun(source, target)(
-            lambda vertex: target(set_map(vertex.point())),
-            lambda identity: target.morphism_at(set_map(identity.domain().point())),
-        )
-    return _discrete_functors[set_map]
+    source, target = _discrete_on_object(set_map.domain()), _discrete_on_object(set_map.codomain())
+    return Fun(source, target)(
+        lambda vertex: target(set_map(vertex.point())),
+        lambda identity: target.morphism_at(set_map(identity.domain().point())),
+    )
 
 
 # The functor ``Discrete: Sets() -> Cat()``, retained once; ``Discrete(S)`` is its

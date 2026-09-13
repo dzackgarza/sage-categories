@@ -640,3 +640,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** sheaves and topological rings each implemented their own lazy `Rings(Sets)` lookup, while affine and ringed-space code had begun reusing the sheaf helper solely to avoid duplicating it. The lazy import exists to break the structured-object import cycle, not because sheaves mathematically own every geometry module's ring category.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Move the lazy ordinary/commutative ring-category accessors to one private geometry boundary module and let sheaves, affine schemes, ringed spaces, and topological rings depend on that owner directly.
+
+## Finite-category evaluation mixed dispatch with Grothendieck execution
+
+- **Evidence and impact:** `cat/finite_categories.py::_evaluate` contained every category-kind dispatch branch and the full finite Grothendieck construction in one 15-complexity function. The dispatcher therefore owned both selection and the most involved evaluator, obscuring which code changes when a new finite category representation is added.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Split discrete, Grothendieck, presented, and opposite evaluation into named owners and make `_evaluate` a category-kind match whose cases only select the corresponding evaluator; keep slice/comma/limit and arrow-category adapters unchanged.

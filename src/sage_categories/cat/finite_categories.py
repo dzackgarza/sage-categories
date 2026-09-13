@@ -72,77 +72,106 @@ def finite_objects(category: Category) -> tuple[CategoryOfCategories.ElementType
     return Unknown if data is Unknown else data.objects
 
 
+def _discrete(category: Category) -> FiniteCategoryData | UnknownClass:
+    """Evaluate one finite discrete category from its chosen point enumeration."""
+    objects = finite_objects(category)
+    match objects:
+        case UnknownClass():
+            return Unknown
+        case _:
+            return FiniteCategoryData(objects, tuple(Mor(category)(value, value).one() for value in objects))
+
+
+def _grothendieck(category: Category) -> FiniteCategoryData | UnknownClass:
+    """Evaluate a finite Grothendieck construction from its finite base and fibers."""
+    indexed = category.indexed_category()
+    base = finite_category(indexed.domain().op())
+    match base:
+        case UnknownClass():
+            return Unknown
+        case _:
+            pass
+    fibers = {id(value): finite_category(indexed.on_object(value)) for value in base.objects}
+    match any(fiber is Unknown for fiber in fibers.values()):
+        case True:
+            return Unknown
+        case False:
+            pass
+    concrete_fibers = {key: value for key, value in fibers.items() if value is not Unknown}
+    objects = tuple(category(value, point) for value in base.objects for point in concrete_fibers[id(value)].objects)
+    by_pair = {(id(value.base_object()), id(value.fiber_object())): value for value in objects}
+    from sage_categories.engines import category_limits
+
+    arrows = []
+    for arrow in base.morphisms:
+        source_fiber = concrete_fibers[id(arrow.domain())]
+        target_fiber = concrete_fibers[id(arrow.codomain())]
+        reindex = indexed.reindex(arrow)
+        triples = category_limits.matching_triples(
+            source_fiber.objects,
+            target_fiber.objects,
+            source_fiber.morphisms,
+            reindex.on_object,
+            lambda morphism: morphism.domain(),
+            lambda morphism: morphism.codomain(),
+            position,
+        )
+        arrows.extend(
+            category.construct_morphism(
+                by_pair[(id(arrow.domain()), id(source))],
+                by_pair[(id(arrow.codomain()), id(target))],
+                arrow,
+                fiber_arrow,
+            )
+            for source, target, fiber_arrow in triples
+        )
+    return FiniteCategoryData(objects, tuple(arrows))
+
+
+def _presented(category: FinitePresentedCategory) -> FiniteCategoryData | UnknownClass:
+    """Evaluate a finite presented category from its native finite morphism family."""
+    arrows = category.finite_morphisms()
+    match arrows:
+        case UnknownClass():
+            return Unknown
+        case _:
+            return FiniteCategoryData(tuple(category(label) for label in category.labels()), arrows)
+
+
+def _opposite(category: OppositeCategory) -> FiniteCategoryData | UnknownClass:
+    """Evaluate an opposite by reversing the retained arrows of its finite original."""
+    original = finite_category(category.original())
+    match original:
+        case UnknownClass():
+            return Unknown
+        case _:
+            return FiniteCategoryData(original.objects, tuple(opposite_morphism(arrow) for arrow in original.morphisms))
+
+
 def _evaluate(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
     from sage_categories.cat.indexed import GrothendieckCategory
     from sage_categories.cat.shapes import DiscreteCategory
+    from sage_categories.cat.slices import SliceLikeCategory
 
-    if isinstance(category, DiscreteCategory):
-        objects = finite_objects(category)
-        if objects is Unknown:
-            return Unknown
-        return FiniteCategoryData(objects, tuple(Mor(category)(value, value).one() for value in objects))
-    if isinstance(category, GrothendieckCategory):
-        indexed = category.indexed_category()
-        base = finite_category(indexed.domain().op())
-        if base is Unknown:
-            return Unknown
-        fibers = {id(value): finite_category(indexed.on_object(value)) for value in base.objects}
-        if any(fiber is Unknown for fiber in fibers.values()):
-            return Unknown
-        concrete_fibers = {key: value for key, value in fibers.items() if value is not Unknown}
-        objects = tuple(
-            category(value, point)
-            for value in base.objects
-            for point in concrete_fibers[id(value)].objects
-        )
-        by_pair = {(id(value.base_object()), id(value.fiber_object())): value for value in objects}
-        from sage_categories.engines import category_limits
-
-        arrows = []
-        for arrow in base.morphisms:
-            source_fiber = concrete_fibers[id(arrow.domain())]
-            target_fiber = concrete_fibers[id(arrow.codomain())]
-            reindex = indexed.reindex(arrow)
-            triples = category_limits.matching_triples(
-                source_fiber.objects,
-                target_fiber.objects,
-                source_fiber.morphisms,
-                reindex.on_object,
-                lambda morphism: morphism.domain(),
-                lambda morphism: morphism.codomain(),
-                position,
-            )
-            arrows.extend(
-                category.construct_morphism(
-                    by_pair[(id(arrow.domain()), id(source))],
-                    by_pair[(id(arrow.codomain()), id(target))],
-                    arrow,
-                    fiber_arrow,
-                )
-                for source, target, fiber_arrow in triples
-            )
-        return FiniteCategoryData(objects, tuple(arrows))
-    if isinstance(category, FinitePresentedCategory):
-        arrows = category.finite_morphisms()
-        if arrows is Unknown:
-            return Unknown
-        return FiniteCategoryData(tuple(category(label) for label in category.labels()), arrows)
-    if isinstance(category, OppositeCategory):
-        original = finite_category(category.original())
-        if original is Unknown:
-            return Unknown
-        return FiniteCategoryData(original.objects, tuple(opposite_morphism(arrow) for arrow in original.morphisms))
-    if isinstance(category, FunctorCategory) and category.domain() is Cat().Simplex(1):
-        return _arrows(category)
-    if isinstance(category, CommaCategory):
-        from sage_categories.cat.slices import SliceLikeCategory
-
-        if isinstance(category, SliceLikeCategory):
+    match category:
+        case DiscreteCategory():
+            return _discrete(category)
+        case GrothendieckCategory():
+            return _grothendieck(category)
+        case FinitePresentedCategory():
+            return _presented(category)
+        case OppositeCategory():
+            return _opposite(category)
+        case FunctorCategory() if category.domain() is Cat().Simplex(1):
+            return _arrows(category)
+        case SliceLikeCategory():
             return _slice(category)
-        return _comma(category)
-    if isinstance(category, LimitCategory):
-        return _limit(category)
-    return Unknown
+        case CommaCategory():
+            return _comma(category)
+        case LimitCategory():
+            return _limit(category)
+        case _:
+            return Unknown
 
 
 def _arrows(category: FunctorCategory) -> FiniteCategoryData | UnknownClass:

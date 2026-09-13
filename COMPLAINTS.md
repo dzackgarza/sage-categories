@@ -1715,3 +1715,9 @@ Ideas, to be weighed, not obligations.*
   Sage `cached_method` already owns that lifecycle and is already imported in the module.
 
 - **Repair link and acceptance:** `bloat-inverse-image-projection-cache`. Make `target_projection()` a `cached_method`, return the constructed restricted functor directly, and retain monomorphism/isofibration refinement inside that first cached construction.
+
+## DisCoPy path orchestration still owned its local semantic category
+
+- **Evidence and impact:** after the earlier immutable-chain cleanup, `engines/diagrams.py::evaluate_path` still defined the local semantic object/arrow classes and identity-aware token allocator inside the path orchestration itself, leaving the function at McCabe complexity 12. Those are reusable setup responsibilities, not branches of path evaluation.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Give the local semantic category and endpoint-token table separate private owners; leave `evaluate_path` responsible only for the endpoint chain, DisCoPy boxes/functor, empty identity, and native fold.

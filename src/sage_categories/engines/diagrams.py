@@ -204,15 +204,11 @@ class _PathArrow(Protocol):
     def codomain(self) -> object: ...
 
 
-def evaluate_path(
-    arrows: tuple[_PathArrow, ...],
-    *,
-    domain: object,
-    codomain: object,
+def _path_semantic_category(
     identity: Callable[[object], object],
     compose: Callable[[object, object], object],
-) -> object:
-    """Compose a retained semantic path through DisCoPy's native arrow evaluator."""
+) -> tuple[Any, type, type]:
+    """Build the local DisCoPy semantic category for one path evaluator."""
 
     class ObjectValue:
         def __init__(self, value: object) -> None:
@@ -236,8 +232,33 @@ def evaluate_path(
             assert self.cod == other.dom
             return type(self)(self.dom, other.cod, compose(other.value, self.value))
 
+    return _discopy_cat().Category(ObjectValue, ArrowValue), ObjectValue, ArrowValue
+
+
+def _path_tokens(chain: tuple[object, ...]) -> tuple[MonoDict, dict[str, object]]:
+    """Assign stable local DisCoPy names to one endpoint chain by identity."""
+    tokens: MonoDict = MonoDict()
+    values: dict[str, object] = {}
+    for value in chain:
+        if value in tokens:
+            continue
+        name = f"o{len(values)}"
+        tokens[value] = name
+        values[name] = value
+    return tokens, values
+
+
+def evaluate_path(
+    arrows: tuple[_PathArrow, ...],
+    *,
+    domain: object,
+    codomain: object,
+    identity: Callable[[object], object],
+    compose: Callable[[object, object], object],
+) -> object:
+    """Compose a retained semantic path through DisCoPy's native arrow evaluator."""
     cat = _discopy_cat()
-    category = cat.Category(ObjectValue, ArrowValue)
+    category, ObjectValue, ArrowValue = _path_semantic_category(identity, compose)
     objects: MonoDict = MonoDict()
 
     def ob(value: object) -> ObjectValue:
@@ -248,21 +269,13 @@ def evaluate_path(
     targets = tuple(arrow.codomain() for arrow in arrows)
     chain = (domain, *targets)
     assert chain[-1] is codomain
-    tokens: MonoDict = MonoDict()
-    token_values: dict[str, object] = {}
-
-    def token(value: object) -> str:
-        if value not in tokens:
-            name = f"o{len(token_values)}"
-            tokens[value] = name
-            token_values[name] = value
-        return tokens[value]
+    tokens, token_values = _path_tokens(chain)
 
     boxes = tuple(
         cat.Box(
             f"a{index}",
-            cat.Ob(token(source)),
-            cat.Ob(token(target)),
+            cat.Ob(tokens[source]),
+            cat.Ob(tokens[target]),
             data=arrow,
         )
         for index, (source, target, arrow) in enumerate(zip(chain, chain[1:], arrows, strict=True))

@@ -289,17 +289,6 @@ def retract(proposition: Proposition) -> None:
     global_assumptions.discard(proposition)
 
 
-def _property_subcategory() -> type[PropertySubcategory]:
-    """The default implementation of a generated property subcategory.
-
-    An axiom is declared in the body of a category class, and ``Cat()``'s own class is
-    one of them, so this module stands below ``cat/properties.py`` rather than beside it
-    (``cat/category.py``, ``Cat().Inhabited()``).  The class it returns is read on first
-    construction, which is after that module is imported.
-    """
-    return _properties().PropertySubcategory
-
-
 class Axiom:
     """A property axiom, declared once in the body of a category class (D77.4, POL-LEAF-059).
 
@@ -494,7 +483,7 @@ class Axiom:
     def _construct_declared(self, category: Category, *parameters: CategoryOfCategories.ElementType) -> Category:
         """Construct the declared implementation at its mathematical ambient category."""
         containing = tuple(axiom._declared_on(category) for axiom in self._full_subcategory_of)
-        constructed = (self._implementation or _property_subcategory())(category, self._name, containing, *parameters)
+        constructed = (self._implementation or _properties().PropertySubcategory)(category, self._name, containing, *parameters)
         if self._deciding is not None:
             self._register_deciding_proposition(constructed, category)
         return constructed

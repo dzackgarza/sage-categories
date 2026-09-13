@@ -765,7 +765,7 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/presented_colimits.py::presented_colimit_in_opposite` combined finite-shape extraction, object-class lowering, coproduct generator provenance, diagram-relation generation, injection reconstruction, quotient representatives, and mediator reconstruction in one 20-complexity function.
   Each phase has a different invariant and engine boundary, so one edit required reasoning across the entire pipeline.
 
-- **Repair link and acceptance:** `bloat-audit-loop`. Give each lowering/reconstruction phase a named private owner and leave `presented_colimit_in_opposite` as the orchestration that connects their retained data and installs the final universal presentation.
+- **Repair link and acceptance:** `bloat-presented-colimit-phases`. Give each lowering/reconstruction phase a named private owner and leave `presented_colimit_in_opposite` as the orchestration that connects their retained data and installs the final universal presentation.
 
 ## Native cell lookup mixed inverse synchronization with construction dispatch
 
@@ -1302,18 +1302,21 @@ Ideas, to be weighed, not obligations.*
 
 ## Free-associative construction embedded native multiplication descent
 
-- **Evidence and impact:** `integer_free_associative_algebra()` built the word module/bimodule object and also carried the complete multiplication implementation: conversion of both operands to word coefficients, native Sage free-algebra multiplication, re-embedding into the indexed module, relative-tensor mediation, and bimodule wrapping. That is one independent operation of the algebra, not part of choosing its carrier.
+- **Evidence and impact:** `integer_free_associative_algebra()` built the word module/bimodule object and also carried the complete multiplication implementation: conversion of both operands to word coefficients, native Sage free-algebra multiplication, re-embedding into the indexed module, relative-tensor mediation, and bimodule wrapping.
+  That is one independent operation of the algebra, not part of choosing its carrier.
 
 - **Repair link and acceptance:** `bloat-free-associative-multiplication`. Move native multiplication plus relative-tensor descent into `_free_associative_multiplication()`; keep the public constructor responsible for selecting carrier/actions/unit and retaining the resulting monoid object.
 
 ## Projective-line constructor still embedded chart-swap construction
 
-- **Evidence and impact:** after separating its structure sheaf, `projective_line()` still carried the two chart pullbacks, chart maps into the glued scheme, gluing mediator, and induced overlap localization automorphism for the involution exchanging the two affine charts. This is one named automorphism with its own exact pullback data, not part of constructing the cover itself.
+- **Evidence and impact:** after separating its structure sheaf, `projective_line()` still carried the two chart pullbacks, chart maps into the glued scheme, gluing mediator, and induced overlap localization automorphism for the involution exchanging the two affine charts.
+  This is one named automorphism with its own exact pullback data, not part of constructing the cover itself.
 
 - **Repair link and acceptance:** `bloat-projective-line-swap`. Move the chart-swap and overlap automorphism into `_projective_line_swap()`; keep `projective_line()` responsible for constructing charts/overlap/gluing and packaging the returned swap data.
 
 ## Free-associative substitution fused source linearization with algebra lifting
 
-- **Evidence and impact:** `free_associative_substitution()` both computed the indexed-free-module endomorphism determined by generator images and then lifted that map through the retained bimodule and monoid owners. Those are two distinct owner boundaries, and the public substitution constructor obscured which layer was responsible for which step.
+- **Evidence and impact:** `free_associative_substitution()` both computed the indexed-free-module endomorphism determined by generator images and then lifted that map through the retained bimodule and monoid owners.
+  Those are two distinct owner boundaries, and the public substitution constructor obscured which layer was responsible for which step.
 
 - **Repair link and acceptance:** `bloat-free-associative-substitution-layers`. Extract `_free_associative_linear_substitution()` and `_free_associative_algebra_substitution()`; leave the public function to validate generator images and compose those two named owner transitions.

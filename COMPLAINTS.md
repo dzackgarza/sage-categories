@@ -1245,3 +1245,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `adeles_of_rationals()` built the restricted-product carrier, its commutative ring, the topology of basic opens, and continuity witnesses for both ring operations in one function. These are two independent mathematical construction boundaries, and the resulting initializer hid the topology's binary-preimage rule inside a nested closure.
 
 - **Repair link and acceptance:** `bloat-adele-algebra-topology`. Split `_adele_ring()` from `_adele_topological_ring()` so the public constructor only selects the owner, assembles the two retained structures, and packages the final presentation.
+
+## Semiring construction embedded every law equation in the public constructor
+
+- **Evidence and impact:** `cat/structured_objects.py::Semirings` built the pullback of additive/multiplicative monoids and also carried the full distributivity and zero-absorption calculus, including product coordinates and all four natural-transformation equations. That mixed structural assembly with the laws that cut out the semiring subcategory and left the public constructor over one hundred lines.
+
+- **Repair link and acceptance:** `bloat-semiring-law-equations`. Move the four law equations and their local operation calculus into `_semiring_law_equations()`; keep `Semirings()` responsible for assembling the monoid-pair carrier and applying the resulting equifiers.

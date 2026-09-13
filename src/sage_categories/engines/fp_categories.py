@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from sage.libs.gap.element import GapElement
 from sage.libs.gap.libgap import libgap
+from sage.libs.gap.util import GAPError
 
 from sage_categories.engines.gap import FINITE_CATEGORY_PACKAGES, load_packages
 from sage_categories.kernel.sage_runtime import MonoDict
@@ -219,11 +220,15 @@ def inverse_morphism(category: object, morphism: object) -> object:
 
 def is_isomorphism(category: object, morphism: object) -> bool | None:
     """Native isomorphism decision when ``FpCategories`` has an applicable method."""
-    native = native_morphism(category, morphism)
-    method = libgap.ApplicableMethod(libgap.IsIsomorphism, [native])
-    if method == libgap.fail:
-        return None
-    return bool(libgap.IsIsomorphism(native))
+    try:
+        return bool(libgap.IsIsomorphism(native_morphism(category, morphism)))
+    except GAPError as error:
+        # ``ApplicableMethod`` is not a safe preflight here: GAP documents that an
+        # applicable method may still ``TryNextMethod``.  Let GAP perform its own full
+        # dispatch, and preserve undecidability only when that chain has no method.
+        if "no method found" in str(error):
+            return None
+        raise
 
 
 def finite_morphisms(category: object) -> tuple[tuple[int, int, tuple[str, ...]], ...] | None:

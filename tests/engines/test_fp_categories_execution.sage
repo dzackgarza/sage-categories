@@ -46,11 +46,19 @@ def test_native_finite_presented_category_paths() -> None:
         (("x", "v", "v"),),
         ((("x", "x"), ("x",)),),
     )
-    assert fp_categories.is_isomorphism(idempotent, idempotent.generator("x")) is None
+    assert fp_categories.is_isomorphism(idempotent, idempotent.generator("x")) is False
     assert (idempotent.generator("x") * idempotent.generator("x")) is idempotent.generator("x")
     finite = idempotent.finite_morphisms()
     assert finite is not Unknown and len(finite) == 2
     assert ask(finite[0] == finite[0]) is True
+
+    commuting = FinitePresentedCategory(
+        "commuting loops",
+        (0,),
+        (("a", 0, 0), ("b", 0, 0)),
+        ((("a", "b"), ("b", "a")),),
+    )
+    assert fp_categories.is_isomorphism(commuting, commuting.generator("a")) is None
 
     parallel = FinitePresentedCategory(
         "parallel relation",

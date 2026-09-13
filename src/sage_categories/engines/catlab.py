@@ -134,7 +134,7 @@ def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:
     if recipe is None:
         recipe = (
             "callable",
-            (value.source_functor(), value.target_functor(), value.component),
+            (value.source_functor(), value.target_functor(), value._declared_component),
         )
     bridge = _bridge()
     match recipe:

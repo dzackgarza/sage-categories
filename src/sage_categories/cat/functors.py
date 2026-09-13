@@ -463,6 +463,14 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         def target_functor(self) -> Functor:
             return self._target_functor
 
+        def _declared_component(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            """Execute the primitive component assignment without re-entering Catlab materialization."""
+            source, target = self.source_functor(), self.target_functor()
+            component = self._assignment(member_object)
+            expected = source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
+            assert component in expected, f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
+            return component
+
         @cached_method(key=lambda self, member_object: identity_key(member_object))
         def _component_from_assignment(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             source, target = self.source_functor(), self.target_functor()

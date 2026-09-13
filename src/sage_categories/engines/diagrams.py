@@ -15,6 +15,7 @@ from importlib import import_module
 from operator import rshift
 from typing import Any, Protocol, cast, overload
 
+from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict
 from sage_categories.kernel.type_aliases import EqualityInput
 
@@ -124,7 +125,7 @@ class NonstrictMonoidalModel[Object, Arrow]:
         self._compose = compose
         self._inverse = inverse
         self._comparison = comparison
-        self._word_cache: dict[tuple[int, ...], _ObjectValue] = {}
+        self._word_cache: dict[tuple[tuple[int, Object], ...], _ObjectValue] = {}
         self._wire_values: dict[str, Object] = {}
         self._wire_tokens: MonoDict = MonoDict()
         self._next_wire = 0
@@ -141,7 +142,7 @@ class NonstrictMonoidalModel[Object, Arrow]:
         self._category = _discopy_cat().Category(self._object_type, self._arrow_type)
 
     def _word(self, word: tuple[Object, ...]) -> _ObjectValue:
-        key = tuple(id(value) for value in word)
+        key = identity_key(*word)
         if key not in self._word_cache:
             match len(word):
                 case 0:

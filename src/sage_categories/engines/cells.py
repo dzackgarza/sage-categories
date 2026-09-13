@@ -135,7 +135,10 @@ def _retain_lower_attachment(
     owner = _root_owner(owner)
     state = _state(owner)
     transformation_native = native_cell(owner, transformation)
-    functor_native = native_object(owner, functor)
+    # A whiskering functor is a 1-cell of the root category, not a 0-cell object.
+    # Lower it through the same owned-cell boundary as every other categorical arrow;
+    # treating it as an object loses the Mor(Cat) level and rejects Functor(Cat -> Cat).
+    functor_native = native_cell(owner, functor)
     native = transformation_native.attach(functor_native, side, [])
     cached = _cached_morphism(state, value)
     match cached is None:

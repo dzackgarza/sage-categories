@@ -201,8 +201,12 @@ def test_functors_and_two_morphisms_are_owned_and_distinct() -> None:
 
     eta = _identity_transformation(first)
     theta = _identity_transformation(second)
-    assert eta.whisker_left(first).source_functor().domain() is category
-    assert eta.whisker_right(first).source_functor().domain() is category
+    left_whisker = eta.whisker_left(first)
+    right_whisker = eta.whisker_right(first)
+    assert left_whisker.source_functor().domain() is category
+    assert right_whisker.source_functor().domain() is category
+    left_whisker.typecheck_cell()
+    right_whisker.typecheck_cell()
     assert eta.horizontal(theta).source_functor().domain() is category
 
 

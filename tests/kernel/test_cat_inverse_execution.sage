@@ -10,7 +10,17 @@ from sage_categories.sets.finite import Sets
 def test_cat_isomorphism_requires_retained_executable_inverse() -> None:
     forward = Fun(Sets(), Sets())(lambda value: value, lambda arrow: arrow)
     inverse = Fun(Sets(), Sets())(lambda value: value, lambda arrow: arrow)
-    isomorphisms = Mor(Cat()).Isomorphisms()
+    isomorphisms = Fun(Sets(), Sets()).Isomorphisms()
+
+    try:
+        isomorphisms(
+            lambda value: value,
+            lambda arrow: arrow,
+        )
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Cat constructed an isomorphism without executable inverse data")
 
     try:
         refine(forward, isomorphisms)
@@ -22,8 +32,9 @@ def test_cat_isomorphism_requires_retained_executable_inverse() -> None:
     Cat().retain_inverses(forward, inverse)
     assert forward.inverse() is inverse
     assert inverse.inverse() is forward
-    assert forward.inverse().on_object(Sets()) is Sets()
-    identity = Mor(Sets())(Sets((0,)), Sets((0,)))(lambda value: value)
+    carrier = Sets((0,))
+    assert forward.inverse().on_object(carrier) is carrier
+    identity = Mor(Sets())(carrier, carrier)(lambda value: value)
     assert forward.inverse().on_morphism(identity) is identity
 
 

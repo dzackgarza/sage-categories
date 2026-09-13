@@ -736,3 +736,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `algebra/_presented_modules_cap.py` imported `AbelianGroups` separately inside object-retention and morphism-retention functions solely to avoid importing the leaf during bootstrap. Both paths need the same exact owner; duplicating the cycle-breaking import makes that boundary implicit in two places.
 
 - **Repair link and acceptance:** `bloat-presented-module-owner`. Put the lazy `AbelianGroups()` lookup behind one `_owner()` helper and let both native retention families use it, preserving the bootstrap boundary and exact Hom ownership.
+
+## OSCAR ring reconstruction repeated its cycle-safe runtime module bundle
+
+- **Evidence and impact:** `_commutative_rings_oscar.py` dynamically imported `cat.declarations`, `cat.morphisms`, and `cat.structured_objects` in both object and morphism reconstruction, while `_owner()` repeated two of the same imports. These imports are deliberately delayed to the OSCAR reconstruction boundary, but the boundary itself had three spellings.
+
+- **Repair link and acceptance:** `bloat-oscar-runtime-modules`. Keep delayed loading, but make one `_ring_runtime_modules()` owner for the shared declaration/morphism/structured modules and use it in owner lookup plus both reconstruction directions.

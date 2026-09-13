@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import import_module
+from types import ModuleType
 from typing import Any, cast
 
 from sage_categories.cat.category import CategoryOfCategories
@@ -41,10 +42,18 @@ _objects: NativeObjectRealizations[object, OscarRingConstruction] = NativeObject
 _morphisms: NativeMorphismRealizations[object] = NativeMorphismRealizations()
 
 
+def _ring_runtime_modules() -> tuple[ModuleType, ModuleType, ModuleType]:
+    """Load the declaration, morphism, and structured-object owners at the cycle-safe OSCAR boundary."""
+    return (
+        import_module("sage_categories.cat.declarations"),
+        import_module("sage_categories.cat.morphisms"),
+        import_module("sage_categories.cat.structured_objects"),
+    )
+
+
 def _owner() -> Any:
-    structured_objects = import_module("sage_categories.cat.structured_objects")
-    declarations = import_module("sage_categories.cat.declarations")
-    return structured_objects.Rings(declarations.Sets).Commutative()
+    declarations, _morphisms_module, structured = _ring_runtime_modules()
+    return structured.Rings(declarations.Sets).Commutative()
 
 
 def retain_oscar_native_object(
@@ -110,11 +119,9 @@ def reconstruct_oscar_object(
     from sage_categories.engines import oscar
 
     calculus = import_module("sage_categories.cat.calculus")
-    declarations = import_module("sage_categories.cat.declarations")
+    declarations, morphisms, structured = _ring_runtime_modules()
     monoidal_module = import_module("sage_categories.cat.monoidal")
-    morphisms = import_module("sage_categories.cat.morphisms")
     refinement = import_module("sage_categories.kernel.refinement")
-    structured = import_module("sage_categories.cat.structured_objects")
     Sets = declarations.Sets
     Mor = morphisms.Mor
     monoidal = monoidal_module.Cartesian(Sets)
@@ -172,9 +179,7 @@ def reconstruct_oscar_morphism(
     target_native = oscar_object_handle(target)
     assert oscar.same_native(oscar.domain(native), source_native)
     assert oscar.same_native(oscar.codomain(native), target_native)
-    declarations = import_module("sage_categories.cat.declarations")
-    morphisms = import_module("sage_categories.cat.morphisms")
-    structured = import_module("sage_categories.cat.structured_objects")
+    declarations, morphisms, structured = _ring_runtime_modules()
     Sets = declarations.Sets
     rings = structured.Rings(Sets)
     forgetful = rings.forgetful()

@@ -1840,3 +1840,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `FunctorPropertyCategory` used a `TripleDict` for `identity_on_values(source, target)` and two `MonoDict`s for placement-level inheritance/subcategory decisions. All three are pure method results keyed by owned category identity; their lookup/insert branches duplicated Sage method caching while obscuring that the queue/bootstrap state, not the caches, is the only mutable declaration phase.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Use identity-keyed `cached_method` for `identity_on_values` and for the two post-bootstrap placement decisions; remove `_shared_value_functors`, `_declaring`, and `_inheriting` while leaving pending bootstrap declarations unchanged.
+
+## Limit and colimit families duplicated diagram-lowering caches
+
+- **Evidence and impact:** `ApexCategory` and `ColimitsCategory` each allocated `_lowered: MonoDict` and separately implemented the same identity lookup plus full-subcategory inclusion composition. Lowering is one operation determined by the construction family and diagram, so the two tables duplicated both ownership and cache lifecycle.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Give diagram lowering one identity-keyed cached function shared by limit and colimit families, remove both `_lowered` tables, and leave each family-specific universal-data path unchanged.

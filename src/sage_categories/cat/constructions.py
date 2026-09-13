@@ -128,6 +128,17 @@ def _construction_diagrams(family: Category) -> Category:
     return _diagram_category(family.ambient(), _construction_shape(family))
 
 
+@cached_function(key=lambda family, diagram: identity_key(family, diagram))
+def _lower_construction_diagram(family: Category, diagram: Functor) -> Functor:
+    """Regard a diagram in a declared subcategory as a diagram in the family ambient."""
+    ambient = family.ambient()
+    codomain = diagram.codomain()
+    if codomain is ambient:
+        return diagram
+    assert is_subcategory(codomain, ambient), f"{codomain!r} is not a declared subcategory of {ambient!r}"
+    return Fun(codomain, ambient).Monomorphisms().Isofibrations().Full()() * diagram
+
+
 def _diagram_category(ambient: Category, shape: Category) -> Category:
     """The owned category of ``shape``-diagrams landing in ``ambient``."""
     return Fun(shape, ambient)
@@ -260,7 +271,6 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
         self._data: MonoDict = MonoDict()
         self._constructed: MonoDict = MonoDict()
         self._source_diagrams: MonoDict = MonoDict()
-        self._lowered: MonoDict = MonoDict()
         super().__init__(ambient, name, full_subcategory_of)
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
@@ -275,15 +285,8 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
         assert is_subcategory(diagram.codomain(), self.ambient()), f"{diagram!r} does not land in {self.ambient()!r}"
 
     def lowered(self, diagram: Functor) -> Functor:
-        """The diagram as a diagram in ``C``: itself, or its composite with the subcategory monomorphism of its codomain, retained per diagram."""
-        ambient = self.ambient()
-        codomain = diagram.codomain()
-        if codomain is ambient:
-            return diagram
-        assert is_subcategory(codomain, ambient), f"{codomain!r} is not a declared subcategory of {ambient!r}"
-        if diagram not in self._lowered:
-            self._lowered[diagram] = Fun(codomain, ambient).Monomorphisms().Isofibrations().Full()() * diagram
-        return self._lowered[diagram]
+        """The diagram as a diagram in ``C``: itself, or its retained composite with the codomain inclusion."""
+        return _lower_construction_diagram(self, diagram)
 
     # -- the retained constructions ----------------------------------------------------
 
@@ -818,7 +821,6 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         self._shape = shape
         self._duality = dual_functor_category_equivalence(shape, ambient)
         self._dual_limits = ambient.op().Limits(shape.op())
-        self._lowered: MonoDict = MonoDict()
         self._dual_diagrams: MonoDict = MonoDict()
         self._presentations: MonoDict = MonoDict()
         super().__init__(
@@ -844,13 +846,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         assert is_subcategory(diagram.codomain(), self.ambient()), f"{diagram!r} does not land in {self.ambient()!r}"
 
     def lowered(self, diagram: Functor) -> Functor:
-        codomain = diagram.codomain()
-        if codomain is self.ambient():
-            return diagram
-        assert is_subcategory(codomain, self.ambient()), f"{codomain!r} is not a declared subcategory of {self.ambient()!r}"
-        if diagram not in self._lowered:
-            self._lowered[diagram] = Fun(codomain, self.ambient()).Monomorphisms().Isofibrations().Full()() * diagram
-        return self._lowered[diagram]
+        return _lower_construction_diagram(self, diagram)
 
     def _dual_diagram(self, diagram: Functor) -> Functor:
         if diagram not in self._dual_diagrams:

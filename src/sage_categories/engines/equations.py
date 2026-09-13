@@ -27,10 +27,6 @@ def _worker_path() -> Path:
     return Path(__file__).with_name("_maude_worker.py")
 
 
-def _local_python() -> Path:
-    return Path(__file__).resolve().parents[3] / ".venv" / "bin" / "python"
-
-
 def _has_maude(executable: Path) -> bool:
     if not executable.is_file():
         return False
@@ -49,7 +45,7 @@ def _worker_command() -> list[str]:
         case str(executable) if executable:
             return [executable, str(_worker_path())]
         case _:
-            local = _local_python()
+            local = Path(__file__).resolve().parents[3] / ".venv" / "bin" / "python"
             if _has_maude(local):
                 return [str(local), str(_worker_path())]
             uv = shutil.which("uv")

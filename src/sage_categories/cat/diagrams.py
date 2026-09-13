@@ -353,7 +353,7 @@ def pointwise_limit(diagram: Functor) -> CategoryOfCategories.ElementType:
     return family.with_universal_data(
         lowered,
         apex,
-        cone(lowered, apex, lambda vertex: limiting_cone.component(vertex)),
+        cone(lowered, apex, limiting_cone.component),
         mediator,
     )
 

@@ -158,7 +158,7 @@ class SliceLikeCategory(CommaSpecialization):
             self,
             self._base_of_slice,
             lambda member_object: self.varying_end(self.defining_arrow_of(member_object)),
-            lambda triangle: _varying_of(triangle),
+            _varying_of,
         )
 
     def structure_functors(self) -> tuple[Functor, ...]:

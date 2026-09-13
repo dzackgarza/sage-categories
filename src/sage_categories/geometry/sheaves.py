@@ -185,7 +185,7 @@ def ring_presheaf(
         space.open_category(),
         Fun(source, rings)(on_object, on_morphism),
         lambda key: space.open_object(cast(frozenset[Hashable], key)),
-        lambda open_object: _open_data(open_object),
+        _open_data,
     )
 
 

@@ -10,8 +10,9 @@ DisCoPy diagram evaluates boxes or layers.
 from __future__ import annotations
 
 from collections.abc import Callable
-from functools import cache
+from functools import cache, reduce
 from importlib import import_module
+from operator import rshift
 from typing import Any, Protocol, cast, overload
 
 from sage_categories.kernel.type_aliases import EqualityInput
@@ -245,28 +246,26 @@ def evaluate_path(
             objects[key] = ObjectValue(value)
         return objects[key]
 
-    boxes = []
-    current = domain
-    for index, arrow in enumerate(arrows):
-        target = arrow.codomain()
-        boxes.append(
-            cat.Box(
-                f"a{index}",
-                cat.Ob(str(id(current))),
-                cat.Ob(str(id(target))),
-                data=arrow,
-            )
+    targets = tuple(arrow.codomain() for arrow in arrows)
+    chain = (domain, *targets)
+    assert chain[-1] is codomain
+    boxes = tuple(
+        cat.Box(
+            f"a{index}",
+            cat.Ob(str(id(source))),
+            cat.Ob(str(id(target))),
+            data=arrow,
         )
-        current = target
-    assert current is codomain
+        for index, (source, target, arrow) in enumerate(
+            zip(chain, chain[1:], arrows, strict=True)
+        )
+    )
     token_values = {
         str(id(value)): value
-        for value in [
-            domain,
-            codomain,
-            *(a.domain() for a in arrows),
-            *(a.codomain() for a in arrows),
-        ]
+        for value in (
+            *chain,
+            *(arrow.domain() for arrow in arrows),
+        )
     }
     functor = cat.Functor(
         lambda token: ob(token_values[token.name]),
@@ -275,7 +274,4 @@ def evaluate_path(
     )
     if not boxes:
         return identity(domain)
-    diagram = boxes[0]
-    for box in boxes[1:]:
-        diagram = diagram >> box
-    return cast(object, functor(diagram).value)
+    return cast(object, functor(reduce(rshift, boxes)).value)

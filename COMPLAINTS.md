@@ -628,3 +628,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `geometry/affine.py::_commutative_rings()` repeated `geometry/sheaves.py::_rings()` exactly, including the same lazy import used to avoid the structured-object import cycle. Affine geometry already imports the sheaf module, so the duplicate helper added a second owner without isolating any dependency.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Reuse the sheaf module's lazy commutative-ring owner throughout affine scheme construction and `Spec`; remove the duplicate import machinery from `affine.py`.
+
+## DisCoPy path evaluation manually accumulated a simple linear chain
+
+- **Evidence and impact:** `engines/diagrams.py::evaluate_path` built a linear list of boxes with mutable `current` state, rebuilt the same endpoint family for token lookup, then manually folded `>>` across the boxes. The mutable setup inflated the function's branch complexity even though the path is already an ordered tuple.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Derive the endpoint chain once, construct boxes and token values from that immutable chain, and use the standard `reduce(rshift, ...)` fold for nonempty paths while retaining the explicit empty-path identity case.

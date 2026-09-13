@@ -70,7 +70,6 @@ def _denoted_morphism(candidate: CategoryOfCategories.ElementType) -> CategoryOf
     return candidate
 
 
-
 def _is_slice_over(category: SliceLikeCategory) -> bool:
     """Whether this specialization fixes the codomain rather than the domain."""
     return category._fixed_label == 1
@@ -150,7 +149,7 @@ class SliceLikeCategory(CommaSpecialization):
     @cached_method
     def defining_arrow(self) -> Functor:
         """The retained pullback projection to ``Fun([1], C)``: the defining morphism of an object, the commuting square of a triangle (POL-CAT-092)."""
-        return Cat().construct_morphism(self, self.arrows(), _structure_of, self._square)
+        return Cat().construct_morphism(self, self.arrows(), lambda member_object: member_object.arrow(), self._square)
 
     @cached_method
     def fixed_projection(self) -> Functor:

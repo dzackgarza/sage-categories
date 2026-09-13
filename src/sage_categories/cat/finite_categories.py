@@ -205,6 +205,28 @@ def _arrows(category: FunctorCategory) -> FiniteCategoryData | UnknownClass:
     return FiniteCategoryData(objects, morphisms)
 
 
+def _reconstruct_limit_family(
+    category: LimitCategory,
+    object_components: tuple[tuple[object, ...], ...],
+    morphism_components: tuple[tuple[object, ...], ...],
+) -> FiniteCategoryData:
+    """Reconstruct owned limit objects and arrows from their finite component families."""
+    objects = tuple(category(components) for components in object_components)
+    by_components = {
+        tuple(id(component) for component in components): value
+        for components, value in zip(object_components, objects, strict=True)
+    }
+    morphisms = tuple(
+        category.construct_morphism(
+            by_components[tuple(id(component.domain()) for component in components)],
+            by_components[tuple(id(component.codomain()) for component in components)],
+            components,
+        )
+        for components in morphism_components
+    )
+    return FiniteCategoryData(objects, morphisms)
+
+
 def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
     shape = finite_category(category.shape())
     if shape is Unknown:
@@ -226,17 +248,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
             tuple(factor.objects for factor in concrete_factors),
             tuple(factor.morphisms for factor in concrete_factors),
         )
-        objects = tuple(category(components) for components in object_components)
-        by_components = {
-            tuple(id(component) for component in components): value
-            for components, value in zip(object_components, objects, strict=True)
-        }
-        morphisms = []
-        for components in morphism_components:
-            domain = by_components[tuple(id(component.domain()) for component in components)]
-            codomain = by_components[tuple(id(component.codomain()) for component in components)]
-            morphisms.append(category.construct_morphism(domain, codomain, components))
-        return FiniteCategoryData(objects, tuple(morphisms))
+        return _reconstruct_limit_family(category, object_components, morphism_components)
 
     category_limits = _category_limits_engine()
     concrete_factors = tuple(factor for factor in factors if factor is not Unknown)
@@ -248,11 +260,6 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
         lambda arrow, value: diagram.on_morphism(arrow).on_object(value),
         position,
     )
-    objects = tuple(category(components) for components in object_components)
-    by_components = {
-        tuple(id(component) for component in components): value
-        for components, value in zip(object_components, objects, strict=True)
-    }
     morphism_components = category_limits.compatible_families(
         vertices,
         shape.morphisms,
@@ -260,15 +267,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
         lambda arrow, value: diagram.on_morphism(arrow).on_morphism(value),
         position,
     )
-    morphisms = tuple(
-        category.construct_morphism(
-            by_components[tuple(id(component.domain()) for component in components)],
-            by_components[tuple(id(component.codomain()) for component in components)],
-            components,
-        )
-        for components in morphism_components
-    )
-    return FiniteCategoryData(objects, morphisms)
+    return _reconstruct_limit_family(category, object_components, morphism_components)
 
 
 def _slice(category: object) -> FiniteCategoryData | UnknownClass:

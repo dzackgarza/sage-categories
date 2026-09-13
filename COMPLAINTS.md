@@ -1276,3 +1276,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `engines/category_limits.py::matching_triples` both converted owned values to skeletal indices and built the full native product/equalizer diagram selecting triples `(x,y,φ)`. The public adapter therefore mixed reconstruction concerns with the CAP computation it delegates.
 
 - **Repair link and acceptance:** `bloat-matching-triples-native`. Move the skeletal finite-set product, three projections, compatibility maps, equalizer and selected-index extraction into `_matching_native_selection()`; keep `matching_triples()` responsible for owned-value graph conversion and reconstruction only.
+
+## Finite limit evaluation duplicated owned-family reconstruction
+
+- **Evidence and impact:** `cat/finite_categories.py::_limit` reconstructed owned limit objects and morphisms twice: once after CAP category products and again after general compatible-family limits. Both branches built the same component-identity index and exact owned morphisms; only the native component computation differs.
+
+- **Repair link and acceptance:** `bloat-finite-limit-reconstruction`. Put component-family reconstruction in `_reconstruct_limit_family()` and let the product and general finite-limit branches stop once they have obtained object/morphism component tuples.

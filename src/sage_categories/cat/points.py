@@ -100,10 +100,6 @@ class PointCategory(Category[[], []]):
         """The sole object ``X``."""
         return self._member
 
-    def structure_functors(self) -> tuple[CategoryOfCategories.MorphismType, ...]:
-        """Return the selected structure functors."""
-        return ()
-
     def morphism_category_type(self) -> type[PointMorphismCategory]:
         return PointMorphismCategory
 

@@ -8,8 +8,13 @@ from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.images import full_image, strict_image
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import Op, op_squared_isomorphism
+from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import Proposition, Unknown, register_handler
 from sage_categories.kernel.refinement import _join
+
+
+def test_point_category_uses_generic_empty_structure_surface() -> None:
+    assert PointCategory.structure_functors is Category.structure_functors
 
 
 class Tokens(Category):

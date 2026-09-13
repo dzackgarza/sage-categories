@@ -1847,7 +1847,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return f"Functor({self.domain()!r} -> {self.codomain()!r})"
 
     def __init__(self) -> None:
-        self._canonical: dict[tuple[str, tuple[int, ...]], FinitePresentedCategory] = {}
         self._declared_functors: TripleDict = TripleDict(weak_values=False)
         self._exponential_actions: TripleDict = TripleDict(weak_values=False)
         self._declarations: dict[str, Category | CategoryFamily] = {}
@@ -2389,6 +2388,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         canonical = _canonical_categories()
         return self._canonical_shape("walking parallel pair", (), canonical.walking_parallel_pair)
 
+    @cached_method(key=lambda self, name, parameters, construct: (name, tuple(int(parameter) for parameter in parameters)))
     def _canonical_shape(
         self,
         name: str,
@@ -2396,10 +2396,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         construct: Callable[[], FinitePresentedCategory],
     ) -> FinitePresentedCategory:
         """Retain one canonical finite shape by its mathematical presentation key."""
-        key = (name, tuple(int(parameter) for parameter in parameters))
-        if key not in self._canonical:
-            self._canonical[key] = construct()
-        return self._canonical[key]
+        return construct()
 
     def element_from_defining_morphism(self, defining_functor: Functor) -> CategoryOfCategories.ElementType:
         """The point of a category with domain ``T``, given by a functor ``T -> C``."""

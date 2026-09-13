@@ -16,7 +16,7 @@ from operator import rshift
 from typing import Any, Protocol, cast, overload
 
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.sage_runtime import MonoDict, cached_method
 from sage_categories.kernel.type_aliases import EqualityInput
 
 
@@ -125,7 +125,6 @@ class NonstrictMonoidalModel[Object, Arrow]:
         self._compose = compose
         self._inverse = inverse
         self._comparison = comparison
-        self._word_cache: dict[tuple[tuple[int, Object], ...], _ObjectValue] = {}
         self._wire_values: dict[str, Object] = {}
         self._wire_tokens: MonoDict = MonoDict()
         self._next_wire = 0
@@ -141,18 +140,16 @@ class NonstrictMonoidalModel[Object, Arrow]:
         )
         self._category = _discopy_cat().Category(self._object_type, self._arrow_type)
 
+    @cached_method(key=lambda self, word: identity_key(*word))
     def _word(self, word: tuple[Object, ...]) -> _ObjectValue:
-        key = identity_key(*word)
-        if key not in self._word_cache:
-            match len(word):
-                case 0:
-                    value = self._unit
-                case _:
-                    value = word[0]
-                    for following in word[1:]:
-                        value = self._tensor_object(value, following)
-            self._word_cache[key] = self._object_type(word, value)
-        return self._word_cache[key]
+        match len(word):
+            case 0:
+                value = self._unit
+            case _:
+                value = word[0]
+                for following in word[1:]:
+                    value = self._tensor_object(value, following)
+        return self._object_type(word, value)
 
     def wire(self, value: Object) -> Any:
         """A stable DisCoPy atomic wire retaining one exact owned object."""

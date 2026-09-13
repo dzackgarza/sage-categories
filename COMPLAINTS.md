@@ -994,3 +994,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `geometry/topological_rings.py::construct_identity` constructs the topology-side identity through `TopologicalSpaces()`, but the module imported only `TopologicalSpacesCategory` and `_topological_space_projection`. Ruff therefore reports `F821 Undefined name TopologicalSpaces` on the current public identity path, so any consumer reaching the category identity fails before checking its topology/ring coherence.
 
 - **Repair link and acceptance:** `bloat-topological-ring-identity-owner`. Bind the existing `TopologicalSpaces` owner beside the other topology imports; `construct_identity` then uses the same category owner as the rest of the geometry layer and the file is Ruff-clean.
+
+## Kernel role bases reopened construction and compiler modules at every callback
+
+- **Evidence and impact:** `kernel/roles.py` delayed imports from `kernel.construction` in identity initialization, object/morphism placement, and `role_of`, while compiler imports were repeated in category construction, compile/recompile, and object-role-source callbacks. The delays are required because roles are the stable bottom of both runtime cycles; repeating each symbol import hid those two actual boundaries behind eight local import sites.
+
+- **Repair link and acceptance:** `bloat-role-kernel-boundaries`. Put the delayed modules behind `_construction()` and `_compiler()` and route all role callbacks through those two cycle-safe owners, with no direct function-local imports of either module remaining.

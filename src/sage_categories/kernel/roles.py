@@ -6,6 +6,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import Enum
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeIs, cast
 
 if TYPE_CHECKING:
@@ -42,6 +43,20 @@ _building_role_class = False
 _category_declaration_root: type[CategoryPoint] | None = None
 _category_universal_class: type[CategoryPoint] | None = None
 _category_object_class: type[CategoryPoint] | None = None
+
+
+def _construction() -> ModuleType:
+    """Load construction contexts through the one cycle-safe role boundary."""
+    from sage_categories.kernel import construction
+
+    return construction
+
+
+def _compiler() -> ModuleType:
+    """Load compiler operations through the one cycle-safe role boundary."""
+    from sage_categories.kernel import compiler
+
+    return compiler
 
 
 @contextmanager
@@ -98,9 +113,7 @@ class CategoryPoint(_AttributeWriteTracked):
 
     def _initialize_identity(self) -> None:
         """Read the point identity from the active construction context; the kernel calls this first."""
-        from sage_categories.kernel.construction import active_construction_context
-
-        context = active_construction_context(self)
+        context = _construction().active_construction_context(self)
         assert context is not None and context.canonical_image is self, "a category point requires its active construction context"
         self._cat_element_identity = context.cat_element_identity
 
@@ -131,9 +144,7 @@ def _install_category_initializer(category_class: type[CategoryPoint]) -> None:
     def kernel_initializer(self: CategoryPoint, *arguments: object, **keywords: object) -> None:
         written(self, *arguments, **keywords)
         if type(self).__init__ is kernel_initializer:
-            from sage_categories.kernel.compiler import construct_category_value
-
-            construct_category_value(cast(ObjectOfCategory, self))
+            _compiler().construct_category_value(cast(ObjectOfCategory, self))
 
     cast(Any, kernel_initializer)._runs_the_kernel_initializer = True
     cast(Any, category_class).__init__ = kernel_initializer
@@ -167,14 +178,10 @@ class ObjectOfCategory(CategoryPoint):
             _require_declarations(cls, _category_universal_class)
 
     def _compile_category(self, functors: tuple[Functor, ...]) -> None:
-        from sage_categories.kernel.compiler import compile_category
-
-        compile_category(cast("Category", self), functors)
+        _compiler().compile_category(cast("Category", self), functors)
 
     def _recompile_category(self, functors: tuple[Functor, ...]) -> None:
-        from sage_categories.kernel.compiler import recompile_category
-
-        recompile_category(cast("Category", self), functors)
+        _compiler().recompile_category(cast("Category", self), functors)
 
     def local_role_class(self, role: Role) -> type[CategoryPoint]:
         """Return the declaration written for one role of this category."""
@@ -189,9 +196,7 @@ class ObjectOfCategory(CategoryPoint):
         return cast("Category", self), role
 
     def _object_role_source(self) -> tuple[Category, bool]:
-        from sage_categories.kernel.compiler import node
-
-        source = node(cast("Category", self), Role.OBJECT)
+        source = _compiler().node(cast("Category", self), Role.OBJECT)
         return source.category, source.role is Role.MORPHISM
 
     def _initialize_placement(self) -> None:
@@ -200,9 +205,7 @@ class ObjectOfCategory(CategoryPoint):
         Each role reads its own context and no other, so an object never sees a morphism
         input and a morphism never sees an object input.
         """
-        from sage_categories.kernel.construction import active_object_context
-
-        context = active_object_context()
+        context = _construction().active_object_context()
         assert context is not None and context.canonical_image is self, "object identity requires its active construction context"
         self._category = context.identity.category
 
@@ -244,9 +247,7 @@ class MorphismOfCategory(ObjectOfCategory):
         return self._image_cache.morphism_image(source, on_object, construct)
 
     def _initialize_placement(self) -> None:
-        from sage_categories.kernel.construction import active_morphism_context
-
-        context = active_morphism_context()
+        context = _construction().active_morphism_context()
         assert context is not None and context.canonical_image is self, "morphism identity requires its active construction context"
         identity = context.identity
         # ``category`` is the placement, a subcategory of ``Mor(C)``; ``C`` is its base.
@@ -429,9 +430,7 @@ class _ElementValue(Protocol):
 
 def role_of(candidate: RoleCandidate) -> Role | None:
     """The constructor's role, or ``None`` for an unowned candidate (POL-TYPE-004)."""
-    from sage_categories.kernel.construction import construction_role
-
-    return construction_role(candidate) if isinstance(candidate, CategoryPoint) else None
+    return _construction().construction_role(candidate) if isinstance(candidate, CategoryPoint) else None
 
 
 def category_of(value: CategoryPoint, role: Role) -> Category:

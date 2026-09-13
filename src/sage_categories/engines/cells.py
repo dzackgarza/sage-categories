@@ -43,10 +43,10 @@ class _CellState:
 
 
 def _root_owner(owner: Category) -> Category:
-    root = owner
+    root = owner.construction_owner()
     while isinstance(root, MorphismCategory):
-        root = root.base_category()
-    return root.construction_owner()
+        root = root.base_category().construction_owner()
+    return root
 
 
 @cached_function(key=lambda owner: identity_key(_root_owner(owner)))
@@ -61,6 +61,7 @@ def native_signature(owner: Category) -> homotopy.Signature:
 
 
 def native_object(owner: Category, value: object) -> homotopy.Cell:
+    owner = owner.construction_owner()
     match owner:
         case MorphismCategory():
             return native_cell(owner.base_category(), value)
@@ -320,7 +321,7 @@ def boundary(
     """
     assert depth >= 0
     native = native_cell(owner, value).boundary(side, depth)
-    current_owner = owner
+    current_owner = owner.construction_owner()
     current_value = value
     for level in range(depth + 1):
         match side:

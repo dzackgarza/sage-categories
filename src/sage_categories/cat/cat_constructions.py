@@ -74,7 +74,7 @@ from sage_categories.cat.shapes import (
 )
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.retention import complete_constructions, deferred_category, identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, cached_method
+from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -490,15 +490,12 @@ def limit_of_categories(
     same construction at two shapes (POL-CAT-092).
     """
     limit = deferred_category(category_type, diagram)
-    projections: MonoDict = MonoDict()
-
+    @cached_function(key=identity_key)
     def projection(vertex: CategoryOfCategories.ElementType) -> Functor:
-        if vertex not in projections:
-            projections[vertex] = Fun(limit, diagram.on_object(vertex))(
-                lambda member_object: member_object.family_component(vertex),
-                lambda morphism: morphism.family_component(vertex),
-            )
-        return projections[vertex]
+        return Fun(limit, diagram.on_object(vertex))(
+            lambda member_object: member_object.family_component(vertex),
+            lambda morphism: morphism.family_component(vertex),
+        )
 
     def mediator(candidate_cone: NaturalTransformation) -> Functor:
         source = cone_apex(candidate_cone)
@@ -703,20 +700,17 @@ def _limit_of_opposite_categories(diagram: Functor) -> CategoryOfCategories.Elem
         return presented_colimit_in_opposite(lowered)
     tagged = _TaggedCategory(lowered)
     opposite_categories(tagged)
-    projections: MonoDict = MonoDict()
-
+    @cached_function(key=identity_key)
     def projection(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        if vertex not in projections:
-            injection = Fun(lowered.on_object(vertex), tagged)(
-                lambda member_object: tagged(vertex, member_object),
-                lambda morphism: tagged.construct_morphism(
-                    tagged(vertex, morphism.domain()),
-                    tagged(vertex, morphism.codomain()),
-                    morphism,
-                ),
-            )
-            projections[vertex] = opposite_morphism(injection)
-        return projections[vertex]
+        injection = Fun(lowered.on_object(vertex), tagged)(
+            lambda member_object: tagged(vertex, member_object),
+            lambda morphism: tagged.construct_morphism(
+                tagged(vertex, morphism.domain()),
+                tagged(vertex, morphism.codomain()),
+                morphism,
+            ),
+        )
+        return opposite_morphism(injection)
 
     def mediator(candidate_cone: NaturalTransformation) -> MorphismCategory.ObjectType:
         target = cone_apex(candidate_cone)

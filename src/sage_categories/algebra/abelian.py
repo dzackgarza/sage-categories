@@ -1336,6 +1336,39 @@ def relative_right_unitor(
     return _unitor(projection, right_action, lambda datum: balanced_tensor(projection, datum, one))
 
 
+def _bimodule_unitor_components(
+    tensor: Functor,
+    pairs: Category,
+    unit: CategoryOfCategories.ElementType,
+    bimodules: Category,
+    scalars: MonoidCategory.ObjectType,
+    value: CategoryOfCategories.ElementType,
+    side: Literal["left", "right"],
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The selected relative-tensor unitor and inverse as bimodule homomorphisms."""
+    match side:
+        case "left":
+            source = tensor.on_object(pairs((unit, value)))
+            projection = relative_tensor(unit.right_action(), value.left_action())
+            forward, backward = relative_left_unitor(
+                projection,
+                value.left_action(),
+                scalars.unit_morphism(),
+            )
+        case "right":
+            source = tensor.on_object(pairs((value, unit)))
+            projection = relative_tensor(value.right_action(), unit.left_action())
+            forward, backward = relative_right_unitor(
+                projection,
+                value.right_action(),
+                scalars.unit_morphism(),
+            )
+    return (
+        bimodules.homomorphism(source, value, forward),
+        bimodules.homomorphism(value, source, backward),
+    )
+
+
 @cached_function(key=identity_key)
 def AbelianBimoduleTensor(
     scalars: MonoidCategory.ObjectType,
@@ -1444,49 +1477,24 @@ def AbelianBimoduleTensor(
     )
 
     @cached_function(key=identity_key)
-    def left_unitor_components(
+    def unitor_components(
         value: CategoryOfCategories.ElementType,
+        side: Literal["left", "right"],
     ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-        source = tensor.on_object(pairs((unit, value)))
-        projection = relative_tensor(unit.right_action(), value.left_action())
-        forward, backward = relative_left_unitor(
-            projection,
-            value.left_action(),
-            scalars.unit_morphism(),
-        )
-        return (
-            bimodules.homomorphism(source, value, forward),
-            bimodules.homomorphism(value, source, backward),
-        )
-
-    @cached_function(key=identity_key)
-    def right_unitor_components(
-        value: CategoryOfCategories.ElementType,
-    ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-        source = tensor.on_object(pairs((value, unit)))
-        projection = relative_tensor(value.right_action(), unit.left_action())
-        forward, backward = relative_right_unitor(
-            projection,
-            value.right_action(),
-            scalars.unit_morphism(),
-        )
-        return (
-            bimodules.homomorphism(source, value, forward),
-            bimodules.homomorphism(value, source, backward),
-        )
+        return _bimodule_unitor_components(tensor, pairs, unit, bimodules, scalars, value, side)
 
     left_unit, right_unit = tensor_units(tensor, unit)
     identity = Fun(bimodules, bimodules).one()
     left_unitor = natural_isomorphism(
         left_unit,
         identity,
-        lambda value: left_unitor_components(value)[0],
-        lambda value: left_unitor_components(value)[1],
+        lambda value: unitor_components(value, "left")[0],
+        lambda value: unitor_components(value, "left")[1],
     )
     right_unitor = natural_isomorphism(
         right_unit,
         identity,
-        lambda value: right_unitor_components(value)[0],
-        lambda value: right_unitor_components(value)[1],
+        lambda value: unitor_components(value, "right")[0],
+        lambda value: unitor_components(value, "right")[1],
     )
     return MonoidalStructures(bimodules)(tensor, unit, associator, left_unitor, right_unitor)

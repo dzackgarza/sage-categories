@@ -1282,3 +1282,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/finite_categories.py::_limit` reconstructed owned limit objects and morphisms twice: once after CAP category products and again after general compatible-family limits. Both branches built the same component-identity index and exact owned morphisms; only the native component computation differs.
 
 - **Repair link and acceptance:** `bloat-finite-limit-reconstruction`. Put component-family reconstruction in `_reconstruct_limit_family()` and let the product and general finite-limit branches stop once they have obtained object/morphism component tuples.
+
+## Bimodule tensor unitors duplicated the same relative-tensor scaffold
+
+- **Evidence and impact:** `AbelianBimoduleTensor()` had separate cached left- and right-unitor component functions, each building the appropriate relative tensor, selecting the corresponding relative unitor, and then wrapping both directions as bimodule homomorphisms. Only the side-specific actions and tensor-factor order differ.
+
+- **Repair link and acceptance:** `bloat-bimodule-unitors`. Put side selection in `_bimodule_unitor_components()` and keep one cached `unitor_components(value, side)` inside the monoidal-structure constructor for both natural isomorphisms.

@@ -41,7 +41,7 @@ class _Presentation:
 _presentations: MonoDict = MonoDict()
 
 
-def _native_path(
+def _ambient_native_path(
     ambient: GapElement,
     ambient_objects: tuple[GapElement, ...],
     generator_indices: dict[str, int],
@@ -117,8 +117,8 @@ def _defining_relations(
         target_index = positions[target] - 1
         relations.append(
             [
-                _native_path(ambient, ambient_objects, generator_indices, source_index, target_index, left),
-                _native_path(ambient, ambient_objects, generator_indices, source_index, target_index, right),
+                _ambient_native_path(ambient, ambient_objects, generator_indices, source_index, target_index, left),
+                _ambient_native_path(ambient, ambient_objects, generator_indices, source_index, target_index, right),
             ]
         )
     return relations
@@ -158,7 +158,7 @@ def _ambient_path(
     word: tuple[str, ...],
 ) -> GapElement:
     source_index, target_index = _indices(category, source, target)
-    return _native_path(
+    return _ambient_native_path(
         presentation.ambient,
         presentation.ambient_objects,
         presentation.generator_indices,

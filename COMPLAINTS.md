@@ -796,3 +796,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/kan.py` imported `precompose`, `comma_objects`, and `Mor` independently in both left- and right-Kan adjunction constructors. The imports remain delayed to avoid the Kan/calculus/comma bootstrap cycle, but duplicating the same three-name bundle gave one cycle-safe adjunction boundary two owners.
 
 - **Repair link and acceptance:** `bloat-kan-adjunction-runtime`. Put the delayed helper bundle behind one `_kan_adjunction_runtime()` owner and let both adjunction constructors share it while retaining their distinct universal-arrow classes.
+
+## Morphism cells and equations repeated native-engine imports
+
+- **Evidence and impact:** `cat/morphisms.py` imported the homotopy-cell adapter independently for dimension, boundary, and typecheck, and imported the equation engine separately for equality and word reduction. These adapters remain delayed to avoid importing native execution during category bootstrap, but five local imports gave two engine boundaries multiple owners.
+
+- **Repair link and acceptance:** `bloat-morphism-engine-boundaries`. Keep native cells and equation reduction delayed behind `_cells_engine()` and `_equations_engine()`, and route every morphism-owned operation through those two boundaries.

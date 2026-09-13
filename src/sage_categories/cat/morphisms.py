@@ -55,6 +55,20 @@ if TYPE_CHECKING:
 __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "endpoints", "endpoints_in", "hom_inhabitation"]
 
 
+def _cells_engine():
+    """Load the native cell adapter at the cycle-safe morphism boundary."""
+    from sage_categories.engines import cells
+
+    return cells
+
+
+def _equations_engine():
+    """Load native equation reduction at the cycle-safe morphism boundary."""
+    from sage_categories.engines import equations
+
+    return equations
+
+
 @overload
 def Mor[**M, **T, ObjectRole, ElementRole, MorphismRole](
     category: _category.CategoryDeclaration[M, T, ObjectRole, ElementRole, MorphismRole],
@@ -172,9 +186,7 @@ def _equal_words(
             return False
         case None:
             pass
-    from sage_categories.engines import equations
-
-    return True if equations.equal_morphisms(first, second) else Unknown
+    return True if _equations_engine().equal_morphisms(first, second) else Unknown
 
 
 class MorphismCategory[
@@ -209,9 +221,7 @@ class MorphismCategory[
 
         def cell_dimension(self) -> int:
             """The dimension of this owned cell in homotopy-core's retained signature."""
-            from sage_categories.engines import cells
-
-            return cells.dimension(self.base_category(), self)
+            return _cells_engine().dimension(self.base_category(), self)
 
         def boundary(
             self,
@@ -219,15 +229,11 @@ class MorphismCategory[
             depth: int = 0,
         ) -> CategoryOfCategories.ElementType:
             """The exact owned boundary selected by the native cell boundary path."""
-            from sage_categories.engines import cells
-
-            return cells.boundary(self.base_category(), self, side, depth)
+            return _cells_engine().boundary(self.base_category(), self, side, depth)
 
         def typecheck_cell(self) -> None:
             """Run homotopy-core typechecking on this exact owned cell."""
-            from sage_categories.engines import cells
-
-            cells.typecheck(self.base_category(), self)
+            _cells_engine().typecheck(self.base_category(), self)
 
         def base_category(self) -> Category:
             """The category ``C`` whose morphism this is.
@@ -260,9 +266,7 @@ class MorphismCategory[
             hold by placement.  A category adding mathematics to composition reduces
             further and overrides, as D44 licenses.
             """
-            from sage_categories.engines import equations
-
-            return equations.reduced_word(self)
+            return _equations_engine().reduced_word(self)
 
         def factors(self) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
             """The retained factors ``(first, second)`` of an explicit composite ``second * first``, in categorical order.

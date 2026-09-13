@@ -778,3 +778,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/diagrams.py` imported `constructed_data` separately in pointwise-limit assembly and in the dualized pointwise-colimit path. The delay is intentional because `cat.constructions` depends on diagram machinery, but two local imports gave the same cycle-safe universal-data boundary two owners.
 
 - **Repair link and acceptance:** `bloat-diagram-constructed-data-boundary`. Put the delayed lookup behind one `_constructed_data()` helper and route both pointwise limit and pointwise colimit through it.
+
+## Presented categories repeated their FpCategories engine import
+
+- **Evidence and impact:** `cat/canonical.py::FinitePresentedCategory` imported `engines.fp_categories` independently for finite Hom enumeration, terminal selection, path reduction, isomorphism detection, composition, and inversion. The delay is necessary because the engine reconstructs owned canonical-category values, but six local imports gave one native execution boundary six owners.
+
+- **Repair link and acceptance:** `bloat-canonical-fp-engine-boundary`. Keep FpCategories loading delayed behind one `_fp_categories_engine()` helper and route every native presented-category operation through it.

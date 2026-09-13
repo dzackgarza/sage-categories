@@ -59,6 +59,13 @@ type Generator = tuple[str, Hashable, Hashable]
 type Relation = tuple[Word, Word]
 
 
+def _fp_categories_engine():
+    """Load the GAP finitely-presented-category adapter at the cycle-safe boundary."""
+    from sage_categories.engines import fp_categories
+
+    return fp_categories
+
+
 @dataclass(frozen=True, eq=False, slots=True)
 class VertexData:
     """The local state introduced by a finitely presented vertex."""
@@ -190,8 +197,7 @@ class FinitePresentedCategory(Category[[Word], []]):
     def finite_morphisms(self) -> tuple[FinitePresentedCategory.MorphismType, ...] | UnknownClass:
         """The exact finite path enumeration supplied by FpCategories."""
         if self._finite_arrows is None:
-            from sage_categories.engines import fp_categories
-
+            fp_categories = _fp_categories_engine()
             native = fp_categories.finite_morphisms(self)
             if native is None:
                 self._finite_arrows = Unknown
@@ -203,8 +209,7 @@ class FinitePresentedCategory(Category[[Word], []]):
     def Terminal(self) -> FinitePresentedCategory.ObjectType:
         """A retained terminal vertex certified by native finite Hom sets."""
         if self._terminal is None:
-            from sage_categories.engines import fp_categories
-
+            fp_categories = _fp_categories_engine()
             selected = fp_categories.terminal_object(self)
             assert selected is not None, f"{self!r} declares no native-computable terminal object"
             self._terminal = selected
@@ -241,9 +246,7 @@ class FinitePresentedCategory(Category[[Word], []]):
     ) -> Word:
         if not word:
             return word
-        from sage_categories.engines import fp_categories
-
-        return fp_categories.reduce_word(self, domain, codomain, word)
+        return _fp_categories_engine().reduce_word(self, domain, codomain, word)
 
     def construct_morphism(self, domain: FinitePresentedCategory.ObjectType, codomain: FinitePresentedCategory.ObjectType, word: Word) -> FinitePresentedCategory.MorphismType:
         """The path along the named generators, reduced modulo the relations."""
@@ -263,9 +266,7 @@ class FinitePresentedCategory(Category[[Word], []]):
             # Positive invertibility comes from the native quotient category; absence of a
             # native decision leaves refinement open rather than manufacturing an inverse.
             if path.word() and self._relations:
-                from sage_categories.engines import fp_categories
-
-                if fp_categories.is_isomorphism(self, path) is True:
+                if _fp_categories_engine().is_isomorphism(self, path) is True:
                     refine(path, self.morphism_category(1).Isomorphisms())
             self._paths[key] = path
         return self._paths[key]
@@ -274,15 +275,11 @@ class FinitePresentedCategory(Category[[Word], []]):
         return self.construct_morphism(vertex, vertex, ())
 
     def composite(self, second: FinitePresentedCategory.MorphismType, first: FinitePresentedCategory.MorphismType) -> FinitePresentedCategory.MorphismType:
-        from sage_categories.engines import fp_categories
-
-        return fp_categories.compose_morphisms(self, second, first)
+        return _fp_categories_engine().compose_morphisms(self, second, first)
 
     def inverse_morphism(self, morphism: FinitePresentedCategory.MorphismType) -> FinitePresentedCategory.MorphismType:
         """The inverse reconstructed from the native presented category."""
-        from sage_categories.engines import fp_categories
-
-        return fp_categories.inverse_morphism(self, morphism)
+        return _fp_categories_engine().inverse_morphism(self, morphism)
 
     def _equal(
         self,

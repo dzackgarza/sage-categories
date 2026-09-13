@@ -1024,3 +1024,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/finite_categories.py` delays slice imports because the evaluator is itself consumed while category constructions bootstrap. Runtime dispatch imported `SliceLikeCategory`, while comma-category evaluation independently imported the slice endpoint/pair functors. Both reads cross the same delayed slice-category owner.
 
 - **Repair link and acceptance:** `bloat-finite-category-slice-boundary`. Put the delayed slice module behind `_slices()` and use it for both runtime slice recognition and comma-category endpoint/pair construction.
+
+## FinSetsForCAP split one cone module into separate limit/colimit loaders
+
+- **Evidence and impact:** `engines/finite_sets.py` had `_limit_cone_runtime()` and `_colimit_cocone_runtime()`, both importing from `cat.cones`, then six limit/colimit implementations unpacked those parallel helpers. The delay is required by the Sets/construction cycle; the split loader is not, because cones and cocones are one execution module and both sides are already used by this adapter.
+
+- **Repair link and acceptance:** `bloat-finite-sets-cone-module`. Replace the two tuple-returning loaders by one `_cones()` module boundary and route finite limits, colimits, products, equalizers, coproducts, and coequalizers through it.

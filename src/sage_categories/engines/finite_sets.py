@@ -8,6 +8,7 @@ bijection and delegates finite-map algorithms to CAP.
 from __future__ import annotations
 
 from functools import cache
+from types import ModuleType
 from typing import TYPE_CHECKING, Literal
 
 from sage.libs.gap.element import GapElement
@@ -65,18 +66,11 @@ def _finite_category_data(
     return finite_category(category)
 
 
-def _limit_cone_runtime():
-    """Load cone construction at the one cycle-safe finite-set engine boundary."""
-    from sage_categories.cat.cones import cone, cone_apex
+def _cones() -> ModuleType:
+    """Load cone/cocone execution at the one cycle-safe finite-set engine boundary."""
+    from sage_categories.cat import cones
 
-    return cone, cone_apex
-
-
-def _colimit_cocone_runtime():
-    """Load cocone construction at the one cycle-safe finite-set engine boundary."""
-    from sage_categories.cat.cones import cocone, cocone_apex
-
-    return cocone, cocone_apex
+    return cones
 
 
 def _index(realization: object, datum: object) -> int:
@@ -286,7 +280,7 @@ def _native_diagram(diagram: Functor):
 
 def finite_limit(diagram: Functor) -> object:
     """Selected limit of an arbitrary exact finite diagram, computed by CAP."""
-    cone, cone_apex = _limit_cone_runtime()
+    cones = _cones()
 
     vertices, positions, factors, native_factors, decorated = _native_diagram(diagram)
     category = _category()
@@ -309,7 +303,7 @@ def finite_limit(diagram: Functor) -> object:
     )
 
     def lift(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        source = cone_apex(candidate)
+        source = cones.cone_apex(candidate)
         native_source = _native_object_if_finite(source)
         if native_source is None:
             components = tuple(candidate.component(vertex) for vertex in vertices)
@@ -328,7 +322,7 @@ def finite_limit(diagram: Functor) -> object:
         .with_universal_data(
             diagram,
             apex,
-            cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+            cones.cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
             lift,
         )
     )
@@ -336,7 +330,7 @@ def finite_limit(diagram: Functor) -> object:
 
 def finite_colimit(diagram: Functor) -> object:
     """Selected colimit of an arbitrary exact finite diagram, computed by CAP."""
-    cocone, cocone_apex = _colimit_cocone_runtime()
+    cones = _cones()
 
     vertices, positions, factors, native_factors, decorated = _native_diagram(diagram)
     category = _category()
@@ -362,7 +356,7 @@ def finite_colimit(diagram: Functor) -> object:
     )
 
     def descent(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        target = cocone_apex(candidate)
+        target = cones.cocone_apex(candidate)
         native_target = _native_object_if_finite(target)
         if native_target is None:
             components = tuple(candidate.component(vertex) for vertex in vertices)
@@ -382,14 +376,14 @@ def finite_colimit(diagram: Functor) -> object:
         .with_universal_data(
             diagram,
             apex,
-            cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+            cones.cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
             descent,
         )
     )
 
 
 def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
-    cone, cone_apex = _limit_cone_runtime()
+    cones = _cones()
 
     factors = tuple(diagram.on_object(vertex) for vertex in vertices)
     native_factors = [_native_object(factor) for factor in factors]
@@ -417,7 +411,7 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
     )
 
     def lift(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        source = cone_apex(candidate)
+        source = cones.cone_apex(candidate)
         native_source = _native_object_if_finite(source)
         if native_source is None:
             components = tuple(candidate.component(vertex) for vertex in vertices)
@@ -436,14 +430,14 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
         .with_universal_data(
             diagram,
             apex,
-            cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+            cones.cone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
             lift,
         )
     )
 
 
 def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
-    cone, cone_apex = _limit_cone_runtime()
+    cones = _cones()
 
     arrows = diagram.domain().generating_morphisms()
     first, second = (diagram.on_morphism(arrow) for arrow in arrows)
@@ -468,7 +462,7 @@ def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         return source_leg if vertex is source_vertex else target_leg
 
     def lift(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        candidate_source = cone_apex(candidate)
+        candidate_source = cones.cone_apex(candidate)
         candidate_native = _native_object_if_finite(candidate_source)
         component = candidate.component(source_vertex)
         if candidate_native is None:
@@ -484,7 +478,7 @@ def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         )
         return _native_map_on_owned_endpoints(candidate_source, apex, computed)
 
-    return diagram.codomain().Limits(diagram.domain()).with_universal_data(diagram, apex, cone(diagram, apex, leg), lift)
+    return diagram.codomain().Limits(diagram.domain()).with_universal_data(diagram, apex, cones.cone(diagram, apex, leg), lift)
 
 
 def primitive_limit(diagram: Functor) -> object:
@@ -496,7 +490,7 @@ def primitive_limit(diagram: Functor) -> object:
 
 
 def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
-    cocone, cocone_apex = _colimit_cocone_runtime()
+    cones = _cones()
 
     factors = tuple(diagram.on_object(vertex) for vertex in vertices)
     native_factors = [_native_object(factor) for factor in factors]
@@ -526,7 +520,7 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
     )
 
     def descent(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        target = cocone_apex(candidate)
+        target = cones.cocone_apex(candidate)
         native_target = _native_object_if_finite(target)
         if native_target is None:
             components = tuple(candidate.component(vertex) for vertex in vertices)
@@ -541,14 +535,14 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
         .with_universal_data(
             diagram,
             apex,
-            cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
+            cones.cocone(diagram, apex, lambda vertex: legs[positions[id(vertex)]]),
             descent,
         )
     )
 
 
 def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
-    cocone, cocone_apex = _colimit_cocone_runtime()
+    cones = _cones()
 
     arrows = diagram.domain().generating_morphisms()
     first, second = (diagram.on_morphism(arrow) for arrow in arrows)
@@ -576,7 +570,7 @@ def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         return source_leg if vertex is source_vertex else target_leg
 
     def descent(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        candidate_target = cocone_apex(candidate)
+        candidate_target = cones.cocone_apex(candidate)
         candidate_native = _native_object_if_finite(candidate_target)
         component = candidate.component(target_vertex)
         if candidate_native is None:
@@ -592,7 +586,7 @@ def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
         )
         return _native_map_on_owned_endpoints(apex, candidate_target, computed)
 
-    return diagram.codomain().Colimits(diagram.domain()).with_universal_data(diagram, apex, cocone(diagram, apex, leg), descent)
+    return diagram.codomain().Colimits(diagram.domain()).with_universal_data(diagram, apex, cones.cocone(diagram, apex, leg), descent)
 
 
 def primitive_colimit(diagram: Functor) -> object:

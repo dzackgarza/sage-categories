@@ -1,12 +1,14 @@
 """Catlab executes functor and transformation composites over a nonfinite source."""
 
-from sage_categories.all import Cat, Category, Fun, Mor
+from sage_categories.all import Cat, Category, Fun, Mor, ask
+from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.category import is_placed
 from sage_categories.cat.native import (
     has_native_category,
     has_native_functor,
     has_native_transformation,
 )
+from sage_categories.engines import cells
 
 
 class IntegerLabels(Category):
@@ -192,4 +194,50 @@ def test_catlab_functor_calculus() -> None:
     horizontal.typecheck_cell()
 
 
+def test_horizontal_interchange_uses_nonidentity_components() -> None:
+    category = FinitePresentedCategory(
+        "commuting loops",
+        (0,),
+        (("a", 0, 0), ("b", 0, 0)),
+        ((("a", "b"), ("b", "a")),),
+    )
+    point = category(0)
+    identity = Fun(category, category).one()
+
+    def transformation(name: str):
+        component = category.generator(name)
+        return Mor(Fun(category, category))(identity, identity)(lambda _: component)
+
+    eta = transformation("a")
+    theta = transformation("b")
+    sigma = transformation("a")
+    tau = transformation("b")
+    identity_component = Mor(category)(point, point).one()
+    assert ask(eta.component(point) == identity_component) is False
+    assert ask(theta.component(point) == identity_component) is False
+    native_eta = cells.native_cell(eta.base_category(), eta)
+    try:
+        cells.native_signature(eta.base_category()).typecheck(native_eta.inverse(), True)
+    except ValueError as error:
+        assert "directed generator" in str(error)
+    else:
+        raise AssertionError("a noninvertible primitive transformation acquired a native inverse")
+
+    vertical_then_horizontal = (theta * eta).horizontal(tau * sigma)
+    horizontal_then_vertical = theta.horizontal(tau) * eta.horizontal(sigma)
+    first_component = vertical_then_horizontal.component(point)
+    second_component = horizontal_then_vertical.component(point)
+    a, b = category.generator("a"), category.generator("b")
+    expected = b * b * a * a
+
+    assert ask(first_component == identity_component) is False
+    assert ask(second_component == identity_component) is False
+    assert ask(first_component == expected) is True
+    assert ask(second_component == expected) is True
+    assert ask(first_component == second_component) is True
+    assert vertical_then_horizontal.domain() is horizontal_then_vertical.domain()
+    assert vertical_then_horizontal.codomain() is horizontal_then_vertical.codomain()
+
+
 test_catlab_functor_calculus()
+test_horizontal_interchange_uses_nonidentity_components()

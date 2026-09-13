@@ -802,3 +802,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/morphisms.py` imported the homotopy-cell adapter independently for dimension, boundary, and typecheck, and imported the equation engine separately for equality and word reduction. These adapters remain delayed to avoid importing native execution during category bootstrap, but five local imports gave two engine boundaries multiple owners.
 
 - **Repair link and acceptance:** `bloat-morphism-engine-boundaries`. Keep native cells and equation reduction delayed behind `_cells_engine()` and `_equations_engine()`, and route every morphism-owned operation through those two boundaries.
+
+## Cone construction repeated the terminal-category bootstrap
+
+- **Evidence and impact:** `cat/cones.py` imported `Cat` independently in cone-object construction and cone-morphism construction, then rebuilt `Cat().Terminal()` in each path. The delay is required because functors depend on cone machinery during bootstrap, but the same terminal-category boundary had two spellings and one path constructed it twice.
+
+- **Repair link and acceptance:** `bloat-cone-terminal-boundary`. Put the delayed terminal-category lookup behind `_terminal_category_and_star()` and let both construction paths share the retained terminal category and its unique object.

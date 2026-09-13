@@ -32,6 +32,14 @@ type Components = Callable[[CategoryOfCategories.ElementType], MorphismCategory.
 type Lift = Callable[[ConeCategory.ObjectType], MorphismCategory.ObjectType]
 
 
+def _terminal_category_and_star() -> tuple[Category, CategoryOfCategories.ElementType]:
+    """Load ``Cat().Terminal()`` once at the cycle-safe cone construction boundary."""
+    from sage_categories.cat.functors import Cat
+
+    terminal = Cat().Terminal()
+    return terminal, terminal(0)
+
+
 def cone(
     diagram: Functor,
     apex: CategoryOfCategories.ElementType,
@@ -150,10 +158,8 @@ class ConeCategory(CommaSpecialization):
         expected = self._diagram.op() if self._dual else self._diagram
         assert defining.codomain() is expected
         assert Fun(expected.domain(), expected.codomain()).has_constant_value(defining.domain())
-        from sage_categories.cat.functors import Cat
-
         apex = self.apex_of(transformation)
-        star = Cat().Terminal()(0)
+        _, star = _terminal_category_and_star()
         return self.from_arrow(star if self._dual else apex, apex if self._dual else star, transformation)
 
     def construct_morphism(
@@ -162,10 +168,8 @@ class ConeCategory(CommaSpecialization):
         target: ConeCategory.ObjectType,
         apex_morphism: MorphismCategory.ObjectType,
     ) -> ConeCategory.MorphismType:
-        from sage_categories.cat.functors import Cat
-
-        star = Cat().Terminal()(0)
-        identity = Cat().Terminal().morphism_category(1)(star, star).one()
+        terminal, star = _terminal_category_and_star()
+        identity = terminal.morphism_category(1)(star, star).one()
         return self.morphism_from_pair(source, target, identity if self._dual else apex_morphism, apex_morphism if self._dual else identity)
 
     @cached_method

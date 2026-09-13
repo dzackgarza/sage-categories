@@ -80,7 +80,7 @@ from sage_categories.kernel.refinement import (
     traces_placement,
 )
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_function
+from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_function, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -261,7 +261,6 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
         self._constructed: MonoDict = MonoDict()
         self._source_diagrams: MonoDict = MonoDict()
         self._lowered: MonoDict = MonoDict()
-        self._image_factor: Functor | None = None
         super().__init__(ambient, name, full_subcategory_of)
 
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
@@ -375,13 +374,12 @@ class ApexCategory[**MorphismData, **TwoMorphismData](PropertySubcategory[Morphi
         refine(constructed, self)
         return constructed
 
+    @cached_method(key=lambda self, defining_functor: identity_key(defining_functor))
     def _factor_through_image(self, defining_functor: Functor) -> Functor:
-        if self._image_factor is None:
-            self._image_factor = Fun(defining_functor.domain(), self)(
-                lambda diagram: self(diagram),
-                defining_functor.on_morphism,
-            )
-        return self._image_factor
+        return Fun(defining_functor.domain(), self)(
+            lambda diagram: self(diagram),
+            defining_functor.on_morphism,
+        )
 
 
 type LimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
@@ -476,7 +474,6 @@ class LimitsCategory(ApexCategory):
         self._shape = shape
         self._limit_functor: MonoDict = MonoDict()
         self._pullback_transformations: TripleDict = TripleDict(weak_values=False)
-        self._limit_adjunction: CategoryOfCategories.ElementType | None = None
         super().__init__(
             ambient,
             name,
@@ -610,11 +607,10 @@ class LimitsCategory(ApexCategory):
     def factorization(self) -> tuple[Functor, Functor]:
         return self._factor_through_image(self.limit_functor()), self.subcategory_monomorphism()
 
+    @cached_method
     def adjunction(self) -> CategoryOfCategories.ElementType:
         """Return the selected adjunction ``Delta_I |- Lim_I``."""
-        if self._limit_adjunction is None:
-            self._limit_adjunction = limit_adjunction(self)
-        return self._limit_adjunction
+        return limit_adjunction(self)
 
     def __repr__(self) -> str:
         return f"{self.ambient()!r}.{self.name()}({self._shape!r})"
@@ -826,7 +822,6 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         self._lowered: MonoDict = MonoDict()
         self._dual_diagrams: MonoDict = MonoDict()
         self._presentations: MonoDict = MonoDict()
-        self._colimit_functor: Functor | None = None
         super().__init__(
             ambient,
             name,
@@ -967,14 +962,14 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         self._presentations[diagram] = colimit_cocones(diagram).with_universal_data(colimiting_cocone, mediator)
         return self._associate(self._presentations[diagram])
 
+    @cached_method
     def colimit_functor(self) -> Functor:
         """``Colim_I: Fun(I, C) -> C``, derived from the opposite limit functor."""
-        if self._colimit_functor is None:
-            self._colimit_functor = self._dual_limits.limit_functor().op() * self._duality.forward()
-            _register_construction_full_image(self._colimit_functor, self)
+        functor = self._dual_limits.limit_functor().op() * self._duality.forward()
+        _register_construction_full_image(functor, self)
         if self._shape.is_discrete():
             self.ambient().Coproducts().retain_full_image(self)
-        return self._colimit_functor
+        return functor
 
     def defining_functor(self) -> Functor:
         return self.colimit_functor()

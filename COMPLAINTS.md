@@ -1695,9 +1695,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-image-functor-caches`. Cache image factor/inclusion accessors with `cached_method` and return the constructed functors directly.
 
-
 ## Slice categories hand-rolled nullable projection caches
 
-- **Evidence and impact:** `SliceLikeCategory` carried `_arrow_projection` and `_varying_projection` nullable fields and explicit first-call mutation in both structural projection accessors. Sage `cached_method` already supplies this per-instance retention; the local state duplicated caching machinery and made the object lifecycle noisier.
+- **Evidence and impact:** `SliceLikeCategory` carried `_arrow_projection` and `_varying_projection` nullable fields and explicit first-call mutation in both structural projection accessors.
+  Sage `cached_method` already supplies this per-instance retention; the local state duplicated caching machinery and made the object lifecycle noisier.
 
 - **Repair link and acceptance:** `bloat-slice-projection-caches`. Make both projection accessors `cached_method`s and construct their functors directly; lift retention continues to call the cached varying projection.
+
+
+## Universal-construction categories hand-rolled nullable functor caches
+
+- **Evidence and impact:** universal-construction owners carried nullable `_image_factor`, `_limit_adjunction`, and `_colimit_functor` fields with explicit first-call mutation. These are per-instance method results and Sage `cached_method` already owns that lifecycle, including identity-keyed arguments where the image factor depends on its defining functor.
+
+- **Repair link and acceptance:** `bloat-universal-construction-functor-caches`. Cache those three accessors with Sage, retaining full-image and coproduct registration inside the first cached construction.

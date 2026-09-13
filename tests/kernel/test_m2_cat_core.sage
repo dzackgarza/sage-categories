@@ -173,8 +173,9 @@ def test_the_three_role_types_a_functor_and_a_transformation_are_one_tower() -> 
     assert Mor(TOKENS).ObjectType is TOKENS.MorphismType
     assert Mor(2, TOKENS).ObjectType is Mor(TOKENS).MorphismType
     assert isinstance(arrow, Mor(TOKENS).ObjectType)
-    assert FixedEndpointCategory.narrowing_base is Category.narrowing_base
-    assert FixedEndpointCategory.narrowing_roots is Category.narrowing_roots
+    fixed = Mor(TOKENS)(a, b)
+    assert fixed.narrowing_base() is fixed
+    assert fixed.narrowing_roots() == ()
 
     # A functor is an object of ``Mor(Cat())`` and of the fixed-endpoint category.
     functors = Fun(TOKENS, TOKENS)

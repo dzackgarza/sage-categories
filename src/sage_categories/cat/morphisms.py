@@ -573,6 +573,16 @@ class FixedEndpointCategory[
     def codomain(self) -> CodomainType:
         return self._codomain_object
 
+    # A fixed-endpoint Hom category is the base on which morphism properties narrow.
+    # Although it is full in ``Mor(C)``, ``Mor(C)(A, B).P()`` must retain the fixed
+    # endpoints as its construction base; weakening to ``Mor(C)`` would reinterpret
+    # constructor data as a new endpoint pair during bootstrap.
+    def narrowing_base(self) -> Category:
+        return self
+
+    def narrowing_roots(self) -> tuple[Category, ...]:
+        return ()
+
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition:
         """A morphism of ``Mor(C)`` with these endpoints (POL-CAT-087: the ambient decides which values are its morphisms)."""
         return self.ambient().membership_proposition(candidate) & endpoints(candidate, self._domain_object, self._codomain_object)

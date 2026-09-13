@@ -395,18 +395,9 @@ def _projective_infinity_descent(
     return TopologicalSpaces().morphism_with_inverse_image(space, target, underlying, inverse)
 
 
-_projective_infinity: ProjectiveInfinityPresentation | None = None
-
-
+@cache
 def projective_infinity() -> ProjectiveInfinityPresentation:
     """Return the full CW colimit of the standard sequence of complex projective spaces."""
-    global _projective_infinity
-    match _projective_infinity:
-        case ProjectiveInfinityPresentation():
-            return _projective_infinity
-        case None:
-            pass
-
     spaces = TopologicalSpaces()
     diagram = _projective_diagram()
     underlying_diagram = Fun(omega, Sets)(
@@ -446,8 +437,6 @@ def projective_infinity() -> ProjectiveInfinityPresentation:
     object.__setattr__(presentation, "weak_opens", opens)
     object.__setattr__(presentation, "empty_open", empty)
     object.__setattr__(presentation, "whole_open", whole)
-    _projective_infinity = presentation
-
     set_colimit = Sets.Colimits(omega).universal_data(underlying_diagram)
 
     spaces.Colimits(omega).with_universal_data(

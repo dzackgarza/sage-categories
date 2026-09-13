@@ -1721,3 +1721,10 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** after the earlier immutable-chain cleanup, `engines/diagrams.py::evaluate_path` still defined the local semantic object/arrow classes and identity-aware token allocator inside the path orchestration itself, leaving the function at McCabe complexity 12. Those are reusable setup responsibilities, not branches of path evaluation.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give the local semantic category and endpoint-token table separate private owners; leave `evaluate_path` responsible only for the endpoint chain, DisCoPy boxes/functor, empty identity, and native fold.
+
+## Projective infinity hand-rolled a nullary singleton cache
+
+- **Evidence and impact:** `geometry/cw.py::projective_infinity` maintained a module-level nullable `_projective_infinity`, matched it on every call, and mutated it after construction even though the module already uses `functools.cache` for the same immutable presentation pattern.
+  The extra state duplicated standard cache lifecycle with no mathematical role.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Make `projective_infinity()` a nullary `@cache` construction and remove the parallel nullable global and manual first-call branch.

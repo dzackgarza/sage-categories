@@ -916,3 +916,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `CategoryOfCategories.MorphismType` imported `Discrete` separately when retaining a family-wide limit lifting and when looking one up for a concrete discrete shape. Both operations use the same delayed shape-family owner because `shapes` depends on category core during bootstrap.
 
 - **Repair link and acceptance:** `bloat-category-discrete-shape-boundary`. Put the delayed `Discrete` lookup behind `_discrete_shape_family()` and let limit-lifting registration and lookup share it.
+
+## Static projection repeated its delayed mypy stubgen boundary
+
+- **Evidence and impact:** `kernel/stub_generator.py` imported `mypy.stubgen.main` independently in the public projection pass and the private package-internal refresh pass. The import should stay delayed so importing `sage_categories` does not require the development-only mypy runtime, but both projection phases cross the same tool boundary.
+
+- **Repair link and acceptance:** `bloat-stubgen-runtime-boundary`. Put the delayed import behind `_stubgen_main()` and let both projection phases invoke the same boundary without making mypy a package-import dependency.

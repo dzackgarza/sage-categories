@@ -12,13 +12,20 @@ import copy
 import os
 import subprocess
 import sys
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from importlib import import_module
 from pathlib import Path
 from shutil import which
 from tempfile import TemporaryDirectory
 
 __all__ = ["generate_stubs"]
+
+
+def _stubgen_main() -> Callable[[list[str]], None]:
+    """Load mypy's parse-only stub generator only when static projection runs."""
+    from mypy.stubgen import main
+
+    return main
 
 
 def _set_bucket[Key, Value](mapping: dict[Key, set[Value]], key: Key) -> set[Value]:
@@ -103,8 +110,6 @@ def generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> t
 
 def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> tuple[Path, ...]:
     """Project declarations and return only formatter/linter-conforming stubs."""
-    from mypy.stubgen import main as stubgen_main
-
     from sage_categories.kernel.compiler import compiler
 
     sources = tuple(sorted(output_directory.rglob("*.py")))
@@ -112,7 +117,7 @@ def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> 
         if _bootstrap_source(output_directory, source):
             import_module(_module_name(package, output_directory, source))
     canonical_exports = _canonical_exports(package, output_directory, sources)
-    stubgen_main(
+    _stubgen_main()(
         [
             "--no-import",
             "--parse-only",
@@ -1392,8 +1397,6 @@ def _refresh_internal_static_definitions(
     sources: tuple[Path, ...] | None = None,
 ) -> None:
     """Refresh the package-internal static surface without runtime bootstrap."""
-    from mypy.stubgen import main as stubgen_main
-
     if sources is None:
         sources = tuple(sorted(output_directory.rglob("*.py")))
     internal = _internal_static_names(package, output_directory, sources)
@@ -1402,7 +1405,7 @@ def _refresh_internal_static_definitions(
 
     with TemporaryDirectory(prefix="sage-categories-private-stubs-") as temporary:
         private_output = Path(temporary)
-        stubgen_main(
+        _stubgen_main()(
             [
                 "--no-import",
                 "--parse-only",

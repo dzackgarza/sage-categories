@@ -40,6 +40,86 @@ class _Presentation:
 _presentations: dict[int, _Presentation] = {}
 
 
+def _native_path(
+    ambient: GapElement,
+    ambient_objects: tuple[GapElement, ...],
+    generator_indices: dict[str, int],
+    source_index: int,
+    target_index: int,
+    word: tuple[str, ...],
+) -> GapElement:
+    """Construct one typed path in the retained ambient path category."""
+    indices = [generator_indices[name] for name in word]
+    return libgap.MorphismConstructor(
+        ambient,
+        ambient_objects[source_index],
+        [len(indices), indices],
+        ambient_objects[target_index],
+    )
+
+
+def _ambient_presentation(
+    category: object,
+) -> tuple[
+    tuple[str, ...],
+    dict[object, int],
+    GapElement,
+    tuple[GapElement, ...],
+    dict[str, int],
+]:
+    """Lower the objects and generators of one owned presentation to a GAP path category."""
+    labels = tuple(category.labels())
+    names = tuple(category.generator_names())
+    positions = {label: index + 1 for index, label in enumerate(labels)}
+    endpoints = tuple(category._generator_endpoints[name] for name in names)
+    quiver = libgap.FinQuiver(
+        [
+            "sage_categories",
+            [len(labels), [f"v{index}" for index in range(len(labels))]],
+            [
+                len(names),
+                [positions[source] for source, _target in endpoints],
+                [positions[target] for _source, target in endpoints],
+                [f"g{index}" for index in range(len(names))],
+            ],
+        ]
+    )
+    ambient = libgap.PathCategory(quiver)
+    return (
+        names,
+        positions,
+        ambient,
+        tuple(libgap.SetOfObjects(ambient)),
+        {name: index + 1 for index, name in enumerate(names)},
+    )
+
+
+def _defining_relations(
+    category: object,
+    positions: dict[object, int],
+    ambient: GapElement,
+    ambient_objects: tuple[GapElement, ...],
+    generator_indices: dict[str, int],
+) -> list[list[GapElement]]:
+    """Lower the owned path equations to typed relations in the ambient path category."""
+    relations: list[list[GapElement]] = []
+    for left, right in category.relations():
+        witness = left or right
+        if not witness:
+            raise AssertionError("a defining relation cannot equate two empty paths")
+        source, target = category._path_endpoints(witness)
+        assert source is not None and target is not None
+        source_index = positions[source] - 1
+        target_index = positions[target] - 1
+        relations.append(
+            [
+                _native_path(ambient, ambient_objects, generator_indices, source_index, target_index, left),
+                _native_path(ambient, ambient_objects, generator_indices, source_index, target_index, right),
+            ]
+        )
+    return relations
+
+
 def _presentation(category: object) -> _Presentation:
     identifier = id(category)
     if identifier in _presentations:
@@ -47,51 +127,8 @@ def _presentation(category: object) -> _Presentation:
         assert retained.owner is category
         return retained
     load_packages(FINITE_CATEGORY_PACKAGES)
-    labels = tuple(category.labels())
-    names = tuple(category.generator_names())
-    positions = {label: index + 1 for index, label in enumerate(labels)}
-    sources = []
-    targets = []
-    for name in names:
-        source, target = category._generator_endpoints[name]
-        sources.append(positions[source])
-        targets.append(positions[target])
-    quiver = libgap.FinQuiver(
-        [
-            "sage_categories",
-            [len(labels), [f"v{index}" for index in range(len(labels))]],
-            [len(names), sources, targets, [f"g{index}" for index in range(len(names))]],
-        ]
-    )
-    ambient = libgap.PathCategory(quiver)
-    ambient_objects = tuple(libgap.SetOfObjects(ambient))
-    generator_indices = {name: index + 1 for index, name in enumerate(names)}
-
-    def ambient_path(source_index: int, target_index: int, word: tuple[str, ...]) -> GapElement:
-        indices = [generator_indices[name] for name in word]
-        return libgap.MorphismConstructor(
-            ambient,
-            ambient_objects[source_index],
-            [len(indices), indices],
-            ambient_objects[target_index],
-        )
-
-    relations = []
-    for left, right in category.relations():
-        witness = left or right
-        if witness:
-            source, target = category._path_endpoints(witness)
-            assert source is not None and target is not None
-        else:
-            raise AssertionError("a defining relation cannot equate two empty paths")
-        source_index = positions[source] - 1
-        target_index = positions[target] - 1
-        relations.append(
-            [
-                ambient_path(source_index, target_index, left),
-                ambient_path(source_index, target_index, right),
-            ]
-        )
+    names, positions, ambient, ambient_objects, generator_indices = _ambient_presentation(category)
+    relations = _defining_relations(category, positions, ambient, ambient_objects, generator_indices)
     native = ambient if not relations else libgap.QuotientCategory(ambient, relations)
     record = _Presentation(
         category,
@@ -120,12 +157,13 @@ def _ambient_path(
     word: tuple[str, ...],
 ) -> GapElement:
     source_index, target_index = _indices(category, source, target)
-    indices = [presentation.generator_indices[name] for name in word]
-    return libgap.MorphismConstructor(
+    return _native_path(
         presentation.ambient,
-        presentation.ambient_objects[source_index],
-        [len(indices), indices],
-        presentation.ambient_objects[target_index],
+        presentation.ambient_objects,
+        presentation.generator_indices,
+        source_index,
+        target_index,
+        word,
     )
 
 

@@ -184,6 +184,13 @@ def _canonical_categories():
     return canonical_module
 
 
+def _discrete_shape_family():
+    """Load the discrete-shape family after the category core has bootstrapped."""
+    from sage_categories.cat.shapes import Discrete
+
+    return Discrete
+
+
 def _declares_subcategory(functor: MorphismCategory.ObjectType) -> bool:
     """Whether ``functor`` is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
 
@@ -1784,7 +1791,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             faithfulness makes their cone equations and uniqueness follow.
             """
             Fun = _functors()
-            from sage_categories.cat.shapes import Discrete
+            Discrete = _discrete_shape_family()
 
             assert self in Fun.Faithful(), "limit reconstruction requires a faithful functor"
             assert shape in Cat() or shape is Discrete, "supply a shape or the discrete shape family"
@@ -1794,7 +1801,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def limit_lifting(self, shape: Category) -> tuple[LimitApexLift, LimitMorphismLift] | None:
             """Return the chosen lifts for this shape or the discrete shape family."""
-            from sage_categories.cat.shapes import Discrete
+            Discrete = _discrete_shape_family()
 
             if shape in self._limit_liftings:
                 return self._limit_liftings[shape]
@@ -2078,6 +2085,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     ) -> NaturalTransformation:
         """Construct one owned transformation and its Catlab callable semantics."""
         from sage_categories.cat.functors import NaturalTransformationData, diagram_of
+
         catlab = _catlab_engine()
 
         functors = self.morphism_category(1)
@@ -2110,6 +2118,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def identity_two_morphism(self, member_object: CategoryOfCategories.ElementType) -> NaturalTransformation:
         from sage_categories.cat.functors import diagram_of
+
         catlab, cells = _catlab_engine(), _cells_engine()
 
         functor = diagram_of(member_object)

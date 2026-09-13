@@ -1674,9 +1674,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-role-declaration-owner-retention`. Centralize first-owner retention in `_retain_declaration_owner` and invoke it from both paths.
 
-
 ## BinaryRelations hand-rolled a nullable functor cache
 
-- **Evidence and impact:** `BinaryRelationsCategory.to_sets()` carried a `_forgetful: Functor | None` field, checked it on every call, and mutated it on first use. Sage `cached_method`, already the repository cache owner for category methods, provides the same once-per-instance semantics without nullable state or a second cache protocol.
+- **Evidence and impact:** `BinaryRelationsCategory.to_sets()` carried a `_forgetful: Functor | None` field, checked it on every call, and mutated it on first use.
+  Sage `cached_method`, already the repository cache owner for category methods, provides the same once-per-instance semantics without nullable state or a second cache protocol.
 
 - **Repair link and acceptance:** `bloat-binary-relations-forgetful-cache`. Make `to_sets()` a `cached_method` and return the constructed functor directly.
+
+
+## Indexed categories hand-rolled two nullable structural-functor caches
+
+- **Evidence and impact:** `IndexedCategoriesCategory` stored `_grothendieck_functor: Functor | None`, and each `GrothendieckCategory` stored `_projection: Functor | None`, with explicit first-call branches mutating those fields. Sage `cached_method` already owns per-instance method caching and is used throughout this module, so the nullable state duplicated the repository cache mechanism.
+
+- **Repair link and acceptance:** `bloat-indexed-structural-functor-caches`. Make both structural-functor accessors `cached_method`s; construct the projection locally, install its cartesian lifts before returning it, and delete both nullable cache fields.

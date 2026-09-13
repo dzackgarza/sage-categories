@@ -134,7 +134,6 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
 
     def __init__(self, base: Category) -> None:
         self._base = base
-        self._grothendieck_functor: Functor | None = None
 
     def base(self) -> Category:
         return self._base
@@ -193,10 +192,10 @@ class IndexedCategoriesCategory(Category[[ComponentRule, ComparisonRule], []]):
             ),
         )
 
+    @cached_method
     def grothendieck_functor(self) -> Functor:
-        if self._grothendieck_functor is None:
-            self._grothendieck_functor = Fun(self, Cat())(GrothendieckCategory, _induced_functor)
-        return self._grothendieck_functor
+        """The Grothendieck construction functor, retained by Sage per indexed-category owner."""
+        return Fun(self, Cat())(GrothendieckCategory, _induced_functor)
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -240,7 +239,6 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
     def __init__(self, indexed: IndexedCategoriesCategory.ObjectType) -> None:
         self._indexed = indexed
         self._objects: TripleDict = TripleDict(weak_values=False)
-        self._projection: Functor | None = None
         super().__init__()
         register_handler(self._equality, self._equal_objects)
         register_handler(self._equality, self._equal_morphisms)
@@ -285,14 +283,15 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
         fiber = fiber * self._indexed.reindex(lower).on_morphism(second.fiber_morphism()) * first.fiber_morphism()
         return self.construct_morphism(first.domain(), second.codomain(), upper * lower, fiber)
 
+    @cached_method
     def projection(self) -> Functor:
-        if self._projection is None:
-            self._projection = Fun(self, self._indexed.domain().op()).Fibrations()(
-                lambda value: value.base_object(),
-                lambda morphism: morphism.base_morphism(),
-            )
-            self._projection.retain_cartesian_lifts(self._cartesian_lift)
-        return self._projection
+        """The Grothendieck projection, retained by Sage after installing its cartesian lifts."""
+        projection = Fun(self, self._indexed.domain().op()).Fibrations()(
+            lambda value: value.base_object(),
+            lambda morphism: morphism.base_morphism(),
+        )
+        projection.retain_cartesian_lifts(self._cartesian_lift)
+        return projection
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (self.projection(),)

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import cache
-from importlib import import_module
 from typing import Any, cast
 
 from sage_categories.algebra._commutative_rings_oscar import (
@@ -20,7 +19,6 @@ from sage_categories.algebra.commutative_rings import (
     prime_ideal,
 )
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.native import (
@@ -32,7 +30,7 @@ from sage_categories.cat.native import (
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.engines import oscar
 from sage_categories.engines.julia_bridge import OscarHandle
-from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
+from sage_categories.geometry.sheaves import RingPresheaf, _rings, ring_presheaf_from_functor
 
 __all__ = [
     "AffineOpen",
@@ -66,10 +64,6 @@ class AffineSpectrumPoint:
 
 _objects: NativeObjectRealizations[OscarHandle, AffineSchemeConstruction] = NativeObjectRealizations()
 _morphisms: NativeMorphismRealizations[OscarHandle] = NativeMorphismRealizations()
-
-
-def _commutative_rings() -> Any:
-    return import_module("sage_categories.cat.structured_objects").Rings(Sets).Commutative()
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -207,7 +201,7 @@ class AffineSchemesCategory(Category[Any, Any]):
         native: OscarHandle,
     ) -> AffineSchemesCategory.ObjectType:
         """Wrap ``Spec(coordinate_ring)`` with exact owned/native correspondence."""
-        assert coordinate_ring in _commutative_rings()
+        assert coordinate_ring in _rings()
         native_ring = oscar_object_handle(coordinate_ring)
         native_sections = oscar.structure_sheaf(native)
         assert oscar.same_native(native_sections, native_ring)
@@ -316,7 +310,7 @@ def _spec_morphism(opposite_ring_map: MorphismCategory.ObjectType) -> MorphismCa
     )
 
 
-Spec: Functor = Fun(_commutative_rings().op(), AffineSchemes())(_spec_object, _spec_morphism)
+Spec: Functor = Fun(_rings().op(), AffineSchemes())(_spec_object, _spec_morphism)
 
 
 def affine_structure_sheaf(
@@ -324,7 +318,7 @@ def affine_structure_sheaf(
 ) -> tuple[AffineOpenCategory, RingPresheaf]:
     """The OSCAR structure sheaf on the retained principal-open tree of ``scheme``."""
     opens = AffineOpenCategory(scheme)
-    rings = _commutative_rings()
+    rings = _rings()
 
     def on_object(open_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         return cast(AffineOpenCategory.ObjectType, open_object).section_ring()

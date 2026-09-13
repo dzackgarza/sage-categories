@@ -622,3 +622,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/kan.py` and `cat/slices.py` each defined the same `_star()` constructor for the sole object of `Cat().Terminal()`. Kan extensions already depend on the comma/slice module for their indexing categories, so the duplicated helper created a second owner for the same terminal point used in those constructions.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Reuse the slice/comma module's `_star` helper in Kan constructions and keep the terminal-point construction at that one owner.
+
+## Affine geometry duplicated the sheaf commutative-ring lookup
+
+- **Evidence and impact:** `geometry/affine.py::_commutative_rings()` repeated `geometry/sheaves.py::_rings()` exactly, including the same lazy import used to avoid the structured-object import cycle. Affine geometry already imports the sheaf module, so the duplicate helper added a second owner without isolating any dependency.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Reuse the sheaf module's lazy commutative-ring owner throughout affine scheme construction and `Spec`; remove the duplicate import machinery from `affine.py`.

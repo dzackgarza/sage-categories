@@ -670,3 +670,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/compiler.py::_initialize_graph` contained local implementations of reached-node lookup, queued structure-functor execution, and traversal ordering inside the initializer loop itself. The resulting 14-complexity function made the once-only initialization contract depend on three nested pieces of mutable traversal machinery.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give resolved-input lookup, selected-action execution, and initialization ordering separate private owners; leave `_initialize_graph` responsible for running the resulting ordered initializer turns and preserving first-written state.
+
+## Level-shift application mixed reachability and retained-value migration
+
+- **Evidence and impact:** `kernel/compiler.py::apply_level_shift` combined selected-functor reachability, runtime-cache replacement, and per-object class migration in one 12-complexity function. The two graph traversals answer distinct questions: which runtime nodes are affected, and which retained values need rebuilt classes.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Give runtime reachability and retained-value migration separate private owners; leave `apply_level_shift` to compute the affected runtime class replacement and hand the migration phase its exact replacement/added-node tables.

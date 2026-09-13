@@ -1402,28 +1402,68 @@ def implement_category(
                 local_initializer(value, retained_input(value).datum)
 
 
+def _runtime_reaches(runtime: _RuntimeImplementationCategory, target: Node) -> bool:
+    """Whether the selected-functor graph below ``runtime`` reaches ``target``."""
+    frontier = [runtime._current]
+    seen: list[Node] = []
+    while frontier:
+        candidate = frontier.pop(0)
+        match same_node(candidate, target):
+            case True:
+                return True
+            case False:
+                pass
+        match any(same_node(candidate, known) for known in seen):
+            case True:
+                continue
+            case False:
+                seen.append(candidate)
+                frontier.extend(reached for _, reached in successors(candidate))
+    return False
+
+
+def _migrate_level_shift_values(
+    object_runtimes_by_old_class: dict[type[CategoryPoint], _RuntimeImplementationCategory],
+    replacements: dict[type[CategoryPoint], type[CategoryPoint]],
+    added_by_runtime: dict[_RuntimeImplementationCategory, tuple[Node, ...]],
+) -> None:
+    """Move retained constructed objects onto rebuilt runtime classes and initialize added point nodes."""
+    for constructed in retained_values():
+        match isinstance(constructed, ObjectOfCategory) and is_constructed(constructed):
+            case False:
+                continue
+            case True:
+                pass
+        runtime = next(
+            (object_runtimes_by_old_class[base] for base in type(constructed).__mro__ if base in object_runtimes_by_old_class),
+            None,
+        )
+        match runtime:
+            case None:
+                continue
+            case _:
+                pass
+        replacement = _replace_runtime_classes(type(constructed), replacements)
+        match replacement is type(constructed):
+            case True:
+                continue
+            case False:
+                object.__setattr__(constructed, "__class__", replacement)
+                _initialize_added_object_nodes(constructed, added_by_runtime[runtime])
+
+
 def apply_level_shift(member: Category, placement: Category) -> None:
     """Rebuild the object implementation graph after a category placement changes."""
     current = node(member, Role.OBJECT)
     changed = _runtime_category(current)
     shifted = _runtime_category(node(placement, Role.ELEMENT))
-    if issubclass(changed.parent_class, shifted.parent_class):
-        return
+    match issubclass(changed.parent_class, shifted.parent_class):
+        case True:
+            return
+        case False:
+            pass
 
-    def reaches_changed(runtime: _RuntimeImplementationCategory) -> bool:
-        frontier = [runtime._current]
-        seen: list[Node] = []
-        while frontier:
-            candidate = frontier.pop(0)
-            if same_node(candidate, current):
-                return True
-            if any(same_node(candidate, known) for known in seen):
-                continue
-            seen.append(candidate)
-            frontier.extend(target for _, target in successors(candidate))
-        return False
-
-    affected = tuple(runtime for table in _runtime_categories.values() for _, runtime in table.items() if reaches_changed(runtime))
+    affected = tuple(runtime for table in _runtime_categories.values() for _, runtime in table.items() if _runtime_reaches(runtime, current))
     old_classes = {runtime.parent_class: runtime for runtime in affected}
     old_nodes = {runtime: _linearized_nodes(runtime._current) for runtime in affected}
     changed._targets = _runtime_targets(current)
@@ -1436,20 +1476,7 @@ def apply_level_shift(member: Category, placement: Category) -> None:
         runtime: tuple(reached for reached in _linearized_nodes(runtime._current) if not any(same_node(reached, old) for old in old_nodes[runtime]))
         for runtime in object_runtimes_by_old_class.values()
     }
-    for constructed in retained_values():
-        if not isinstance(constructed, ObjectOfCategory) or not is_constructed(constructed):
-            continue
-        runtime = next(
-            (object_runtimes_by_old_class[base] for base in type(constructed).__mro__ if base in object_runtimes_by_old_class),
-            None,
-        )
-        if runtime is None:
-            continue
-        replacement = _replace_runtime_classes(type(constructed), replacements)
-        if replacement is type(constructed):
-            continue
-        object.__setattr__(constructed, "__class__", replacement)
-        _initialize_added_object_nodes(constructed, added_by_runtime[runtime])
+    _migrate_level_shift_values(object_runtimes_by_old_class, replacements, added_by_runtime)
 
 
 def _replace_runtime_classes(

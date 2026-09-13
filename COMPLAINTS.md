@@ -838,3 +838,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `kernel/predicates.py` imported `runtime_semantic_bases` independently while building owned-value atom types and while checking whether a runtime argument inhabits a declared predicate domain. The import is deliberately delayed because compiler construction consumes predicate machinery, but both operations read the same semantic ancestry relation.
 
 - **Repair link and acceptance:** `bloat-predicate-semantic-bases-boundary`. Put the delayed compiler lookup behind `_semantic_bases()` and let atom construction plus argument-domain matching share it.
+
+## Kernel functor-declaration readers repeated the functor-category import
+
+- **Evidence and impact:** `cat_kernel/functor_declarations.py` imported `Fun` separately in placement, inheritance, and point-declaration readers. The import must stay delayed because this kernel adapter is installed before the public functor category finishes bootstrapping, but all three readers query the same declaration owner.
+
+- **Repair link and acceptance:** `bloat-functor-declaration-boundary`. Put the delayed `Fun` lookup behind one `_functors()` helper and route all three declaration readers through it.

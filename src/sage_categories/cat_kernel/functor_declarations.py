@@ -18,15 +18,20 @@ if TYPE_CHECKING:
 __all__ = ["declares_point", "install", "traces_inheritance", "traces_placement"]
 
 
+def _functors():
+    """Load the functor category after the kernel declaration readers are importable."""
+    from sage_categories.cat.functors import Fun
+
+    return Fun
+
+
 def traces_placement(functor: Functor) -> bool:
     """Whether placement follows ``functor``: it is declared a monomorphism of ``Cat()`` and an isofibration (POL-FUN-036).
 
     Read both conditions from the functor's property-category placement.
     Monicity and repleteness together present the exact subcategory relation.
     """
-    from sage_categories.cat.functors import Fun
-
-    return Fun.declares_subcategory(functor)
+    return _functors().declares_subcategory(functor)
 
 
 def traces_inheritance(functor: Functor) -> bool:
@@ -37,9 +42,7 @@ def traces_inheritance(functor: Functor) -> bool:
     and inherited classes").  Placement asks for a monomorphism as well
     (``traces_placement``, D169).
     """
-    from sage_categories.cat.functors import Fun
-
-    return Fun.declares_inheritance(functor)
+    return _functors().declares_inheritance(functor)
 
 
 def declares_point(functor: Functor) -> bool:
@@ -52,9 +55,7 @@ def declares_point(functor: Functor) -> bool:
     because a point arrow is the one selected functor whose domain is not the category
     that selected it.
     """
-    from sage_categories.cat.functors import Fun
-
-    return Fun.declares_point(functor)
+    return _functors().declares_point(functor)
 
 
 def install() -> None:

@@ -1545,9 +1545,16 @@ Ideas, to be weighed, not obligations.*
 
 - **Repair link and acceptance:** `bloat-predicate-retention-key`. Delete `_retention_key` and call the kernel identity-key owner directly.
 
-
 ## Construction completion used bare ids as dependency-graph nodes
 
-- **Evidence and impact:** `kernel.retention.complete_constructions()` keyed staged category declarations and their `TopologicalSorter` graph by raw `id(category)` integers even though the same module defines `identity_key()` to keep the value alive and make identity-before-equality explicit. The graph therefore had a second spelling of its own identity invariant.
+- **Evidence and impact:** `kernel.retention.complete_constructions()` keyed staged category declarations and their `TopologicalSorter` graph by raw `id(category)` integers even though the same module defines `identity_key()` to keep the value alive and make identity-before-equality explicit.
+  The graph therefore had a second spelling of its own identity invariant.
 
 - **Repair link and acceptance:** `bloat-construction-order-identity-keys`. Use `identity_key(category)` for declaration and dependency nodes throughout the completion pass.
+
+
+## The static projector converted AST-node identity to integers unnecessarily
+
+- **Evidence and impact:** `kernel/stub_generator.py` tracked projected aliases as `id(statement)` integers and used dictionaries keyed by `id(statement)` merely to deduplicate repeated declaration references. Python AST nodes already have object-identity hashing/equality, so the integer layer adds bookkeeping and obscures the actual retained object.
+
+- **Repair link and acceptance:** `bloat-stub-ast-identity-ids`. Store projected `ast.Assign` nodes directly and deduplicate declaration statements with ordered dictionary keys on the nodes themselves.

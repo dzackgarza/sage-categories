@@ -411,7 +411,7 @@ def _render_stub_source(tree: ast.Module, package: str, stub_path: Path, ruff_co
     return completed.stdout
 
 
-def _mark_projected_generic_aliases(tree: ast.Module, projected_aliases: frozenset[int]) -> None:
+def _mark_projected_generic_aliases(tree: ast.Module, projected_aliases: frozenset[ast.Assign]) -> None:
     """Mark projector-owned generic aliases with the strongest valid stub syntax."""
 
     def alias_parameters(value: ast.expr) -> list[ast.type_param]:
@@ -425,7 +425,7 @@ def _mark_projected_generic_aliases(tree: ast.Module, projected_aliases: frozens
         for statement in statements:
             if isinstance(statement, ast.ClassDef):
                 rewrite(statement.body, nested=True)
-            if isinstance(statement, ast.Assign) and id(statement) in projected_aliases:
+            if isinstance(statement, ast.Assign) and statement in projected_aliases:
                 assert len(statement.targets) == 1 and isinstance(statement.targets[0], ast.Name)
                 if nested:
                     projected.append(
@@ -1346,6 +1346,21 @@ def _loaded_names_in(statements: Iterable[ast.stmt]) -> set[str]:
     return {expression.id for statement in statements for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)}
 
 
+def _selected_declarations(
+    declarations: dict[str, list[ast.stmt]],
+    names: set[str] | frozenset[str],
+) -> tuple[ast.stmt, ...]:
+    """Return declaration statements once by their AST-node identity, preserving encounter order."""
+    return tuple(
+        dict.fromkeys(
+            statement
+            for name in names
+            if name in declarations
+            for statement in declarations[name]
+        )
+    )
+
+
 def _internal_definition_closure(
     declarations: dict[str, list[ast.stmt]],
     names: frozenset[str],
@@ -1353,8 +1368,8 @@ def _internal_definition_closure(
     """Close explicitly requested internal declarations under top-level name dependencies."""
     required = set(names)
     while True:
-        selected = {id(statement): statement for name in required if name in declarations for statement in declarations[name]}
-        added = (_loaded_names_in(selected.values()) & declarations.keys()) - required
+        selected = _selected_declarations(declarations, required)
+        added = (_loaded_names_in(selected) & declarations.keys()) - required
         if not added:
             return required
         required.update(added)
@@ -1704,9 +1719,9 @@ def _project_public_static_surface(tree: ast.Module, source: ast.Module) -> None
 
     required = set(public)
     while True:
-        selected = {id(statement): statement for name in required if name in declarations for statement in declarations[name]}
+        selected = _selected_declarations(declarations, required)
         loaded = {
-            expression.id for statement in selected.values() for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
+            expression.id for statement in selected for expression in ast.walk(statement) if isinstance(expression, ast.Name) and isinstance(expression.ctx, ast.Load)
         }
         added = (loaded & declarations.keys()) - required
         if not added:
@@ -1827,7 +1842,7 @@ def _rewrite_class_aliases(
     statements: list[ast.stmt],
     declarations: dict[str, tuple[ast.ParamSpec, ...]],
     used: set[str],
-    projected_aliases: set[int],
+    projected_aliases: set[ast.Assign],
 ) -> None:
     """Rewrite class aliases recursively while retaining which source classes they use."""
     rewritten: list[ast.stmt] = []
@@ -1840,7 +1855,7 @@ def _rewrite_class_aliases(
             declaration = _class_alias_declaration(statement.value, declarations)
             if declaration is not None:
                 statement.value = _projected_class_alias_value(declaration, declarations)
-                projected_aliases.add(id(statement))
+                projected_aliases.add(statement)
                 used.add(declaration)
             rewritten.append(statement)
             continue
@@ -1852,7 +1867,7 @@ def _rewrite_class_aliases(
                     targets=[ast.Name(id=statement.name.id, ctx=ast.Store())],
                     value=_projected_class_alias_value(declaration, declarations),
                 )
-                projected_aliases.add(id(projected))
+                projected_aliases.add(projected)
                 rewritten.append(projected)
                 continue
         rewritten.append(statement)
@@ -1906,7 +1921,7 @@ def _install_class_alias_paramspecs(
 def _project_class_aliases(
     tree: ast.Module,
     source: ast.Module,
-) -> frozenset[int]:
+) -> frozenset[ast.Assign]:
     """Project runtime generic class aliases as legacy generic aliases.
 
     ``stubgen`` writes ``Category = CategoryDeclaration`` as an inferred alias.
@@ -1922,7 +1937,7 @@ def _project_class_aliases(
     """
     declarations = _paramspec_class_declarations(source)
     used: set[str] = set()
-    projected_aliases: set[int] = set()
+    projected_aliases: set[ast.Assign] = set()
     _rewrite_class_aliases(tree.body, declarations, used, projected_aliases)
     if not used:
         return frozenset(projected_aliases)

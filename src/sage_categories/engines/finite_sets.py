@@ -7,6 +7,7 @@ bijection and delegates finite-map algorithms to CAP.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import cache
 from types import ModuleType
 from typing import TYPE_CHECKING, Literal
@@ -271,6 +272,19 @@ def _native_map_on_owned_endpoints(
     return _owned_morphism(source, target, native)
 
 
+def _parallel_pair_leg(
+    source_vertex: object,
+    source_leg: MorphismCategory.ObjectType,
+    target_leg: MorphismCategory.ObjectType,
+) -> Callable[[object], MorphismCategory.ObjectType]:
+    """Return the two-leg selector shared by equalizer and coequalizer presentations."""
+
+    def leg(vertex: object) -> MorphismCategory.ObjectType:
+        return source_leg if vertex is source_vertex else target_leg
+
+    return leg
+
+
 def _native_diagram(diagram: Functor):
     finite = _finite_category_data(diagram.domain())
     assert finite is not Unknown, "native finite-set execution requires exact finite structural data"
@@ -466,8 +480,7 @@ def _equalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     target_leg = _native_map_on_owned_endpoints(apex, target, target_computed)
     source_vertex = arrows[0].domain()
 
-    def leg(vertex: object) -> MorphismCategory.ObjectType:
-        return source_leg if vertex is source_vertex else target_leg
+    leg = _parallel_pair_leg(source_vertex, source_leg, target_leg)
 
     def lift(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
         candidate_source = cones.cone_apex(candidate)
@@ -574,8 +587,7 @@ def _coequalizer(diagram: Functor, vertices: tuple[object, ...]) -> object:
     source_leg = _native_map_on_owned_endpoints(source, apex, source_computed)
     source_vertex, target_vertex = arrows[0].domain(), arrows[0].codomain()
 
-    def leg(vertex: object) -> MorphismCategory.ObjectType:
-        return source_leg if vertex is source_vertex else target_leg
+    leg = _parallel_pair_leg(source_vertex, source_leg, target_leg)
 
     def descent(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
         candidate_target = cones.cocone_apex(candidate)

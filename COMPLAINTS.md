@@ -844,3 +844,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat_kernel/functor_declarations.py` imported `Fun` separately in placement, inheritance, and point-declaration readers. The import must stay delayed because this kernel adapter is installed before the public functor category finishes bootstrapping, but all three readers query the same declaration owner.
 
 - **Repair link and acceptance:** `bloat-functor-declaration-boundary`. Put the delayed `Fun` lookup behind one `_functors()` helper and route all three declaration readers through it.
+
+## Homotopy-cell engine re-imported an already bound morphism type
+
+- **Evidence and impact:** `engines/cells.py` binds `MorphismCategory` at module scope, then re-imported the same class inside `_root_owner`, `native_object`, and `boundary`. Those local imports neither break a cycle nor delay an otherwise absent dependency; they duplicate an already-established owner binding in three execution paths.
+
+- **Repair link and acceptance:** `bloat-cell-morphism-imports`. Remove the three local re-imports and use the module-level `MorphismCategory` binding for root-owner traversal, object lowering, and boundary reconstruction.

@@ -57,8 +57,6 @@ def _cell_owner(value: object, proposed: Category) -> Category:
 
 
 def _root_owner(owner: Category) -> Category:
-    from sage_categories.cat.morphisms import MorphismCategory
-
     root = owner
     while isinstance(root, MorphismCategory):
         root = root.base_category()
@@ -84,8 +82,6 @@ def native_signature(owner: Category) -> homotopy.Signature:
 
 
 def native_object(owner: Category, value: object) -> homotopy.Cell:
-    from sage_categories.cat.morphisms import MorphismCategory
-
     match owner:
         case MorphismCategory():
             return native_cell(owner.base_category(), value)
@@ -363,8 +359,6 @@ def boundary(
     a second boundary representation in Python.
     """
     owner = _cell_owner(value, owner)
-    from sage_categories.cat.morphisms import MorphismCategory
-
     assert depth >= 0
     native = native_cell(owner, value).boundary(side, depth)
     current_owner = owner

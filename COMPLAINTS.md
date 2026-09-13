@@ -1858,3 +1858,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `GrothendieckCategory(base, fiber)` stored objects in `_objects: TripleDict` and open-coded identity lookup/construct/store even though the total object is determined solely by the exact base and fiber objects. The category already uses identity-keyed Sage cached methods for its other retained constructions.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Make the two-argument object constructor an identity-keyed `cached_method`, remove `_objects` and the now-unused `TripleDict` dependency, and preserve one total object per exact base/fiber pair.
+
+## Point-indexed shape objects hand-rolled two identity caches
+
+- **Evidence and impact:** `DiscreteCategory` and `ThinCategory` each allocated `_objects: MonoDict` and routed construction through `_point_shape_construct(category, objects, point)`, which open-coded one object per exact carrier point. The cache is necessary because owned point equality is proposition-valued, but both categories already import Sage `cached_method` and the repository `identity_key` policy.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Cache both point constructors directly by point identity, remove the two `_objects` tables and the cache parameter from `_point_shape_construct`, and preserve their distinct morphism-admission/equality rules.

@@ -48,7 +48,7 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, cached_function, cached_method
+from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
@@ -96,15 +96,12 @@ def _point_shape_identity(category: Category, member_object: CategoryOfCategorie
 
 def _point_shape_construct(
     category: Category,
-    objects: MonoDict,
     point: CategoryOfCategories.ElementType,
 ) -> CategoryOfCategories.ElementType:
-    """Retain the unique shape object over one carrier point."""
+    """Construct the unique shape object over one carrier point."""
     carrier = category.object_set()
     assert point in carrier, f"{point!r} is not a point of {carrier!r}"
-    if point not in objects:
-        objects[point] = category.ObjectType(_PointObjectData(point))
-    return objects[point]
+    return category.ObjectType(_PointObjectData(point))
 
 
 class DiscreteCategory(Category[[], []]):
@@ -124,7 +121,6 @@ class DiscreteCategory(Category[[], []]):
 
     def __init__(self, index_set: CategoryOfCategories.ElementType) -> None:
         self._index_set = index_set
-        self._objects: MonoDict = MonoDict()
         super().__init__()
         register_handler(self._equality, self._equal)
 
@@ -156,9 +152,10 @@ class DiscreteCategory(Category[[], []]):
         """No morphism beyond the identities: the empty generating family."""
         return ()
 
+    @cached_method(key=lambda self, point: identity_key(point))
     def __call__(self, point: CategoryOfCategories.ElementType) -> DiscreteCategory.ObjectType:
         """The object of ``Discrete(S)`` at a point of ``S``, one object per retained point."""
-        return _point_shape_construct(self, self._objects, point)
+        return _point_shape_construct(self, point)
 
     def construct_morphism(self, domain: DiscreteCategory.ObjectType, codomain: DiscreteCategory.ObjectType) -> DiscreteCategory.MorphismType:
         """``Mor(Discrete(S))(x, y)()``: the identity, which exists exactly when ``x == y``."""
@@ -359,7 +356,6 @@ class ThinCategory(Category[[], []]):
     def __init__(self, carrier: CategoryOfCategories.ElementType, order: Predicate) -> None:
         self._carrier = carrier
         self._order = order
-        self._objects: MonoDict = MonoDict()
         super().__init__()
         register_handler(self._equality, self._equal)
 
@@ -383,9 +379,10 @@ class ThinCategory(Category[[], []]):
     def object_point(self, member_object: ThinCategory.ObjectType) -> CategoryOfCategories.ElementType:
         return _point_shape_object_point(member_object)
 
+    @cached_method(key=lambda self, point: identity_key(point))
     def __call__(self, point: CategoryOfCategories.ElementType) -> ThinCategory.ObjectType:
         """The object at a point of ``P``, one object per retained point."""
-        return _point_shape_construct(self, self._objects, point)
+        return _point_shape_construct(self, point)
 
     def construct_morphism(self, domain: ThinCategory.ObjectType, codomain: ThinCategory.ObjectType) -> ThinCategory.MorphismType:
         """``Mor(Thin)(x, y)()``: the comparison ``x <= y``; rejected only when the order decides against it."""

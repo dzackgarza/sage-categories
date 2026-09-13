@@ -1761,6 +1761,121 @@ def _canonicalize_imports(
     tree.body[:] = statements
 
 
+def _paramspec_class_declarations(source: ast.Module) -> dict[str, tuple[ast.ParamSpec, ...]]:
+    """Return source classes whose runtime alias needs free ParamSpec variables."""
+    return {
+        declaration.name: tuple(parameter for parameter in declaration.type_params if isinstance(parameter, ast.ParamSpec))
+        for declaration in source.body
+        if isinstance(declaration, ast.ClassDef) and any(isinstance(parameter, ast.ParamSpec) for parameter in declaration.type_params)
+    }
+
+
+def _class_alias_declaration(
+    value: ast.expr,
+    declarations: dict[str, tuple[ast.ParamSpec, ...]],
+) -> str | None:
+    """Return the source class named by one generated alias expression."""
+    carrier = value.value if isinstance(value, ast.Subscript) else value
+    if isinstance(carrier, ast.Name) and carrier.id in declarations:
+        return carrier.id
+    return None
+
+
+def _projected_class_alias_value(
+    name: str,
+    declarations: dict[str, tuple[ast.ParamSpec, ...]],
+) -> ast.expr:
+    """Build the legacy generic alias value for one ParamSpec-bearing class."""
+    return ast.Subscript(
+        value=ast.Name(id=name, ctx=ast.Load()),
+        slice=ast.Tuple(
+            elts=[ast.Name(id=f"_{name}_{parameter.name}", ctx=ast.Load()) for parameter in declarations[name]],
+            ctx=ast.Load(),
+        ),
+        ctx=ast.Load(),
+    )
+
+
+def _rewrite_class_aliases(
+    statements: list[ast.stmt],
+    declarations: dict[str, tuple[ast.ParamSpec, ...]],
+    used: set[str],
+    projected_aliases: set[int],
+) -> None:
+    """Rewrite class aliases recursively while retaining which source classes they use."""
+    rewritten: list[ast.stmt] = []
+    for statement in statements:
+        if isinstance(statement, ast.ClassDef):
+            _rewrite_class_aliases(statement.body, declarations, used, projected_aliases)
+            rewritten.append(statement)
+            continue
+        if isinstance(statement, ast.Assign):
+            declaration = _class_alias_declaration(statement.value, declarations)
+            if declaration is not None:
+                statement.value = _projected_class_alias_value(declaration, declarations)
+                projected_aliases.add(id(statement))
+                used.add(declaration)
+            rewritten.append(statement)
+            continue
+        if isinstance(statement, ast.TypeAlias):
+            declaration = _class_alias_declaration(statement.value, declarations)
+            if declaration is not None and isinstance(statement.name, ast.Name):
+                used.add(declaration)
+                projected = ast.Assign(
+                    targets=[ast.Name(id=statement.name.id, ctx=ast.Store())],
+                    value=_projected_class_alias_value(declaration, declarations),
+                )
+                projected_aliases.add(id(projected))
+                rewritten.append(projected)
+                continue
+        rewritten.append(statement)
+    statements[:] = rewritten
+
+
+def _paramspec_assignment(class_name: str, parameter: ast.ParamSpec) -> ast.Assign:
+    """Construct the module-level ParamSpec backing one projected legacy alias."""
+    name = f"_{class_name}_{parameter.name}"
+    keywords = [ast.keyword(arg="default", value=parameter.default_value)] if parameter.default_value is not None else []
+    return ast.Assign(
+        targets=[ast.Name(id=name, ctx=ast.Store())],
+        value=ast.Call(
+            func=ast.Attribute(
+                value=ast.Name(id="_typing", ctx=ast.Load()),
+                attr="ParamSpec",
+                ctx=ast.Load(),
+            ),
+            args=[ast.Constant(value=name)],
+            keywords=keywords,
+        ),
+    )
+
+
+def _install_class_alias_paramspecs(
+    tree: ast.Module,
+    declarations: dict[str, tuple[ast.ParamSpec, ...]],
+    used: set[str],
+) -> None:
+    """Install exactly the module-level ParamSpecs required by projected class aliases."""
+    has_typing_import = any(
+        isinstance(statement, ast.Import) and any(alias.name == "typing" and alias.asname == "_typing" for alias in statement.names) for statement in tree.body
+    )
+    existing_names = {target.id for statement in tree.body if isinstance(statement, ast.Assign) for target in statement.targets if isinstance(target, ast.Name)}
+    rewritten: list[ast.stmt] = []
+    if not has_typing_import:
+        rewritten.append(ast.Import(names=[ast.alias(name="typing", asname="_typing")]))
+    for statement in tree.body:
+        rewritten.append(statement)
+        if not isinstance(statement, ast.ClassDef) or statement.name not in used:
+            continue
+        for parameter in declarations[statement.name]:
+            name = f"_{statement.name}_{parameter.name}"
+            if name in existing_names:
+                continue
+            rewritten.append(_paramspec_assignment(statement.name, parameter))
+            existing_names.add(name)
+    tree.body[:] = rewritten
+
+
 def _project_class_aliases(
     tree: ast.Module,
     source: ast.Module,
@@ -1778,96 +1893,13 @@ def _project_class_aliases(
     symbol remains usable as a class base. The projection is idempotent and also
     converts a previously generated PEP 695 alias back to this stronger form.
     """
-    declarations = {
-        declaration.name: tuple(parameter for parameter in declaration.type_params if isinstance(parameter, ast.ParamSpec))
-        for declaration in source.body
-        if isinstance(declaration, ast.ClassDef) and any(isinstance(parameter, ast.ParamSpec) for parameter in declaration.type_params)
-    }
-
-    def alias_declaration(value: ast.expr) -> str | None:
-        carrier = value.value if isinstance(value, ast.Subscript) else value
-        if isinstance(carrier, ast.Name) and carrier.id in declarations:
-            return carrier.id
-        return None
-
-    def projected_value(name: str) -> ast.expr:
-        return ast.Subscript(
-            value=ast.Name(id=name, ctx=ast.Load()),
-            slice=ast.Tuple(
-                elts=[ast.Name(id=f"_{name}_{parameter.name}", ctx=ast.Load()) for parameter in declarations[name]],
-                ctx=ast.Load(),
-            ),
-            ctx=ast.Load(),
-        )
-
+    declarations = _paramspec_class_declarations(source)
     used: set[str] = set()
     projected_aliases: set[int] = set()
-
-    def project(statements: list[ast.stmt]) -> None:
-        rewritten: list[ast.stmt] = []
-        for statement in statements:
-            if isinstance(statement, ast.ClassDef):
-                project(statement.body)
-                rewritten.append(statement)
-                continue
-            if isinstance(statement, ast.Assign):
-                declaration = alias_declaration(statement.value)
-                if declaration is not None:
-                    statement.value = projected_value(declaration)
-                    projected_aliases.add(id(statement))
-                    used.add(declaration)
-                rewritten.append(statement)
-                continue
-            if isinstance(statement, ast.TypeAlias):
-                declaration = alias_declaration(statement.value)
-                if declaration is not None and isinstance(statement.name, ast.Name):
-                    used.add(declaration)
-                    projected = ast.Assign(
-                        targets=[ast.Name(id=statement.name.id, ctx=ast.Store())],
-                        value=projected_value(declaration),
-                    )
-                    projected_aliases.add(id(projected))
-                    rewritten.append(projected)
-                    continue
-            rewritten.append(statement)
-        statements[:] = rewritten
-
-    project(tree.body)
+    _rewrite_class_aliases(tree.body, declarations, used, projected_aliases)
     if not used:
         return frozenset(projected_aliases)
-
-    has_typing_import = any(
-        isinstance(statement, ast.Import) and any(alias.name == "typing" and alias.asname == "_typing" for alias in statement.names) for statement in tree.body
-    )
-    existing_names = {target.id for statement in tree.body if isinstance(statement, ast.Assign) for target in statement.targets if isinstance(target, ast.Name)}
-    rewritten: list[ast.stmt] = []
-    if not has_typing_import:
-        rewritten.append(ast.Import(names=[ast.alias(name="typing", asname="_typing")]))
-    for statement in tree.body:
-        rewritten.append(statement)
-        if not isinstance(statement, ast.ClassDef) or statement.name not in used:
-            continue
-        for parameter in declarations[statement.name]:
-            name = f"_{statement.name}_{parameter.name}"
-            if name in existing_names:
-                continue
-            keywords = [ast.keyword(arg="default", value=parameter.default_value)] if parameter.default_value is not None else []
-            rewritten.append(
-                ast.Assign(
-                    targets=[ast.Name(id=name, ctx=ast.Store())],
-                    value=ast.Call(
-                        func=ast.Attribute(
-                            value=ast.Name(id="_typing", ctx=ast.Load()),
-                            attr="ParamSpec",
-                            ctx=ast.Load(),
-                        ),
-                        args=[ast.Constant(value=name)],
-                        keywords=keywords,
-                    ),
-                )
-            )
-            existing_names.add(name)
-    tree.body[:] = rewritten
+    _install_class_alias_paramspecs(tree, declarations, used)
     return frozenset(projected_aliases)
 
 

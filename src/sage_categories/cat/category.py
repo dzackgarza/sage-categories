@@ -1569,7 +1569,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __init__(self, data: FunctorData) -> None:
             self._on_object = data.on_object
             self._on_morphism = data.on_morphism
-            self._limit_liftings: dict[Category | Functor, tuple[LimitApexLift, LimitMorphismLift]] = {}
+            self._limit_liftings: MonoDict = MonoDict()
             self._cartesian_lift_rule = None
             self._cocartesian_lift_rule = None
             self._initialize_functor_image_cache()

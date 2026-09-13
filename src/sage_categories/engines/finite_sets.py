@@ -18,6 +18,8 @@ from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
 from sage_categories.sets._finite_cap import (
     finite_native_morphism,
     finite_native_object,
+    has_finite_native_morphism,
+    has_finite_native_object,
     retain_finite_native_morphism,
     retain_finite_native_object,
 )
@@ -50,22 +52,6 @@ def _category() -> GapElement:
     return libgap.SkeletalFinSets
 
 
-def _has_native_object(value: object) -> bool:
-    try:
-        finite_native_object(value)
-    except AssertionError:
-        return False
-    return True
-
-
-def _has_native_morphism(value: object) -> bool:
-    try:
-        finite_native_morphism(value)
-    except AssertionError:
-        return False
-    return True
-
-
 def _index(realization: object, datum: object) -> int:
     indexing = realization.construction.data
     owner = realization.value
@@ -77,7 +63,7 @@ def _index(realization: object, datum: object) -> int:
 
 
 def _native_object(value: object) -> GapElement:
-    if _has_native_object(value):
+    if has_finite_native_object(value):
         return finite_native_object(value).native
     indexing = tuple(value._values)
     category = _category()
@@ -102,14 +88,12 @@ def _native_object_if_finite(value: object) -> GapElement | None:
 
 
 def _native_morphism(value: MorphismCategory.ObjectType) -> GapElement:
-    if _has_native_morphism(value):
+    if has_finite_native_morphism(value):
         return finite_native_morphism(value).native
-    source_record = finite_native_object(value.domain()) if _has_native_object(value.domain()) else None
-    target_record = finite_native_object(value.codomain()) if _has_native_object(value.codomain()) else None
     source_native = _native_object(value.domain())
     target_native = _native_object(value.codomain())
-    source_record = finite_native_object(value.domain()) if source_record is None else source_record
-    target_record = finite_native_object(value.codomain()) if target_record is None else target_record
+    source_record = finite_native_object(value.domain())
+    target_record = finite_native_object(value.codomain())
     graph = [_index(target_record, value._action(datum)) for datum in source_record.construction.data]
     native = libgap.MapOfFinSets(source_native, graph, target_native)
     retain_finite_native_morphism(value, native)

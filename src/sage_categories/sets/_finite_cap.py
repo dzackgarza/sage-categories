@@ -15,6 +15,8 @@ __all__ = [
     "FiniteIndexing",
     "finite_native_morphism",
     "finite_native_object",
+    "has_finite_native_morphism",
+    "has_finite_native_object",
     "retain_finite_native_morphism",
     "retain_finite_native_object",
 ]
@@ -47,9 +49,19 @@ def finite_native_object(value: SetsCategory.ObjectType):
     return _objects.realization(value)
 
 
+def has_finite_native_object(value: SetsCategory.ObjectType) -> bool:
+    """Whether ``value`` already retains its private FinSetsForCAP realization."""
+    return _objects.has(value)
+
+
 def retain_finite_native_morphism(value: SetsCategory.MorphismType, native: object):
     return _morphisms.retain(Sets, value, value.domain(), value.codomain(), native)
 
 
 def finite_native_morphism(value: SetsCategory.MorphismType):
     return _morphisms.realization(value)
+
+
+def has_finite_native_morphism(value: SetsCategory.MorphismType) -> bool:
+    """Whether ``value`` already retains its private FinSetsForCAP realization."""
+    return _morphisms.has(value)

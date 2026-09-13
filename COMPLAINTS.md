@@ -586,3 +586,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `PointCategory.member()` and zero-argument `PointCategory.__call__()` both returned `_member` directly. The callable form is only a convenience spelling for the same mathematical object, so duplicating the state read gives two implementation owners for one trivial invariant.
 
 - **Repair link and acceptance:** `bloat-point-member-alias`. Keep `member()` as the state-reading owner and make `__call__()` delegate to it; point-category consumers must remain unchanged.
+
+## FinSetsForCAP retention was detected by throwing assertions
+
+- **Evidence and impact:** `engines/finite_sets.py` duplicated the old presented-module pattern of probing `finite_native_object()` and `finite_native_morphism()` inside `try/except AssertionError` helpers. Native realization registries already own exact identity-based presence, so absence was being encoded as an exception and endpoint lowering repeated presence checks around reconstruction.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Expose the registry's `has()` queries through `sets/_finite_cap.py`; make the FinSets adapter use those predicates directly and reconstruct endpoint records once after `_native_object()` has ensured them.

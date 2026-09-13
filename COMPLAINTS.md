@@ -1846,3 +1846,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `ApexCategory` and `ColimitsCategory` each allocated `_lowered: MonoDict` and separately implemented the same identity lookup plus full-subcategory inclusion composition. Lowering is one operation determined by the construction family and diagram, so the two tables duplicated both ownership and cache lifecycle.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give diagram lowering one identity-keyed cached function shared by limit and colimit families, remove both `_lowered` tables, and leave each family-specific universal-data path unchanged.
+
+## Fixed-endpoint Hom categories hand-rolled an identity method cache
+
+- **Evidence and impact:** `MorphismCategory(A, B)` stored fixed-endpoint categories in `_fixed_endpoints: TripleDict` and open-coded identity lookup/construct/store. The category is determined solely by the exact endpoint identities, so the table duplicated Sage method caching and kept a dedicated runtime field for one constructor.
+
+- **Repair link and acceptance:** `bloat-audit-loop`. Make `MorphismCategory.__call__(domain, codomain)` an identity-keyed `cached_method`, remove `_fixed_endpoints` and its `TripleDict` dependency, and preserve one retained Hom category per exact endpoint pair.

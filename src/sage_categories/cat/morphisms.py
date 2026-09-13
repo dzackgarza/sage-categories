@@ -44,7 +44,8 @@ from sage_categories.cat.properties import (
 )
 from sage_categories.kernel.refinement import common_ancestor, is_placed
 from sage_categories.kernel.roles import Role
-from sage_categories.kernel.sage_runtime import Integer, TripleDict, Unknown
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import Integer, Unknown, cached_method
 from sage_categories.kernel.type_aliases import EqualityInput
 
 if TYPE_CHECKING:
@@ -331,7 +332,6 @@ class MorphismCategory[
     def __init__(self, base: Category[MorphismData, TwoMorphismData]) -> None:
         self._base = base
         self._membership_predicate = property_predicate("morphism_member", self)
-        self._fixed_endpoints: TripleDict = TripleDict(weak_values=False)
         if base.has_ambient():
             # ``Mor(D)`` for a declared subcategory ``D`` of ``C`` is a subcategory of
             # ``Mor(C)``, and this category derives that ambient rather than receiving it
@@ -403,6 +403,7 @@ class MorphismCategory[
 
     # -- fixed endpoints ---------------------------------------------------------
 
+    @cached_method(key=lambda self, domain, codomain: identity_key(domain, codomain))
     def __call__[DomainType, CodomainType](
         self,
         domain: DomainType,
@@ -418,10 +419,7 @@ class MorphismCategory[
     ]:
         """``Mor(C)(A, B)``: the full subcategory on morphisms ``A -> B``, one object per pair."""
         assert domain in self._base and codomain in self._base
-        key = (domain, codomain, self)
-        if key not in self._fixed_endpoints:
-            self._fixed_endpoints[key] = self.fixed_endpoint_type()(self, domain, codomain)
-        return self._fixed_endpoints[key]
+        return self.fixed_endpoint_type()(self, domain, codomain)
 
     def fixed_endpoint_type(self) -> type[FixedEndpointCategory[MorphismData, TwoMorphismData]]:
         return FixedEndpointCategory

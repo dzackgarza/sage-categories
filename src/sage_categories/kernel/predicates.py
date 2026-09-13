@@ -92,7 +92,6 @@ class _OwnedValueAtom(AtomicExpr):
 _atoms: MonoDict = MonoDict()
 _atom_values: dict[_OwnedValueAtom, Argument] = {}
 _property_categories: dict[OwnedPredicate, Category] = {}
-_identity_predicates: set[OwnedPredicate] = set()
 _query_dispatchers: dict[Query, tuple[Dispatcher, Function]] = {}
 
 
@@ -258,8 +257,6 @@ def bind_property_predicate(owner: OwnedPredicate, category: Category) -> None:
 
 def mark_identity_predicate(owner: OwnedPredicate) -> None:
     """Make object identity the generic exact positive case of an equality predicate."""
-    _identity_predicates.add(owner)
-
     def identical(first: _OwnedValueAtom, second: _OwnedValueAtom, assumptions: Proposition) -> bool | None:
         return True if _owned_argument(first) is _owned_argument(second) else None
 
@@ -299,8 +296,6 @@ def _register_exact_case(owner: OwnedPredicate, domains: tuple[type, ...], handl
         arguments = tuple(_owned_argument(value) for value in engine_values)
         property_category = _property_categories.get(owner)
         if property_category is not None and len(arguments) == 1 and is_placed(arguments[0], property_category):
-            return True
-        if owner in _identity_predicates and len(arguments) == 2 and arguments[0] is arguments[1]:
             return True
         result = handler(*arguments, assumptions=assumptions)
         if result is None or result is Unknown:

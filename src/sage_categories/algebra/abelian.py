@@ -635,15 +635,10 @@ def _abelian_coequalizer(diagram: Functor) -> CategoryOfCategories.ElementType:
     )
 
 
-def _install_abelian_coequalizers() -> None:
-    """Install the presented walking-parallel-pair colimit on the exact category ``Ab``."""
-    AbelianGroups().retain_colimit_construction(
-        Cat().WalkingParallelPair(),
-        _abelian_coequalizer,
-    )
-
-
-_install_abelian_coequalizers()
+AbelianGroups().retain_colimit_construction(
+    Cat().WalkingParallelPair(),
+    _abelian_coequalizer,
+)
 
 
 @cached_function(key=identity_key)

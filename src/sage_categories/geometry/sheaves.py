@@ -32,12 +32,6 @@ def _open_data(open_object: CategoryOfCategories.ElementType) -> frozenset[Hasha
     return cast(frozenset[Hashable], cast(Any, open_object).point().datum())
 
 
-def _opposite_original(
-    arrow: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    return cast(MorphismCategory.ObjectType, cast(Any, arrow).original())
-
-
 def _apply_ring_map(
     arrow: MorphismCategory.ObjectType,
     section: CategoryOfCategories.ElementType,
@@ -175,7 +169,10 @@ def ring_presheaf(
     def on_morphism(
         opposite_inclusion: MorphismCategory.ObjectType,
     ) -> MorphismCategory.ObjectType:
-        inclusion = _opposite_original(opposite_inclusion)
+        inclusion = cast(
+            MorphismCategory.ObjectType,
+            cast(Any, opposite_inclusion).original(),
+        )
         smaller = _open_data(inclusion.domain())
         larger = _open_data(inclusion.codomain())
         return restrictions[(larger, smaller)]

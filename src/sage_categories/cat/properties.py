@@ -77,10 +77,8 @@ def _functors() -> FunctorsCategory:
 
 
 def _categories() -> CategoryOfCategories:
-    """Load ``Cat`` through the one cycle-safe functor bootstrap boundary."""
-    from sage_categories.cat.functors import Cat
-
-    return Cat
+    """Recover ``Cat`` as the base of the already-retained functor category ``Fun = Mor(Cat)``."""
+    return _functors().base_category()
 
 
 def _morphisms() -> ModuleType:
@@ -337,7 +335,7 @@ def inverse_image(functor: Functor, target_subcategory: Category) -> Category:
     of ``D`` by ``P`` (POL-CAT-084): one category, the placement the kernel joins with,
     whose monomorphisms into ``D`` and into ``P`` are the two projections.
     """
-    key = (functor, target_subcategory, _categories()())
+    key = (functor, target_subcategory, _categories())
     if key in _inverse_images:
         return _inverse_images[key]
     if target_subcategory is functor.codomain():
@@ -403,12 +401,12 @@ def retain_inverse_image(
     category (``specs/functor.md``, "Inverse-image subcategories";
     ``specs/ordered-sets.md``).
     """
-    cone, cone_apex, cospan_diagram, Cat, Fun = _subcategory_pullback_runtime()
+    cone, cone_apex, cospan_diagram, cat, Fun = _subcategory_pullback_runtime()
 
-    key = (functor, target_subcategory, Cat())
+    key = (functor, target_subcategory, cat)
     assert key not in _inverse_images, f"an inverse image of {target_subcategory!r} along {functor!r} is already retained"
     _inverse_images[key] = realization
-    diagram = cospan_diagram(Cat(), functor, _declared_inclusion(target_subcategory, functor.codomain()))
+    diagram = cospan_diagram(cat, functor, _declared_inclusion(target_subcategory, functor.codomain()))
     shape = diagram.domain()
     projections = {
         0: source_projection,
@@ -433,7 +431,7 @@ def retain_inverse_image(
 
         return Fun(source, realization)(on_object, on_morphism)
 
-    pullbacks = Cat().Pullbacks()
+    pullbacks = cat.Pullbacks()
     pullbacks.with_universal_data(diagram, realization, limiting_cone, mediator)
     pullbacks._apply_pullback_comparisons_at(diagram)
     containments = (
@@ -445,7 +443,7 @@ def retain_inverse_image(
             continue
         if containment.codomain() is functor.codomain():
             continue
-        target_key = (functor, containment.codomain(), Cat())
+        target_key = (functor, containment.codomain(), cat)
         target_inclusion = next(
             (
                 candidate
@@ -457,7 +455,7 @@ def retain_inverse_image(
         if target_inclusion is None:
             continue
         target_diagram = cospan_diagram(
-            Cat(),
+            cat,
             functor,
             target_inclusion,
         )
@@ -534,12 +532,12 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
         """``self.intersection(other)`` as the retained pullback over the common ambient."""
         if isinstance(other, tuple):
             return super().intersection(other)
-        cone, cone_apex, cospan_diagram, Cat, Fun = _subcategory_pullback_runtime()
+        cone, cone_apex, cospan_diagram, cat, Fun = _subcategory_pullback_runtime()
 
         ambient = self.narrowing_base()
         assert other.narrowing_base() is ambient, f"{self!r} and {other!r} do not have a common narrowing base"
         result = ambient.intersection((self, other))
-        diagram = cospan_diagram(Cat(), self.subcategory_monomorphism(), other.subcategory_monomorphism())
+        diagram = cospan_diagram(cat, self.subcategory_monomorphism(), other.subcategory_monomorphism())
         shape = diagram.domain()
         projections = {
             0: Fun.full_subcategory_monomorphism(result, self),
@@ -563,7 +561,7 @@ class PropertySubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[Mor
 
             return Fun(source, result)(on_object, on_morphism)
 
-        pullbacks = Cat().Pullbacks()
+        pullbacks = cat.Pullbacks()
         if pullbacks.has_construction(diagram):
             assert pullbacks.chosen_object(diagram) is result
             return result

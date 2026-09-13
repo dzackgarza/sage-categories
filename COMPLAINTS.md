@@ -60,7 +60,10 @@ Read historical observations at their stated revisions before relying on them.
   No credits were purchased, and no permissions were broadened.
 
 - **Related friction:** Several `write_stdin` calls on existing benign sessions were blocked with “couldn't determine the safety status of the request.”
-  Retained process IDs and output files allowed the actual job result to be read without treating the blocked poll as a live job or restarting successful mathematical work. The same indeterminate safety response also affected benign command-result reads during this continuation; completed sessions remained recoverable through their original terminal results. On 2026-09-11 two further benign status/result reads for the retained static-stub generator were blocked by the same indeterminate safety response; later ordinary terminal reads succeeded, and the blocked calls were not treated as process evidence. A new bounded read-only delegation attempt again returned `UNIDENTIFIED_CALLER` and created no workers.
+  Retained process IDs and output files allowed the actual job result to be read without treating the blocked poll as a live job or restarting successful mathematical work.
+  The same indeterminate safety response also affected benign command-result reads during this continuation; completed sessions remained recoverable through their original terminal results.
+  On 2026-09-11 two further benign status/result reads for the retained static-stub generator were blocked by the same indeterminate safety response; later ordinary terminal reads succeeded, and the blocked calls were not treated as process evidence.
+  A new bounded read-only delegation attempt again returned `UNIDENTIFIED_CALLER` and created no workers.
 
 - **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.
 
@@ -76,7 +79,12 @@ Read historical observations at their stated revisions before relying on them.
   A non-login Bash invocation then lacked both the shell's `uvx` entry point and `$HOME/.local/bin` for the already-installed `zk`; the login-shell fallback successfully retrieved the plan.
   The working DAG command is the same fallback followed by `agent-memory card dag`. The connector's file reader cannot follow `.agents` outside its approved root; the authorized CLI remains the working vault access route.
 
-- **Dependency-workspace constraint:** The connector rejected `/home/dzack/gitclones/sage-stubs` as a working directory outside its approved roots. An initial clone and setup had completed there, but no source was edited; further access was not attempted after the rejection. The source repair instead uses a fresh public-source clone at `.tmp/dependency-sage-stubs` inside this approved repository root. That independent clone is not a worktree of this repository and remains necessary while its staged repair is uncommitted. A shell-only lookup also failed because `path` is a special zsh variable tied to `PATH`; changing the loop variable to `source_file` restored the same lookup. This was a command error, not evidence that `gh` or `base64` was unavailable.
+- **Dependency-workspace constraint:** The connector rejected `/home/dzack/gitclones/sage-stubs` as a working directory outside its approved roots.
+  An initial clone and setup had completed there, but no source was edited; further access was not attempted after the rejection.
+  The source repair instead uses a fresh public-source clone at `.tmp/dependency-sage-stubs` inside this approved repository root.
+  That independent clone is not a worktree of this repository and remains necessary while its staged repair is uncommitted.
+  A shell-only lookup also failed because `path` is a special zsh variable tied to `PATH`; changing the loop variable to `source_file` restored the same lookup.
+  This was a command error, not evidence that `gh` or `base64` was unavailable.
 
 - **Gap and impact:** The documented first-line continuation commands are not self-contained on this host.
   Plan retrieval degrades to the fallback path, while current DAG-card routing cannot be queried through the named command without separately discovering its installation route.
@@ -90,39 +98,110 @@ Read historical observations at their stated revisions before relying on them.
 
 - **Mathematical need or user action:** Run the repository commit gate on a kernel refinement change in the tracked Sage/Python 3.14 environment with all workspace dependencies resolved exactly as declared by `pyproject.toml`.
 
-- **Dependency-source repair and remaining failure (2026-09-10):** The locked Sage-stubs revision `1d87ee246c5dc95a29617ac64eaa46b9f3df5d48` has the same integer-matrix parser defect as current upstream `d0aa14f52c60431c587bf49ae9a78fe62ba3d940`; selecting the lock's revision would not repair it. A full syntax diagnostic found malformed ellipses in five files: `matrix_integer_dense.pyi`, `matrix_rational_dense.pyi`, `matrix_cyclo_dense.pyi`, `rings/asymptotic/term_monoid.pyi`, and `rings/asymptotic/asymptotics_multivariate_generating_functions.pyi`. The exact token corrections are staged in the independent dependency checkout `.tmp/dependency-sage-stubs`, branch `fix/integer-matrix-stub-syntax`, with its original hooks active after `just setup`. All 2,975 dependency stubs parse after the corrections; no parameter or result annotation was changed. The source and affected definitions were read at the dependency's pinned Sage revision `68d7e0e4d056f82449c8daeca7e7c21b0691c8c7`.
+- **Dependency-source repair and remaining failure (2026-09-10):** The locked Sage-stubs revision `1d87ee246c5dc95a29617ac64eaa46b9f3df5d48` has the same integer-matrix parser defect as current upstream `d0aa14f52c60431c587bf49ae9a78fe62ba3d940`; selecting the lock's revision would not repair it.
+  A full syntax diagnostic found malformed ellipses in five files: `matrix_integer_dense.pyi`, `matrix_rational_dense.pyi`, `matrix_cyclo_dense.pyi`, `rings/asymptotic/term_monoid.pyi`, and `rings/asymptotic/asymptotics_multivariate_generating_functions.pyi`. The exact token corrections are staged in the independent dependency checkout `.tmp/dependency-sage-stubs`, branch `fix/integer-matrix-stub-syntax`, with its original hooks active after `just setup`. All 2,975 dependency stubs parse after the corrections; no parameter or result annotation was changed.
+  The source and affected definitions were read at the dependency's pinned Sage revision `68d7e0e4d056f82449c8daeca7e7c21b0691c8c7`.
 
-- **Dependency hook is still red:** Its first run could not find the PEP 561 stub package in the Sage interpreter. Installing the package from the retained source checkout into `/tmp/sage314` corrected that setup failure. The unchanged strict type check then reported 88 errors in the five files, including incompatible overrides and class-local names shadowing types. A concrete incompatible contract is `sage-stubs/structure/element.pyi:131`, which declares `Matrix[_Scalar].inverse() -> Matrix[_Scalar]`, versus the rational result of the integer-matrix implementation. That ancestor declaration is not present in the pinned Sage source: `structure/element.pyx:3607` defines `Matrix`, with its directly defined Python-visible methods `__mul__` at 3615 and `__truediv__` at 3947, not `inverse`. The complete native Sage diagnostic `/tmp/sage-categories-inverse-scalar-domain.sage` passes: the inverse of the integer matrix `[2]` has base ring `QQ`, entry `1/2`, and the required inverse equation. Repair must put the declaration at its actual owner and retain the coefficient-changing result; weakening that rational result to satisfy the fabricated ancestor would be incorrect. The same hook also reports eight lint failures; one requests deletion of a source-defined `__repr__` declaration, contrary to the dependency's declaration-preservation requirement. Neither the dependency hooks nor this project's checker settings were bypassed or relaxed.
+- **Dependency hook is still red:** Its first run could not find the PEP 561 stub package in the Sage interpreter.
+  Installing the package from the retained source checkout into `/tmp/sage314` corrected that setup failure.
+  The unchanged strict type check then reported 88 errors in the five files, including incompatible overrides and class-local names shadowing types.
+  A concrete incompatible contract is `sage-stubs/structure/element.pyi:131`, which declares `Matrix[_Scalar].inverse() -> Matrix[_Scalar]`, versus the rational result of the integer-matrix implementation.
+  That ancestor declaration is not present in the pinned Sage source: `structure/element.pyx:3607` defines `Matrix`, with its directly defined Python-visible methods `__mul__` at 3615 and `__truediv__` at 3947, not `inverse`. The complete native Sage diagnostic `/tmp/sage-categories-inverse-scalar-domain.sage` passes: the inverse of the integer matrix `[2]` has base ring `QQ`, entry `1/2`, and the required inverse equation.
+  Repair must put the declaration at its actual owner and retain the coefficient-changing result; weakening that rational result to satisfy the fabricated ancestor would be incorrect.
+  The same hook also reports eight lint failures; one requests deletion of a source-defined `__repr__` declaration, contrary to the dependency's declaration-preservation requirement.
+  Neither the dependency hooks nor this project's checker settings were bypassed or relaxed.
 
-- **Source-parity rule repaired:** Dependency commit `28c8fe8` excludes only Ruff `PYI029`, retaining directly source-defined representation methods and every strict type-check setting. The normal dependency hook passed. The earlier `__repr__` rejection and source at `asymptotics_multivariate_generating_functions.py:3273–3290` remain its provenance; this rule conflict no longer blocks the repair.
+- **Source-parity rule repaired:** Dependency commit `28c8fe8` excludes only Ruff `PYI029`, retaining directly source-defined representation methods and every strict type-check setting.
+  The normal dependency hook passed.
+  The earlier `__repr__` rejection and source at `asymptotics_multivariate_generating_functions.py:3273–3290` remain its provenance; this rule conflict no longer blocks the repair.
 
-- **Committed source repairs and remaining owner:** In the independent dependency checkout, `636f8c8` removes fabricated element-base matrix methods and parent overrides at their actual source owners, preserving concrete inverse results and reflected arithmetic. Its exact-type consumer and native parent/scalar-domain checks pass. `ec81c00` repairs the asymptotic fraction stub, retains its representation method, and types the actual substitution shapes, ordered substitutions, identity substitution, and coefficient-changing element results. Its strict type consumer and full native symbolic/polynomial/zero-element consumer pass. Both commits passed the normal dependency hook. Dependency commit `0df25c16b8b3fc43d345fd9ef68d09e563e316c0` now also repairs term-monoid classcall and factory typing: static constructor binding, inherited copy identity, callable reconstruction, pickle reduction shapes, and correlated factory argument defaults/keywords, keys, extras and products. The seven affected source/type-consumer files pass strict mypy; the complete native unique-representation, term-factory and fraction consumers pass (`/tmp/sage-stubs-factory-final-types.log`, `/tmp/sage-stubs-factory-final-native.log`). The source commit passed the normal dependency hook; its documentation-only amendment is recorded in `/tmp/sage-stubs-factory-bank-complete.log`. The remaining matrix-only strict check reports 55 errors in the integer, rational and cyclotomic dense stubs (`/tmp/sage-stubs-matrix-only-0df25c1.log`). Those three source repairs and their phase-05 ownership remain staged. The parent repository dependency declaration and lockfile are unchanged, and its ordinary gate is not restored.
+- **Committed source repairs and remaining owner:** In the independent dependency checkout, `636f8c8` removes fabricated element-base matrix methods and parent overrides at their actual source owners, preserving concrete inverse results and reflected arithmetic.
+  Its exact-type consumer and native parent/scalar-domain checks pass.
+  `ec81c00` repairs the asymptotic fraction stub, retains its representation method, and types the actual substitution shapes, ordered substitutions, identity substitution, and coefficient-changing element results.
+  Its strict type consumer and full native symbolic/polynomial/zero-element consumer pass.
+  Both commits passed the normal dependency hook.
+  Dependency commit `0df25c16b8b3fc43d345fd9ef68d09e563e316c0` now also repairs term-monoid classcall and factory typing: static constructor binding, inherited copy identity, callable reconstruction, pickle reduction shapes, and correlated factory argument defaults/keywords, keys, extras and products.
+  The seven affected source/type-consumer files pass strict mypy; the complete native unique-representation, term-factory and fraction consumers pass (`/tmp/sage-stubs-factory-final-types.log`, `/tmp/sage-stubs-factory-final-native.log`). The source commit passed the normal dependency hook; its documentation-only amendment is recorded in `/tmp/sage-stubs-factory-bank-complete.log`. The remaining matrix-only strict check reports 55 errors in the integer, rational and cyclotomic dense stubs (`/tmp/sage-stubs-matrix-only-0df25c1.log`). Those three source repairs and their phase-05 ownership remain staged.
+  The parent repository dependency declaration and lockfile are unchanged, and its ordinary gate is not restored.
 
-- **Retained commit and connector friction (2026-09-10):** A selective commit attempt encountered an active index lock owned by the retained normal-hook commit process (PID 34801, with live mypy child 35302). The lock was not removed. The retained commit completed as `ea51c3f`; its validated source and tests were retained, and its phase/validation record was amended to `0df25c1`. A later read-only grouped inspection was blocked with an undetermined safety-status tool error; the connector file reader remained available. Neither event was treated as a mathematical test result.
+- **Retained commit and connector friction (2026-09-10):** A selective commit attempt encountered an active index lock owned by the retained normal-hook commit process (PID 34801, with live mypy child 35302). The lock was not removed.
+  The retained commit completed as `ea51c3f`; its validated source and tests were retained, and its phase/validation record was amended to `0df25c1`. A later read-only grouped inspection was blocked with an undetermined safety-status tool error; the connector file reader remained available.
+  Neither event was treated as a mathematical test result.
 
-- **Installed-package lookup friction:** A targeted check of the fraction stub continued reporting the old `RingElement.parent` after its source repair. Inspection outside the checkout showed that Sage Python was reading the earlier wheel under `site-packages/sage-stubs`, not a live editable stub tree. A normal `uv pip install --python /tmp/sage314/bin/python --reinstall --no-deps .` from the retained dependency source refreshed that installation. Installed tool-cache files were not patched, and import diagnostics were not suppressed.
+- **Installed-package lookup friction:** A targeted check of the fraction stub continued reporting the old `RingElement.parent` after its source repair.
+  Inspection outside the checkout showed that Sage Python was reading the earlier wheel under `site-packages/sage-stubs`, not a live editable stub tree.
+  A normal `uv pip install --python /tmp/sage314/bin/python --reinstall --no-deps .` from the retained dependency source refreshed that installation.
+  Installed tool-cache files were not patched, and import diagnostics were not suppressed.
 
-- **Dependency hook tool path:** The resumed normal commit of the unique-representation source-owner correction reached and passed strict mypy, the source checks, and the protected-configuration check, but failed at `ruff: command not found`. Ruff already exists at `/tmp/sage314/bin/ruff`; `SAGE_BIN` selects the mypy interpreter but does not expose its sibling lint executable to the hook. Setting `PATH=/tmp/sage314/bin:$PATH` together with `SAGE_BIN=/tmp/sage314-qc/sage` resolved the launcher failure. The constructor/factory and subsequent matrix-owner commits passed the normal dependency hook, without changing its rules.
+- **Dependency hook tool path:** The resumed normal commit of the unique-representation source-owner correction reached and passed strict mypy, the source checks, and the protected-configuration check, but failed at `ruff: command not found`. Ruff already exists at `/tmp/sage314/bin/ruff`; `SAGE_BIN` selects the mypy interpreter but does not expose its sibling lint executable to the hook.
+  Setting `PATH=/tmp/sage314/bin:$PATH` together with `SAGE_BIN=/tmp/sage314-qc/sage` resolved the launcher failure.
+  The constructor/factory and subsequent matrix-owner commits passed the normal dependency hook, without changing its rules.
 
-- **Generic matrix owner correction:** Dependency commit `dcb94d4ca8f2b267184361c367bfc3d4a2843629` repairs the next exposed ancestor contracts. At pinned Sage source `68d7e0e`, `matrix2.pyx:2260-2272` defines `det` as a forwarding method, not an alias, and the generic `determinant` accepts no arbitrary keyword options; `rank` is inherited from `matrix0.pyx:5043`; `matrix2.pyx:5717-5814` allows scalar extension for row spans but no `base_ring` argument for column spans. The corrected stub and exact-type consumer pass strict mypy, including the concrete determinant's forwarded `proof` option. The normal hook passes. Its complete native consumer verifies determinant result parents, integer versus rational row spans, column spans, and rejection of phantom generic arguments (`/tmp/sage-stubs-matrix2-owner-types.log`, `/tmp/sage-stubs-matrix-owner-native.log`). The subsequent four-file strict check, explicitly including the corrected base and all three retained dense drafts, reports 48 errors in those three drafts (`/tmp/sage-stubs-matrix-after-dcb94d4.log`); 55 was the preceding revision's count. Phase-05 ownership is now committed, with T05.1 reopened for the still-exposed shared matrix contracts. The three dense source files remain staged and unaccepted, and the parent project's gate is not restored.
+- **Generic matrix owner correction:** Dependency commit `dcb94d4ca8f2b267184361c367bfc3d4a2843629` repairs the next exposed ancestor contracts.
+  At pinned Sage source `68d7e0e`, `matrix2.pyx:2260-2272` defines `det` as a forwarding method, not an alias, and the generic `determinant` accepts no arbitrary keyword options; `rank` is inherited from `matrix0.pyx:5043`; `matrix2.pyx:5717-5814` allows scalar extension for row spans but no `base_ring` argument for column spans.
+  The corrected stub and exact-type consumer pass strict mypy, including the concrete determinant's forwarded `proof` option.
+  The normal hook passes.
+  Its complete native consumer verifies determinant result parents, integer versus rational row spans, column spans, and rejection of phantom generic arguments (`/tmp/sage-stubs-matrix2-owner-types.log`, `/tmp/sage-stubs-matrix-owner-native.log`). The subsequent four-file strict check, explicitly including the corrected base and all three retained dense drafts, reports 48 errors in those three drafts (`/tmp/sage-stubs-matrix-after-dcb94d4.log`); 55 was the preceding revision's count.
+  Phase-05 ownership is now committed, with T05.1 reopened for the still-exposed shared matrix contracts.
+  The three dense source files remain staged and unaccepted, and the parent project's gate is not restored.
 
-- **Polynomial and inverse result owners repaired:** Dependency commits `fca10f8` and `3c2023df4d49871ebc16a0bbdfc4a0a85bc95e81` preserve the four separately source-defined polynomial methods and infer the native inversion result without making matrices covariant. `characteristic_polynomial` forwards the actual `charpoly` arguments; `minimal_polynomial` still permits only its variable positionally. Generic inversion retains its original empty/non-domain result as well as the scalar reciprocal's coefficient extension, while the dense integer inverse remains rational. Integral powers retain the original or inverse type. Matrix indexing now distinguishes scalar entries, rows and submatrices without overlapping result annotations; aliases eliminate class-method shadowing of builtins. `Element.base_ring` returns the stored base parent or `None`, not a category's method provider. Both source units passed the normal dependency hook. All seven affected source/type-consumer files pass strict mypy at `3c2023d`, and the three complete native inverse, polynomial, and determinant/span consumers pass (`/tmp/sage-stubs-inverse-polynomial-types-3c2023d.log`, `/tmp/sage-stubs-inverse-owner-native-3c2023d.log`). The inverse consumer includes nonunimodular integers, rationals, a polynomial fraction field, the empty matrix, and a ring with zero divisors; the polynomial consumer distinguishes repeated characteristic roots from the minimal polynomial.
+- **Polynomial and inverse result owners repaired:** Dependency commits `fca10f8` and `3c2023df4d49871ebc16a0bbdfc4a0a85bc95e81` preserve the four separately source-defined polynomial methods and infer the native inversion result without making matrices covariant.
+  `characteristic_polynomial` forwards the actual `charpoly` arguments; `minimal_polynomial` still permits only its variable positionally.
+  Generic inversion retains its original empty/non-domain result as well as the scalar reciprocal's coefficient extension, while the dense integer inverse remains rational.
+  Integral powers retain the original or inverse type.
+  Matrix indexing now distinguishes scalar entries, rows and submatrices without overlapping result annotations; aliases eliminate class-method shadowing of builtins.
+  `Element.base_ring` returns the stored base parent or `None`, not a category's method provider.
+  Both source units passed the normal dependency hook.
+  All seven affected source/type-consumer files pass strict mypy at `3c2023d`, and the three complete native inverse, polynomial, and determinant/span consumers pass (`/tmp/sage-stubs-inverse-polynomial-types-3c2023d.log`, `/tmp/sage-stubs-inverse-owner-native-3c2023d.log`). The inverse consumer includes nonunimodular integers, rationals, a polynomial fraction field, the empty matrix, and a ring with zero divisors; the polynomial consumer distinguishes repeated characteristic roots from the minimal polynomial.
 
-- **Dense dependency repair completed locally:** Dependency commit `f19dc7973149adf54b2754fae3e1364283f1c351` closes the retained matrix repair through the unchanged normal `sage-stubs` hook. The final unit reconciles matrix0/1/2 ownership, native Singular conversion, backend-overridable dense pickle payloads, integer/rational/cyclotomic call domains, coefficient-changing inversion, Smith/echelon/decomposition/randomize contracts, and cyclotomic tensor products. The three dense stubs plus their four shared owners pass strict mypy together with `typing-tests/dense_matrix_owner_types.py`; all four complete native matrix consumers pass (`/tmp/sage-stubs-dense-all-types-final.log`, `/tmp/sage-stubs-dense-native-final.log`). Native-incompatible ancestor calls are not advertised as successful: where a concrete override really rejects an ancestor-only argument shape, the stub preserves that call as non-returning rather than fabricating support. T05.1, T05.2, T05.3, and T05.5 are restored to done in the dependency phase plan. The dependency branch is eight commits ahead of public `origin/main`; the parent still declares `sage-stubs @ ...@main` and `uv.lock` still resolves `1d87ee246c5dc95a29617ac64eaa46b9f3df5d48`, so publication/integration remains a separate prerequisite.
+- **Dense dependency repair completed locally:** Dependency commit `f19dc7973149adf54b2754fae3e1364283f1c351` closes the retained matrix repair through the unchanged normal `sage-stubs` hook.
+  The final unit reconciles matrix0/1/2 ownership, native Singular conversion, backend-overridable dense pickle payloads, integer/rational/cyclotomic call domains, coefficient-changing inversion, Smith/echelon/decomposition/randomize contracts, and cyclotomic tensor products.
+  The three dense stubs plus their four shared owners pass strict mypy together with `typing-tests/dense_matrix_owner_types.py`; all four complete native matrix consumers pass (`/tmp/sage-stubs-dense-all-types-final.log`, `/tmp/sage-stubs-dense-native-final.log`). Native-incompatible ancestor calls are not advertised as successful: where a concrete override really rejects an ancestor-only argument shape, the stub preserves that call as non-returning rather than fabricating support.
+  T05.1, T05.2, T05.3, and T05.5 are restored to done in the dependency phase plan.
+  The dependency branch is eight commits ahead of public `origin/main`; the parent still declares `sage-stubs @ ...@main` and `uv.lock` still resolves `1d87ee246c5dc95a29617ac64eaa46b9f3df5d48`, so publication/integration remains a separate prerequisite.
 
-- **External annotation provisioning:** The first full check of the existing `matrix1.pyi` reported missing mpmath/SymPy type information and unimported NumPy annotation types. Installing the parent project's already-declared `microsoft-python-type-stubs` dependency into the actual Sage interpreter (resolved revision `f7474b297f8764ad96db2e0ce9c0a7bd27fd8d59`) resolves the SymPy import failure. The unchanged matrix1 check still reports four errors involving the untyped mpmath import and NumPy annotations (`/tmp/sage-stubs-matrix1-provisioned-baseline.log`). No matrix1 source or checker configuration was changed. Source inspection also identifies its incorrect `_singular_` ancestor signature: `matrix1.pyx:421-437` uses `Singular` and returns `SingularElement`, rather than the unrelated types declared by the current stub. This is a required T05.2 source repair, whose supporting annotation dependencies must first be made available without suppressing imports.
+- **External annotation provisioning:** The first full check of the existing `matrix1.pyi` reported missing mpmath/SymPy type information and unimported NumPy annotation types.
+  Installing the parent project's already-declared `microsoft-python-type-stubs` dependency into the actual Sage interpreter (resolved revision `f7474b297f8764ad96db2e0ce9c0a7bd27fd8d59`) resolves the SymPy import failure.
+  The unchanged matrix1 check still reports four errors involving the untyped mpmath import and NumPy annotations (`/tmp/sage-stubs-matrix1-provisioned-baseline.log`). No matrix1 source or checker configuration was changed.
+  Source inspection also identifies its incorrect `_singular_` ancestor signature: `matrix1.pyx:421-437` uses `Singular` and returns `SingularElement`, rather than the unrelated types declared by the current stub.
+  This is a required T05.2 source repair, whose supporting annotation dependencies must first be made available without suppressing imports.
 
-- **Overlapping execution despite sole-writer context:** During this continuation, files written by this session were changed by other tool executions in the same checkout: `unique_representation.pyi`, `factory.pyi`, and `term_monoid.pyi` changed at 20:25:29-30 UTC, followed by a separately launched factory-consumer command. The source commit made by this session, `ea51c3f`, was then amended to `0df25c1`; comparison showed only two phase-card documentation changes, with identical source and tests. Related changes were preserved and reconciled, not discarded as unexplained dirt. A read-only `agents status` request returned `WORKER_IDENTITY_LOST`; session discovery exposed unattributed activity rather than an independently addressable writer. No worker, branch, or worktree was created by this continuation. The same condition recurred during the inverse-owner repair: intermediate source edits and commit `3c2023d` appeared between visible tool calls. Its actual diff, normal-hook output, seven-file strict result and complete committed-revision native results were collected and checked before use. The execution coordinator must enforce the declared sole-writer ownership and restore attributable calls; an inherited dirty tree alone is not evidence of another writer, but these observed intervening writes are.
+- **Overlapping execution despite sole-writer context:** During this continuation, files written by this session were changed by other tool executions in the same checkout: `unique_representation.pyi`, `factory.pyi`, and `term_monoid.pyi` changed at 20:25:29-30 UTC, followed by a separately launched factory-consumer command.
+  The source commit made by this session, `ea51c3f`, was then amended to `0df25c1`; comparison showed only two phase-card documentation changes, with identical source and tests.
+  Related changes were preserved and reconciled, not discarded as unexplained dirt.
+  A read-only `agents status` request returned `WORKER_IDENTITY_LOST`; session discovery exposed unattributed activity rather than an independently addressable writer.
+  No worker, branch, or worktree was created by this continuation.
+  The same condition recurred during the inverse-owner repair: intermediate source edits and commit `3c2023d` appeared between visible tool calls.
+  Its actual diff, normal-hook output, seven-file strict result and complete committed-revision native results were collected and checked before use.
+  The execution coordinator must enforce the declared sole-writer ownership and restore attributable calls; an inherited dirty tree alone is not evidence of another writer, but these observed intervening writes are.
 
-- **Earlier parser-stop evidence:** The 2026-09-10 ordinary commit gate reached mypy 2.0.0 but stopped parsing `sage-stubs/matrix/matrix_integer_dense.pyi:174` from the declared `sage-stubs` revision `d0aa14f52c60431c587bf49ae9a78fe62ba3d940`. That source contains six invalid `..` placeholders at lines 174, 180, 186, 187, 201, and 202, and `def LLL\(` at line 210. The corresponding Sage definitions are at `matrix_integer_dense.pyx:2250` (`saturation`), `:2599` (`frobenius_form`), and `:3078` (`LLL`); their stub placeholders must be `...`, and the method identifier has no backslash. The upstream file was checked independently and contained the same defects. No project type-check result follows from this parser stop. At that checkpoint, no dependency source or pin had been changed; the later source repair and its unresolved gate are recorded above. Do not edit installed caches, suppress the dependency's imports, or classify this new failure as an established project baseline.
+- **Earlier parser-stop evidence:** The 2026-09-10 ordinary commit gate reached mypy 2.0.0 but stopped parsing `sage-stubs/matrix/matrix_integer_dense.pyi:174` from the declared `sage-stubs` revision `d0aa14f52c60431c587bf49ae9a78fe62ba3d940`. That source contains six invalid `..` placeholders at lines 174, 180, 186, 187, 201, and 202, and `def LLL\(` at line 210. The corresponding Sage definitions are at `matrix_integer_dense.pyx:2250` (`saturation`), `:2599` (`frobenius_form`), and `:3078` (`LLL`); their stub placeholders must be `...`, and the method identifier has no backslash.
+  The upstream file was checked independently and contained the same defects.
+  No project type-check result follows from this parser stop.
+  At that checkpoint, no dependency source or pin had been changed; the later source repair and its unresolved gate are recorded above.
+  Do not edit installed caches, suppress the dependency's imports, or classify this new failure as an established project baseline.
 
-- **Current gate outcome:** With the native CLI binding repaired, all Sage files pass syntax validation. A local CPython-3.14 homotopy wheel plus a temporary uv absolute override to the committed local `sage-stubs` source lets the unchanged parent `just test-commit` pass both dependency-resolution blockers without editing `pyproject.toml` or `uv.lock`. The gate then reaches project mypy and reports 2,366 errors in 32 project files (`/tmp/sage-categories-parent-local-deps-gate.log`), beginning with the unannotated helper in `tests/static/test_stub_generator_ast.py` and broad category/functor/refinement type-contract failures. This is the first project-level mypy result obtained past the dependency parser stop; it is not a restored ordinary gate because the published `sage-stubs@main` contract remains stale. The gate's 25 autoformat edits were compared against HEAD and restored rather than banked as unrelated churn.
+- **Current gate outcome:** With the native CLI binding repaired, all Sage files pass syntax validation.
+  A local CPython-3.14 homotopy wheel plus a temporary uv absolute override to the committed local `sage-stubs` source lets the unchanged parent `just test-commit` pass both dependency-resolution blockers without editing `pyproject.toml` or `uv.lock`. The gate then reaches project mypy and reports 2,366 errors in 32 project files (`/tmp/sage-categories-parent-local-deps-gate.log`), beginning with the unannotated helper in `tests/static/test_stub_generator_ast.py` and broad category/functor/refinement type-contract failures.
+  This is the first project-level mypy result obtained past the dependency parser stop; it is not a restored ordinary gate because the published `sage-stubs@main` contract remains stale.
+  The gate's 25 autoformat edits were compared against HEAD and restored rather than banked as unrelated churn.
   The hook also selected 41 Python files from the unpushed branch difference despite this being a `.sage`-only code change; its 23 formatting edits were checked AST-identical and restored, rather than silently adding unrelated source changes to the checkpoint.
-  On 2026-09-11, after the architecture and first static-projection repairs were banked, the ordinary `just test-commit` retry again failed to reach project mypy: the Semgrep autofix subprocess remained live but the retained gate log did not advance across two measured five-second intervals. Under `POL-WORK-004` that run was stopped as stalled; it had made no tracked edits. This is gate-execution friction, not a Semgrep finding or evidence about the mathematical/static assertions.
-  Later the retained tmux run of the unchanged #45 `category_morphism_parameters.py` consumer against committed projection `4cbbf51` disappeared before completion: the tmux session no longer existed, no mypy process remained, and its status file was never written, while the retained log stopped at 1,144,888 bytes. Under the session-continuity rule this is a killed/dead execution, not a checker result. The committed tree remained clean and the same consumer must be relaunched from `4cbbf51`; the partial log supplies no acceptance or failure count.
-  A focused source-derived stub check exposed another invocation papercut: this installed mypy 2.0.0 build has no runnable `python -m mypy.stubgen` code object, while `/tmp/sage314/bin/stubgen` works and generated the corrected `morphisms.pyi` import owner from source. Use the installed entry point for isolated stub generation here. A subsequent broad `pkill -f` pattern also matched its own checking shell and terminated that shell before follow-up commands ran; process termination checks must target the child PID rather than repeat the pattern in the controlling shell.
-  The same `stubgen` build also strips the annotation from a module-level parameter named literally `cls`: a minimal `def g(cls: type[A]) -> None` projects as `def g(cls) -> None`, while the identical annotation on a differently named parameter is preserved. The private `prepare_category_subclass` helper therefore uses the descriptive positional name `category_class`, which regenerates its `type[CategoryPoint]` annotation without a handwritten stub exception.
-  On 2026-09-11 the governing TODO moved project-wide mypy/static projection from commit to push tier. The local `justfile` can express that split by composing the existing central private recipes, but the normal commit hook rejects any such downstream composition before those checks run: `ai-review-ci doctor-preflight` requires a Sage repository to delegate exactly to the public central `test-commit` and `test-push` recipes. The observed diagnostic was `FATAL: QC doctor preflight failed: /home/dzack/gitclones/sage-categories declares 'sage', which requires exactly ~/ai-review-ci/justfiles/sage.just with -d . for: test-commit, test-push`. The invalid local recipe change was reverted. Upstream `dzackgarza/ai-review-ci#408` now owns a supported Sage tier-selection mechanism; acceptance is a central profile/doctor contract where downstream `test-commit` omits `_mypy`, `test-push` retains the same `_mypy` plus `_sage-pytest`, and CI remains unchanged. Until that lands, the gate-tier repair is externally blocked rather than a reason to duplicate or suppress central QC locally.
+  On 2026-09-11, after the architecture and first static-projection repairs were banked, the ordinary `just test-commit` retry again failed to reach project mypy: the Semgrep autofix subprocess remained live but the retained gate log did not advance across two measured five-second intervals.
+  Under `POL-WORK-004` that run was stopped as stalled; it had made no tracked edits.
+  This is gate-execution friction, not a Semgrep finding or evidence about the mathematical/static assertions.
+  Later the retained tmux run of the unchanged #45 `category_morphism_parameters.py` consumer against committed projection `4cbbf51` disappeared before completion: the tmux session no longer existed, no mypy process remained, and its status file was never written, while the retained log stopped at 1,144,888 bytes.
+  Under the session-continuity rule this is a killed/dead execution, not a checker result.
+  The committed tree remained clean and the same consumer must be relaunched from `4cbbf51`; the partial log supplies no acceptance or failure count.
+  A focused source-derived stub check exposed another invocation papercut: this installed mypy 2.0.0 build has no runnable `python -m mypy.stubgen` code object, while `/tmp/sage314/bin/stubgen` works and generated the corrected `morphisms.pyi` import owner from source.
+  Use the installed entry point for isolated stub generation here.
+  A subsequent broad `pkill -f` pattern also matched its own checking shell and terminated that shell before follow-up commands ran; process termination checks must target the child PID rather than repeat the pattern in the controlling shell.
+  The same `stubgen` build also strips the annotation from a module-level parameter named literally `cls`: a minimal `def g(cls: type[A]) -> None` projects as `def g(cls) -> None`, while the identical annotation on a differently named parameter is preserved.
+  The private `prepare_category_subclass` helper therefore uses the descriptive positional name `category_class`, which regenerates its `type[CategoryPoint]` annotation without a handwritten stub exception.
+  On 2026-09-11 the governing TODO moved project-wide mypy/static projection from commit to push tier.
+  The local `justfile` can express that split by composing the existing central private recipes, but the normal commit hook rejects any such downstream composition before those checks run: `ai-review-ci doctor-preflight` requires a Sage repository to delegate exactly to the public central `test-commit` and `test-push` recipes.
+  The observed diagnostic was `FATAL: QC doctor preflight failed: /home/dzack/gitclones/sage-categories declares 'sage', which requires exactly ~/ai-review-ci/justfiles/sage.just with -d . for: test-commit, test-push`. The invalid local recipe change was reverted.
+  Upstream `dzackgarza/ai-review-ci#408` now owns a supported Sage tier-selection mechanism; acceptance is a central profile/doctor contract where downstream `test-commit` omits `_mypy`, `test-push` retains the same `_mypy` plus `_sage-pytest`, and CI remains unchanged.
+  Until that lands, the gate-tier repair is externally blocked rather than a reason to duplicate or suppress central QC locally.
   No static or mathematical acceptance follows from syntax validation.
 
 - **Current native CLI boundary:** The first 2026-09-10 commit attempt on the set-scaffold correction reached `_sage-syntax` and failed because the conda Sage 10.9 `sage.cli` entry point has no `--preparse` or `-python` option.
@@ -519,7 +598,9 @@ Ideas, to be weighed, not obligations.*
 
 - **Impact:** The governing plan allocates polynomial rings, quotients, localizations, affine schemes, sheaves, and gluings to OSCAR. The repository cannot currently verify that the embedded Julia environment exposes OSCAR before extending `SageCategoriesBridge.jl`.
 
-- **Required resolution:** Superseded by the incompatible-project evidence below: OSCAR must not enter the embedded Catlab JuliaCall environment.  The repair is the dedicated OSCAR process/project and opaque-handle boundary at `6de3716`/`7578e61`; `sage_categories.engines.oscar.version()` is the deterministic loaded-version probe.  The ring/affine public consumers still own runtime acceptance.
+- **Required resolution:** Superseded by the incompatible-project evidence below: OSCAR must not enter the embedded Catlab JuliaCall environment.
+  The repair is the dedicated OSCAR process/project and opaque-handle boundary at `6de3716`/`7578e61`; `sage_categories.engines.oscar.version()` is the deterministic loaded-version probe.
+  The ring/affine public consumers still own runtime acceptance.
 
 ## Catlab and OSCAR cannot share the repository JuliaPkg environment
 
@@ -535,7 +616,10 @@ Ideas, to be weighed, not obligations.*
   Run OSCAR in a separate Julia process/project with an explicit opaque-handle boundary, so incompatible transitive dependencies never enter one Julia process.
   Until that process boundary exists, OSCAR must not be declared in the global JuliaPkg project.
 
-- **Repair state:** `6de3716` keeps `Catlab = 0.17.6` / `GATlab = 0.2.4` in the package-global JuliaPkg project and launches OSCAR 1.8.2 under its own `OscarProject.toml` in a separate Julia 1.12.7 process.  Python exchanges only JSON primitives and worker-owned integer handles; `7578e61` carries those handles through the ring, affine, and covered-scheme native-retention boundaries.  Source/process-boundary tests and Julia syntax/project parsing are green.  This resolves the dependency-graph collision; it does not claim the pending OSCAR ring/affine runtime consumers on the resource-constrained host.
+- **Repair state:** `6de3716` keeps `Catlab = 0.17.6` / `GATlab = 0.2.4` in the package-global JuliaPkg project and launches OSCAR 1.8.2 under its own `OscarProject.toml` in a separate Julia 1.12.7 process.
+  Python exchanges only JSON primitives and worker-owned integer handles; `7578e61` carries those handles through the ring, affine, and covered-scheme native-retention boundaries.
+  Source/process-boundary tests and Julia syntax/project parsing are green.
+  This resolves the dependency-graph collision; it does not claim the pending OSCAR ring/affine runtime consumers on the resource-constrained host.
 
 ## Recovered Python-3.14 Sage runtime exhausts host headroom under public consumers
 
@@ -543,12 +627,19 @@ Ideas, to be weighed, not obligations.*
 
 - **Evidence:** A local Sage 10.9 / Python 3.14.7 environment was successfully provisioned at `/tmp/sage314` and is about 2.4 GiB. During 2026-09-10 public-consumer runs the root filesystem fell as low as about 55 MiB free and the host used about 11 GiB of swap.
   Single Sage/Julia/Catlab consumers repeatedly spent minutes in `folio_wait_bit_common` before reaching test bodies.
-  On 2026-09-11 a full static-stub regeneration process remained live for 2m15s but entered `folio_wait_bit_common`; its retained log stopped at 244 bytes after the Sage runtime warning and no projected stub write advanced during the observed interval. At that point the host had about 557 MiB free RAM, 10 GiB of 19 GiB swap in use, and 24 GiB free disk. The run was stopped under `POL-WORK-004`, and the raw `stubgen` files it had written before stalling were restored rather than mistaken for a completed compiler projection.
+  On 2026-09-11 a full static-stub regeneration process remained live for 2m15s but entered `folio_wait_bit_common`; its retained log stopped at 244 bytes after the Sage runtime warning and no projected stub write advanced during the observed interval.
+  At that point the host had about 557 MiB free RAM, 10 GiB of 19 GiB swap in use, and 24 GiB free disk.
+  The run was stopped under `POL-WORK-004`, and the raw `stubgen` files it had written before stalling were restored rather than mistaken for a completed compiler projection.
   The #31 residue construction nevertheless crossed the previously failing tensor/functor placement path after `5568f78`; subsequent cold-start diagnostics were stopped to avoid exhausting the host.
   The three #31 public consumers were then changed to import their actual owners directly instead of `sage_categories.all`, and primitive functor / natural-transformation actions were restored to their declared Python callbacks while retained composites remain Catlab-backed (`10243b9`, `3d6379c`, `4a55964`). Unrelated resident workloads were left untouched.
-  On 2026-09-11 the `sagemath-mypy-plugin` push gate was rerun with the provisioned Sage 10.9 / Python 3.14 runtime after its default `SAGE_BIN` pointed at the absent `sage-dev-allopts` environment. Typecheck and every test shard except the final behavior matrix completed; that shard remained CPU-active for about fifteen minutes, briefly entered `folio_wait_bit_common`, and the push process then exited without creating the remote branch. Pytest's `lastfailed` cache was empty, so the run produced no retained failing test to remediate.
+  On 2026-09-11 the `sagemath-mypy-plugin` push gate was rerun with the provisioned Sage 10.9 / Python 3.14 runtime after its default `SAGE_BIN` pointed at the absent `sage-dev-allopts` environment.
+  Typecheck and every test shard except the final behavior matrix completed; that shard remained CPU-active for about fifteen minutes, briefly entered `folio_wait_bit_common`, and the push process then exited without creating the remote branch.
+  Pytest's `lastfailed` cache was empty, so the run produced no retained failing test to remediate.
 
-- **Bounded acceptance shape:** `scripts/run_sage_test_case.sh` now stages one named `.sage` test at a time. It preparses a temporary copy with only top-level direct test invocations removed, then runs the selected unchanged function through verbose pytest under `SAGE_BIN`, so collection, test start, and completion are visible while one test bounds the resident set. On 2026-09-12 `tests/sets/test_set_scaffold.sage::test_rule_defined_infinite_set` completed in 45.09 seconds under Sage 10.9 / Python 3.14.7; the same staging shape completed `test_finite_set_universal_maps` in 70.45 seconds. This is the reproducible targeted route for runtime acceptance on this host; it does not claim that the whole public-consumer suite can run in one process.
+- **Bounded acceptance shape:** `scripts/run_sage_test_case.sh` now stages one named `.sage` test at a time.
+  It preparses a temporary copy with only top-level direct test invocations removed, then runs the selected unchanged function through verbose pytest under `SAGE_BIN`, so collection, test start, and completion are visible while one test bounds the resident set.
+  On 2026-09-12 `tests/sets/test_set_scaffold.sage::test_rule_defined_infinite_set` completed in 45.09 seconds under Sage 10.9 / Python 3.14.7; the same staging shape completed `test_finite_set_universal_maps` in 70.45 seconds.
+  This is the reproducible targeted route for runtime acceptance on this host; it does not claim that the whole public-consumer suite can run in one process.
 
 - **Gap and impact:** The compatible runtime now exists, but this host cannot reliably execute several cold Sage/Julia consumers while the filesystem and memory are under this pressure.
   Source/static/architecture checks remain usable; long runtime acceptance can be nondiagnostic or terminated externally before an assertion is reached.
@@ -564,44 +655,54 @@ Ideas, to be weighed, not obligations.*
 
 - **Exact Ruff owners:** A minimal Ruff 0.16 reproducer identifies `SIM401` as the unsafe fix replacing `d[key] if key in d else default` by `d.get(key, default)`, and `PERF102` as the unsafe fix replacing `for _, value in d.items()` / `for key, _ in d.items()` by `.values()` / `.keys()`. `tests/kernel/test_monodict_runtime.sage` now pins the corresponding Sage contract: identity membership/indexing and `.items()` work, while `get` and `values` are absent; that consumer passes under Sage 10.9 / Python 3.14.7.
 
-- **Impact:** The normalizer can turn previously working bootstrap code into runtime-invalid code while still treating the change as a lint cleanup. The same autofix class affected compiler runtime tables, construction-input retention, construction-family source-diagram retention, retained inverse lookup, and finite-set form retention.
+- **Impact:** The normalizer can turn previously working bootstrap code into runtime-invalid code while still treating the change as a lint cleanup.
+  The same autofix class affected compiler runtime tables, construction-input retention, construction-family source-diagram retention, retained inverse lookup, and finite-set form retention.
 
 - **Required resolution:** Treat Sage `MonoDict` as its actual mapping API, not as `dict`. Preserve membership/indexing and `.items()` forms at these owners, and keep a root-package Sage bootstrap regression so any future autofix that reintroduces dict-only operations fails before static/plugin work proceeds.
-  The normalizer invokes Ruff with the explicit central config `~/ai-review-ci/tool-configs/ruff-global.toml`; repository-local Ruff configuration therefore cannot enforce this exclusion. The remaining repair belongs to that central QC owner: mark `SIM401` and `PERF102` unfixable there, then rerun the unsafe-fix reproducer and the MonoDict runtime consumer.
+  The normalizer invokes Ruff with the explicit central config `~/ai-review-ci/tool-configs/ruff-global.toml`; repository-local Ruff configuration therefore cannot enforce this exclusion.
+  The remaining repair belongs to that central QC owner: mark `SIM401` and `PERF102` unfixable there, then rerun the unsafe-fix reproducer and the MonoDict runtime consumer.
 
 ## Finite category limits and colimits duplicate the same native diagram lowering
 
 - **Mathematical need or user action:** Lower one finite category-valued diagram to `FinSetsForCAP` once, then choose either the native limit or colimit operation without maintaining two copies of the object/arrow encoding.
 
-- **Evidence:** `src/sage_categories/engines/category_limits.py` currently repeats the same `vertex_positions`, per-factor `value_positions`, `native_factors`, and decorated-edge construction in both `compatible_families()` and `identified_objects()`. Only the final CAP operation and projection/injection readback differ. `matching_triples()` uses a genuinely different three-factor equalizer construction and is not part of this duplication.
+- **Evidence:** `src/sage_categories/engines/category_limits.py` currently repeats the same `vertex_positions`, per-factor `value_positions`, `native_factors`, and decorated-edge construction in both `compatible_families()` and `identified_objects()`. Only the final CAP operation and projection/injection readback differ.
+  `matching_triples()` uses a genuinely different three-factor equalizer construction and is not part of this duplication.
 
-- **Gap and impact:** The repeated finite-diagram lowering is engine-boundary code, so any indexing, identity, or map-graph correction must be made twice before either limits or colimits are trustworthy. It also obscures the actual distinction between the two operations behind duplicated setup code. The earliest owner is `engines/category_limits.py`, not the public limit/colimit categories.
+- **Gap and impact:** The repeated finite-diagram lowering is engine-boundary code, so any indexing, identity, or map-graph correction must be made twice before either limits or colimits are trustworthy.
+  It also obscures the actual distinction between the two operations behind duplicated setup code.
+  The earliest owner is `engines/category_limits.py`, not the public limit/colimit categories.
 
 - **Uncertainty:** This audit establishes duplication inside this adapter only; it does not claim that the same lowering helper should absorb product/equalizer-specific adapters elsewhere.
 
-- **Repair link and acceptance:** `bloat-audit-loop`. Resolve by giving the shared finite-diagram lowering one private owner returning the native factors and decorated arrows, with `compatible_families()` and `identified_objects()` retaining only their limit-versus-colimit calls and directional readback. Existing finite category limit/colimit consumers must remain unchanged.
+- **Repair link and acceptance:** `bloat-audit-loop`. Resolve by giving the shared finite-diagram lowering one private owner returning the native factors and decorated arrows, with `compatible_families()` and `identified_objects()` retaining only their limit-versus-colimit calls and directional readback.
+  Existing finite category limit/colimit consumers must remain unchanged.
 
 ## PointCategory duplicated its sole-object state read
 
-- **Evidence and impact:** `PointCategory.member()` and zero-argument `PointCategory.__call__()` both returned `_member` directly. The callable form is only a convenience spelling for the same mathematical object, so duplicating the state read gives two implementation owners for one trivial invariant.
+- **Evidence and impact:** `PointCategory.member()` and zero-argument `PointCategory.__call__()` both returned `_member` directly.
+  The callable form is only a convenience spelling for the same mathematical object, so duplicating the state read gives two implementation owners for one trivial invariant.
 
 - **Repair link and acceptance:** `bloat-point-member-alias`. Keep `member()` as the state-reading owner and make `__call__()` delegate to it; point-category consumers must remain unchanged.
 
 ## FinSetsForCAP retention was detected by throwing assertions
 
-- **Evidence and impact:** `engines/finite_sets.py` duplicated the old presented-module pattern of probing `finite_native_object()` and `finite_native_morphism()` inside `try/except AssertionError` helpers. Native realization registries already own exact identity-based presence, so absence was being encoded as an exception and endpoint lowering repeated presence checks around reconstruction.
+- **Evidence and impact:** `engines/finite_sets.py` duplicated the old presented-module pattern of probing `finite_native_object()` and `finite_native_morphism()` inside `try/except AssertionError` helpers.
+  Native realization registries already own exact identity-based presence, so absence was being encoded as an exception and endpoint lowering repeated presence checks around reconstruction.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Expose the registry's `has()` queries through `sets/_finite_cap.py`; make the FinSets adapter use those predicates directly and reconstruct endpoint records once after `_native_object()` has ensured them.
 
 ## Native realization families duplicated identity-store lookup plumbing
 
-- **Evidence and impact:** `NativeObjectRealizations`, `NativeMorphismRealizations`, and `NativeUniversalPresentationRealizations` each repeated the same `_IdentityRecords` initialization plus `has()` and `realization()` forwarding. Their only real distinction is the validation and record construction performed by `retain()`.
+- **Evidence and impact:** `NativeObjectRealizations`, `NativeMorphismRealizations`, and `NativeUniversalPresentationRealizations` each repeated the same `_IdentityRecords` initialization plus `has()` and `realization()` forwarding.
+  Their only real distinction is the validation and record construction performed by `retain()`.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give the three realization families one private generic lookup owner and leave only their mathematically distinct retention checks in the public family classes.
 
 ## Ringed-space code duplicated sheaf boundary helpers
 
-- **Evidence and impact:** `geometry/ringed_spaces.py` repeated `geometry/sheaves.py`'s lazy commutative-ring category lookup and exact open-object datum extraction byte-for-byte even though ringed spaces already depend on the sheaf module. That gave the same sheaf boundary two private implementation owners.
+- **Evidence and impact:** `geometry/ringed_spaces.py` repeated `geometry/sheaves.py`'s lazy commutative-ring category lookup and exact open-object datum extraction byte-for-byte even though ringed spaces already depend on the sheaf module.
+  That gave the same sheaf boundary two private implementation owners.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Reuse the sheaf module's existing `_rings` and `_open_data` owners from ringed spaces; keep only ringed-space-specific transformation and transport logic locally.
 
@@ -613,7 +714,8 @@ Ideas, to be weighed, not obligations.*
 
 ## Represented Sets diagram rules repeated one admission mechanism
 
-- **Evidence and impact:** `_IndexedProductRule`, `_IndexedCoproductRule`, and `_SequentialColimitRule` each stored one diagram and implemented the same identity-based admission test, differing only in the retained value class they accept. Three copies of the same constructor and predicate obscure that one invariant owns all represented diagram values.
+- **Evidence and impact:** `_IndexedProductRule`, `_IndexedCoproductRule`, and `_SequentialColimitRule` each stored one diagram and implemented the same identity-based admission test, differing only in the retained value class they accept.
+  Three copies of the same constructor and predicate obscure that one invariant owns all represented diagram values.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Put diagram retention and identity-based value admission on one private base rule; keep the three named rule subclasses only to select their distinct retained value type and preserve existing dispatch by presentation class.
 
@@ -625,61 +727,71 @@ Ideas, to be weighed, not obligations.*
 
 ## Affine geometry duplicated the sheaf commutative-ring lookup
 
-- **Evidence and impact:** `geometry/affine.py::_commutative_rings()` repeated `geometry/sheaves.py::_rings()` exactly, including the same lazy import used to avoid the structured-object import cycle. Affine geometry already imports the sheaf module, so the duplicate helper added a second owner without isolating any dependency.
+- **Evidence and impact:** `geometry/affine.py::_commutative_rings()` repeated `geometry/sheaves.py::_rings()` exactly, including the same lazy import used to avoid the structured-object import cycle.
+  Affine geometry already imports the sheaf module, so the duplicate helper added a second owner without isolating any dependency.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Reuse the sheaf module's lazy commutative-ring owner throughout affine scheme construction and `Spec`; remove the duplicate import machinery from `affine.py`.
 
 ## DisCoPy path evaluation manually accumulated a simple linear chain
 
-- **Evidence and impact:** `engines/diagrams.py::evaluate_path` built a linear list of boxes with mutable `current` state, rebuilt the same endpoint family for token lookup, then manually folded `>>` across the boxes. The mutable setup inflated the function's branch complexity even though the path is already an ordered tuple.
+- **Evidence and impact:** `engines/diagrams.py::evaluate_path` built a linear list of boxes with mutable `current` state, rebuilt the same endpoint family for token lookup, then manually folded `>>` across the boxes.
+  The mutable setup inflated the function's branch complexity even though the path is already an ordered tuple.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Derive the endpoint chain once, construct boxes and token values from that immutable chain, and use the standard `reduce(rshift, ...)` fold for nonempty paths while retaining the explicit empty-path identity case.
 
 ## Geometry modules repeated the lazy ring-category import boundary
 
-- **Evidence and impact:** sheaves and topological rings each implemented their own lazy `Rings(Sets)` lookup, while affine and ringed-space code had begun reusing the sheaf helper solely to avoid duplicating it. The lazy import exists to break the structured-object import cycle, not because sheaves mathematically own every geometry module's ring category.
+- **Evidence and impact:** sheaves and topological rings each implemented their own lazy `Rings(Sets)` lookup, while affine and ringed-space code had begun reusing the sheaf helper solely to avoid duplicating it.
+  The lazy import exists to break the structured-object import cycle, not because sheaves mathematically own every geometry module's ring category.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Move the lazy ordinary/commutative ring-category accessors to one private geometry boundary module and let sheaves, affine schemes, ringed spaces, and topological rings depend on that owner directly.
 
 ## Finite-category evaluation mixed dispatch with Grothendieck execution
 
-- **Evidence and impact:** `cat/finite_categories.py::_evaluate` contained every category-kind dispatch branch and the full finite Grothendieck construction in one 15-complexity function. The dispatcher therefore owned both selection and the most involved evaluator, obscuring which code changes when a new finite category representation is added.
+- **Evidence and impact:** `cat/finite_categories.py::_evaluate` contained every category-kind dispatch branch and the full finite Grothendieck construction in one 15-complexity function.
+  The dispatcher therefore owned both selection and the most involved evaluator, obscuring which code changes when a new finite category representation is added.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Split discrete, Grothendieck, presented, and opposite evaluation into named owners and make `_evaluate` a category-kind match whose cases only select the corresponding evaluator; keep slice/comma/limit and arrow-category adapters unchanged.
 
 ## Cartesian monoidal construction embedded all comparison execution
 
-- **Evidence and impact:** `cat/monoidal.py::Cartesian` assembled the selected monoidal structure while also containing full associator rebracketing and two nearly identical left/right unitor native/fallback implementations. This made the constructor a 22-complexity owner for both declaration and execution details.
+- **Evidence and impact:** `cat/monoidal.py::Cartesian` assembled the selected monoidal structure while also containing full associator rebracketing and two nearly identical left/right unitor native/fallback implementations.
+  This made the constructor a 22-complexity owner for both declaration and execution details.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Move associator and shared unitor component execution to private helpers; leave `Cartesian` responsible only for assembling the tensor, unit, and natural isomorphisms from those component owners.
 
 ## Presented-colimit construction mixed every lowering phase in one function
 
-- **Evidence and impact:** `cat/presented_colimits.py::presented_colimit_in_opposite` combined finite-shape extraction, object-class lowering, coproduct generator provenance, diagram-relation generation, injection reconstruction, quotient representatives, and mediator reconstruction in one 20-complexity function. Each phase has a different invariant and engine boundary, so one edit required reasoning across the entire pipeline.
+- **Evidence and impact:** `cat/presented_colimits.py::presented_colimit_in_opposite` combined finite-shape extraction, object-class lowering, coproduct generator provenance, diagram-relation generation, injection reconstruction, quotient representatives, and mediator reconstruction in one 20-complexity function.
+  Each phase has a different invariant and engine boundary, so one edit required reasoning across the entire pipeline.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give each lowering/reconstruction phase a named private owner and leave `presented_colimit_in_opposite` as the orchestration that connects their retained data and installs the final universal presentation.
 
 ## Native cell lookup mixed inverse synchronization with construction dispatch
 
-- **Evidence and impact:** `engines/cells.py::native_cell` handled cache lookup, identity recognition, reverse-orientation reuse, composite/generator construction, invertibility classification, and inverse-partner retention in one 16-complexity routine. The inverse bookkeeping appeared twice around the construction branch, making the ordinary lookup path harder to audit than the native operation requires.
+- **Evidence and impact:** `engines/cells.py::native_cell` handled cache lookup, identity recognition, reverse-orientation reuse, composite/generator construction, invertibility classification, and inverse-partner retention in one 16-complexity routine.
+  The inverse bookkeeping appeared twice around the construction branch, making the ordinary lookup path harder to audit than the native operation requires.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Separate retained-inverse lookup, uncached cell construction, and inverse-partner synchronization into private helpers; leave `native_cell` as the ordered orchestration of those responsibilities.
 
 ## Compiler initialization mixed graph traversal with selected-action execution
 
-- **Evidence and impact:** `kernel/compiler.py::_initialize_graph` contained local implementations of reached-node lookup, queued structure-functor execution, and traversal ordering inside the initializer loop itself. The resulting 14-complexity function made the once-only initialization contract depend on three nested pieces of mutable traversal machinery.
+- **Evidence and impact:** `kernel/compiler.py::_initialize_graph` contained local implementations of reached-node lookup, queued structure-functor execution, and traversal ordering inside the initializer loop itself.
+  The resulting 14-complexity function made the once-only initialization contract depend on three nested pieces of mutable traversal machinery.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give resolved-input lookup, selected-action execution, and initialization ordering separate private owners; leave `_initialize_graph` responsible for running the resulting ordered initializer turns and preserving first-written state.
 
 ## Level-shift application mixed reachability and retained-value migration
 
-- **Evidence and impact:** `kernel/compiler.py::apply_level_shift` combined selected-functor reachability, runtime-cache replacement, and per-object class migration in one 12-complexity function. The two graph traversals answer distinct questions: which runtime nodes are affected, and which retained values need rebuilt classes.
+- **Evidence and impact:** `kernel/compiler.py::apply_level_shift` combined selected-functor reachability, runtime-cache replacement, and per-object class migration in one 12-complexity function.
+  The two graph traversals answer distinct questions: which runtime nodes are affected, and which retained values need rebuilt classes.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give runtime reachability and retained-value migration separate private owners; leave `apply_level_shift` to compute the affected runtime class replacement and hand the migration phase its exact replacement/added-node tables.
 
 ## Stub import projection combined liveness, normalization, grouping, and ordering
 
-- **Evidence and impact:** `kernel/stub_generator.py::_stub_import_groups` computed declaration liveness, filtered imports, merged unaliased from-imports, classified isort sections, and ordered every result in one 19-complexity function. Those are separate projector invariants, and changes to one import rule forced reasoning through the entire rendering pipeline.
+- **Evidence and impact:** `kernel/stub_generator.py::_stub_import_groups` computed declaration liveness, filtered imports, merged unaliased from-imports, classified isort sections, and ordered every result in one 19-complexity function.
+  Those are separate projector invariants, and changes to one import rule forced reasoning through the entire rendering pipeline.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Split loaded-name discovery, retained-import projection, module extraction, section classification, and ordering into named private helpers; keep `_stub_import_groups` as the four-section assembly only.
 
@@ -691,13 +803,15 @@ Ideas, to be weighed, not obligations.*
 
 ## Magma repeated accessors already owned by its inserter base
 
-- **Evidence and impact:** `cat/structured_objects.py::MagmaCategory` repeated `carrier()`, `structure()`, and `underlying_morphism()` byte-for-byte with `InserterCategory`, even though `MagmaCategory` subclasses that owner. The overrides added a second state-reading surface with no changed semantics and made later subclasses look as though Magma owned those generic inserter operations.
+- **Evidence and impact:** `cat/structured_objects.py::MagmaCategory` repeated `carrier()`, `structure()`, and `underlying_morphism()` byte-for-byte with `InserterCategory`, even though `MagmaCategory` subclasses that owner.
+  The overrides added a second state-reading surface with no changed semantics and made later subclasses look as though Magma owned those generic inserter operations.
 
 - **Repair link and acceptance:** `bloat-magma-inherited-accessors`. Delete the redundant overrides and inherit the exact inserter implementations; keep only Magma's mathematical `operation()` alias on the object role.
 
 ## Pullback pair categories repeated faithful factor projections
 
-- **Evidence and impact:** `MonoidPairsCategory` built the same `Fun(self, factor).Faithful().Isofibrations()` projection three times and `ActionPairsCategory` repeated it twice more, differing only by factor index and public semantic name. The componentwise object/morphism action is generic limit-family plumbing, not monoid- or module-specific mathematics.
+- **Evidence and impact:** `MonoidPairsCategory` built the same `Fun(self, factor).Faithful().Isofibrations()` projection three times and `ActionPairsCategory` repeated it twice more, differing only by factor index and public semantic name.
+  The componentwise object/morphism action is generic limit-family plumbing, not monoid- or module-specific mathematics.
 
 - **Repair link and acceptance:** `bloat-faithful-factor-projections`. Give the componentwise faithful-isofibration factor projection one private owner in the category-limit layer and let the pair categories keep only their named projection methods.
 
@@ -709,139 +823,162 @@ Ideas, to be weighed, not obligations.*
 
 ## Calculus helpers repeatedly imported cone constructors they had already loaded
 
-- **Evidence and impact:** `cat/calculus.py` imported `LimitConesCategory` from `cat.cones` at module scope, but `pair_maps`, `terminal_map`, and `power_functor` each performed additional local imports of `cone`/`cones`; `pair_maps` even split the two names into separate imports around an assertion. Because the module dependency is already established, these local imports add no cycle protection and obscure the actual dependencies of the calculus layer.
+- **Evidence and impact:** `cat/calculus.py` imported `LimitConesCategory` from `cat.cones` at module scope, but `pair_maps`, `terminal_map`, and `power_functor` each performed additional local imports of `cone`/`cones`; `pair_maps` even split the two names into separate imports around an assertion.
+  Because the module dependency is already established, these local imports add no cycle protection and obscure the actual dependencies of the calculus layer.
 
 - **Repair link and acceptance:** `bloat-calculus-cone-imports`. Import the cone constructors once with `LimitConesCategory` and remove the repeated function-local imports without changing the universal-construction calls.
 
 ## Adjunction transposition repeated a morphism-owner import
 
-- **Evidence and impact:** `AdjunctionsCategory.ObjectType.transpose()` and `untranspose()` each imported `Mor` locally even though `cat/adjunctions.py` already imports `MorphismCategory` from the same owner at module scope. No import cycle is avoided by delaying only the sibling name, so both directions carried unnecessary dependency boilerplate.
+- **Evidence and impact:** `AdjunctionsCategory.ObjectType.transpose()` and `untranspose()` each imported `Mor` locally even though `cat/adjunctions.py` already imports `MorphismCategory` from the same owner at module scope.
+  No import cycle is avoided by delaying only the sibling name, so both directions carried unnecessary dependency boilerplate.
 
 - **Repair link and acceptance:** `bloat-adjunction-mor-imports`. Import `Mor` with `MorphismCategory` once and let both transposition directions use the shared binding while preserving their exact fixed-endpoint Hom checks.
 
 ## Finite-category evaluation repeatedly imported its discrete-shape type
 
-- **Evidence and impact:** `cat/finite_categories.py` imported `DiscreteCategory` independently in `finite_objects`, `_evaluate`, and `_limit`, although `cat/shapes.py` has no dependency back on the finite evaluator. The three delayed imports therefore protected no cycle and obscured that discrete-shape recognition is a module-wide evaluator dependency.
+- **Evidence and impact:** `cat/finite_categories.py` imported `DiscreteCategory` independently in `finite_objects`, `_evaluate`, and `_limit`, although `cat/shapes.py` has no dependency back on the finite evaluator.
+  The three delayed imports therefore protected no cycle and obscured that discrete-shape recognition is a module-wide evaluator dependency.
 
 - **Repair link and acceptance:** `bloat-finite-discrete-imports`. Bind `DiscreteCategory` once at module scope and share it across finite object enumeration, representation dispatch, and finite-product specialization.
 
 ## FinSetsForCAP repeatedly imported the implemented Sets leaf instead of its declaration
 
-- **Evidence and impact:** `engines/finite_sets.py` performed eight function-local `from sage_categories.sets.finite import Sets` imports across morphism reconstruction, image factorization, and every primitive finite universal construction. The engine needs the owned `Sets` declaration whose implementation has already been installed by the caller, not a repeated dependency on the leaf implementation module itself.
+- **Evidence and impact:** `engines/finite_sets.py` performed eight function-local `from sage_categories.sets.finite import Sets` imports across morphism reconstruction, image factorization, and every primitive finite universal construction.
+  The engine needs the owned `Sets` declaration whose implementation has already been installed by the caller, not a repeated dependency on the leaf implementation module itself.
 
 - **Repair link and acceptance:** `bloat-finite-sets-owner-import`. Bind `Sets` once from `cat.declarations` at the engine boundary and remove every reverse import of `sets/finite.py`, preserving the existing native object/morphism reconstruction operations.
 
 ## Presented-module retention repeated the same lazy Ab owner lookup
 
-- **Evidence and impact:** `algebra/_presented_modules_cap.py` imported `AbelianGroups` separately inside object-retention and morphism-retention functions solely to avoid importing the leaf during bootstrap. Both paths need the same exact owner; duplicating the cycle-breaking import makes that boundary implicit in two places.
+- **Evidence and impact:** `algebra/_presented_modules_cap.py` imported `AbelianGroups` separately inside object-retention and morphism-retention functions solely to avoid importing the leaf during bootstrap.
+  Both paths need the same exact owner; duplicating the cycle-breaking import makes that boundary implicit in two places.
 
 - **Repair link and acceptance:** `bloat-presented-module-owner`. Put the lazy `AbelianGroups()` lookup behind one `_owner()` helper and let both native retention families use it, preserving the bootstrap boundary and exact Hom ownership.
 
 ## OSCAR ring reconstruction repeated its cycle-safe runtime module bundle
 
-- **Evidence and impact:** `_commutative_rings_oscar.py` dynamically imported `cat.declarations`, `cat.morphisms`, and `cat.structured_objects` in both object and morphism reconstruction, while `_owner()` repeated two of the same imports. These imports are deliberately delayed to the OSCAR reconstruction boundary, but the boundary itself had three spellings.
+- **Evidence and impact:** `_commutative_rings_oscar.py` dynamically imported `cat.declarations`, `cat.morphisms`, and `cat.structured_objects` in both object and morphism reconstruction, while `_owner()` repeated two of the same imports.
+  These imports are deliberately delayed to the OSCAR reconstruction boundary, but the boundary itself had three spellings.
 
 - **Repair link and acceptance:** `bloat-oscar-runtime-modules`. Keep delayed loading, but make one `_ring_runtime_modules()` owner for the shared declaration/morphism/structured modules and use it in owner lookup plus both reconstruction directions.
 
 ## Finite-category evaluation repeated its lazy category-limit engine import
 
-- **Evidence and impact:** `cat/finite_categories.py` imported `engines.category_limits` independently in Grothendieck evaluation and in general strict-limit evaluation. The delay is useful because the public category evaluator should not load GAP adapters until a finite native calculation needs them, but duplicating that delayed import gave the engine boundary two owners.
+- **Evidence and impact:** `cat/finite_categories.py` imported `engines.category_limits` independently in Grothendieck evaluation and in general strict-limit evaluation.
+  The delay is useful because the public category evaluator should not load GAP adapters until a finite native calculation needs them, but duplicating that delayed import gave the engine boundary two owners.
 
 - **Repair link and acceptance:** `bloat-finite-category-limit-engine`. Preserve delayed loading behind one `_category_limits_engine()` helper and use it for matching triples plus compatible-family evaluation.
 
 ## FinSetsForCAP repeated its lazy finite-category evaluator boundary
 
-- **Evidence and impact:** `engines/finite_sets.py` imported `finite_category` independently in native diagram lowering, primitive finite limits, and primitive finite colimits, and imported `Unknown` separately in two of those finite-admission paths. The category evaluator is intentionally delayed to avoid import-cycle pressure, but the delay had three separate spellings.
+- **Evidence and impact:** `engines/finite_sets.py` imported `finite_category` independently in native diagram lowering, primitive finite limits, and primitive finite colimits, and imported `Unknown` separately in two of those finite-admission paths.
+  The category evaluator is intentionally delayed to avoid import-cycle pressure, but the delay had three separate spellings.
 
 - **Repair link and acceptance:** `bloat-finite-sets-category-evaluator`. Keep evaluator loading lazy behind `_finite_category_data()`, bind `Unknown` once, and route all finite shape/diagram evaluation through that one private boundary.
 
 ## Sets repeatedly reopened the same FinSetsForCAP engine boundary
 
-- **Evidence and impact:** `sets/finite.py` imported `engines.finite_sets` independently in equality, mono/epi/inverse checks, limit/colimit dispatch, primitive universal constructions, image factorization, Hom enumeration, and cartesian comparisons. The delay is necessary because the engine reaches back through the finite-set retention layer, but twelve separate import sites gave one cycle-breaking boundary twelve owners.
+- **Evidence and impact:** `sets/finite.py` imported `engines.finite_sets` independently in equality, mono/epi/inverse checks, limit/colimit dispatch, primitive universal constructions, image factorization, Hom enumeration, and cartesian comparisons.
+  The delay is necessary because the engine reaches back through the finite-set retention layer, but twelve separate import sites gave one cycle-breaking boundary twelve owners.
 
 - **Repair link and acceptance:** `bloat-sets-finite-engine-boundary`. Keep the import delayed behind one `_finite_sets_engine()` helper and route every finite-set engine call through that boundary without changing which operations remain native or represented.
 
 ## Sets repeated its finite-category evaluator import boundary
 
-- **Evidence and impact:** `sets/finite.py` imported `cat.finite_categories` separately for product enumeration, finite limit/colimit dispatch, and primitive finite product/coproduct selection. These imports are intentionally delayed to avoid bootstrap cycles, but five spellings of the same cycle-safe evaluator boundary obscure the dependency and duplicate its loading policy.
+- **Evidence and impact:** `sets/finite.py` imported `cat.finite_categories` separately for product enumeration, finite limit/colimit dispatch, and primitive finite product/coproduct selection.
+  These imports are intentionally delayed to avoid bootstrap cycles, but five spellings of the same cycle-safe evaluator boundary obscure the dependency and duplicate its loading policy.
 
 - **Repair link and acceptance:** `bloat-sets-finite-category-boundary`. Keep finite-category recognition delayed behind one `_finite_category_engine()` helper and use it for `finite_objects` and `finite_category` throughout the Sets implementation.
 
 ## Functor equality repeated the same finite-category evaluator import
 
-- **Evidence and impact:** `cat/functors.py` imported `finite_category` independently in finite functor equality and finite natural-transformation equality. The import must remain delayed because the finite evaluator imports the functor owner, but duplicating that cycle break gave one extensionality boundary two spellings.
+- **Evidence and impact:** `cat/functors.py` imported `finite_category` independently in finite functor equality and finite natural-transformation equality.
+  The import must remain delayed because the finite evaluator imports the functor owner, but duplicating that cycle break gave one extensionality boundary two spellings.
 
 - **Repair link and acceptance:** `bloat-functor-finite-category-boundary`. Put the delayed finite-category lookup behind one `_finite_category_data()` helper and let both extensional equality handlers share it.
 
 ## Pointwise diagram constructions repeated universal-data imports
 
-- **Evidence and impact:** `cat/diagrams.py` imported `constructed_data` separately in pointwise-limit assembly and in the dualized pointwise-colimit path. The delay is intentional because `cat.constructions` depends on diagram machinery, but two local imports gave the same cycle-safe universal-data boundary two owners.
+- **Evidence and impact:** `cat/diagrams.py` imported `constructed_data` separately in pointwise-limit assembly and in the dualized pointwise-colimit path.
+  The delay is intentional because `cat.constructions` depends on diagram machinery, but two local imports gave the same cycle-safe universal-data boundary two owners.
 
 - **Repair link and acceptance:** `bloat-diagram-constructed-data-boundary`. Put the delayed lookup behind one `_constructed_data()` helper and route both pointwise limit and pointwise colimit through it.
 
 ## Presented categories repeated their FpCategories engine import
 
-- **Evidence and impact:** `cat/canonical.py::FinitePresentedCategory` imported `engines.fp_categories` independently for finite Hom enumeration, terminal selection, path reduction, isomorphism detection, composition, and inversion. The delay is necessary because the engine reconstructs owned canonical-category values, but six local imports gave one native execution boundary six owners.
+- **Evidence and impact:** `cat/canonical.py::FinitePresentedCategory` imported `engines.fp_categories` independently for finite Hom enumeration, terminal selection, path reduction, isomorphism detection, composition, and inversion.
+  The delay is necessary because the engine reconstructs owned canonical-category values, but six local imports gave one native execution boundary six owners.
 
 - **Repair link and acceptance:** `bloat-canonical-fp-engine-boundary`. Keep FpCategories loading delayed behind one `_fp_categories_engine()` helper and route every native presented-category operation through it.
 
 ## Limit and colimit families repeated full-image registration imports
 
-- **Evidence and impact:** `cat/constructions.py` imported `register_full_image` separately when constructing the chosen limit functor and the dualized chosen colimit functor. The delay is required because the image layer depends back on categorical constructions, but two local imports gave the same registration boundary two owners.
+- **Evidence and impact:** `cat/constructions.py` imported `register_full_image` separately when constructing the chosen limit functor and the dualized chosen colimit functor.
+  The delay is required because the image layer depends back on categorical constructions, but two local imports gave the same registration boundary two owners.
 
 - **Repair link and acceptance:** `bloat-construction-full-image-boundary`. Put the delayed registration behind one `_register_construction_full_image()` helper and let both chosen-construction functors delegate to it.
 
 ## Left and right Kan adjunctions repeated the same runtime helper bundle
 
-- **Evidence and impact:** `cat/kan.py` imported `precompose`, `comma_objects`, and `Mor` independently in both left- and right-Kan adjunction constructors. The imports remain delayed to avoid the Kan/calculus/comma bootstrap cycle, but duplicating the same three-name bundle gave one cycle-safe adjunction boundary two owners.
+- **Evidence and impact:** `cat/kan.py` imported `precompose`, `comma_objects`, and `Mor` independently in both left- and right-Kan adjunction constructors.
+  The imports remain delayed to avoid the Kan/calculus/comma bootstrap cycle, but duplicating the same three-name bundle gave one cycle-safe adjunction boundary two owners.
 
 - **Repair link and acceptance:** `bloat-kan-adjunction-runtime`. Put the delayed helper bundle behind one `_kan_adjunction_runtime()` owner and let both adjunction constructors share it while retaining their distinct universal-arrow classes.
 
 ## Morphism cells and equations repeated native-engine imports
 
-- **Evidence and impact:** `cat/morphisms.py` imported the homotopy-cell adapter independently for dimension, boundary, and typecheck, and imported the equation engine separately for equality and word reduction. These adapters remain delayed to avoid importing native execution during category bootstrap, but five local imports gave two engine boundaries multiple owners.
+- **Evidence and impact:** `cat/morphisms.py` imported the homotopy-cell adapter independently for dimension, boundary, and typecheck, and imported the equation engine separately for equality and word reduction.
+  These adapters remain delayed to avoid importing native execution during category bootstrap, but five local imports gave two engine boundaries multiple owners.
 
 - **Repair link and acceptance:** `bloat-morphism-engine-boundaries`. Keep native cells and equation reduction delayed behind `_cells_engine()` and `_equations_engine()`, and route every morphism-owned operation through those two boundaries.
 
 ## Cone construction repeated the terminal-category bootstrap
 
-- **Evidence and impact:** `cat/cones.py` imported `Cat` independently in cone-object construction and cone-morphism construction, then rebuilt `Cat().Terminal()` in each path. The delay is required because functors depend on cone machinery during bootstrap, but the same terminal-category boundary had two spellings and one path constructed it twice.
+- **Evidence and impact:** `cat/cones.py` imported `Cat` independently in cone-object construction and cone-morphism construction, then rebuilt `Cat().Terminal()` in each path.
+  The delay is required because functors depend on cone machinery during bootstrap, but the same terminal-category boundary had two spellings and one path constructed it twice.
 
 - **Repair link and acceptance:** `bloat-cone-terminal-boundary`. Put the delayed terminal-category lookup behind `_terminal_category_and_star()` and let both construction paths share the retained terminal category and its unique object.
 
 ## FinSetsForCAP repeated cone and cocone imports
 
-- **Evidence and impact:** `engines/finite_sets.py` imported `cone`/`cone_apex` separately in finite limit, product, and equalizer execution, and imported `cocone`/`cocone_apex` separately in finite colimit, coproduct, and coequalizer execution. Those imports remain delayed because cone construction sits above the finite engine in the public category layer, but six local import sites gave two cycle-safe execution boundaries six owners.
+- **Evidence and impact:** `engines/finite_sets.py` imported `cone`/`cone_apex` separately in finite limit, product, and equalizer execution, and imported `cocone`/`cocone_apex` separately in finite colimit, coproduct, and coequalizer execution.
+  Those imports remain delayed because cone construction sits above the finite engine in the public category layer, but six local import sites gave two cycle-safe execution boundaries six owners.
 
 - **Repair link and acceptance:** `bloat-finite-sets-cone-boundaries`. Put the delayed limit and colimit cone bundles behind `_limit_cone_runtime()` and `_colimit_cocone_runtime()`, and route all six native universal-construction paths through them.
 
 ## Property pullbacks repeated the same construction runtime bundle
 
-- **Evidence and impact:** `cat/properties.py` imported `cone`, `cone_apex`, `cospan_diagram`, `Cat`, and `Fun` independently in inverse-image retention and property-subcategory intersection. Both paths construct the same kind of retained pullback and delay the same imports to avoid property/functor/construction bootstrap cycles, so the five-name runtime boundary had two owners.
+- **Evidence and impact:** `cat/properties.py` imported `cone`, `cone_apex`, `cospan_diagram`, `Cat`, and `Fun` independently in inverse-image retention and property-subcategory intersection.
+  Both paths construct the same kind of retained pullback and delay the same imports to avoid property/functor/construction bootstrap cycles, so the five-name runtime boundary had two owners.
 
 - **Repair link and acceptance:** `bloat-property-pullback-runtime`. Put the delayed pullback helper bundle behind one `_subcategory_pullback_runtime()` owner and let inverse images and intersections share it without changing their distinct projections or mediator logic.
 
 ## Yoneda helpers repeatedly imported refinement
 
-- **Evidence and impact:** `cat/weighted.py::yoneda` and `coyoneda` each imported the same kernel `refine` operation locally immediately before marking the constructed embedding fully faithful. The module already depends on the refinement-independent category layer at import time, and the kernel refinement owner has no reverse dependency on weighted constructions, so the duplicate delayed imports protect no cycle.
+- **Evidence and impact:** `cat/weighted.py::yoneda` and `coyoneda` each imported the same kernel `refine` operation locally immediately before marking the constructed embedding fully faithful.
+  The module already depends on the refinement-independent category layer at import time, and the kernel refinement owner has no reverse dependency on weighted constructions, so the duplicate delayed imports protect no cycle.
 
 - **Repair link and acceptance:** `bloat-weighted-refinement-import`. Bind `refine` once at module scope and let both Yoneda constructions use the shared owner while retaining their separate curry/transpose formulas.
 
 ## Universal-arrow adjunctions repeated the same delayed owner import
 
-- **Evidence and impact:** `RightUniversalArrows.adjunction()` and `LeftUniversalArrows.adjunction()` each imported `Adjunctions` locally immediately before constructing their unit/counit pair. The delay is required because the adjunction module consumes universal arrows, but duplicating the same cycle break gave one mathematical owner two runtime import sites.
+- **Evidence and impact:** `RightUniversalArrows.adjunction()` and `LeftUniversalArrows.adjunction()` each imported `Adjunctions` locally immediately before constructing their unit/counit pair.
+  The delay is required because the adjunction module consumes universal arrows, but duplicating the same cycle break gave one mathematical owner two runtime import sites.
 
 - **Repair link and acceptance:** `bloat-universal-arrow-adjunction-boundary`. Put the delayed `Adjunctions` lookup behind one `_adjunctions()` helper and let both universal-arrow directions share it while retaining their distinct unit/counit formulas.
 
 ## Predicate dispatch repeated compiler-ancestry imports
 
-- **Evidence and impact:** `kernel/predicates.py` imported `runtime_semantic_bases` independently while building owned-value atom types and while checking whether a runtime argument inhabits a declared predicate domain. The import is deliberately delayed because compiler construction consumes predicate machinery, but both operations read the same semantic ancestry relation.
+- **Evidence and impact:** `kernel/predicates.py` imported `runtime_semantic_bases` independently while building owned-value atom types and while checking whether a runtime argument inhabits a declared predicate domain.
+  The import is deliberately delayed because compiler construction consumes predicate machinery, but both operations read the same semantic ancestry relation.
 
 - **Repair link and acceptance:** `bloat-predicate-semantic-bases-boundary`. Put the delayed compiler lookup behind `_semantic_bases()` and let atom construction plus argument-domain matching share it.
 
 ## Kernel functor-declaration readers repeated the functor-category import
 
-- **Evidence and impact:** `cat_kernel/functor_declarations.py` imported `Fun` separately in placement, inheritance, and point-declaration readers. The import must stay delayed because this kernel adapter is installed before the public functor category finishes bootstrapping, but all three readers query the same declaration owner.
+- **Evidence and impact:** `cat_kernel/functor_declarations.py` imported `Fun` separately in placement, inheritance, and point-declaration readers.
+  The import must stay delayed because this kernel adapter is installed before the public functor category finishes bootstrapping, but all three readers query the same declaration owner.
 
 - **Repair link and acceptance:** `bloat-functor-declaration-boundary`. Put the delayed `Fun` lookup behind one `_functors()` helper and route all three declaration readers through it.
 
@@ -853,97 +990,114 @@ Ideas, to be weighed, not obligations.*
 
 ## Presented-module reconstruction repeated the additive-owner import
 
-- **Evidence and impact:** `engines/presented_modules.py` imported the private additive `_group_from_engine` reconstruction separately in cokernel and tensor-product object reconstruction. The import must remain delayed because the additive owner calls back into this CAP adapter, but both paths cross the same native-to-owned object boundary.
+- **Evidence and impact:** `engines/presented_modules.py` imported the private additive `_group_from_engine` reconstruction separately in cokernel and tensor-product object reconstruction.
+  The import must remain delayed because the additive owner calls back into this CAP adapter, but both paths cross the same native-to-owned object boundary.
 
 - **Repair link and acceptance:** `bloat-presented-group-reconstruction-boundary`. Put the delayed reconstruction behind `_owned_group_from_engine()` and route both cokernel and tensor-product object reconstruction through it.
 
 ## Relative tensor descent repeated CAP colift imports
 
-- **Evidence and impact:** `algebra/abelian.py` imported `colift_along_epimorphism` separately for induced left actions, induced right actions, and relative-tensor associator descent. All three operations factor already-owned maps through a retained CAP epimorphism; the import must remain delayed because the CAP adapter imports the additive owner, but the same descent boundary appeared three times.
+- **Evidence and impact:** `algebra/abelian.py` imported `colift_along_epimorphism` separately for induced left actions, induced right actions, and relative-tensor associator descent.
+  All three operations factor already-owned maps through a retained CAP epimorphism; the import must remain delayed because the CAP adapter imports the additive owner, but the same descent boundary appeared three times.
 
 - **Repair link and acceptance:** `bloat-additive-colift-boundary`. Put the delayed CAP colift behind `_colift_presented_epimorphism()` and route action descent plus associator descent through it.
 
 ## OSCAR reconstruction repeated its execution-adapter import
 
-- **Evidence and impact:** `algebra/_commutative_rings_oscar.py` imported `engines.oscar` separately while reconstructing native ring objects and native ring morphisms. Both operations already share the same cycle-safe owner/runtime module bundle, so duplicating the OSCAR adapter import split one reconstruction boundary across two functions.
+- **Evidence and impact:** `algebra/_commutative_rings_oscar.py` imported `engines.oscar` separately while reconstructing native ring objects and native ring morphisms.
+  Both operations already share the same cycle-safe owner/runtime module bundle, so duplicating the OSCAR adapter import split one reconstruction boundary across two functions.
 
 - **Repair link and acceptance:** `bloat-oscar-reconstruction-boundary`. Put the delayed OSCAR adapter lookup behind `_oscar_runtime()` and let object and morphism reconstruction share it.
 
 ## Category finite-morphism queries repeated evaluator imports
 
-- **Evidence and impact:** `cat/category.py` imported `finite_category` independently in `morphisms()` and `hom_morphisms()` after the primary morphism-set query failed to provide an exact set. Both paths invoke the same finite structural evaluator and keep it delayed only to avoid the category/evaluator bootstrap cycle.
+- **Evidence and impact:** `cat/category.py` imported `finite_category` independently in `morphisms()` and `hom_morphisms()` after the primary morphism-set query failed to provide an exact set.
+  Both paths invoke the same finite structural evaluator and keep it delayed only to avoid the category/evaluator bootstrap cycle.
 
 - **Repair link and acceptance:** `bloat-category-finite-evaluator-boundary`. Put the delayed evaluator behind `_finite_category_data()` and let both finite morphism-query fallbacks share it.
 
 ## Category core repeated the functor-category bootstrap import
 
-- **Evidence and impact:** `cat/category.py` imported `Fun` independently in ten methods spanning structural-declaration queries, exponentials, point/arrow functors, restriction/lift registration, identities, and composition. All ten imports serve the same deliberate bootstrap rule: `Fun` cannot be imported until the core category declaration exists. Repeating the cycle break across the core obscured that single dependency boundary.
+- **Evidence and impact:** `cat/category.py` imported `Fun` independently in ten methods spanning structural-declaration queries, exponentials, point/arrow functors, restriction/lift registration, identities, and composition.
+  All ten imports serve the same deliberate bootstrap rule: `Fun` cannot be imported until the core category declaration exists.
+  Repeating the cycle break across the core obscured that single dependency boundary.
 
 - **Repair link and acceptance:** `bloat-category-functor-boundary`. Put the delayed functor-category owner behind `_functors()` and route every exact `Fun` import in `cat/category.py` through that one bootstrap boundary.
 
 ## Category core repeated native Catlab and cell-engine imports
 
-- **Evidence and impact:** `cat/category.py` reopened the native cell adapter throughout identity/inverse/composite retention and transformation calculus, and reopened Catlab throughout functor images, identities, composition, transformations, and whiskering. These imports are intentionally delayed until the category core has established owned runtime classes, but twenty execution sites repeated two bootstrap boundaries rather than naming those boundaries once.
+- **Evidence and impact:** `cat/category.py` reopened the native cell adapter throughout identity/inverse/composite retention and transformation calculus, and reopened Catlab throughout functor images, identities, composition, transformations, and whiskering.
+  These imports are intentionally delayed until the category core has established owned runtime classes, but twenty execution sites repeated two bootstrap boundaries rather than naming those boundaries once.
 
 - **Repair link and acceptance:** `bloat-category-native-engine-boundaries`. Put Catlab and homotopy-cell loading behind `_catlab_engine()` and `_cells_engine()` and route every category-core native execution site through those two owners.
 
 ## Cat repeatedly reopened its canonical finite-category constructor module
 
-- **Evidence and impact:** `Cat()` imported `cat.canonical` independently for presented categories, the initial category, simplices, boundaries, horns, the walking isomorphism, and the walking parallel pair. Those imports are deliberately delayed until the `Cat` owner exists, but seven constructors repeated the same bootstrap boundary.
+- **Evidence and impact:** `Cat()` imported `cat.canonical` independently for presented categories, the initial category, simplices, boundaries, horns, the walking isomorphism, and the walking parallel pair.
+  Those imports are deliberately delayed until the `Cat` owner exists, but seven constructors repeated the same bootstrap boundary.
 
 - **Repair link and acceptance:** `bloat-category-canonical-boundary`. Put the delayed canonical-constructor module behind `_canonical_categories()` and route every canonical `Cat()` constructor through that owner.
 
 ## Category core re-imported refinement despite a module-level binding
 
-- **Evidence and impact:** `cat/category.py` already imports `refine` with `is_placed` and `is_subcategory` at module scope, but eleven identity, inverse, morphism, 2-cell, functor-identity, and functor-composition methods re-imported `refine` locally. Those imports neither break a cycle nor defer an absent dependency; they duplicate the binding the module already established.
+- **Evidence and impact:** `cat/category.py` already imports `refine` with `is_placed` and `is_subcategory` at module scope, but eleven identity, inverse, morphism, 2-cell, functor-identity, and functor-composition methods re-imported `refine` locally.
+  Those imports neither break a cycle nor defer an absent dependency; they duplicate the binding the module already established.
 
 - **Repair link and acceptance:** `bloat-category-refine-reimports`. Delete every function-local `refine` import from `cat/category.py` and use the existing module-level binding throughout category-core execution.
 
 ## Finite-category dispatch mixed bootstrap-stable and delayed category kinds
 
-- **Evidence and impact:** `cat/finite_categories.py::_evaluate` handled bootstrap-stable categories and the cycle-sensitive `GrothendieckCategory`/`SliceLikeCategory` declarations in one large match, forcing both delayed imports on every finite-category evaluation and leaving the dispatcher above the repository complexity threshold. The delayed imports are required, but only for those two runtime-only category kinds.
+- **Evidence and impact:** `cat/finite_categories.py::_evaluate` handled bootstrap-stable categories and the cycle-sensitive `GrothendieckCategory`/`SliceLikeCategory` declarations in one large match, forcing both delayed imports on every finite-category evaluation and leaving the dispatcher above the repository complexity threshold.
+  The delayed imports are required, but only for those two runtime-only category kinds.
 
 - **Repair link and acceptance:** `bloat-finite-category-dispatch`. Keep the bootstrap-stable cases in `_evaluate` and move only the delayed indexed/slice cases to `_evaluate_runtime_category`, so ordinary finite-category evaluation never opens those imports and both dispatchers stay below the complexity threshold.
 
 ## Predicate assumption helpers repeated the same SymPy owner import
 
-- **Evidence and impact:** `cat/predicates.py` imported `sympy.assumptions.global_assumptions` independently in `unconditional`, `assume`, and `retract` even though SymPy is already a module-level dependency of the predicate owner. The three local imports protected no cycle and gave one mutable assumption context three bindings.
+- **Evidence and impact:** `cat/predicates.py` imported `sympy.assumptions.global_assumptions` independently in `unconditional`, `assume`, and `retract` even though SymPy is already a module-level dependency of the predicate owner.
+  The three local imports protected no cycle and gave one mutable assumption context three bindings.
 
 - **Repair link and acceptance:** `bloat-predicate-global-assumptions`. Bind `global_assumptions` once beside the other SymPy predicate imports and let all three assumption helpers share that binding.
 
 ## Functor limit lifting repeated the discrete-shape import
 
-- **Evidence and impact:** `CategoryOfCategories.MorphismType` imported `Discrete` separately when retaining a family-wide limit lifting and when looking one up for a concrete discrete shape. Both operations use the same delayed shape-family owner because `shapes` depends on category core during bootstrap.
+- **Evidence and impact:** `CategoryOfCategories.MorphismType` imported `Discrete` separately when retaining a family-wide limit lifting and when looking one up for a concrete discrete shape.
+  Both operations use the same delayed shape-family owner because `shapes` depends on category core during bootstrap.
 
 - **Repair link and acceptance:** `bloat-category-discrete-shape-boundary`. Put the delayed `Discrete` lookup behind `_discrete_shape_family()` and let limit-lifting registration and lookup share it.
 
 ## Static projection repeated its delayed mypy stubgen boundary
 
-- **Evidence and impact:** `kernel/stub_generator.py` imported `mypy.stubgen.main` independently in the public projection pass and the private package-internal refresh pass. The import should stay delayed so importing `sage_categories` does not require the development-only mypy runtime, but both projection phases cross the same tool boundary.
+- **Evidence and impact:** `kernel/stub_generator.py` imported `mypy.stubgen.main` independently in the public projection pass and the private package-internal refresh pass.
+  The import should stay delayed so importing `sage_categories` does not require the development-only mypy runtime, but both projection phases cross the same tool boundary.
 
 - **Repair link and acceptance:** `bloat-stubgen-runtime-boundary`. Put the delayed import behind `_stubgen_main()` and let both projection phases invoke the same boundary without making mypy a package-import dependency.
 
 ## Monoidal choices repeated the same discrete-category morphism constructor
 
-- **Evidence and impact:** `MonoidalStructuresCategory.construct_morphism` and `ActionsCategory.construct_morphism` contained byte-for-byte copies of the same identity-only arrow rule. These are both discrete categories of supplied coherence data, so duplicating the assertion and constructor obscured the fact that they share one categorical admission rule.
+- **Evidence and impact:** `MonoidalStructuresCategory.construct_morphism` and `ActionsCategory.construct_morphism` contained byte-for-byte copies of the same identity-only arrow rule.
+  These are both discrete categories of supplied coherence data, so duplicating the assertion and constructor obscured the fact that they share one categorical admission rule.
 
 - **Repair link and acceptance:** `bloat-monoidal-discrete-morphism`. Put the identity-only arrow construction behind `_identity_only_morphism()` and let both supplied-structure categories retain only their distinct object construction.
 
 ## Additive universal maps re-imported cone accessors already owned by the module
 
-- **Evidence and impact:** `algebra/abelian.py` already imports its cone/cocone constructors from `cat.cones`, but the indexed coproduct mediator and biproduct product lift re-imported `cocone_apex` and `cone_apex` locally. Those delayed imports protect no cycle because the same owner is already bound at module import time.
+- **Evidence and impact:** `algebra/abelian.py` already imports its cone/cocone constructors from `cat.cones`, but the indexed coproduct mediator and biproduct product lift re-imported `cocone_apex` and `cone_apex` locally.
+  Those delayed imports protect no cycle because the same owner is already bound at module import time.
 
 - **Repair link and acceptance:** `bloat-additive-cone-accessors`. Bind `cone_apex` and `cocone_apex` beside the existing cone imports and remove both function-local re-imports.
 
 ## Functor categories repeatedly reopened the diagram execution boundary
 
-- **Evidence and impact:** `cat/functors.py` imported `cat.diagrams` independently for evaluation, constant and diagonal diagrams, object-rule diagrams, commuting-square sets and points, and pointwise limits. The delay is intentional because the diagram layer depends back on the functor owner during bootstrap, but seven local imports gave that one cycle-safe execution boundary seven spellings.
+- **Evidence and impact:** `cat/functors.py` imported `cat.diagrams` independently for evaluation, constant and diagonal diagrams, object-rule diagrams, commuting-square sets and points, and pointwise limits.
+  The delay is intentional because the diagram layer depends back on the functor owner during bootstrap, but seven local imports gave that one cycle-safe execution boundary seven spellings.
 
 - **Repair link and acceptance:** `bloat-functor-diagram-boundary`. Put the delayed diagram module behind `_diagrams()` and route all seven functor-category operations through it while preserving their existing public methods.
 
 ## Property pullbacks reopened the functor bootstrap owner
 
-- **Evidence and impact:** `cat/properties.py` already had `_functors()` as the delayed `Fun` owner, but `_subcategory_pullback_runtime()` imported both `Cat` and `Fun` again and `inverse_image()` imported `Cat` a third time. The delay is required by the property/functor bootstrap cycle; the repeated owner lookup is not.
+- **Evidence and impact:** `cat/properties.py` already had `_functors()` as the delayed `Fun` owner, but `_subcategory_pullback_runtime()` imported both `Cat` and `Fun` again and `inverse_image()` imported `Cat` a third time.
+  The delay is required by the property/functor bootstrap cycle; the repeated owner lookup is not.
 
 - **Repair link and acceptance:** `bloat-property-functor-bootstrap`. Add one `_categories()` owner beside `_functors()`, let the pullback runtime compose those two existing boundaries, and make inverse-image keys use the same `Cat` binding.
 
@@ -961,31 +1115,37 @@ Ideas, to be weighed, not obligations.*
 
 ## Predicate axioms reopened the property runtime boundary
 
-- **Evidence and impact:** `cat/predicates.py` imported `PropertySubcategory` when selecting the default axiom implementation and separately imported `retain_inverse_image` when transporting an inherited axiom. Both imports are intentionally delayed because predicates sit below property-category construction during bootstrap, but they cross the same property runtime boundary.
+- **Evidence and impact:** `cat/predicates.py` imported `PropertySubcategory` when selecting the default axiom implementation and separately imported `retain_inverse_image` when transporting an inherited axiom.
+  Both imports are intentionally delayed because predicates sit below property-category construction during bootstrap, but they cross the same property runtime boundary.
 
 - **Repair link and acceptance:** `bloat-predicate-property-boundary`. Put the delayed property module behind `_properties()` and use it for both default subcategory construction and retained inverse-image transport.
 
 ## Cone utilities reopened the opposite-category boundary
 
-- **Evidence and impact:** `cat/cones.py` imported `opposite_morphism` in cocone construction and `OppositeCategory` independently in vertex resolution. Both operations must remain below the opposite-category layer during bootstrap, but they cross one delayed module boundary rather than two unrelated dependencies.
+- **Evidence and impact:** `cat/cones.py` imported `opposite_morphism` in cocone construction and `OppositeCategory` independently in vertex resolution.
+  Both operations must remain below the opposite-category layer during bootstrap, but they cross one delayed module boundary rather than two unrelated dependencies.
 
 - **Repair link and acceptance:** `bloat-cone-opposite-boundary`. Put the delayed opposite-category module behind `_opposites()` and use it for both cocone arrow reversal and opposite-shape recognition.
 
 ## Integer-module presentations retained a deleted additive presentation API
 
-- **Evidence and impact:** `algebra/indexed_modules.py` already imports its additive construction owners at module scope, but finite free modules, matrix presentations, basis elements, and cokernel factors reopened `algebra.abelian` locally. Three of those paths still imported the removed public `presentation()` accessor, so they would fail when exercised after the native-additive cleanup. The retained Smith conversion is now the private `_coordinates` boundary used by the CAP adapter itself.
+- **Evidence and impact:** `algebra/indexed_modules.py` already imports its additive construction owners at module scope, but finite free modules, matrix presentations, basis elements, and cokernel factors reopened `algebra.abelian` locally.
+  Three of those paths still imported the removed public `presentation()` accessor, so they would fail when exercised after the native-additive cleanup.
+  The retained Smith conversion is now the private `_coordinates` boundary used by the CAP adapter itself.
 
 - **Repair link and acceptance:** `bloat-indexed-module-additive-boundary`. Bind the required additive operations once at module scope, replace the stale `presentation()` calls by `_coordinates()`, and remove every function-local `algebra.abelian` import from the integer-module presentation path.
 
 ## Presented-module execution reopened its additive owner in three forms
 
-- **Evidence and impact:** `engines/presented_modules.py` lazily imported additive coordinates, object reconstruction, and the exact `Ab` Hom constructor through three separate `algebra.abelian` import sites. The delay is required by the owner/engine cycle, but all three operations cross the same additive reconstruction boundary.
+- **Evidence and impact:** `engines/presented_modules.py` lazily imported additive coordinates, object reconstruction, and the exact `Ab` Hom constructor through three separate `algebra.abelian` import sites.
+  The delay is required by the owner/engine cycle, but all three operations cross the same additive reconstruction boundary.
 
 - **Repair link and acceptance:** `bloat-presented-module-additive-boundary`. Put the delayed additive module behind `_abelian_owner()` and route coordinate lookup, object reconstruction, and native-morphism reconstruction through it.
 
 ## Additive ownership reopened the presented-module engine at every operation
 
-- **Evidence and impact:** `algebra/abelian.py` crossed the `ModulePresentationsForCAP` adapter separately for morphism equality/construction, zero maps, biproducts, coequalizers, tensor elements/objects/maps/mediators/comparisons, and epimorphism colifts. The cycle-safe delay is required because the engine reconstructs owned `Ab` values, but thirteen operation-local imports made one allocated computation boundary look like thirteen independent implementations.
+- **Evidence and impact:** `algebra/abelian.py` crossed the `ModulePresentationsForCAP` adapter separately for morphism equality/construction, zero maps, biproducts, coequalizers, tensor elements/objects/maps/mediators/comparisons, and epimorphism colifts.
+  The cycle-safe delay is required because the engine reconstructs owned `Ab` values, but thirteen operation-local imports made one allocated computation boundary look like thirteen independent implementations.
 
 - **Repair link and acceptance:** `bloat-additive-presented-module-boundary`. Put the delayed CAP adapter behind `_presented_modules()` and route every presented additive operation through that single engine-module owner.
 
@@ -997,19 +1157,22 @@ Ideas, to be weighed, not obligations.*
 
 ## Kernel role bases reopened construction and compiler modules at every callback
 
-- **Evidence and impact:** `kernel/roles.py` delayed imports from `kernel.construction` in identity initialization, object/morphism placement, and `role_of`, while compiler imports were repeated in category construction, compile/recompile, and object-role-source callbacks. The delays are required because roles are the stable bottom of both runtime cycles; repeating each symbol import hid those two actual boundaries behind eight local import sites.
+- **Evidence and impact:** `kernel/roles.py` delayed imports from `kernel.construction` in identity initialization, object/morphism placement, and `role_of`, while compiler imports were repeated in category construction, compile/recompile, and object-role-source callbacks.
+  The delays are required because roles are the stable bottom of both runtime cycles; repeating each symbol import hid those two actual boundaries behind eight local import sites.
 
 - **Repair link and acceptance:** `bloat-role-kernel-boundaries`. Put the delayed modules behind `_construction()` and `_compiler()` and route all role callbacks through those two cycle-safe owners, with no direct function-local imports of either module remaining.
 
 ## Axiom installation reopened the predicate declaration boundary
 
-- **Evidence and impact:** `cat_kernel/axioms.py` imports public predicate declarations only after `Cat` exists, but subclass application installation imported `Axiom` locally while each generated application imported `declared_axiom` again. Both are reads from the same cycle-sensitive public predicate owner.
+- **Evidence and impact:** `cat_kernel/axioms.py` imports public predicate declarations only after `Cat` exists, but subclass application installation imported `Axiom` locally while each generated application imported `declared_axiom` again.
+  Both are reads from the same cycle-sensitive public predicate owner.
 
 - **Repair link and acceptance:** `bloat-axiom-predicate-boundary`. Put the delayed predicate module behind `_predicates()` and use it for both axiom-type recognition and generated application lookup.
 
 ## Compiler execution reopened the refinement graph at separate call sites
 
-- **Evidence and impact:** `kernel/compiler.py` imported `traces_inheritance` when reading selected inheritance edges and separately imported `declares_point`/`is_placed` during category compilation. The compiler and refinement modules intentionally meet through a delayed cycle boundary, but both operations query the same retained refinement graph.
+- **Evidence and impact:** `kernel/compiler.py` imported `traces_inheritance` when reading selected inheritance edges and separately imported `declares_point`/`is_placed` during category compilation.
+  The compiler and refinement modules intentionally meet through a delayed cycle boundary, but both operations query the same retained refinement graph.
 
 - **Repair link and acceptance:** `bloat-compiler-refinement-boundary`. Put the delayed refinement module behind `_refinement()` and route inheritance tracing plus selected-functor placement/point checks through that one owner.
 
@@ -1021,12 +1184,22 @@ Ideas, to be weighed, not obligations.*
 
 ## Finite-category evaluation reopened the slice-category module twice
 
-- **Evidence and impact:** `cat/finite_categories.py` delays slice imports because the evaluator is itself consumed while category constructions bootstrap. Runtime dispatch imported `SliceLikeCategory`, while comma-category evaluation independently imported the slice endpoint/pair functors. Both reads cross the same delayed slice-category owner.
+- **Evidence and impact:** `cat/finite_categories.py` delays slice imports because the evaluator is itself consumed while category constructions bootstrap.
+  Runtime dispatch imported `SliceLikeCategory`, while comma-category evaluation independently imported the slice endpoint/pair functors.
+  Both reads cross the same delayed slice-category owner.
 
 - **Repair link and acceptance:** `bloat-finite-category-slice-boundary`. Put the delayed slice module behind `_slices()` and use it for both runtime slice recognition and comma-category endpoint/pair construction.
 
 ## FinSetsForCAP split one cone module into separate limit/colimit loaders
 
-- **Evidence and impact:** `engines/finite_sets.py` had `_limit_cone_runtime()` and `_colimit_cocone_runtime()`, both importing from `cat.cones`, then six limit/colimit implementations unpacked those parallel helpers. The delay is required by the Sets/construction cycle; the split loader is not, because cones and cocones are one execution module and both sides are already used by this adapter.
+- **Evidence and impact:** `engines/finite_sets.py` had `_limit_cone_runtime()` and `_colimit_cocone_runtime()`, both importing from `cat.cones`, then six limit/colimit implementations unpacked those parallel helpers.
+  The delay is required by the Sets/construction cycle; the split loader is not, because cones and cocones are one execution module and both sides are already used by this adapter.
 
 - **Repair link and acceptance:** `bloat-finite-sets-cone-module`. Replace the two tuple-returning loaders by one `_cones()` module boundary and route finite limits, colimits, products, equalizers, coproducts, and coequalizers through it.
+
+## Property execution imported Cat separately from Fun = Mor(Cat)
+
+- **Evidence and impact:** `cat/properties.py` already obtains the retained `Fun` category through its cycle-safe `_functors()` boundary, but `_categories()` independently imported `Cat` from the same module.
+  Since `Fun` is exactly `Mor(Cat)`, its base category is the owned `Cat` object; a second constructor import duplicates both the bootstrap boundary and the mathematical source of truth.
+
+- **Repair link and acceptance:** `bloat-property-cat-derivation`. Recover `Cat` through `_functors().base_category()`, pass that retained category object through pullback construction, and remove the separate `Cat` import/call path.

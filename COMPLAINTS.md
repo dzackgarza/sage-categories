@@ -2032,3 +2032,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `algebra/abelian.py::_point_map()` was a two-line wrapper around `_forgetful().on_morphism(arrow)` with no source or test callers. The public forgetful functor is already the owner of that operation, so the wrapper carried no retained state, abstraction boundary, or reuse and simply enlarged the private additive surface.
 
 - **Repair link and acceptance:** `bloat-additive-dead-point-map`. Delete `_point_map`, keep `_points` for the still-used carrier-object boundary, and leave morphism forgetting at the public forgetful-functor call sites.
+
+## Catlab retained an unused native-transformation lookup wrapper
+
+- **Evidence and impact:** `engines/catlab.py::_native_transformation()` only asserted retention and returned `retained_native_transformation(value).native`; no source or test caller used it. Active execution already goes through `ensure_native_transformation()` when materialization may be needed and through the retained realization API when presence is known.
+
+- **Repair link and acceptance:** `bloat-catlab-dead-native-transformation-wrapper`. Delete the dead wrapper and keep the two actual native-transformation boundaries unchanged.

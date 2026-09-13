@@ -127,11 +127,6 @@ def _retain_transformation(
     return native
 
 
-def _native_transformation(value: MorphismCategory.ObjectType) -> object:
-    assert has_native_transformation(value), f"{value!r} has no retained native transformation"
-    return retained_native_transformation(value).native
-
-
 def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:
     if has_native_transformation(value):
         return retained_native_transformation(value).native

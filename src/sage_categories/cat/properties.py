@@ -77,11 +77,6 @@ def _functors() -> FunctorsCategory:
     return Fun
 
 
-def _categories() -> CategoryOfCategories:
-    """Recover ``Cat`` as the base of the already-retained functor category ``Fun = Mor(Cat)``."""
-    return _functors().base_category()
-
-
 def _morphisms() -> ModuleType:
     from sage_categories.cat import morphisms
 
@@ -93,7 +88,8 @@ def _subcategory_pullback_runtime():
     from sage_categories.cat.constructions import cone, cone_apex
     from sage_categories.cat.diagrams import cospan_diagram
 
-    return cone, cone_apex, cospan_diagram, _categories(), _functors()
+    functors = _functors()
+    return cone, cone_apex, cospan_diagram, functors.base_category(), functors
 
 
 class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, TwoMorphismData]):

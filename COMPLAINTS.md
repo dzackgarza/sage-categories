@@ -790,3 +790,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/constructions.py` imported `register_full_image` separately when constructing the chosen limit functor and the dualized chosen colimit functor. The delay is required because the image layer depends back on categorical constructions, but two local imports gave the same registration boundary two owners.
 
 - **Repair link and acceptance:** `bloat-construction-full-image-boundary`. Put the delayed registration behind one `_register_construction_full_image()` helper and let both chosen-construction functors delegate to it.
+
+## Left and right Kan adjunctions repeated the same runtime helper bundle
+
+- **Evidence and impact:** `cat/kan.py` imported `precompose`, `comma_objects`, and `Mor` independently in both left- and right-Kan adjunction constructors. The imports remain delayed to avoid the Kan/calculus/comma bootstrap cycle, but duplicating the same three-name bundle gave one cycle-safe adjunction boundary two owners.
+
+- **Repair link and acceptance:** `bloat-kan-adjunction-runtime`. Put the delayed helper bundle behind one `_kan_adjunction_runtime()` owner and let both adjunction constructors share it while retaining their distinct universal-arrow classes.

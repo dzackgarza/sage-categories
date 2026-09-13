@@ -47,6 +47,16 @@ __all__ = [
     "right_kan_lift",
 ]
 
+
+def _kan_adjunction_runtime():
+    """Load the shared adjunction helpers at the cycle-safe Kan boundary."""
+    from sage_categories.cat.calculus import precompose
+    from sage_categories.cat.comma import comma_objects
+    from sage_categories.cat.morphisms import Mor
+
+    return precompose, comma_objects, Mor
+
+
 def _kan_presentation(
     along: Functor,
     functor: Functor,
@@ -219,14 +229,12 @@ def left_kan_desc(
 @cached_function(key=identity_key)
 def right_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategories.ElementType:
     """The adjunction ``K* ⊣ Ran_K``, including the action on transformations."""
-    from sage_categories.cat.calculus import precompose
-    from sage_categories.cat.comma import comma_objects
-    from sage_categories.cat.morphisms import Mor
     from sage_categories.cat.universal_arrows import (
         RightUniversalArrows,
         TerminalObjects,
     )
 
+    precompose, comma_objects, Mor = _kan_adjunction_runtime()
     restriction = precompose(along, values)
     star = _star()
     identity = Mor(Cat().Terminal())(star, star).one()
@@ -250,11 +258,9 @@ def right_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategori
 @cached_function(key=identity_key)
 def left_kan_adjunction(along: Functor, values: Category) -> CategoryOfCategories.ElementType:
     """The adjunction ``Lan_K ⊣ K*``, including the action on transformations."""
-    from sage_categories.cat.calculus import precompose
-    from sage_categories.cat.comma import comma_objects
-    from sage_categories.cat.morphisms import Mor
     from sage_categories.cat.universal_arrows import InitialObjects, LeftUniversalArrows
 
+    precompose, comma_objects, Mor = _kan_adjunction_runtime()
     restriction = precompose(along, values)
     star = _star()
     identity = Mor(Cat().Terminal())(star, star).one()

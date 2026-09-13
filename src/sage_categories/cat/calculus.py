@@ -25,7 +25,7 @@ __all__ = [
 from collections.abc import Callable
 
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.cones import LimitConesCategory
+from sage_categories.cat.cones import LimitConesCategory, cone, cones
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.kernel.retention import identity_key
@@ -39,11 +39,7 @@ def pair_maps(
     second: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Pair two arrows through a chosen binary product."""
-    from sage_categories.cat.cones import cone
-
     assert first.domain() is second.domain()
-    from sage_categories.cat.cones import cones
-
     data = binary_product_data(base, first.codomain(), second.codomain())
     diagram = data.diagram()
     return data.lift(
@@ -83,16 +79,12 @@ def power_data(base: Category, value: CategoryOfCategories.ElementType, degree: 
 
 
 def terminal_map(base: Category, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-    from sage_categories.cat.cones import cone, cones
-
     data = power_data(base, value, 0)
     return data.lift(cones(data.diagram())(cone(data.diagram(), value, data.leg)))
 
 
 @cached_function
 def power_functor(base: Category, degree: int) -> Functor:
-    from sage_categories.cat.cones import cone, cones
-
     def action(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         source, target = (
             power_data(base, arrow.domain(), degree),

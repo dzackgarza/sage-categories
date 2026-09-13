@@ -706,3 +706,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `cat/calculus.py::binary_product_data` and `power_data` each lazily imported the same sequence-diagram and universal-data owners, built `from_sequence(base, values)`, and looked up `constructed_data(base.Limits(shape), diagram)`. Their only distinction is how the finite tuple of factors is formed.
 
 - **Repair link and acceptance:** `bloat-finite-power-data`. Give finite sequence-product lookup one private owner and keep the binary/power helpers as the two public mathematical spellings of that shared construction.
+
+## Calculus helpers repeatedly imported cone constructors they had already loaded
+
+- **Evidence and impact:** `cat/calculus.py` imported `LimitConesCategory` from `cat.cones` at module scope, but `pair_maps`, `terminal_map`, and `power_functor` each performed additional local imports of `cone`/`cones`; `pair_maps` even split the two names into separate imports around an assertion. Because the module dependency is already established, these local imports add no cycle protection and obscure the actual dependencies of the calculus layer.
+
+- **Repair link and acceptance:** `bloat-calculus-cone-imports`. Import the cone constructors once with `LimitConesCategory` and remove the repeated function-local imports without changing the universal-construction calls.

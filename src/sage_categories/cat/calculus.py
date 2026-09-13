@@ -57,25 +57,29 @@ def pair_maps(
     )
 
 
+def _finite_power_data(
+    base: Category,
+    values: tuple[CategoryOfCategories.ElementType, ...],
+) -> LimitConesCategory.ObjectType:
+    """The chosen product presentation of one finite sequence in ``base``."""
+    from sage_categories.cat.constructions import constructed_data
+    from sage_categories.cat.diagrams import from_sequence
+
+    diagram = from_sequence(base, values)
+    return constructed_data(base.Limits(diagram.domain()), diagram)
+
+
 def binary_product_data(
     base: Category,
     first: CategoryOfCategories.ElementType,
     second: CategoryOfCategories.ElementType,
 ) -> LimitConesCategory.ObjectType:
     """The chosen binary product presentation, even when its apex presents other diagrams."""
-    from sage_categories.cat.constructions import constructed_data
-    from sage_categories.cat.diagrams import from_sequence
-
-    diagram = from_sequence(base, (first, second))
-    return constructed_data(base.Limits(diagram.domain()), diagram)
+    return _finite_power_data(base, (first, second))
 
 
 def power_data(base: Category, value: CategoryOfCategories.ElementType, degree: int) -> LimitConesCategory.ObjectType:
-    from sage_categories.cat.constructions import constructed_data
-    from sage_categories.cat.diagrams import from_sequence
-
-    diagram = from_sequence(base, (value,) * degree)
-    return constructed_data(base.Limits(diagram.domain()), diagram)
+    return _finite_power_data(base, (value,) * degree)
 
 
 def terminal_map(base: Category, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:

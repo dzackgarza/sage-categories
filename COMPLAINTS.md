@@ -700,3 +700,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** `MonoidPairsCategory` built the same `Fun(self, factor).Faithful().Isofibrations()` projection three times and `ActionPairsCategory` repeated it twice more, differing only by factor index and public semantic name. The componentwise object/morphism action is generic limit-family plumbing, not monoid- or module-specific mathematics.
 
 - **Repair link and acceptance:** `bloat-faithful-factor-projections`. Give the componentwise faithful-isofibration factor projection one private owner in the category-limit layer and let the pair categories keep only their named projection methods.
+
+## Binary products and finite powers duplicated sequence-product lookup
+
+- **Evidence and impact:** `cat/calculus.py::binary_product_data` and `power_data` each lazily imported the same sequence-diagram and universal-data owners, built `from_sequence(base, values)`, and looked up `constructed_data(base.Limits(shape), diagram)`. Their only distinction is how the finite tuple of factors is formed.
+
+- **Repair link and acceptance:** `bloat-finite-power-data`. Give finite sequence-product lookup one private owner and keep the binary/power helpers as the two public mathematical spellings of that shared construction.

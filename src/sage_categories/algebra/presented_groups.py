@@ -28,11 +28,9 @@ from sage_categories.cat.structured_objects import (
     _shear,
 )
 from sage_categories.kernel.refinement import refine
-from sage_categories.kernel.sage_runtime import MonoDict
 from sage_categories.sets import Sets
 
 type GroupWord = tuple[int, ...]
-_native_group_engines: MonoDict = MonoDict()
 
 
 def _native_parent_is(engine, value) -> bool:
@@ -62,13 +60,7 @@ def _owned_group(engine):
     shear = _shear(pointed)
     inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], pair[0] ** -1 * pair[1]))
     Sets.retain_inverses(shear, inverse_shear)
-    _native_group_engines[pointed] = engine
     return pointed
-
-
-def _native_engine(group):
-    assert group in _native_group_engines, f"{group!r} has no retained native group realization"
-    return _native_group_engines[group]
 
 
 def _owned_group_homomorphism(source, target, native):
@@ -176,7 +168,12 @@ class GroupPresentation(SageObject):
         images = tuple(point.datum() for point in points)
         if len(images) != len(self.generator_names()):
             raise ValueError("one target image is required for every presentation generator")
-        native = self._quotient_engine.hom(images, _native_engine(target))
+        if not isinstance(images[0], Element):
+            raise ValueError("presentation factorization requires a native Sage/GAP target group")
+        target_engine = images[0].parent()
+        if any(not _native_parent_is(target_engine, image) for image in images):
+            raise ValueError("presentation generator images must share one native target group")
+        native = self._quotient_engine.hom(images, target_engine)
         return _owned_group_homomorphism(self.group(), target, native)
 
     def _repr_(self) -> str:

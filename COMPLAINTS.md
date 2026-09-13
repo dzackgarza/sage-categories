@@ -1942,3 +1942,9 @@ Ideas, to be weighed, not obligations.*
 - **Evidence and impact:** a chosen enumeration is genuine retained mathematical data because callers may select a noncanonical indexing and later constructions must recover that exact choice. The module-level `_enumerations: MonoDict` and repeated lookup/store branches should not exist, however: the selection is a positive-only cache keyed by the exact set object, and Sage's `cached_function` already supports identity keys, cache-presence checks, and `set_cache` installation without ever caching `Unknown`.
 
 - **Repair link and acceptance:** `bloat-chosen-enumeration-cache`. Replace `_enumerations` with an identity-keyed `_retained_enumeration` cached function whose uncached body is not a constructor; install finite, product, and supplied enumerations through `set_cache`, keep absent/unknown cases uncached, and route all enumeration-presence queries through the cache API.
+
+## Presented groups retained a native-parent registry that factorization did not need
+
+- **Evidence and impact:** `_owned_group(engine)` wrote every reconstructed group into `_native_group_engines`, but the only reader was `GroupPresentation.factor(target, generator_images)`. Factorization already receives one image for every presentation generator, and those validated Sage group elements carry their exact native target parent. Retaining a second group-to-parent registry therefore duplicated information already present at the operation boundary and extended native-engine lifetime/state for no additional mathematical capability.
+
+- **Repair link and acceptance:** `bloat-presented-group-engine-registry`. Delete `_native_group_engines` and `_native_engine`; after validating the public target points, derive their one common Sage parent from the image data and pass it directly to the native quotient homomorphism constructor.

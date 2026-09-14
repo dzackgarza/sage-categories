@@ -700,6 +700,7 @@ collect its full native exception and exercise the failing binding before repeat
 the complete public consumer. A passing native probe does not replace that consumer.
 Check the configured Sage interpreter against the project's declared Python version
 before loading a consumer. An older installed Sage is not an interchangeable runtime.
+Acceptance and QC always use the configured stable Sage installation. Never provision, clone, or retain a second Sage distribution under `/tmp`, a cache directory, or another disposable path merely to satisfy a version or gate mismatch. If the stable Sage runtime does not satisfy the repository contract, record and repair that runtime/QC incompatibility at its owner; do not replace the host runtime with an ephemeral parallel Sage.
 An R-gate also runs `just architecture` on its declared owned rule set.
 D132 admits exact architectural invariant checks with file-and-line failures at the architecture push tier.
 `scripts/rule_coverage.py` rejects a rule whose file glob matches nothing.

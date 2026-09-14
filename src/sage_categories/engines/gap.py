@@ -10,7 +10,6 @@ from a different system installation.
 
 from __future__ import annotations
 
-import os
 import re
 from dataclasses import dataclass
 from functools import cache
@@ -87,15 +86,7 @@ PRESENTED_MODULE_PACKAGES = (
 
 _PACKAGE_NAME = re.compile(r'PackageName\s*:=\s*"([^"]+)"')
 _PACKAGE_VERSION = re.compile(r'Version\s*:=\s*"([^"]+)"')
-
-
-def _package_root() -> Path:
-    """Return the package directory populated by ``.gap-packages.g``."""
-    match "SAGE_CATEGORIES_GAP_PACKAGE_DIR" in os.environ:
-        case True:
-            return Path(os.environ["SAGE_CATEGORIES_GAP_PACKAGE_DIR"]).resolve()
-        case False:
-            return Path(__file__).resolve().parents[3] / ".gap" / "pkg"
+_PACKAGE_ROOT = Path(__file__).resolve().parents[3] / ".gap" / "pkg"
 
 
 def _package_identity(package_info: Path) -> GapPackage:
@@ -109,7 +100,7 @@ def _package_identity(package_info: Path) -> GapPackage:
 
 def package_directory(package: GapPackage) -> Path:
     """Return the unique repository-local installation of ``package``."""
-    root = _package_root()
+    root = _PACKAGE_ROOT
     assert root.is_dir(), f"the repository GAP package directory does not exist: {root}"
     matches = tuple(info.parent for info in root.glob("*/PackageInfo.g") if _package_identity(info) == package)
     assert len(matches) == 1, f"expected one repository-local {package.name} {package.version} under {root}, found {len(matches)}"
@@ -138,7 +129,7 @@ def load_repository_package(package: GapPackage) -> GapElement:
     GAP is allowed to resolve dependencies.  PackageManager backup directories are
     not active installations and are ignored.
     """
-    root = _package_root()
+    root = _PACKAGE_ROOT
     installed: dict[str, tuple[GapPackage, Path]] = {}
     for info in root.glob("*/PackageInfo.g"):
         if info.parent.name.endswith(".old"):

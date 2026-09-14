@@ -138,6 +138,7 @@ class _OscarWorker:
                 "--history-file=no",
                 f"--project={_oscar_project()}",
                 str(_bridge_source("OscarWorker.jl")),
+                str(cache_directory / "home"),
                 str(_bridge_source("OscarBridge.jl")),
             ],
             stdin=subprocess.PIPE,

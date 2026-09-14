@@ -5,12 +5,19 @@ integer handles, so OSCAR's Julia project never shares a process or dependency g
 with the package-global Catlab/GATlab JuliaCall environment.
 """
 
+@assert length(ARGS) == 2 "OSCAR worker requires its private home and bridge source"
+worker_home, bridge_source = ARGS
+mkpath(worker_home)
+ENV["HOME"] = worker_home
+const _PROTOCOL_STDOUT = stdout
+redirect_stdout(stderr)
+
 using Pkg
 Pkg.instantiate(; io=stderr)
 using JSON
 using Oscar
 
-include(only(ARGS))
+include(bridge_source)
 using .SageCategoriesOscarBridge
 
 const _VALUES = Dict{Int,Any}()
@@ -76,13 +83,13 @@ function _retain(value)
 end
 
 function _decode(value)
-    if value isa Dict && haskey(value, "__oscar_handle__")
+    if value isa AbstractDict && haskey(value, "__oscar_handle__")
         handle = Int(value["__oscar_handle__"])
         haskey(_VALUES, handle) || error("unknown OSCAR handle $(handle)")
         return _VALUES[handle]
     elseif value isa AbstractVector
         return [_decode(part) for part in value]
-    elseif value isa Dict
+    elseif value isa AbstractDict
         return Dict(key => _decode(part) for (key, part) in value)
     end
     value
@@ -111,13 +118,13 @@ for line in eachline(stdin)
     try
         request = JSON.parse(line)
         response = Dict("ok" => true, "result" => _handle(request))
-        println(stdout, JSON.json(response))
+        println(_PROTOCOL_STDOUT, JSON.json(response))
     catch error
         response = Dict(
             "ok" => false,
             "error" => "$(typeof(error)): $(sprint(showerror, error))",
         )
-        println(stdout, JSON.json(response))
+        println(_PROTOCOL_STDOUT, JSON.json(response))
     end
-    flush(stdout)
+    flush(_PROTOCOL_STDOUT)
 end

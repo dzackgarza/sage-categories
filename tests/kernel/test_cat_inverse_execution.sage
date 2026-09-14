@@ -1,10 +1,11 @@
 """Isomorphisms of Cat retain executable inverse functors."""
 
+import pytest
+
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun
 from sage_categories.cat.morphisms import Mor, endpoints
-from sage_categories.cat.predicates import ask
-from sage_categories.kernel.refinement import refine
+from sage_categories.cat.predicates import ask, assume, retract
 from sage_categories.sets.finite import Sets
 
 
@@ -40,12 +41,10 @@ def test_cat_isomorphism_requires_retained_executable_inverse() -> None:
     else:
         raise AssertionError("Cat constructed an isomorphism without executable inverse data")
 
-    try:
-        refine(forward, isomorphisms)
-    except AssertionError:
-        pass
-    else:
-        raise AssertionError("Cat accepted an isomorphism without executable inverse data")
+    proposition = isomorphisms.membership_proposition(forward)
+    with pytest.raises(AssertionError):
+        assume(proposition)
+    retract(proposition)
 
     Cat().retain_inverses(forward, inverse)
     assert forward.inverse() is inverse

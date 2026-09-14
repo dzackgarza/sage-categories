@@ -2102,7 +2102,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return image.category().morphism_category(1)(image, image).one()
 
         transformation = self._construct_transformation(member_object, member_object, component)
-        catlab.identity_transformation(transformation, functor)
+        catlab.identity_transformation(transformation)
         cells.retain_identity(self.morphism_category(1), transformation)
         return transformation
 
@@ -2123,7 +2123,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             first.source_functor(),
             second.target_functor(),
         )
-        catlab.compose_transformations(result, first, second, first.source_functor(), second.target_functor())
+        catlab.compose_transformations(result, first, second)
         result.retain_factors(first, second)
         cells.retain_composite(self.morphism_category(1), result, first, second)
         return result
@@ -2163,7 +2163,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return functor.on_morphism(transformation.component(value))
 
         result = self._construct_transformation(source_image, target_image, component)
-        catlab.whisker_left(result, functor, transformation, source_image, target_image)
+        catlab.whisker_left(result, functor, transformation)
         cells.retain_whisker_left(self.morphism_category(1), result, functor, transformation)
         return result
 
@@ -2185,7 +2185,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return transformation.component(functor.on_object(value))
 
         result = self._construct_transformation(source_image, target_image, component)
-        catlab.whisker_right(result, transformation, functor, source_image, target_image)
+        catlab.whisker_right(result, transformation, functor)
         cells.retain_whisker_right(self.morphism_category(1), result, transformation, functor)
         return result
 
@@ -2211,7 +2211,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return inner.component(value) * outer.component(value)
 
         result = self._construct_transformation(outer.domain(), inner.codomain(), component)
-        catlab.horizontal_composite(result, first, second, first.source_functor(), second.target_functor())
+        catlab.horizontal_composite(result, first, second)
         cells.retain_composite(self.morphism_category(1), result, outer, inner)
         return result
 

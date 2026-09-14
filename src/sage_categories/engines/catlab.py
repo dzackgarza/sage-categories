@@ -109,6 +109,7 @@ def functor_morphism_image(functor: MorphismCategory.ObjectType, value: object) 
 def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:
     if has_native_transformation(value):
         return retained_native_transformation(value).native
+    domain, codomain = value.domain(), value.codomain()
     recipe = _transformation_recipes[value] if value in _transformation_recipes else None
     if recipe is None:
         recipe = (
@@ -123,32 +124,31 @@ def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:
                 ensure_native_functor(source),
                 ensure_native_functor(target),
             )
-        case ("identity", (functor,)):
-            source = target = functor
-            native = bridge.identity_transformation(ensure_native_functor(functor))
-        case ("compose", (first, second, source, target)):
+        case ("identity", ()):
+            native = bridge.identity_transformation(ensure_native_functor(value.source_functor()))
+        case ("compose", (first, second)):
             native = bridge.compose_transformations(
                 ensure_native_transformation(first),
                 ensure_native_transformation(second),
             )
-        case ("whisker_left", (functor, transformation, source, target)):
+        case ("whisker_left", (functor, transformation)):
             native = bridge.whisker_left(
                 ensure_native_functor(functor),
                 ensure_native_transformation(transformation),
             )
-        case ("whisker_right", (transformation, functor, source, target)):
+        case ("whisker_right", (transformation, functor)):
             native = bridge.whisker_right(
                 ensure_native_transformation(transformation),
                 ensure_native_functor(functor),
             )
-        case ("horizontal", (first, second, source, target)):
+        case ("horizontal", (first, second)):
             native = bridge.horizontal_composite(
                 ensure_native_transformation(first),
                 ensure_native_transformation(second),
             )
         case _:
             raise AssertionError(f"unknown Catlab transformation recipe {recipe!r}")
-    retain_native_transformation(value, source, target, native)
+    retain_native_transformation(value, domain, codomain, native)
     return native
 
 
@@ -156,51 +156,40 @@ def transformation_component(value: MorphismCategory.ObjectType, member_object: 
     return _bridge().transformation_component(ensure_native_transformation(value), member_object)
 
 
-def identity_transformation(
-    value: MorphismCategory.ObjectType,
-    functor: MorphismCategory.ObjectType,
-) -> None:
-    _retain_transformation_recipe(value, ("identity", (functor,)))
+def identity_transformation(value: MorphismCategory.ObjectType) -> None:
+    _retain_transformation_recipe(value, ("identity", ()))
 
 
 def compose_transformations(
     value: MorphismCategory.ObjectType,
     first: MorphismCategory.ObjectType,
     second: MorphismCategory.ObjectType,
-    source: MorphismCategory.ObjectType,
-    target: MorphismCategory.ObjectType,
 ) -> None:
-    _retain_transformation_recipe(value, ("compose", (first, second, source, target)))
+    _retain_transformation_recipe(value, ("compose", (first, second)))
 
 
 def whisker_left(
     value: MorphismCategory.ObjectType,
     functor: MorphismCategory.ObjectType,
     transformation: MorphismCategory.ObjectType,
-    source: MorphismCategory.ObjectType,
-    target: MorphismCategory.ObjectType,
 ) -> None:
-    _retain_transformation_recipe(value, ("whisker_left", (functor, transformation, source, target)))
+    _retain_transformation_recipe(value, ("whisker_left", (functor, transformation)))
 
 
 def whisker_right(
     value: MorphismCategory.ObjectType,
     transformation: MorphismCategory.ObjectType,
     functor: MorphismCategory.ObjectType,
-    source: MorphismCategory.ObjectType,
-    target: MorphismCategory.ObjectType,
 ) -> None:
-    _retain_transformation_recipe(value, ("whisker_right", (transformation, functor, source, target)))
+    _retain_transformation_recipe(value, ("whisker_right", (transformation, functor)))
 
 
 def horizontal_composite(
     value: MorphismCategory.ObjectType,
     first: MorphismCategory.ObjectType,
     second: MorphismCategory.ObjectType,
-    source: MorphismCategory.ObjectType,
-    target: MorphismCategory.ObjectType,
 ) -> None:
-    _retain_transformation_recipe(value, ("horizontal", (first, second, source, target)))
+    _retain_transformation_recipe(value, ("horizontal", (first, second)))
 
 
 def _presented_category_data(

@@ -5,6 +5,7 @@ from sympy import Q, Rational, sqrt
 from sage_categories.algebra import (
     AbelianTensor,
     abelian_homomorphism,
+    indexed_free_integer_coefficients,
     indexed_free_integer_element,
     indexed_free_integer_module,
     indexed_free_integer_support,

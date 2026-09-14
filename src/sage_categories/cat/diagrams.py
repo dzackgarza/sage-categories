@@ -91,7 +91,7 @@ def evaluation(functors: FunctorCategory, vertex: CategoryOfCategories.ElementTy
     assert vertex in functors.domain(), f"{vertex!r} is not an object of {functors.domain()!r}"
     evaluation_functor = Fun(functors, functors.codomain())(
         lambda diagram: functors.diagram(diagram).on_object(vertex),
-        lambda transformation: transformation._component_family[vertex],
+        lambda transformation: transformation.component(vertex),
     )
     if functors.domain() is Cat().Simplex(1) and functors.domain().label(vertex) == 1:
         evaluation_functor.retain_cartesian_lifts(lambda morphism, member_object: codomain_lift(functors, morphism, member_object))

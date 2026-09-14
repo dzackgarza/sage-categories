@@ -1427,6 +1427,11 @@ class FunctorData:
     on_morphism: OnMorphism
 
 
+@dataclass(frozen=True, eq=False, slots=True)
+class _StructuralFunctorData:
+    """A functor whose execution is determined by retained categorical structure."""
+
+
 class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignment]]):
     """The singleton ``Cat()``."""
 
@@ -1575,9 +1580,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     ]:
         """A functor: a morphism of ``Cat()`` with a domain, a codomain, and total object and morphism actions."""
 
-        def __init__(self, data: FunctorData) -> None:
-            self._on_object = data.on_object
-            self._on_morphism = data.on_morphism
+        def __init__(self, data: FunctorData | _StructuralFunctorData) -> None:
+            self._functor_data = data
             self._limit_liftings: MonoDict = MonoDict()
             self._cartesian_lift_rule = None
             self._cocartesian_lift_rule = None
@@ -1611,9 +1615,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def _declared_object_image(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
             """Execute this functor's declared object action through its retained image cache."""
+            data = self._functor_data
+            assert isinstance(data, FunctorData), f"{self!r} has no primitive object action"
             return self._cached_object_image(
                 member_object,
-                lambda value: self._retain_object_action_result(value, self._on_object(value)),
+                lambda value: self._retain_object_action_result(value, data.on_object(value)),
             )
 
         def _construct_object_image(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
@@ -1675,13 +1681,15 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def _declared_morphism_image(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             """Execute this functor's declared morphism action through its retained image cache."""
+            data = self._functor_data
+            assert isinstance(data, FunctorData), f"{self!r} has no primitive morphism action"
 
             def construct(
                 value: MorphismCategory.ObjectType,
             ) -> MorphismCategory.ObjectType:
                 return self._retain_morphism_action_result(
                     value,
-                    self._on_morphism(value),
+                    data.on_morphism(value),
                     self._declared_object_image,
                 )
 
@@ -1974,18 +1982,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def construct_identity(self, category: CategoryOfCategories.ObjectType) -> CategoryOfCategories.MorphismType:
         Fun = _functors()
-
-        def on_object(
-            value: CategoryOfCategories.ElementType,
-        ) -> CategoryOfCategories.ElementType:
-            return value
-
-        def on_morphism(
-            value: MorphismCategory.ObjectType,
-        ) -> MorphismCategory.ObjectType:
-            return value
-
-        identity = self.construct_morphism(category, category, on_object, on_morphism)
+        identity = self.MorphismType(
+            domain=category,
+            codomain=category,
+            data=_StructuralFunctorData(),
+        )
         cells = _cells_engine()
 
         cells.retain_identity(self, identity)
@@ -2039,13 +2040,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """
         assert factors == (*_composite_sequence(first), *_composite_sequence(second))
 
-        def on_object(value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-            return second.on_object(first.on_object(value))
-
-        def on_morphism(value: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-            return second.on_morphism(first.on_morphism(value))
-
-        composite = self.construct_morphism(first.domain(), second.codomain(), on_object, on_morphism)
+        composite = self.MorphismType(
+            domain=first.domain(),
+            codomain=second.codomain(),
+            data=_StructuralFunctorData(),
+        )
         composite.retain_factors(first, second)
         _cells_engine().retain_composite(self, composite, first, second)
         return composite

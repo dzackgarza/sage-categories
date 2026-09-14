@@ -29,9 +29,13 @@ def test_infinite_free_integer_module_retains_all_indices_and_finite_support() -
     module = indexed_free_integer_module(indices)
     element = indexed_free_integer_element(module, {2: 3, 1000: -4})
     support = indexed_free_integer_support(module, element)
+    monoidal = AbelianTensor()
+    modules = Modules(integer_scalar_monoid(), SelfAction(monoidal))
+    carrier = modules.forgetful().on_object(module)
 
     assert {point.datum() for point in support} == {2, 1000}
     assert element.parent() is module
+    assert modules(monoidal.left_unitor().component(carrier)) is module
 
 
 def test_nonenumerable_index_needs_only_finite_support_per_element() -> None:

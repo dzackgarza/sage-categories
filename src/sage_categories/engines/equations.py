@@ -10,9 +10,8 @@ already loaded by Sage; it is not a secondary evaluator.
 from __future__ import annotations
 
 import json
-import os
-import shutil
 import subprocess
+import sys
 from functools import cache
 from pathlib import Path
 from threading import Lock
@@ -23,50 +22,10 @@ from sage_categories.kernel.sage_runtime import MonoDict
 __all__ = ["equal_morphisms", "reduced_word"]
 
 
-def _worker_path() -> Path:
-    return Path(__file__).with_name("_maude_worker.py")
-
-
-def _has_maude(executable: Path) -> bool:
-    if not executable.is_file():
-        return False
-    result = subprocess.run(
-        [str(executable), "-c", "import maude"],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
-    return result.returncode == 0
-
-
-def _worker_command() -> list[str]:
-    match os.environ.get("SAGE_CATEGORIES_MAUDE_PYTHON"):
-        case str(executable) if executable:
-            return [executable, str(_worker_path())]
-        case _:
-            local = Path(__file__).resolve().parents[3] / ".venv" / "bin" / "python"
-            if _has_maude(local):
-                return [str(local), str(_worker_path())]
-            uv = shutil.which("uv")
-            assert uv is not None, "Maude execution requires either SAGE_CATEGORIES_MAUDE_PYTHON, a project .venv containing maude, or uv"
-            return [
-                uv,
-                "run",
-                "--no-project",
-                "--python",
-                "3.14",
-                "--with",
-                "maude>=1.6,<2",
-                "python",
-                str(_worker_path()),
-            ]
-
-
 class _Worker:
     def __init__(self) -> None:
         self._process = subprocess.Popen(
-            _worker_command(),
+            [sys.executable, str(Path(__file__).with_name("_maude_worker.py"))],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             text=True,

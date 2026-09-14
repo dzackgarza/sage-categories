@@ -9,7 +9,8 @@ from sage.libs.gap.libgap import libgap
 from sage.libs.gap.util import GAPError
 
 from sage_categories.engines.gap import FINITE_CATEGORY_PACKAGES, load_packages
-from sage_categories.kernel.sage_runtime import MonoDict
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import cached_function
 
 __all__ = [
     "compose_morphisms",
@@ -36,9 +37,6 @@ class _Presentation:
     generator_names: tuple[str, ...]
     generator_indices: dict[str, int]
     quotient: bool
-
-
-_presentations: MonoDict = MonoDict()
 
 
 def _ambient_native_path(
@@ -121,14 +119,13 @@ def _defining_relations(
     return relations
 
 
+@cached_function(key=identity_key)
 def _presentation(category: object) -> _Presentation:
-    if category in _presentations:
-        return _presentations[category]
     load_packages(FINITE_CATEGORY_PACKAGES)
     names, positions, ambient, ambient_objects, generator_indices = _ambient_presentation(category)
     relations = _defining_relations(category, positions, ambient, ambient_objects, generator_indices)
     native = ambient if not relations else libgap.QuotientCategory(ambient, relations)
-    record = _Presentation(
+    return _Presentation(
         category,
         native,
         ambient,
@@ -138,8 +135,6 @@ def _presentation(category: object) -> _Presentation:
         generator_indices,
         bool(relations),
     )
-    _presentations[category] = record
-    return record
 
 
 def _indices(category: object, source: object, target: object) -> tuple[int, int]:

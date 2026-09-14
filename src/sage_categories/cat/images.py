@@ -175,6 +175,23 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
         identity = self.target().morphism_category(1)(member_object, member_object).one()
         return self._retain_morphism(identity)
 
+    @cached_method(key=lambda self, member_object: identity_key(member_object))
+    def _identity_morphism_(
+        self,
+        member_object: CategoryOfCategories.ElementType,
+    ) -> MorphismCategory.ObjectType:
+        """Reuse the target identity without inventing image-category placement.
+
+        Strict and full image inclusions are not generally isofibrations, so membership
+        in either image does not give a placement relation to the target category.  The
+        identity is nevertheless literally the target's identity on the retained object.
+        Cache that shared value with Sage and retain its self-inverse fact locally; do not
+        refine it into an image morphism property category.
+        """
+        identity = self.construct_identity(member_object)
+        self._inverses[identity] = identity
+        return identity
+
     def composite(
         self,
         second: MorphismCategory.ObjectType,

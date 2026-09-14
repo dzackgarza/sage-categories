@@ -789,14 +789,16 @@ def test_applying_a_functor_whose_full_image_exists_retains_the_image_and_places
     assert ask(early_image.membership_proposition(source)) is True
     assert source in early_image
 
-    # Image categories specialize identity construction only.  The generic category
-    # owner retains that identity, its inverse, and its Identity placement; the image
-    # must not replace that lifecycle with a second cache implementation.
+    # An image identity is literally the target identity.  Since the full-image
+    # inclusion is not an isofibration, membership must not be turned into placement.
+    # The image still caches the shared identity with Sage and retains it as self-inverse.
     identity = early_image.morphism_category(1)(source, source).one()
     assert identity is early_image.morphism_category(1)(source, source).one()
     assert identity in early_image.morphism_category(1)
     assert early_image.retained_inverse(identity) is identity
-    assert is_placed(identity, early_image.morphism_category(1).Identity())
+    assert not is_placed(identity, early_image.morphism_category(1))
+    assert not is_placed(identity, early_image.morphism_category(1).Identity())
+    assert is_placed(identity, TOKENS.morphism_category(1).Identity())
 
     # The full image spans every morphism of the target between the objects it retains,
     # so an arbitrary one is a morphism of it and is no value of ``early``.

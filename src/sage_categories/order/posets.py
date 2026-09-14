@@ -324,10 +324,11 @@ def _decide_total_order(
     poset_object: BinaryRelationsCategory.ObjectType,
     assumptions: Proposition,
 ) -> bool | None:
-    """Totality of a finite order: every pair of carrier points is comparable."""
+    """Totality of a finite order through Sage's finite-poset implementation."""
+    from sage_categories.engines.order_relations import is_total_order
+
     data = tuple(point.datum() for point in poset_object.carrier())
-    pairs = _related_pairs(poset_object)
-    return all((first, second) in pairs or (second, first) in pairs for first in data for second in data)
+    return is_total_order(data, _related_pairs(poset_object))
 
 
 register_handler(order_related, _decide_order_related)

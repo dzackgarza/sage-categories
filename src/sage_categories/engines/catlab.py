@@ -30,7 +30,6 @@ from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.sage_runtime import MonoDict
 
 __all__ = [
-    "compose_functors",
     "compose_transformations",
     "ensure_native_category",
     "ensure_native_functor",
@@ -105,10 +104,6 @@ def functor_object_image(functor: MorphismCategory.ObjectType, value: object) ->
 
 def functor_morphism_image(functor: MorphismCategory.ObjectType, value: object) -> object:
     return _bridge().functor_morphism_image(ensure_native_functor(functor), value)
-
-
-def compose_functors(first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> object:
-    return _bridge().compose_functors(ensure_native_functor(first), ensure_native_functor(second))
 
 
 def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:

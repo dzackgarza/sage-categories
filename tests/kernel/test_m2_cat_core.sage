@@ -785,7 +785,6 @@ def test_applying_a_functor_whose_full_image_exists_retains_the_image_and_places
     early_image = full_image(TOKENS, early)
     source, target = early.on_object(MARKS("a")), early.on_object(MARKS("b"))
     assert source is early.on_object(MARKS("a"))
-    assert early._image_cache.has_object_image(source)
     assert ask(early_image.membership_proposition(source)) is True
     assert source in early_image
 

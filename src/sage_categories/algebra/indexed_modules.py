@@ -28,14 +28,13 @@ from sage_categories.algebra.abelian import (
     presented_abelian_group,
 )
 from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.cones import cocone, cocone_apex
+from sage_categories.cat.cones import ConeCategory, cocone
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.modules import ModuleCategory, Modules
 from sage_categories.cat.monoidal import SelfAction
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import Monoids
-from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 from sage_categories.sets.finite import Sets
@@ -107,10 +106,7 @@ def _certified_integer_module(
     monoidal = AbelianTensor()
     modules = _integer_modules()
     action = monoidal.left_unitor().component(carrier)
-    algebra = modules._algebras.algebra(carrier, action)
-    refine(algebra, modules.ambient())
-    refine(algebra, modules)
-    return algebra
+    return modules(action)
 
 
 @cached_function(key=identity_key)
@@ -138,13 +134,13 @@ def indexed_free_integer_module(
 
     selected = cocone(diagram, module, leg)
 
-    def mediator(candidate) -> MorphismCategory.ObjectType:
-        target = cocone_apex(candidate)
+    def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
+        target = candidate.apex()
         target_carrier = modules.forgetful().on_object(target)
 
         def component(index: Hashable) -> MorphismCategory.ObjectType:
             vertex = shape.object_at(index_set.point(index))
-            return modules.forgetful().on_morphism(candidate.component(vertex))
+            return modules.forgetful().on_morphism(candidate.leg(vertex))
 
         additive = indexed_free_abelian_mediator(carrier, target_carrier, component)
         return modules.homomorphism(module, target, additive)

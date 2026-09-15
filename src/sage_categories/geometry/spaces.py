@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, Generic, cast
+
+from typing_extensions import TypeVar
 
 from sympy import false, true
 
@@ -17,6 +19,9 @@ from sage_categories.kernel.sage_runtime import cached_function, cached_method
 from sage_categories.order.posets import BinaryRelations, Posets, Thin
 
 __all__ = ["TopologicalSpaces", "TopologicalSpacesCategory"]
+
+
+OpenKey = TypeVar("OpenKey", bound=Hashable, default=Hashable)
 
 
 def _topological_space_projection(source: Category) -> Functor:
@@ -39,7 +44,7 @@ class _TopologyData[OpenKey: Hashable]:
 class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
     """Represented topological spaces; the first executable domain is a finite topology."""
 
-    class ObjectType[OpenKey: Hashable = Hashable]:
+    class ObjectType(Generic[OpenKey]):
         def __init__(self, data: _TopologyData[OpenKey]) -> None:
             self._carrier = data.carrier
             self._opens = data.opens

@@ -2,13 +2,14 @@
 name = "sage-categories"
 version = "0.1.0"
 description = "Owned Sage categories."
-requires-python = ">=3.14,<3.15"
+requires-python = ">=3.12,<3.15"
 dependencies = [
     "attrs>=26.1,<27",
     "makefun>=1.16",
     "multimethod>=2.1",
     "plum-dispatch>=2.9,<3",
     "sympy>=1.14,<2",
+    "typing-extensions>=4.12",
     "wrapt",
 ]
 

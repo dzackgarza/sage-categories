@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import singledispatch
-from typing import NamedTuple
+from typing import Generic, NamedTuple
+
+from typing_extensions import TypeVar
 
 from sage_categories.cat.calculus import (
     binary_product_data,
@@ -45,6 +47,11 @@ __all__ = [
 
 
 type CartesianComparisonHandler = Callable[..., MorphismCategory.ObjectType]
+
+
+BaseCategory = TypeVar("BaseCategory", default="Category[..., ...]")
+ActingCategory = TypeVar("ActingCategory", default="Category[..., ...]")
+ActedCategory = TypeVar("ActedCategory", default="Category[..., ...]")
 
 
 @singledispatch
@@ -204,14 +211,13 @@ class _MonoidalData(NamedTuple):
     right_unitor: NaturalTransformation
 
 
-class MonoidalStructuresCategory[
-    BaseCategory: "Category[..., ...]" = "Category[..., ...]",
-](Category[[], []]):
+class MonoidalStructuresCategory(
+    Category[[], []],
+    Generic[BaseCategory],
+):
     """The discrete category of supplied coherent monoidal structures on C."""
 
-    class ObjectType[
-        BaseCategory: "Category[..., ...]" = "Category[..., ...]",
-    ]:
+    class ObjectType(Generic[BaseCategory]):
         def __init__(self, data: _MonoidalData) -> None:
             self._monoidal_data = data
 
@@ -529,16 +535,13 @@ class _ActionData(NamedTuple):
     unitor: NaturalTransformation
 
 
-class ActionsCategory[
-    ActingCategory: "Category[..., ...]" = "Category[..., ...]",
-    ActedCategory: "Category[..., ...]" = "Category[..., ...]",
-](Category[[], []]):
+class ActionsCategory(
+    Category[[], []],
+    Generic[ActingCategory, ActedCategory],
+):
     """The discrete category of supplied coherent left actions of M on C."""
 
-    class ObjectType[
-        ActingCategory: "Category[..., ...]" = "Category[..., ...]",
-        ActedCategory: "Category[..., ...]" = "Category[..., ...]",
-    ]:
+    class ObjectType(Generic[ActingCategory, ActedCategory]):
         def __init__(self, data: _ActionData) -> None:
             self._action_data = data
 

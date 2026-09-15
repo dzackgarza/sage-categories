@@ -5,7 +5,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
-from typing import overload
+from typing import Generic, overload
+
+from typing_extensions import TypeVar
 
 from sympy import ask as sympy_ask
 
@@ -51,6 +53,16 @@ __all__ = [
     "NaturalTransformation",
     "PreservesLimitsCategory",
 ]
+
+
+DomainCategory = TypeVar("DomainCategory", default="Category[..., ...]")
+CodomainCategory = TypeVar("CodomainCategory", default="Category[..., ...]")
+DomainObject = TypeVar("DomainObject", default="CategoryOfCategories.ElementType")
+DomainElement = TypeVar("DomainElement", default="CategoryOfCategories.ElementType")
+DomainMorphism = TypeVar("DomainMorphism", default="MorphismCategory.ObjectType")
+CodomainObject = TypeVar("CodomainObject", default="CategoryOfCategories.ElementType")
+CodomainElement = TypeVar("CodomainElement", default="CategoryOfCategories.ElementType")
+CodomainMorphism = TypeVar("CodomainMorphism", default="MorphismCategory.ObjectType")
 
 
 def _diagrams() -> ModuleType:
@@ -248,22 +260,23 @@ def _denotes_functor_by_domain(
     return (candidate._is_object() or candidate._is_morphism()) and candidate.defining_morphism().domain() in Cat()
 
 
-class FunctorCategory[
-    DomainCategory = "Category[..., ...]",
-    CodomainCategory = "Category[..., ...]",
-    DomainObject = "CategoryOfCategories.ElementType",
-    DomainElement = "CategoryOfCategories.ElementType",
-    DomainMorphism = "MorphismCategory.ObjectType",
-    CodomainObject = "CategoryOfCategories.ElementType",
-    CodomainElement = "CategoryOfCategories.ElementType",
-    CodomainMorphism = "MorphismCategory.ObjectType",
-](
+class FunctorCategory(
     FixedEndpointCategory[
         [OnObject, OnMorphism],
         [Assignment],
         DomainCategory,
         CodomainCategory,
-    ]
+    ],
+    Generic[
+        DomainCategory,
+        CodomainCategory,
+        DomainObject,
+        DomainElement,
+        DomainMorphism,
+        CodomainObject,
+        CodomainElement,
+        CodomainMorphism,
+    ],
 ):
     """``Fun(C, D)``: functors ``C -> D`` and their natural transformations.
 
@@ -281,16 +294,18 @@ class FunctorCategory[
     C ... given by the morphism c_1 x_{c_2} c'_2 -> c'_2").
     """
 
-    class ObjectType[
-        DomainCategory = "Category[..., ...]",
-        CodomainCategory = "Category[..., ...]",
-        DomainObject = "CategoryOfCategories.ElementType",
-        DomainElement = "CategoryOfCategories.ElementType",
-        DomainMorphism = "MorphismCategory.ObjectType",
-        CodomainObject = "CategoryOfCategories.ElementType",
-        CodomainElement = "CategoryOfCategories.ElementType",
-        CodomainMorphism = "MorphismCategory.ObjectType",
-    ]:
+    class ObjectType(
+        Generic[
+            DomainCategory,
+            CodomainCategory,
+            DomainObject,
+            DomainElement,
+            DomainMorphism,
+            CodomainObject,
+            CodomainElement,
+            CodomainMorphism,
+        ]
+    ):
         """A functor ``C -> D``, which is a morphism of ``Cat()``.
 
         For ``C = [1]`` the objects are the morphisms of ``D``, and those are objects of

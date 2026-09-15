@@ -6,7 +6,9 @@ import itertools
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import cache
-from typing import TYPE_CHECKING, ClassVar, Literal, overload
+from typing import TYPE_CHECKING, ClassVar, Generic, Literal, ParamSpec, overload
+
+from typing_extensions import TypeVar
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import (
@@ -75,6 +77,21 @@ _category_ordinals = itertools.count()
 type OnObject = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
 type OnMorphism = Callable[["MorphismCategory.ObjectType"], "MorphismCategory.ObjectType"]
 type Assignment = Callable[[CategoryOfCategories.ElementType], "MorphismCategory.ObjectType"]
+
+
+MorphismData = ParamSpec("MorphismData")
+TwoMorphismData = ParamSpec("TwoMorphismData")
+ObjectRole = TypeVar("ObjectRole", default="CategoryOfCategories.ElementType")
+ElementRole = TypeVar("ElementRole", default="CategoryOfCategories.ElementType")
+MorphismRole = TypeVar("MorphismRole", default="MorphismCategory.ObjectType")
+DomainCategory = TypeVar("DomainCategory", default="Category[..., ...]")
+CodomainCategory = TypeVar("CodomainCategory", default="Category[..., ...]")
+DomainObject = TypeVar("DomainObject", default="CategoryOfCategories.ElementType")
+DomainElement = TypeVar("DomainElement", default="CategoryOfCategories.ElementType")
+DomainMorphism = TypeVar("DomainMorphism", default="MorphismCategory.ObjectType")
+CodomainObject = TypeVar("CodomainObject", default="CategoryOfCategories.ElementType")
+CodomainElement = TypeVar("CodomainElement", default="CategoryOfCategories.ElementType")
+CodomainMorphism = TypeVar("CodomainMorphism", default="MorphismCategory.ObjectType")
 
 
 # ``member(x, C)``: ``x`` is an object of ``C``.  For a plain category the
@@ -238,13 +255,9 @@ def _finite_category_data(category: Category):
     return finite_category(category)
 
 
-class CategoryDeclaration[
-    **MorphismData,
-    **TwoMorphismData,
-    ObjectRole = "CategoryOfCategories.ElementType",
-    ElementRole = "CategoryOfCategories.ElementType",
-    MorphismRole = "MorphismCategory.ObjectType",
-]:
+class CategoryDeclaration(
+    Generic[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]
+):
     """The local ``Cat().ObjectType`` declaration."""
 
     _constructs_from_diagrams: ClassVar[bool] = False
@@ -1568,16 +1581,18 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __repr__(self) -> str:
             return f"point of {self.parent()!r}"
 
-    class MorphismType[
-        DomainCategory: "Category[..., ...]" = "Category[..., ...]",
-        CodomainCategory: "Category[..., ...]" = "Category[..., ...]",
-        DomainObject: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
-        DomainElement: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
-        DomainMorphism: "MorphismCategory.ObjectType" = "MorphismCategory.ObjectType",
-        CodomainObject: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
-        CodomainElement: "CategoryOfCategories.ElementType" = "CategoryOfCategories.ElementType",
-        CodomainMorphism: "MorphismCategory.ObjectType" = "MorphismCategory.ObjectType",
-    ]:
+    class MorphismType(
+        Generic[
+            DomainCategory,
+            CodomainCategory,
+            DomainObject,
+            DomainElement,
+            DomainMorphism,
+            CodomainObject,
+            CodomainElement,
+            CodomainMorphism,
+        ]
+    ):
         """A functor: a morphism of ``Cat()`` with a domain, a codomain, and total object and morphism actions."""
 
         def __init__(self, data: FunctorData | _StructuralFunctorData) -> None:

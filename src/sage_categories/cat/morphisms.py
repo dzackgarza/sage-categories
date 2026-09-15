@@ -16,7 +16,9 @@ category-owned constructor ``C.construct_morphism`` (POL-API-009/010).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, Generic, Literal, ParamSpec, overload
+
+from typing_extensions import TypeVar
 
 from sympy import ask as sympy_ask
 
@@ -54,6 +56,15 @@ if TYPE_CHECKING:
     from sage_categories.cat.properties import FixedEndpointProperty
 
 __all__ = ["EndomorphismsCategory", "FixedEndpointCategory", "IsomorphismsCategory", "Mor", "MorphismCategory", "endpoints", "endpoints_in", "hom_inhabitation"]
+
+
+MorphismData = ParamSpec("MorphismData")
+TwoMorphismData = ParamSpec("TwoMorphismData")
+ObjectRole = TypeVar("ObjectRole", default="MorphismCategory.ObjectType")
+ElementRole = TypeVar("ElementRole", default="MorphismCategory.ElementType")
+MorphismRole = TypeVar("MorphismRole", default="MorphismCategory.MorphismType")
+DomainType = TypeVar("DomainType", default="CategoryOfCategories.ElementType")
+CodomainType = TypeVar("CodomainType", default="CategoryOfCategories.ElementType")
 
 
 def _cells_engine():
@@ -192,13 +203,10 @@ def _equal_words(
     return True if _equations_engine().equal_morphisms(first, second) else Unknown
 
 
-class MorphismCategory[
-    **MorphismData,
-    **TwoMorphismData,
-    ObjectRole = "MorphismCategory.ObjectType",
-    ElementRole = "MorphismCategory.ElementType",
-    MorphismRole = "MorphismCategory.MorphismType",
-](Category[TwoMorphismData, [], ObjectRole, ElementRole, MorphismRole]):
+class MorphismCategory(
+    Category[TwoMorphismData, [], ObjectRole, ElementRole, MorphismRole],
+    Generic[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole],
+):
     """``Mor(C)``: objects are the morphisms of ``C``, morphisms its 2-morphisms."""
 
     # An object of ``Mor(C)`` is a morphism of ``C``, and ``C`` is arbitrary, so the
@@ -547,15 +555,18 @@ class EndomorphismsCategory[**MorphismData, **TwoMorphismData](PredicateSubcateg
         return sympy_ask(candidate.domain() == candidate.codomain(), assumptions)
 
 
-class FixedEndpointCategory[
-    **MorphismData,
-    **TwoMorphismData,
-    DomainType = "CategoryOfCategories.ElementType",
-    CodomainType = "CategoryOfCategories.ElementType",
-    ObjectRole = "MorphismCategory.ObjectType",
-    ElementRole = "MorphismCategory.ElementType",
-    MorphismRole = "MorphismCategory.MorphismType",
-](FullSubcategory[TwoMorphismData, []]):
+class FixedEndpointCategory(
+    FullSubcategory[TwoMorphismData, []],
+    Generic[
+        MorphismData,
+        TwoMorphismData,
+        DomainType,
+        CodomainType,
+        ObjectRole,
+        ElementRole,
+        MorphismRole,
+    ],
+):
     """``Mor(C)(A, B)``: the full subcategory of ``Mor(C)`` on the morphisms ``A -> B``."""
 
     class ObjectType:

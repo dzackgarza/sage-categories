@@ -6,7 +6,11 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Any, cast
 
-from sage_categories.algebra._commutative_rings_oscar import oscar_morphism_handle
+from sage_categories.algebra._commutative_rings_oscar import (
+    oscar_morphism_handle,
+    oscar_object_handle,
+    reconstruct_oscar_morphism,
+)
 from sage_categories.algebra.commutative_rings import (
     inverse_unit,
     localization_extension,
@@ -318,10 +322,8 @@ def _projective_line_structure_sheaf(
     left_root: AffineOpenCategory.ObjectType,
     right_root: AffineOpenCategory.ObjectType,
     left_overlap: AffineOpenCategory.ObjectType,
-    right_overlap: AffineOpenCategory.ObjectType,
-    right_to_left: MorphismCategory.ObjectType,
 ) -> RingPresheaf[str]:
-    """Retain the two-chart structure sheaf after transporting both overlap restrictions to the left chart."""
+    """Retain the two-chart structure sheaf from OSCAR's sheaf on the glued scheme."""
     cover = FinitePresentedCategory(
         "ProjectiveLineAffineCover",
         ("overlap", "left", "right"),
@@ -329,9 +331,24 @@ def _projective_line_structure_sheaf(
         (),
     )
     rings = Rings(Sets).Commutative()
-    left_restriction = left_overlap.restriction_to(left_root)
-    right_restriction = right_overlap.restriction_to(right_root)
-    transported_right_restriction = right_to_left * right_restriction
+    overlap_ring = left_overlap.section_ring()
+    native_sheaf = oscar.structure_sheaf(native_scheme(glued).native)
+    for open_set, ring in (
+        (left_root, left_ring),
+        (right_root, right_ring),
+        (left_overlap, overlap_ring),
+    ):
+        assert oscar.same_native(oscar.sheaf_value(native_sheaf, open_set.native()), oscar_object_handle(ring))
+    left_restriction = reconstruct_oscar_morphism(
+        left_ring,
+        overlap_ring,
+        oscar.sheaf_restriction(native_sheaf, left_root.native(), left_overlap.native()),
+    )
+    right_restriction = reconstruct_oscar_morphism(
+        right_ring,
+        overlap_ring,
+        oscar.sheaf_restriction(native_sheaf, right_root.native(), left_overlap.native()),
+    )
 
     def sections(open_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
         match cover.label(cast(FinitePresentedCategory.ObjectType, open_object)):
@@ -340,7 +357,7 @@ def _projective_line_structure_sheaf(
             case "right":
                 return right_ring
             case "overlap":
-                return left_overlap.section_ring()
+                return overlap_ring
             case label:
                 raise AssertionError(f"unexpected projective-line open {label!r}")
 
@@ -354,11 +371,12 @@ def _projective_line_structure_sheaf(
             case ("overlap->left",):
                 return left_restriction
             case ("overlap->right",):
-                return transported_right_restriction
+                return right_restriction
             case _:
                 raise AssertionError(f"unexpected projective-line restriction path {path!r}")
 
     sheaf_functor = Fun(cover.op(), rings)(sections, restriction)
+
     def key_to_open(key: str) -> CategoryOfCategories.ElementType:
         return cover(key)
 
@@ -464,8 +482,6 @@ def projective_line(
         cover.left_root,
         cover.right_root,
         cover.left_overlap,
-        cover.right_overlap,
-        cover.right_to_left,
     )
     return ProjectiveLinePresentation(
         glued,

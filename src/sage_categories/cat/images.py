@@ -32,7 +32,7 @@ def _retained_object_image(
     candidate: CategoryOfCategories.ElementType,
 ) -> bool | None:
     """Whether ``candidate`` is already retained as an exact object image of ``defining_functor``."""
-    return True if defining_functor._image_cache.has_object_image(candidate) else None
+    return True if defining_functor._has_retained_object_image(candidate) else None
 
 
 class ImageMorphismCategory[**MorphismData, **TwoMorphismData](MorphismCategory[MorphismData, TwoMorphismData]):
@@ -121,7 +121,7 @@ class ImageCategory[**MorphismData, **TwoMorphismData](Category[MorphismData, Tw
         candidate: CategoryOfCategories.ElementType,
         assumptions: Proposition,
     ) -> bool | None:
-        if candidate in self._morphism_members or self._defining_functor._image_cache.has_morphism_image(candidate):
+        if candidate in self._morphism_members or self._defining_functor._has_retained_morphism_image(candidate):
             return True
         return None
 

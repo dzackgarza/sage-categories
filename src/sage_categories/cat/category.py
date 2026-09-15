@@ -6,9 +6,7 @@ import itertools
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import cache
-from typing import TYPE_CHECKING, ClassVar, Generic, Literal, ParamSpec, overload
-
-from typing_extensions import TypeVar
+from typing import TYPE_CHECKING, ClassVar, Generic, Literal, ParamSpec, TypeVar, overload
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import (
@@ -255,9 +253,7 @@ def _finite_category_data(category: Category):
     return finite_category(category)
 
 
-class CategoryDeclaration(
-    Generic[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]
-):
+class CategoryDeclaration(Generic[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]):
     """The local ``Cat().ObjectType`` declaration."""
 
     _constructs_from_diagrams: ClassVar[bool] = False
@@ -1615,6 +1611,14 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def on_object(self, member_object: DomainObject) -> CodomainObject:
             """The image of an object of the domain, executed by the retained Catlab functor."""
             return self._cached_object_image(member_object, self._construct_object_image)
+
+        def _has_retained_object_image(self, candidate: CategoryOfCategories.ElementType) -> bool:
+            """Protected image-category query for an exact retained object action value."""
+            return self._image_cache.has_object_image(candidate)
+
+        def _has_retained_morphism_image(self, candidate: MorphismCategory.ObjectType) -> bool:
+            """Protected image-category query for an exact retained morphism action value."""
+            return self._image_cache.has_morphism_image(candidate)
 
         def _retain_object_action_result(
             self,

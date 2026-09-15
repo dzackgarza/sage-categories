@@ -337,7 +337,24 @@ class MonoidCategory(EquifierCategory):
         monoidal = self.monoidal_structure()
         magma = Magmas(monoidal).algebra(operation.codomain(), operation)
         pointed = PointedMagmas(monoidal.tensor(), monoidal.unit()).algebra(magma, unit)
-        return super().__call__(pointed)
+
+        tensor_unit = monoidal.unit()
+        base = monoidal.underlying_category()
+        canonical_unit_monoid = (
+            operation.codomain() is tensor_unit
+            and operation is monoidal.left_unitor().component(tensor_unit)
+            and unit is Mor(base)(tensor_unit, tensor_unit).one()
+        )
+        match canonical_unit_monoid:
+            case True:
+                # The tensor unit carries its canonical monoid structure by monoidal
+                # coherence.  Do not ask the generic equifier equality engine to
+                # rediscover the two unitor laws and associativity extensionally.
+                refine(pointed, self.ambient())
+                refine(pointed, self)
+                return pointed
+            case False:
+                return super().__call__(pointed)
 
     @cached_method
     def to_magmas(self) -> Functor:

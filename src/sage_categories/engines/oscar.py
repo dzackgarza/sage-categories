@@ -7,6 +7,7 @@ from sage_categories.engines.julia_bridge import oscar_bridge as bridge
 
 __all__ = [
     "affine_codomain",
+    "affine_coordinate_ring",
     "affine_domain",
     "affine_morphism",
     "affine_morphism_direct",
@@ -15,8 +16,11 @@ __all__ = [
     "codomain",
     "covered_chart_inclusion",
     "covered_chart_map",
+    "covered_compose",
     "covered_codomain",
     "covered_domain",
+    "covered_equal",
+    "covered_identity",
     "covered_patches",
     "covered_scheme",
     "domain",
@@ -38,8 +42,12 @@ __all__ = [
     "quotient",
     "ring_add",
     "ring_coerce",
+    "ring_compose",
     "ring_contains",
+    "ring_equal",
+    "ring_identity",
     "ring_inverse",
+    "ring_map_equal",
     "ring_multiply",
     "ring_negate",
     "ring_one",
@@ -130,12 +138,32 @@ def codomain(mapping: OscarHandle) -> OscarHandle:
     return bridge().handle("map_codomain", mapping)
 
 
+def ring_identity(ring: OscarHandle) -> OscarHandle:
+    """Return OSCAR's identity map of a ring."""
+    return bridge().handle("ring_identity", ring)
+
+
+def ring_compose(second: OscarHandle, first: OscarHandle) -> OscarHandle:
+    """Return ``second * first`` through OSCAR ring-map composition."""
+    return bridge().handle("ring_compose", second, first)
+
+
+def ring_map_equal(first: OscarHandle, second: OscarHandle) -> bool:
+    """Decide equality of two OSCAR ring maps."""
+    return bridge().boolean("ring_map_equal", first, second)
+
+
 def generators(ring: OscarHandle) -> tuple[OscarHandle, ...]:
     return bridge().handles("ring_generators", ring)
 
 
 def ring_contains(ring: OscarHandle, element: OscarHandle | int) -> bool:
     return bridge().boolean("ring_contains", ring, element)
+
+
+def ring_equal(first: OscarHandle, second: OscarHandle) -> bool:
+    """Decide equality of two OSCAR ring elements."""
+    return bridge().boolean("ring_equal", first, second)
 
 
 def ring_zero(ring: OscarHandle) -> OscarHandle:
@@ -173,6 +201,11 @@ def same_native(first: OscarHandle, second: OscarHandle) -> bool:
 def affine_spec(ring: OscarHandle) -> OscarHandle:
     """Return OSCAR's affine scheme ``Spec(ring)``."""
     return bridge().handle("affine_spec", ring)
+
+
+def affine_coordinate_ring(scheme: OscarHandle) -> OscarHandle:
+    """Return OSCAR's coordinate ring ``OO(scheme)`` for an affine scheme."""
+    return bridge().handle("affine_coordinate_ring", scheme)
 
 
 def affine_morphism(source_scheme: OscarHandle, target_scheme: OscarHandle, pullback_map: OscarHandle) -> OscarHandle:
@@ -249,6 +282,21 @@ def covered_domain(mapping: OscarHandle) -> OscarHandle:
 
 def covered_codomain(mapping: OscarHandle) -> OscarHandle:
     return bridge().handle("covered_codomain", mapping)
+
+
+def covered_identity(scheme: OscarHandle) -> OscarHandle:
+    """Return OSCAR's identity morphism of a covered scheme."""
+    return bridge().handle("covered_identity", scheme)
+
+
+def covered_compose(second: OscarHandle, first: OscarHandle) -> OscarHandle:
+    """Return ``second * first`` through OSCAR's covered-scheme composition."""
+    return bridge().handle("covered_compose", second, first)
+
+
+def covered_equal(first: OscarHandle, second: OscarHandle) -> bool:
+    """Decide equality of two covered-scheme morphisms on compatible coverings."""
+    return bridge().boolean("covered_equal", first, second)
 
 
 def structure_sheaf(scheme: OscarHandle) -> OscarHandle:

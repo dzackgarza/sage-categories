@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, cast
 
 from sage_categories.algebra._commutative_rings_oscar import (
     OscarRingConstruction,
@@ -11,6 +10,7 @@ from sage_categories.algebra._commutative_rings_oscar import (
     oscar_morphism_handle,
     oscar_native_object,
     oscar_object_handle,
+    reconstruct_oscar_element,
     reconstruct_oscar_morphism,
     reconstruct_oscar_object,
 )
@@ -84,7 +84,7 @@ def _point(
     ring: CategoryOfCategories.ElementType,
     datum: OscarHandle,
 ) -> CategoryOfCategories.ElementType:
-    return cast(CategoryOfCategories.ElementType, cast(Any, ring).point(datum))
+    return reconstruct_oscar_element(ring, datum)
 
 
 def _datum(point: CategoryOfCategories.ElementType) -> OscarHandle:

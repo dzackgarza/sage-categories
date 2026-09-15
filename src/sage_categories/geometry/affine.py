@@ -104,7 +104,6 @@ class AffineOpenCategory(Category[Any, Any]):
     def __init__(self, scheme: AffineSchemesCategory.ObjectType) -> None:
         self._scheme = scheme
         native_scheme = native_affine_scheme(cast(CategoryOfCategories.ElementType, scheme)).native
-        self._native_sheaf = oscar.structure_sheaf(native_scheme)
         self._root = self.ObjectType(_AffineOpenData(scheme, native_scheme, scheme.coordinate_ring(), (), ()))
         super().__init__()
 
@@ -122,8 +121,8 @@ class AffineOpenCategory(Category[Any, Any]):
         """Retain ``D(element)`` inside ``parent`` with OSCAR's actual section ring/map."""
         assert element.parent() is parent.section_ring()
         native_open = oscar.principal_open(parent.native(), oscar_element_handle(element))
-        native_ring = oscar.sheaf_value(self._native_sheaf, native_open)
-        native_restriction = oscar.sheaf_restriction(self._native_sheaf, parent.native(), native_open)
+        native_ring = oscar.affine_coordinate_ring(native_open)
+        native_restriction = oscar.affine_pullback(oscar.principal_open_inclusion(native_open))
         section_ring, restriction = _principal_localization_from_native(parent.section_ring(), element, native_ring, native_restriction)
         ancestor_restrictions = tuple(
             (
@@ -204,8 +203,7 @@ class AffineSchemesCategory(Category[Any, Any]):
         """Wrap ``Spec(coordinate_ring)`` with exact owned/native correspondence."""
         assert coordinate_ring in _rings()
         native_ring = oscar_object_handle(coordinate_ring)
-        native_sections = oscar.structure_sheaf(native)
-        assert oscar.same_native(native_sections, native_ring)
+        assert oscar.same_native(oscar.affine_coordinate_ring(native), native_ring)
         value = self.ObjectType(coordinate_ring)
         _objects.retain(
             self,

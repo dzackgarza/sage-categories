@@ -10,7 +10,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
-from sage_categories.cat.predicates import ask
+from sage_categories.cat.predicates import Unknown, ask
 from sage_categories.geometry._ring_categories import (
     commutative_rings as _rings,
 )
@@ -67,7 +67,13 @@ class RingPresheaf[OpenKey: Hashable]:
         smaller: OpenKey,
     ) -> MorphismCategory.ObjectType:
         """The owned ring map ``F(larger) -> F(smaller)`` for ``smaller <= larger``."""
-        inclusion = Mor(self.opens)(self.open_object(smaller), self.open_object(larger))()
+        source, target = self.open_object(smaller), self.open_object(larger)
+        hom = self.opens.hom_morphisms(source, target)
+        if hom is Unknown:
+            inclusion = Mor(self.opens)(source, target)()
+        else:
+            assert len(hom) == 1, f"open inclusion {source!r} -> {target!r} is not unique"
+            inclusion = hom[0]
         return cast(
             MorphismCategory.ObjectType,
             self.functor.on_morphism(opposite_morphism(inclusion)),

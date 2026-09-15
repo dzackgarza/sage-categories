@@ -38,8 +38,12 @@ const _OPERATIONS = Set([
     "map_apply",
     "map_domain",
     "map_codomain",
+    "ring_identity",
+    "ring_compose",
+    "ring_map_equal",
     "ring_generators",
     "ring_contains",
+    "ring_equal",
     "ring_zero",
     "ring_one",
     "ring_add",
@@ -49,6 +53,7 @@ const _OPERATIONS = Set([
     "ring_inverse",
     "same_native",
     "affine_spec",
+    "affine_coordinate_ring",
     "affine_morphism_from_pullback",
     "affine_pullback",
     "affine_domain",
@@ -69,6 +74,9 @@ const _OPERATIONS = Set([
     "covered_chart_map",
     "covered_domain",
     "covered_codomain",
+    "covered_identity",
+    "covered_compose",
+    "covered_equal",
 ])
 
 function _retain(value)

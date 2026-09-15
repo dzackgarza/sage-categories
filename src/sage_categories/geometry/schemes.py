@@ -155,6 +155,36 @@ class SchemesCategory(Category[Any, Any]):
         )
         return arrow
 
+    def construct_identity(self, member_object: SchemesCategory.ObjectType) -> SchemesCategory.MorphismType:
+        """The identity scheme morphism, executed by OSCAR on the retained covered scheme."""
+        native = oscar.covered_identity(native_scheme(cast(CategoryOfCategories.ElementType, member_object)).native)
+        return self._from_native_morphism(member_object, member_object, native)
+
+    def composite(
+        self,
+        second: SchemesCategory.MorphismType,
+        first: SchemesCategory.MorphismType,
+    ) -> SchemesCategory.MorphismType:
+        """Compose scheme morphisms through OSCAR's covered-scheme composition."""
+        assert first.codomain() is second.domain()
+        native = oscar.covered_compose(
+            native_scheme_morphism(cast(MorphismCategory.ObjectType, second)).native,
+            native_scheme_morphism(cast(MorphismCategory.ObjectType, first)).native,
+        )
+        return self._from_native_morphism(first.domain(), second.codomain(), native)
+
+    def _morphism_equality(
+        self,
+        first: MorphismCategory.ObjectType,
+        second: MorphismCategory.ObjectType,
+    ) -> bool | None:
+        if not (_morphisms.has(first) and _morphisms.has(second)):
+            return None
+        return oscar.covered_equal(
+            native_scheme_morphism(first).native,
+            native_scheme_morphism(second).native,
+        )
+
     @cached_method
     def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType:
         """The affine scheme as a scheme, preserving its exact OSCAR chart."""

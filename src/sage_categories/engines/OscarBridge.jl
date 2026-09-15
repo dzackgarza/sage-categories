@@ -5,17 +5,18 @@ using Oscar
 export prime_field, polynomial_ring_with_generators, quotient_ring,
        localization_at_element, localization_at_prime, ring_hom, localization_hom,
        prime_ideal_from_generators, prime_ideal_preimage, stalk_map,
-       map_apply, map_domain, map_codomain, ring_generators,
-       ring_contains, ring_zero, ring_one, ring_add, ring_multiply, ring_negate,
+       map_apply, map_domain, map_codomain, ring_identity, ring_compose, ring_map_equal, ring_generators,
+       ring_contains, ring_equal, ring_zero, ring_one, ring_add, ring_multiply, ring_negate,
        ring_coerce, ring_inverse, same_native,
-       affine_spec, affine_morphism_from_pullback, affine_pullback,
+       affine_spec, affine_coordinate_ring, affine_morphism_from_pullback, affine_pullback,
        affine_domain, affine_codomain, covered_scheme_of,
        structure_sheaf, sheaf_value, sheaf_restriction,
        principal_open_subset, principal_open_ambient,
        principal_open_inclusion, affine_morphism_direct,
        simple_gluing, glued_covered_scheme, covered_patches,
        covered_chart_inclusion, gluing_mediator,
-       covered_chart_map, covered_domain, covered_codomain
+       covered_chart_map, covered_domain, covered_codomain,
+       covered_identity, covered_compose, covered_equal
 
 """The prime field ``GF(p)`` used by the affine-ring consumer."""
 prime_field(p::Integer) = GF(p)
@@ -56,12 +57,16 @@ localization_hom(localized, target, base_map) = hom(localized, target, base_map)
 map_apply(map, element) = map(element)
 map_domain(map) = domain(map)
 map_codomain(map) = codomain(map)
+ring_identity(ring) = identity_map(ring)
+ring_compose(second, first) = compose(first, second)
+ring_map_equal(first, second) = first == second
 ring_generators(ring) = gens(ring)
 ring_contains(ring, element) = try
     parent(element) === ring
 catch
     false
 end
+ring_equal(first, second) = first == second
 ring_zero(ring) = zero(ring)
 ring_one(ring) = one(ring)
 ring_add(first, second) = first + second
@@ -73,6 +78,7 @@ same_native(first, second) = first === second
 
 """The affine scheme ``Spec(R)`` for a supported OSCAR coordinate ring."""
 affine_spec(ring) = spec(ring)
+affine_coordinate_ring(scheme) = OO(scheme)
 
 """The affine morphism ``Spec(B) -> Spec(A)`` defined by a ring map ``A -> B``."""
 function affine_morphism_from_pullback(source_scheme, target_scheme, ring_map)
@@ -84,7 +90,7 @@ affine_pullback(map) = pullback(map)
 affine_domain(map) = domain(map)
 affine_codomain(map) = codomain(map)
 covered_scheme_of(scheme) = covered_scheme(scheme)
-structure_sheaf(scheme) = OO(scheme)
+structure_sheaf(scheme) = StructureSheafOfRings(scheme)
 sheaf_value(sheaf, open_subset) = sheaf(open_subset)
 sheaf_restriction(sheaf, larger, smaller) = restriction_map(sheaf, larger, smaller)
 principal_open_subset(scheme, element) = PrincipalOpenSubset(scheme, element)
@@ -130,8 +136,8 @@ function gluing_mediator(glued, target, left_chart, right_chart, left_map, right
     source_cover = default_covering(glued)
     target_cover = default_covering(target)
     maps = IdDict{AbsAffineScheme, AbsAffineSchemeMor}(
-        left_chart => left_map,
-        right_chart => right_map,
+        left_chart => left_map[left_chart],
+        right_chart => right_map[right_chart],
     )
     covering_map = CoveringMorphism(source_cover, target_cover, maps)
     CoveredSchemeMorphism(glued, target, covering_map)
@@ -139,5 +145,8 @@ end
 
 covered_domain(map) = domain(map)
 covered_codomain(map) = codomain(map)
+covered_identity(scheme) = identity_map(scheme)
+covered_compose(second, first) = compose(first, second)
+covered_equal(first, second) = first == second
 
 end

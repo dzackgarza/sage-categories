@@ -1,7 +1,7 @@
 """The projective line is glued from two affine charts and its swap uses the gluing mediator."""
 
 from sage_categories.algebra import inverse_unit, prime_field
-from sage_categories.all import ask
+from sage_categories.all import Mor, ask
 from sage_categories.geometry import Schemes, TwoChartGluing, projective_line
 from sage_categories.geometry.schemes import native_scheme, native_scheme_morphism
 
@@ -24,6 +24,8 @@ def test_projective_line_two_chart_gluing_and_swap() -> None:
     assert presentation.right_inclusion.codomain() is presentation.scheme
     assert presentation.chart_swap.domain() is presentation.scheme
     assert presentation.chart_swap.codomain() is presentation.scheme
+    identity = Mor(schemes)(presentation.scheme, presentation.scheme).one()
+    assert ask(presentation.chart_swap * presentation.chart_swap == identity) is True
     assert native_scheme(presentation.scheme).construction is construction
     for arrow, source in (
         (presentation.left_inclusion, left_scheme),

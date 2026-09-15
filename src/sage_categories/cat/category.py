@@ -6,7 +6,9 @@ import itertools
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from functools import cache
-from typing import TYPE_CHECKING, ClassVar, Generic, Literal, ParamSpec, TypeVar, overload
+from typing import TYPE_CHECKING, ClassVar, Generic, Literal, ParamSpec, overload
+
+import typing_extensions
 
 from sage_categories.cat.equality import equality_predicate
 from sage_categories.cat.predicates import (
@@ -79,17 +81,17 @@ type Assignment = Callable[[CategoryOfCategories.ElementType], "MorphismCategory
 
 MorphismData = ParamSpec("MorphismData")
 TwoMorphismData = ParamSpec("TwoMorphismData")
-ObjectRole = TypeVar("ObjectRole", default="CategoryOfCategories.ElementType")
-ElementRole = TypeVar("ElementRole", default="CategoryOfCategories.ElementType")
-MorphismRole = TypeVar("MorphismRole", default="MorphismCategory.ObjectType")
-DomainCategory = TypeVar("DomainCategory", default="Category[..., ...]")
-CodomainCategory = TypeVar("CodomainCategory", default="Category[..., ...]")
-DomainObject = TypeVar("DomainObject", default="CategoryOfCategories.ElementType")
-DomainElement = TypeVar("DomainElement", default="CategoryOfCategories.ElementType")
-DomainMorphism = TypeVar("DomainMorphism", default="MorphismCategory.ObjectType")
-CodomainObject = TypeVar("CodomainObject", default="CategoryOfCategories.ElementType")
-CodomainElement = TypeVar("CodomainElement", default="CategoryOfCategories.ElementType")
-CodomainMorphism = TypeVar("CodomainMorphism", default="MorphismCategory.ObjectType")
+ObjectRole = typing_extensions.TypeVar("ObjectRole", default="CategoryOfCategories.ElementType")
+ElementRole = typing_extensions.TypeVar("ElementRole", default="CategoryOfCategories.ElementType")
+MorphismRole = typing_extensions.TypeVar("MorphismRole", default="MorphismCategory.ObjectType")
+DomainCategory = typing_extensions.TypeVar("DomainCategory", default="Category[..., ...]")
+CodomainCategory = typing_extensions.TypeVar("CodomainCategory", default="Category[..., ...]")
+DomainObject = typing_extensions.TypeVar("DomainObject", default="CategoryOfCategories.ElementType")
+DomainElement = typing_extensions.TypeVar("DomainElement", default="CategoryOfCategories.ElementType")
+DomainMorphism = typing_extensions.TypeVar("DomainMorphism", default="MorphismCategory.ObjectType")
+CodomainObject = typing_extensions.TypeVar("CodomainObject", default="CategoryOfCategories.ElementType")
+CodomainElement = typing_extensions.TypeVar("CodomainElement", default="CategoryOfCategories.ElementType")
+CodomainMorphism = typing_extensions.TypeVar("CodomainMorphism", default="MorphismCategory.ObjectType")
 
 
 # ``member(x, C)``: ``x`` is an object of ``C``.  For a plain category the

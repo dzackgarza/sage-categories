@@ -9,7 +9,18 @@ relation, so a relation object inherits point, map, and set behavior from its ca
 
 from __future__ import annotations
 
-__all__ = ["BinaryRelations", "BinaryRelationsCategory", "Posets", "PosetsCategory", "Thin", "TotallyOrderedSets"]
+__all__ = [
+    "BinaryRelations",
+    "BinaryRelationsCategory",
+    "FinitePosets",
+    "FinitePosetsCategory",
+    "FiniteTotallyOrderedSets",
+    "Posets",
+    "PosetsCategory",
+    "Thin",
+    "TotallyOrderedSets",
+    "order_preserving",
+]
 
 from collections.abc import Callable
 
@@ -31,7 +42,8 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete, ThinCategory
-from sage_categories.order._firewall import relations as _relations_firewall
+from sage_categories.order._firewall import finite_posets as _finite_posets_firewall
+from sage_categories.sets.finite import SetsCategory
 
 type OrderRule = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType], Proposition]
 
@@ -48,9 +60,14 @@ class _TotalOrderPredicate(Predicate):
     name = "total_order"
 
 
+class _OrderPreservingPredicate(Predicate):
+    name = "order_preserving"
+
+
 order_related = _OrderRelatedPredicate()
 partial_order = _PartialOrderPredicate()
 total_order = _TotalOrderPredicate()
+order_preserving = _OrderPreservingPredicate()
 
 
 def _square_factor(square: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
@@ -64,11 +81,6 @@ def _square_factor(square: CategoryOfCategories.ElementType) -> CategoryOfCatego
     factors = tuple(diagram.on_object(diagram.domain()(0)) for diagram in family.presenting_diagrams(square))
     assert all(factor is factors[0] for factor in factors), f"{square!r} presents products of unequal sets"
     return factors[0]
-
-
-def _related_pairs(relation_object: BinaryRelationsCategory.ObjectType) -> frozenset[tuple[object, object]]:
-    """The finite set of related data pairs of a relation object."""
-    return frozenset(point.datum() for point in relation_object.relation().arrow().domain())
 
 
 def _decide_order_related(
@@ -98,9 +110,7 @@ def _decide_partial_order(
     assumptions: Proposition,
 ) -> bool | None:
     """Reflexivity, antisymmetry, and transitivity of a finite relation (Mathlib ``PartialOrder``)."""
-    carrier = relation_object.carrier()
-    data = tuple(point.datum() for point in carrier)
-    return _relations_firewall.partial_order(data, _related_pairs(relation_object))
+    return _finite_posets_firewall.partial_order(relation_object)
 
 
 class BinaryRelationsCategory(FaithfulStructureCategory):
@@ -210,7 +220,7 @@ class BinaryRelationsCategory(FaithfulStructureCategory):
 
         transported = self.from_predicate(image, transported_rule)
         # Preservation in both directions is the defining equation above, so this
-        # theorem-backed lift must not re-enumerate the source relation merely to
+        # named transport must not re-enumerate the source relation merely to
         # rediscover it pointwise.
         forward = self._morphism_from_data(relation_object, transported, bijection)
         backward = self._morphism_from_data(transported, relation_object, inverse)
@@ -245,9 +255,9 @@ class BinaryRelationsCategory(FaithfulStructureCategory):
     ) -> BinaryRelationsCategory.MorphismType:
         source_carrier, target_carrier = source.carrier(), target.carrier()
         assert underlying.domain() is source_carrier and underlying.codomain() is target_carrier
-        images = {value: underlying(source_carrier.point(value)).datum() for value in (point.datum() for point in source_carrier)}
-        target_pairs = _related_pairs(target)
-        assert all((images[first], images[second]) in target_pairs for first, second in _related_pairs(source)), f"{underlying!r} does not preserve the relation of {source!r}"
+        assert sympy_ask(order_preserving(source, target, underlying)) is True, (
+            f"{underlying!r} is not established to preserve the relation of {source!r}"
+        )
         return self._morphism_from_data(source, target, underlying)
 
 
@@ -273,6 +283,39 @@ class PosetsCategory(PropertySubcategory):
 
     Total = Axiom(_total)
 
+    def to_sets(self) -> Functor:
+        """The underlying-set functor ``U: Posets() -> Sets()``.
+
+        ``Posets()`` is the full partial-order subcategory of ``BinaryRelations()``;
+        restricting the relation projection is therefore the one owned underlying-set
+        functor, with no second object or morphism action in the poset leaf.
+        """
+        return BinaryRelations().to_sets().restrict(self, Sets)
+
+    Finite = SetsCategory.Finite.inverse_image(lambda category: category.to_sets())
+
+
+class FinitePosetsCategory(Category):
+    """The implementation surface of the exact derived category ``Posets().Finite()``.
+
+    The category itself is the inverse image selected by ``PosetsCategory.Finite``.
+    This implementation claims that exact value in place so finite-poset operations can
+    live on its three ordinary roles without constructing a second property category.
+    """
+
+    class ObjectType:
+        """A finite poset; finite algorithms are owned by this role."""
+
+    class ElementType:
+        """An element inherited from the ambient poset."""
+
+    class MorphismType:
+        """A monotone map between finite posets."""
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        finite_posets = FinitePosets()
+        return (Fun(finite_posets, finite_posets).one(),)
+
 
 _BINARY_RELATIONS = BinaryRelationsCategory()
 
@@ -292,19 +335,40 @@ def TotallyOrderedSets() -> Category:
     return Posets().Total()
 
 
+def FinitePosets() -> FinitePosetsCategory:
+    """Finite posets: ``U.inverse_image(Sets().Finite())`` for ``U: Posets() -> Sets()``."""
+    return Posets().Finite()
+
+
+def FiniteTotallyOrderedSets() -> Category:
+    """Finite total orders: the finite inverse image along ``TotallyOrderedSets() -> Posets()``."""
+    return TotallyOrderedSets().Finite()
+
+
 def _decide_total_order(
     poset_object: BinaryRelationsCategory.ObjectType,
     assumptions: Proposition,
 ) -> bool | None:
     """Totality of a finite order through Sage's finite-poset implementation."""
-    data = tuple(point.datum() for point in poset_object.carrier())
-    return _relations_firewall.total_order(data, _related_pairs(poset_object))
+    return _finite_posets_firewall.total_order(poset_object)
+
+
+def _decide_order_preserving(
+    source: BinaryRelationsCategory.ObjectType,
+    target: BinaryRelationsCategory.ObjectType,
+    underlying: MorphismCategory.ObjectType,
+    assumptions: Proposition,
+) -> bool | None:
+    """Exact finite monotonicity, delegated to the private finite-order boundary."""
+    return _finite_posets_firewall.order_preserving(source, target, underlying, assumptions)
 
 
 register_handler(order_related, _decide_order_related)
 register_handler(partial_order, _decide_partial_order)
 register_handler(total_order, _decide_total_order)
+register_handler(order_preserving, _decide_order_preserving)
 register_handler(BinaryRelations().equality(), BinaryRelations()._equal_morphisms)
+Cat().implement(FinitePosetsCategory)
 
 
 def _thin_category(poset_object: BinaryRelationsCategory.ObjectType) -> ThinCategory:

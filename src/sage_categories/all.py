@@ -65,7 +65,9 @@ __all__ = [
     "EndofunctorAlgebras",
     "Equifier",
     "Equivalences",
+    "FinitePosets",
     "FiniteSets",
+    "FiniteTotallyOrderedSets",
     "Fun",
     "Grothendieck",
     "GroupPresentation",
@@ -85,6 +87,7 @@ __all__ = [
     "MultiplicativeMonoids",
     "Op",
     "PointedMagmas",
+    "Posets",
     "Predicate",
     "Profunctors",
     "Query",
@@ -96,6 +99,7 @@ __all__ = [
     "Sets",
     "TerminalObjects",
     "Thin",
+    "TotallyOrderedSets",
     "TotalCones",
     "TrivialAction",
     "Unknown",
@@ -132,6 +136,7 @@ __all__ = [
     "natural_transformation_to_end",
     "pair_maps",
     "parallel_pair",
+    "order_preserving",
     "power_functor",
     "precompose",
     "presented_group",
@@ -241,5 +246,12 @@ from sage_categories.cat.monoidal import (
     MonoidalStructures,
     SelfAction,
     TrivialAction,
+)
+from sage_categories.order.posets import (
+    FinitePosets,
+    FiniteTotallyOrderedSets,
+    Posets,
+    TotallyOrderedSets,
+    order_preserving,
 )
 from sage_categories.sets import FiniteSets, Sets

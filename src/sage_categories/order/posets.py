@@ -38,10 +38,13 @@ from sage_categories.cat.predicates import (
     Predicate,
     Proposition,
     conjunction,
+    disjunction,
+    implication,
     register_handler,
 )
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete, ThinCategory
+from sage_categories.cat.slices import SliceProperty
 from sage_categories.order._firewall import finite_posets as _finite_posets_firewall
 from sage_categories.sets.finite import SetsCategory
 
@@ -294,6 +297,107 @@ class PosetsCategory(PropertySubcategory):
 
     Finite = SetsCategory.Finite.inverse_image(lambda category: category.to_sets())
 
+    def subobjects_type(self) -> type[PosetSubobjects]:
+        """The induced-poset realization of ``Posets().Subobjects(P)``."""
+        return PosetSubobjects
+
+
+class PosetSubobjects(SliceProperty):
+    """Induced subposets of one fixed ambient poset, with their retained inclusions."""
+
+    class ObjectType:
+        """An induced subposet together with its monomorphism into the fixed poset."""
+
+    class ElementType:
+        """A generalized element inherited from the subobject category."""
+
+    class MorphismType:
+        """A commuting triangle between induced subposets."""
+
+    def from_predicate(
+        self,
+        predicate: Callable[[PosetsCategory.ElementType], Proposition],
+    ) -> PosetSubobjects.ObjectType:
+        """Construct the induced subposet selected by ``predicate`` and its inclusion.
+
+        The carrier is the owned predicate subobject of the exact ambient carrier.  The
+        order is the restriction of the ambient order along that set inclusion, and the
+        resulting poset inclusion retains that same set map as its underlying morphism.
+        No backend or Python collection is the public subobject.
+        """
+        ambient = self.ambient().fixed_object()
+        carrier_subobjects = Sets.Subobjects(ambient.carrier())
+        carrier_subobject = carrier_subobjects.from_predicate(
+            lambda point: predicate(ambient.point(point.datum()))
+        )
+        carrier_inclusion = carrier_subobjects.defining_arrow().on_object(carrier_subobject)
+        selected_carrier = carrier_inclusion.domain()
+
+        def induced_order(
+            first: CategoryOfCategories.ElementType,
+            second: CategoryOfCategories.ElementType,
+        ) -> Proposition:
+            return ambient.related(
+                ambient.point(carrier_inclusion(first).datum()),
+                ambient.point(carrier_inclusion(second).datum()),
+            )
+
+        induced_relation = BinaryRelations().from_predicate(selected_carrier, induced_order)
+        match sympy_ask(Sets.Finite().membership_proposition(selected_carrier)):
+            case True:
+                induced = FinitePosets()(induced_relation.relation())
+            case _:
+                induced = Posets()(induced_relation.relation())
+        inclusion = BinaryRelations()._morphism_from_data(induced, ambient, carrier_inclusion)
+        return self(inclusion)
+
+
+def _strictly_less(
+    first: PosetsCategory.ElementType,
+    second: PosetsCategory.ElementType,
+) -> Proposition:
+    """Strict order expressed through the owned order and equality predicates."""
+    return (first <= second) & ~(first == second)
+
+
+def _cover_proposition(
+    poset: FinitePosetsCategory.ObjectType,
+    lower: FinitePosetsCategory.ElementType,
+    upper: FinitePosetsCategory.ElementType,
+) -> Proposition:
+    """The finite cover proposition, used by the collection-valued cover constructors."""
+    assert lower.parent() is poset and upper.parent() is poset
+    return conjunction(
+        (
+            _strictly_less(lower, upper),
+            *(
+                ~conjunction((_strictly_less(lower, middle), _strictly_less(middle, upper)))
+                for middle in poset
+            ),
+        )
+    )
+
+
+def _owned_subobject_inclusion(
+    ambient: FinitePosetsCategory.ObjectType,
+    members: PosetSubobjects.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """The retained inclusion of an owned subobject of ``ambient``."""
+    subobjects = Posets().Subobjects(ambient)
+    assert members in subobjects, f"{members!r} is not an owned subobject of {ambient!r}"
+    inclusion = subobjects.defining_arrow().on_object(members)
+    assert inclusion.codomain() is ambient
+    return inclusion
+
+
+def _owned_subobject_members(
+    ambient: FinitePosetsCategory.ObjectType,
+    members: PosetSubobjects.ObjectType,
+) -> tuple[FinitePosetsCategory.ElementType, ...]:
+    """The selected ambient elements of an owned finite subobject."""
+    inclusion = _owned_subobject_inclusion(ambient, members)
+    return tuple(inclusion(member) for member in inclusion.domain())
+
 
 class FinitePosetsCategory(Category):
     """The implementation surface of the exact derived category ``Posets().Finite()``.
@@ -305,6 +409,139 @@ class FinitePosetsCategory(Category):
 
     class ObjectType:
         """A finite poset; finite algorithms are owned by this role."""
+
+        def lower_covers(self, member: FinitePosetsCategory.ElementType) -> PosetSubobjects.ObjectType:
+            """The induced subposet of elements covered by ``member``."""
+            assert member.parent() is self
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: _cover_proposition(self, candidate, member)
+            )
+
+        def upper_covers(self, member: FinitePosetsCategory.ElementType) -> PosetSubobjects.ObjectType:
+            """The induced subposet of elements covering ``member``."""
+            assert member.parent() is self
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: _cover_proposition(self, member, candidate)
+            )
+
+        def open_interval(
+            self,
+            lower: FinitePosetsCategory.ElementType,
+            upper: FinitePosetsCategory.ElementType,
+        ) -> PosetSubobjects.ObjectType:
+            """The induced open interval ``{z : lower < z < upper}``."""
+            assert lower.parent() is self and upper.parent() is self
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: conjunction(
+                    (_strictly_less(lower, candidate), _strictly_less(candidate, upper))
+                )
+            )
+
+        def closed_interval(
+            self,
+            lower: FinitePosetsCategory.ElementType,
+            upper: FinitePosetsCategory.ElementType,
+        ) -> PosetSubobjects.ObjectType:
+            """The induced closed interval ``{z : lower <= z <= upper}``."""
+            assert lower.parent() is self and upper.parent() is self
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: conjunction((lower <= candidate, candidate <= upper))
+            )
+
+        def principal_order_ideal(
+            self,
+            member: FinitePosetsCategory.ElementType,
+        ) -> PosetSubobjects.ObjectType:
+            """The principal order ideal ``{z : z <= member}``."""
+            assert member.parent() is self
+            return Posets().Subobjects(self).from_predicate(lambda candidate: candidate <= member)
+
+        def principal_order_filter(
+            self,
+            member: FinitePosetsCategory.ElementType,
+        ) -> PosetSubobjects.ObjectType:
+            """The principal order filter ``{z : member <= z}``."""
+            assert member.parent() is self
+            return Posets().Subobjects(self).from_predicate(lambda candidate: member <= candidate)
+
+        def common_lower_covers(
+            self,
+            members: PosetSubobjects.ObjectType,
+        ) -> PosetSubobjects.ObjectType:
+            """The elements covered by every member of the supplied owned subobject."""
+            selected = _owned_subobject_members(self, members)
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: conjunction(
+                    _cover_proposition(self, candidate, member) for member in selected
+                )
+            )
+
+        def common_upper_covers(
+            self,
+            members: PosetSubobjects.ObjectType,
+        ) -> PosetSubobjects.ObjectType:
+            """The elements covering every member of the supplied owned subobject."""
+            selected = _owned_subobject_members(self, members)
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: conjunction(
+                    _cover_proposition(self, member, candidate) for member in selected
+                )
+            )
+
+        def order_ideal(
+            self,
+            members: PosetSubobjects.ObjectType,
+        ) -> PosetSubobjects.ObjectType:
+            """The down-closure of the supplied owned subobject."""
+            selected = _owned_subobject_members(self, members)
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: disjunction(candidate <= member for member in selected)
+            )
+
+        def order_filter(
+            self,
+            members: PosetSubobjects.ObjectType,
+        ) -> PosetSubobjects.ObjectType:
+            """The up-closure of the supplied owned subobject."""
+            selected = _owned_subobject_members(self, members)
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: disjunction(member <= candidate for member in selected)
+            )
+
+        def minimal_elements(self) -> PosetSubobjects.ObjectType:
+            """The induced subposet of minimal elements."""
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: conjunction(
+                    ~_strictly_less(other, candidate) for other in self
+                )
+            )
+
+        def maximal_elements(self) -> PosetSubobjects.ObjectType:
+            """The induced subposet of maximal elements."""
+            return Posets().Subobjects(self).from_predicate(
+                lambda candidate: conjunction(
+                    ~_strictly_less(candidate, other) for other in self
+                )
+            )
+
+        def is_chain_of_poset(self, members: PosetSubobjects.ObjectType) -> Proposition:
+            """Chainhood is totality of the induced order on the owned subobject."""
+            return _owned_subobject_inclusion(self, members).domain().is_total()
+
+        def is_antichain_of_poset(self, members: PosetSubobjects.ObjectType) -> Proposition:
+            """Antichainhood is equality of the induced order with equality."""
+            induced = _owned_subobject_inclusion(self, members).domain()
+            points = tuple(induced)
+            return conjunction(
+                conjunction(
+                    (
+                        implication(first <= second, first == second),
+                        implication(first == second, first <= second),
+                    )
+                )
+                for first in points
+                for second in points
+            )
 
     class ElementType:
         """An element inherited from the ambient poset."""

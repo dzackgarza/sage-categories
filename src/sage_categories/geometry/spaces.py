@@ -13,9 +13,8 @@ from sympy import false, true
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor
+from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_function, cached_method
 from sage_categories.order.posets import BinaryRelations, Posets, Thin
 
 __all__ = ["TopologicalSpaces", "TopologicalSpacesCategory"]
@@ -41,7 +40,7 @@ class _TopologyData[OpenKey: Hashable]:
     open_object_rule: Callable[[OpenKey], CategoryOfCategories.ElementType]
 
 
-class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
+class TopologicalSpacesCategory(MorphismDataCategory):
     """Represented topological spaces; the first executable domain is a finite topology."""
 
     class ObjectType(Generic[OpenKey]):
@@ -86,15 +85,15 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
             """The contravariant functor ``O(Y) -> O(X)`` induced by this map ``X -> Y``."""
             return self._inverse_image
 
-    @cached_method
     def to_sets(self) -> Functor:
-        return Fun(self, Sets).Faithful()(
+        return next(functor for functor in self.selected_functors() if functor.codomain() is Sets)
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        underlying = Fun(self, Sets).Faithful().Isofibrations()(
             lambda space: space.carrier(),
             lambda arrow: arrow.underlying_map(),
         )
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        return (*super().structure_functors(), self.to_sets())
+        return (*super().structure_functors(), underlying)
 
     def __call__(
         self,
@@ -209,27 +208,23 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()
         assert inverse.domain() is target.open_category()
         assert inverse.codomain() is source.open_category()
-        return self.MorphismType(domain=source, codomain=target, data=(underlying, inverse))
+        return self._morphism_from_data(source, target, (underlying, inverse))
 
-    def construct_identity[OpenKey: Hashable](
+    def _identity_data[OpenKey: Hashable](
         self,
         member_object: TopologicalSpacesCategory.ObjectType[OpenKey],
-    ) -> TopologicalSpacesCategory.MorphismType:
-        return self.morphism_with_inverse_image(
-            member_object,
-            member_object,
+    ) -> tuple[MorphismCategory.ObjectType, Functor]:
+        return (
             Mor(Sets)(member_object.carrier(), member_object.carrier()).one(),
             Fun(member_object.open_category(), member_object.open_category()).one(),
         )
 
-    def composite(
+    def _composite_data(
         self,
         second: TopologicalSpacesCategory.MorphismType,
         first: TopologicalSpacesCategory.MorphismType,
-    ) -> TopologicalSpacesCategory.MorphismType:
-        return self.morphism_with_inverse_image(
-            first.domain(),
-            second.codomain(),
+    ) -> tuple[MorphismCategory.ObjectType, Functor]:
+        return (
             second.underlying_map() * first.underlying_map(),
             first.inverse_image() * second.inverse_image(),
         )
@@ -238,6 +233,8 @@ class TopologicalSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         return "TopologicalSpaces"
 
 
-@cached_function(key=identity_key)
 def TopologicalSpaces() -> TopologicalSpacesCategory:
-    return TopologicalSpacesCategory()
+    return _TOPOLOGICAL_SPACES
+
+
+_TOPOLOGICAL_SPACES = TopologicalSpacesCategory()

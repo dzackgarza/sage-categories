@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from sympy import false, true
 
+from sage_categories.algebra._firewall import free_associative as _backend
 from sage_categories.algebra.abelian import (
     AbelianBimoduleTensor,
     AbelianTensor,
@@ -27,9 +28,7 @@ from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import MonoidalStructuresCategory, tensor_object
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.native import NativeObjectRealizations
 from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoids
-from sage_categories.engines import free_algebras
 from sage_categories.sets.finite import Sets
 
 type Word = tuple[int, ...]
@@ -41,9 +40,6 @@ class IntegerFreeAssociativeConstruction:
 
     names: tuple[str, ...]
     word_module: CategoryOfCategories.ElementType
-
-
-_objects: NativeObjectRealizations[object, IntegerFreeAssociativeConstruction] = NativeObjectRealizations()
 
 
 def _word_set(names: tuple[str, ...]):
@@ -59,12 +55,18 @@ def _word_set(names: tuple[str, ...]):
     return Sets.from_membership(is_word)
 
 
-def _record(algebra):
-    return _objects.realization(algebra)
+def _construction(algebra: MonoidCategory.ObjectType) -> IntegerFreeAssociativeConstruction:
+    construction = _backend.construction(algebra)
+    assert isinstance(construction, IntegerFreeAssociativeConstruction)
+    return construction
+
+
+def _owner(algebra: MonoidCategory.ObjectType):
+    return _backend.owner(algebra)
 
 
 def _free_associative_multiplication(
-    native: object,
+    construction: IntegerFreeAssociativeConstruction,
     word_module: ModuleCategory.ObjectType,
     bimodule: CategoryOfCategories.ElementType,
     structure: MonoidalStructuresCategory.ObjectType,
@@ -77,7 +79,7 @@ def _free_associative_multiplication(
     def multiply(left, right):
         record_terms_left = indexed_free_integer_coefficients(word_module, word_module.point(left))
         record_terms_right = indexed_free_integer_coefficients(word_module, word_module.point(right))
-        terms = free_algebras.multiply(native, record_terms_left, record_terms_right)
+        terms = _backend.multiply(construction, record_terms_left, record_terms_right)
         return indexed_free_integer_element(word_module, terms).datum()
 
     underlying_multiplication = relative_tensor_mediator(
@@ -106,9 +108,10 @@ def integer_free_associative_algebra(
     names = tuple(str(name) for name in names)
     if not names:
         raise ValueError("this consumer requires at least one free generator")
-    native = free_algebras.integer_free_algebra(names)
     words = _word_set(names)
     word_module = indexed_free_integer_module(words)
+    construction = IntegerFreeAssociativeConstruction(names, word_module)
+    _backend.prepare(construction, names)
     scalars = integer_scalar_monoid()
     absolute_tensor = AbelianTensor()
     bimodules = Bimodules(scalars, scalars, absolute_tensor)
@@ -119,7 +122,7 @@ def integer_free_associative_algebra(
     structure = AbelianBimoduleTensor(scalars)
     projection = relative_tensor(bimodule.right_action(), bimodule.left_action())
     multiplication = _free_associative_multiplication(
-        native,
+        construction,
         word_module,
         bimodule,
         structure,
@@ -130,12 +133,7 @@ def integer_free_associative_algebra(
     unit = bimodules.homomorphism(structure.unit(), bimodule, additive_unit)
     monoids = Monoids(structure)
     algebra = monoids(multiplication, unit)
-    _objects.retain(
-        monoids,
-        algebra,
-        native,
-        IntegerFreeAssociativeConstruction(names, word_module),
-    )
+    _backend.retain(monoids, algebra, construction)
     return algebra
 
 
@@ -145,8 +143,7 @@ def free_associative_underlying_module(algebra: MonoidCategory.ObjectType) -> Mo
 
 
 def _underlying_module_functor(algebra):
-    record = _record(algebra)
-    monoids = record.owner
+    monoids = _owner(algebra)
     structure = monoids.monoidal_structure()
     bimodules = structure.underlying_category()
     return bimodules.to_left() * Magmas(structure).forgetful() * monoids.to_magmas()
@@ -154,26 +151,25 @@ def _underlying_module_functor(algebra):
 
 def free_associative_element(algebra: MonoidCategory.ObjectType, terms: Mapping[Word, int]) -> ModuleCategory.ElementType:
     """Return the underlying-module element with the supplied finite word coefficients."""
-    record = _record(algebra)
-    source_point = indexed_free_integer_element(record.construction.word_module, terms)
+    construction = _construction(algebra)
+    source_point = indexed_free_integer_element(construction.word_module, terms)
     return free_associative_underlying_module(algebra).point(source_point.datum())
 
 
 def free_associative_generator(algebra: MonoidCategory.ObjectType, position: int) -> ModuleCategory.ElementType:
     """Return generator ``x_position`` as a point of the genuine underlying module."""
-    record = _record(algebra)
-    terms = free_algebras.generator(record.native, int(position))
+    terms = _backend.generator(algebra, int(position))
     return free_associative_element(algebra, terms)
 
 
 def free_associative_coefficients(algebra: MonoidCategory.ObjectType, element: ModuleCategory.ElementType) -> dict[Word, int]:
     """Return the finite word-basis coefficient map of an underlying element."""
-    record = _record(algebra)
+    construction = _construction(algebra)
     module = free_associative_underlying_module(algebra)
     if element.parent() is not module:
         raise ValueError("coefficients are read on the algebra's underlying module")
-    source_point = record.construction.word_module.point(element.datum())
-    return indexed_free_integer_coefficients(record.construction.word_module, source_point)
+    source_point = construction.word_module.point(element.datum())
+    return indexed_free_integer_coefficients(construction.word_module, source_point)
 
 
 def free_associative_product(
@@ -185,8 +181,7 @@ def free_associative_product(
     module = free_associative_underlying_module(algebra)
     if left.parent() is not module or right.parent() is not module:
         raise ValueError("free-algebra multiplication takes elements of its underlying module")
-    record = _record(algebra)
-    monoids = record.owner
+    monoids = _owner(algebra)
     structure = monoids.monoidal_structure()
     magma = monoids.to_magmas().on_object(algebra)
     bimodules = structure.underlying_category()
@@ -208,20 +203,20 @@ def free_associative_substitution(
     constructors, so forgetting this arrow gives the same map on the genuine
     underlying module; no degree bound appears.
     """
-    record = _record(algebra)
+    construction = _construction(algebra)
     module = free_associative_underlying_module(algebra)
-    if len(images) != len(record.construction.names):
+    if len(images) != len(construction.names):
         raise ValueError("one image is required for every free generator")
     if any(image.parent() is not module for image in images):
         raise ValueError("generator images belong to the algebra's underlying module")
-    source_module = record.construction.word_module
+    source_module = construction.word_module
     image_terms = tuple(
         indexed_free_integer_coefficients(source_module, source_module.point(image.datum()))
         for image in images
     )
 
     def basis_image(word: Word):
-        terms = free_algebras.substitute(record.native, {word: 1}, image_terms)
+        terms = _backend.substitute(algebra, {word: 1}, image_terms)
         return indexed_free_integer_element(source_module, terms)
 
     source_linear = indexed_free_integer_homomorphism(
@@ -229,7 +224,7 @@ def free_associative_substitution(
         source_module,
         basis_image,
     )
-    monoids = record.owner
+    monoids = _owner(algebra)
     structure = monoids.monoidal_structure()
     bimodules = structure.underlying_category()
     carrier_map = bimodules.left_modules().forgetful().on_morphism(source_linear)

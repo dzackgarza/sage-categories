@@ -20,6 +20,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import LimitConesCategory
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
+from sage_categories.cat.leaf_categories import FaithfulStructureCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import (
     Axiom,
@@ -30,7 +31,7 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete, ThinCategory
-from sage_categories.kernel.sage_runtime import cached_function, cached_method
+from sage_categories.order._firewall import relations as _relations_firewall
 
 type OrderRule = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType], Proposition]
 
@@ -97,14 +98,12 @@ def _decide_partial_order(
     assumptions: Proposition,
 ) -> bool | None:
     """Reflexivity, antisymmetry, and transitivity of a finite relation (Mathlib ``PartialOrder``)."""
-    from sage_categories.engines.order_relations import is_partial_order
-
     carrier = relation_object.carrier()
     data = tuple(point.datum() for point in carrier)
-    return is_partial_order(data, _related_pairs(relation_object))
+    return _relations_firewall.partial_order(data, _related_pairs(relation_object))
 
 
-class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
+class BinaryRelationsCategory(FaithfulStructureCategory):
     """Sets equipped with a binary endorelation, and relation-preserving maps."""
 
     class ObjectType:
@@ -135,17 +134,6 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
 
         def underlying_map(self) -> MorphismCategory.ObjectType:
             return self._underlying_map
-
-    def _equal_morphisms(
-        self,
-        first: BinaryRelationsCategory.MorphismType,
-        second: BinaryRelationsCategory.MorphismType,
-        assumptions: Proposition,
-    ) -> bool | None:
-        """``to_sets()`` is faithful: equal endpoints and one underlying set map make one morphism."""
-        if first.domain() is not second.domain() or first.codomain() is not second.codomain():
-            return False
-        return sympy_ask(first.underlying_map() == second.underlying_map(), assumptions)
 
     def _partial_order(self, relation_object: BinaryRelationsCategory.ObjectType) -> Proposition:
         return partial_order(relation_object)
@@ -224,19 +212,21 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         # Preservation in both directions is the defining equation above, so this
         # theorem-backed lift must not re-enumerate the source relation merely to
         # rediscover it pointwise.
-        forward = self.MorphismType(domain=relation_object, codomain=transported, data=bijection)
-        backward = self.MorphismType(domain=transported, codomain=relation_object, data=inverse)
+        forward = self._morphism_from_data(relation_object, transported, bijection)
+        backward = self._morphism_from_data(transported, relation_object, inverse)
         self.retain_inverses(forward, backward)
         return forward
 
-    @cached_method
     def to_sets(self) -> Functor:
         """The faithful isofibration ``(X, R) |-> X`` forgetting the relation (D163).
 
         It carries the chosen lift of a discrete set limit: the componentwise order on
         the selected set apex (D183, ``specs/ordered-sets.md``, "Products").
         """
-        return (
+        return next(functor for functor in self.selected_functors() if functor.codomain() is Sets)
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        underlying = (
             Fun(self, Sets)
             .Faithful()
             .Isofibrations()(
@@ -245,9 +235,7 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
             )
             .with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
         )
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        return (self.to_sets(),)
+        return (underlying,)
 
     def construct_morphism(
         self,
@@ -260,28 +248,10 @@ class BinaryRelationsCategory(Category[[MorphismCategory.ObjectType], []]):
         images = {value: underlying(source_carrier.point(value)).datum() for value in (point.datum() for point in source_carrier)}
         target_pairs = _related_pairs(target)
         assert all((images[first], images[second]) in target_pairs for first, second in _related_pairs(source)), f"{underlying!r} does not preserve the relation of {source!r}"
-        return self.MorphismType(domain=source, codomain=target, data=underlying)
-
-    def construct_identity(self, relation_object: BinaryRelationsCategory.ObjectType) -> BinaryRelationsCategory.MorphismType:
-        return self.MorphismType(
-            domain=relation_object,
-            codomain=relation_object,
-            data=Mor(Sets)(relation_object.carrier(), relation_object.carrier()).one(),
-        )
-
-    def composite(
-        self,
-        second: BinaryRelationsCategory.MorphismType,
-        first: BinaryRelationsCategory.MorphismType,
-    ) -> BinaryRelationsCategory.MorphismType:
-        return self.MorphismType(
-            domain=first.domain(),
-            codomain=second.codomain(),
-            data=second.underlying_map() * first.underlying_map(),
-        )
+        return self._morphism_from_data(source, target, underlying)
 
 
-class PosetsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
+class PosetsCategory(PropertySubcategory):
     """``BinaryRelations().PartialOrder()``: relation objects whose relation is a partial order."""
 
     _base_category_class_and_axiom = (BinaryRelationsCategory, "PartialOrder")
@@ -304,10 +274,12 @@ class PosetsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
     Total = Axiom(_total)
 
 
-@cached_function(key=lambda: 0)
+_BINARY_RELATIONS = BinaryRelationsCategory()
+
+
 def BinaryRelations() -> BinaryRelationsCategory:
     """The category of sets equipped with a binary relation."""
-    return BinaryRelationsCategory()
+    return _BINARY_RELATIONS
 
 
 def Posets() -> Category:
@@ -325,10 +297,8 @@ def _decide_total_order(
     assumptions: Proposition,
 ) -> bool | None:
     """Totality of a finite order through Sage's finite-poset implementation."""
-    from sage_categories.engines.order_relations import is_total_order
-
     data = tuple(point.datum() for point in poset_object.carrier())
-    return is_total_order(data, _related_pairs(poset_object))
+    return _relations_firewall.total_order(data, _related_pairs(poset_object))
 
 
 register_handler(order_related, _decide_order_related)

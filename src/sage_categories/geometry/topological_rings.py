@@ -6,8 +6,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, cast
 
-from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor
+from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import ask
 from sage_categories.geometry._ring_categories import rings as _rings
@@ -16,8 +17,6 @@ from sage_categories.geometry.spaces import (
     TopologicalSpacesCategory,
     _topological_space_projection,
 )
-from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 __all__ = [
     "BinaryContinuity",
@@ -65,7 +64,7 @@ class _TopologicalRingData:
     multiplication: BinaryContinuity
 
 
-class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
+class TopologicalRingsCategory(MorphismDataCategory):
     """Ring objects in ``Sets`` equipped with a topology on the exact same carrier."""
 
     class ObjectType:
@@ -113,19 +112,22 @@ class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
         def continuous_map(self) -> TopologicalSpacesCategory.MorphismType:
             return self._continuous_map
 
-    @cached_method
     def to_rings(self) -> Functor:
-        return Fun(self, _rings())(
+        rings = _rings()
+        return next(functor for functor in self.selected_functors() if functor.codomain() is rings)
+
+    def to_spaces(self) -> Functor:
+        spaces = TopologicalSpaces()
+        return next(functor for functor in self.selected_functors() if functor.codomain() is spaces)
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        rings = _rings()
+        to_rings = Fun(self, rings).Faithful().Isofibrations()(
             lambda value: cast(Any, value).ring(),
             lambda arrow: cast(Any, arrow).ring_map(),
         )
-
-    @cached_method
-    def to_spaces(self) -> Functor:
-        return _topological_space_projection(self)
-
-    def structure_functors(self) -> tuple[Functor, ...]:
-        return (*super().structure_functors(), self.to_rings(), self.to_spaces())
+        to_spaces = _topological_space_projection(self)
+        return (*super().structure_functors(), to_rings, to_spaces)
 
     def __call__(
         self,
@@ -154,35 +156,23 @@ class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
         assert continuous_map.domain() is source.space() and continuous_map.codomain() is target.space()
         underlying_ring_map = rings.forgetful().on_morphism(ring_map)
         assert ask(underlying_ring_map == continuous_map.underlying_map()) is True
-        return cast(
-            TopologicalRingsCategory.MorphismType,
-            cast(Any, self).MorphismType(
-                domain=source,
-                codomain=target,
-                data=(ring_map, continuous_map),
-            ),
-        )
+        return self._morphism_from_data(source, target, (ring_map, continuous_map))
 
-    def construct_identity(
+    def _identity_data(
         self,
         member_object: TopologicalRingsCategory.ObjectType,
-    ) -> TopologicalRingsCategory.MorphismType:
-        return self.homomorphism(
-            member_object,
-            member_object,
+    ) -> tuple[MorphismCategory.ObjectType, TopologicalSpacesCategory.MorphismType]:
+        return (
             _rings().morphism_category(1)(member_object.ring(), member_object.ring()).one(),
             TopologicalSpaces().morphism_category(1)(member_object.space(), member_object.space()).one(),
         )
 
-    def composite(
+    def _composite_data(
         self,
         second: TopologicalRingsCategory.MorphismType,
         first: TopologicalRingsCategory.MorphismType,
-    ) -> TopologicalRingsCategory.MorphismType:
-        assert first.codomain() is second.domain()
-        return self.homomorphism(
-            first.domain(),
-            second.codomain(),
+    ) -> tuple[MorphismCategory.ObjectType, TopologicalSpacesCategory.MorphismType]:
+        return (
             second.ring_map() * first.ring_map(),
             second.continuous_map() * first.continuous_map(),
         )
@@ -191,6 +181,8 @@ class TopologicalRingsCategory(Category[[MorphismCategory.ObjectType], []]):
         return "TopologicalRings"
 
 
-@cached_function(key=identity_key)
 def TopologicalRings() -> TopologicalRingsCategory:
-    return TopologicalRingsCategory()
+    return _TOPOLOGICAL_RINGS
+
+
+_TOPOLOGICAL_RINGS = TopologicalRingsCategory()

@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from fractions import Fraction
-from functools import cache
 from typing import Any, cast
 
 from sympy import false, true
@@ -23,6 +22,7 @@ from sage_categories.algebra.local_fields import (
     exact_real_field,
     prime_indices,
 )
+from sage_categories.cat.assembly import chosen_construction
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.morphisms import Mor, MorphismCategory
@@ -36,7 +36,6 @@ from sage_categories.geometry.topological_rings import (
     TopologicalRings,
     TopologicalRingsCategory,
 )
-from sage_categories.kernel.sage_runtime import cached_method
 
 __all__ = [
     "AdeleOpen",
@@ -279,8 +278,15 @@ class AdelePresentation:
             lambda prime: prime not in exceptions,
         )
 
-    @cached_method
     def component_map(self, place: str | int) -> MorphismCategory.ObjectType:
+        return chosen_construction(
+            self,
+            f"component-map-{place!r}",
+            (),
+            lambda: self._new_component_map(place),
+        )
+
+    def _new_component_map(self, place: str | int) -> MorphismCategory.ObjectType:
         rings = Rings(Sets)
         source_carrier = rings.forgetful().on_object(self.ring)
         match place:
@@ -294,8 +300,10 @@ class AdelePresentation:
         carrier_map = Mor(Sets)(source_carrier, target_carrier)(lambda value: cast(AdeleValue, value).component(place))
         return rings.homomorphism(self.ring, target.ring, carrier_map)
 
-    @cached_method
     def diagonal_map(self) -> MorphismCategory.ObjectType:
+        return chosen_construction(self, "diagonal-map", (), self._new_diagonal_map)
+
+    def _new_diagonal_map(self) -> MorphismCategory.ObjectType:
         rings = Rings(Sets)
         source = self.rational_field.ring
         source_carrier = rings.forgetful().on_object(source)
@@ -409,9 +417,12 @@ def _adele_topological_ring(
     return space, TopologicalRings()(ring, space, addition_continuity, multiplication_continuity)
 
 
-@cache
 def adeles_of_rationals() -> AdelePresentation:
     """Return the exact restricted product ``R x product'_p Q_p`` relative to ``Z_p``."""
+    return chosen_construction(TopologicalRings(), "adeles-of-rationals", (), _new_adeles_of_rationals)
+
+
+def _new_adeles_of_rationals() -> AdelePresentation:
     owner = object()
     carrier, ring = _adele_ring(owner)
     space, topological_ring = _adele_topological_ring(owner, carrier, ring)

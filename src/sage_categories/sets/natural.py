@@ -1,6 +1,7 @@
 """The positive integers as the named set ``NN`` (POL-SET-032)."""
 
 from collections.abc import Hashable
+from functools import partial
 
 from sympy import Q
 
@@ -47,11 +48,8 @@ def natural_order(first: CategoryOfCategories.ElementType, second: CategoryOfCat
 class SequentialCategory(ThinCategory):
     """``omega = Thin(NN, <=)`` with the owned positive integers as stages."""
 
-    def __init__(self) -> None:
-        super().__init__(NN, natural_order)
-
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun(omega, omega).one(),)
 
 
-Cat().implement(SequentialCategory)
+Cat().implement(partial(SequentialCategory, NN, natural_order))

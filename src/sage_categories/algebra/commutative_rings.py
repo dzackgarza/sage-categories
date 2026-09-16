@@ -1,23 +1,16 @@
-"""OSCAR-backed polynomial, quotient, and localization constructions in owned commutative rings."""
+"""OSCAR-backed polynomial, quotient, and localization constructions in owned commutative rings.
+
+The mathematical layer retains only owned construction data.  Conversion to and from
+OSCAR lives in ``algebra._firewall.commutative_rings``.
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from sage_categories.algebra._commutative_rings_oscar import (
-    OscarRingConstruction,
-    oscar_element_handle,
-    oscar_morphism_handle,
-    oscar_native_object,
-    oscar_object_handle,
-    reconstruct_oscar_element,
-    reconstruct_oscar_morphism,
-    reconstruct_oscar_object,
-)
+from sage_categories.algebra._firewall import commutative_rings as _backend
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.engines import oscar
-from sage_categories.engines.julia_bridge import OscarHandle
 
 __all__ = [
     "PrimeIdeal",
@@ -61,10 +54,9 @@ class _LocalizationConstruction:
 
 @dataclass(frozen=True, eq=False, slots=True)
 class PrimeIdeal:
-    """An owned prime ideal of one OSCAR-backed commutative ring."""
+    """An owned prime ideal of one commutative ring."""
 
     ring: CategoryOfCategories.ElementType
-    _native: OscarHandle
     generators: tuple[CategoryOfCategories.ElementType, ...]
 
 
@@ -75,27 +67,13 @@ class _PrimeLocalizationConstruction:
 
 
 def _construction(ring: CategoryOfCategories.ElementType) -> object:
-    record = oscar_native_object(ring)
-    assert isinstance(record.construction, OscarRingConstruction)
-    return record.construction.data
-
-
-def _point(
-    ring: CategoryOfCategories.ElementType,
-    datum: OscarHandle,
-) -> CategoryOfCategories.ElementType:
-    return reconstruct_oscar_element(ring, datum)
-
-
-def _datum(point: CategoryOfCategories.ElementType) -> OscarHandle:
-    return oscar_element_handle(point)
+    return _backend.construction(ring)
 
 
 def prime_field(characteristic: int) -> CategoryOfCategories.ElementType:
     """The prime field ``F_p`` as an owned commutative ring."""
     assert characteristic > 1
-    native = oscar.prime_field(characteristic)
-    return reconstruct_oscar_object(native, _PrimeFieldConstruction(characteristic))
+    return _backend.prime_field(characteristic, _PrimeFieldConstruction(characteristic))
 
 
 def polynomial_ring(
@@ -104,10 +82,7 @@ def polynomial_ring(
 ) -> tuple[CategoryOfCategories.ElementType, tuple[CategoryOfCategories.ElementType, ...]]:
     """The polynomial ring ``base[names]`` and its ordered owned generator points."""
     assert names and len(set(names)) == len(names)
-    native_base = oscar_object_handle(base)
-    native_ring, native_generators = oscar.polynomial_ring(native_base, names)
-    ring = reconstruct_oscar_object(native_ring, _PolynomialConstruction(base, names))
-    return ring, tuple(_point(ring, generator) for generator in native_generators)
+    return _backend.polynomial_ring(base, names, _PolynomialConstruction(base, names))
 
 
 def quotient_ring(
@@ -115,13 +90,8 @@ def quotient_ring(
     relations: tuple[CategoryOfCategories.ElementType, ...],
 ) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
     """The presented quotient ``source/(relations)`` and its canonical projection."""
-    assert relations
-    assert all(relation.parent() is source for relation in relations)
-    native_source = oscar_object_handle(source)
-    native_quotient, native_projection = oscar.quotient(native_source, tuple(_datum(relation) for relation in relations))
-    quotient = reconstruct_oscar_object(native_quotient, _QuotientConstruction(source, relations))
-    projection = reconstruct_oscar_morphism(source, quotient, native_projection)
-    return quotient, projection
+    assert relations and all(relation.parent() is source for relation in relations)
+    return _backend.quotient_ring(source, relations, _QuotientConstruction(source, relations))
 
 
 def principal_localization(
@@ -130,11 +100,7 @@ def principal_localization(
 ) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
     """The principal localization ``source[element^-1]`` and its canonical map."""
     assert element.parent() is source
-    native_source = oscar_object_handle(source)
-    native_localized, native_map = oscar.localization_at_element(native_source, _datum(element))
-    localized = reconstruct_oscar_object(native_localized, _LocalizationConstruction(source, element))
-    canonical = reconstruct_oscar_morphism(source, localized, native_map)
-    return localized, canonical
+    return _backend.principal_localization(source, element, _LocalizationConstruction(source, element))
 
 
 def prime_ideal(
@@ -142,13 +108,10 @@ def prime_ideal(
     generators: tuple[CategoryOfCategories.ElementType, ...],
 ) -> PrimeIdeal:
     """The checked prime ideal generated by the supplied owned ring elements."""
-    assert generators
-    assert all(generator.parent() is ring for generator in generators)
-    native = oscar.prime_ideal(
-        oscar_object_handle(ring),
-        tuple(_datum(generator) for generator in generators),
-    )
-    return PrimeIdeal(ring, native, generators)
+    assert generators and all(generator.parent() is ring for generator in generators)
+    result = PrimeIdeal(ring, generators)
+    _backend.retain_prime_ideal(result, ring, generators)
+    return result
 
 
 def prime_ideal_preimage(
@@ -157,24 +120,20 @@ def prime_ideal_preimage(
 ) -> PrimeIdeal:
     """The inverse-image prime under an owned commutative-ring map."""
     assert mapping.codomain() is target_prime.ring
-    native = oscar.prime_ideal_preimage(oscar_morphism_handle(mapping), target_prime._native)
-    return PrimeIdeal(mapping.domain(), native, ())
+    result = PrimeIdeal(mapping.domain(), ())
+    _backend.retain_prime_ideal_preimage(result, mapping, target_prime)
+    return result
 
 
 def localize_at_prime(
     prime: PrimeIdeal,
 ) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
     """The local ring at ``prime`` and its canonical localization map."""
-    native_localized, native_map = oscar.localization_at_prime(
-        oscar_object_handle(prime.ring),
-        prime._native,
-    )
-    localized = reconstruct_oscar_object(
-        native_localized,
+    return _backend.localization_at_prime(
+        prime.ring,
+        prime,
         _PrimeLocalizationConstruction(prime.ring, prime),
     )
-    canonical = reconstruct_oscar_morphism(prime.ring, localized, native_map)
-    return localized, canonical
 
 
 def induced_stalk_map(
@@ -185,13 +144,7 @@ def induced_stalk_map(
     source_prime = prime_ideal_preimage(mapping, target_prime)
     source_local, _ = localize_at_prime(source_prime)
     target_local, target_localization = localize_at_prime(target_prime)
-    native = oscar.stalk_map(
-        oscar_morphism_handle(mapping),
-        oscar_object_handle(source_local),
-        oscar_object_handle(target_local),
-        oscar_morphism_handle(target_localization),
-    )
-    arrow = reconstruct_oscar_morphism(source_local, target_local, native)
+    arrow = _backend.stalk_map(mapping, source_local, target_local, target_localization)
     return source_prime, source_local, target_local, arrow
 
 
@@ -209,36 +162,29 @@ def induced_stalk_map_to(
     assert target_construction.prime is target_prime
     source_prime = prime_ideal_preimage(mapping, target_prime)
     source_local, source_localization = localize_at_prime(source_prime)
-    native = oscar.stalk_map(
-        oscar_morphism_handle(mapping),
-        oscar_object_handle(source_local),
-        oscar_object_handle(target_local),
-        oscar_morphism_handle(target_localization),
-    )
     return (
         source_prime,
         source_local,
         source_localization,
-        reconstruct_oscar_morphism(source_local, target_local, native),
+        _backend.stalk_map(mapping, source_local, target_local, target_localization),
     )
 
 
 def _principal_localization_from_native(
     source: CategoryOfCategories.ElementType,
     element: CategoryOfCategories.ElementType,
-    native_localized: OscarHandle,
-    native_map: OscarHandle,
+    native_localized: object,
+    native_map: object,
 ) -> tuple[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
-    """Reconstruct the selected principal localization from an existing OSCAR realization.
-
-    This is the owner-side entrypoint used by the affine structure sheaf: OSCAR has
-    already constructed the admissible principal open and its section ring, so geometry
-    passes those native values back to the ring owner rather than recomputing localization.
-    """
+    """Reconstruct a principal localization supplied by another private firewall."""
     assert element.parent() is source
-    localized = reconstruct_oscar_object(native_localized, _LocalizationConstruction(source, element))
-    canonical = reconstruct_oscar_morphism(source, localized, native_map)
-    return localized, canonical
+    return _backend.principal_localization_from_native(
+        source,
+        element,
+        native_localized,
+        native_map,
+        _LocalizationConstruction(source, element),
+    )
 
 
 def presented_ring_homomorphism(
@@ -250,12 +196,7 @@ def presented_ring_homomorphism(
     construction = _construction(source)
     assert isinstance(construction, (_PolynomialConstruction, _QuotientConstruction))
     assert all(image.parent() is target for image in generator_images)
-    native = oscar.hom(
-        oscar_object_handle(source),
-        oscar_object_handle(target),
-        tuple(_datum(image) for image in generator_images),
-    )
-    return reconstruct_oscar_morphism(source, target, native)
+    return _backend.presented_ring_homomorphism(source, target, generator_images)
 
 
 def localization_extension(
@@ -263,26 +204,10 @@ def localization_extension(
     target: CategoryOfCategories.ElementType,
     base_map: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
-    """Extend a base map uniquely across a retained principal localization.
-
-    OSCAR checks that the selected element maps to a unit before constructing the
-    extension; the owned result retains ``localized`` and ``target`` as exact endpoints.
-    """
-    construction = _construction(localized)
-    assert isinstance(construction, _LocalizationConstruction)
-    assert base_map.domain() is construction.source and base_map.codomain() is target
-    native = oscar.localization_hom(
-        oscar_object_handle(localized),
-        oscar_object_handle(target),
-        oscar_morphism_handle(base_map),
-    )
-    return reconstruct_oscar_morphism(localized, target, native)
+    """Extend a base map uniquely across a retained principal localization."""
+    return _backend.localization_extension(localized, target, base_map)
 
 
-def inverse_unit(
-    element: CategoryOfCategories.ElementType,
-) -> CategoryOfCategories.ElementType:
+def inverse_unit(element: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
     """The multiplicative inverse of a unit in an OSCAR-backed commutative ring."""
-    ring = element.parent()
-    oscar_native_object(ring)
-    return _point(ring, oscar.ring_inverse(_datum(element)))
+    return _backend.inverse_unit(element)

@@ -11,13 +11,10 @@ __all__ = ["FiniteSets", "Sets", "SetsCategory"]
 
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
-from functools import cached_property
 from itertools import islice
 from itertools import product as cartesian_product
-from typing import Literal, overload
+from typing import Any, Literal, overload
 
-from sage.rings.integer import Integer as SageInteger
-from sage.symbolic.expression import Expression as SageExpression
 from sympy import (
     Dummy,
     Eq,
@@ -34,10 +31,12 @@ from sympy import Integer as SympyInteger
 from sympy import ask as sympy_ask
 from sympy.core.basic import Basic
 
+from sage_categories.cat.assembly import has_selected_value, point_from_datum, select_value, selected_value
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.declarations import NN, Sets, omega
 from sage_categories.cat.functors import Cat, Fun, Functor
+from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import (
     Axiom,
@@ -51,22 +50,18 @@ from sage_categories.cat.predicates import (
 )
 from sage_categories.cat.shapes import realize_discrete_object
 from sage_categories.cat.slices import SliceLikeCategory, SliceProperty
-from sage_categories.kernel.retention import identity_key, identity_positions
-from sage_categories.kernel.sage_runtime import cached_function, cached_method
-from sage_categories.kernel.type_aliases import ContainmentInput
+from sage_categories.sets._firewall import runtime as _runtime
 
 type Map = Callable[[Hashable], Hashable]
 type MembershipRule = Callable[[Hashable], Proposition]
 # What a set map can be constructed from: a rule on data, a SymPy ``Lambda`` or Sage callable
 # symbolic expression, or a table (``specs/sets.md``, "Morphisms").
-type MapData = Map | Lambda | SageExpression | Mapping[Hashable, Hashable]
+type MapData = Map | Lambda | Mapping[Hashable, Hashable] | Any
 
 
 def _finite_sets_engine():
-    """Load the FinSetsForCAP adapter at the one cycle-safe execution boundary."""
-    from sage_categories.engines import finite_sets
-
-    return finite_sets
+    """Read the FinSetsForCAP adapter through the leaf-local computation firewall."""
+    return _runtime.finite_sets()
 
 
 def _finite_category_engine():
@@ -222,16 +217,6 @@ def _finite_data(value: SetsCategory.ObjectType) -> tuple[Hashable, ...] | Unkno
 # datum that separates them; otherwise it stays undecided (``specs/sets.md``, "Equality").
 
 
-@cached_function(key=identity_key)
-def _retained_enumeration(value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType:
-    """The explicitly retained chosen enumeration of ``value``.
-
-    The uncached function is not a constructor: an enumeration is selected by finite
-    reconstruction or supplied by a caller, both of which install it with ``set_cache``.
-    """
-    raise AssertionError(f"{value!r} has no retained enumeration")
-
-
 @dataclass(frozen=True, slots=True)
 class _NoSymbolicRule:
     """Explicit absence of a symbolic rule on an otherwise executable set map."""
@@ -277,17 +262,16 @@ def _plain(value: Basic) -> Hashable:
 def _sympifiable(datum: Hashable) -> bool:
     if isinstance(datum, tuple):
         return all(_sympifiable(component) for component in datum)
-    return isinstance(datum, (int, SageInteger, Basic))
+    return isinstance(datum, (int, Basic)) or _runtime.is_sage_integer(datum)
 
 
 def _symbolic_rule(action: MapData | _SetMap) -> SymbolicRule:
     """The symbolic form of a construction input, normalized to one structured argument."""
     if isinstance(action, _SetMap):
         return action.rule
-    if isinstance(action, SageExpression):
-        if not action.arguments():
-            return _NO_SYMBOLIC_RULE
-        action = action._sympy_()
+    converted = _runtime.symbolic_lambda(action)
+    if converted is not None:
+        action = converted
     if not isinstance(action, Lambda):
         return _NO_SYMBOLIC_RULE
     if len(action.signature) == 1:
@@ -356,7 +340,7 @@ def _separated(
     return any(not _equal_datum(first._action(sample), second._action(sample)) for sample in _samples(domain))
 
 
-class SetsCategory(Category[[Map], []]):
+class SetsCategory(MorphismDataCategory):
     def __repr__(self) -> str:
         return "Sets"
 
@@ -377,7 +361,7 @@ class SetsCategory(Category[[Map], []]):
             """The defining ordered finite set data, or the predicate deciding membership."""
             return self._presentation
 
-        @cached_property
+        @property
         def _lookup(self) -> dict[Hashable, Hashable]:
             return {value: value for value in self._values}
 
@@ -430,10 +414,9 @@ class SetsCategory(Category[[Map], []]):
             assert ask(presentation(datum)) is True, "set membership is not established"
             return datum
 
-        @cached_method
         def point(self, datum: Hashable) -> SetsCategory.ElementType:
             datum = self.representative(datum)
-            return self.ObjectType(datum)
+            return point_from_datum(self, datum)
 
         def __iter__(self) -> Iterator[SetsCategory.ElementType]:
             return (self.point(value) for value in self._values)
@@ -441,7 +424,7 @@ class SetsCategory(Category[[Map], []]):
         def __len__(self) -> int:
             return len(self._values)
 
-        def __contains__(self, point: ContainmentInput) -> bool:
+        def __contains__(self, point: object) -> bool:
             return ask(self.membership_proposition(point)) is True
 
         def membership_proposition(self, point: CategoryOfCategories.ElementType) -> Proposition:
@@ -493,7 +476,7 @@ class SetsCategory(Category[[Map], []]):
             finite_sets = _finite_sets_engine()
 
             return finite_sets.equal_morphisms(first, second)
-        if _retained_enumeration.is_in_cache(domain):
+        if has_selected_value(self, "enumeration", (domain,)):
             points = self.finite_points(domain)
             if points is not Unknown:
                 return sympy_ask(
@@ -585,7 +568,6 @@ class SetsCategory(Category[[Map], []]):
                 return False
         return None
 
-    @cached_method
     def _generic_preimage(self, arrow: SetsCategory.MorphismType) -> tuple[Basic, Basic] | None:
         """The codomain structure ``a`` and the one symbolic preimage of ``a`` under a symbolic map, when solving gives exactly one."""
         domain, codomain = arrow.domain(), arrow.codomain()
@@ -608,7 +590,6 @@ class SetsCategory(Category[[Map], []]):
             return None
         return target, source.xreplace(solutions[0])
 
-    @cached_method
     def _solved_inverse(self, arrow: SetsCategory.MorphismType) -> Lambda | None:
         """The inverse rule of a symbolic map between rule-defined sets, when solving its equations gives one preimage that the domain rule admits.
 
@@ -665,8 +646,8 @@ class SetsCategory(Category[[Map], []]):
 
     def chosen_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass:
         """The retained isomorphism ``e: I -> X`` for the supplied enumeration of ``X``."""
-        if _retained_enumeration.is_in_cache(value):
-            return _retained_enumeration(value)
+        if has_selected_value(self, "enumeration", (value,)):
+            return selected_value(self, "enumeration", (value,))
         placement = value.category()
         for family in (placement, *placement.narrowing_roots()):
             for diagram in family.presenting_diagrams(value):
@@ -677,8 +658,8 @@ class SetsCategory(Category[[Map], []]):
 
     def _finite_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass:
         """Index the defining finite list by ``{1, ..., n}``."""
-        if _retained_enumeration.is_in_cache(value):
-            return _retained_enumeration(value)
+        if has_selected_value(self, "enumeration", (value,)):
+            return selected_value(self, "enumeration", (value,))
         values = _finite_data(value)
         if values is Unknown:
             return Unknown
@@ -687,7 +668,7 @@ class SetsCategory(Category[[Map], []]):
         positions = {datum: index for index, datum in enumerate(values, start=1)}
         inverse = Mor(self)(value, indices)(lambda datum: positions[value.representative(datum)])
         self.retain_inverses(enumeration, inverse)
-        _retained_enumeration.set_cache(enumeration, value)
+        select_value(self, "enumeration", (value,), enumeration)
         return enumeration
 
     def _product_enumeration(self, diagram: Functor) -> MorphismCategory.ObjectType | UnknownClass:
@@ -717,7 +698,7 @@ class SetsCategory(Category[[Map], []]):
         enumeration = limit.on_morphism(forward) * index_enumeration
         inverse = index_enumeration.inverse() * limit.on_morphism(backward)
         self.retain_inverses(enumeration, inverse)
-        _retained_enumeration.set_cache(enumeration, enumeration.codomain())
+        select_value(self, "enumeration", (enumeration.codomain(),), enumeration)
         return enumeration
 
     def finite_points(self, value: SetsCategory.ObjectType) -> tuple[SetsCategory.ElementType, ...] | UnknownClass:
@@ -729,11 +710,14 @@ class SetsCategory(Category[[Map], []]):
             return Unknown
         return tuple(enumeration(index) for index in enumeration.domain())
 
-    @cached_method(key=lambda self, enumeration: identity_key(enumeration))
     def enumeration_index_inclusion(self, enumeration: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         """The retained inclusion of the enumeration's positive index set into ``NN``."""
         assert enumeration in Mor(self).Isomorphisms()
-        return Mor(self)(enumeration.domain(), NN).Monomorphisms()(lambda index: index)
+        if has_selected_value(self, "enumeration-index-inclusion", (enumeration,)):
+            return selected_value(self, "enumeration-index-inclusion", (enumeration,))
+        inclusion = Mor(self)(enumeration.domain(), NN).Monomorphisms()(lambda index: index)
+        select_value(self, "enumeration-index-inclusion", (enumeration,), inclusion)
+        return inclusion
 
     def retain_enumeration(
         self,
@@ -745,14 +729,14 @@ class SetsCategory(Category[[Map], []]):
         assert inclusion in Mor(self).Monomorphisms()
         assert inclusion.domain() is enumeration.domain() and inclusion.codomain() is NN
         value = enumeration.codomain()
-        if _retained_enumeration.is_in_cache(value):
-            assert _retained_enumeration(value) is enumeration, "this set already has a different chosen enumeration"
+        if has_selected_value(self, "enumeration", (value,)):
+            assert selected_value(self, "enumeration", (value,)) is enumeration, "this set already has a different chosen enumeration"
         else:
-            _retained_enumeration.set_cache(enumeration, value)
-        if self.enumeration_index_inclusion.is_in_cache(enumeration):
-            assert self.enumeration_index_inclusion(enumeration) is inclusion, "this enumeration already has a different retained index inclusion"
+            select_value(self, "enumeration", (value,), enumeration)
+        if has_selected_value(self, "enumeration-index-inclusion", (enumeration,)):
+            assert selected_value(self, "enumeration-index-inclusion", (enumeration,)) is inclusion, "this enumeration already has a different retained index inclusion"
         else:
-            self.enumeration_index_inclusion.set_cache(inclusion, enumeration)
+            select_value(self, "enumeration-index-inclusion", (enumeration,), inclusion)
 
     def constant(self, source: SetsCategory.ObjectType, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
         """The total constant map with the supplied value."""
@@ -802,22 +786,14 @@ class SetsCategory(Category[[Map], []]):
                 rule = _constant_rule(source, value)
         return self.MorphismType(domain=source, codomain=target, data=_SetMap(table.__getitem__, rule))
 
-    def construct_identity(self, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+    def _identity_data(self, value: CategoryOfCategories.ElementType) -> _SetMap:
         structure = _structure(value)
-        return self.MorphismType(
-            domain=value,
-            codomain=value,
-            data=_SetMap(lambda datum: datum, Lambda((structure,), structure)),
-        )
+        return _SetMap(lambda datum: datum, Lambda((structure,), structure))
 
-    def composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        return self.MorphismType(
-            domain=first.domain(),
-            codomain=second.codomain(),
-            data=_SetMap(
-                lambda value: second._action(first._action(value)),
-                _composed_rule(second, first),
-            ),
+    def _composite_data(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> _SetMap:
+        return _SetMap(
+            lambda value: second._action(first._action(value)),
+            _composed_rule(second, first),
         )
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
@@ -854,12 +830,10 @@ class SetsCategory(Category[[Map], []]):
         """
         factors = tuple(diagram.on_object(vertex) for vertex in vertices)
         apex = self.from_membership(_ProductRule(factors))
-        position = identity_positions(vertices)
-
         def leg(
             vertex: CategoryOfCategories.ElementType,
         ) -> MorphismCategory.ObjectType:
-            index = position[vertex]
+            index = next(index for index, candidate in enumerate(vertices) if candidate is vertex)
             structure = _structure(apex)
             symbolic = Lambda((structure,), structure[index])
             return Mor(self)(apex, diagram.on_object(vertex))(_SetMap(lambda value: value[index], symbolic))
@@ -997,7 +971,6 @@ class SetsCategory(Category[[Map], []]):
 
         return finite_sets.factor_through_monomorphism(mono, arrow)
 
-    @cached_method
     def hom_morphisms(
         self,
         source: CategoryOfCategories.ElementType,
@@ -1014,8 +987,9 @@ def _finite_presentation(value: SetsCategory.ObjectType, assumptions: Propositio
         return True
     if isinstance(presentation, _PredicateRule) and sympy_ask(finite_set(presentation.ambient), assumptions) is True:
         return True
-    if _retained_enumeration.is_in_cache(value):
-        index_presentation = _retained_enumeration(value).domain().set_presentation()
+    if has_selected_value(Sets, "enumeration", (value,)):
+        enumeration = selected_value(Sets, "enumeration", (value,))
+        index_presentation = enumeration.domain().set_presentation()
         while isinstance(index_presentation, _PredicateRule):
             index_presentation = index_presentation.ambient.set_presentation()
         if isinstance(index_presentation, tuple):

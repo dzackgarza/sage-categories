@@ -8,8 +8,9 @@ from typing import Any, Generic, cast
 
 from typing_extensions import TypeVar
 
-from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
+from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.sheaves import RingSheaf
@@ -17,8 +18,6 @@ from sage_categories.geometry.spaces import (
     TopologicalSpacesCategory,
     _topological_space_projection,
 )
-from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 __all__ = ["RingedSpaces", "RingedSpacesCategory"]
 
@@ -35,7 +34,7 @@ class _RingedSpaceData[OpenKey: Hashable]:
     sheaf: RingSheaf[OpenKey]
 
 
-class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
+class RingedSpacesCategory(MorphismDataCategory):
     """Spaces equipped with sheaves of commutative rings."""
 
     class ObjectType(Generic[OpenKey]):
@@ -61,12 +60,16 @@ class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         def sheaf_map(self) -> NaturalTransformation:
             return self._sheaf_map
 
-    @cached_method
     def to_spaces(self) -> Functor:
-        return _topological_space_projection(self)
+        return next(functor for functor in self.selected_functors() if functor.codomain() is self._space_category())
+
+    def _space_category(self):
+        from sage_categories.geometry.spaces import TopologicalSpaces
+
+        return TopologicalSpaces()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (*super().structure_functors(), self.to_spaces())
+        return (*super().structure_functors(), _topological_space_projection(self))
 
     def __call__[OpenKey: Hashable](
         self,
@@ -101,15 +104,14 @@ class RingedSpacesCategory(Category[[MorphismCategory.ObjectType], []]):
         # trusted").  Do not enumerate the represented open category here: ringed-space
         # morphisms must also work for topologies supplied by ``from_open_category``.
         transformation = Mor(Fun(target_sheaf.domain(), _rings()))(target_sheaf, pushed_source)(component)
-        return cast(
-            RingedSpacesCategory.MorphismType,
-            cast(Any, self).MorphismType(domain=source, codomain=target, data=(continuous, transformation)),
-        )
+        return self._morphism_from_data(source, target, (continuous, transformation))
 
     def __repr__(self) -> str:
         return "RingedSpaces"
 
 
-@cached_function(key=identity_key)
 def RingedSpaces() -> RingedSpacesCategory:
-    return RingedSpacesCategory()
+    return _RINGED_SPACES
+
+
+_RINGED_SPACES = RingedSpacesCategory()

@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Mapping
 
+from sage_categories.algebra._firewall import abelian as _backend
 from sage_categories.algebra.abelian import (
     AbelianGroups,
     AbelianTensor,
     _coordinates,
-    _indexed_free_record,
     _rule_abelian_homomorphism,
     abelian_homomorphism,
     coequalizer_mediator,
@@ -27,6 +27,7 @@ from sage_categories.algebra.abelian import (
     integer_group,
     presented_abelian_group,
 )
+from sage_categories.cat.assembly import chosen_construction
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.cones import ConeCategory, cocone
 from sage_categories.cat.functors import Fun
@@ -35,8 +36,6 @@ from sage_categories.cat.monoidal import SelfAction
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import Monoids
-from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_function
 from sage_categories.sets.finite import Sets
 
 __all__ = [
@@ -54,7 +53,6 @@ __all__ = [
 ]
 
 
-@cached_function(key=lambda: 0)
 def integer_scalar_monoid() -> CategoryOfCategories.ElementType:
     r"""The tensor-unit ring ``ZZ`` as a monoid object of ``(Ab, tensor)``.
 
@@ -62,6 +60,10 @@ def integer_scalar_monoid() -> CategoryOfCategories.ElementType:
     the unit ``ZZ -> ZZ`` is the identity.  Thus this is not a second integer
     object: its carrier is literally :func:`integer_group`.
     """
+    return chosen_construction(AbelianTensor(), "integer-scalar-monoid", (), _new_integer_scalar_monoid)
+
+
+def _new_integer_scalar_monoid() -> CategoryOfCategories.ElementType:
     monoidal = AbelianTensor()
     unit = integer_group()
     multiplication = monoidal.left_unitor().component(unit)
@@ -82,13 +84,16 @@ def _indexed_integer_carrier(
     modules = _integer_modules()
     assert module in modules, f"{module!r} is not an integer module"
     carrier = modules.forgetful().on_object(module)
-    _indexed_free_record(carrier)
+    assert _backend.is_indexed(carrier), f"{carrier!r} is not an indexed-free abelian group"
     return modules, carrier
 
 
-@cached_function(key=lambda: 0)
 def integer_regular_module() -> ModuleCategory.ObjectType:
     r"""The regular left ``ZZ``-module in ``Modules(ZZ, Ab)``."""
+    return chosen_construction(_integer_modules(), "integer-regular-module", (), _new_integer_regular_module)
+
+
+def _new_integer_regular_module() -> ModuleCategory.ObjectType:
     scalars = integer_scalar_monoid()
     modules = _integer_modules()
     return modules(scalars.operation())
@@ -109,7 +114,6 @@ def _certified_integer_module(
     return modules(action)
 
 
-@cached_function(key=identity_key)
 def indexed_free_integer_module(
     index_set: CategoryOfCategories.ElementType,
 ) -> ModuleCategory.ObjectType:
@@ -121,6 +125,17 @@ def indexed_free_integer_module(
     and the universal mediator in ``Modules(ZZ, Ab)``.
     """
     assert index_set in Sets
+    return chosen_construction(
+        _integer_modules(),
+        "indexed-free-integer-module",
+        (index_set,),
+        lambda: _new_indexed_free_integer_module(index_set),
+    )
+
+
+def _new_indexed_free_integer_module(
+    index_set: CategoryOfCategories.ElementType,
+) -> ModuleCategory.ObjectType:
     modules = _integer_modules()
     regular = integer_regular_module()
     carrier = indexed_free_abelian_coproduct(index_set)
@@ -159,9 +174,9 @@ def indexed_free_integer_element(
 ) -> CategoryOfCategories.ElementType:
     r"""Return the finite-support element ``sum_i terms[i] e_i`` of ``module``."""
     _modules, carrier = _indexed_integer_carrier(module)
-    record = _indexed_free_record(carrier)
-    native_terms = tuple((record.index_set.representative(index), coefficient) for index, coefficient in terms.items() if int(coefficient) != 0)
-    datum = record.engine.sum_of_terms(native_terms, distinct=True)
+    index_set = _backend.indexed_index_set(carrier)
+    native_terms = tuple((index_set.representative(index), int(coefficient)) for index, coefficient in terms.items() if int(coefficient) != 0)
+    datum = _backend.indexed_sum_terms(carrier, native_terms, distinct=True)
     return module.point(datum)
 
 
@@ -171,8 +186,8 @@ def indexed_free_integer_support(
 ) -> CategoryOfCategories.ElementType:
     r"""Return the finite owned set of indices supporting ``element``."""
     assert element.parent() is module
-    _indexed_integer_carrier(module)
-    support = tuple(element.datum().monomial_coefficients(copy=False))
+    _modules, carrier = _indexed_integer_carrier(module)
+    support = tuple(_backend.indexed_coefficients(carrier, element.datum()))
     return Sets(support)
 
 
@@ -187,8 +202,8 @@ def indexed_free_integer_coefficients(
     ``CombinatorialFreeModule`` element that stores them.
     """
     assert element.parent() is module
-    _indexed_integer_carrier(module)
-    return {index: int(coefficient) for index, coefficient in element.datum().monomial_coefficients(copy=False).items() if int(coefficient) != 0}
+    _modules, carrier = _indexed_integer_carrier(module)
+    return {index: int(coefficient) for index, coefficient in _backend.indexed_coefficients(carrier, element.datum()).items() if int(coefficient) != 0}
 
 
 def indexed_free_integer_homomorphism(
@@ -219,39 +234,40 @@ def indexed_free_integer_homomorphism(
     return modules.homomorphism(source, target, additive)
 
 
-@cached_function(key=identity_key)
 def integer_module(
     additive_group: CategoryOfCategories.ElementType,
 ) -> ModuleCategory.ObjectType:
     r"""Equip a represented abelian group with its canonical left ``ZZ`` action."""
     assert additive_group in AbelianGroups()
-    return _certified_integer_module(additive_group)
+    return chosen_construction(
+        _integer_modules(),
+        "integer-module",
+        (additive_group,),
+        lambda: _certified_integer_module(additive_group),
+    )
 
 
-@cached_function
 def finite_free_integer_module(rank: int) -> ModuleCategory.ObjectType:
     r"""The finite free left module ``ZZ^rank`` in the general integer-module category."""
-    from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup
-
     rank = int(rank)
     if rank < 0:
         raise ValueError("a free-module rank is nonnegative")
-    return integer_module(presented_abelian_group(AdditiveAbelianGroup([0] * rank)))
+    return chosen_construction(
+        _integer_modules(),
+        f"finite-free-integer-module-{rank}",
+        (),
+        lambda: integer_module(presented_abelian_group(_backend.finite_free_engine(rank))),
+    )
 
 
 class IntegerModulePresentation:
     r"""A finite matrix presentation ``ZZ^m -> ZZ^n -> M`` with its cokernel map."""
 
     def __init__(self, relation_rows) -> None:
-        from sage.matrix.constructor import matrix
-        from sage.modules.free_module_element import vector
-        from sage.rings.integer_ring import ZZ
-
         rows = tuple(tuple(int(entry) for entry in row) for row in relation_rows)
         columns = len(rows[0]) if rows else 0
         if any(len(row) != columns for row in rows):
             raise ValueError("a relation matrix has one common target rank")
-        relation_matrix = matrix(ZZ, rows) if rows else matrix(ZZ, 0, columns)
         source = finite_free_integer_module(len(rows))
         target = finite_free_integer_module(columns)
         modules = _integer_modules()
@@ -261,8 +277,8 @@ class IntegerModulePresentation:
         target_form = _coordinates(target_group)
 
         def relation_rule(datum):
-            coordinates = vector(ZZ, source_form.coordinates(datum)) * relation_matrix
-            return target_form.element(tuple(int(entry) for entry in coordinates))
+            coordinates = _backend.relation_image(rows, source_form.coordinates(datum))
+            return target_form.element(coordinates)
 
         relation_additive = abelian_homomorphism(source_group, target_group, relation_rule)
         zero_additive = abelian_homomorphism(
@@ -276,7 +292,7 @@ class IntegerModulePresentation:
         quotient = integer_module(additive_projection.codomain())
         projection = modules.homomorphism(target, quotient, additive_projection)
 
-        self._relation_matrix = relation_matrix
+        self._relation_rows = rows
         self._modules = modules
         self._source = source
         self._target = target
@@ -287,7 +303,7 @@ class IntegerModulePresentation:
         self._projection = projection
 
     def relation_matrix(self):
-        return self._relation_matrix
+        return _backend.relation_matrix(self._relation_rows)
 
     def module_category(self):
         return self._modules

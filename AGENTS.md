@@ -6,6 +6,15 @@ Read [TODO.md](TODO.md) for the execution DAG and its governing-plan links,
 Apply `POL-WORK-002` when an issue arises, including outside the selected task.
 Capture the evidence before leaving that work; recording it does not repair it.
 
+## Owner pause — 2026-09-16
+
+The repository owner has paused this workstream. Do not start, select, continue,
+revive, wake, route, or push new work while this pause stands. If a turn was already
+mid-unit when the pause arrived, bank only that coherent unit and stop before selecting
+another. Preserve the existing dirty/shared tree. Only a later explicit owner instruction
+resumes this repository; recurrence of an older scheduled continuation does not supersede
+the pause.
+
 `sage-categories` builds a foundational category framework for Sage mathematics.
 The repository is initialized. Deliver each specified capability to its complete public consumer.
 

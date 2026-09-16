@@ -78,3 +78,86 @@ def order_preserving(
             return False
         undecided = undecided or decision is None
     return None if undecided else True
+
+
+def covers(poset_object: Any, lower: Any, upper: Any) -> bool | None:
+    lowered = _finite_relation(poset_object)
+    if lowered is None:
+        return None
+    assert lower.parent() is poset_object and upper.parent() is poset_object
+    data, pairs = lowered
+    return _relations.covers(data, pairs, lower.datum(), upper.datum())
+
+
+def height(poset_object: Any) -> int | None:
+    lowered = _finite_relation(poset_object)
+    if lowered is None:
+        return None
+    return _relations.height(*lowered)
+
+
+def width(poset_object: Any) -> int | None:
+    lowered = _finite_relation(poset_object)
+    if lowered is None:
+        return None
+    return _relations.width(*lowered)
+
+
+def has_bottom(poset_object: Any) -> bool | None:
+    lowered = _finite_relation(poset_object)
+    if lowered is None:
+        return None
+    return _relations.has_bottom(*lowered)
+
+
+def has_top(poset_object: Any) -> bool | None:
+    lowered = _finite_relation(poset_object)
+    if lowered is None:
+        return None
+    return _relations.has_top(*lowered)
+
+
+def linear_extension_leq(poset_object: Any, first: Any, second: Any) -> bool:
+    lowered = _finite_relation(poset_object)
+    assert lowered is not None, f"{poset_object!r} has no exact finite relation"
+    assert first.parent() is poset_object and second.parent() is poset_object
+    return _relations.linear_extension_leq(*lowered, first.datum(), second.datum())
+
+
+def is_ranked(poset_object: Any) -> bool | None:
+    lowered = _finite_relation(poset_object)
+    if lowered is None:
+        return None
+    return _relations.is_ranked(*lowered)
+
+
+def is_graded(poset_object: Any) -> bool | None:
+    lowered = _finite_relation(poset_object)
+    if lowered is None:
+        return None
+    return _relations.is_graded(*lowered)
+
+
+def rank_of_element(poset_object: Any, member: Any) -> int:
+    lowered = _finite_relation(poset_object)
+    assert lowered is not None, f"{poset_object!r} has no exact finite relation"
+    assert member.parent() is poset_object
+    return _relations.rank_of_element(*lowered, member.datum())
+
+
+def rank(poset_object: Any) -> int:
+    lowered = _finite_relation(poset_object)
+    assert lowered is not None, f"{poset_object!r} has no exact finite relation"
+    return _relations.rank(*lowered)
+
+
+def bottom(poset_object: Any) -> Hashable:
+    lowered = _finite_relation(poset_object)
+    assert lowered is not None, f"{poset_object!r} has no exact finite relation"
+    return _relations.bottom(*lowered)
+
+
+def top(poset_object: Any) -> Hashable:
+    lowered = _finite_relation(poset_object)
+    assert lowered is not None, f"{poset_object!r} has no exact finite relation"
+    return _relations.top(*lowered)

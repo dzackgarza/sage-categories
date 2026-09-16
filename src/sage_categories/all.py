@@ -50,6 +50,7 @@ __all__ = [
     "Adjunctions",
     "Axiom",
     "Cartesian",
+    "Cardinal",
     "Cat",
     "Category",
     "Cocones",
@@ -255,3 +256,4 @@ from sage_categories.order.posets import (
     order_preserving,
 )
 from sage_categories.sets import FiniteSets, Sets
+from sage_categories.sets.cardinals import Cardinal

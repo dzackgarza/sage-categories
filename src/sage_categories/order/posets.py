@@ -14,6 +14,8 @@ __all__ = [
     "BinaryRelationsCategory",
     "FinitePosets",
     "FinitePosetsCategory",
+    "FiniteRankedPosetsCategory",
+    "FiniteTotallyOrderedSetsCategory",
     "FiniteTotallyOrderedSets",
     "Posets",
     "PosetsCategory",
@@ -25,6 +27,7 @@ __all__ = [
 from collections.abc import Callable
 
 from sympy import ask as sympy_ask
+from sympy import false, true
 from sympy.logic.boolalg import Boolean
 
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -46,6 +49,7 @@ from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.shapes import Discrete, ThinCategory
 from sage_categories.cat.slices import SliceProperty
 from sage_categories.order._firewall import finite_posets as _finite_posets_firewall
+from sage_categories.sets.cardinals import Cardinal, CardinalCategory
 from sage_categories.sets.finite import SetsCategory
 
 type OrderRule = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType], Proposition]
@@ -67,10 +71,35 @@ class _OrderPreservingPredicate(Predicate):
     name = "order_preserving"
 
 
+class _CoverPredicate(Predicate):
+    name = "covers"
+
+
+class _RankedPredicate(Predicate):
+    name = "ranked"
+
+
+class _GradedPredicate(Predicate):
+    name = "graded"
+
+
+class _HasBottomPredicate(Predicate):
+    name = "has_bottom"
+
+
+class _HasTopPredicate(Predicate):
+    name = "has_top"
+
+
 order_related = _OrderRelatedPredicate()
 partial_order = _PartialOrderPredicate()
 total_order = _TotalOrderPredicate()
 order_preserving = _OrderPreservingPredicate()
+covers = _CoverPredicate()
+ranked = _RankedPredicate()
+graded = _GradedPredicate()
+has_bottom = _HasBottomPredicate()
+has_top = _HasTopPredicate()
 
 
 def _square_factor(square: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
@@ -360,24 +389,6 @@ def _strictly_less(
     return (first <= second) & ~(first == second)
 
 
-def _cover_proposition(
-    poset: FinitePosetsCategory.ObjectType,
-    lower: FinitePosetsCategory.ElementType,
-    upper: FinitePosetsCategory.ElementType,
-) -> Proposition:
-    """The finite cover proposition, used by the collection-valued cover constructors."""
-    assert lower.parent() is poset and upper.parent() is poset
-    return conjunction(
-        (
-            _strictly_less(lower, upper),
-            *(
-                ~conjunction((_strictly_less(lower, middle), _strictly_less(middle, upper)))
-                for middle in poset
-            ),
-        )
-    )
-
-
 def _owned_subobject_inclusion(
     ambient: FinitePosetsCategory.ObjectType,
     members: PosetSubobjects.ObjectType,
@@ -410,18 +421,54 @@ class FinitePosetsCategory(Category):
     class ObjectType:
         """A finite poset; finite algorithms are owned by this role."""
 
+        def covers(
+            self,
+            lower: FinitePosetsCategory.ElementType,
+            upper: FinitePosetsCategory.ElementType,
+        ) -> Proposition:
+            """The proposition that ``upper`` covers ``lower``."""
+            assert lower.parent() is self and upper.parent() is self
+            return covers(self, lower, upper)
+
+        def height(self) -> CardinalCategory.ObjectType:
+            """The owned cardinality of a largest chain."""
+            value = _finite_posets_firewall.height(self)
+            assert value is not None
+            return Cardinal()(value)
+
+        def width(self) -> CardinalCategory.ObjectType:
+            """The owned cardinality of a largest antichain."""
+            value = _finite_posets_firewall.width(self)
+            assert value is not None
+            return Cardinal()(value)
+
+        def linear_extension(self) -> FiniteTotallyOrderedSetsCategory.ObjectType:
+            """A finite total order on this exact carrier extending the source order."""
+            carrier = self.carrier()
+            relation = BinaryRelations().from_predicate(
+                carrier,
+                lambda first, second: true
+                if _finite_posets_firewall.linear_extension_leq(
+                        self,
+                        self.point(first.datum()),
+                        self.point(second.datum()),
+                    )
+                else false,
+            )
+            return FiniteTotallyOrderedSets()(relation.relation())
+
         def lower_covers(self, member: FinitePosetsCategory.ElementType) -> PosetSubobjects.ObjectType:
             """The induced subposet of elements covered by ``member``."""
             assert member.parent() is self
             return Posets().Subobjects(self).from_predicate(
-                lambda candidate: _cover_proposition(self, candidate, member)
+                lambda candidate: self.covers(candidate, member)
             )
 
         def upper_covers(self, member: FinitePosetsCategory.ElementType) -> PosetSubobjects.ObjectType:
             """The induced subposet of elements covering ``member``."""
             assert member.parent() is self
             return Posets().Subobjects(self).from_predicate(
-                lambda candidate: _cover_proposition(self, member, candidate)
+                lambda candidate: self.covers(member, candidate)
             )
 
         def open_interval(
@@ -472,7 +519,7 @@ class FinitePosetsCategory(Category):
             selected = _owned_subobject_members(self, members)
             return Posets().Subobjects(self).from_predicate(
                 lambda candidate: conjunction(
-                    _cover_proposition(self, candidate, member) for member in selected
+                    self.covers(candidate, member) for member in selected
                 )
             )
 
@@ -484,7 +531,7 @@ class FinitePosetsCategory(Category):
             selected = _owned_subobject_members(self, members)
             return Posets().Subobjects(self).from_predicate(
                 lambda candidate: conjunction(
-                    _cover_proposition(self, member, candidate) for member in selected
+                    self.covers(member, candidate) for member in selected
                 )
             )
 
@@ -549,9 +596,131 @@ class FinitePosetsCategory(Category):
     class MorphismType:
         """A monotone map between finite posets."""
 
+    def _ranked(self, poset_object: FinitePosetsCategory.ObjectType) -> Proposition:
+        return ranked(poset_object)
+
+    def _graded(self, poset_object: FinitePosetsCategory.ObjectType) -> Proposition:
+        return graded(poset_object)
+
+    def _with_bottom(self, poset_object: FinitePosetsCategory.ObjectType) -> Proposition:
+        return has_bottom(poset_object)
+
+    def _with_top(self, poset_object: FinitePosetsCategory.ObjectType) -> Proposition:
+        return has_top(poset_object)
+
+    Ranked = Axiom(_ranked)
+    Graded = Axiom(_graded, full_subcategory_of=(Ranked,))
+    WithBottom = Axiom(_with_bottom)
+    WithTop = Axiom(_with_top)
+
     def structure_functors(self) -> tuple[Functor, ...]:
         finite_posets = FinitePosets()
         return (Fun(finite_posets, finite_posets).one(),)
+
+
+class FiniteRankedPosetsCategory(PropertySubcategory):
+    """Finite ranked posets and their rank-valued operations."""
+
+    _base_category_class_and_axiom = (FinitePosetsCategory, "Ranked")
+
+    class ObjectType:
+        def rank_of_element(
+            self,
+            member: FinitePosetsCategory.ElementType,
+        ) -> CardinalCategory.ObjectType:
+            """The owned natural cardinal rank of ``member``."""
+            assert member.parent() is self
+            return Cardinal()(_finite_posets_firewall.rank_of_element(self, member))
+
+        def rank(self) -> CardinalCategory.ObjectType:
+            """The maximum element rank of a nonempty finite ranked poset."""
+            assert len(self) > 0, "the rank of the empty poset is not defined"
+            return Cardinal()(_finite_posets_firewall.rank(self))
+
+        def level_sets(self) -> Functor:
+            """The rank-level predicate subobjects as an owned discrete indexed family."""
+            rank_value = int(self.rank())
+            indices = Sets(tuple(range(rank_value + 1)))
+            shape = Discrete.on_object(indices)
+            subobjects = Posets().Subobjects(self)
+
+            def level(vertex: CategoryOfCategories.ElementType) -> PosetSubobjects.ObjectType:
+                target_rank = Cardinal()(int(vertex.point().datum()))
+                return subobjects.from_predicate(
+                    lambda member: self.rank_of_element(member) == target_rank
+                )
+
+            return Fun(shape, subobjects).from_object_rule(level)
+
+    class ElementType:
+        """An element of a ranked finite poset."""
+
+    class MorphismType:
+        """A monotone morphism between ranked finite posets."""
+
+
+class FiniteGradedPosetsCategory(PropertySubcategory):
+    """Finite graded posets; grading implies rankedness and adds no new operation."""
+
+    _base_category_class_and_axiom = (FinitePosetsCategory, "Graded")
+
+    class ObjectType:
+        """A finite graded poset."""
+
+    class ElementType:
+        """An element of a finite graded poset."""
+
+    class MorphismType:
+        """A monotone morphism between finite graded posets."""
+
+
+class FinitePosetsWithBottomCategory(PropertySubcategory):
+    """Finite posets with a bottom element."""
+
+    _base_category_class_and_axiom = (FinitePosetsCategory, "WithBottom")
+
+    class ObjectType:
+        def bottom(self) -> FinitePosetsCategory.ElementType:
+            return self.point(_finite_posets_firewall.bottom(self))
+
+    class ElementType:
+        """An element of a finite poset with bottom."""
+
+    class MorphismType:
+        """A monotone morphism between finite posets with bottom."""
+
+
+class FinitePosetsWithTopCategory(PropertySubcategory):
+    """Finite posets with a top element."""
+
+    _base_category_class_and_axiom = (FinitePosetsCategory, "WithTop")
+
+    class ObjectType:
+        def top(self) -> FinitePosetsCategory.ElementType:
+            return self.point(_finite_posets_firewall.top(self))
+
+    class ElementType:
+        """An element of a finite poset with top."""
+
+    class MorphismType:
+        """A monotone morphism between finite posets with top."""
+
+
+class FiniteTotallyOrderedSetsCategory(Category):
+    """The implementation surface of the exact finite-total-order narrowing."""
+
+    class ObjectType:
+        """A finite total order."""
+
+    class ElementType:
+        """An element of a finite total order."""
+
+    class MorphismType:
+        """A monotone map between finite total orders."""
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        category = FiniteTotallyOrderedSets()
+        return (Fun(category, category).one(),)
 
 
 _BINARY_RELATIONS = BinaryRelationsCategory()
@@ -577,7 +746,7 @@ def FinitePosets() -> FinitePosetsCategory:
     return Posets().Finite()
 
 
-def FiniteTotallyOrderedSets() -> Category:
+def FiniteTotallyOrderedSets() -> FiniteTotallyOrderedSetsCategory:
     """Finite total orders: the finite inverse image along ``TotallyOrderedSets() -> Posets()``."""
     return TotallyOrderedSets().Finite()
 
@@ -600,12 +769,55 @@ def _decide_order_preserving(
     return _finite_posets_firewall.order_preserving(source, target, underlying, assumptions)
 
 
+def _decide_covers(
+    poset_object: FinitePosetsCategory.ObjectType,
+    lower: FinitePosetsCategory.ElementType,
+    upper: FinitePosetsCategory.ElementType,
+    assumptions: Proposition,
+) -> bool | None:
+    return _finite_posets_firewall.covers(poset_object, lower, upper)
+
+
+def _decide_ranked(
+    poset_object: FinitePosetsCategory.ObjectType,
+    assumptions: Proposition,
+) -> bool | None:
+    return _finite_posets_firewall.is_ranked(poset_object)
+
+
+def _decide_graded(
+    poset_object: FinitePosetsCategory.ObjectType,
+    assumptions: Proposition,
+) -> bool | None:
+    return _finite_posets_firewall.is_graded(poset_object)
+
+
+def _decide_has_bottom(
+    poset_object: FinitePosetsCategory.ObjectType,
+    assumptions: Proposition,
+) -> bool | None:
+    return _finite_posets_firewall.has_bottom(poset_object)
+
+
+def _decide_has_top(
+    poset_object: FinitePosetsCategory.ObjectType,
+    assumptions: Proposition,
+) -> bool | None:
+    return _finite_posets_firewall.has_top(poset_object)
+
+
 register_handler(order_related, _decide_order_related)
 register_handler(partial_order, _decide_partial_order)
 register_handler(total_order, _decide_total_order)
 register_handler(order_preserving, _decide_order_preserving)
+register_handler(covers, _decide_covers)
+register_handler(ranked, _decide_ranked)
+register_handler(graded, _decide_graded)
+register_handler(has_bottom, _decide_has_bottom)
+register_handler(has_top, _decide_has_top)
 register_handler(BinaryRelations().equality(), BinaryRelations()._equal_morphisms)
 Cat().implement(FinitePosetsCategory)
+Cat().implement(FiniteTotallyOrderedSetsCategory)
 
 
 def _thin_category(poset_object: BinaryRelationsCategory.ObjectType) -> ThinCategory:

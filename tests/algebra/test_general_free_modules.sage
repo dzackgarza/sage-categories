@@ -81,7 +81,10 @@ def test_finite_free_module_retains_basis_product_coproduct_and_left_action() ->
     assert project_first.domain() is free and project_first.codomain() is regular
     assert project_second.domain() is free and project_second.codomain() is regular
 
-    swap = free_module_homomorphism(modules, free, free, (include_second, include_first))
+    def swap_basis(index):
+        return include_second if index is first else include_first
+
+    swap = free_module_homomorphism(modules, free, free, swap_basis)
     assert ask(swap * include_first == include_second) is True
     assert ask(swap * include_second == include_first) is True
 

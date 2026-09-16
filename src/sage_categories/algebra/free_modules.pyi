@@ -21,6 +21,7 @@ __all__ = [
 
 type ModuleMap = MorphismCategory.ObjectType
 type PairRule = Callable[[tuple[ModuleMap, ...]], ModuleMap]
+type BasisImageRule = Callable[[CategoryOfCategories.ElementType], ModuleMap]
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _FreeModuleData:
@@ -65,7 +66,7 @@ def free_module_homomorphism(
     modules: ModuleCategory,
     source: ModuleCategory.ObjectType,
     target: ModuleCategory.ObjectType,
-    component_images: tuple[ModuleMap, ...],
+    basis_image: BasisImageRule,
 ) -> ModuleMap: ...
 def finite_free_matrix_morphism(
     modules: ModuleCategory,

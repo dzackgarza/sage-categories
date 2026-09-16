@@ -1,5 +1,6 @@
 """Static consumer for scalar-general finite free modules."""
 
+from collections.abc import Callable
 from typing import assert_type
 
 from sage_categories.algebra.free_modules import (
@@ -25,6 +26,7 @@ def free_module_types(
     module: ModuleCategory.ObjectType,
     basis_index: CategoryOfCategories.ElementType,
     coefficient: CategoryOfCategories.ElementType,
+    basis_image: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType],
 ) -> None:
     modules = ordinary_modules(scalars)
     assert_type(modules, ModuleCategory)
@@ -34,5 +36,5 @@ def free_module_types(
     assert_type(finite_free_basis_family(modules, module), Functor)
     assert_type(finite_free_injection(modules, module, basis_index), MorphismCategory.ObjectType)
     assert_type(finite_free_projection(modules, module, basis_index), MorphismCategory.ObjectType)
-    assert_type(free_module_homomorphism(modules, module, module, ()), MorphismCategory.ObjectType)
+    assert_type(free_module_homomorphism(modules, module, module, basis_image), MorphismCategory.ObjectType)
     assert_type(finite_free_matrix_morphism(modules, module, module, ((coefficient,),)), MorphismCategory.ObjectType)

@@ -51,6 +51,7 @@ __all__ = [
 
 type ModuleMap = MorphismCategory.ObjectType
 type PairRule = Callable[[tuple[ModuleMap, ...]], ModuleMap]
+type BasisImageRule = Callable[[CategoryOfCategories.ElementType], ModuleMap]
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -334,16 +335,17 @@ def free_module_homomorphism(
     modules: ModuleCategory,
     source: ModuleCategory.ObjectType,
     target: ModuleCategory.ObjectType,
-    component_images: tuple[ModuleMap, ...],
+    basis_image: BasisImageRule,
 ) -> ModuleMap:
     """The map out of a finite free module determined by its owned basis-family maps.
 
-    Each component is a module morphism ``R -> target``.  The retained coproduct
-    presentation supplies the unique map from ``source``; no coordinates are read.
+    ``basis_image(i)`` is a module morphism ``R -> target`` for a point ``i`` of the
+    retained owned basis.  The retained coproduct presentation supplies the unique map
+    from ``source``; the family need not be materialized and no coordinates are read.
     """
     data = _free_data(modules, source)
     regular = regular_module(modules)
-    assert len(component_images) == len(data.injections)
+    component_images = tuple(basis_image(index) for index in data.basis)
     assert all(arrow.domain() is regular and arrow.codomain() is target for arrow in component_images)
     return data.copair(component_images)
 
@@ -386,8 +388,8 @@ def finite_free_matrix_morphism(
     if any(entry.parent() is not carrier for row in entries for entry in row):
         raise ValueError("matrix entries must be elements of the exact scalar carrier")
 
-    columns = tuple(
-        target_data.pair(tuple(_right_scalar_morphism(modules, entries[row][column]) for row in range(target_rank)))
-        for column in range(source_rank)
-    )
-    return free_module_homomorphism(modules, source, target, columns)
+    def column_image(index: CategoryOfCategories.ElementType) -> ModuleMap:
+        column = _basis_position(source_data, index)
+        return target_data.pair(tuple(_right_scalar_morphism(modules, entries[row][column]) for row in range(target_rank)))
+
+    return free_module_homomorphism(modules, source, target, column_image)

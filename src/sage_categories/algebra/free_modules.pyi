@@ -23,15 +23,6 @@ type ModuleMap = MorphismCategory.ObjectType
 type PairRule = Callable[[tuple[ModuleMap, ...]], ModuleMap]
 type BasisImageRule = Callable[[CategoryOfCategories.ElementType], ModuleMap]
 
-@dataclass(frozen=True, eq=False, slots=True)
-class _FreeModuleData:
-    basis: CategoryOfCategories.ElementType
-    family: Functor
-    injections: tuple[ModuleMap, ...]
-    projections: tuple[ModuleMap, ...]
-    pair: PairRule
-    copair: PairRule
-
 def ordinary_modules(scalars: MonoidCategory.ObjectType) -> ModuleCategory: ...
 def regular_module(modules: ModuleCategory) -> ModuleCategory.ObjectType: ...
 

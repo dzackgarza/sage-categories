@@ -54,18 +54,6 @@ type PairRule = Callable[[tuple[ModuleMap, ...]], ModuleMap]
 type BasisImageRule = Callable[[CategoryOfCategories.ElementType], ModuleMap]
 
 
-@dataclass(frozen=True, eq=False, slots=True)
-class _FreeModuleData:
-    """The retained finite basis presentation of one exact free module."""
-
-    basis: CategoryOfCategories.ElementType
-    family: Functor
-    injections: tuple[ModuleMap, ...]
-    projections: tuple[ModuleMap, ...]
-    pair: PairRule
-    copair: PairRule
-
-
 def ordinary_modules(scalars: MonoidCategory.ObjectType) -> ModuleCategory:
     """The ordinary category of left modules over ``scalars`` in ``(Ab, tensor)``."""
     monoidal = AbelianTensor()
@@ -262,9 +250,9 @@ def _new_finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategor
     )
     select_value(
         modules,
-        "finite-free-data",
+        "finite-free-family",
         (stage.module,),
-        _FreeModuleData(basis, family, stage.injections, stage.projections, stage.pair, stage.copair),
+        family,
     )
     return stage.module
 
@@ -288,27 +276,33 @@ def finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategory.Obj
     )
 
 
-def _free_data(modules: ModuleCategory, module: ModuleCategory.ObjectType) -> _FreeModuleData:
+def _free_family(modules: ModuleCategory, module: ModuleCategory.ObjectType) -> Functor:
     assert module in modules
-    assert has_selected_value(modules, "finite-free-data", (module,)), f"{module!r} has no retained finite free-module basis"
-    return selected_value(modules, "finite-free-data", (module,))
+    assert has_selected_value(modules, "finite-free-family", (module,)), f"{module!r} has no retained finite free-module basis"
+    return selected_value(modules, "finite-free-family", (module,))
 
 
 def finite_free_basis(modules: ModuleCategory, module: ModuleCategory.ObjectType) -> CategoryOfCategories.ElementType:
     """The owned finite index set of the retained basis of ``module``."""
-    return _free_data(modules, module).basis
+    return _free_family(modules, module).domain().object_set()
 
 
 def finite_free_basis_family(modules: ModuleCategory, module: ModuleCategory.ObjectType) -> Functor:
     """The retained family ``i |-> R`` whose direct sum is ``module``."""
-    return _free_data(modules, module).family
+    return _free_family(modules, module)
 
 
-def _basis_position(data: _FreeModuleData, index: CategoryOfCategories.ElementType) -> int:
-    assert index.parent() is data.basis, f"{index!r} is not a point of this free module's basis index"
+def _basis_position(family: Functor, index: CategoryOfCategories.ElementType) -> int:
+    basis = family.domain().object_set()
+    assert index.parent() is basis, f"{index!r} is not a point of this free module's basis index"
     position = int(index.datum())
-    assert 0 <= position < len(data.injections)
+    assert 0 <= position < len(basis)
     return position
+
+
+def _basis_vertex(family: Functor, index: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+    _basis_position(family, index)
+    return family.domain().object_at(index)
 
 
 def finite_free_injection(
@@ -317,8 +311,8 @@ def finite_free_injection(
     index: CategoryOfCategories.ElementType,
 ) -> ModuleMap:
     """The basis-family injection ``R -> R^n`` at the owned basis index ``index``."""
-    data = _free_data(modules, module)
-    return data.injections[_basis_position(data, index)]
+    family = _free_family(modules, module)
+    return modules.Colimits(family.domain()).universal_data(family).leg(_basis_vertex(family, index))
 
 
 def finite_free_projection(
@@ -327,8 +321,8 @@ def finite_free_projection(
     index: CategoryOfCategories.ElementType,
 ) -> ModuleMap:
     """The biproduct projection ``R^n -> R`` at the owned basis index ``index``."""
-    data = _free_data(modules, module)
-    return data.projections[_basis_position(data, index)]
+    family = _free_family(modules, module)
+    return modules.Limits(family.domain()).universal_data(family).leg(_basis_vertex(family, index))
 
 
 def free_module_homomorphism(
@@ -343,11 +337,17 @@ def free_module_homomorphism(
     retained owned basis.  The retained coproduct presentation supplies the unique map
     from ``source``; the family need not be materialized and no coordinates are read.
     """
-    data = _free_data(modules, source)
+    family = _free_family(modules, source)
     regular = regular_module(modules)
-    component_images = tuple(basis_image(index) for index in data.basis)
-    assert all(arrow.domain() is regular and arrow.codomain() is target for arrow in component_images)
-    return data.copair(component_images)
+
+    def component(vertex: CategoryOfCategories.ElementType) -> ModuleMap:
+        arrow = basis_image(vertex.point())
+        assert arrow.domain() is regular and arrow.codomain() is target
+        return arrow
+
+    return modules.Colimits(family.domain()).universal_data(family).lift(
+        cocones(family)(cocone(family, target, component))
+    )
 
 
 def _right_scalar_morphism(
@@ -380,8 +380,9 @@ def finite_free_matrix_morphism(
     ``r e_i |-> (r a[j][i]) e_j``.  This convention is observable over a
     noncommutative scalar ring and is not used to define either module.
     """
-    source_data, target_data = _free_data(modules, source), _free_data(modules, target)
-    source_rank, target_rank = len(source_data.injections), len(target_data.injections)
+    source_family, target_family = _free_family(modules, source), _free_family(modules, target)
+    source_basis, target_basis = source_family.domain().object_set(), target_family.domain().object_set()
+    source_rank, target_rank = len(source_basis), len(target_basis)
     if len(entries) != target_rank or any(len(row) != source_rank for row in entries):
         raise ValueError(f"matrix shape must be {target_rank} by {source_rank}")
     carrier = modules.carrier()
@@ -389,7 +390,21 @@ def finite_free_matrix_morphism(
         raise ValueError("matrix entries must be elements of the exact scalar carrier")
 
     def column_image(index: CategoryOfCategories.ElementType) -> ModuleMap:
-        column = _basis_position(source_data, index)
-        return target_data.pair(tuple(_right_scalar_morphism(modules, entries[row][column]) for row in range(target_rank)))
+        column = _basis_position(source_family, index)
+        target_product = modules.Limits(target_family.domain()).universal_data(target_family)
+
+        def component(vertex: CategoryOfCategories.ElementType) -> ModuleMap:
+            row = _basis_position(target_family, vertex.point())
+            return _right_scalar_morphism(modules, entries[row][column])
+
+        return target_product.lift(
+            cones(target_family)(
+                cone(
+                    target_family,
+                    regular_module(modules),
+                    component,
+                )
+            )
+        )
 
     return free_module_homomorphism(modules, source, target, column_image)

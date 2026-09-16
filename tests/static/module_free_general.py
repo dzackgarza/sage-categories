@@ -17,6 +17,7 @@ from sage_categories.algebra.free_modules import (
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.modules import ModuleCategory
+from sage_categories.cat.monoidal import ActionsCategory
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import MonoidCategory
 
@@ -30,8 +31,12 @@ def free_module_types(
 ) -> None:
     modules = ordinary_modules(scalars)
     assert_type(modules, ModuleCategory)
+    assert_type(modules.scalars(), MonoidCategory.ObjectType)
+    assert_type(modules.actegory(), ActionsCategory.ObjectType)
     assert_type(regular_module(modules), ModuleCategory.ObjectType)
     assert_type(finite_free_module(modules, 3), ModuleCategory.ObjectType)
+    assert_type(regular_module(modules).action(), MorphismCategory.ObjectType)
+    assert_type(finite_free_module(modules, 3).action(), MorphismCategory.ObjectType)
     assert_type(finite_free_basis(modules, module), CategoryOfCategories.ElementType)
     assert_type(finite_free_basis_family(modules, module), Functor)
     assert_type(finite_free_injection(modules, module, basis_index), MorphismCategory.ObjectType)

@@ -343,6 +343,15 @@ def _prime_ideal_handle(value: object) -> OscarHandle:
     return _prime_ideals[value]
 
 
+def prime_ideal_generators(value: object) -> tuple[CategoryOfCategories.ElementType, ...]:
+    """Reconstruct the native generators of one retained prime in its exact owned ring."""
+    ring = cast(Any, value).ring
+    return tuple(
+        reconstruct_oscar_element(ring, generator)
+        for generator in _oscar_runtime().ideal_generators(_prime_ideal_handle(value))
+    )
+
+
 def retain_prime_ideal_preimage(
     value: object,
     mapping: MorphismCategory.ObjectType,

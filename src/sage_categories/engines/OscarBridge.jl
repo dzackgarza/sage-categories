@@ -4,7 +4,7 @@ using Oscar
 
 export prime_field, polynomial_ring_with_generators, quotient_ring,
        localization_at_element, localization_at_prime, ring_hom, localization_hom,
-       prime_ideal_from_generators, prime_ideal_preimage, stalk_map,
+       prime_ideal_from_generators, prime_ideal_preimage, ideal_generators, stalk_map,
        map_apply, map_domain, map_codomain, ring_identity, ring_compose, ring_map_equal, ring_generators,
        ring_contains, ring_equal, ring_zero, ring_one, ring_add, ring_multiply, ring_negate,
        ring_coerce, ring_inverse, same_native,
@@ -38,6 +38,7 @@ function prime_ideal_from_generators(ring, generators)
 end
 
 prime_ideal_preimage(map, prime) = preimage(map, prime)
+ideal_generators(ideal_value) = collect(gens(ideal_value))
 
 """The local ring ``R_p`` and its canonical localization map."""
 localization_at_prime(ring, prime) = localization(ring, complement_of_prime_ideal(prime))

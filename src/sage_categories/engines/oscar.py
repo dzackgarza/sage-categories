@@ -28,6 +28,7 @@ __all__ = [
     "glued_covered_scheme",
     "gluing_mediator",
     "hom",
+    "ideal_generators",
     "localization_at_element",
     "localization_at_prime",
     "localization_hom",
@@ -98,6 +99,11 @@ def prime_ideal(ring: OscarHandle, generators: tuple[OscarHandle, ...]) -> Oscar
 def prime_ideal_preimage(mapping: OscarHandle, prime: OscarHandle) -> OscarHandle:
     """Return the inverse-image prime ideal under ``mapping``."""
     return bridge().handle("prime_ideal_preimage", mapping, prime)
+
+
+def ideal_generators(ideal: OscarHandle) -> tuple[OscarHandle, ...]:
+    """Return the native generators retained by an OSCAR ideal."""
+    return bridge().handles("ideal_generators", ideal)
 
 
 def localization_at_prime(ring: OscarHandle, prime: OscarHandle) -> tuple[OscarHandle, OscarHandle]:

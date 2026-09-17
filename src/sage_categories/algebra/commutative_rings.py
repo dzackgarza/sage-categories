@@ -22,6 +22,7 @@ __all__ = [
     "polynomial_ring",
     "presented_ring_homomorphism",
     "prime_field",
+    "prime_generators",
     "prime_ideal",
     "prime_ideal_preimage",
     "principal_localization",
@@ -123,6 +124,13 @@ def prime_ideal_preimage(
     result = PrimeIdeal(mapping.domain(), ())
     _backend.retain_prime_ideal_preimage(result, mapping, target_prime)
     return result
+
+
+def prime_generators(
+    prime: PrimeIdeal,
+) -> tuple[CategoryOfCategories.ElementType, ...]:
+    """The exact owned generator family of a retained OSCAR prime ideal."""
+    return _backend.prime_ideal_generators(prime)
 
 
 def localize_at_prime(

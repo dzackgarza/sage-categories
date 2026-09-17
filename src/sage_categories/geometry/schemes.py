@@ -12,6 +12,7 @@ from sage_categories.algebra.commutative_rings import (
     integer_ring,
     inverse_unit,
     localization_extension,
+    polynomial_coefficient_map,
     polynomial_ring,
     presented_ring_homomorphism,
     prime_contains,
@@ -25,16 +26,15 @@ from sage_categories.cat.assembly import (
     select_value,
     selected_value,
 )
-from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.leaf_categories import LeafCategory, ParameterizedThinCategory
+from sage_categories.cat.leaf_categories import ParameterizedThinCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import assume
 from sage_categories.cat.properties import PropertySubcategory
-from sage_categories.cat.structured_objects import Rings
+from sage_categories.cat.slices import SliceLikeCategory
 from sage_categories.geometry._firewall import schemes as _backend
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.affine import (
@@ -54,7 +54,6 @@ from sage_categories.geometry.locally_ringed_spaces import (
 )
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
 from sage_categories.geometry.sheaves import (
-    RingPresheaf,
     RingSheaf,
     descent_chart_comparison,
     descent_lift,
@@ -77,7 +76,7 @@ __all__ = [
     "ProjectiveLinePresentation",
     "Schemes",
     "SchemesCategory",
-    "TwoChartGluing",
+    "SchemeOpenCategory",
     "native_scheme",
     "native_scheme_morphism",
     "projective_line",
@@ -94,7 +93,7 @@ class AffineOpenChart:
     """One affine member of a retained scheme cover and its open immersion."""
 
     affine: AffineSchemesCategory.ObjectType
-    open_immersion: MorphismCategory.ObjectType
+    open_immersion: SchemesCategory.MorphismType
     structure_sheaf_comparison: NaturalTransformation
 
 
@@ -305,29 +304,28 @@ class SchemeOpenCategory(ParameterizedThinCategory):
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class TwoChartGluing:
-    left: AffineSchemesCategory.ObjectType
-    right: AffineSchemesCategory.ObjectType
-    left_open: AffineOpenCategory.ObjectType
-    right_open: AffineOpenCategory.ObjectType
-    left_to_right_pullback: MorphismCategory.ObjectType
-    right_to_left_pullback: MorphismCategory.ObjectType
-
-
-@dataclass(frozen=True, eq=False, slots=True)
 class ProjectiveLinePresentation:
-    scheme: CategoryOfCategories.ElementType
+    """The standard finite affine presentation of a scheme over its supplied field."""
+
+    scheme: SchemesCategory.ObjectType
     left_chart: AffineSchemesCategory.ObjectType
     right_chart: AffineSchemesCategory.ObjectType
     left_coordinate: CategoryOfCategories.ElementType
     right_coordinate: CategoryOfCategories.ElementType
     left_open: AffineOpenCategory.ObjectType
     right_open: AffineOpenCategory.ObjectType
-    left_inclusion: MorphismCategory.ObjectType
-    right_inclusion: MorphismCategory.ObjectType
-    chart_swap: MorphismCategory.ObjectType
-    structure_sheaf: RingPresheaf[str]
+    left_inclusion: SchemesCategory.MorphismType
+    right_inclusion: SchemesCategory.MorphismType
+    chart_swap: SchemesCategory.MorphismType
+    structure_sheaf: RingSheaf[SchemeOpenCategory.ObjectType]
     overlap_swap: MorphismCategory.ObjectType
+    left_scheme_open: SchemeOpenCategory.ObjectType
+    right_scheme_open: SchemeOpenCategory.ObjectType
+    overlap_scheme_open: SchemeOpenCategory.ObjectType
+    base: SchemesCategory.ObjectType
+    structure_map: SchemesCategory.MorphismType
+    over_base: SliceLikeCategory.ObjectType
+    swap_over_base: SliceLikeCategory.MorphismType
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -344,173 +342,8 @@ class _ProjectiveLineCover:
     right_root: AffineOpenCategory.ObjectType
     left_overlap: AffineOpenCategory.ObjectType
     right_overlap: AffineOpenCategory.ObjectType
-    inverse_t: CategoryOfCategories.ElementType
     right_to_left: MorphismCategory.ObjectType
     left_to_right: MorphismCategory.ObjectType
-
-
-class _OscarCoveredSchemesCategory(LeafCategory):
-    """Covered schemes with retained affine presentations and native mediators."""
-
-    class ObjectType:
-        def __init__(self, construction: object) -> None:
-            self._construction = construction
-
-        def construction(self) -> object:
-            return self._construction
-
-    class ElementType:
-        pass
-
-    class MorphismType:
-        pass
-
-    def _morphism_equality(
-        self,
-        first: MorphismCategory.ObjectType,
-        second: MorphismCategory.ObjectType,
-    ) -> bool | None:
-        return _backend.morphism_equal(first, second)
-
-    def affine(self, affine: AffineSchemesCategory.ObjectType) -> _OscarCoveredSchemesCategory.ObjectType:
-        """The affine scheme as a scheme, preserving its exact OSCAR chart."""
-        def construct() -> _OscarCoveredSchemesCategory.ObjectType:
-            construction = _AffineSchemeConstruction(affine)
-            value = cast(_OscarCoveredSchemesCategory.ObjectType, self.assemble_object(construction))
-            _backend.retain_affine(
-                self,
-                cast(CategoryOfCategories.ElementType, value),
-                cast(CategoryOfCategories.ElementType, affine),
-                construction,
-            )
-            return value
-
-        return chosen_construction(self, "affine-scheme", (affine,), construct)
-
-    def _covered_chart_inclusion(
-        self,
-        affine: AffineSchemesCategory.ObjectType,
-        glued: _OscarCoveredSchemesCategory.ObjectType,
-    ) -> _OscarCoveredSchemesCategory.MorphismType:
-        """Reconstruct one owned chart inclusion of a retained two-chart gluing."""
-        affine_scheme = self.affine(affine)
-        arrow = cast(
-            _OscarCoveredSchemesCategory.MorphismType,
-            self.assemble_morphism(affine_scheme, glued),
-        )
-        _backend.retain_chart_inclusion(
-            cast(MorphismCategory.ObjectType, arrow),
-            cast(CategoryOfCategories.ElementType, affine),
-            cast(CategoryOfCategories.ElementType, glued),
-        )
-        return arrow
-
-    def glue_two_affines(
-        self,
-        left: AffineSchemesCategory.ObjectType,
-        right: AffineSchemesCategory.ObjectType,
-        left_open: AffineOpenCategory.ObjectType,
-        right_open: AffineOpenCategory.ObjectType,
-        left_to_right_pullback: MorphismCategory.ObjectType,
-        right_to_left_pullback: MorphismCategory.ObjectType,
-    ) -> tuple[
-        _OscarCoveredSchemesCategory.ObjectType,
-        _OscarCoveredSchemesCategory.MorphismType,
-        _OscarCoveredSchemesCategory.MorphismType,
-    ]:
-        """Glue two affine charts along inverse principal-open maps."""
-        assert left_to_right_pullback.domain() is right_open.section_ring()
-        assert left_to_right_pullback.codomain() is left_open.section_ring()
-        assert right_to_left_pullback.domain() is left_open.section_ring()
-        assert right_to_left_pullback.codomain() is right_open.section_ring()
-        construction = TwoChartGluing(
-            left,
-            right,
-            left_open,
-            right_open,
-            left_to_right_pullback,
-            right_to_left_pullback,
-        )
-        glued = cast(_OscarCoveredSchemesCategory.ObjectType, self.assemble_object(construction))
-        _backend.retain_gluing(
-            self,
-            cast(CategoryOfCategories.ElementType, glued),
-            construction,
-            cast(CategoryOfCategories.ElementType, left),
-            cast(CategoryOfCategories.ElementType, right),
-            cast(CategoryOfCategories.ElementType, left_open),
-            cast(CategoryOfCategories.ElementType, right_open),
-            left_to_right_pullback,
-            right_to_left_pullback,
-        )
-        left_inclusion = self._covered_chart_inclusion(left, glued)
-        right_inclusion = self._covered_chart_inclusion(right, glued)
-        return glued, left_inclusion, right_inclusion
-
-    def gluing_mediator(
-        self,
-        glued: _OscarCoveredSchemesCategory.ObjectType,
-        target: _OscarCoveredSchemesCategory.ObjectType,
-        left_map: _OscarCoveredSchemesCategory.MorphismType,
-        right_map: _OscarCoveredSchemesCategory.MorphismType,
-    ) -> _OscarCoveredSchemesCategory.MorphismType:
-        """The unique map induced by compatible maps on the retained two-chart presentation."""
-        construction = glued.construction()
-        assert isinstance(construction, TwoChartGluing)
-        left_scheme, right_scheme = (
-            self.affine(construction.left),
-            self.affine(construction.right),
-        )
-        assert left_map.domain() is left_scheme and right_map.domain() is right_scheme
-        assert left_map.codomain() is target and right_map.codomain() is target
-        arrow = cast(
-            _OscarCoveredSchemesCategory.MorphismType,
-            self.assemble_morphism(glued, target),
-        )
-        _backend.retain_gluing_mediator(
-            cast(MorphismCategory.ObjectType, arrow),
-            cast(CategoryOfCategories.ElementType, glued),
-            cast(CategoryOfCategories.ElementType, target),
-            cast(CategoryOfCategories.ElementType, construction.left),
-            cast(CategoryOfCategories.ElementType, construction.right),
-            cast(MorphismCategory.ObjectType, left_map),
-            cast(MorphismCategory.ObjectType, right_map),
-        )
-        return arrow
-
-    def chart_map(
-        self,
-        source: AffineSchemesCategory.ObjectType,
-        target: _OscarCoveredSchemesCategory.ObjectType,
-        target_chart: AffineSchemesCategory.ObjectType,
-        pullback: MorphismCategory.ObjectType,
-    ) -> _OscarCoveredSchemesCategory.MorphismType:
-        """A scheme map from an affine source into one retained affine chart of ``target``."""
-        assert pullback.domain() is target_chart.coordinate_ring()
-        assert pullback.codomain() is source.coordinate_ring()
-        source_scheme = self.affine(source)
-        arrow = cast(
-            _OscarCoveredSchemesCategory.MorphismType,
-            self.assemble_morphism(source_scheme, target),
-        )
-        _backend.retain_chart_map(
-            cast(MorphismCategory.ObjectType, arrow),
-            cast(CategoryOfCategories.ElementType, source),
-            cast(CategoryOfCategories.ElementType, target),
-            cast(CategoryOfCategories.ElementType, target_chart),
-            pullback,
-        )
-        return arrow
-
-    def __repr__(self) -> str:
-        return "OscarCoveredSchemes"
-
-
-def _covered_schemes() -> _OscarCoveredSchemesCategory:
-    return cast(
-        _OscarCoveredSchemesCategory,
-        chosen_construction(Cat(), "oscar-covered-schemes", (), _OscarCoveredSchemesCategory),
-    )
 
 
 def _scheme_open_category(presentation: FiniteAffineGluing) -> SchemeOpenCategory:
@@ -951,7 +784,7 @@ class SchemesCategory(PropertySubcategory):
             self,
             base: SchemesCategory.ObjectType,
             structure_map: SchemesCategory.MorphismType,
-        ) -> CategoryOfCategories.ElementType:
+        ) -> SliceLikeCategory.ObjectType:
             """This scheme with a supplied structure map, as an ordinary object of the slice over ``base``."""
             return Schemes().over_base(self, base, structure_map)
 
@@ -960,6 +793,13 @@ class SchemesCategory(PropertySubcategory):
 
     class MorphismType:
         pass
+
+    def _morphism_equality(
+        self,
+        first: MorphismCategory.ObjectType,
+        second: MorphismCategory.ObjectType,
+    ) -> bool | None:
+        return _backend.morphism_equal(first, second)
 
     def valued_points(
         self,
@@ -983,7 +823,7 @@ class SchemesCategory(PropertySubcategory):
         scheme: SchemesCategory.ObjectType,
         base: SchemesCategory.ObjectType,
         structure_map: SchemesCategory.MorphismType,
-    ) -> CategoryOfCategories.ElementType:
+    ) -> SliceLikeCategory.ObjectType:
         """Retain ``scheme -> base`` as the generic slice object over ``base``."""
         assert scheme in self and base in self
         assert structure_map.domain() is scheme and structure_map.codomain() is base
@@ -1335,75 +1175,6 @@ def native_scheme_morphism(
     return _backend.native_scheme_morphism(value)
 
 
-def _projective_line_structure_sheaf(
-    glued: CategoryOfCategories.ElementType,
-    left_ring: CategoryOfCategories.ElementType,
-    right_ring: CategoryOfCategories.ElementType,
-    left_root: AffineOpenCategory.ObjectType,
-    right_root: AffineOpenCategory.ObjectType,
-    left_overlap: AffineOpenCategory.ObjectType,
-) -> RingPresheaf[str]:
-    """Retain the two-chart structure sheaf from OSCAR's sheaf on the glued scheme."""
-    cover = FinitePresentedCategory(
-        "ProjectiveLineAffineCover",
-        ("overlap", "left", "right"),
-        (("overlap->left", "overlap", "left"), ("overlap->right", "overlap", "right")),
-        (),
-    )
-    rings = Rings(Sets).Commutative()
-    overlap_ring = left_overlap.section_ring()
-    left_restriction, right_restriction = _backend.structure_sheaf_restrictions(
-        glued,
-        left_root,
-        right_root,
-        left_overlap,
-        left_ring,
-        right_ring,
-        overlap_ring,
-    )
-
-    def sections(open_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        match cover.label(cast(FinitePresentedCategory.ObjectType, open_object)):
-            case "left":
-                return left_ring
-            case "right":
-                return right_ring
-            case "overlap":
-                return overlap_ring
-            case label:
-                raise AssertionError(f"unexpected projective-line open {label!r}")
-
-    def restriction(opposite_arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        arrow = opposite_morphism(opposite_arrow)
-        path = cast(FinitePresentedCategory.MorphismType, arrow).word()
-        match path:
-            case ():
-                section_ring = sections(arrow.domain())
-                return Mor(rings)(section_ring, section_ring).one()
-            case ("overlap->left",):
-                return left_restriction
-            case ("overlap->right",):
-                return right_restriction
-            case _:
-                raise AssertionError(f"unexpected projective-line restriction path {path!r}")
-
-    sheaf_functor = Fun(cover.op(), rings)(sections, restriction)
-
-    def key_to_open(key: str) -> CategoryOfCategories.ElementType:
-        return cover(key)
-
-    def open_to_key(open_object: CategoryOfCategories.ElementType) -> str:
-        return cover.label(cast(FinitePresentedCategory.ObjectType, open_object))
-
-    return ring_presheaf_from_functor(
-        glued,
-        cover,
-        sheaf_functor,
-        key_to_open,
-        open_to_key,
-    )
-
-
 def _projective_line_cover(field: CategoryOfCategories.ElementType) -> _ProjectiveLineCover:
     """Construct the standard affine cover of ``P^1`` and its overlap transition maps."""
     left_ring, (t,) = polynomial_ring(field, ("t",))
@@ -1431,81 +1202,79 @@ def _projective_line_cover(field: CategoryOfCategories.ElementType) -> _Projecti
         right_root,
         left_overlap,
         right_overlap,
-        inverse_t,
         localization_extension(right_overlap.section_ring(), left_overlap.section_ring(), right_to_left_base),
         localization_extension(left_overlap.section_ring(), right_overlap.section_ring(), left_to_right_base),
     )
 
 
-def _projective_line_swap(
-    glued: _OscarCoveredSchemesCategory.ObjectType,
-    left: AffineSchemesCategory.ObjectType,
-    right: AffineSchemesCategory.ObjectType,
-    left_ring: CategoryOfCategories.ElementType,
-    right_ring: CategoryOfCategories.ElementType,
-    t: CategoryOfCategories.ElementType,
-    u: CategoryOfCategories.ElementType,
-    left_overlap: AffineOpenCategory.ObjectType,
-    inverse_t: CategoryOfCategories.ElementType,
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """The chart-swap automorphism of ``P^1`` and its induced overlap automorphism."""
-    schemes = _covered_schemes()
-    swap_left_pullback = presented_ring_homomorphism(right_ring, left_ring, (t,))
-    swap_right_pullback = presented_ring_homomorphism(left_ring, right_ring, (u,))
-    left_to_glued = schemes.chart_map(left, glued, right, swap_left_pullback)
-    right_to_glued = schemes.chart_map(right, glued, left, swap_right_pullback)
-    swap = schemes.gluing_mediator(glued, glued, left_to_glued, right_to_glued)
-    swap_overlap_base = presented_ring_homomorphism(left_ring, left_overlap.section_ring(), (inverse_t,))
-    overlap_swap = localization_extension(left_overlap.section_ring(), left_overlap.section_ring(), swap_overlap_base)
-    return swap, overlap_swap
-
-
 def projective_line(
     field: CategoryOfCategories.ElementType,
 ) -> ProjectiveLinePresentation:
-    """The two-chart projective line over ``field`` with its chart-swap automorphism."""
+    """Glue the standard two charts of ``P^1`` through the general scheme owner.
+
+    The gluing uses Stacks, Lemma 26.14.1 (01JB). The coordinate exchange is
+    defined on the charts, descends through the checked mediator, and is its own
+    inverse because the two chart coordinate exchanges are inverse maps.
+    """
     cover = _projective_line_cover(field)
-    schemes = _covered_schemes()
-    glued, left_inclusion, right_inclusion = schemes.glue_two_affines(
-        cover.left,
-        cover.right,
-        cover.left_overlap,
-        cover.right_overlap,
-        cover.right_to_left,
-        cover.left_to_right,
+    schemes = Schemes()
+    charts = (cover.left, cover.right)
+    piece = AffineOverlapPiece(
+        cover.left_overlap, cover.right_overlap,
+        cover.right_to_left, cover.left_to_right,
     )
+    overlap = schemes.affine_overlap(charts, 0, 1, (piece,))
+    glued = schemes.glue_affines(charts, (overlap,))
+    left_entry, right_entry = glued.affine_cover()
+    left_inclusion, right_inclusion = left_entry.open_immersion, right_entry.open_immersion
 
-    swap, overlap_swap = _projective_line_swap(
-        glued,
-        cover.left,
-        cover.right,
-        cover.left_ring,
-        cover.right_ring,
-        cover.t,
-        cover.u,
-        cover.left_overlap,
-        cover.inverse_t,
+    swap_left = schemes.affine_morphism(AffineSchemes().construct_morphism(
+        cover.left, cover.right,
+        presented_ring_homomorphism(cover.right_ring, cover.left_ring, (cover.t,)),
+    ))
+    swap_right = schemes.affine_morphism(AffineSchemes().construct_morphism(
+        cover.right, cover.left,
+        presented_ring_homomorphism(cover.left_ring, cover.right_ring, (cover.u,)),
+    ))
+    swap = schemes.gluing_mediator(
+        glued, glued, (right_inclusion * swap_left, left_inclusion * swap_right),
     )
+    schemes.retain_inverses(swap, swap)
 
-    structure_sheaf = _projective_line_structure_sheaf(
-        glued,
-        cover.left_ring,
-        cover.right_ring,
-        cover.left_root,
-        cover.right_root,
-        cover.left_overlap,
+    opens = _scheme_open_category(glued.finite_affine_gluing())
+    left_global = opens.open(0, cover.left_root)
+    right_global = opens.open(1, cover.right_root)
+    overlap_global = opens.open(0, cover.left_overlap)
+    pulled_overlap = swap.continuous_map().inverse_image().on_object(overlap_global)
+    local_source = pulled_overlap.chart_open(0)
+    # Read the overlap action from the actual sheaf map, not from a separately
+    # constructed substitution that could disagree with the scheme morphism.
+    overlap_swap = (
+        cover.left_overlap.restriction_to(local_source)
+        * descent_projection(pulled_overlap, pulled_overlap.section_ring(), local_source.section_ring(), 0)
+        * swap.sheaf_map().component(overlap_global)
+        * left_entry.structure_sheaf_comparison.inverse().component(cover.left_overlap)
     )
+    _rings().retain_inverses(overlap_swap, overlap_swap)
+
+    base_affine = Spec.on_object(field)
+    base = schemes.affine(base_affine)
+    structure_maps = tuple(
+        schemes.affine_morphism(AffineSchemes().construct_morphism(
+            chart, base_affine, polynomial_coefficient_map(chart.coordinate_ring()),
+        ))
+        for chart in charts
+    )
+    structure_map = schemes.gluing_mediator(glued, base, structure_maps)
+    over_base = glued.over(base, structure_map)
+    slice_category = schemes.SliceOver(base)
+    swap_over_base = Mor(slice_category)(over_base, over_base)(swap)
+    slice_category.retain_inverses(swap_over_base, swap_over_base)
+
     return ProjectiveLinePresentation(
-        glued,
-        cover.left,
-        cover.right,
-        cover.t,
-        cover.u,
-        cover.left_overlap,
-        cover.right_overlap,
-        left_inclusion,
-        right_inclusion,
-        swap,
-        structure_sheaf,
-        overlap_swap,
+        glued, cover.left, cover.right, cover.t, cover.u,
+        cover.left_overlap, cover.right_overlap,
+        left_inclusion, right_inclusion, swap, glued.sheaf(), overlap_swap,
+        left_global, right_global, overlap_global,
+        base, structure_map, over_base, swap_over_base,
     )

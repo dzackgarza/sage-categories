@@ -21,6 +21,7 @@ __all__ = [
     "inverse_unit",
     "localization_extension",
     "localize_at_prime",
+    "polynomial_coefficient_map",
     "polynomial_ring",
     "presented_ring_homomorphism",
     "prime_contains",
@@ -100,6 +101,15 @@ def polynomial_ring(
     """The polynomial ring ``base[names]`` and its ordered owned generator points."""
     assert names and len(set(names)) == len(names)
     return _backend.polynomial_ring(base, names, _PolynomialConstruction(base, names))
+
+
+def polynomial_coefficient_map(
+    polynomial: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """The canonical coefficient homomorphism ``R -> R[x_1, ..., x_n]``."""
+    construction = _construction(polynomial)
+    assert isinstance(construction, _PolynomialConstruction)
+    return _backend.polynomial_coefficient_map(construction.base, polynomial)
 
 
 def quotient_ring(

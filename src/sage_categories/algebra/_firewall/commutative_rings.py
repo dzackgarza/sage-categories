@@ -321,6 +321,16 @@ def quotient_ring(
     return target, reconstruct_oscar_morphism(source, target, native_map)
 
 
+def polynomial_coefficient_map(
+    base: CategoryOfCategories.ElementType,
+    polynomial: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    native = _oscar_runtime().polynomial_coefficient_map(
+        oscar_object_handle(base), oscar_object_handle(polynomial)
+    )
+    return reconstruct_oscar_morphism(base, polynomial, native)
+
+
 def principal_localization(
     source: CategoryOfCategories.ElementType,
     element: CategoryOfCategories.ElementType,

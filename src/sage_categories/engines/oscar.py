@@ -13,6 +13,7 @@ __all__ = [
     "affine_morphism_direct",
     "affine_open_contains",
     "affine_open_intersection",
+    "affine_open_pullback",
     "affine_open_restriction",
     "affine_open_section_ring",
     "affine_open_union",
@@ -49,6 +50,7 @@ __all__ = [
     "localization_hom",
     "map_apply",
     "polynomial_ring",
+    "polynomial_coefficient_map",
     "prime_field",
     "prime_ideal",
     "prime_ideal_extension",
@@ -104,6 +106,11 @@ def quotient(ring: OscarHandle, relations: tuple[OscarHandle, ...]) -> tuple[Osc
     """Return ``ring/(relations)`` and its canonical projection."""
     quotient_ring, projection = bridge().pair("quotient_ring", ring, list(relations))
     return quotient_ring, projection
+
+
+def polynomial_coefficient_map(base: OscarHandle, polynomial: OscarHandle) -> OscarHandle:
+    """Return the canonical inclusion of a polynomial ring's exact coefficient ring."""
+    return bridge().handle("polynomial_coefficient_map", base, polynomial)
 
 
 def localization_at_element(ring: OscarHandle, element: OscarHandle) -> tuple[OscarHandle, OscarHandle]:
@@ -283,6 +290,11 @@ def affine_open_contains(smaller: OscarHandle, larger: OscarHandle) -> bool:
 def affine_open_intersection(first: OscarHandle, second: OscarHandle) -> OscarHandle:
     """Return the represented intersection of two affine opens."""
     return bridge().handle("affine_open_intersection", first, second)
+
+
+def affine_open_pullback(mapping: OscarHandle, source_open: OscarHandle, target_open: OscarHandle) -> OscarHandle:
+    """Return the pullback on regular functions over an exact open inverse image."""
+    return bridge().handle("affine_open_pullback", mapping, source_open, target_open)
 
 
 def affine_domain(mapping: OscarHandle) -> OscarHandle:

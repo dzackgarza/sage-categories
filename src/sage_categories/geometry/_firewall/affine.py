@@ -161,6 +161,20 @@ def open_intersection_equations(
     )
 
 
+def open_pullback(
+    mapping: MorphismCategory.ObjectType,
+    source_open: CategoryOfCategories.ElementType,
+    target_open: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """Reconstruct OSCAR's pullback on a finite union of principal opens."""
+    native = oscar.affine_open_pullback(
+        morphism_handle(mapping), open_handle(source_open), open_handle(target_open)
+    )
+    return _rings_backend.reconstruct_oscar_morphism(
+        target_open.section_ring(), source_open.section_ring(), native
+    )
+
+
 def open_handle(value: CategoryOfCategories.ElementType) -> OscarHandle:
     assert value in _opens, f"{value!r} has no retained OSCAR affine-open realization"
     return _opens[value]

@@ -23,7 +23,7 @@ from sage_categories.geometry.schemes import (
     ProjectiveLinePresentation,
     Schemes,
     SchemesCategory,
-    TwoChartGluing,
+    SchemeOpenCategory,
     projective_line,
 )
 from sage_categories.geometry.sheaves import (
@@ -65,7 +65,7 @@ __all__ = [
     "TopologicalRingsCategory",
     "TopologicalSpaces",
     "TopologicalSpacesCategory",
-    "TwoChartGluing",
+    "SchemeOpenCategory",
     "affine_structure_sheaf",
     "complex_projective_point",
     "projective_infinity",

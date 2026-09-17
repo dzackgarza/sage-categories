@@ -547,11 +547,22 @@ def affine_open_preimage(
     mapping: AffineSchemesCategory.MorphismType,
     target_open: AffineOpenCategory.ObjectType,
 ) -> tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType]:
-    """The principal-open inverse image and induced structure-sheaf map."""
+    """The represented open inverse image and induced structure-sheaf map."""
     assert target_open.scheme() is mapping.codomain()
     source_opens = _affine_open_category(mapping.domain())
 
     def construct() -> tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType]:
+        # A represented union has no single parent/localizing element; it is not
+        # the affine root.  Inverse images preserve its principal-open cover.
+        match target_open.covering_pieces():
+            case ():
+                pass
+            case pieces:
+                source_pieces = tuple(
+                    affine_open_preimage(mapping, piece)[0] for piece in pieces
+                )
+                source_open = source_opens.finite_union(source_pieces)
+                return source_open, _backend.open_pullback(mapping, source_open, target_open)
         match target_open.parent_open():
             case None:
                 source_open = source_opens.root()

@@ -31,7 +31,12 @@ from sympy import Integer as SympyInteger
 from sympy import ask as sympy_ask
 from sympy.core.basic import Basic
 
-from sage_categories.cat.assembly import has_selected_value, point_from_datum, select_value, selected_value
+from sage_categories.cat.assembly import (
+    has_selected_value,
+    point_from_datum,
+    select_value,
+    selected_value,
+)
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.declarations import NN, Sets, omega
@@ -173,6 +178,36 @@ class _SequentialColimitRule(_DiagramValueRule):
     """Membership presentation for a colimit over ``omega``."""
 
     value_type = _SequentialColimitValue
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _QuotientValue:
+    """One retained representative of a represented quotient set."""
+
+    rule: _QuotientRule
+    value: Hashable
+
+
+class _QuotientRule:
+    """A quotient carrier presented by an ambient set and an exact equivalence rule."""
+
+    def __init__(
+        self,
+        ambient: SetsCategory.ObjectType,
+        equivalent: Callable[[SetsCategory.ElementType, SetsCategory.ElementType], Proposition],
+    ) -> None:
+        self.ambient, self.equivalent = ambient, equivalent
+
+    def __call__(self, datum: Hashable) -> Proposition:
+        match datum:
+            case _QuotientValue(rule=rule):
+                match rule is self:
+                    case True:
+                        return true
+                    case False:
+                        return false
+            case _:
+                return false
 
 
 class _PredicateRule:
@@ -411,6 +446,19 @@ class SetsCategory(MorphismDataCategory):
                     stage,
                     presentation.diagram.on_object(vertex).representative(value),
                 )
+            if isinstance(presentation, _QuotientRule):
+                match datum:
+                    case _QuotientValue(rule=rule, value=value):
+                        assert rule is presentation, "representative belongs to another quotient"
+                        return _QuotientValue(
+                            presentation,
+                            presentation.ambient.representative(value),
+                        )
+                    case _:
+                        return _QuotientValue(
+                            presentation,
+                            presentation.ambient.representative(datum),
+                        )
             assert ask(presentation(datum)) is True, "set membership is not established"
             return datum
 
@@ -511,6 +559,20 @@ class SetsCategory(MorphismDataCategory):
                 return presentation.diagram.on_morphism(transition)._action(representative.value)
 
             return True if _equal_datum(image(left), image(right)) else None
+        if isinstance(presentation, _QuotientRule):
+            left, right = first.datum(), second.datum()
+            assert isinstance(left, _QuotientValue) and isinstance(right, _QuotientValue)
+            decision = ask(
+                presentation.equivalent(
+                    presentation.ambient.point(left.value),
+                    presentation.ambient.point(right.value),
+                )
+            )
+            match decision:
+                case True | False:
+                    return decision
+                case _:
+                    return None
         return _equal_datum(first.datum(), second.datum())
 
     # -- monomorphisms, epimorphisms, isomorphisms (``specs/sets.md``, "Morphisms") ------------
@@ -815,6 +877,24 @@ class SetsCategory(MorphismDataCategory):
         if _finite_category_engine().finite_category(shape) is not Unknown:
             return finite_sets.finite_colimit
         return Category.colimit_construction(self, shape)
+
+    def quotient(
+        self,
+        ambient: SetsCategory.ObjectType,
+        equivalent: Callable[[SetsCategory.ElementType, SetsCategory.ElementType], Proposition],
+    ) -> tuple[SetsCategory.ObjectType, SetsCategory.MorphismType]:
+        """Represent ``ambient / equivalent`` without enumerating either set or its classes.
+
+        ``equivalent`` is the category-owned equality predicate for quotient classes.  The
+        quotient map retains one ambient representative; equality of quotient points asks
+        only the supplied relation and may remain undecided.
+        """
+        rule = _QuotientRule(ambient, equivalent)
+        quotient = self.from_membership(rule)
+        projection = Mor(self)(ambient, quotient)(
+            lambda value: _QuotientValue(rule, ambient.representative(value))
+        )
+        return quotient, projection
 
     def _represented_product(
         self,

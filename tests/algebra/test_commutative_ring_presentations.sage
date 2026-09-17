@@ -14,6 +14,7 @@ from sage_categories.algebra import (
 )
 from sage_categories.algebra.commutative_rings import (
     prime_contains,
+    prime_ideal_equal,
     prime_ideal_extension,
 )
 from sage_categories.all import Mor, ask
@@ -57,8 +58,11 @@ def test_prime_localizations_and_stalk_map_retain_owned_endpoints() -> None:
     target, (u,) = polynomial_ring(field, ("u",))
     mapping = presented_ring_homomorphism(source, target, (u,))
     target_prime = prime_ideal(target, (u,))
+    same_target_prime = prime_ideal(target, (u,))
     assert prime_contains(target_prime, u) is True
     assert prime_contains(target_prime, target.one()) is False
+    assert prime_ideal_equal(target_prime, same_target_prime) is True
+    assert prime_ideal_equal(target_prime, prime_ideal(target, (u - target.one(),))) is False
     extended_source_prime = prime_ideal_extension(mapping, prime_ideal(source, (_t,)))
     assert prime_contains(extended_source_prime, u) is True
     target_local, target_localization = localize_at_prime(target_prime)

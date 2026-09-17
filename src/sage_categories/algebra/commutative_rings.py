@@ -25,6 +25,7 @@ __all__ = [
     "prime_field",
     "prime_generators",
     "prime_ideal",
+    "prime_ideal_equal",
     "prime_ideal_extension",
     "prime_ideal_preimage",
     "principal_localization",
@@ -153,6 +154,18 @@ def prime_contains(
     """Decide whether ``element`` belongs to the retained prime ideal."""
     assert element.parent() is prime.ring
     return _backend.prime_ideal_contains(prime, element)
+
+
+def prime_ideal_equal(first: PrimeIdeal, second: PrimeIdeal) -> bool:
+    """Decide equality of two retained prime ideals by mutual generator containment."""
+    match first.ring is second.ring:
+        case False:
+            return False
+        case True:
+            pass
+    return all(prime_contains(second, generator) for generator in prime_generators(first)) and all(
+        prime_contains(first, generator) for generator in prime_generators(second)
+    )
 
 
 def localize_at_prime(

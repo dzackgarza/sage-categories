@@ -16,6 +16,9 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        principal_open_subset, principal_open_ambient,
        principal_open_inclusion, affine_morphism_direct,
        simple_gluing, glued_covered_scheme, covered_patches,
+       general_gluing, finite_covered_scheme, gluing_cocycle,
+       covered_open_contains, covered_open_restriction,
+       covered_chart_open_preimage, affine_open_complement_equations,
        covered_chart_inclusion, gluing_mediator,
        covered_chart_map, covered_domain, covered_codomain,
        covered_identity, covered_compose, covered_equal
@@ -110,7 +113,9 @@ sheaf_restriction(sheaf, larger, smaller) = restriction_map(sheaf, larger, small
 function affine_open_union(patches)
     opens = [AffineSchemeOpenSubscheme(patch) for patch in collect(patches)]
     isempty(opens) && error("an affine-open union needs at least one principal patch")
-    reduce(union, opens)
+    result = reduce(union, opens)
+    result.patches = collect(patches)
+    result
 end
 
 affine_open_section_ring(open_subset) = OO(open_subset)
@@ -126,6 +131,104 @@ affine_morphism_direct(source_scheme, target_scheme, pullback_map) = morphism(so
 """A checked gluing of two affine charts along inverse principal-open maps."""
 simple_gluing(left_chart, right_chart, left_to_right, right_to_left) =
     SimpleGluing(left_chart, right_chart, left_to_right, right_to_left)
+
+function affine_open_piecewise_morphism(source_open, target_open, source_patches, target_patches, pullbacks)
+    source_patches = collect(source_patches)
+    target_patches = collect(target_patches)
+    pullbacks = collect(pullbacks)
+    length(source_patches) == length(target_patches) == length(pullbacks) ||
+        error("piecewise open morphism data have inconsistent lengths")
+    target_ambient = ambient_scheme(target_open)
+    target_generators = gens(OO(target_ambient))
+    maps = AbsAffineSchemeMor[]
+    for (source_patch, target_patch, pullback_map) in zip(source_patches, target_patches, pullbacks)
+        target_restriction = pullback(inclusion_morphism(target_patch))
+        images = [pullback_map(target_restriction(generator)) for generator in target_generators]
+        push!(maps, morphism(source_patch, target_ambient, images, check=false))
+    end
+    AffineSchemeOpenSubschemeMor(source_open, target_open, maps, check=true)
+end
+
+function general_gluing(
+    left_chart,
+    right_chart,
+    left_open,
+    right_open,
+    left_patches,
+    right_patches,
+    left_to_right_pullbacks,
+    right_to_left_pullbacks,
+)
+    left_to_right = affine_open_piecewise_morphism(
+        left_open,
+        right_open,
+        left_patches,
+        right_patches,
+        left_to_right_pullbacks,
+    )
+    right_to_left = affine_open_piecewise_morphism(
+        right_open,
+        left_open,
+        right_patches,
+        left_patches,
+        right_to_left_pullbacks,
+    )
+    Gluing(left_chart, right_chart, left_to_right, right_to_left, check=true)
+end
+
+function gluing_cocycle(first, second, direct)
+    try
+        composed = compose(first, second)
+        if patches(composed)[1] !== patches(direct)[1]
+            direct = inverse(direct)
+        end
+        composed_map = gluing_morphisms(composed)[1]
+        direct_map = gluing_morphisms(direct)[1]
+        restricted = restrict(
+            direct_map,
+            domain(composed_map),
+            codomain(composed_map),
+            check=true,
+        )
+        composed_map == restricted
+    catch
+        false
+    end
+end
+
+function finite_covered_scheme(patches, gluings)
+    covering = Covering(collect(patches))
+    for gluing in collect(gluings)
+        add_gluing!(covering, gluing)
+    end
+    CoveredScheme(covering)
+end
+
+function covered_open_contains(scheme, smaller, larger)
+    try
+        restriction_map(StructureSheafOfRings(scheme), larger, smaller)
+        true
+    catch
+        false
+    end
+end
+
+covered_open_restriction(scheme, larger, smaller) =
+    restriction_map(StructureSheafOfRings(scheme), larger, smaller)
+
+function covered_chart_open_preimage(scheme, source_chart, target_open)
+    target_chart = ambient_scheme(target_open)
+    target_as_open = target_open isa AffineSchemeOpenSubscheme ? target_open : AffineSchemeOpenSubscheme(target_open)
+    if source_chart === target_chart
+        return target_as_open
+    end
+    gluing = default_covering(scheme)[source_chart, target_chart]
+    forward = gluing_morphisms(gluing)[1]
+    target_part = intersect(codomain(forward), target_as_open)
+    preimage(forward, target_part)
+end
+
+affine_open_complement_equations(open_subset) = collect(complement_equations(open_subset))
 
 """The covered scheme obtained from two charts and their gluing."""
 function glued_covered_scheme(left_chart, right_chart, gluing)

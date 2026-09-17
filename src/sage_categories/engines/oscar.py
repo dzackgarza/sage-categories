@@ -19,16 +19,22 @@ __all__ = [
     "codomain",
     "covered_chart_inclusion",
     "covered_chart_map",
+    "covered_chart_open_preimage",
     "covered_codomain",
     "covered_compose",
     "covered_domain",
     "covered_equal",
     "covered_identity",
+    "covered_open_contains",
+    "covered_open_restriction",
     "covered_patches",
     "covered_scheme",
     "domain",
+    "finite_covered_scheme",
+    "general_gluing",
     "generators",
     "glued_covered_scheme",
+    "gluing_cocycle",
     "gluing_mediator",
     "hom",
     "ideal_contains",
@@ -279,6 +285,67 @@ def simple_gluing(
 ) -> OscarHandle:
     """Return OSCAR's checked simple gluing of two affine charts."""
     return bridge().handle("simple_gluing", left_chart, right_chart, left_to_right, right_to_left)
+
+
+def general_gluing(
+    left_chart: OscarHandle,
+    right_chart: OscarHandle,
+    left_open: OscarHandle,
+    right_open: OscarHandle,
+    left_patches: tuple[OscarHandle, ...],
+    right_patches: tuple[OscarHandle, ...],
+    left_to_right_pullbacks: tuple[OscarHandle, ...],
+    right_to_left_pullbacks: tuple[OscarHandle, ...],
+) -> OscarHandle:
+    """Return a checked gluing along finite affine covers of general open subsets."""
+    return bridge().handle(
+        "general_gluing",
+        left_chart,
+        right_chart,
+        left_open,
+        right_open,
+        list(left_patches),
+        list(right_patches),
+        list(left_to_right_pullbacks),
+        list(right_to_left_pullbacks),
+    )
+
+
+def gluing_cocycle(first: OscarHandle, second: OscarHandle, direct: OscarHandle) -> bool:
+    """Check the direct transition against the composite on the triple-overlap domain."""
+    return bridge().boolean("gluing_cocycle", first, second, direct)
+
+
+def finite_covered_scheme(
+    patches: tuple[OscarHandle, ...],
+    gluings: tuple[OscarHandle, ...],
+) -> OscarHandle:
+    """Return a covered scheme with all supplied pairwise gluings retained."""
+    return bridge().handle("finite_covered_scheme", list(patches), list(gluings))
+
+
+def covered_open_contains(scheme: OscarHandle, smaller: OscarHandle, larger: OscarHandle) -> bool:
+    """Decide represented-open containment through the covered structure sheaf."""
+    return bridge().boolean("covered_open_contains", scheme, smaller, larger)
+
+
+def covered_open_restriction(scheme: OscarHandle, larger: OscarHandle, smaller: OscarHandle) -> OscarHandle:
+    """Return the covered structure-sheaf restriction between represented affine opens."""
+    return bridge().handle("covered_open_restriction", scheme, larger, smaller)
+
+
+def covered_chart_open_preimage(
+    scheme: OscarHandle,
+    source_chart: OscarHandle,
+    target_open: OscarHandle,
+) -> OscarHandle:
+    """Pull one represented chart-affine open back into another chart."""
+    return bridge().handle("covered_chart_open_preimage", scheme, source_chart, target_open)
+
+
+def affine_open_complement_equations(open_subset: OscarHandle) -> tuple[OscarHandle, ...]:
+    """Return root-coordinate equations whose principal opens cover ``open_subset``."""
+    return bridge().handles("affine_open_complement_equations", open_subset)
 
 
 def glued_covered_scheme(left_chart: OscarHandle, right_chart: OscarHandle, gluing: OscarHandle) -> OscarHandle:

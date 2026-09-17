@@ -2,17 +2,25 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from sage_categories.algebra._firewall import commutative_rings as _rings_backend
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.native import NativeMorphismRealization, NativeMorphismRealizations, NativeObjectRealization, NativeObjectRealizations
+from sage_categories.cat.native import (
+    NativeMorphismRealization,
+    NativeMorphismRealizations,
+    NativeObjectRealization,
+    NativeObjectRealizations,
+)
 from sage_categories.engines import oscar
 from sage_categories.engines.julia_bridge import OscarHandle
 from sage_categories.geometry._firewall import affine as _affine_backend
 
-
 _objects: NativeObjectRealizations[OscarHandle, object] = NativeObjectRealizations()
 _morphisms: NativeMorphismRealizations[OscarHandle] = NativeMorphismRealizations()
+_finite_gluing_presentations: dict[object, OscarHandle] = {}
+_finite_gluing_edges: dict[tuple[object, int, int], OscarHandle] = {}
 
 
 def _retain_object(owner: Category, value: CategoryOfCategories.ElementType, native: OscarHandle, construction: object) -> None:
@@ -58,6 +66,107 @@ def retain_gluing(
     )
     gluing = oscar.simple_gluing(native_left, native_right, left_to_right, right_to_left)
     _retain_object(owner, value, oscar.glued_covered_scheme(native_left, native_right, gluing), construction)
+
+
+def prepare_finite_gluing(presentation: object) -> None:
+    """Build and validate the private OSCAR realization of a finite affine gluing."""
+    match presentation in _finite_gluing_presentations:
+        case True:
+            return
+        case False:
+            pass
+    charts = cast(Any, presentation).charts
+    overlaps = cast(Any, presentation).overlaps
+    native_charts = tuple(_affine_backend.scheme_handle(chart) for chart in charts)
+    native_gluings: list[OscarHandle] = []
+    for overlap in overlaps:
+        pieces = overlap.pieces
+        gluing = oscar.general_gluing(
+            native_charts[overlap.left],
+            native_charts[overlap.right],
+            _affine_backend.open_handle(overlap.left_open),
+            _affine_backend.open_handle(overlap.right_open),
+            tuple(_affine_backend.open_handle(piece.left_open) for piece in pieces),
+            tuple(_affine_backend.open_handle(piece.right_open) for piece in pieces),
+            tuple(_rings_backend.oscar_morphism_handle(piece.left_to_right_pullback) for piece in pieces),
+            tuple(_rings_backend.oscar_morphism_handle(piece.right_to_left_pullback) for piece in pieces),
+        )
+        _finite_gluing_edges[presentation, overlap.left, overlap.right] = gluing
+        native_gluings.append(gluing)
+    for left in range(len(charts)):
+        for middle in range(left + 1, len(charts)):
+            for right in range(middle + 1, len(charts)):
+                assert oscar.gluing_cocycle(
+                    _finite_gluing_edges[presentation, left, middle],
+                    _finite_gluing_edges[presentation, middle, right],
+                    _finite_gluing_edges[presentation, left, right],
+                ), f"gluing cocycle fails on charts {(left, middle, right)!r}"
+    _finite_gluing_presentations[presentation] = oscar.finite_covered_scheme(
+        native_charts,
+        tuple(native_gluings),
+    )
+
+
+def retain_finite_glued_scheme(
+    owner: Category,
+    value: CategoryOfCategories.ElementType,
+    presentation: object,
+) -> None:
+    """Attach the checked finite-cover realization to the public scheme value."""
+    prepare_finite_gluing(presentation)
+    _retain_object(owner, value, _finite_gluing_presentations[presentation], presentation)
+
+
+def finite_open_contains(
+    presentation: object,
+    smaller: object,
+    larger: object,
+) -> bool:
+    """Decide containment of two chart-affine basis opens in the glued scheme."""
+    prepare_finite_gluing(presentation)
+    return oscar.covered_open_contains(
+        _finite_gluing_presentations[presentation],
+        _affine_backend.open_handle(smaller),
+        _affine_backend.open_handle(larger),
+    )
+
+
+def finite_open_restriction(
+    presentation: object,
+    smaller: object,
+    larger: object,
+) -> MorphismCategory.ObjectType:
+    """Reconstruct the covered structure-sheaf restriction on two basis opens."""
+    prepare_finite_gluing(presentation)
+    native = oscar.covered_open_restriction(
+        _finite_gluing_presentations[presentation],
+        _affine_backend.open_handle(larger),
+        _affine_backend.open_handle(smaller),
+    )
+    return _rings_backend.reconstruct_oscar_morphism(
+        cast(Any, larger).section_ring(),
+        cast(Any, smaller).section_ring(),
+        native,
+    )
+
+
+def finite_chart_preimage_equations(
+    presentation: object,
+    source_index: int,
+    target_open: object,
+) -> tuple[CategoryOfCategories.ElementType, ...]:
+    """Normalize a cross-chart inverse image to principal root equations."""
+    prepare_finite_gluing(presentation)
+    chart = cast(Any, presentation).charts[source_index]
+    native_open = oscar.covered_chart_open_preimage(
+        _finite_gluing_presentations[presentation],
+        _affine_backend.scheme_handle(chart),
+        _affine_backend.open_handle(target_open),
+    )
+    return tuple(
+        _rings_backend.reconstruct_oscar_element(chart.coordinate_ring(), equation)
+        for equation in oscar.affine_open_complement_equations(native_open)
+    )
 
 
 def _retain_morphism(value: MorphismCategory.ObjectType, native: OscarHandle) -> None:

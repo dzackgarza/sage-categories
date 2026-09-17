@@ -16,8 +16,8 @@ from sage_categories.cat.native import (
     NativeObjectRealization,
     NativeObjectRealizations,
 )
-from sage_categories.engines.julia_bridge import OscarHandle
 from sage_categories.cat.predicates import assume
+from sage_categories.engines.julia_bridge import OscarHandle
 
 if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
@@ -218,7 +218,9 @@ def reconstruct_oscar_object(
     """
     from sympy import false, true
 
-    from sage_categories.algebra._certified_commutative_ring import certified_commutative_ring
+    from sage_categories.algebra._certified_commutative_ring import (
+        certified_commutative_ring,
+    )
 
     _install_oscar_ring_operations()
     oscar = _oscar_runtime()
@@ -349,6 +351,17 @@ def prime_ideal_generators(value: object) -> tuple[CategoryOfCategories.ElementT
     return tuple(
         reconstruct_oscar_element(ring, generator)
         for generator in _oscar_runtime().ideal_generators(_prime_ideal_handle(value))
+    )
+
+
+def prime_ideal_contains(
+    value: object,
+    element: CategoryOfCategories.ElementType,
+) -> bool:
+    """Decide ideal membership at the private OSCAR boundary."""
+    return _oscar_runtime().ideal_contains(
+        _prime_ideal_handle(value),
+        oscar_element_handle(element),
     )
 
 

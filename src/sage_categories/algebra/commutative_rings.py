@@ -21,6 +21,7 @@ __all__ = [
     "localize_at_prime",
     "polynomial_ring",
     "presented_ring_homomorphism",
+    "prime_contains",
     "prime_field",
     "prime_generators",
     "prime_ideal",
@@ -131,6 +132,15 @@ def prime_generators(
 ) -> tuple[CategoryOfCategories.ElementType, ...]:
     """The exact owned generator family of a retained OSCAR prime ideal."""
     return _backend.prime_ideal_generators(prime)
+
+
+def prime_contains(
+    prime: PrimeIdeal,
+    element: CategoryOfCategories.ElementType,
+) -> bool:
+    """Decide whether ``element`` belongs to the retained prime ideal."""
+    assert element.parent() is prime.ring
+    return _backend.prime_ideal_contains(prime, element)
 
 
 def localize_at_prime(

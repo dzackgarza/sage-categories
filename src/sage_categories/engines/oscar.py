@@ -16,8 +16,8 @@ __all__ = [
     "codomain",
     "covered_chart_inclusion",
     "covered_chart_map",
-    "covered_compose",
     "covered_codomain",
+    "covered_compose",
     "covered_domain",
     "covered_equal",
     "covered_identity",
@@ -28,6 +28,7 @@ __all__ = [
     "glued_covered_scheme",
     "gluing_mediator",
     "hom",
+    "ideal_contains",
     "ideal_generators",
     "localization_at_element",
     "localization_at_prime",
@@ -104,6 +105,11 @@ def prime_ideal_preimage(mapping: OscarHandle, prime: OscarHandle) -> OscarHandl
 def ideal_generators(ideal: OscarHandle) -> tuple[OscarHandle, ...]:
     """Return the native generators retained by an OSCAR ideal."""
     return bridge().handles("ideal_generators", ideal)
+
+
+def ideal_contains(ideal: OscarHandle, element: OscarHandle) -> bool:
+    """Decide membership of one OSCAR ring element in an ideal."""
+    return bridge().boolean("ideal_contains", ideal, element)
 
 
 def localization_at_prime(ring: OscarHandle, prime: OscarHandle) -> tuple[OscarHandle, OscarHandle]:

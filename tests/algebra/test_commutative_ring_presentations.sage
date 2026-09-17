@@ -1,6 +1,5 @@
 """Owned OSCAR polynomial, quotient, and principal-localization presentations."""
 
-from sage_categories.all import Mor, ask
 from sage_categories.algebra import (
     induced_stalk_map,
     inverse_unit,
@@ -8,11 +7,13 @@ from sage_categories.algebra import (
     localize_at_prime,
     polynomial_ring,
     presented_ring_homomorphism,
-    prime_ideal,
     prime_field,
+    prime_ideal,
     principal_localization,
     quotient_ring,
 )
+from sage_categories.algebra.commutative_rings import prime_contains
+from sage_categories.all import Mor, ask
 from sage_categories.cat.structured_objects import Rings
 from sage_categories.sets.finite import Sets
 
@@ -40,7 +41,7 @@ def test_polynomial_quotient_and_principal_localization_maps() -> None:
     assert ask(epsilon == dual_numbers.zero()) is False
     assert ask(epsilon * epsilon == dual_numbers.zero()) is True
 
-    target, (u,) = polynomial_ring(field, ("u",))
+    target, (_u,) = polynomial_ring(field, ("u",))
     quotient_map = presented_ring_homomorphism(dual_numbers, target, (target.zero(),))
     assert quotient_map.domain() is dual_numbers and quotient_map.codomain() is target
     assert ask(quotient_map(epsilon) == target.zero()) is True
@@ -49,10 +50,12 @@ def test_polynomial_quotient_and_principal_localization_maps() -> None:
 
 def test_prime_localizations_and_stalk_map_retain_owned_endpoints() -> None:
     field = prime_field(5)
-    source, (t,) = polynomial_ring(field, ("t",))
+    source, (_t,) = polynomial_ring(field, ("t",))
     target, (u,) = polynomial_ring(field, ("u",))
     mapping = presented_ring_homomorphism(source, target, (u,))
     target_prime = prime_ideal(target, (u,))
+    assert prime_contains(target_prime, u) is True
+    assert prime_contains(target_prime, target.one()) is False
     target_local, target_localization = localize_at_prime(target_prime)
     source_prime, source_local, induced_target_local, stalk = induced_stalk_map(
         mapping, target_prime

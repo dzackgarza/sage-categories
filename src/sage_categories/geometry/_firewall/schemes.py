@@ -169,46 +169,49 @@ def finite_chart_preimage_equations(
     )
 
 
-def finite_open_family_compatible(
+def finite_overlap_restrictions(
     presentation: object,
-    chart_opens: tuple[object, ...],
-) -> bool:
-    """Check that chart-local opens describe one open of the glued space."""
+    left_index: int,
+    left_open: object,
+    right_index: int,
+    right_open: object,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """Reconstruct the two restrictions to a pairwise overlap from OSCAR's structure sheaf."""
     prepare_finite_gluing(presentation)
-    return oscar.covered_open_family_compatible(
+    native_ring, native_left, native_right = oscar.covered_overlap_restrictions(
         _finite_gluing_presentations[presentation],
-        tuple(_affine_backend.open_handle(open_object) for open_object in chart_opens),
+        _affine_backend.open_handle(left_open),
+        _affine_backend.open_handle(right_open),
+    )
+    overlap_ring = _rings_backend.reconstruct_oscar_object(
+        native_ring,
+        (
+            "covered-overlap",
+            presentation,
+            left_index,
+            right_index,
+            left_open,
+            right_open,
+        ),
+    )
+    return (
+        _rings_backend.reconstruct_oscar_morphism(
+            cast(Any, left_open).section_ring(), overlap_ring, native_left
+        ),
+        _rings_backend.reconstruct_oscar_morphism(
+            cast(Any, right_open).section_ring(), overlap_ring, native_right
+        ),
     )
 
 
-def finite_component_intersection_equations(
-    presentation: object,
-    source_index: int,
-    source_open: object,
-    target_open: object,
-) -> tuple[CategoryOfCategories.ElementType, ...]:
-    """Normalize a transported pairwise component intersection in one source chart."""
-    prepare_finite_gluing(presentation)
-    native = oscar.covered_component_intersection(
-        _finite_gluing_presentations[presentation],
-        _affine_backend.open_handle(source_open),
-        _affine_backend.open_handle(target_open),
-    )
-    chart = cast(Any, presentation).charts[source_index]
-    return tuple(
-        _rings_backend.reconstruct_oscar_element(chart.coordinate_ring(), equation)
-        for equation in oscar.affine_open_complement_equations(native)
-    )
-
-
-def retain_finite_gluing_mediator(
+def retain_covered_morphism(
     value: MorphismCategory.ObjectType,
     source: CategoryOfCategories.ElementType,
     target: CategoryOfCategories.ElementType,
     chart_maps: tuple[MorphismCategory.ObjectType, ...],
 ) -> None:
-    """Validate chart compatibility natively and retain the induced covered map."""
-    native = oscar.finite_gluing_mediator(
+    """Retain OSCAR's covered-scheme morphism for a compatible chart family."""
+    native = oscar.covered_scheme_morphism_from_chart_maps(
         scheme_handle(source),
         scheme_handle(target),
         tuple(morphism_handle(mapping) for mapping in chart_maps),

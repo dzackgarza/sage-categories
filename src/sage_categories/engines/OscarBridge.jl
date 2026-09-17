@@ -20,8 +20,7 @@ export integer_ring, prime_field, polynomial_ring_with_generators, quotient_ring
        general_gluing, finite_covered_scheme, gluing_cocycle,
        covered_open_contains, covered_open_restriction,
        covered_chart_open_preimage, affine_open_complement_equations,
-       covered_open_family_compatible, covered_component_intersection,
-       finite_gluing_mediator,
+       covered_overlap_restrictions, covered_scheme_morphism_from_chart_maps,
        covered_chart_inclusion, gluing_mediator,
        covered_chart_map, covered_domain, covered_codomain,
        covered_identity, covered_compose, covered_equal
@@ -247,45 +246,33 @@ end
 
 affine_open_complement_equations(open_subset) = collect(complement_equations(open_subset))
 
-function affine_open_equal(first, second)
-    affine_open_contains(first, second) && affine_open_contains(second, first)
-end
-
-
-function covered_open_family_compatible(scheme, opens)
-    opens = collect(opens)
-    cover = default_covering(scheme)
-    for left_index in eachindex(opens)
-        for right_index in eachindex(opens)
-            left_index < right_index || continue
-            left_open = opens[left_index]
-            right_open = opens[right_index]
-            left_chart = ambient_scheme(left_open)
-            right_chart = ambient_scheme(right_open)
-            gluing = cover[left_chart, right_chart]
-            forward = gluing_morphisms(gluing)[1]
-            left_part = intersect(left_open, domain(forward))
-            right_part = intersect(right_open, codomain(forward))
-            transported = preimage(forward, right_part)
-            affine_open_equal(left_part, transported) || return false
-        end
+# OSCAR 1.8.2 exposes the covered structure sheaf, covering gluings, native
+# intersections/preimages, and restriction maps separately.  There is no public
+# one-call API returning both restriction maps for two chart-local opens, so this
+# firewall only composes those OSCAR operations and returns their native results.
+function covered_overlap_restrictions(scheme, left_open, right_open)
+    source_chart = ambient_scheme(left_open)
+    target_chart = ambient_scheme(right_open)
+    if source_chart === target_chart
+        overlap = intersect(left_open, right_open)
+    else
+        gluing = default_covering(scheme)[source_chart, target_chart]
+        forward = gluing_morphisms(gluing)[1]
+        left_part = intersect(left_open, domain(forward))
+        right_part = intersect(right_open, codomain(forward))
+        overlap = intersect(left_part, preimage(forward, right_part))
     end
-    true
+    sheaf = StructureSheafOfRings(scheme)
+    ring = sheaf(overlap)
+    left_restriction = restriction_map(sheaf, left_open, overlap)
+    right_restriction = restriction_map(sheaf, right_open, overlap)
+    (ring, (left_restriction, right_restriction))
 end
 
 
-function covered_component_intersection(scheme, source_open, target_open)
-    source_chart = ambient_scheme(source_open)
-    target_chart = ambient_scheme(target_open)
-    source_chart === target_chart && return intersect(source_open, target_open)
-    gluing = default_covering(scheme)[source_chart, target_chart]
-    forward = gluing_morphisms(gluing)[1]
-    target_part = intersect(target_open, codomain(forward))
-    intersect(source_open, preimage(forward, target_part))
-end
-
-
-function finite_gluing_mediator(source, target, chart_maps)
+# CoveringMorphism and CoveredSchemeMorphism are OSCAR's own representation of
+# the compatible-family mediator; this adapter only packages the supplied local maps.
+function covered_scheme_morphism_from_chart_maps(source, target, chart_maps)
     source_cover = default_covering(source)
     target_cover = default_covering(target)
     source_patches = patches(source_cover)
@@ -296,6 +283,8 @@ function finite_gluing_mediator(source, target, chart_maps)
         patch => chart_map[patch]
         for (patch, chart_map) in zip(source_patches, chart_maps)
     )
+    # Compatibility is the public mediator's mathematical precondition. OSCAR owns
+    # the covered-morphism representation; avoid a second local overlap checker.
     covering_map = CoveringMorphism(source_cover, target_cover, local_maps; check=false)
     CoveredSchemeMorphism(source, target, covering_map; check=false)
 end

@@ -23,19 +23,18 @@ __all__ = [
     "covered_chart_map",
     "covered_chart_open_preimage",
     "covered_codomain",
-    "covered_component_intersection",
     "covered_compose",
     "covered_domain",
     "covered_equal",
     "covered_identity",
     "covered_open_contains",
-    "covered_open_family_compatible",
     "covered_open_restriction",
+    "covered_overlap_restrictions",
     "covered_patches",
     "covered_scheme",
+    "covered_scheme_morphism_from_chart_maps",
     "domain",
     "finite_covered_scheme",
-    "finite_gluing_mediator",
     "general_gluing",
     "generators",
     "glued_covered_scheme",
@@ -369,30 +368,32 @@ def affine_open_complement_equations(open_subset: OscarHandle) -> tuple[OscarHan
     return bridge().handles("affine_open_complement_equations", open_subset)
 
 
-def covered_open_family_compatible(
+def covered_overlap_restrictions(
     scheme: OscarHandle,
-    opens: tuple[OscarHandle, ...],
-) -> bool:
-    """Check that chart-local opens agree across every retained gluing."""
-    return bridge().boolean("covered_open_family_compatible", scheme, list(opens))
+    left_open: OscarHandle,
+    right_open: OscarHandle,
+) -> tuple[OscarHandle, OscarHandle, OscarHandle]:
+    """Return the common overlap ring and both structure-sheaf restrictions."""
+    ring, restrictions = bridge().handle_and_handles(
+        "covered_overlap_restrictions", scheme, left_open, right_open
+    )
+    assert len(restrictions) == 2
+    left, right = restrictions
+    return ring, left, right
 
 
-def covered_component_intersection(
-    scheme: OscarHandle,
-    source_open: OscarHandle,
-    target_open: OscarHandle,
-) -> OscarHandle:
-    """Return the source-chart intersection with the transported target open."""
-    return bridge().handle("covered_component_intersection", scheme, source_open, target_open)
-
-
-def finite_gluing_mediator(
+def covered_scheme_morphism_from_chart_maps(
     source: OscarHandle,
     target: OscarHandle,
     chart_maps: tuple[OscarHandle, ...],
 ) -> OscarHandle:
-    """Glue compatible chart maps to the checked unique covered-scheme morphism."""
-    return bridge().handle("finite_gluing_mediator", source, target, list(chart_maps))
+    """Construct OSCAR's covered-scheme morphism from compatible chart maps."""
+    return bridge().handle(
+        "covered_scheme_morphism_from_chart_maps",
+        source,
+        target,
+        list(chart_maps),
+    )
 
 
 def glued_covered_scheme(left_chart: OscarHandle, right_chart: OscarHandle, gluing: OscarHandle) -> OscarHandle:

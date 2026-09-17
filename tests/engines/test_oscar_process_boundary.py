@@ -173,7 +173,7 @@ def test_oscar_checks_finite_general_gluing_and_triple_cocycle() -> None:
             affine,
         )
 
-    mediator = oscar.finite_gluing_mediator(
+    mediator = oscar.covered_scheme_morphism_from_chart_maps(
         glued,
         target,
         (

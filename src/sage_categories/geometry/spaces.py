@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
-from typing import Any, Generic, cast
-
-from typing_extensions import TypeVar
+from typing import Any, Generic, TypeVar, cast
 
 from sympy import false, true
 
+from sage_categories.cat.assembly import select_value, selected_value
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor
@@ -148,6 +147,116 @@ class TopologicalSpacesCategory(MorphismDataCategory):
                 open_object_rule,
             )
         )
+
+    def quotient_from_open_category[OpenKey: Hashable](
+        self,
+        ambient: CategoryOfCategories.ElementType,
+        equivalent: Callable[
+            [CategoryOfCategories.ElementType, CategoryOfCategories.ElementType],
+            object,
+        ],
+        opens: CategoryOfCategories.ElementType,
+        open_category: Category,
+        open_point_rule: Callable[[OpenKey], CategoryOfCategories.ElementType],
+        open_object_rule: Callable[[OpenKey], CategoryOfCategories.ElementType],
+    ) -> TopologicalSpacesCategory.ObjectType[OpenKey]:
+        """Form a represented quotient topology from an owned equivalence relation.
+
+        ``Sets`` owns the quotient carrier and projection; ``TopologicalSpaces``
+        owns the resulting represented topology. The caller supplies only the
+        mathematical equivalence relation and the represented open category.
+        """
+        quotient, projection = Sets.quotient(ambient, equivalent)
+        space = self.from_open_category(
+            quotient,
+            opens,
+            open_category,
+            open_point_rule,
+            open_object_rule,
+        )
+        select_value(self, "quotient-projection", (space,), projection)
+        return space
+
+    def quotient_projection(
+        self,
+        space: TopologicalSpacesCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
+        """The retained set quotient map underlying a quotient topology."""
+        return selected_value(self, "quotient-projection", (space,))
+
+    def quotient_chart_morphism[SourceKey: Hashable, TargetKey: Hashable](
+        self,
+        source: TopologicalSpacesCategory.ObjectType[SourceKey],
+        target: TopologicalSpacesCategory.ObjectType[TargetKey],
+        tag_rule: Callable[[Hashable], Hashable],
+        preimage_rule: Callable[
+            [CategoryOfCategories.ElementType], CategoryOfCategories.ElementType
+        ],
+    ) -> TopologicalSpacesCategory.MorphismType:
+        """The continuous chart map into a represented quotient topology."""
+        projection = self.quotient_projection(target)
+        ambient = projection.domain()
+        assert projection.codomain() is target.carrier()
+
+        def point_image(value: Hashable) -> Hashable:
+            return projection(cast(Any, ambient).point(tag_rule(value))).datum()
+
+        underlying = Mor(Sets)(source.carrier(), target.carrier())(point_image)
+        target_opens = target.open_category()
+        source_opens = source.open_category()
+        inverse = Fun(target_opens, source_opens)(
+            preimage_rule,
+            lambda inclusion: Mor(source_opens)(
+                preimage_rule(inclusion.domain()),
+                preimage_rule(inclusion.codomain()),
+            )(),
+        )
+        return self.morphism_with_inverse_image(source, target, underlying, inverse)
+
+    def quotient_mediator[SourceKey: Hashable, TargetKey: Hashable](
+        self,
+        source: TopologicalSpacesCategory.ObjectType[SourceKey],
+        target: TopologicalSpacesCategory.ObjectType[TargetKey],
+        chart_maps: tuple[TopologicalSpacesCategory.MorphismType, ...],
+        representative_rule: Callable[
+            [CategoryOfCategories.ElementType],
+            tuple[int, CategoryOfCategories.ElementType],
+        ],
+        assemble_open: Callable[
+            [tuple[CategoryOfCategories.ElementType, ...]],
+            CategoryOfCategories.ElementType,
+        ],
+    ) -> TopologicalSpacesCategory.MorphismType:
+        """The universal continuous map induced by compatible chart maps."""
+
+        def point_image(value: Hashable) -> Hashable:
+            point = source.carrier().point(value)
+            chart_index, chart_point = representative_rule(point)
+            image = chart_maps[chart_index].underlying_map()(chart_point)
+            return image.datum()
+
+        underlying = Mor(Sets)(source.carrier(), target.carrier())(point_image)
+        target_opens = target.open_category()
+        source_opens = source.open_category()
+
+        def preimage(
+            open_object: CategoryOfCategories.ElementType,
+        ) -> CategoryOfCategories.ElementType:
+            return assemble_open(
+                tuple(
+                    mapping.inverse_image().on_object(open_object)
+                    for mapping in chart_maps
+                )
+            )
+
+        inverse = Fun(target_opens, source_opens)(
+            preimage,
+            lambda inclusion: Mor(source_opens)(
+                preimage(inclusion.domain()),
+                preimage(inclusion.codomain()),
+            )(),
+        )
+        return self.morphism_with_inverse_image(source, target, underlying, inverse)
 
     def _inverse_image_functor(
         self,

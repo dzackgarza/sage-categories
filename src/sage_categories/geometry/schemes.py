@@ -8,9 +8,6 @@ from typing import Any, cast
 
 from sympy import false, true
 
-from sage_categories.algebra._certified_commutative_ring import (
-    certified_commutative_ring,
-)
 from sage_categories.algebra.commutative_rings import (
     integer_ring,
     inverse_unit,
@@ -28,7 +25,6 @@ from sage_categories.cat.assembly import (
     select_value,
     selected_value,
 )
-from sage_categories.cat.calculus import natural_isomorphism
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.declarations import Sets
@@ -36,7 +32,7 @@ from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformatio
 from sage_categories.cat.leaf_categories import LeafCategory, ParameterizedThinCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
-from sage_categories.cat.predicates import ask, assume
+from sage_categories.cat.predicates import assume
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.structured_objects import Rings
 from sage_categories.geometry._firewall import schemes as _backend
@@ -60,6 +56,13 @@ from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCat
 from sage_categories.geometry.sheaves import (
     RingPresheaf,
     RingSheaf,
+    descent_chart_comparison,
+    descent_lift,
+    descent_map,
+    descent_projection,
+    descent_restriction,
+    descent_section_ring,
+    identity_sheaf_comparison,
     ring_presheaf_from_functor,
     ring_sheaf,
 )
@@ -172,7 +175,22 @@ class SchemeOpenCategory(ParameterizedThinCategory):
             return self._data.chart_opens[index]
 
         def section_ring(self) -> CategoryOfCategories.ElementType:
-            return _compatible_sections_ring(self)
+            chart_opens = self.chart_opens()
+            local_rings = tuple(component.section_ring() for component in chart_opens)
+
+            def overlap_restrictions(
+                left: int, right: int
+            ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+                return _backend.finite_overlap_restrictions(
+                    self.presentation(),
+                    left,
+                    chart_opens[left],
+                    right,
+                    chart_opens[right],
+                )
+
+            return descent_section_ring(self, local_rings, overlap_restrictions)
+
 
         def restriction_to(self, larger: SchemeOpenCategory.ObjectType) -> MorphismCategory.ObjectType:
             return cast(SchemeOpenCategory, self.parent()).restriction_map(self, larger)
@@ -228,7 +246,6 @@ class SchemeOpenCategory(ParameterizedThinCategory):
         assert len(chart_opens) == len(presentation.charts)
         for chart, affine_open in zip(presentation.charts, chart_opens, strict=True):
             assert affine_open.scheme() is chart
-        assert _backend.finite_open_family_compatible(presentation, chart_opens)
         return cast(
             SchemeOpenCategory.ObjectType,
             chosen_construction(
@@ -250,7 +267,20 @@ class SchemeOpenCategory(ParameterizedThinCategory):
             case True:
                 return Mor(_rings())(larger.section_ring(), larger.section_ring()).one()
             case False:
-                return _compatible_sections_restriction(smaller, larger)
+                return descent_restriction(
+                    larger,
+                    smaller,
+                    larger.section_ring(),
+                    smaller.section_ring(),
+                    tuple(
+                        small.restriction_to(large)
+                        for small, large in zip(
+                            smaller.chart_opens(),
+                            larger.chart_opens(),
+                            strict=True,
+                        )
+                    ),
+                )
 
     def _admits_morphism(
         self,
@@ -529,259 +559,6 @@ def _finite_chart_preimage_affine_open(
             return _affine_open_from_equations(presentation, source_chart, equations)
 
 
-def _component_intersection_open(
-    presentation: FiniteAffineGluing,
-    source_chart: int,
-    source_open: AffineOpenCategory.ObjectType,
-    target_open: AffineOpenCategory.ObjectType,
-) -> AffineOpenCategory.ObjectType:
-    equations = _backend.finite_component_intersection_equations(
-        presentation,
-        source_chart,
-        source_open,
-        target_open,
-    )
-    return _affine_open_from_equations(presentation, source_chart, equations)
-
-
-def _compatible_sections_ring(
-    open_object: SchemeOpenCategory.ObjectType,
-) -> CategoryOfCategories.ElementType:
-    """The equalizer ring of compatible sections on a chart-local open family."""
-
-    def construct() -> CategoryOfCategories.ElementType:
-        presentation = open_object.presentation()
-        chart_opens = open_object.chart_opens()
-        local_rings = tuple(component.section_ring() for component in chart_opens)
-
-        def member(value: Hashable):
-            match value:
-                case (owner, values) if owner is open_object and isinstance(values, tuple):
-                    match len(values) == len(local_rings):
-                        case False:
-                            return false
-                        case True:
-                            pass
-                    for section, ring in zip(values, local_rings, strict=True):
-                        match isinstance(section, CategoryOfCategories.ElementType) and section.parent() is ring:
-                            case False:
-                                return false
-                            case True:
-                                pass
-                    for left in range(len(chart_opens)):
-                        for right in range(left + 1, len(chart_opens)):
-                            intersection = _component_intersection_open(
-                                presentation,
-                                left,
-                                chart_opens[left],
-                                chart_opens[right],
-                            )
-                            left_restriction = intersection.restriction_to(chart_opens[left])
-                            right_restriction = _backend.finite_open_restriction(
-                                presentation,
-                                intersection,
-                                chart_opens[right],
-                            )
-                            match ask(
-                                left_restriction(values[left])
-                                == right_restriction(values[right])
-                            ):
-                                case True:
-                                    pass
-                                case _:
-                                    return false
-                    return true
-                case _:
-                    return false
-
-        carrier = Sets.from_membership(member)
-
-        def add(pair: tuple[Hashable, Hashable]) -> Hashable:
-            left, right = pair
-            left_owner, left_values = cast(tuple[object, tuple[Any, ...]], left)
-            right_owner, right_values = cast(tuple[object, tuple[Any, ...]], right)
-            assert left_owner is open_object and right_owner is open_object
-            return (
-                open_object,
-                tuple(a + b for a, b in zip(left_values, right_values, strict=True)),
-            )
-
-        def multiply(pair: tuple[Hashable, Hashable]) -> Hashable:
-            left, right = pair
-            left_owner, left_values = cast(tuple[object, tuple[Any, ...]], left)
-            right_owner, right_values = cast(tuple[object, tuple[Any, ...]], right)
-            assert left_owner is open_object and right_owner is open_object
-            return (
-                open_object,
-                tuple(a * b for a, b in zip(left_values, right_values, strict=True)),
-            )
-
-        zero = (open_object, tuple(ring.zero() for ring in local_rings))
-        one = (open_object, tuple(ring.one() for ring in local_rings))
-        return certified_commutative_ring(carrier, add, multiply, zero, one)
-
-    return chosen_construction(
-        _rings(),
-        "compatible-section-ring",
-        (open_object,),
-        construct,
-    )
-
-
-def _compatible_sections_restriction(
-    smaller: SchemeOpenCategory.ObjectType,
-    larger: SchemeOpenCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    source_ring = larger.section_ring()
-    target_ring = smaller.section_ring()
-    source_carrier = Rings(Sets).forgetful().on_object(source_ring)
-    target_carrier = Rings(Sets).forgetful().on_object(target_ring)
-    restrictions = tuple(
-        small.restriction_to(large)
-        for small, large in zip(smaller.chart_opens(), larger.chart_opens(), strict=True)
-    )
-
-    def rule(value: Hashable) -> Hashable:
-        owner, sections = cast(tuple[object, tuple[Any, ...]], value)
-        assert owner is larger
-        return (
-            smaller,
-            tuple(
-                restriction(section)
-                for restriction, section in zip(restrictions, sections, strict=True)
-            ),
-        )
-
-    underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    ambient = Rings(Sets).homomorphism(source_ring, target_ring, underlying)
-    return _rings().restrict_morphism(ambient)
-
-
-def _compatible_section_projection(
-    open_object: SchemeOpenCategory.ObjectType,
-    chart_index: int,
-) -> MorphismCategory.ObjectType:
-    source_ring = open_object.section_ring()
-    target_ring = open_object.chart_open(chart_index).section_ring()
-    source_carrier = Rings(Sets).forgetful().on_object(source_ring)
-    target_carrier = Rings(Sets).forgetful().on_object(target_ring)
-
-    def rule(value: Hashable) -> Hashable:
-        owner, sections = cast(tuple[object, tuple[Any, ...]], value)
-        assert owner is open_object
-        return cast(CategoryOfCategories.ElementType, sections[chart_index]).datum()
-
-    underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    ambient = Rings(Sets).homomorphism(source_ring, target_ring, underlying)
-    return _rings().restrict_morphism(ambient)
-
-
-def _compatible_section_lift(
-    open_object: SchemeOpenCategory.ObjectType,
-    chart_index: int,
-) -> MorphismCategory.ObjectType:
-    """Recover a compatible global section family from one chart section."""
-    presentation = open_object.presentation()
-    source_open = open_object.chart_open(chart_index)
-    source_ring = source_open.section_ring()
-    target_ring = open_object.section_ring()
-    source_carrier = Rings(Sets).forgetful().on_object(source_ring)
-    target_carrier = Rings(Sets).forgetful().on_object(target_ring)
-    component_maps = tuple(
-        component.restriction_to(source_open)
-        if index == chart_index
-        else _backend.finite_open_restriction(presentation, component, source_open)
-        for index, component in enumerate(open_object.chart_opens())
-    )
-
-    def rule(value: Hashable) -> Hashable:
-        section = source_ring.point(value)
-        return (
-            open_object,
-            tuple(component_map(section) for component_map in component_maps),
-        )
-
-    underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    ambient = Rings(Sets).homomorphism(source_ring, target_ring, underlying)
-    lift = _rings().restrict_morphism(ambient)
-    projection = _compatible_section_projection(open_object, chart_index)
-    _rings().retain_inverses(projection, lift)
-    return lift
-
-
-def _finite_chart_structure_sheaf_comparison(
-    presentation: FiniteAffineGluing,
-    chart_index: int,
-) -> NaturalTransformation:
-    """The retained isomorphism from the glued sheaf restricted to one chart to its affine sheaf."""
-
-    def construct() -> NaturalTransformation:
-        chart = presentation.charts[chart_index]
-        local_opens, local_sheaf = affine_structure_sheaf(chart)
-        scheme_opens = _scheme_open_category(presentation)
-
-        def global_open(
-            open_object: CategoryOfCategories.ElementType,
-        ) -> SchemeOpenCategory.ObjectType:
-            return scheme_opens.open(
-                chart_index,
-                cast(AffineOpenCategory.ObjectType, open_object),
-            )
-
-        def on_object(
-            open_object: CategoryOfCategories.ElementType,
-        ) -> CategoryOfCategories.ElementType:
-            return global_open(open_object).section_ring()
-
-        def on_morphism(
-            opposite_inclusion: MorphismCategory.ObjectType,
-        ) -> MorphismCategory.ObjectType:
-            inclusion = opposite_morphism(opposite_inclusion)
-            smaller = global_open(inclusion.domain())
-            larger = global_open(inclusion.codomain())
-            return smaller.restriction_to(larger)
-
-        restricted_glued_sheaf = Fun(local_opens.op(), _rings())(
-            on_object,
-            on_morphism,
-        )
-        return natural_isomorphism(
-            restricted_glued_sheaf,
-            local_sheaf.functor,
-            lambda open_object: _compatible_section_projection(
-                global_open(open_object),
-                chart_index,
-            ),
-            lambda open_object: _compatible_section_lift(
-                global_open(open_object),
-                chart_index,
-            ),
-        )
-
-    return cast(
-        NaturalTransformation,
-        chosen_construction(
-            Schemes(),
-            "finite-chart-structure-sheaf-comparison",
-            (presentation, chart_index),
-            construct,
-        ),
-    )
-
-
-def _affine_chart_structure_sheaf_comparison(
-    affine: AffineSchemesCategory.ObjectType,
-) -> NaturalTransformation:
-    """The identity comparison for the one-chart affine presentation."""
-    sheaf = affine_structure_sheaf(affine)[1].functor
-
-    def identity(open_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        ring = sheaf.on_object(open_object)
-        return Mor(_rings())(ring, ring).one()
-
-    return natural_isomorphism(sheaf, sheaf, identity, identity)
-
-
 def _point_in_overlap_piece(
     point: AffineSpectrumPoint,
     open_object: AffineOpenCategory.ObjectType,
@@ -846,16 +623,26 @@ def _transition_point(
     return None
 
 
-def _finite_glued_point_quotient(
+def _finite_glued_topological_space(
     presentation: FiniteAffineGluing,
-):
-    def construct():
+) -> TopologicalSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
+    def construct() -> TopologicalSpacesCategory.ObjectType[
+        SchemeOpenCategory.ObjectType
+    ]:
         def member(value: Hashable):
             match value:
-                case _TaggedAffinePoint(presentation=retained, chart=chart, point=point):
-                    match retained is presentation and 0 <= chart < len(presentation.charts):
+                case _TaggedAffinePoint(
+                    presentation=retained, chart=chart, point=point
+                ):
+                    match retained is presentation and 0 <= chart < len(
+                        presentation.charts
+                    ):
                         case True:
-                            return true if point.scheme is presentation.charts[chart] else false
+                            return (
+                                true
+                                if point.scheme is presentation.charts[chart]
+                                else false
+                            )
                         case False:
                             return false
                 case _:
@@ -871,7 +658,11 @@ def _finite_glued_point_quotient(
             right = cast(_TaggedAffinePoint, second.datum())
             match left.chart == right.chart:
                 case True:
-                    return true if prime_ideal_equal(left.point.prime, right.point.prime) else false
+                    return (
+                        true
+                        if prime_ideal_equal(left.point.prime, right.point.prime)
+                        else false
+                    )
                 case False:
                     pass
             transported = _transition_point(
@@ -884,24 +675,12 @@ def _finite_glued_point_quotient(
                 case None:
                     return false
                 case _:
-                    return true if prime_ideal_equal(transported.prime, right.point.prime) else false
+                    return (
+                        true
+                        if prime_ideal_equal(transported.prime, right.point.prime)
+                        else false
+                    )
 
-        quotient, projection = Sets.quotient(ambient, equivalent)
-        return ambient, quotient, projection
-
-    return chosen_construction(
-        Sets,
-        "finite-gluing-point-quotient",
-        (presentation,),
-        construct,
-    )
-
-
-def _finite_glued_topological_space(
-    presentation: FiniteAffineGluing,
-) -> TopologicalSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
-    def construct() -> TopologicalSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
-        _ambient, carrier, _projection = _finite_glued_point_quotient(presentation)
         opens = _scheme_open_category(presentation)
 
         def open_member(value: Hashable):
@@ -913,12 +692,17 @@ def _finite_glued_topological_space(
 
         open_carrier = Sets.from_membership(open_member)
 
-        def open_point(key: SchemeOpenCategory.ObjectType) -> CategoryOfCategories.ElementType:
+        def open_point(
+            key: SchemeOpenCategory.ObjectType,
+        ) -> CategoryOfCategories.ElementType:
             assert key.presentation() is presentation
-            return cast(CategoryOfCategories.ElementType, cast(Any, open_carrier).point(key))
+            return cast(
+                CategoryOfCategories.ElementType, cast(Any, open_carrier).point(key)
+            )
 
-        return TopologicalSpaces().from_open_category(
-            carrier,
+        return TopologicalSpaces().quotient_from_open_category(
+            ambient,
+            equivalent,
             open_carrier,
             opens,
             open_point,
@@ -1034,16 +818,6 @@ def _finite_chart_continuous_map(
         chart = presentation.charts[chart_index]
         source = affine_topological_space(chart)
         target = _finite_glued_topological_space(presentation)
-        source_opens, _ = affine_structure_sheaf(chart)
-        target_opens = _scheme_open_category(presentation)
-        ambient, _quotient, projection = _finite_glued_point_quotient(presentation)
-
-        def point_image(value: Hashable) -> Hashable:
-            assert isinstance(value, AffineSpectrumPoint)
-            tagged = _TaggedAffinePoint(presentation, chart_index, value)
-            return projection(ambient.point(tagged)).datum()
-
-        underlying = Mor(Sets)(source.carrier(), target.carrier())(point_image)
 
         def preimage(
             open_object: CategoryOfCategories.ElementType,
@@ -1054,18 +828,13 @@ def _finite_chart_continuous_map(
                 cast(SchemeOpenCategory.ObjectType, open_object),
             )
 
-        inverse = Fun(target_opens, source_opens)(
-            preimage,
-            lambda inclusion: Mor(source_opens)(
-                preimage(inclusion.domain()),
-                preimage(inclusion.codomain()),
-            )(),
-        )
-        return TopologicalSpaces().morphism_with_inverse_image(
+        return TopologicalSpaces().quotient_chart_morphism(
             source,
             target,
-            underlying,
-            inverse,
+            lambda value: _TaggedAffinePoint(
+                presentation, chart_index, cast(AffineSpectrumPoint, value)
+            ),
+            preimage,
         )
 
     return cast(
@@ -1089,9 +858,16 @@ def _finite_chart_ringed_map(
         target = _finite_glued_ringed_space(presentation)
         continuous = _finite_chart_continuous_map(presentation, chart_index)
 
-        def sheaf_map(open_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def sheaf_map(
+            open_object: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             target_open = cast(SchemeOpenCategory.ObjectType, open_object)
-            return _compatible_section_projection(target_open, chart_index)
+            return descent_projection(
+                target_open,
+                target_open.section_ring(),
+                target_open.chart_open(chart_index).section_ring(),
+                chart_index,
+            )
 
         return RingedSpaces().homomorphism(
             source,
@@ -1139,156 +915,6 @@ def _finite_chart_locally_ringed_map(
             Schemes(),
             "finite-gluing-chart-locally-ringed-map",
             (presentation, chart_index),
-            construct,
-        ),
-    )
-
-
-def _gluing_mediator_continuous_map(
-    source: SchemesCategory.ObjectType,
-    target: SchemesCategory.ObjectType,
-    chart_maps: tuple[SchemesCategory.MorphismType, ...],
-) -> TopologicalSpacesCategory.MorphismType:
-    presentation = source.finite_affine_gluing()
-
-    def construct() -> TopologicalSpacesCategory.MorphismType:
-        source_space = source.space()
-        target_space = target.space()
-        source_opens = _scheme_open_category(presentation)
-        target_opens = target_space.open_category()
-
-        def point_image(value: Hashable) -> Hashable:
-            quotient_point = source_space.carrier().point(value)
-            tagged = _quotient_tag(quotient_point)
-            chart_space = affine_topological_space(presentation.charts[tagged.chart])
-            chart_point = chart_space.carrier().point(tagged.point)
-            image = chart_maps[tagged.chart].continuous_map().underlying_map()(chart_point)
-            return image.datum()
-
-        underlying = Mor(Sets)(source_space.carrier(), target_space.carrier())(point_image)
-
-        def preimage(
-            open_object: CategoryOfCategories.ElementType,
-        ) -> CategoryOfCategories.ElementType:
-            chart_opens = tuple(
-                cast(
-                    AffineOpenCategory.ObjectType,
-                    mapping.continuous_map().inverse_image().on_object(open_object),
-                )
-                for mapping in chart_maps
-            )
-            return source_opens.from_chart_opens(chart_opens)
-
-        inverse = Fun(target_opens, source_opens)(
-            preimage,
-            lambda inclusion: Mor(source_opens)(
-                preimage(inclusion.domain()),
-                preimage(inclusion.codomain()),
-            )(),
-        )
-        return TopologicalSpaces().morphism_with_inverse_image(
-            source_space,
-            target_space,
-            underlying,
-            inverse,
-        )
-
-    return cast(
-        TopologicalSpacesCategory.MorphismType,
-        chosen_construction(
-            Schemes(),
-            "finite-gluing-mediator-continuous-map",
-            (source, target, chart_maps),
-            construct,
-        ),
-    )
-
-
-def _gluing_mediator_ringed_map(
-    source: SchemesCategory.ObjectType,
-    target: SchemesCategory.ObjectType,
-    chart_maps: tuple[SchemesCategory.MorphismType, ...],
-) -> RingedSpacesCategory.MorphismType:
-    continuous = _gluing_mediator_continuous_map(source, target, chart_maps)
-
-    def construct() -> RingedSpacesCategory.MorphismType:
-        target_presheaf = target.sheaf().presheaf
-
-        def component(target_key: Hashable) -> MorphismCategory.ObjectType:
-            target_open = target_presheaf.open_object(target_key)
-            source_open = cast(
-                SchemeOpenCategory.ObjectType,
-                continuous.inverse_image().on_object(target_open),
-            )
-            target_ring = target_presheaf.section_ring(target_key)
-            source_ring = source_open.section_ring()
-            target_carrier = Rings(Sets).forgetful().on_object(target_ring)
-            source_carrier = Rings(Sets).forgetful().on_object(source_ring)
-            chart_components = tuple(
-                mapping.sheaf_map().component(target_open)
-                for mapping in chart_maps
-            )
-
-            def rule(value: Hashable) -> Hashable:
-                target_section = target_ring.point(value)
-                return (
-                    source_open,
-                    tuple(component_map(target_section) for component_map in chart_components),
-                )
-
-            underlying = Mor(Sets)(target_carrier, source_carrier)(rule)
-            ambient = Rings(Sets).homomorphism(target_ring, source_ring, underlying)
-            return _rings().restrict_morphism(ambient)
-
-        return RingedSpaces().homomorphism(
-            source.ringed_space(),
-            target.ringed_space(),
-            continuous,
-            component,
-        )
-
-    return cast(
-        RingedSpacesCategory.MorphismType,
-        chosen_construction(
-            Schemes(),
-            "finite-gluing-mediator-ringed-map",
-            (source, target, chart_maps),
-            construct,
-        ),
-    )
-
-
-def _gluing_mediator_locally_ringed_map(
-    source: SchemesCategory.ObjectType,
-    target: SchemesCategory.ObjectType,
-    chart_maps: tuple[SchemesCategory.MorphismType, ...],
-) -> LocallyRingedSpacesCategory.MorphismType:
-    presentation = source.finite_affine_gluing()
-
-    def chart_point(
-        quotient_point: CategoryOfCategories.ElementType,
-    ) -> tuple[int, CategoryOfCategories.ElementType]:
-        tagged = _quotient_tag(quotient_point)
-        space = affine_topological_space(presentation.charts[tagged.chart])
-        return tagged.chart, space.carrier().point(tagged.point)
-
-    def construct() -> LocallyRingedSpacesCategory.MorphismType:
-        return LocallyRingedSpaces().homomorphism_with_stalks(
-            source,
-            target,
-            _gluing_mediator_ringed_map(source, target, chart_maps),
-            lambda point: chart_maps[chart_point(point)[0]].stalk_map(chart_point(point)[1]),
-            lambda point, _stalk_map: chart_maps[chart_point(point)[0]].local_map_condition(
-                chart_point(point)[1]
-            ),
-        )
-
-    return cast(
-        LocallyRingedSpacesCategory.MorphismType,
-        chosen_construction(
-            Schemes(),
-            "finite-gluing-mediator-locally-ringed-map",
-            (source, target, chart_maps),
             construct,
         ),
     )
@@ -1441,17 +1067,72 @@ class SchemesCategory(PropertySubcategory):
                 source = self.affine(chart)
                 ambient = _finite_chart_locally_ringed_map(presentation, chart_index)
                 assert ambient.domain() is source and ambient.codomain() is value
-                inclusion = cast(SchemesCategory.MorphismType, self.restrict_morphism(ambient))
-                _backend.retain_chart_inclusion(inclusion, chart, value)
-                chart_entries.append(
-                    AffineOpenChart(
-                        chart,
-                        inclusion,
-                        _finite_chart_structure_sheaf_comparison(
-                            presentation, chart_index
-                        ),
-                    )
+                inclusion = cast(
+                    SchemesCategory.MorphismType, self.restrict_morphism(ambient)
                 )
+                _backend.retain_chart_inclusion(inclusion, chart, value)
+                local_opens, local_sheaf = affine_structure_sheaf(chart)
+                scheme_opens = _scheme_open_category(presentation)
+
+                def global_open(
+                    open_object: CategoryOfCategories.ElementType,
+                    *,
+                    retained_chart_index: int = chart_index,
+                    retained_scheme_opens: SchemeOpenCategory = scheme_opens,
+                ) -> SchemeOpenCategory.ObjectType:
+                    return retained_scheme_opens.open(
+                        retained_chart_index,
+                        cast(AffineOpenCategory.ObjectType, open_object),
+                    )
+
+                def projection(
+                    global_key: Hashable,
+                    *,
+                    retained_chart_index: int = chart_index,
+                ) -> MorphismCategory.ObjectType:
+                    represented = cast(SchemeOpenCategory.ObjectType, global_key)
+                    return descent_projection(
+                        represented,
+                        represented.section_ring(),
+                        represented.chart_open(retained_chart_index).section_ring(),
+                        retained_chart_index,
+                    )
+
+                def lift(
+                    global_key: Hashable,
+                    *,
+                    retained_chart_index: int = chart_index,
+                ) -> MorphismCategory.ObjectType:
+                    represented = cast(SchemeOpenCategory.ObjectType, global_key)
+                    source_open = represented.chart_open(retained_chart_index)
+                    component_maps = tuple(
+                        component.restriction_to(source_open)
+                        if index == retained_chart_index
+                        else _backend.finite_open_restriction(
+                            presentation, component, source_open
+                        )
+                        for index, component in enumerate(represented.chart_opens())
+                    )
+                    return descent_lift(
+                        represented,
+                        source_open.section_ring(),
+                        represented.section_ring(),
+                        component_maps,
+                        retained_chart_index,
+                    )
+
+                comparison = descent_chart_comparison(
+                    local_opens,
+                    local_sheaf,
+                    global_open,
+                    lambda key: cast(SchemeOpenCategory.ObjectType, key).section_ring(),
+                    lambda smaller, larger: cast(
+                        SchemeOpenCategory.ObjectType, smaller
+                    ).restriction_to(cast(SchemeOpenCategory.ObjectType, larger)),
+                    projection,
+                    lift,
+                )
+                chart_entries.append(AffineOpenChart(chart, inclusion, comparison))
             self.retain_affine_cover(value, tuple(chart_entries))
             return value
 
@@ -1476,14 +1157,75 @@ class SchemesCategory(PropertySubcategory):
             assert mapping.codomain() is target
 
         def construct() -> SchemesCategory.MorphismType:
-            ambient = _gluing_mediator_locally_ringed_map(source, target, chart_maps)
-            assert ambient.domain() is source and ambient.codomain() is target
+            source_opens = _scheme_open_category(presentation)
+
+            def chart_point(
+                quotient_point: CategoryOfCategories.ElementType,
+            ) -> tuple[int, CategoryOfCategories.ElementType]:
+                tagged = _quotient_tag(quotient_point)
+                space = affine_topological_space(presentation.charts[tagged.chart])
+                return tagged.chart, space.carrier().point(tagged.point)
+
+            def assemble_open(
+                chart_opens: tuple[CategoryOfCategories.ElementType, ...],
+            ) -> CategoryOfCategories.ElementType:
+                return source_opens.from_chart_opens(
+                    tuple(
+                        cast(AffineOpenCategory.ObjectType, open_object)
+                        for open_object in chart_opens
+                    )
+                )
+
+            continuous = TopologicalSpaces().quotient_mediator(
+                source.space(),
+                target.space(),
+                tuple(mapping.continuous_map() for mapping in chart_maps),
+                chart_point,
+                assemble_open,
+            )
+            target_presheaf = target.sheaf().presheaf
+
+            def sheaf_component(target_key: Hashable) -> MorphismCategory.ObjectType:
+                target_open = target_presheaf.open_object(target_key)
+                source_open = cast(
+                    SchemeOpenCategory.ObjectType,
+                    continuous.inverse_image().on_object(target_open),
+                )
+                return descent_map(
+                    source_open,
+                    target_presheaf.section_ring(target_key),
+                    source_open.section_ring(),
+                    tuple(
+                        mapping.sheaf_map().component(target_open)
+                        for mapping in chart_maps
+                    ),
+                )
+
+            ringed = RingedSpaces().homomorphism(
+                source.ringed_space(),
+                target.ringed_space(),
+                continuous,
+                sheaf_component,
+            )
+            ambient = LocallyRingedSpaces().homomorphism_with_stalks(
+                source,
+                target,
+                ringed,
+                lambda point: chart_maps[chart_point(point)[0]].stalk_map(
+                    chart_point(point)[1]
+                ),
+                lambda point, _stalk_map: chart_maps[
+                    chart_point(point)[0]
+                ].local_map_condition(chart_point(point)[1]),
+            )
             arrow = cast(SchemesCategory.MorphismType, self.restrict_morphism(ambient))
-            _backend.retain_finite_gluing_mediator(
+            _backend.retain_covered_morphism(
                 arrow,
                 source,
                 target,
-                tuple(cast(MorphismCategory.ObjectType, mapping) for mapping in chart_maps),
+                tuple(
+                    cast(MorphismCategory.ObjectType, mapping) for mapping in chart_maps
+                ),
             )
             return arrow
 
@@ -1505,7 +1247,7 @@ class SchemesCategory(PropertySubcategory):
                     AffineOpenChart(
                         affine,
                         inclusion,
-                        _affine_chart_structure_sheaf_comparison(affine),
+                        identity_sheaf_comparison(affine_structure_sheaf(affine)[1]),
                     ),
                 ),
             )

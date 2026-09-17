@@ -7,6 +7,7 @@ from sage_categories.algebra.commutative_rings import (
     prime_ideal_equal,
 )
 from sage_categories.all import ask
+from sage_categories.geometry import RingedSpaces, RingSheaf, TopologicalSpaces
 from sage_categories.geometry.affine import (
     AffineSchemes,
     Spec,
@@ -87,6 +88,9 @@ def test_three_chart_gluing_uses_multi_affine_overlaps() -> None:
     )
 
     glued = schemes.glue_affines(charts, overlaps)
+    assert glued.space() in TopologicalSpaces()
+    assert glued.ringed_space() in RingedSpaces()
+    assert isinstance(glued.sheaf(), RingSheaf)
     presentation = glued.finite_affine_gluing()
     assert presentation.charts == charts
     assert presentation.overlaps == overlaps

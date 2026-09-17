@@ -12,6 +12,7 @@ from sage_categories.algebra._certified_commutative_ring import (
     certified_commutative_ring,
 )
 from sage_categories.algebra.commutative_rings import (
+    integer_ring,
     inverse_unit,
     localization_extension,
     polynomial_ring,
@@ -1308,11 +1309,59 @@ class SchemesCategory(PropertySubcategory):
         def finite_affine_gluing(self) -> FiniteAffineGluing:
             return selected_value(Schemes(), "finite-affine-gluing", (self,))
 
+        def underlying_points(self) -> CategoryOfCategories.ElementType:
+            """The carrier of the underlying topological space; its points are not scheme-valued points."""
+            return self.space().carrier()
+
+        def valued_points(self, ring: CategoryOfCategories.ElementType) -> MorphismCategory:
+            """The exact Hom category whose objects are ``Spec(ring) -> self``."""
+            return Schemes().valued_points(self, ring)
+
+        def categorical_points(self) -> MorphismCategory:
+            """The exact Hom category ``Mor(Schemes())(Spec(ZZ), self)``."""
+            return Schemes().categorical_points(self)
+
+        def over(
+            self,
+            base: SchemesCategory.ObjectType,
+            structure_map: SchemesCategory.MorphismType,
+        ) -> CategoryOfCategories.ElementType:
+            """This scheme with a supplied structure map, as an ordinary object of the slice over ``base``."""
+            return Schemes().over_base(self, base, structure_map)
+
     class ElementType:
         pass
 
     class MorphismType:
         pass
+
+    def valued_points(
+        self,
+        scheme: SchemesCategory.ObjectType,
+        ring: CategoryOfCategories.ElementType,
+    ) -> MorphismCategory:
+        """The fixed Hom category of ``ring``-valued points ``Spec(ring) -> scheme``."""
+        assert scheme in self and ring in _rings()
+        source = self.affine(cast(AffineSchemesCategory.ObjectType, Spec.on_object(ring)))
+        return Mor(self)(source, scheme)
+
+    def categorical_points(
+        self,
+        scheme: SchemesCategory.ObjectType,
+    ) -> MorphismCategory:
+        """The fixed Hom category of categorical points ``Spec(ZZ) -> scheme``."""
+        return self.valued_points(scheme, integer_ring())
+
+    def over_base(
+        self,
+        scheme: SchemesCategory.ObjectType,
+        base: SchemesCategory.ObjectType,
+        structure_map: SchemesCategory.MorphismType,
+    ) -> CategoryOfCategories.ElementType:
+        """Retain ``scheme -> base`` as the generic slice object over ``base``."""
+        assert scheme in self and base in self
+        assert structure_map.domain() is scheme and structure_map.codomain() is base
+        return self.SliceOver(base)(structure_map)
 
     def retain_affine_cover(
         self,

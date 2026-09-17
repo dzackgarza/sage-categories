@@ -7,6 +7,7 @@ OSCAR lives in ``algebra._firewall.commutative_rings``.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cache
 
 from sage_categories.algebra._firewall import commutative_rings as _backend
 from sage_categories.cat.category import CategoryOfCategories
@@ -16,6 +17,7 @@ __all__ = [
     "PrimeIdeal",
     "induced_stalk_map",
     "induced_stalk_map_to",
+    "integer_ring",
     "inverse_unit",
     "localization_extension",
     "localize_at_prime",
@@ -31,6 +33,11 @@ __all__ = [
     "principal_localization",
     "quotient_ring",
 ]
+
+
+@dataclass(frozen=True, eq=False, slots=True)
+class _IntegerRingConstruction:
+    pass
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -72,6 +79,12 @@ class _PrimeLocalizationConstruction:
 
 def _construction(ring: CategoryOfCategories.ElementType) -> object:
     return _backend.construction(ring)
+
+
+@cache
+def integer_ring() -> CategoryOfCategories.ElementType:
+    """The integer ring ``ZZ`` as the owned commutative ring underlying ``Spec(ZZ)``."""
+    return _backend.integer_ring(_IntegerRingConstruction())
 
 
 def prime_field(characteristic: int) -> CategoryOfCategories.ElementType:

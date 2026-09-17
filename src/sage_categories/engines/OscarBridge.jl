@@ -2,7 +2,7 @@ module SageCategoriesOscarBridge
 
 using Oscar
 
-export prime_field, polynomial_ring_with_generators, quotient_ring,
+export integer_ring, prime_field, polynomial_ring_with_generators, quotient_ring,
        localization_at_element, localization_at_prime, ring_hom, localization_hom,
        prime_ideal_from_generators, prime_ideal_preimage, prime_ideal_extension,
        ideal_generators, ideal_contains, stalk_map,
@@ -25,6 +25,9 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        covered_chart_inclusion, gluing_mediator,
        covered_chart_map, covered_domain, covered_codomain,
        covered_identity, covered_compose, covered_equal
+
+"""The integer ring used by the terminal affine scheme."""
+integer_ring() = ZZ
 
 """The prime field ``GF(p)`` used by the affine-ring consumer."""
 prime_field(p::Integer) = GF(p)

@@ -44,6 +44,7 @@ __all__ = [
     "hom",
     "ideal_contains",
     "ideal_generators",
+    "integer_ring",
     "localization_at_element",
     "localization_at_prime",
     "localization_hom",
@@ -82,6 +83,11 @@ __all__ = [
 def version() -> str:
     """Return the OSCAR package version loaded by the isolated worker."""
     return bridge().text("version")
+
+
+def integer_ring() -> OscarHandle:
+    """Return OSCAR's integer ring ``ZZ``."""
+    return bridge().handle("integer_ring")
 
 
 def prime_field(characteristic: int) -> OscarHandle:

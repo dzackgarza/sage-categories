@@ -40,6 +40,8 @@ def test_oscar_worker_executes_without_loading_oscar_into_catlab() -> None:
     assert not bool(main.seval("isdefined(Main, :Oscar)"))
 
     assert oscar.version() == "1.8.2"
+    integers = oscar.integer_ring()
+    assert oscar.ring_contains(integers, oscar.ring_one(integers))
     field = oscar.prime_field(5)
     one = oscar.ring_one(field)
     assert oscar.ring_contains(field, one)

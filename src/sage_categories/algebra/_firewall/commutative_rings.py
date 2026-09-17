@@ -288,6 +288,11 @@ def construction(value: CategoryOfCategories.ElementType) -> object:
     return record.construction.data
 
 
+def integer_ring(construction_data: object) -> CategoryOfCategories.ElementType:
+    native = _oscar_runtime().integer_ring()
+    return reconstruct_oscar_object(native, construction_data)
+
+
 def prime_field(characteristic: int, construction_data: object) -> CategoryOfCategories.ElementType:
     native = _oscar_runtime().prime_field(characteristic)
     return reconstruct_oscar_object(native, construction_data)

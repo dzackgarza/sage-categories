@@ -136,10 +136,16 @@ def _verify_gluing_result(
 
 @dataclass(frozen=True, eq=False, slots=True)
 class RingSheaf[OpenKey: Hashable]:
-    """A ring presheaf with retained finite-cover gluing."""
+    """A ring presheaf declared to satisfy the sheaf condition.
+
+    A selected gluing evaluator is additional computational data.  Finite
+    represented topologies can retain one through :func:`ring_sheaf`; other
+    sheaves need not manufacture an evaluator for an open representation that
+    their backend does not use.
+    """
 
     presheaf: RingPresheaf[OpenKey]
-    gluing_rule: GluingRule[OpenKey]
+    gluing_rule: GluingRule[OpenKey] | None = None
 
     def glue(
         self: RingSheaf[frozenset[Hashable]],
@@ -148,8 +154,13 @@ class RingSheaf[OpenKey: Hashable]:
         local_sections: tuple[CategoryOfCategories.ElementType, ...],
     ) -> CategoryOfCategories.ElementType:
         """Glue one compatible finite family and verify its unique global section."""
+        match self.gluing_rule:
+            case None:
+                raise AssertionError("this sheaf has no selected gluing evaluator")
+            case gluing_rule:
+                selected_gluing = gluing_rule
         _validate_gluing_family(self.presheaf, open_set, cover, local_sections)
-        global_section = self.gluing_rule(open_set, cover, local_sections)
+        global_section = selected_gluing(open_set, cover, local_sections)
         _verify_gluing_result(self.presheaf, open_set, cover, local_sections, global_section)
         return global_section
 
@@ -234,6 +245,9 @@ def ring_presheaf_from_functor[OpenKey: Hashable](
     return RingPresheaf(space, opens, functor, open_object_rule, open_key_rule)
 
 
-def ring_sheaf[OpenKey: Hashable](presheaf: RingPresheaf[OpenKey], gluing_rule: GluingRule[OpenKey]) -> RingSheaf[OpenKey]:
-    """Retain the supplied finite-cover gluing operation on this ring presheaf."""
+def ring_sheaf[OpenKey: Hashable](
+    presheaf: RingPresheaf[OpenKey],
+    gluing_rule: GluingRule[OpenKey] | None = None,
+) -> RingSheaf[OpenKey]:
+    """Declare ``presheaf`` a sheaf and retain a gluing evaluator when supplied."""
     return RingSheaf(presheaf, gluing_rule)

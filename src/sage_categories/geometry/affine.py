@@ -27,7 +27,17 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.geometry._firewall import affine as _backend
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
-from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
+from sage_categories.geometry.locally_ringed_spaces import (
+    LocallyRingedSpaces,
+    LocallyRingedSpacesCategory,
+)
+from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
+from sage_categories.geometry.sheaves import (
+    RingPresheaf,
+    RingSheaf,
+    ring_presheaf_from_functor,
+    ring_sheaf,
+)
 from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 
 __all__ = [
@@ -36,9 +46,15 @@ __all__ = [
     "AffineSchemes",
     "AffineSchemesCategory",
     "AffineSpectrumPoint",
+    "AffineToLocallyRingedSpaces",
     "Spec",
     "affine_continuous_map",
+    "affine_locally_ringed_map",
+    "affine_locally_ringed_space",
     "affine_open_preimage",
+    "affine_ring_sheaf",
+    "affine_ringed_map",
+    "affine_ringed_space",
     "affine_structure_sheaf",
     "affine_topological_space",
     "native_affine_morphism",
@@ -298,11 +314,10 @@ def _spec_morphism(opposite_ring_map: MorphismCategory.ObjectType) -> MorphismCa
 Spec: Functor = Fun(_rings().op(), AffineSchemes())(_spec_object, _spec_morphism)
 
 
-def affine_structure_sheaf(
+def _affine_open_category(
     scheme: AffineSchemesCategory.ObjectType,
-) -> tuple[AffineOpenCategory, RingPresheaf[AffineOpenCategory.ObjectType]]:
-    """The OSCAR structure sheaf on the retained principal-open tree of ``scheme``."""
-    opens = cast(
+) -> AffineOpenCategory:
+    return cast(
         AffineOpenCategory,
         chosen_construction(
             AffineSchemes(),
@@ -311,6 +326,13 @@ def affine_structure_sheaf(
             lambda: AffineOpenCategory(scheme),
         ),
     )
+
+
+def affine_structure_sheaf(
+    scheme: AffineSchemesCategory.ObjectType,
+) -> tuple[AffineOpenCategory, RingPresheaf[AffineOpenCategory.ObjectType]]:
+    """The OSCAR structure sheaf on the retained principal-open tree of ``scheme``."""
+    opens = _affine_open_category(scheme)
     rings = _rings()
 
     def on_object(open_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
@@ -331,7 +353,7 @@ def affine_structure_sheaf(
 
     functor = Fun(opens.op(), rings)(on_object, on_morphism)
     presheaf = ring_presheaf_from_functor(
-        scheme,
+        affine_topological_space(scheme),
         opens,
         functor,
         key_to_open,
@@ -346,7 +368,7 @@ def affine_topological_space(
     """The represented prime spectrum with its retained principal-open basis."""
 
     def construct() -> TopologicalSpacesCategory.ObjectType[AffineOpenCategory.ObjectType]:
-        opens, _ = affine_structure_sheaf(scheme)
+        opens = _affine_open_category(scheme)
 
         def point_member(value: Hashable):
             match isinstance(value, AffineSpectrumPoint):
@@ -404,7 +426,7 @@ def affine_open_preimage(
 ) -> tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType]:
     """The principal-open inverse image and induced structure-sheaf map."""
     assert target_open.scheme() is mapping.codomain()
-    source_opens, _ = affine_structure_sheaf(mapping.domain())
+    source_opens = _affine_open_category(mapping.domain())
 
     def construct() -> tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType]:
         match target_open.parent_open():
@@ -444,8 +466,8 @@ def affine_continuous_map(
     def construct() -> TopologicalSpacesCategory.MorphismType:
         source = affine_topological_space(mapping.domain())
         target = affine_topological_space(mapping.codomain())
-        target_opens, _ = affine_structure_sheaf(mapping.codomain())
-        source_opens, _ = affine_structure_sheaf(mapping.domain())
+        target_opens = _affine_open_category(mapping.codomain())
+        source_opens = _affine_open_category(mapping.domain())
 
         def point_image(value: Hashable) -> Hashable:
             assert isinstance(value, AffineSpectrumPoint)
@@ -483,3 +505,129 @@ def affine_continuous_map(
             construct,
         ),
     )
+
+
+def affine_ring_sheaf(
+    scheme: AffineSchemesCategory.ObjectType,
+) -> RingSheaf[AffineOpenCategory.ObjectType]:
+    """The affine structure sheaf on the represented principal-open basis."""
+    _, presheaf = affine_structure_sheaf(scheme)
+    return cast(
+        RingSheaf[AffineOpenCategory.ObjectType],
+        chosen_construction(
+            AffineSchemes(),
+            "affine-ring-sheaf",
+            (scheme,),
+            lambda: ring_sheaf(presheaf),
+        ),
+    )
+
+
+def affine_ringed_space(
+    scheme: AffineSchemesCategory.ObjectType,
+) -> RingedSpacesCategory.ObjectType[AffineOpenCategory.ObjectType]:
+    """The ringed space carried by an affine scheme."""
+    return cast(
+        RingedSpacesCategory.ObjectType[AffineOpenCategory.ObjectType],
+        chosen_construction(
+            AffineSchemes(),
+            "affine-ringed-space",
+            (scheme,),
+            lambda: RingedSpaces()(
+                affine_topological_space(scheme),
+                affine_ring_sheaf(scheme),
+            ),
+        ),
+    )
+
+
+def affine_ringed_map(
+    mapping: AffineSchemesCategory.MorphismType,
+) -> RingedSpacesCategory.MorphismType:
+    """The ringed-space morphism induced by an affine scheme morphism."""
+
+    def construct() -> RingedSpacesCategory.MorphismType:
+        return RingedSpaces().homomorphism(
+            affine_ringed_space(mapping.domain()),
+            affine_ringed_space(mapping.codomain()),
+            affine_continuous_map(mapping),
+            lambda target_open: affine_open_preimage(mapping, target_open)[1],
+        )
+
+    return cast(
+        RingedSpacesCategory.MorphismType,
+        chosen_construction(
+            AffineSchemes(),
+            "affine-ringed-map",
+            (mapping,),
+            construct,
+        ),
+    )
+
+
+def _spectrum_point_datum(
+    represented_point: CategoryOfCategories.ElementType,
+) -> AffineSpectrumPoint:
+    datum = cast(Any, represented_point).datum()
+    assert isinstance(datum, AffineSpectrumPoint)
+    return datum
+
+
+def affine_locally_ringed_space(
+    scheme: AffineSchemesCategory.ObjectType,
+) -> LocallyRingedSpacesCategory.ObjectType:
+    """The locally ringed space underlying an affine scheme."""
+
+    def construct() -> LocallyRingedSpacesCategory.ObjectType:
+        return LocallyRingedSpaces().with_stalks(
+            affine_ringed_space(scheme),
+            lambda point: _spectrum_point_datum(point).local_ring,
+            lambda _point, _stalk: true,
+        )
+
+    return cast(
+        LocallyRingedSpacesCategory.ObjectType,
+        chosen_construction(
+            AffineSchemes(),
+            "affine-locally-ringed-space",
+            (scheme,),
+            construct,
+        ),
+    )
+
+
+def affine_locally_ringed_map(
+    mapping: AffineSchemesCategory.MorphismType,
+) -> LocallyRingedSpacesCategory.MorphismType:
+    """The locally ringed morphism induced by an affine scheme morphism."""
+
+    def stalk_map(
+        source_point: CategoryOfCategories.ElementType,
+    ) -> MorphismCategory.ObjectType:
+        point = _spectrum_point_datum(source_point)
+        return AffineSchemes().map_spectrum_point(mapping, point)[1]
+
+    def construct() -> LocallyRingedSpacesCategory.MorphismType:
+        return LocallyRingedSpaces().homomorphism_with_stalks(
+            affine_locally_ringed_space(mapping.domain()),
+            affine_locally_ringed_space(mapping.codomain()),
+            affine_ringed_map(mapping),
+            stalk_map,
+            lambda _point, _stalk_map: true,
+        )
+
+    return cast(
+        LocallyRingedSpacesCategory.MorphismType,
+        chosen_construction(
+            AffineSchemes(),
+            "affine-locally-ringed-map",
+            (mapping,),
+            construct,
+        ),
+    )
+
+
+AffineToLocallyRingedSpaces: Functor = Fun(
+    AffineSchemes(),
+    LocallyRingedSpaces(),
+)(affine_locally_ringed_space, affine_locally_ringed_map)

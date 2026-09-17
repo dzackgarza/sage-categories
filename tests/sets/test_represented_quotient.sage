@@ -26,6 +26,8 @@ def test_non_enumerated_quotient_uses_owned_equivalence_relation() -> None:
 
     direct = quotient.point(6)
     assert ask(direct == even) is True
+    assert Sets.quotient_representative(even).datum() == 2
+    assert Sets.quotient_representative(direct).datum() == 6
     assert projection.domain() is integers
     assert projection.codomain() is quotient
 

@@ -896,6 +896,20 @@ class SetsCategory(MorphismDataCategory):
         )
         return quotient, projection
 
+    def quotient_representative(
+        self,
+        point: SetsCategory.ElementType,
+    ) -> SetsCategory.ElementType:
+        """Recover the retained ambient representative of a represented quotient point.
+
+        This is computational presentation data, not a section of the quotient map.
+        """
+        presentation = point.parent().set_presentation()
+        assert isinstance(presentation, _QuotientRule), "point does not belong to a represented quotient"
+        datum = point.datum()
+        assert isinstance(datum, _QuotientValue) and datum.rule is presentation
+        return presentation.ambient.point(datum.value)
+
     def _represented_product(
         self,
         diagram: Functor,

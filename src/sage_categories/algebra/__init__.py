@@ -78,10 +78,15 @@ from sage_categories.algebra.local_fields import (
     exact_real_field,
     prime_indices,
 )
+from sage_categories.algebra.module_adapters import (
+    install_sage_module_adapter as _install_sage_module_adapter,
+)
 from sage_categories.algebra.presented_groups import (
     GroupPresentation,
     presented_group,
 )
+
+_install_sage_module_adapter()
 
 __all__ = [
     "AbelianBimoduleTensor",
@@ -92,9 +97,9 @@ __all__ = [
     "AdeleValue",
     "ExactLocalFieldPresentation",
     "ExactLocalValue",
-    "NoIntegralSubring",
     "GroupPresentation",
     "IntegerModulePresentation",
+    "NoIntegralSubring",
     "PrimeIdeal",
     "abelian_homomorphism",
     "adeles_of_rationals",

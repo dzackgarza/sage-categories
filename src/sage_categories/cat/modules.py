@@ -9,8 +9,15 @@ monoid laws are over pointed magmas.
 
 from __future__ import annotations
 
-__all__ = ["ModuleCategory", "Modules"]
+from collections.abc import Callable
 
+__all__ = ["ModuleCategory", "Modules", "internal_endomorphism_module"]
+
+from sage_categories.cat.assembly import (
+    has_selected_value,
+    select_value,
+    selected_value,
+)
 from sage_categories.cat.calculus import pair_maps
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
@@ -132,6 +139,56 @@ class ModuleCategory(EquifierCategory):
         """The module morphism over ``f: X -> Y`` in ``C``; the algebra square ``f ∘ ρ_X = ρ_Y ∘ (A • f)`` must commute."""
         return self._algebras.homomorphism(source, target, arrow)
 
+    def from_endomorphism_action(
+        self,
+        scalar_morphism: MorphismCategory.ObjectType,
+    ) -> ModuleCategory.ObjectType:
+        """Restrict the selected tautological ``End_C(X)`` action along ``A -> End_C(X)``.
+
+        The closed/enriched structure supplies the internal endomorphism object together
+        with its evaluation action through :func:`internal_endomorphism_module`.  This
+        constructor then uses the supplied monoid morphism itself: restriction of scalars
+        produces the ``A``-action on the same exact carrier, so no identity action or
+        replacement carrier can enter this route.
+        """
+        assert scalar_morphism.domain() is self.scalars(), (
+            f"{scalar_morphism!r} does not start at the acting monoid {self.scalars()!r}"
+        )
+        endomorphism_modules = Modules(scalar_morphism.codomain(), self.actegory())
+        assert has_selected_value(endomorphism_modules, "internal-endomorphism-module", ()), (
+            f"{scalar_morphism.codomain()!r} has no selected internal-endomorphism evaluation in {self.actegory()!r}"
+        )
+        tautological: ModuleCategory.ObjectType = selected_value(
+            endomorphism_modules,
+            "internal-endomorphism-module",
+            (),
+        )
+        result = endomorphism_modules.restriction(scalar_morphism).on_object(tautological)
+        assert result in self
+        return result
+
+    def from_sage_module(self, engine_module: object) -> ModuleCategory.ObjectType:
+        """Ingest a Sage module through the native adapter selected for this exact owner.
+
+        ``Cat`` owns only the dispatch into the already selected ``Modules(A,C)``.  A leaf
+        that knows how to reconstruct Sage data selects the conversion rule on this exact
+        module category; the backend object itself never becomes the public module.
+        """
+        match has_selected_value(self, "native-module-adapter", ()):
+            case True:
+                owner: object = self
+            case False:
+                owner = self.underlying_category()
+        assert has_selected_value(owner, "native-module-adapter", ()), f"{self!r} has no selected native-module adapter"
+        adapter: Callable[[ModuleCategory, object], ModuleCategory.ObjectType] = selected_value(
+            owner,
+            "native-module-adapter",
+            (),
+        )
+        result = adapter(self, engine_module)
+        assert result in self
+        return result
+
     def transport(self, module: ModuleCategory.ObjectType, isomorphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
         """The module on ``Y`` along an isomorphism ``φ: X -> Y`` of ``C``: ``ρ_Y = φ ∘ ρ_X ∘ (A • φ⁻¹)``."""
         base = self.underlying_category()
@@ -200,3 +257,21 @@ def Modules(scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.Object
     inclusion = Fun.full_subcategory_monomorphism(unital, algebras)
     first, second = equations[1]
     return ModuleCategory(first.whisker_right(inclusion), second.whisker_right(inclusion), scalars, actegory, algebras)
+
+
+def internal_endomorphism_module(
+    endomorphisms: MonoidCategory.ObjectType,
+    actegory: ActionsCategory.ObjectType,
+    evaluation: MorphismCategory.ObjectType,
+) -> ModuleCategory.ObjectType:
+    """Retain ``X`` with evaluation ``End_C(X) • X -> X`` as the tautological End-module.
+
+    The supplied closed/enriched structure is responsible for the internal endomorphism
+    object and its tensor-hom evaluation.  This function records that complete semantic
+    presentation on the exact generic module owner so ``from_endomorphism_action`` can
+    restrict it along an independently supplied monoid morphism.
+    """
+    modules = Modules(endomorphisms, actegory)
+    module = modules(evaluation)
+    select_value(modules, "internal-endomorphism-module", (), module)
+    return module

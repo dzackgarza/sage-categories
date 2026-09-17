@@ -207,6 +207,23 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
             refine(arrow, self.morphism_category(1))
         return arrows
 
+    def restrict_morphism(
+        self,
+        morphism: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
+        """View an ambient morphism between members as the same morphism here.
+
+        Fullness means there is no new arrow datum to construct: once both endpoints
+        are objects of this subcategory, every ambient arrow between them is already an
+        arrow of the subcategory.  This is the morphism analogue of same-object
+        refinement and keeps leaf code from reconstructing ambient morphism data merely
+        to enter a full subcategory.
+        """
+        assert morphism in self._ambient.morphism_category(1)
+        assert morphism.domain() in self and morphism.codomain() in self
+        refine(morphism, self.morphism_category(1))
+        return morphism
+
 
 class InverseImageSubcategory[**MorphismData, **TwoMorphismData](FullSubcategory[MorphismData, TwoMorphismData]):
     """``F.inverse_image(P)``: the full same-value subcategory ``D ×_C P``.

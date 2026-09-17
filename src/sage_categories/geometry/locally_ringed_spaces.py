@@ -11,7 +11,7 @@ from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Proposition
+from sage_categories.cat.predicates import Axiom, Proposition
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
 from sage_categories.geometry.spaces import TopologicalSpaces
@@ -98,6 +98,8 @@ def _ringed_composite(
 
 class LocallyRingedSpacesCategory(MorphismDataCategory):
     """Ringed spaces with local stalks and stalkwise-local morphisms."""
+
+    Scheme = Axiom()
 
     class ObjectType:
         def __init__(self, data: _LocallyRingedSpaceData) -> None:

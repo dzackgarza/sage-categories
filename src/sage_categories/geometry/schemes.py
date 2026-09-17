@@ -11,25 +11,41 @@ from sage_categories.algebra.commutative_rings import (
     polynomial_ring,
     presented_ring_homomorphism,
 )
-from sage_categories.cat.assembly import chosen_construction
+from sage_categories.cat.assembly import (
+    chosen_construction,
+    select_value,
+    selected_value,
+)
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.declarations import Sets
-from sage_categories.cat.functors import Cat, Fun
+from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.leaf_categories import LeafCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
+from sage_categories.cat.predicates import assume
+from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat.structured_objects import Rings
 from sage_categories.geometry._firewall import schemes as _backend
 from sage_categories.geometry.affine import (
     AffineOpenCategory,
+    AffineSchemes,
     AffineSchemesCategory,
     Spec,
+    affine_locally_ringed_map,
+    affine_locally_ringed_space,
     affine_structure_sheaf,
 )
+from sage_categories.geometry.locally_ringed_spaces import (
+    LocallyRingedSpaces,
+    LocallyRingedSpacesCategory,
+)
+from sage_categories.geometry.ringed_spaces import RingedSpaces
 from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
 
 __all__ = [
+    "AffineOpenChart",
+    "AffineToSchemes",
     "ProjectiveLinePresentation",
     "Schemes",
     "SchemesCategory",
@@ -46,6 +62,14 @@ class _AffineSchemeConstruction:
 
 
 @dataclass(frozen=True, eq=False, slots=True)
+class AffineOpenChart:
+    """One affine member of a retained scheme cover and its open immersion."""
+
+    affine: AffineSchemesCategory.ObjectType
+    open_immersion: MorphismCategory.ObjectType
+
+
+@dataclass(frozen=True, eq=False, slots=True)
 class TwoChartGluing:
     left: AffineSchemesCategory.ObjectType
     right: AffineSchemesCategory.ObjectType
@@ -57,16 +81,16 @@ class TwoChartGluing:
 
 @dataclass(frozen=True, eq=False, slots=True)
 class ProjectiveLinePresentation:
-    scheme: SchemesCategory.ObjectType
+    scheme: CategoryOfCategories.ElementType
     left_chart: AffineSchemesCategory.ObjectType
     right_chart: AffineSchemesCategory.ObjectType
     left_coordinate: CategoryOfCategories.ElementType
     right_coordinate: CategoryOfCategories.ElementType
     left_open: AffineOpenCategory.ObjectType
     right_open: AffineOpenCategory.ObjectType
-    left_inclusion: SchemesCategory.MorphismType
-    right_inclusion: SchemesCategory.MorphismType
-    chart_swap: SchemesCategory.MorphismType
+    left_inclusion: MorphismCategory.ObjectType
+    right_inclusion: MorphismCategory.ObjectType
+    chart_swap: MorphismCategory.ObjectType
     structure_sheaf: RingPresheaf[str]
     overlap_swap: MorphismCategory.ObjectType
 
@@ -90,7 +114,7 @@ class _ProjectiveLineCover:
     left_to_right: MorphismCategory.ObjectType
 
 
-class SchemesCategory(LeafCategory):
+class _OscarCoveredSchemesCategory(LeafCategory):
     """Covered schemes with retained affine presentations and native mediators."""
 
     class ObjectType:
@@ -113,11 +137,11 @@ class SchemesCategory(LeafCategory):
     ) -> bool | None:
         return _backend.morphism_equal(first, second)
 
-    def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType:
+    def affine(self, affine: AffineSchemesCategory.ObjectType) -> _OscarCoveredSchemesCategory.ObjectType:
         """The affine scheme as a scheme, preserving its exact OSCAR chart."""
-        def construct() -> SchemesCategory.ObjectType:
+        def construct() -> _OscarCoveredSchemesCategory.ObjectType:
             construction = _AffineSchemeConstruction(affine)
-            value = cast(SchemesCategory.ObjectType, self.assemble_object(construction))
+            value = cast(_OscarCoveredSchemesCategory.ObjectType, self.assemble_object(construction))
             _backend.retain_affine(
                 self,
                 cast(CategoryOfCategories.ElementType, value),
@@ -131,12 +155,12 @@ class SchemesCategory(LeafCategory):
     def _covered_chart_inclusion(
         self,
         affine: AffineSchemesCategory.ObjectType,
-        glued: SchemesCategory.ObjectType,
-    ) -> SchemesCategory.MorphismType:
+        glued: _OscarCoveredSchemesCategory.ObjectType,
+    ) -> _OscarCoveredSchemesCategory.MorphismType:
         """Reconstruct one owned chart inclusion of a retained two-chart gluing."""
         affine_scheme = self.affine(affine)
         arrow = cast(
-            SchemesCategory.MorphismType,
+            _OscarCoveredSchemesCategory.MorphismType,
             self.assemble_morphism(affine_scheme, glued),
         )
         _backend.retain_chart_inclusion(
@@ -155,9 +179,9 @@ class SchemesCategory(LeafCategory):
         left_to_right_pullback: MorphismCategory.ObjectType,
         right_to_left_pullback: MorphismCategory.ObjectType,
     ) -> tuple[
-        SchemesCategory.ObjectType,
-        SchemesCategory.MorphismType,
-        SchemesCategory.MorphismType,
+        _OscarCoveredSchemesCategory.ObjectType,
+        _OscarCoveredSchemesCategory.MorphismType,
+        _OscarCoveredSchemesCategory.MorphismType,
     ]:
         """Glue two affine charts along inverse principal-open maps."""
         assert left_to_right_pullback.domain() is right_open.section_ring()
@@ -172,7 +196,7 @@ class SchemesCategory(LeafCategory):
             left_to_right_pullback,
             right_to_left_pullback,
         )
-        glued = cast(SchemesCategory.ObjectType, self.assemble_object(construction))
+        glued = cast(_OscarCoveredSchemesCategory.ObjectType, self.assemble_object(construction))
         _backend.retain_gluing(
             self,
             cast(CategoryOfCategories.ElementType, glued),
@@ -190,11 +214,11 @@ class SchemesCategory(LeafCategory):
 
     def gluing_mediator(
         self,
-        glued: SchemesCategory.ObjectType,
-        target: SchemesCategory.ObjectType,
-        left_map: SchemesCategory.MorphismType,
-        right_map: SchemesCategory.MorphismType,
-    ) -> SchemesCategory.MorphismType:
+        glued: _OscarCoveredSchemesCategory.ObjectType,
+        target: _OscarCoveredSchemesCategory.ObjectType,
+        left_map: _OscarCoveredSchemesCategory.MorphismType,
+        right_map: _OscarCoveredSchemesCategory.MorphismType,
+    ) -> _OscarCoveredSchemesCategory.MorphismType:
         """The unique map induced by compatible maps on the retained two-chart presentation."""
         construction = glued.construction()
         assert isinstance(construction, TwoChartGluing)
@@ -205,7 +229,7 @@ class SchemesCategory(LeafCategory):
         assert left_map.domain() is left_scheme and right_map.domain() is right_scheme
         assert left_map.codomain() is target and right_map.codomain() is target
         arrow = cast(
-            SchemesCategory.MorphismType,
+            _OscarCoveredSchemesCategory.MorphismType,
             self.assemble_morphism(glued, target),
         )
         _backend.retain_gluing_mediator(
@@ -222,16 +246,16 @@ class SchemesCategory(LeafCategory):
     def chart_map(
         self,
         source: AffineSchemesCategory.ObjectType,
-        target: SchemesCategory.ObjectType,
+        target: _OscarCoveredSchemesCategory.ObjectType,
         target_chart: AffineSchemesCategory.ObjectType,
         pullback: MorphismCategory.ObjectType,
-    ) -> SchemesCategory.MorphismType:
+    ) -> _OscarCoveredSchemesCategory.MorphismType:
         """A scheme map from an affine source into one retained affine chart of ``target``."""
         assert pullback.domain() is target_chart.coordinate_ring()
         assert pullback.codomain() is source.coordinate_ring()
         source_scheme = self.affine(source)
         arrow = cast(
-            SchemesCategory.MorphismType,
+            _OscarCoveredSchemesCategory.MorphismType,
             self.assemble_morphism(source_scheme, target),
         )
         _backend.retain_chart_map(
@@ -244,11 +268,123 @@ class SchemesCategory(LeafCategory):
         return arrow
 
     def __repr__(self) -> str:
+        return "OscarCoveredSchemes"
+
+
+def _covered_schemes() -> _OscarCoveredSchemesCategory:
+    return cast(
+        _OscarCoveredSchemesCategory,
+        chosen_construction(Cat(), "oscar-covered-schemes", (), _OscarCoveredSchemesCategory),
+    )
+
+
+class SchemesCategory(PropertySubcategory):
+    """Schemes: locally ringed spaces equipped with a retained affine open cover."""
+
+    _base_category_class_and_axiom = (LocallyRingedSpacesCategory, "Scheme")
+
+    class ObjectType:
+        def affine_cover(self) -> tuple[AffineOpenChart, ...]:
+            return selected_value(Schemes(), "affine-cover", (self,))
+
+        def local_affineness(self) -> tuple[AffineOpenChart, ...]:
+            return self.affine_cover()
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def retain_affine_cover(
+        self,
+        scheme: SchemesCategory.ObjectType,
+        charts: tuple[AffineOpenChart, ...],
+    ) -> None:
+        assert scheme in self
+        assert charts
+        for chart in charts:
+            source = affine_locally_ringed_space(chart.affine)
+            assert chart.open_immersion.domain() is source
+            assert chart.open_immersion.codomain() is scheme
+        select_value(self, "affine-cover", (scheme,), charts)
+
+    def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType:
+        def construct() -> SchemesCategory.ObjectType:
+            value = cast(SchemesCategory.ObjectType, affine_locally_ringed_space(affine))
+            assume(self.predicate()(value))
+            inclusion = Mor(self)(value, value).one()
+            self.retain_affine_cover(value, (AffineOpenChart(affine, inclusion),))
+            construction = _AffineSchemeConstruction(affine)
+            _backend.retain_affine(
+                self,
+                cast(CategoryOfCategories.ElementType, value),
+                cast(CategoryOfCategories.ElementType, affine),
+                construction,
+            )
+            return value
+
+        return chosen_construction(self, "affine-scheme", (affine,), construct)
+
+    def affine_morphism(
+        self,
+        mapping: AffineSchemesCategory.MorphismType,
+    ) -> SchemesCategory.MorphismType:
+        def construct() -> SchemesCategory.MorphismType:
+            source = self.affine(mapping.domain())
+            target = self.affine(mapping.codomain())
+            ambient = affine_locally_ringed_map(mapping)
+            assert ambient.domain() is source and ambient.codomain() is target
+            arrow = cast(SchemesCategory.MorphismType, self.restrict_morphism(ambient))
+            _backend.retain_chart_map(
+                cast(MorphismCategory.ObjectType, arrow),
+                cast(CategoryOfCategories.ElementType, mapping.domain()),
+                cast(CategoryOfCategories.ElementType, target),
+                cast(CategoryOfCategories.ElementType, mapping.codomain()),
+                mapping.pullback(),
+            )
+            return arrow
+
+        return chosen_construction(self, "affine-morphism", (mapping,), construct)
+
+    def to_locally_ringed_spaces(self) -> Functor:
+        return self.subcategory_monomorphism()
+
+    def to_ringed_spaces(self) -> Functor:
+        return cast(
+            Functor,
+            chosen_construction(
+                self,
+                "to-ringed-spaces",
+                (),
+                lambda: LocallyRingedSpaces().to_ringed_spaces() * self.to_locally_ringed_spaces(),
+            ),
+        )
+
+    def to_topological_spaces(self) -> Functor:
+        return cast(
+            Functor,
+            chosen_construction(
+                self,
+                "to-topological-spaces",
+                (),
+                lambda: RingedSpaces().to_spaces() * self.to_ringed_spaces(),
+            ),
+        )
+
+    def __repr__(self) -> str:
         return "Schemes"
 
 
 def Schemes() -> SchemesCategory:
-    return cast(SchemesCategory, chosen_construction(Cat(), "schemes", (), SchemesCategory))
+    return cast(SchemesCategory, LocallyRingedSpaces().Scheme())
+
+
+_SCHEMES = Schemes()
+AffineToSchemes: Functor = Fun(AffineSchemes(), _SCHEMES)(
+    _SCHEMES.affine,
+    _SCHEMES.affine_morphism,
+)
 
 
 def native_scheme(
@@ -366,7 +502,7 @@ def _projective_line_cover(field: CategoryOfCategories.ElementType) -> _Projecti
 
 
 def _projective_line_swap(
-    glued: SchemesCategory.ObjectType,
+    glued: _OscarCoveredSchemesCategory.ObjectType,
     left: AffineSchemesCategory.ObjectType,
     right: AffineSchemesCategory.ObjectType,
     left_ring: CategoryOfCategories.ElementType,
@@ -377,7 +513,7 @@ def _projective_line_swap(
     inverse_t: CategoryOfCategories.ElementType,
 ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
     """The chart-swap automorphism of ``P^1`` and its induced overlap automorphism."""
-    schemes = Schemes()
+    schemes = _covered_schemes()
     swap_left_pullback = presented_ring_homomorphism(right_ring, left_ring, (t,))
     swap_right_pullback = presented_ring_homomorphism(left_ring, right_ring, (u,))
     left_to_glued = schemes.chart_map(left, glued, right, swap_left_pullback)
@@ -393,7 +529,7 @@ def projective_line(
 ) -> ProjectiveLinePresentation:
     """The two-chart projective line over ``field`` with its chart-swap automorphism."""
     cover = _projective_line_cover(field)
-    schemes = Schemes()
+    schemes = _covered_schemes()
     glued, left_inclusion, right_inclusion = schemes.glue_two_affines(
         cover.left,
         cover.right,

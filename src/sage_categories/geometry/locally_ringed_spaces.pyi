@@ -16,15 +16,23 @@ type LocalRingRule = Callable[
 type LocalMapRule = Callable[
     [CategoryOfCategories.ElementType, MorphismCategory.ObjectType], Proposition
 ]
+type StalkRule = Callable[
+    [CategoryOfCategories.ElementType], CategoryOfCategories.ElementType
+]
+type StalkMapRule = Callable[
+    [CategoryOfCategories.ElementType], MorphismCategory.ObjectType
+]
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _LocallyRingedSpaceData:
     ringed_space: RingedSpacesCategory.ObjectType
+    stalk_rule: StalkRule
     local_ring_rule: LocalRingRule
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _LocallyRingedMorphismData:
     ringed_map: RingedSpacesCategory.MorphismType
+    stalk_map_rule: StalkMapRule
     local_map_rule: LocalMapRule
 
 class LocallyRingedSpacesCategory(MorphismDataCategory):
@@ -61,11 +69,25 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
         ringed_space: RingedSpacesCategory.ObjectType,
         local_ring_rule: LocalRingRule,
     ) -> LocallyRingedSpacesCategory.ObjectType: ...
+    def with_stalks(
+        self,
+        ringed_space: RingedSpacesCategory.ObjectType,
+        stalk_rule: StalkRule,
+        local_ring_rule: LocalRingRule,
+    ) -> LocallyRingedSpacesCategory.ObjectType: ...
     def homomorphism(
         self,
         source: LocallyRingedSpacesCategory.ObjectType,
         target: LocallyRingedSpacesCategory.ObjectType,
         ringed_map: RingedSpacesCategory.MorphismType,
+        local_map_rule: LocalMapRule,
+    ) -> LocallyRingedSpacesCategory.MorphismType: ...
+    def homomorphism_with_stalks(
+        self,
+        source: LocallyRingedSpacesCategory.ObjectType,
+        target: LocallyRingedSpacesCategory.ObjectType,
+        ringed_map: RingedSpacesCategory.MorphismType,
+        stalk_map_rule: StalkMapRule,
         local_map_rule: LocalMapRule,
     ) -> LocallyRingedSpacesCategory.MorphismType: ...
 

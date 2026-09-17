@@ -27,6 +27,18 @@ def local_map_rule(
     return cast(Proposition, True)
 
 
+def stalk_rule(
+    point: CategoryOfCategories.ElementType,
+) -> CategoryOfCategories.ElementType:
+    return point
+
+
+def stalk_map_rule(
+    _point: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    return cast(MorphismCategory.ObjectType, object())
+
+
 def locally_ringed_types(
     ringed_space: RingedSpacesCategory.ObjectType,
     ringed_map: RingedSpacesCategory.MorphismType,
@@ -47,4 +59,15 @@ def locally_ringed_types(
     assert_type(arrow, LocallyRingedSpacesCategory.MorphismType)
     assert_type(arrow.stalk_map(point), MorphismCategory.ObjectType)
     assert_type(arrow.local_map_condition(point), Proposition)
+    explicit = locally.with_stalks(ringed_space, stalk_rule, local_ring_rule)
+    assert_type(explicit, LocallyRingedSpacesCategory.ObjectType)
+    explicit_arrow = locally.homomorphism_with_stalks(
+        explicit,
+        explicit,
+        ringed_map,
+        stalk_map_rule,
+        local_map_rule,
+    )
+    assert_type(explicit_arrow, LocallyRingedSpacesCategory.MorphismType)
+    assert_type(explicit_arrow.stalk_map(point), MorphismCategory.ObjectType)
     assert_type(locally.to_ringed_spaces(), Functor)

@@ -86,5 +86,38 @@ def test_locally_ringed_owner_forgets_to_ringed_spaces_and_retains_local_stalk_m
     assert ask(composite.stalk_map(zero) == identity) is True
     assert ask(composite.local_map_condition(zero)) is True
 
+    # A represented geometry with its own stalk evaluator can retain that evaluator
+    # without routing through the finite-neighborhood stalk implementation.  Scheme
+    # realizations use this boundary while remaining ordinary locally ringed spaces.
+    stalk_points = []
+    stalk_map_points = []
+
+    def supplied_stalk(point):
+        stalk_points.append(point)
+        return field
+
+    def supplied_stalk_map(point):
+        stalk_map_points.append(point)
+        return identity
+
+    explicit = locally.with_stalks(
+        ringed_space,
+        supplied_stalk,
+        lambda _point, _stalk: true,
+    )
+    assert explicit.stalk(zero) is field
+    assert stalk_points == [zero]
+    explicit_map = locally.homomorphism_with_stalks(
+        explicit,
+        explicit,
+        ringed_map,
+        supplied_stalk_map,
+        lambda _point, _stalk_map: true,
+    )
+    assert ask(explicit_map.stalk_map(zero) == identity) is True
+    assert stalk_map_points == [zero]
+    assert ask(Mor(locally)(explicit, explicit).one().stalk_map(zero) == identity) is True
+    assert ask((explicit_map * explicit_map).stalk_map(zero) == identity) is True
+
 
 test_locally_ringed_owner_forgets_to_ringed_spaces_and_retains_local_stalk_maps()

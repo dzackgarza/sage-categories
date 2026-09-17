@@ -28,17 +28,27 @@ type LocalMapRule = Callable[
     [CategoryOfCategories.ElementType, MorphismCategory.ObjectType],
     Proposition,
 ]
+type StalkRule = Callable[
+    [CategoryOfCategories.ElementType],
+    CategoryOfCategories.ElementType,
+]
+type StalkMapRule = Callable[
+    [CategoryOfCategories.ElementType],
+    MorphismCategory.ObjectType,
+]
 
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _LocallyRingedSpaceData:
     ringed_space: RingedSpacesCategory.ObjectType
+    stalk_rule: StalkRule
     local_ring_rule: LocalRingRule
 
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _LocallyRingedMorphismData:
     ringed_map: RingedSpacesCategory.MorphismType
+    stalk_map_rule: StalkMapRule
     local_map_rule: LocalMapRule
 
 
@@ -106,7 +116,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
             self,
             point: CategoryOfCategories.ElementType,
         ) -> CategoryOfCategories.ElementType:
-            return ring_stalk(self.sheaf(), point)
+            return self._locally_ringed_data.stalk_rule(point)
 
         def local_ring_condition(
             self,
@@ -135,7 +145,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
             self,
             source_point: CategoryOfCategories.ElementType,
         ) -> MorphismCategory.ObjectType:
-            return ringed_stalk_map(self.ringed_map(), source_point)
+            return self._locally_ringed_map_data.stalk_map_rule(source_point)
 
         def local_map_condition(
             self,
@@ -166,8 +176,23 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
         ringed_space: RingedSpacesCategory.ObjectType,
         local_ring_rule: LocalRingRule,
     ) -> LocallyRingedSpacesCategory.ObjectType:
+        return self.with_stalks(
+            ringed_space,
+            lambda point: ring_stalk(ringed_space.sheaf(), point),
+            local_ring_rule,
+        )
+
+    def with_stalks(
+        self,
+        ringed_space: RingedSpacesCategory.ObjectType,
+        stalk_rule: StalkRule,
+        local_ring_rule: LocalRingRule,
+    ) -> LocallyRingedSpacesCategory.ObjectType:
+        """Construct from a supplied stalk evaluator with the same public LRS surface."""
         assert ringed_space in RingedSpaces()
-        return self.ObjectType(_LocallyRingedSpaceData(ringed_space, local_ring_rule))
+        return self.ObjectType(
+            _LocallyRingedSpaceData(ringed_space, stalk_rule, local_ring_rule)
+        )
 
     def homomorphism(
         self,
@@ -176,20 +201,44 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
         ringed_map: RingedSpacesCategory.MorphismType,
         local_map_rule: LocalMapRule,
     ) -> LocallyRingedSpacesCategory.MorphismType:
+        return self.homomorphism_with_stalks(
+            source,
+            target,
+            ringed_map,
+            lambda point: ringed_stalk_map(ringed_map, point),
+            local_map_rule,
+        )
+
+    def homomorphism_with_stalks(
+        self,
+        source: LocallyRingedSpacesCategory.ObjectType,
+        target: LocallyRingedSpacesCategory.ObjectType,
+        ringed_map: RingedSpacesCategory.MorphismType,
+        stalk_map_rule: StalkMapRule,
+        local_map_rule: LocalMapRule,
+    ) -> LocallyRingedSpacesCategory.MorphismType:
+        """Construct from a supplied induced-stalk-map evaluator."""
         assert ringed_map.domain() is source.ringed_space()
         assert ringed_map.codomain() is target.ringed_space()
         return self._morphism_from_data(
             source,
             target,
-            _LocallyRingedMorphismData(ringed_map, local_map_rule),
+            _LocallyRingedMorphismData(ringed_map, stalk_map_rule, local_map_rule),
         )
 
     def _identity_data(
         self,
         member_object: LocallyRingedSpacesCategory.ObjectType,
     ) -> _LocallyRingedMorphismData:
+        def identity_stalk_map(
+            point: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
+            stalk = member_object.stalk(point)
+            return Mor(_rings())(stalk, stalk).one()
+
         return _LocallyRingedMorphismData(
             _ringed_identity(member_object.ringed_space()),
+            identity_stalk_map,
             lambda _point, _stalk_map: true,
         )
 
@@ -209,8 +258,15 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
                 middle_point
             )
 
+        def stalk_map_at(
+            source_point: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
+            middle_point = first_map.continuous_map().underlying_map()(source_point)
+            return first.stalk_map(source_point) * second.stalk_map(middle_point)
+
         return _LocallyRingedMorphismData(
             _ringed_composite(second_map, first_map),
+            stalk_map_at,
             local_at,
         )
 

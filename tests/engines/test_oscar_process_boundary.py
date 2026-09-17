@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import os
 import tomllib
 from importlib import import_module
 from pathlib import Path
 
 from sage_categories.engines import oscar
 from sage_categories.engines.julia_bridge import catlab_bridge
+
+os.environ.setdefault("SAGE_CATEGORIES_OSCAR_REQUEST_TIMEOUT", "180")
 
 ROOT = Path(__file__).parents[2]
 ENGINE = ROOT / "src/sage_categories/engines"
@@ -153,3 +156,29 @@ def test_oscar_checks_finite_general_gluing_and_triple_cocycle() -> None:
 
     pulled_back = oscar.covered_chart_open_preimage(glued, first, third_open)
     assert len(oscar.affine_open_complement_equations(pulled_back)) == 2
+
+    target_ring, _target_generators = oscar.polynomial_ring(field, ("u", "v"))
+    target_chart = oscar.affine_spec(target_ring)
+    target = oscar.covered_scheme(target_chart)
+
+    def chart_map(ring, generators, chart):
+        pullback = oscar.hom(target_ring, ring, generators)
+        affine = oscar.affine_morphism_direct(chart, target_chart, pullback)
+        return oscar.covered_chart_map(
+            oscar.covered_scheme(chart),
+            chart,
+            target,
+            affine,
+        )
+
+    mediator = oscar.finite_gluing_mediator(
+        glued,
+        target,
+        (
+            chart_map(first_ring, first_generators, first),
+            chart_map(second_ring, second_generators, second),
+            chart_map(third_ring, third_generators, third),
+        ),
+    )
+    assert oscar.same_native(oscar.covered_domain(mediator), glued)
+    assert oscar.same_native(oscar.covered_codomain(mediator), target)

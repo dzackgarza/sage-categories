@@ -4,6 +4,7 @@ from sage_categories.algebra import polynomial_ring, prime_field
 from sage_categories.algebra.commutative_rings import (
     localization_extension,
     presented_ring_homomorphism,
+    prime_ideal_equal,
 )
 from sage_categories.all import ask
 from sage_categories.geometry.affine import (
@@ -94,9 +95,26 @@ def test_three_chart_gluing_uses_multi_affine_overlaps() -> None:
 
     cover = glued.affine_cover()
     assert len(cover) == 3
+    assert glued.local_affineness() is cover
     assert tuple(chart.affine for chart in cover) == charts
     assert all(chart.open_immersion.codomain() is glued for chart in cover)
     assert native_scheme(glued).construction is presentation
+
+    for overlap in overlaps:
+        for piece in overlap.pieces:
+            assert piece.left_to_right_pullback.inverse() is piece.right_to_left_pullback
+            assert piece.right_to_left_pullback.inverse() is piece.left_to_right_pullback
+
+    for index, chart in enumerate(cover):
+        local_opens, local_sheaf = affine_structure_sheaf(chart.affine)
+        root = local_opens.root()
+        comparison = chart.structure_sheaf_comparison
+        component = comparison.component(root)
+        inverse = comparison.inverse().component(root)
+        assert component.codomain() is local_sheaf.section_ring(root)
+        assert component.inverse() is inverse
+        local_generator = generators[index][0]
+        assert ask(component(inverse(local_generator)) == local_generator) is True
 
     points = tuple(
         AffineSchemes().spectrum_point(
@@ -114,6 +132,60 @@ def test_three_chart_gluing_uses_multi_affine_overlaps() -> None:
     assert ask(quotient_points[0] == quotient_points[1]) is True
     assert ask(quotient_points[1] == quotient_points[2]) is True
     assert glued.stalk(quotient_points[0]) is points[0].local_ring
+
+    target_ring, (u, v) = polynomial_ring(field, ("u", "v"))
+    target_affine = Spec.on_object(target_ring)
+    target = schemes.affine(target_affine)
+    chart_maps = tuple(
+        schemes.affine_morphism(
+            Spec.on_morphism(
+                presented_ring_homomorphism(
+                    target_ring,
+                    ring,
+                    chart_generators,
+                ).op()
+            )
+        )
+        for ring, chart_generators in zip(rings, generators, strict=True)
+    )
+    mediator = schemes.gluing_mediator(glued, target, chart_maps)
+    assert mediator.domain() is glued and mediator.codomain() is target
+    assert schemes.gluing_mediator(glued, target, chart_maps) is mediator
+
+    target_opens, _ = affine_structure_sheaf(target_affine)
+    target_root = target_opens.root()
+    target_du = target_opens.principal_open(target_root, u)
+    source_du = mediator.continuous_map().inverse_image().on_object(target_du)
+    assert len(source_du.chart_opens()) == 3
+    assert all(
+        component.scheme() is chart
+        for component, chart in zip(source_du.chart_opens(), charts, strict=True)
+    )
+
+    sheaf_pullback = mediator.sheaf_map().component(target_du)
+    assert sheaf_pullback.domain() is target_du.section_ring()
+    assert sheaf_pullback.codomain() is source_du.section_ring()
+    localized_u = target_du.restriction_to(target_root)(u)
+    compatible_u = sheaf_pullback(localized_u)
+    owner, local_values = compatible_u.datum()
+    assert owner is source_du
+    assert len(local_values) == 3
+    assert all(
+        local_value.parent() is component.section_ring()
+        for local_value, component in zip(local_values, source_du.chart_opens(), strict=True)
+    )
+
+    image = mediator.continuous_map().underlying_map()(quotient_points[0])
+    expected_target_point = AffineSchemes().spectrum_point(
+        target_affine,
+        (u - u.parent().one(), v),
+    )
+    assert image.datum().scheme is target_affine
+    assert prime_ideal_equal(image.datum().prime, expected_target_point.prime) is True
+    stalk_map = mediator.stalk_map(quotient_points[0])
+    assert stalk_map.domain() is image.datum().local_ring
+    assert stalk_map.codomain() is points[0].local_ring
+    assert ask(mediator.local_map_condition(quotient_points[0])) is True
 
 
 test_three_chart_gluing_uses_multi_affine_overlaps()

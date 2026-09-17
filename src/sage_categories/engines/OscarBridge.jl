@@ -20,6 +20,8 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        general_gluing, finite_covered_scheme, gluing_cocycle,
        covered_open_contains, covered_open_restriction,
        covered_chart_open_preimage, affine_open_complement_equations,
+       covered_open_family_compatible, covered_component_intersection,
+       finite_gluing_mediator,
        covered_chart_inclusion, gluing_mediator,
        covered_chart_map, covered_domain, covered_codomain,
        covered_identity, covered_compose, covered_equal
@@ -241,6 +243,60 @@ function covered_chart_open_preimage(scheme, source_chart, target_open)
 end
 
 affine_open_complement_equations(open_subset) = collect(complement_equations(open_subset))
+
+function affine_open_equal(first, second)
+    affine_open_contains(first, second) && affine_open_contains(second, first)
+end
+
+
+function covered_open_family_compatible(scheme, opens)
+    opens = collect(opens)
+    cover = default_covering(scheme)
+    for left_index in eachindex(opens)
+        for right_index in eachindex(opens)
+            left_index < right_index || continue
+            left_open = opens[left_index]
+            right_open = opens[right_index]
+            left_chart = ambient_scheme(left_open)
+            right_chart = ambient_scheme(right_open)
+            gluing = cover[left_chart, right_chart]
+            forward = gluing_morphisms(gluing)[1]
+            left_part = intersect(left_open, domain(forward))
+            right_part = intersect(right_open, codomain(forward))
+            transported = preimage(forward, right_part)
+            affine_open_equal(left_part, transported) || return false
+        end
+    end
+    true
+end
+
+
+function covered_component_intersection(scheme, source_open, target_open)
+    source_chart = ambient_scheme(source_open)
+    target_chart = ambient_scheme(target_open)
+    source_chart === target_chart && return intersect(source_open, target_open)
+    gluing = default_covering(scheme)[source_chart, target_chart]
+    forward = gluing_morphisms(gluing)[1]
+    target_part = intersect(target_open, codomain(forward))
+    intersect(source_open, preimage(forward, target_part))
+end
+
+
+function finite_gluing_mediator(source, target, chart_maps)
+    source_cover = default_covering(source)
+    target_cover = default_covering(target)
+    source_patches = patches(source_cover)
+    chart_maps = collect(chart_maps)
+    length(source_patches) == length(chart_maps) ||
+        error("one chart map is required for each source affine chart")
+    local_maps = IdDict{AbsAffineScheme, AbsAffineSchemeMor}(
+        patch => chart_map[patch]
+        for (patch, chart_map) in zip(source_patches, chart_maps)
+    )
+    covering_map = CoveringMorphism(source_cover, target_cover, local_maps; check=false)
+    CoveredSchemeMorphism(source, target, covering_map; check=false)
+end
+
 
 """The covered scheme obtained from two charts and their gluing."""
 function glued_covered_scheme(left_chart, right_chart, gluing)

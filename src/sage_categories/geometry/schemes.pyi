@@ -23,6 +23,7 @@ from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.functors import Fun as Fun
+from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.native import (
@@ -59,6 +60,33 @@ from sage_categories.kernel.sage_runtime import cached_method as cached_method
 __all__ = ["ProjectiveLinePresentation", "Schemes", "SchemesCategory", "TwoChartGluing", "native_scheme", "native_scheme_morphism", "projective_line"]
 
 @dataclass(frozen=True, eq=False, slots=True)
+class AffineOpenChart:
+    affine: AffineSchemesCategory.ObjectType
+    open_immersion: MorphismCategory.ObjectType
+    structure_sheaf_comparison: NaturalTransformation
+
+@dataclass(frozen=True, eq=False, slots=True)
+class AffineOverlapPiece:
+    left_open: AffineOpenCategory.ObjectType
+    right_open: AffineOpenCategory.ObjectType
+    left_to_right_pullback: MorphismCategory.ObjectType
+    right_to_left_pullback: MorphismCategory.ObjectType
+
+@dataclass(frozen=True, eq=False, slots=True)
+class AffineOverlap:
+    left: int
+    right: int
+    pieces: tuple[AffineOverlapPiece, ...]
+    left_open: AffineOpenCategory.ObjectType
+    right_open: AffineOpenCategory.ObjectType
+
+@dataclass(frozen=True, eq=False, slots=True)
+class FiniteAffineGluing:
+    charts: tuple[AffineSchemesCategory.ObjectType, ...]
+    overlaps: tuple[AffineOverlap, ...]
+    def overlap(self, first: int, second: int) -> AffineOverlap: ...
+
+@dataclass(frozen=True, eq=False, slots=True)
 class TwoChartGluing:
     left: AffineSchemesCategory.ObjectType
     right: AffineSchemesCategory.ObjectType
@@ -86,6 +114,9 @@ class _StaticRoles_SchemesCategory:
     class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
         def __init__(self, construction: object) -> None: ...
         def construction(self) -> object: ...
+        def affine_cover(self) -> tuple[AffineOpenChart, ...]: ...
+        def local_affineness(self) -> tuple[AffineOpenChart, ...]: ...
+        def finite_affine_gluing(self) -> FiniteAffineGluing: ...
 
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
 
@@ -108,8 +139,14 @@ class SchemesCategory(
         left_to_right_pullback: MorphismCategory.ObjectType,
         right_to_left_pullback: MorphismCategory.ObjectType,
     ) -> tuple[SchemesCategory.ObjectType, SchemesCategory.MorphismType, SchemesCategory.MorphismType]: ...
+    def affine_overlap(
+        self, charts: tuple[AffineSchemesCategory.ObjectType, ...], left: int, right: int, pieces: tuple[AffineOverlapPiece, ...]
+    ) -> AffineOverlap: ...
+    def glue_affines(
+        self, charts: tuple[AffineSchemesCategory.ObjectType, ...], overlaps: tuple[AffineOverlap, ...]
+    ) -> SchemesCategory.ObjectType: ...
     def gluing_mediator(
-        self, glued: SchemesCategory.ObjectType, target: SchemesCategory.ObjectType, left_map: SchemesCategory.MorphismType, right_map: SchemesCategory.MorphismType
+        self, source: SchemesCategory.ObjectType, target: SchemesCategory.ObjectType, chart_maps: tuple[SchemesCategory.MorphismType, ...]
     ) -> SchemesCategory.MorphismType: ...
     def chart_map(
         self,

@@ -169,6 +169,53 @@ def finite_chart_preimage_equations(
     )
 
 
+def finite_open_family_compatible(
+    presentation: object,
+    chart_opens: tuple[object, ...],
+) -> bool:
+    """Check that chart-local opens describe one open of the glued space."""
+    prepare_finite_gluing(presentation)
+    return oscar.covered_open_family_compatible(
+        _finite_gluing_presentations[presentation],
+        tuple(_affine_backend.open_handle(open_object) for open_object in chart_opens),
+    )
+
+
+def finite_component_intersection_equations(
+    presentation: object,
+    source_index: int,
+    source_open: object,
+    target_open: object,
+) -> tuple[CategoryOfCategories.ElementType, ...]:
+    """Normalize a transported pairwise component intersection in one source chart."""
+    prepare_finite_gluing(presentation)
+    native = oscar.covered_component_intersection(
+        _finite_gluing_presentations[presentation],
+        _affine_backend.open_handle(source_open),
+        _affine_backend.open_handle(target_open),
+    )
+    chart = cast(Any, presentation).charts[source_index]
+    return tuple(
+        _rings_backend.reconstruct_oscar_element(chart.coordinate_ring(), equation)
+        for equation in oscar.affine_open_complement_equations(native)
+    )
+
+
+def retain_finite_gluing_mediator(
+    value: MorphismCategory.ObjectType,
+    source: CategoryOfCategories.ElementType,
+    target: CategoryOfCategories.ElementType,
+    chart_maps: tuple[MorphismCategory.ObjectType, ...],
+) -> None:
+    """Validate chart compatibility natively and retain the induced covered map."""
+    native = oscar.finite_gluing_mediator(
+        scheme_handle(source),
+        scheme_handle(target),
+        tuple(morphism_handle(mapping) for mapping in chart_maps),
+    )
+    _retain_morphism(value, native)
+
+
 def _retain_morphism(value: MorphismCategory.ObjectType, native: OscarHandle) -> None:
     _morphisms.retain(value.base_category(), value, value.domain(), value.codomain(), native)
 

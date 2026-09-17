@@ -5,6 +5,7 @@ from __future__ import annotations
 import atexit
 import json
 import os
+import select
 import shutil
 import subprocess
 import sys
@@ -170,7 +171,25 @@ class _OscarWorker:
             assert self._process.poll() is None, f"the OSCAR worker terminated unexpectedly; see {self._stderr_path}"
             self._stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
             self._stdin.flush()
-            line = self._stdout.readline()
+            timeout_text = os.environ.get("SAGE_CATEGORIES_OSCAR_REQUEST_TIMEOUT")
+            match timeout_text:
+                case None:
+                    line = self._stdout.readline()
+                case _:
+                    timeout = float(timeout_text)
+                    assert timeout > 0, "SAGE_CATEGORIES_OSCAR_REQUEST_TIMEOUT must be positive"
+                    readable, _, _ = select.select((self._stdout,), (), (), timeout)
+                    if not readable:
+                        self._process.terminate()
+                        try:
+                            self._process.wait(timeout=5)
+                        except subprocess.TimeoutExpired:
+                            self._process.kill()
+                            self._process.wait()
+                        raise TimeoutError(
+                            f"OSCAR operation {operation!r} exceeded {timeout:g}s; see {self._stderr_path}"
+                        )
+                    line = self._stdout.readline()
         assert line, f"the OSCAR worker returned no response; see {self._stderr_path}"
         response = json.loads(line)
         assert response["ok"] is True, response["error"]

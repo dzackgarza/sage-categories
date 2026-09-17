@@ -12,6 +12,7 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        affine_spec, affine_coordinate_ring, affine_morphism_from_pullback, affine_pullback,
        affine_domain, affine_codomain, covered_scheme_of,
        structure_sheaf, sheaf_value, sheaf_restriction,
+       affine_open_union, affine_open_section_ring, affine_open_restriction,
        principal_open_subset, principal_open_ambient,
        principal_open_inclusion, affine_morphism_direct,
        simple_gluing, glued_covered_scheme, covered_patches,
@@ -105,6 +106,16 @@ covered_scheme_of(scheme) = covered_scheme(scheme)
 structure_sheaf(scheme) = StructureSheafOfRings(scheme)
 sheaf_value(sheaf, open_subset) = sheaf(open_subset)
 sheaf_restriction(sheaf, larger, smaller) = restriction_map(sheaf, larger, smaller)
+
+function affine_open_union(patches)
+    opens = [AffineSchemeOpenSubscheme(patch) for patch in collect(patches)]
+    isempty(opens) && error("an affine-open union needs at least one principal patch")
+    reduce(union, opens)
+end
+
+affine_open_section_ring(open_subset) = OO(open_subset)
+affine_open_restriction(larger, smaller) = restriction_map(larger, smaller)
+
 principal_open_subset(scheme, element) = PrincipalOpenSubset(scheme, element)
 principal_open_ambient(open_subset) = ambient_scheme(open_subset)
 principal_open_inclusion(open_subset) = inclusion_morphism(open_subset)

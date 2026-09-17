@@ -11,6 +11,9 @@ __all__ = [
     "affine_domain",
     "affine_morphism",
     "affine_morphism_direct",
+    "affine_open_restriction",
+    "affine_open_section_ring",
+    "affine_open_union",
     "affine_pullback",
     "affine_spec",
     "codomain",
@@ -239,6 +242,21 @@ def affine_morphism_direct(source_scheme: OscarHandle, target_scheme: OscarHandl
 def affine_pullback(mapping: OscarHandle) -> OscarHandle:
     """Return the coordinate-ring pullback of an affine scheme morphism."""
     return bridge().handle("affine_pullback", mapping)
+
+
+def affine_open_union(patches: tuple[OscarHandle, ...]) -> OscarHandle:
+    """Return the union of finitely many principal opens in one affine ambient."""
+    return bridge().handle("affine_open_union", list(patches))
+
+
+def affine_open_section_ring(open_subset: OscarHandle) -> OscarHandle:
+    """Return OSCAR's ring of regular functions on an affine open subscheme."""
+    return bridge().handle("affine_open_section_ring", open_subset)
+
+
+def affine_open_restriction(larger: OscarHandle, smaller: OscarHandle) -> OscarHandle:
+    """Return the structure-sheaf restriction ``OO(larger) -> OO(smaller)``."""
+    return bridge().handle("affine_open_restriction", larger, smaller)
 
 
 def affine_domain(mapping: OscarHandle) -> OscarHandle:

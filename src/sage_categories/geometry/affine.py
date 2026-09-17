@@ -15,7 +15,12 @@ from sage_categories.algebra.commutative_rings import (
     localize_at_prime,
     prime_ideal,
 )
-from sage_categories.cat.assembly import chosen_construction
+from sage_categories.cat.assembly import (
+    chosen_construction,
+    has_selected_value,
+    select_value,
+    selected_value,
+)
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
@@ -80,6 +85,12 @@ class AffineSpectrumPoint:
 
 
 @dataclass(frozen=True, eq=False, slots=True)
+class _AffineOpenUnionConstruction:
+    scheme: AffineSchemesCategory.ObjectType
+    pieces: tuple[AffineOpenCategory.ObjectType, ...]
+
+
+@dataclass(frozen=True, eq=False, slots=True)
 class _AffineOpenData:
     scheme: AffineSchemesCategory.ObjectType
     section_ring: CategoryOfCategories.ElementType
@@ -111,8 +122,14 @@ class AffineOpenCategory(ParameterizedThinCategory):
             return self._data.localizing_element
 
         def restriction_to(self, ancestor: AffineOpenCategory.ObjectType) -> MorphismCategory.ObjectType:
-            assert any(ancestor is retained for retained in self._ancestors)
-            return self._restrictions[ancestor]
+            return _affine_open_category(self.scheme()).restriction_map(self, ancestor)
+
+        def covering_pieces(self) -> tuple[AffineOpenCategory.ObjectType, ...]:
+            match has_selected_value(_affine_open_category(self.scheme()), "open-cover", (self,)):
+                case True:
+                    return selected_value(_affine_open_category(self.scheme()), "open-cover", (self,))
+                case False:
+                    return ()
 
     class ElementType:
         pass
@@ -144,6 +161,39 @@ class AffineOpenCategory(ParameterizedThinCategory):
 
         return chosen_construction(self, "root-open", (), construct)
 
+    def _retain_restriction(
+        self,
+        smaller: AffineOpenCategory.ObjectType,
+        larger: AffineOpenCategory.ObjectType,
+        restriction: MorphismCategory.ObjectType,
+    ) -> None:
+        assert restriction.domain() is larger.section_ring()
+        assert restriction.codomain() is smaller.section_ring()
+        select_value(self, "open-restriction", (smaller, larger), restriction)
+
+    def restriction_map(
+        self,
+        smaller: AffineOpenCategory.ObjectType,
+        larger: AffineOpenCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
+        """The exact structure-sheaf restriction ``OO(larger) -> OO(smaller)``."""
+        match smaller is larger:
+            case True:
+                return Mor(_rings())(larger.section_ring(), larger.section_ring()).one()
+            case False:
+                pass
+        match has_selected_value(self, "open-restriction", (smaller, larger)):
+            case True:
+                return selected_value(self, "open-restriction", (smaller, larger))
+            case False:
+                pass
+        match smaller.parent_open():
+            case None:
+                raise AssertionError(f"{smaller!r} is not retained inside {larger!r}")
+            case parent:
+                assert self._admits_morphism(parent, larger)
+                return self.restriction_map(smaller, parent) * self.restriction_map(parent, larger)
+
     def principal_open(
         self,
         parent: AffineOpenCategory.ObjectType,
@@ -172,10 +222,13 @@ class AffineOpenCategory(ParameterizedThinCategory):
                     )
                 )
 
-            return cast(
+            value = cast(
                 AffineOpenCategory.ObjectType,
                 _backend.principal_open(parent, element, construct),
             )
+            for ancestor, restriction in value._data.restrictions:
+                self._retain_restriction(value, ancestor, restriction)
+            return value
 
         return chosen_construction(
             self,
@@ -184,12 +237,71 @@ class AffineOpenCategory(ParameterizedThinCategory):
             build,
         )
 
+    def finite_union(
+        self,
+        pieces: tuple[AffineOpenCategory.ObjectType, ...],
+    ) -> AffineOpenCategory.ObjectType:
+        """Retain a finite union of root-principal opens with its regular-function ring."""
+        assert pieces
+        root = self.root()
+        for piece in pieces:
+            assert piece.scheme() is self.scheme()
+            assert piece.parent_open() is root, "union pieces must be principal opens of the affine root"
+
+        def build() -> AffineOpenCategory.ObjectType:
+            construction = _AffineOpenUnionConstruction(self.scheme(), pieces)
+
+            def construct(
+                section_ring: CategoryOfCategories.ElementType,
+                root_restriction: MorphismCategory.ObjectType,
+                piece_restrictions: tuple[MorphismCategory.ObjectType, ...],
+            ) -> CategoryOfCategories.ElementType:
+                value = cast(
+                    AffineOpenCategory.ObjectType,
+                    self.assemble_object(
+                        _AffineOpenData(
+                            self.scheme(),
+                            section_ring,
+                            None,
+                            None,
+                            (root,),
+                            ((root, root_restriction),),
+                        )
+                    ),
+                )
+                self._retain_restriction(value, root, root_restriction)
+                for piece, restriction in zip(pieces, piece_restrictions, strict=True):
+                    self._retain_restriction(piece, value, restriction)
+                select_value(self, "open-cover", (value,), pieces)
+                return value
+
+            return cast(
+                AffineOpenCategory.ObjectType,
+                _backend.open_union(root, pieces, construction, construct),
+            )
+
+        return chosen_construction(self, "finite-open-union", pieces, build)
+
     def _admits_morphism(
         self,
         domain: AffineOpenCategory.ObjectType,
         codomain: AffineOpenCategory.ObjectType,
     ) -> bool:
-        return domain is codomain or any(codomain is ancestor for ancestor in domain._ancestors)
+        match domain is codomain:
+            case True:
+                return True
+            case False:
+                pass
+        match has_selected_value(self, "open-restriction", (domain, codomain)):
+            case True:
+                return True
+            case False:
+                pass
+        match domain.parent_open():
+            case None:
+                return False
+            case parent:
+                return self._admits_morphism(parent, codomain)
 
     def __repr__(self) -> str:
         return f"AffineOpens({self.scheme()!r})"

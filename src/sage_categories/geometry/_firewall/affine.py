@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any, cast
 
 from sage_categories.algebra._firewall import commutative_rings as _rings_backend
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.native import NativeMorphismRealization, NativeMorphismRealizations, NativeObjectRealization, NativeObjectRealizations
+from sage_categories.cat.native import (
+    NativeMorphismRealization,
+    NativeMorphismRealizations,
+    NativeObjectRealization,
+    NativeObjectRealizations,
+)
 from sage_categories.engines import oscar
 from sage_categories.engines.julia_bridge import OscarHandle
-
 
 _objects: NativeObjectRealizations[OscarHandle, object] = NativeObjectRealizations()
 _morphisms: NativeMorphismRealizations[OscarHandle] = NativeMorphismRealizations()
@@ -85,6 +90,42 @@ def principal_open(
         native_restriction,
     )
     value = make_open(section_ring, restriction)
+    _opens[value] = native_open
+    return value
+
+
+def open_union(
+    root: CategoryOfCategories.ElementType,
+    pieces: tuple[CategoryOfCategories.ElementType, ...],
+    construction: object,
+    make_open: Callable[
+        [
+            CategoryOfCategories.ElementType,
+            MorphismCategory.ObjectType,
+            tuple[MorphismCategory.ObjectType, ...],
+        ],
+        CategoryOfCategories.ElementType,
+    ],
+) -> CategoryOfCategories.ElementType:
+    """Retain a finite union of principal opens and its exact section restrictions."""
+    native_pieces = tuple(open_handle(piece) for piece in pieces)
+    native_open = oscar.affine_open_union(native_pieces)
+    native_ring = oscar.affine_open_section_ring(native_open)
+    section_ring = _rings_backend.reconstruct_oscar_object(native_ring, construction)
+    root_restriction = _rings_backend.reconstruct_oscar_morphism(
+        cast(Any, root).section_ring(),
+        section_ring,
+        oscar.affine_open_restriction(open_handle(root), native_open),
+    )
+    piece_restrictions = tuple(
+        _rings_backend.reconstruct_oscar_morphism(
+            section_ring,
+            cast(Any, piece).section_ring(),
+            oscar.affine_open_restriction(native_open, open_handle(piece)),
+        )
+        for piece in pieces
+    )
+    value = make_open(section_ring, root_restriction, piece_restrictions)
     _opens[value] = native_open
     return value
 

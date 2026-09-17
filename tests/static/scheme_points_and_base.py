@@ -4,6 +4,7 @@ from typing import assert_type
 
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.slices import SliceLikeCategory
 from sage_categories.geometry.schemes import SchemesCategory
 
 
@@ -16,4 +17,4 @@ def check_scheme_points_and_base(
     assert_type(scheme.underlying_points(), CategoryOfCategories.ElementType)
     assert_type(scheme.valued_points(ring), MorphismCategory)
     assert_type(scheme.categorical_points(), MorphismCategory)
-    assert_type(scheme.over(base, structure_map), CategoryOfCategories.ElementType)
+    assert_type(scheme.over(base, structure_map), SliceLikeCategory.ObjectType)

@@ -998,6 +998,17 @@ def _helper_role_reference(
     role_parameters = tuple(parameter.name for parameter in helper_role.type_params)
     if not role_parameters:
         return role_reference
+    # A role's own parameters bind its provider bases even when the category
+    # carrying the role has no parameters (for example, schemes with open keys).
+    for index, base in enumerate(helper_role.bases):
+        fullname = _expression_fullname(base)
+        if fullname is None or isinstance(base, ast.Subscript) or source_class_parameters.get(fullname) != role_parameters:
+            continue
+        helper_role.bases[index] = ast.Subscript(
+            value=base,
+            slice=ast.Tuple(elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters], ctx=ast.Load()),
+            ctx=ast.Load(),
+        )
     owner_parameters = {parameter.name for parameter in owner.type_params}
     role_parameter_set = set(role_parameters)
     shared_parameters = role_parameter_set & owner_parameters
@@ -1009,15 +1020,6 @@ def _helper_role_reference(
         slice=ast.Tuple(elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters], ctx=ast.Load()),
         ctx=ast.Load(),
     )
-    for index, base in enumerate(helper_role.bases):
-        fullname = _expression_fullname(base)
-        if fullname is None or isinstance(base, ast.Subscript) or source_class_parameters.get(fullname) != role_parameters:
-            continue
-        helper_role.bases[index] = ast.Subscript(
-            value=base,
-            slice=ast.Tuple(elts=[ast.Name(id=name, ctx=ast.Load()) for name in role_parameters], ctx=ast.Load()),
-            ctx=ast.Load(),
-        )
     return role_reference
 
 

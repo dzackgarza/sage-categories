@@ -10,6 +10,7 @@ from sage_categories.algebra.commutative_rings import (
 )
 from sage_categories.all import ask
 from sage_categories.geometry import RingedSpaces, RingSheaf, TopologicalSpaces
+from sage_categories.geometry.locally_ringed_spaces import LocallyRingedSpaces
 from sage_categories.geometry.affine import (
     AffineSchemes,
     Spec,
@@ -93,6 +94,13 @@ def test_three_chart_gluing_uses_multi_affine_overlaps() -> None:
     assert glued.space() in TopologicalSpaces()
     assert glued.ringed_space() in RingedSpaces()
     assert isinstance(glued.sheaf(), RingSheaf)
+    to_lrs = schemes.to_locally_ringed_spaces()
+    to_ringed = schemes.to_ringed_spaces()
+    to_spaces = schemes.to_topological_spaces()
+    assert to_lrs.codomain() is LocallyRingedSpaces()
+    assert to_lrs.on_object(glued) is glued
+    assert to_ringed.on_object(glued) is glued.ringed_space()
+    assert to_spaces.on_object(glued) is glued.space()
     presentation = glued.finite_affine_gluing()
     assert presentation.charts == charts
     assert presentation.overlaps == overlaps
@@ -173,6 +181,9 @@ def test_three_chart_gluing_uses_multi_affine_overlaps() -> None:
 
     mediator = schemes.gluing_mediator(glued, target, chart_maps)
     assert mediator.domain() is glued and mediator.codomain() is target
+    assert to_lrs.on_morphism(mediator) is mediator
+    assert to_ringed.on_morphism(mediator) is mediator.ringed_map()
+    assert to_spaces.on_morphism(mediator) is mediator.continuous_map()
     assert schemes.gluing_mediator(glued, target, chart_maps) is mediator
     with pytest.raises(AssertionError, match="restrictions do not commute"):
         schemes.gluing_mediator(glued, target, incompatible_maps)

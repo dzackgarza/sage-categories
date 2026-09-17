@@ -1,6 +1,7 @@
 """Locally ringed spaces retain generic stalks and stalkwise-local maps."""
 
 from sympy import true
+import pytest
 
 from sage_categories.all import Cartesian, Mor, Sets, ask
 from sage_categories.cat.calculus import binary_product_data
@@ -11,14 +12,14 @@ from sage_categories.geometry.sheaves import ring_presheaf, ring_sheaf
 from sage_categories.geometry.spaces import TopologicalSpaces
 
 
-def field_two():
-    carrier = Sets((0, 1))
+def residue_ring(modulus):
+    carrier = Sets(tuple(range(modulus)))
     square = binary_product_data(Sets, carrier, carrier).apex()
     cartesian = Cartesian(Sets)
-    addition = Mor(Sets)(square, carrier)(lambda pair: (pair[0] + pair[1]) % 2)
-    multiplication = Mor(Sets)(square, carrier)(lambda pair: (pair[0] * pair[1]) % 2)
+    addition = Mor(Sets)(square, carrier)(lambda pair: (pair[0] + pair[1]) % modulus)
+    multiplication = Mor(Sets)(square, carrier)(lambda pair: (pair[0] * pair[1]) % modulus)
     zero = Mor(Sets)(cartesian.unit(), carrier)(lambda _: 0)
-    one = Mor(Sets)(cartesian.unit(), carrier)(lambda _: 1)
+    one = Mor(Sets)(cartesian.unit(), carrier)(lambda _: 1 % modulus)
     return Rings(Sets)(addition, zero, multiplication, one)
 
 
@@ -29,22 +30,62 @@ def test_locally_ringed_owner_forgets_to_ringed_spaces_and_retains_local_stalk_m
     empty, point_open, whole = frozenset(), frozenset((1,)), frozenset((0, 1))
     spaces = TopologicalSpaces()
     space = spaces(carrier, (empty, point_open, whole))
-    field = field_two()
+    field, empty_ring = residue_ring(2), residue_ring(1)
     rings = Rings(Sets)
     identity = Mor(rings)(field, field).one()
-    sections = {empty: field, point_open: field, whole: field}
+    empty_identity = Mor(rings)(empty_ring, empty_ring).one()
+    to_empty = rings.homomorphism(
+        field,
+        empty_ring,
+        Mor(Sets)(
+            rings.forgetful().on_object(field),
+            rings.forgetful().on_object(empty_ring),
+        )(lambda _: 0),
+    )
+    sections = {empty: empty_ring, point_open: field, whole: field}
+    identities = {empty: empty_identity, point_open: identity, whole: identity}
+
+    def restriction(larger, smaller):
+        match bool(larger), bool(smaller):
+            case False, False:
+                return empty_identity
+            case True, False:
+                return to_empty
+            case True, True:
+                return identity
+            case False, True:
+                raise AssertionError("a nonempty open is not contained in the empty open")
+
     restrictions = {
-        (larger, smaller): identity
+        (larger, smaller): restriction(larger, smaller)
         for larger in (empty, point_open, whole)
         for smaller in (empty, point_open, whole)
         if smaller <= larger
     }
     presheaf = ring_presheaf(space, sections, restrictions)
-    sheaf = ring_sheaf(presheaf, lambda _open, _cover, local: local[0])
+
+    def glue(open_key, cover, local):
+        match bool(open_key):
+            case False:
+                return empty_ring.zero()
+            case True:
+                return next(
+                    section
+                    for member, section in zip(cover, local, strict=True)
+                    if member
+                )
+
+    sheaf = ring_sheaf(presheaf, glue)
+    assert ask(sheaf.glue(empty, (), ()) == empty_ring.zero()) is True
+    with pytest.raises(AssertionError):
+        sheaf.glue(whole, (), ())
     ringed = RingedSpaces()
     ringed_space = ringed(space, sheaf)
     locally = LocallyRingedSpaces()
     local = locally(ringed_space, lambda _point, _stalk: true)
+    assert local.ringed_space() is ringed_space
+    assert local.space() is space
+    assert local.sheaf() is sheaf
 
     zero, one = carrier.point(0), carrier.point(1)
     assert local.stalk(zero) is field
@@ -61,7 +102,7 @@ def test_locally_ringed_owner_forgets_to_ringed_spaces_and_retains_local_stalk_m
         ringed_space,
         ringed_space,
         continuous,
-        lambda _key: identity,
+        lambda key: identities[key],
     )
     mapping = locally.homomorphism(
         local,
@@ -71,6 +112,7 @@ def test_locally_ringed_owner_forgets_to_ringed_spaces_and_retains_local_stalk_m
     )
     assert locally.to_ringed_spaces().on_morphism(mapping) is ringed_map
     assert mapping.continuous_map() is continuous
+    assert mapping.sheaf_map() is ringed_map.sheaf_map()
     assert mapping.continuous_map().underlying_map()(zero) is one
     assert mapping.stalk_map(zero).domain() is field
     assert mapping.stalk_map(zero).codomain() is field
@@ -105,6 +147,8 @@ def test_locally_ringed_owner_forgets_to_ringed_spaces_and_retains_local_stalk_m
         supplied_stalk,
         lambda _point, _stalk: true,
     )
+    assert explicit.space() is space
+    assert explicit.sheaf() is sheaf
     assert explicit.stalk(zero) is field
     assert stalk_points == [zero]
     explicit_map = locally.homomorphism_with_stalks(

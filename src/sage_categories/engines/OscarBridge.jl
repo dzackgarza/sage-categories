@@ -16,12 +16,12 @@ export integer_ring, prime_field, polynomial_ring_with_generators, polynomial_co
        affine_open_contains, affine_open_intersection, affine_open_pullback,
        principal_open_subset, principal_open_ambient,
        principal_open_inclusion, affine_morphism_direct,
-       simple_gluing, glued_covered_scheme, covered_patches,
+       covered_patches,
        general_gluing, finite_covered_scheme, gluing_cocycle,
        covered_open_contains, covered_open_restriction,
        covered_chart_open_preimage, affine_open_complement_equations,
        covered_overlap_restrictions, covered_scheme_morphism_from_chart_maps,
-       covered_chart_inclusion, gluing_mediator,
+       covered_chart_inclusion,
        covered_chart_map, covered_domain, covered_codomain,
        covered_identity, covered_compose, covered_equal
 
@@ -153,10 +153,6 @@ principal_open_inclusion(open_subset) = inclusion_morphism(open_subset)
 
 """An affine-scheme morphism from its exact pullback ring map."""
 affine_morphism_direct(source_scheme, target_scheme, pullback_map) = morphism(source_scheme, target_scheme, pullback_map)
-
-"""A checked gluing of two affine charts along inverse principal-open maps."""
-simple_gluing(left_chart, right_chart, left_to_right, right_to_left) =
-    SimpleGluing(left_chart, right_chart, left_to_right, right_to_left)
 
 function affine_open_piecewise_morphism(source_open, target_open, source_patches, target_patches, pullbacks)
     source_patches = collect(source_patches)
@@ -300,13 +296,6 @@ function covered_scheme_morphism_from_chart_maps(source, target, chart_maps)
 end
 
 
-"""The covered scheme obtained from two charts and their gluing."""
-function glued_covered_scheme(left_chart, right_chart, gluing)
-    covering = Covering([left_chart, right_chart])
-    add_gluing!(covering, gluing)
-    CoveredScheme(covering)
-end
-
 covered_patches(scheme) = patches(scheme)
 
 """The canonical map from one affine chart into a covered scheme containing it."""
@@ -325,18 +314,6 @@ function covered_chart_map(source, source_chart, target, affine_map)
     maps = IdDict{AbsAffineScheme, AbsAffineSchemeMor}(source_chart => affine_map)
     covering_map = CoveringMorphism(source_cover, target_cover, maps)
     CoveredSchemeMorphism(source, target, covering_map)
-end
-
-"""The unique covered-scheme map induced by compatible maps on two glued charts."""
-function gluing_mediator(glued, target, left_chart, right_chart, left_map, right_map)
-    source_cover = default_covering(glued)
-    target_cover = default_covering(target)
-    maps = IdDict{AbsAffineScheme, AbsAffineSchemeMor}(
-        left_chart => left_map[left_chart],
-        right_chart => right_map[right_chart],
-    )
-    covering_map = CoveringMorphism(source_cover, target_cover, maps)
-    CoveredSchemeMorphism(glued, target, covering_map)
 end
 
 covered_domain(map) = domain(map)

@@ -9,6 +9,7 @@ from sage_categories.geometry.schemes import (
     AffineOverlap,
     AffineOverlapPiece,
     FiniteAffineGluing,
+    SchemeOpenCategory,
     Schemes,
     SchemesCategory,
 )
@@ -24,7 +25,7 @@ def check_scheme_general_gluing(
     schemes = Schemes()
     assert_type(schemes.affine_overlap(charts, 0, 1, pieces), AffineOverlap)
     glued = schemes.glue_affines(charts, overlaps)
-    assert_type(glued, SchemesCategory.ObjectType)
+    assert_type(glued, SchemesCategory.ObjectType[SchemeOpenCategory.ObjectType])
     assert_type(glued.finite_affine_gluing(), FiniteAffineGluing)
     assert_type(glued.affine_cover(), tuple[AffineOpenChart, ...])
     assert_type(glued.local_affineness(), tuple[AffineOpenChart, ...])

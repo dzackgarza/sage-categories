@@ -8,13 +8,14 @@ from dataclasses import dataclass
 from sympy import true
 
 from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.functors import Fun, Functor
+from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Axiom, Proposition
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
-from sage_categories.geometry.spaces import TopologicalSpaces
+from sage_categories.geometry.sheaves import RingSheaf
+from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 from sage_categories.geometry.stalks import ring_stalk, ringed_stalk_map
 
 __all__ = ["LocallyRingedSpaces", "LocallyRingedSpacesCategory"]
@@ -39,8 +40,8 @@ type StalkMapRule = Callable[
 
 
 @dataclass(frozen=True, eq=False, slots=True)
-class _LocallyRingedSpaceData:
-    ringed_space: RingedSpacesCategory.ObjectType
+class _LocallyRingedSpaceData[OpenKey: Hashable]:
+    ringed_space: RingedSpacesCategory.ObjectType[OpenKey]
     stalk_rule: StalkRule
     local_ring_rule: LocalRingRule
 
@@ -101,17 +102,17 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
 
     Scheme = Axiom()
 
-    class ObjectType:
-        def __init__(self, data: _LocallyRingedSpaceData) -> None:
+    class ObjectType[OpenKey: Hashable = Hashable]:
+        def __init__(self, data: _LocallyRingedSpaceData[OpenKey]) -> None:
             self._locally_ringed_data = data
 
-        def ringed_space(self) -> RingedSpacesCategory.ObjectType:
+        def ringed_space(self) -> RingedSpacesCategory.ObjectType[OpenKey]:
             return self._locally_ringed_data.ringed_space
 
-        def space(self):
+        def space(self) -> TopologicalSpacesCategory.ObjectType[OpenKey]:
             return self.ringed_space().space()
 
-        def sheaf(self):
+        def sheaf(self) -> RingSheaf[OpenKey]:
             return self.ringed_space().sheaf()
 
         def stalk(
@@ -137,10 +138,10 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
         def ringed_map(self) -> RingedSpacesCategory.MorphismType:
             return self._locally_ringed_map_data.ringed_map
 
-        def continuous_map(self) -> MorphismCategory.ObjectType:
+        def continuous_map(self) -> TopologicalSpacesCategory.MorphismType:
             return self.ringed_map().continuous_map()
 
-        def sheaf_map(self):
+        def sheaf_map(self) -> NaturalTransformation:
             return self.ringed_map().sheaf_map()
 
         def stalk_map(
@@ -173,23 +174,23 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
         )
         return (*super().structure_functors(), forgetful)
 
-    def __call__(
+    def __call__[OpenKey: Hashable](
         self,
-        ringed_space: RingedSpacesCategory.ObjectType,
+        ringed_space: RingedSpacesCategory.ObjectType[OpenKey],
         local_ring_rule: LocalRingRule,
-    ) -> LocallyRingedSpacesCategory.ObjectType:
+    ) -> LocallyRingedSpacesCategory.ObjectType[OpenKey]:
         return self.with_stalks(
             ringed_space,
             lambda point: ring_stalk(ringed_space.sheaf(), point),
             local_ring_rule,
         )
 
-    def with_stalks(
+    def with_stalks[OpenKey: Hashable](
         self,
-        ringed_space: RingedSpacesCategory.ObjectType,
+        ringed_space: RingedSpacesCategory.ObjectType[OpenKey],
         stalk_rule: StalkRule,
         local_ring_rule: LocalRingRule,
-    ) -> LocallyRingedSpacesCategory.ObjectType:
+    ) -> LocallyRingedSpacesCategory.ObjectType[OpenKey]:
         """Construct from a supplied stalk evaluator with the same public LRS surface."""
         assert ringed_space in RingedSpaces()
         return self.ObjectType(

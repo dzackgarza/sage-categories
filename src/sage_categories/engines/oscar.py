@@ -38,9 +38,7 @@ __all__ = [
     "finite_covered_scheme",
     "general_gluing",
     "generators",
-    "glued_covered_scheme",
     "gluing_cocycle",
-    "gluing_mediator",
     "hom",
     "ideal_contains",
     "ideal_generators",
@@ -74,7 +72,6 @@ __all__ = [
     "same_native",
     "sheaf_restriction",
     "sheaf_value",
-    "simple_gluing",
     "stalk_map",
     "structure_sheaf",
     "version",
@@ -309,16 +306,6 @@ def covered_scheme(scheme: OscarHandle) -> OscarHandle:
     return bridge().handle("covered_scheme_of", scheme)
 
 
-def simple_gluing(
-    left_chart: OscarHandle,
-    right_chart: OscarHandle,
-    left_to_right: OscarHandle,
-    right_to_left: OscarHandle,
-) -> OscarHandle:
-    """Return OSCAR's checked simple gluing of two affine charts."""
-    return bridge().handle("simple_gluing", left_chart, right_chart, left_to_right, right_to_left)
-
-
 def general_gluing(
     left_chart: OscarHandle,
     right_chart: OscarHandle,
@@ -408,11 +395,6 @@ def covered_scheme_morphism_from_chart_maps(
     )
 
 
-def glued_covered_scheme(left_chart: OscarHandle, right_chart: OscarHandle, gluing: OscarHandle) -> OscarHandle:
-    """Return the covered scheme represented by the two-chart gluing."""
-    return bridge().handle("glued_covered_scheme", left_chart, right_chart, gluing)
-
-
 def covered_patches(scheme: OscarHandle) -> tuple[OscarHandle, ...]:
     return bridge().handles("covered_patches", scheme)
 
@@ -425,18 +407,6 @@ def covered_chart_inclusion(source: OscarHandle, chart: OscarHandle, glued: Osca
 def covered_chart_map(source: OscarHandle, source_chart: OscarHandle, target: OscarHandle, affine_map: OscarHandle) -> OscarHandle:
     """Return a covered map from one affine source into a chosen target chart."""
     return bridge().handle("covered_chart_map", source, source_chart, target, affine_map)
-
-
-def gluing_mediator(
-    glued: OscarHandle,
-    target: OscarHandle,
-    left_chart: OscarHandle,
-    right_chart: OscarHandle,
-    left_map: OscarHandle,
-    right_map: OscarHandle,
-) -> OscarHandle:
-    """Return the checked map induced by compatible maps on the two charts."""
-    return bridge().handle("gluing_mediator", glued, target, left_chart, right_chart, left_map, right_map)
 
 
 def covered_domain(mapping: OscarHandle) -> OscarHandle:

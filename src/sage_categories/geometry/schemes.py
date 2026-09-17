@@ -307,7 +307,7 @@ class SchemeOpenCategory(ParameterizedThinCategory):
 class ProjectiveLinePresentation:
     """The standard finite affine presentation of a scheme over its supplied field."""
 
-    scheme: SchemesCategory.ObjectType
+    scheme: SchemesCategory.ObjectType[SchemeOpenCategory.ObjectType]
     left_chart: AffineSchemesCategory.ObjectType
     right_chart: AffineSchemesCategory.ObjectType
     left_coordinate: CategoryOfCategories.ElementType
@@ -322,7 +322,7 @@ class ProjectiveLinePresentation:
     left_scheme_open: SchemeOpenCategory.ObjectType
     right_scheme_open: SchemeOpenCategory.ObjectType
     overlap_scheme_open: SchemeOpenCategory.ObjectType
-    base: SchemesCategory.ObjectType
+    base: SchemesCategory.ObjectType[AffineOpenCategory.ObjectType]
     structure_map: SchemesCategory.MorphismType
     over_base: SliceLikeCategory.ObjectType
     swap_over_base: SliceLikeCategory.MorphismType
@@ -615,8 +615,8 @@ def _quotient_tag(point: CategoryOfCategories.ElementType) -> _TaggedAffinePoint
 
 def _finite_glued_locally_ringed_space(
     presentation: FiniteAffineGluing,
-) -> LocallyRingedSpacesCategory.ObjectType:
-    def construct() -> LocallyRingedSpacesCategory.ObjectType:
+) -> LocallyRingedSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
+    def construct() -> LocallyRingedSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
         return LocallyRingedSpaces().with_stalks(
             _finite_glued_ringed_space(presentation),
             lambda point: _quotient_tag(point).point.local_ring,
@@ -624,7 +624,7 @@ def _finite_glued_locally_ringed_space(
         )
 
     return cast(
-        LocallyRingedSpacesCategory.ObjectType,
+        LocallyRingedSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType],
         chosen_construction(
             Schemes(),
             "finite-glued-locally-ringed-space",
@@ -758,7 +758,7 @@ class SchemesCategory(PropertySubcategory):
 
     _base_category_class_and_axiom = (LocallyRingedSpacesCategory, "Scheme")
 
-    class ObjectType:
+    class ObjectType[OpenKey: Hashable = Hashable]:
         def affine_cover(self) -> tuple[AffineOpenChart, ...]:
             return selected_value(Schemes(), "affine-cover", (self,))
 
@@ -876,7 +876,7 @@ class SchemesCategory(PropertySubcategory):
         self,
         charts: tuple[AffineSchemesCategory.ObjectType, ...],
         overlaps: tuple[AffineOverlap, ...],
-    ) -> SchemesCategory.ObjectType:
+    ) -> SchemesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
         """Glue a finite affine family along represented overlap covers satisfying cocycle."""
         assert len(charts) >= 2
         expected_pairs = {
@@ -887,7 +887,7 @@ class SchemesCategory(PropertySubcategory):
         assert {(overlap.left, overlap.right) for overlap in overlaps} == expected_pairs
         presentation = FiniteAffineGluing(charts, overlaps)
 
-        def construct() -> SchemesCategory.ObjectType:
+        def construct() -> SchemesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
             _backend.prepare_finite_gluing(presentation)
             for overlap in overlaps:
                 for piece in overlap.pieces:
@@ -896,7 +896,7 @@ class SchemesCategory(PropertySubcategory):
                         piece.right_to_left_pullback,
                     )
             value = cast(
-                SchemesCategory.ObjectType,
+                SchemesCategory.ObjectType[SchemeOpenCategory.ObjectType],
                 _finite_glued_locally_ringed_space(presentation),
             )
             assume(self.predicate()(value))
@@ -1076,9 +1076,9 @@ class SchemesCategory(PropertySubcategory):
             construct,
         )
 
-    def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType:
-        def construct() -> SchemesCategory.ObjectType:
-            value = cast(SchemesCategory.ObjectType, affine_locally_ringed_space(affine))
+    def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType[AffineOpenCategory.ObjectType]:
+        def construct() -> SchemesCategory.ObjectType[AffineOpenCategory.ObjectType]:
+            value = cast(SchemesCategory.ObjectType[AffineOpenCategory.ObjectType], affine_locally_ringed_space(affine))
             assume(self.predicate()(value))
             inclusion = Mor(self)(value, value).one()
             self.retain_affine_cover(

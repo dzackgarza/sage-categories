@@ -3,7 +3,7 @@
 from typing import assert_type, cast
 
 from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.functors import Functor
+from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import Proposition
 from sage_categories.geometry.locally_ringed_spaces import (
@@ -11,6 +11,8 @@ from sage_categories.geometry.locally_ringed_spaces import (
     LocallyRingedSpacesCategory,
 )
 from sage_categories.geometry.ringed_spaces import RingedSpacesCategory
+from sage_categories.geometry.sheaves import RingSheaf
+from sage_categories.geometry.spaces import TopologicalSpacesCategory
 
 
 def local_ring_rule(
@@ -58,6 +60,8 @@ def locally_ringed_types(
     )
     assert_type(arrow, LocallyRingedSpacesCategory.MorphismType)
     assert_type(arrow.stalk_map(point), MorphismCategory.ObjectType)
+    assert_type(arrow.sheaf_map(), NaturalTransformation)
+    assert_type(arrow.continuous_map(), TopologicalSpacesCategory.MorphismType)
     assert_type(arrow.local_map_condition(point), Proposition)
     explicit = locally.with_stalks(ringed_space, stalk_rule, local_ring_rule)
     assert_type(explicit, LocallyRingedSpacesCategory.ObjectType)
@@ -71,3 +75,21 @@ def locally_ringed_types(
     assert_type(explicit_arrow, LocallyRingedSpacesCategory.MorphismType)
     assert_type(explicit_arrow.stalk_map(point), MorphismCategory.ObjectType)
     assert_type(locally.to_ringed_spaces(), Functor)
+
+
+def locally_ringed_open_key_types(
+    ringed_space: RingedSpacesCategory.ObjectType[tuple[str, int]],
+) -> None:
+    locally = LocallyRingedSpaces()
+    value = locally(ringed_space, local_ring_rule)
+    assert_type(value, LocallyRingedSpacesCategory.ObjectType[tuple[str, int]])
+    assert_type(value.ringed_space(), RingedSpacesCategory.ObjectType[tuple[str, int]])
+    assert_type(value.space(), TopologicalSpacesCategory.ObjectType[tuple[str, int]])
+    assert_type(value.sheaf(), RingSheaf[tuple[str, int]])
+    assert_type(
+        value.sheaf().presheaf.section_ring(("chart", 2)),
+        CategoryOfCategories.ElementType,
+    )
+    explicit = locally.with_stalks(ringed_space, stalk_rule, local_ring_rule)
+    assert_type(explicit, LocallyRingedSpacesCategory.ObjectType[tuple[str, int]])
+    assert_type(explicit.sheaf(), RingSheaf[tuple[str, int]])

@@ -719,6 +719,47 @@ class Owner[A=object, B=object](Category):
     assert "_StaticRoles_Owner.ObjectType[A, B]" in projected
 
 
+def test_nongeneric_category_preserves_its_roles_provider_parameters() -> None:
+    source = ast.parse(
+        """
+class CategoryDeclaration[**P, **Q, ObjectRole=object, ElementRole=object, MorphismRole=object]:
+    pass
+Category = CategoryDeclaration
+
+class Provider[OpenKey = object]:
+    def section(self, key: OpenKey) -> OpenKey: ...
+
+class Owner(Category):
+    class ObjectType[OpenKey = object]: pass
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    stub = ast.parse(ast.unparse(source))
+    owner = next(statement for statement in stub.body if isinstance(statement, ast.ClassDef) and statement.name == "Owner")
+    role = next(statement for statement in owner.body if isinstance(statement, ast.ClassDef) and statement.name == "ObjectType")
+    generator = _stub_generator()
+    role.bases = [generator._base_expression("example.Provider")]
+    generator._project_class_aliases(stub, source)
+    generator._project_category_role_parameters(
+        stub,
+        source,
+        "example",
+        {"CategoryDeclaration": 2, "Category": 2, "Owner": 0},
+        {"Owner": "example"},
+        frozenset(),
+        {"example.Provider": ("OpenKey",), "example.Owner.ObjectType": ("OpenKey",)},
+        frozenset({"example", "sage_categories.kernel.roles"}),
+    )
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    provider = role.bases[0]
+    assert isinstance(provider, ast.Subscript)
+    assert ast.unparse(provider.value) == "example.Provider"
+    assert isinstance(provider.slice, ast.Tuple)
+    assert tuple(ast.unparse(argument) for argument in provider.slice.elts) == ("OpenKey",)
+    assert "_StaticRoles_Owner.ObjectType," in projected
+
+
 def test_hoisted_role_defaults_resolve_to_direct_typeinfo() -> None:
     stub = ast.parse(
         """

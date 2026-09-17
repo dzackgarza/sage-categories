@@ -6,6 +6,7 @@ from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.slices import SliceLikeCategory
 from sage_categories.geometry import (
+    AffineOpenCategory,
     AffineSchemesCategory,
     ProjectiveLinePresentation,
     SchemesCategory,
@@ -19,7 +20,7 @@ from sage_categories.geometry.sheaves import RingPresheaf, RingSheaf
 def check_projective_line_general(field: CategoryOfCategories.ElementType) -> None:
     presentation = projective_line(field)
     assert_type(presentation, ProjectiveLinePresentation)
-    assert_type(presentation.scheme, SchemesCategory.ObjectType)
+    assert_type(presentation.scheme, SchemesCategory.ObjectType[SchemeOpenCategory.ObjectType])
     assert_type(presentation.scheme.finite_affine_gluing(), FiniteAffineGluing)
     assert_type(presentation.scheme.affine_cover(), tuple[AffineOpenChart, ...])
     assert_type(presentation.left_chart, AffineSchemesCategory.ObjectType)
@@ -46,7 +47,7 @@ def check_projective_line_general(field: CategoryOfCategories.ElementType) -> No
         MorphismCategory.ObjectType,
     )
     assert_type(presentation.overlap_swap, MorphismCategory.ObjectType)
-    assert_type(presentation.base, SchemesCategory.ObjectType)
+    assert_type(presentation.base, SchemesCategory.ObjectType[AffineOpenCategory.ObjectType])
     assert_type(presentation.structure_map, SchemesCategory.MorphismType)
     assert_type(presentation.over_base, SliceLikeCategory.ObjectType)
     assert_type(presentation.swap_over_base, SliceLikeCategory.MorphismType)

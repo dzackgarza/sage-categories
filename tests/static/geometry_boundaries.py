@@ -37,7 +37,7 @@ def check_affine_boundary(
 
     schemes = Schemes()
     assert_type(schemes, SchemesCategory)
-    assert_type(schemes.affine(affine), SchemesCategory.ObjectType)
+    assert_type(schemes.affine(affine), SchemesCategory.ObjectType[AffineOpenCategory.ObjectType])
     assert_type(projective_line(ring), ProjectiveLinePresentation)
 
 

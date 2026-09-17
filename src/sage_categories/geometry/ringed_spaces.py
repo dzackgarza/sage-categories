@@ -51,10 +51,10 @@ class RingedSpacesCategory(MorphismDataCategory):
         pass
 
     class MorphismType:
-        def __init__(self, data: tuple[MorphismCategory.ObjectType, NaturalTransformation]) -> None:
+        def __init__(self, data: tuple[TopologicalSpacesCategory.MorphismType, NaturalTransformation]) -> None:
             self._continuous_map, self._sheaf_map = data
 
-        def continuous_map(self) -> MorphismCategory.ObjectType:
+        def continuous_map(self) -> TopologicalSpacesCategory.MorphismType:
             return self._continuous_map
 
         def sheaf_map(self) -> NaturalTransformation:
@@ -83,7 +83,7 @@ class RingedSpacesCategory(MorphismDataCategory):
         self,
         source: RingedSpacesCategory.ObjectType[SourceKey],
         target: RingedSpacesCategory.ObjectType[TargetKey],
-        continuous: MorphismCategory.ObjectType,
+        continuous: TopologicalSpacesCategory.MorphismType,
         component_rule: SheafComponentRule[TargetKey],
     ) -> RingedSpacesCategory.MorphismType:
         """A morphism ``X -> Y`` with ``O_Y -> O_X (f^-1)^op`` as an actual natural transformation."""

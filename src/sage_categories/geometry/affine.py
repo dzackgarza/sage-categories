@@ -709,10 +709,10 @@ def _spectrum_point_datum(
 
 def affine_locally_ringed_space(
     scheme: AffineSchemesCategory.ObjectType,
-) -> LocallyRingedSpacesCategory.ObjectType:
+) -> LocallyRingedSpacesCategory.ObjectType[AffineOpenCategory.ObjectType]:
     """The locally ringed space underlying an affine scheme."""
 
-    def construct() -> LocallyRingedSpacesCategory.ObjectType:
+    def construct() -> LocallyRingedSpacesCategory.ObjectType[AffineOpenCategory.ObjectType]:
         return LocallyRingedSpaces().with_stalks(
             affine_ringed_space(scheme),
             lambda point: _spectrum_point_datum(point).local_ring,
@@ -720,7 +720,7 @@ def affine_locally_ringed_space(
         )
 
     return cast(
-        LocallyRingedSpacesCategory.ObjectType,
+        LocallyRingedSpacesCategory.ObjectType[AffineOpenCategory.ObjectType],
         chosen_construction(
             AffineSchemes(),
             "affine-locally-ringed-space",

@@ -333,7 +333,7 @@ def _validate_gluing_family(
     local_sections: tuple[CategoryOfCategories.ElementType, ...],
 ) -> None:
     """Check that one finite local family is well typed and agrees on every overlap."""
-    assert cover and frozenset().union(*cover) == open_set
+    assert frozenset().union(*cover) == open_set
     assert len(cover) == len(local_sections)
     for member, section in zip(cover, local_sections, strict=True):
         assert section.parent() is presheaf.section_ring(member)

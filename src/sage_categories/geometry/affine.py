@@ -191,8 +191,15 @@ class AffineOpenCategory(ParameterizedThinCategory):
             case None:
                 raise AssertionError(f"{smaller!r} is not retained inside {larger!r}")
             case parent:
-                assert self._admits_morphism(parent, larger)
-                return self.restriction_map(smaller, parent) * self.restriction_map(parent, larger)
+                match self._admits_morphism(parent, larger):
+                    case True:
+                        return self.restriction_map(smaller, parent) * self.restriction_map(parent, larger)
+                    case False:
+                        pass
+        assert _backend.open_contains(smaller, larger)
+        restriction = _backend.open_restriction(smaller, larger)
+        self._retain_restriction(smaller, larger, restriction)
+        return restriction
 
     def principal_open(
         self,
@@ -299,9 +306,13 @@ class AffineOpenCategory(ParameterizedThinCategory):
                 pass
         match domain.parent_open():
             case None:
-                return False
+                return _backend.open_contains(domain, codomain)
             case parent:
-                return self._admits_morphism(parent, codomain)
+                match self._admits_morphism(parent, codomain):
+                    case True:
+                        return True
+                    case False:
+                        return _backend.open_contains(domain, codomain)
 
     def __repr__(self) -> str:
         return f"AffineOpens({self.scheme()!r})"

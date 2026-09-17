@@ -130,6 +130,37 @@ def open_union(
     return value
 
 
+def open_contains(smaller: object, larger: object) -> bool:
+    """Decide containment of two represented opens in one affine scheme."""
+    return oscar.affine_open_contains(open_handle(smaller), open_handle(larger))
+
+
+def open_restriction(
+    smaller: object,
+    larger: object,
+) -> MorphismCategory.ObjectType:
+    """Reconstruct ``OO(larger) -> OO(smaller)`` for an established containment."""
+    native = oscar.affine_open_restriction(open_handle(larger), open_handle(smaller))
+    return _rings_backend.reconstruct_oscar_morphism(
+        cast(Any, larger).section_ring(),
+        cast(Any, smaller).section_ring(),
+        native,
+    )
+
+
+def open_intersection_equations(
+    first: object,
+    second: object,
+) -> tuple[CategoryOfCategories.ElementType, ...]:
+    """Return ambient-coordinate equations covering the represented intersection."""
+    native = oscar.affine_open_intersection(open_handle(first), open_handle(second))
+    ring = cast(Any, first).scheme().coordinate_ring()
+    return tuple(
+        _rings_backend.reconstruct_oscar_element(ring, equation)
+        for equation in oscar.affine_open_complement_equations(native)
+    )
+
+
 def open_handle(value: CategoryOfCategories.ElementType) -> OscarHandle:
     assert value in _opens, f"{value!r} has no retained OSCAR affine-open realization"
     return _opens[value]

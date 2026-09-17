@@ -13,6 +13,7 @@ export prime_field, polynomial_ring_with_generators, quotient_ring,
        affine_domain, affine_codomain, covered_scheme_of,
        structure_sheaf, sheaf_value, sheaf_restriction,
        affine_open_union, affine_open_section_ring, affine_open_restriction,
+       affine_open_contains, affine_open_intersection,
        principal_open_subset, principal_open_ambient,
        principal_open_inclusion, affine_morphism_direct,
        simple_gluing, glued_covered_scheme, covered_patches,
@@ -120,6 +121,17 @@ end
 
 affine_open_section_ring(open_subset) = OO(open_subset)
 affine_open_restriction(larger, smaller) = restriction_map(larger, smaller)
+
+function affine_open_contains(smaller, larger)
+    try
+        restriction_map(larger, smaller)
+        true
+    catch
+        false
+    end
+end
+
+affine_open_intersection(first, second) = intersect(first, second)
 
 principal_open_subset(scheme, element) = PrincipalOpenSubset(scheme, element)
 principal_open_ambient(open_subset) = ambient_scheme(open_subset)

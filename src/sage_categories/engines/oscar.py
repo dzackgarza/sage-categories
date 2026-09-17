@@ -11,6 +11,8 @@ __all__ = [
     "affine_domain",
     "affine_morphism",
     "affine_morphism_direct",
+    "affine_open_contains",
+    "affine_open_intersection",
     "affine_open_restriction",
     "affine_open_section_ring",
     "affine_open_union",
@@ -263,6 +265,16 @@ def affine_open_section_ring(open_subset: OscarHandle) -> OscarHandle:
 def affine_open_restriction(larger: OscarHandle, smaller: OscarHandle) -> OscarHandle:
     """Return the structure-sheaf restriction ``OO(larger) -> OO(smaller)``."""
     return bridge().handle("affine_open_restriction", larger, smaller)
+
+
+def affine_open_contains(smaller: OscarHandle, larger: OscarHandle) -> bool:
+    """Decide containment of two represented affine opens."""
+    return bridge().boolean("affine_open_contains", smaller, larger)
+
+
+def affine_open_intersection(first: OscarHandle, second: OscarHandle) -> OscarHandle:
+    """Return the represented intersection of two affine opens."""
+    return bridge().handle("affine_open_intersection", first, second)
 
 
 def affine_domain(mapping: OscarHandle) -> OscarHandle:

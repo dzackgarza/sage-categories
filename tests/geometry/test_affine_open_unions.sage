@@ -35,5 +35,11 @@ def test_two_principal_open_union_is_one_represented_open() -> None:
     assert union_to_dy.domain() is punctured_plane.section_ring()
     assert union_to_dy.codomain() is dy.section_ring()
 
+    intersection_equations = opens.principal_open(root, x * y)
+    assert opens._admits_morphism(intersection_equations, punctured_plane) is True
+    through_union = intersection_equations.restriction_to(punctured_plane)
+    assert through_union.domain() is punctured_plane.section_ring()
+    assert through_union.codomain() is intersection_equations.section_ring()
+
 
 test_two_principal_open_union_is_one_represented_open()

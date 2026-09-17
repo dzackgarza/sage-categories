@@ -25,6 +25,7 @@ __all__ = [
     "prime_field",
     "prime_generators",
     "prime_ideal",
+    "prime_ideal_extension",
     "prime_ideal_preimage",
     "principal_localization",
     "quotient_ring",
@@ -124,6 +125,17 @@ def prime_ideal_preimage(
     assert mapping.codomain() is target_prime.ring
     result = PrimeIdeal(mapping.domain(), ())
     _backend.retain_prime_ideal_preimage(result, mapping, target_prime)
+    return result
+
+
+def prime_ideal_extension(
+    mapping: MorphismCategory.ObjectType,
+    source_prime: PrimeIdeal,
+) -> PrimeIdeal:
+    """Extend a prime ideal through a map when its generated image is prime."""
+    assert mapping.domain() is source_prime.ring
+    result = PrimeIdeal(mapping.codomain(), ())
+    _backend.retain_prime_ideal_extension(result, mapping, source_prime)
     return result
 
 

@@ -12,7 +12,10 @@ from sage_categories.algebra import (
     principal_localization,
     quotient_ring,
 )
-from sage_categories.algebra.commutative_rings import prime_contains
+from sage_categories.algebra.commutative_rings import (
+    prime_contains,
+    prime_ideal_extension,
+)
 from sage_categories.all import Mor, ask
 from sage_categories.cat.structured_objects import Rings
 from sage_categories.sets.finite import Sets
@@ -56,6 +59,8 @@ def test_prime_localizations_and_stalk_map_retain_owned_endpoints() -> None:
     target_prime = prime_ideal(target, (u,))
     assert prime_contains(target_prime, u) is True
     assert prime_contains(target_prime, target.one()) is False
+    extended_source_prime = prime_ideal_extension(mapping, prime_ideal(source, (_t,)))
+    assert prime_contains(extended_source_prime, u) is True
     target_local, target_localization = localize_at_prime(target_prime)
     source_prime, source_local, induced_target_local, stalk = induced_stalk_map(
         mapping, target_prime

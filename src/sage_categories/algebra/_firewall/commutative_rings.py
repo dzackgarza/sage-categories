@@ -376,6 +376,17 @@ def retain_prime_ideal_preimage(
     )
 
 
+def retain_prime_ideal_extension(
+    value: object,
+    mapping: MorphismCategory.ObjectType,
+    source_prime: object,
+) -> None:
+    _prime_ideals[value] = _oscar_runtime().prime_ideal_extension(
+        oscar_morphism_handle(mapping),
+        _prime_ideal_handle(source_prime),
+    )
+
+
 def localization_at_prime(
     ring: CategoryOfCategories.ElementType,
     prime: object,

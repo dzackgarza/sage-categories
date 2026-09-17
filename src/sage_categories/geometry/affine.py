@@ -2,24 +2,33 @@
 
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import cast
+from typing import Any, cast
+
+from sympy import false, true
 
 from sage_categories.algebra.commutative_rings import (
     PrimeIdeal,
     induced_stalk_map_to,
+    localization_extension,
     localize_at_prime,
     prime_ideal,
 )
 from sage_categories.cat.assembly import chosen_construction
 from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
-from sage_categories.cat.leaf_categories import ContravariantFaithfulStructureCategory, ParameterizedThinCategory
+from sage_categories.cat.leaf_categories import (
+    ContravariantFaithfulStructureCategory,
+    ParameterizedThinCategory,
+)
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.geometry._firewall import affine as _backend
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.sheaves import RingPresheaf, ring_presheaf_from_functor
+from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 
 __all__ = [
     "AffineOpen",
@@ -28,7 +37,10 @@ __all__ = [
     "AffineSchemesCategory",
     "AffineSpectrumPoint",
     "Spec",
+    "affine_continuous_map",
+    "affine_open_preimage",
     "affine_structure_sheaf",
+    "affine_topological_space",
     "native_affine_morphism",
     "native_affine_scheme",
 ]
@@ -55,6 +67,8 @@ class AffineSpectrumPoint:
 class _AffineOpenData:
     scheme: AffineSchemesCategory.ObjectType
     section_ring: CategoryOfCategories.ElementType
+    parent: AffineOpenCategory.ObjectType | None
+    localizing_element: CategoryOfCategories.ElementType | None
     ancestors: tuple[AffineOpenCategory.ObjectType, ...]
     restrictions: tuple[tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType], ...]
 
@@ -70,6 +84,15 @@ class AffineOpenCategory(ParameterizedThinCategory):
 
         def section_ring(self) -> CategoryOfCategories.ElementType:
             return self._data.section_ring
+
+        def scheme(self) -> AffineSchemesCategory.ObjectType:
+            return self._data.scheme
+
+        def parent_open(self) -> AffineOpenCategory.ObjectType | None:
+            return self._data.parent
+
+        def localizing_element(self) -> CategoryOfCategories.ElementType | None:
+            return self._data.localizing_element
 
         def restriction_to(self, ancestor: AffineOpenCategory.ObjectType) -> MorphismCategory.ObjectType:
             assert any(ancestor is retained for retained in self._ancestors)
@@ -90,7 +113,16 @@ class AffineOpenCategory(ParameterizedThinCategory):
         def construct() -> AffineOpenCategory.ObjectType:
             value = _backend.root_open(
                 cast(CategoryOfCategories.ElementType, scheme),
-                lambda: self.assemble_object(_AffineOpenData(scheme, scheme.coordinate_ring(), (), ())),
+                lambda: self.assemble_object(
+                    _AffineOpenData(
+                        scheme,
+                        scheme.coordinate_ring(),
+                        None,
+                        None,
+                        (),
+                        (),
+                    )
+                ),
             )
             return cast(AffineOpenCategory.ObjectType, value)
 
@@ -103,24 +135,38 @@ class AffineOpenCategory(ParameterizedThinCategory):
     ) -> AffineOpenCategory.ObjectType:
         """Retain ``D(element)`` inside ``parent`` with OSCAR's actual section ring/map."""
         assert element.parent() is parent.section_ring()
-        def construct(
-            section_ring: CategoryOfCategories.ElementType,
-            restriction: MorphismCategory.ObjectType,
-        ) -> CategoryOfCategories.ElementType:
-            ancestor_restrictions = tuple(
-                (ancestor, restriction * parent.restriction_to(ancestor))
-                for ancestor in parent._ancestors
-            )
-            return self.assemble_object(
-                _AffineOpenData(
-                    self.scheme(),
-                    section_ring,
-                    (parent, *parent._ancestors),
-                    ((parent, restriction), *ancestor_restrictions),
+
+        def build() -> AffineOpenCategory.ObjectType:
+            def construct(
+                section_ring: CategoryOfCategories.ElementType,
+                restriction: MorphismCategory.ObjectType,
+            ) -> CategoryOfCategories.ElementType:
+                ancestor_restrictions = tuple(
+                    (ancestor, restriction * parent.restriction_to(ancestor))
+                    for ancestor in parent._ancestors
                 )
+                return self.assemble_object(
+                    _AffineOpenData(
+                        self.scheme(),
+                        section_ring,
+                        parent,
+                        element,
+                        (parent, *parent._ancestors),
+                        ((parent, restriction), *ancestor_restrictions),
+                    )
+                )
+
+            return cast(
+                AffineOpenCategory.ObjectType,
+                _backend.principal_open(parent, element, construct),
             )
 
-        return cast(AffineOpenCategory.ObjectType, _backend.principal_open(parent, element, construct))
+        return chosen_construction(
+            self,
+            "principal-open",
+            (parent, element),
+            build,
+        )
 
     def _admits_morphism(
         self,
@@ -292,3 +338,148 @@ def affine_structure_sheaf(
         lambda open_object: open_object,
     )
     return opens, presheaf
+
+
+def affine_topological_space(
+    scheme: AffineSchemesCategory.ObjectType,
+) -> TopologicalSpacesCategory.ObjectType[AffineOpenCategory.ObjectType]:
+    """The represented prime spectrum with its retained principal-open basis."""
+
+    def construct() -> TopologicalSpacesCategory.ObjectType[AffineOpenCategory.ObjectType]:
+        opens, _ = affine_structure_sheaf(scheme)
+
+        def point_member(value: Hashable):
+            match isinstance(value, AffineSpectrumPoint):
+                case True:
+                    match value.scheme is scheme:
+                        case True:
+                            return true
+                        case False:
+                            return false
+                case False:
+                    return false
+
+        def open_member(value: Hashable):
+            match isinstance(value, AffineOpenCategory.ObjectType):
+                case True:
+                    match value.scheme() is scheme:
+                        case True:
+                            return true
+                        case False:
+                            return false
+                case False:
+                    return false
+
+        carrier = Sets.from_membership(point_member)
+        open_carrier = Sets.from_membership(open_member)
+
+        def open_point(
+            key: AffineOpenCategory.ObjectType,
+        ) -> CategoryOfCategories.ElementType:
+            assert key.scheme() is scheme
+            return cast(CategoryOfCategories.ElementType, cast(Any, open_carrier).point(key))
+
+        return TopologicalSpaces().from_open_category(
+            carrier,
+            open_carrier,
+            opens,
+            open_point,
+            lambda key: key,
+        )
+
+    return cast(
+        TopologicalSpacesCategory.ObjectType[AffineOpenCategory.ObjectType],
+        chosen_construction(
+            AffineSchemes(),
+            "affine-topological-space",
+            (scheme,),
+            construct,
+        ),
+    )
+
+
+def affine_open_preimage(
+    mapping: AffineSchemesCategory.MorphismType,
+    target_open: AffineOpenCategory.ObjectType,
+) -> tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The principal-open inverse image and induced structure-sheaf map."""
+    assert target_open.scheme() is mapping.codomain()
+    source_opens, _ = affine_structure_sheaf(mapping.domain())
+
+    def construct() -> tuple[AffineOpenCategory.ObjectType, MorphismCategory.ObjectType]:
+        match target_open.parent_open():
+            case None:
+                source_open = source_opens.root()
+                return source_open, mapping.pullback()
+            case target_parent:
+                source_parent, parent_pullback = affine_open_preimage(
+                    mapping,
+                    target_parent,
+                )
+                element = target_open.localizing_element()
+                assert element is not None
+                image_element = parent_pullback(element)
+                source_open = source_opens.principal_open(source_parent, image_element)
+                base_map = source_open.restriction_to(source_parent) * parent_pullback
+                section_map = localization_extension(
+                    target_open.section_ring(),
+                    source_open.section_ring(),
+                    base_map,
+                )
+                return source_open, section_map
+
+    return chosen_construction(
+        AffineSchemes(),
+        "affine-open-preimage",
+        (mapping, target_open),
+        construct,
+    )
+
+
+def affine_continuous_map(
+    mapping: AffineSchemesCategory.MorphismType,
+) -> TopologicalSpacesCategory.MorphismType:
+    """The continuous prime-spectrum map underlying an affine scheme morphism."""
+
+    def construct() -> TopologicalSpacesCategory.MorphismType:
+        source = affine_topological_space(mapping.domain())
+        target = affine_topological_space(mapping.codomain())
+        target_opens, _ = affine_structure_sheaf(mapping.codomain())
+        source_opens, _ = affine_structure_sheaf(mapping.domain())
+
+        def point_image(value: Hashable) -> Hashable:
+            assert isinstance(value, AffineSpectrumPoint)
+            image, _ = AffineSchemes().map_spectrum_point(mapping, value)
+            return image
+
+        underlying = Mor(Sets)(source.carrier(), target.carrier())(point_image)
+
+        def preimage(
+            open_object: CategoryOfCategories.ElementType,
+        ) -> CategoryOfCategories.ElementType:
+            target_open = cast(AffineOpenCategory.ObjectType, open_object)
+            return affine_open_preimage(mapping, target_open)[0]
+
+        inverse = Fun(target_opens, source_opens)(
+            preimage,
+            lambda inclusion: Mor(source_opens)(
+                preimage(inclusion.domain()),
+                preimage(inclusion.codomain()),
+            )(),
+        )
+        return TopologicalSpaces().morphism_with_inverse_image(
+            source,
+            target,
+            underlying,
+            inverse,
+        )
+
+    return cast(
+        TopologicalSpacesCategory.MorphismType,
+        chosen_construction(
+            AffineSchemes(),
+            "affine-continuous-map",
+            (mapping,),
+            construct,
+        ),
+    )

@@ -8,6 +8,8 @@ import tomllib
 from importlib import import_module
 from pathlib import Path
 
+import pytest
+
 from sage_categories.engines import oscar
 from sage_categories.engines.julia_bridge import catlab_bridge
 
@@ -173,14 +175,23 @@ def test_oscar_checks_finite_general_gluing_and_triple_cocycle() -> None:
             affine,
         )
 
-    mediator = oscar.covered_scheme_morphism_from_chart_maps(
-        glued,
-        target,
-        (
-            chart_map(first_ring, first_generators, first),
-            chart_map(second_ring, second_generators, second),
-            chart_map(third_ring, third_generators, third),
-        ),
+    compatible_maps = (
+        chart_map(first_ring, first_generators, first),
+        chart_map(second_ring, second_generators, second),
+        chart_map(third_ring, third_generators, third),
     )
+    shifted_third_generators = (
+        oscar.ring_add(third_generators[0], oscar.ring_one(third_ring)),
+        third_generators[1],
+    )
+    incompatible_maps = (
+        compatible_maps[0],
+        compatible_maps[1],
+        chart_map(third_ring, shifted_third_generators, third),
+    )
+    with pytest.raises(AssertionError, match="restrictions do not commute"):
+        oscar.covered_scheme_morphism_from_chart_maps(glued, target, incompatible_maps)
+
+    mediator = oscar.covered_scheme_morphism_from_chart_maps(glued, target, compatible_maps)
     assert oscar.same_native(oscar.covered_domain(mediator), glued)
     assert oscar.same_native(oscar.covered_codomain(mediator), target)

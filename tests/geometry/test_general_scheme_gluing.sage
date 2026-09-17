@@ -1,5 +1,7 @@
 """Finite affine gluings retain multi-piece overlaps and locally ringed-space charts."""
 
+import pytest
+
 from sage_categories.algebra import polynomial_ring, prime_field
 from sage_categories.algebra.commutative_rings import (
     localization_extension,
@@ -152,9 +154,28 @@ def test_three_chart_gluing_uses_multi_affine_overlaps() -> None:
         )
         for ring, chart_generators in zip(rings, generators, strict=True)
     )
+
+    # Only the third chart changes: matching endpoints and agreement on the first
+    # pair must not admit a family whose pullbacks differ by 1 on other overlaps.
+    third_x, third_y = generators[2]
+    shifted_third_map = schemes.affine_morphism(
+        Spec.on_morphism(
+            presented_ring_homomorphism(
+                target_ring,
+                rings[2],
+                (third_x + rings[2].one(), third_y),
+            ).op()
+        )
+    )
+    incompatible_maps = (chart_maps[0], chart_maps[1], shifted_third_map)
+    with pytest.raises(AssertionError, match="restrictions do not commute"):
+        schemes.gluing_mediator(glued, target, incompatible_maps)
+
     mediator = schemes.gluing_mediator(glued, target, chart_maps)
     assert mediator.domain() is glued and mediator.codomain() is target
     assert schemes.gluing_mediator(glued, target, chart_maps) is mediator
+    with pytest.raises(AssertionError, match="restrictions do not commute"):
+        schemes.gluing_mediator(glued, target, incompatible_maps)
 
     target_opens, _ = affine_structure_sheaf(target_affine)
     target_root = target_opens.root()

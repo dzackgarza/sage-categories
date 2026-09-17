@@ -271,7 +271,9 @@ end
 
 
 # CoveringMorphism and CoveredSchemeMorphism are OSCAR's own representation of
-# the compatible-family mediator; this adapter only packages the supplied local maps.
+# the compatible-family mediator.  Their default checks are the owner of overlap
+# compatibility and covering/scheme admission, so this adapter only packages the
+# supplied local maps and leaves those checks enabled.
 function covered_scheme_morphism_from_chart_maps(source, target, chart_maps)
     source_cover = default_covering(source)
     target_cover = default_covering(target)
@@ -283,10 +285,8 @@ function covered_scheme_morphism_from_chart_maps(source, target, chart_maps)
         patch => chart_map[patch]
         for (patch, chart_map) in zip(source_patches, chart_maps)
     )
-    # Compatibility is the public mediator's mathematical precondition. OSCAR owns
-    # the covered-morphism representation; avoid a second local overlap checker.
-    covering_map = CoveringMorphism(source_cover, target_cover, local_maps; check=false)
-    CoveredSchemeMorphism(source, target, covering_map; check=false)
+    covering_map = CoveringMorphism(source_cover, target_cover, local_maps)
+    CoveredSchemeMorphism(source, target, covering_map)
 end
 
 

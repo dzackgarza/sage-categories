@@ -1,63 +1,21 @@
 from dataclasses import dataclass
 from functools import cache
-from typing import Any
-
-import sage_categories.cat.category
-import sage_categories.cat.morphisms
-import sage_categories.kernel.roles
-from sage_categories.algebra._commutative_rings_oscar import (
-    oscar_morphism_handle as oscar_morphism_handle,
-)
-from sage_categories.algebra.commutative_rings import inverse_unit as inverse_unit
-from sage_categories.algebra.commutative_rings import (
-    localization_extension as localization_extension,
-)
-from sage_categories.algebra.commutative_rings import polynomial_ring as polynomial_ring
-from sage_categories.algebra.commutative_rings import (
-    presented_ring_homomorphism as presented_ring_homomorphism,
-)
-from sage_categories.cat.canonical import (
-    FinitePresentedCategory as FinitePresentedCategory,
-)
-from sage_categories.cat.category import Category as Category
-from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.algebra._commutative_rings_oscar import oscar_morphism_handle as oscar_morphism_handle, oscar_object_handle as oscar_object_handle, reconstruct_oscar_morphism as reconstruct_oscar_morphism
+from sage_categories.algebra.commutative_rings import inverse_unit as inverse_unit, localization_extension as localization_extension, polynomial_ring as polynomial_ring, presented_ring_homomorphism as presented_ring_homomorphism
+from sage_categories.cat.canonical import FinitePresentedCategory as FinitePresentedCategory
+from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.declarations import Sets as Sets
-from sage_categories.cat.functors import Fun as Fun
-from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
-from sage_categories.cat.morphisms import Mor as Mor
-from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
-from sage_categories.cat.native import (
-    NativeMorphismRealization as NativeMorphismRealization,
-)
-from sage_categories.cat.native import (
-    NativeMorphismRealizations as NativeMorphismRealizations,
-)
-from sage_categories.cat.native import (
-    NativeObjectRealization as NativeObjectRealization,
-)
-from sage_categories.cat.native import (
-    NativeObjectRealizations as NativeObjectRealizations,
-)
+from sage_categories.cat.functors import Fun as Fun, Functor as Functor, NaturalTransformation as NaturalTransformation
+from sage_categories.cat.morphisms import Mor as Mor, MorphismCategory as MorphismCategory
+from sage_categories.cat.native import NativeMorphismRealization as NativeMorphismRealization, NativeMorphismRealizations as NativeMorphismRealizations, NativeObjectRealization as NativeObjectRealization, NativeObjectRealizations as NativeObjectRealizations
 from sage_categories.cat.opposites import opposite_morphism as opposite_morphism
 from sage_categories.cat.structured_objects import Rings as Rings
 from sage_categories.engines import oscar as oscar
 from sage_categories.engines.julia_bridge import OscarHandle as OscarHandle
-from sage_categories.geometry.affine import AffineOpenCategory as AffineOpenCategory
-from sage_categories.geometry.affine import (
-    AffineSchemesCategory as AffineSchemesCategory,
-)
-from sage_categories.geometry.affine import Spec as Spec
-from sage_categories.geometry.affine import (
-    affine_structure_sheaf as affine_structure_sheaf,
-)
-from sage_categories.geometry.affine import native_affine_scheme as native_affine_scheme
-from sage_categories.geometry.sheaves import RingPresheaf as RingPresheaf
-from sage_categories.geometry.sheaves import (
-    ring_presheaf_from_functor as ring_presheaf_from_functor,
-)
+from sage_categories.geometry.affine import AffineOpenCategory as AffineOpenCategory, AffineSchemesCategory as AffineSchemesCategory, Spec as Spec, affine_structure_sheaf as affine_structure_sheaf, native_affine_scheme as native_affine_scheme
+from sage_categories.geometry.sheaves import RingPresheaf as RingPresheaf, ring_presheaf_from_functor as ring_presheaf_from_functor
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
-
-__all__ = ["ProjectiveLinePresentation", "Schemes", "SchemesCategory", "TwoChartGluing", "native_scheme", "native_scheme_morphism", "projective_line"]
+from typing import Any
 
 @dataclass(frozen=True, eq=False, slots=True)
 class AffineOpenChart:
@@ -84,7 +42,8 @@ class AffineOverlap:
 class FiniteAffineGluing:
     charts: tuple[AffineSchemesCategory.ObjectType, ...]
     overlaps: tuple[AffineOverlap, ...]
-    def overlap(self, first: int, second: int) -> AffineOverlap: ...
+    def overlap(self, first: int, second: int) -> AffineOverlap:
+        ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class TwoChartGluing:
@@ -110,61 +69,74 @@ class ProjectiveLinePresentation:
     structure_sheaf: RingPresheaf[str]
     overlap_swap: MorphismCategory.ObjectType
 
-class _StaticRoles_SchemesCategory:
-    class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
-        def __init__(self, construction: object) -> None: ...
-        def construction(self) -> object: ...
-        def affine_cover(self) -> tuple[AffineOpenChart, ...]: ...
-        def local_affineness(self) -> tuple[AffineOpenChart, ...]: ...
-        def finite_affine_gluing(self) -> FiniteAffineGluing: ...
-        def underlying_points(self) -> CategoryOfCategories.ElementType: ...
-        def valued_points(self, ring: CategoryOfCategories.ElementType) -> MorphismCategory: ...
-        def categorical_points(self) -> MorphismCategory: ...
-        def over(self, base: SchemesCategory.ObjectType, structure_map: SchemesCategory.MorphismType) -> CategoryOfCategories.ElementType: ...
+class SchemesCategory(Category[Any, Any]):
 
-    class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
+    class ObjectType:
 
-    class MorphismType(sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType):
-        def domain(self) -> SchemesCategory.ObjectType: ...
-        def codomain(self) -> SchemesCategory.ObjectType: ...
+        def __init__(self, construction: object) -> None:
+            ...
 
-class SchemesCategory(
-    _StaticRoles_SchemesCategory,
-    Category[Any, Any, _StaticRoles_SchemesCategory.ObjectType, _StaticRoles_SchemesCategory.ElementType, _StaticRoles_SchemesCategory.MorphismType],
-):
+        def construction(self) -> object:
+            ...
+
+        def affine_cover(self) -> tuple[AffineOpenChart, ...]:
+            ...
+
+        def local_affineness(self) -> tuple[AffineOpenChart, ...]:
+            ...
+
+        def finite_affine_gluing(self) -> FiniteAffineGluing:
+            ...
+
+    class ElementType:
+        ...
+
+    class MorphismType:
+        ...
+
+    def construct_identity(self, member_object: SchemesCategory.ObjectType) -> SchemesCategory.MorphismType:
+        ...
+
+    def composite(self, second: SchemesCategory.MorphismType, first: SchemesCategory.MorphismType) -> SchemesCategory.MorphismType:
+        ...
+
     @cached_method
-    def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType: ...
-    def valued_points(self, scheme: SchemesCategory.ObjectType, ring: CategoryOfCategories.ElementType) -> MorphismCategory: ...
-    def categorical_points(self, scheme: SchemesCategory.ObjectType) -> MorphismCategory: ...
-    def over_base(self, scheme: SchemesCategory.ObjectType, base: SchemesCategory.ObjectType, structure_map: SchemesCategory.MorphismType) -> CategoryOfCategories.ElementType: ...
-    def glue_two_affines(
-        self,
-        left: AffineSchemesCategory.ObjectType,
-        right: AffineSchemesCategory.ObjectType,
-        left_open: AffineOpenCategory.ObjectType,
-        right_open: AffineOpenCategory.ObjectType,
-        left_to_right_pullback: MorphismCategory.ObjectType,
-        right_to_left_pullback: MorphismCategory.ObjectType,
-    ) -> tuple[SchemesCategory.ObjectType, SchemesCategory.MorphismType, SchemesCategory.MorphismType]: ...
-    def affine_overlap(
-        self, charts: tuple[AffineSchemesCategory.ObjectType, ...], left: int, right: int, pieces: tuple[AffineOverlapPiece, ...]
-    ) -> AffineOverlap: ...
-    def glue_affines(
-        self, charts: tuple[AffineSchemesCategory.ObjectType, ...], overlaps: tuple[AffineOverlap, ...]
-    ) -> SchemesCategory.ObjectType: ...
-    def gluing_mediator(
-        self, source: SchemesCategory.ObjectType, target: SchemesCategory.ObjectType, chart_maps: tuple[SchemesCategory.MorphismType, ...]
-    ) -> SchemesCategory.MorphismType: ...
-    def chart_map(
-        self,
-        source: AffineSchemesCategory.ObjectType,
-        target: SchemesCategory.ObjectType,
-        target_chart: AffineSchemesCategory.ObjectType,
-        pullback: MorphismCategory.ObjectType,
-    ) -> SchemesCategory.MorphismType: ...
+    def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType:
+        ...
+
+    def glue_two_affines(self, left: AffineSchemesCategory.ObjectType, right: AffineSchemesCategory.ObjectType, left_open: AffineOpenCategory.ObjectType, right_open: AffineOpenCategory.ObjectType, left_to_right_pullback: MorphismCategory.ObjectType, right_to_left_pullback: MorphismCategory.ObjectType) -> tuple[SchemesCategory.ObjectType, SchemesCategory.MorphismType, SchemesCategory.MorphismType]:
+        ...
+
+    def affine_overlap(self, charts: tuple[AffineSchemesCategory.ObjectType, ...], left: int, right: int, pieces: tuple[AffineOverlapPiece, ...]) -> AffineOverlap:
+        ...
+
+    def glue_affines(self, charts: tuple[AffineSchemesCategory.ObjectType, ...], overlaps: tuple[AffineOverlap, ...]) -> SchemesCategory.ObjectType:
+        ...
+
+    def gluing_mediator(self, source: SchemesCategory.ObjectType, target: SchemesCategory.ObjectType, chart_maps: tuple[SchemesCategory.MorphismType, ...]) -> SchemesCategory.MorphismType:
+        ...
+
+    def affine_morphism(self, mapping: AffineSchemesCategory.MorphismType) -> SchemesCategory.MorphismType:
+        ...
+
+    def to_locally_ringed_spaces(self) -> Functor:
+        ...
+
+    def to_ringed_spaces(self) -> Functor:
+        ...
+
+    def to_topological_spaces(self) -> Functor:
+        ...
 
 @cache
-def Schemes() -> SchemesCategory: ...
-def native_scheme(value: CategoryOfCategories.ElementType) -> NativeObjectRealization[OscarHandle, object]: ...
-def native_scheme_morphism(value: MorphismCategory.ObjectType) -> NativeMorphismRealization[OscarHandle]: ...
-def projective_line(field: CategoryOfCategories.ElementType) -> ProjectiveLinePresentation: ...
+def Schemes() -> SchemesCategory:
+    ...
+
+def native_scheme(value: CategoryOfCategories.ElementType) -> NativeObjectRealization[OscarHandle, object]:
+    ...
+
+def native_scheme_morphism(value: MorphismCategory.ObjectType) -> NativeMorphismRealization[OscarHandle]:
+    ...
+
+def projective_line(field: CategoryOfCategories.ElementType) -> ProjectiveLinePresentation:
+    ...

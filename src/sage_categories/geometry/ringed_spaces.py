@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
-from typing import Any, Generic, cast
-
-from typing_extensions import TypeVar
+from typing import Any, cast
 
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
@@ -22,9 +20,6 @@ from sage_categories.geometry.spaces import (
 __all__ = ["RingedSpaces", "RingedSpacesCategory"]
 
 
-OpenKey = TypeVar("OpenKey", bound=Hashable, default=Hashable)
-
-
 type SheafComponentRule[OpenKey: Hashable] = Callable[[OpenKey], MorphismCategory.ObjectType]
 
 
@@ -37,7 +32,7 @@ class _RingedSpaceData[OpenKey: Hashable]:
 class RingedSpacesCategory(MorphismDataCategory):
     """Spaces equipped with sheaves of commutative rings."""
 
-    class ObjectType(Generic[OpenKey]):
+    class ObjectType[OpenKey: Hashable = Hashable]:
         def __init__(self, data: _RingedSpaceData[OpenKey]) -> None:
             self._space, self._sheaf = data.space, data.sheaf
 

@@ -34,6 +34,7 @@ def free_module_types(
     assert_type(modules.scalars(), MonoidCategory.ObjectType)
     assert_type(modules.actegory(), ActionsCategory.ObjectType)
     assert_type(regular_module(modules), ModuleCategory.ObjectType)
+    assert_type(finite_free_module(modules, 0), ModuleCategory.ObjectType)
     assert_type(finite_free_module(modules, 3), ModuleCategory.ObjectType)
     assert_type(regular_module(modules).action(), MorphismCategory.ObjectType)
     assert_type(finite_free_module(modules, 3).action(), MorphismCategory.ObjectType)

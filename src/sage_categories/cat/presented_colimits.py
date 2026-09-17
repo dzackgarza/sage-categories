@@ -271,10 +271,7 @@ def _presented_colimit_data(diagram: Functor) -> _PresentedColimitData:
         class_count,
         object_classes,
     )
-    injections = tuple(
-        _colimit_injection(index, factor, colimit, object_classes, factor_objects, coproduct, factors)
-        for index, factor in enumerate(factors)
-    )
+    injections = tuple(_colimit_injection(index, factor, colimit, object_classes, factor_objects, coproduct, factors) for index, factor in enumerate(factors))
     return _PresentedColimitData(
         vertices,
         factors,

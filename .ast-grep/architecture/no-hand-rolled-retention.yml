@@ -3,6 +3,10 @@ language: python
 severity: error
 files:
   - tests/kernel/**/*.sage
+  - src/sage_categories/sets/**/*.py
+  - src/sage_categories/order/**/*.py
+  - src/sage_categories/algebra/**/*.py
+  - src/sage_categories/geometry/**/*.py
 message: POL-LEAF-066, D111, D133
 rule:
   pattern: self.$STORE[$KEY] = self.ObjectType($$$)

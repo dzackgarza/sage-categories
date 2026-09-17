@@ -8,6 +8,12 @@ language: python
 severity: error
 files:
   - tests/kernel/**/*.sage
+  - src/sage_categories/sets/**/*.py
+  - src/sage_categories/order/**/*.py
+  - src/sage_categories/algebra/**/*.py
+  - src/sage_categories/geometry/**/*.py
+ignores:
+  - src/sage_categories/**/_firewall/**/*.py
 message: POL-LEAF-067, POL-SAGE-016, D40
 rule:
   any:

@@ -765,9 +765,29 @@ def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategor
     """``f ⊗ g``: the mediator of ``(a, b) ↦ f(a) ⊗ g(b)``."""
     source = _tensor_object(first.domain(), second.domain())
     target = _tensor_object(first.codomain(), second.codomain())
+    target_data = _tensor_info(target)
+    unit = integer_group()
+    unit_identity = Mor(AbelianGroups())(unit, unit).one()
+    match first is unit_identity, second is unit_identity, target_data:
+        case True, _, _IndexedTensorData(rank_one_on_left=True):
+            # Naturality of the left unitor determines ``1_ZZ ⊗ g`` even when
+            # ``g`` lands in an indexed-free group with no Smith coordinates.
+            return (
+                _tensor_unitor_component(unit, second.codomain(), "left", True)
+                * second
+                * _tensor_unitor_component(unit, second.domain(), "left", False)
+            )
+        case _, True, _IndexedTensorData(rank_one_on_left=False):
+            # The right-unit case is the symmetric naturality square.
+            return (
+                _tensor_unitor_component(unit, first.codomain(), "right", True)
+                * first
+                * _tensor_unitor_component(unit, first.domain(), "right", False)
+            )
+        case _:
+            pass
     if isinstance(_tensor_info(source), _TensorData) and isinstance(_tensor_info(target), _TensorData):
         return _backend.tensor_morphism(first, second, source, target)
-    target_data = _tensor_info(target)
     return tensor_mediator(
         first.domain(),
         second.domain(),
@@ -988,7 +1008,10 @@ def _tensor_unitor_inverse(
     """Construct a tensor unitor inverse through the group's selected native owner."""
     match _backend.is_indexed(group):
         case True:
-            return _rule_abelian_homomorphism(group, target, rule)
+            # Tensoring an indexed-free group with the rank-one unit retains the
+            # same owned basis index, so the inverse unitor is exactly the native
+            # coefficient-preserving relabeling between the two retained copies.
+            return _indexed_free_relabel(group, target)
         case False:
             return abelian_homomorphism(group, target, rule)
 

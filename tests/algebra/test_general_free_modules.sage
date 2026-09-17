@@ -59,6 +59,14 @@ def test_finite_free_module_retains_basis_product_coproduct_and_left_action() ->
     assert modules.actegory() is SelfAction(AbelianTensor())
 
     regular = regular_module(modules)
+    zero_free = finite_free_module(modules, 0)
+    zero_family = finite_free_basis_family(modules, zero_free)
+    assert tuple(finite_free_basis(modules, zero_free)) == ()
+    assert modules.Limits(zero_family.domain()).universal_data(zero_family).apex() is zero_free
+    assert modules.Colimits(zero_family.domain()).universal_data(zero_family).apex() is zero_free
+    zero_matrix = finite_free_matrix_morphism(modules, zero_free, zero_free, ())
+    assert zero_matrix.domain() is zero_free and zero_matrix.codomain() is zero_free
+
     free = finite_free_module(modules, 2)
     assert modules.forgetful().on_object(regular) is group
     assert free in modules

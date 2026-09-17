@@ -490,6 +490,7 @@ def limit_of_categories(
     same construction at two shapes (POL-CAT-092).
     """
     limit = deferred_category(category_type, diagram)
+
     @cached_function(key=identity_key)
     def projection(vertex: CategoryOfCategories.ElementType) -> Functor:
         return Fun(limit, diagram.on_object(vertex))(
@@ -700,6 +701,7 @@ def _limit_of_opposite_categories(diagram: Functor) -> CategoryOfCategories.Elem
         return presented_colimit_in_opposite(lowered)
     tagged = _TaggedCategory(lowered)
     opposite_categories(tagged)
+
     @cached_function(key=identity_key)
     def projection(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         injection = Fun(lowered.on_object(vertex), tagged)(

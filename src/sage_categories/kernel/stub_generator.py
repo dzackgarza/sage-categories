@@ -468,6 +468,7 @@ class _PrivateTypeParameterRenamer(ast.NodeTransformer):
         return ast.copy_location(ast.Name(id=replacement, ctx=node.ctx), node)
 
 
+
 def _private_type_parameter_names(parameters: list[ast.type_param]) -> dict[str, str]:
     """Return the public spellings of private type parameters in one lexical scope."""
     names = {parameter.name: parameter.name.lstrip("_") for parameter in parameters if parameter.name.startswith("_") and parameter.name.lstrip("_")}
@@ -1681,14 +1682,9 @@ def _project_quoted_type_parameter_references(
         source_parameters = {parameter.name: parameter for parameter in source_class.type_params}
         for parameter in target_class.type_params:
             source_parameter = source_parameters.get(parameter.name)
-            if source_parameter is None:
+            if not (isinstance(parameter, ast.TypeVar) and isinstance(source_parameter, ast.TypeVar)):
                 continue
-            if (
-                isinstance(parameter, ast.TypeVar)
-                and isinstance(source_parameter, ast.TypeVar)
-                and isinstance(source_parameter.bound, ast.Constant)
-                and isinstance(source_parameter.bound.value, str)
-            ):
+            if isinstance(source_parameter.bound, ast.Constant) and isinstance(source_parameter.bound.value, str):
                 parameter.bound = copy.deepcopy(source_parameter.bound)
             source_default = source_parameter.default_value
             if isinstance(source_default, ast.Constant) and isinstance(source_default.value, str):

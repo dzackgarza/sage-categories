@@ -18,3 +18,8 @@ __pycache__/
 
 # Agent worktrees: separate checkouts of this repository, never its contents.
 .claude/worktrees/
+
+# Local orchestration/vault links and scratch state are host workspace metadata.
+.agents
+.hermes
+.tmp/

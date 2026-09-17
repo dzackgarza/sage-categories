@@ -23,12 +23,10 @@ FinitePosets()
 FiniteTotallyOrderedSets()
 ```
 
-`Relations()` is the category over `Sets()` whose objects are relation subobjects `R -> X * X` over varying `X`.
-It is sets with additional structure, a structure category: its leaf states the datum `(X, R <= X * X)` and defines its structure functor to `Sets()` by its two actions, sending a relation to its underlying set `X`, never to `R`, constructed into `Fun(Relations(), Sets()).Fibrations()` (D08, D161, D162, D163).
-`Posets()` is `Relations().PartialOrder()`, the axiom subcategory; the `PartialOrder` axiom and its proposition are declared on `Relations()` (D147), and `Posets()` inherits that functor along its inclusion.
-The poset class declares itself the implementation of `Relations().PartialOrder()` through the identity structure functor `End_Cat(Relations().PartialOrder()).one()` (D156).
-`cat_kernel` constructs the inclusion `Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()` (D146, D148, D175).
-`Posets()` defines its faithful structure functor `U: Posets() -> Sets()` by its two actions. Transport of a partial order along a bijection makes `U` an isofibration. Its limit-preservation theorem and chosen lifts are stated under [Products](#products).
+`Relations()` is the category over `Sets()` whose objects are relation subobjects `R -> X * X` over varying `X`. It is sets with additional structure, a structure category: its leaf states the datum `(X, R <= X * X)` and defines its structure functor to `Sets()` by its two actions, sending a relation to its underlying set `X`, never to `R`, constructed into `Fun(Relations(), Sets()).Fibrations()` (D08, D161, D162, D163). `Posets()` is `Relations().PartialOrder()`, the axiom subcategory; the `PartialOrder` axiom and its proposition are declared on `Relations()` (D147), and `Posets()` inherits that functor along its inclusion.
+The poset class declares itself the implementation of `Relations().PartialOrder()` through the identity structure functor `End_Cat(Relations().PartialOrder()).one()` (D156). `cat_kernel` constructs the inclusion `Fun(Posets(), Relations()).Monomorphisms().Isofibrations().Full()()` (D146, D148, D175). `Posets()` defines its faithful structure functor `U: Posets() -> Sets()` by its two actions.
+Transport of a partial order along a bijection makes `U` an isofibration.
+Its limit-preservation theorem and chosen lifts are stated under [Products](#products).
 
 The structure functors form this commutative graph:
 
@@ -42,9 +40,8 @@ The structure functors form this commutative graph:
 \end{array}
 \]
 
-Both paths from finite total orders to sets have the same intended underlying-set
-projection. This is coherence of the owned mathematical diamond, not a requirement for
-the compiler to compare constructor data or public functor images along the two paths.
+Both paths from finite total orders to sets have the same intended underlying-set projection.
+This is coherence of the owned mathematical diamond, not a requirement for the compiler to compare constructor data or public functor images along the two paths.
 
 Let `U: Posets() -> Sets()` send a poset to its carrier `X` (D163). Its isofibration declaration supplies inheritance under [the structure-functor contract](functor.md#structure-functors-and-inherited-classes):
 
@@ -104,12 +101,9 @@ x\leq y\land y\leq x\Rightarrow x=y,
 x\leq y\land y\leq z\Rightarrow x\leq z.
 \]
 
-`Relations()` declares the `PartialOrder` axiom together with this proposition, applying the SymPy predicate it defines ([leaves.md](leaves.md#property-categories); D147, D148).
-The declaration generates `R.is_partial_order()` on `Relations().ObjectType`.
-`ask()` uses the exact SymPy handlers registered by `Relations()` for that predicate.
+`Relations()` declares the `PartialOrder` axiom together with this proposition, applying the SymPy predicate it defines ([leaves.md](leaves.md#property-categories); D147, D148). The declaration generates `R.is_partial_order()` on `Relations().ObjectType`. `ask()` uses the exact SymPy handlers registered by `Relations()` for that predicate.
 An exhaustive finite algorithm is one such handler.
-Exact `True` refines the relation into `Posets()`.
-`False` disproves admission.
+Exact `True` refines the relation into `Posets()`. `False` disproves admission.
 `Unknown` leaves the relation in `Relations()`.
 
 `Posets()` has exactly the constructors of `Relations()` (D150), and constructing there asserts the laws:
@@ -119,7 +113,7 @@ Posets()(relation)
 ```
 
 An already constructed relation enters `Posets()` by `assume(R.is_partial_order())`. A named mathematical construction returns its result already placed in the property category.
-There are no checked, hypothesis-backed, or theorem-backed constructor families.
+All entry paths use the one property-category constructor and differ only in how the defining proposition is established.
 
 Named constructors include:
 
@@ -127,7 +121,7 @@ Named constructors include:
 Posets().discrete_order(X)
 ```
 
-Ordinal orders, natural intervals, and componentwise product orders also use named theorem-backed routes.
+Ordinal orders, natural intervals, and componentwise product orders are also named mathematical constructions.
 They do not repeat exhaustive checks.
 
 For example, the usual order on `{1, ..., 10^10}` must use its construction theorem.
@@ -144,10 +138,8 @@ The containment predicate of `TotallyOrderedSets()` is the proposition:
 \]
 
 `TotallyOrderedSets()` owns this predicate meaning and defines its public SymPy predicate.
-The axiom generates `is_total()` on `Posets().ObjectType`.
-The application returns the SymPy proposition, and `ask()` evaluates it.
-Exact `True` refines the object into `TotallyOrderedSets()`.
-An active assumption and a named mathematical construction establish the same placement without exhaustive checking.
+The axiom generates `is_total()` on `Posets().ObjectType`. The application returns the SymPy proposition, and `ask()` evaluates it.
+Exact `True` refines the object into `TotallyOrderedSets()`. An active assumption and a named mathematical construction establish the same placement without exhaustive checking.
 `False` and `Unknown` keep the object in its previously established category.
 
 Finite totality can use exhaustive pair checks.
@@ -168,8 +160,8 @@ The owned constructors are:
 SimplexOrders()[n]
 ```
 
-`SimplexOrders()[n]` returns the usual total order on `{0, ..., n}`.
-The index `n` is finite. The infinite ordinal is `omega0`, constructed by the ordinal API.
+`SimplexOrders()[n]` returns the usual total order on `{0, ..., n}`. The index `n` is finite.
+The infinite ordinal is `omega0`, constructed by the ordinal API.
 
 The constructor uses its order theorem and returns directly in the strongest established total-order category.
 
@@ -186,29 +178,26 @@ x\leq_P y\Rightarrow f(x)\leq_Q f(y).
 
 For a represented finite source, exhaustive pair checking is one exact handler for `ask()`. A witnessed violation makes `ask()` return `False`. An unresolved evaluation makes it return `Unknown`. Exact `True` refines the morphism into `Mor(Posets())(P, Q)`. Direct property construction, an active assumption, and a named mathematical construction establish the same placement.
 
-Named theorem-backed routes include identities, composites, product projections, and product mediating morphisms.
+Identities, composites, product projections, and product mediating morphisms are constructed by their mathematical owners and are already placed in the poset-morphism category.
 
-The map `n -> n^2` from `NN` to `NN` uses a named theorem-backed constructor.
+The map `n -> n^2` from `NN` to `NN` is supplied as a named monotone construction.
 It does not enumerate `NN`.
 
-A reversing map on the two-element chain fails checked admission.
-Its underlying set morphism remains valid.
+A reversing map on the two-element chain has a preservation proposition that evaluates to `False`. Its underlying set morphism remains valid.
 
 Order preservation, order reflection, order embedding, and order isomorphism use their morphism-property subcategories.
 Each property subcategory owns its predicate meaning and exact SymPy handlers.
-Their axioms generate `is_order_preserving()`,
-`is_order_reflecting()`, `is_order_embedding()`, and `is_order_isomorphism()` on the
-ambient set-map class. `cat_kernel` derives each standard property application (D175).
-Admission makes the preservation proposition evaluate to `True`.
-The other propositions remain available for assumption or exact evaluation.
+Their axioms generate `is_order_preserving()`, `is_order_reflecting()`, `is_order_embedding()`, and `is_order_isomorphism()` on the ambient set-map class.
+`cat_kernel` derives each standard property application (D175). Placement in the preservation property makes the preservation proposition evaluate to `True`. The other propositions remain available for assumption or exact evaluation.
 
 Identity and composition arrive through inherited morphism operations.
-Poset theory adds only the theorem-backed admission needed to preserve monotonicity.
+Poset theory adds only the order-preservation proposition and the named constructions that establish it without exhaustive evaluation.
 
 ## Products
 
 The generic product contract is specified in [Products, coproducts, and component functors](functor.md#products-coproducts-and-component-functors).
-The projection `U: Posets() -> Sets()` preserves small limits and has chosen lifts of set limits. It is an object of each applicable `Fun(Posets(), Sets()).PreservesLimits(I)`.
+The projection `U: Posets() -> Sets()` preserves small limits and has chosen lifts of set limits.
+It is an object of each applicable `Fun(Posets(), Sets()).PreservesLimits(I)`.
 
 For a discrete shape, the selected set-product apex carries the componentwise order:
 
@@ -217,8 +206,11 @@ x\leq y\quad\Longleftrightarrow\quad
 \forall i,\ x_i\leq_i y_i.
 \]
 
-The poset leaf supplies this order formula and its existing monotone-map constructor through `U.with_limit_lifting(Discrete, on_apex, on_morphism)` ([poset-products template](poset-products-minimal-template.py)). The [generic lifting construction](functor.md#diagram-shapes-and-universal-constructions) supplies the projections and universal morphism. Applying `U` returns the selected set apex and maps exactly. `Posets().Products()(P, Q)` uses this construction through the inherited public constructor.
-The same order formula on the compatible-family subset gives limits of other shapes. A mediator is monotone because each component is monotone; the underlying set limit makes it unique.
+The poset leaf supplies this order formula and its existing monotone-map constructor through `U.with_limit_lifting(Discrete, on_apex, on_morphism)` ([poset-products template](poset-products-minimal-template.py)). The [generic lifting construction](functor.md#diagram-shapes-and-universal-constructions) supplies the projections and universal morphism.
+Applying `U` returns the selected set apex and maps exactly.
+`Posets().Products()(P, Q)` uses this construction through the inherited public constructor.
+The same order formula on the compatible-family subset gives limits of other shapes.
+A mediator is monotone because each component is monotone; the underlying set limit makes it unique.
 
 The product of total orders need not be total.
 In a product of two nontrivial chains, the two crossed elements are incomparable.
@@ -226,8 +218,7 @@ Such a product remains a poset.
 
 ## Finite-poset API
 
-`Posets().Subobjects(P).from_predicate(predicate)` constructs the induced subposet, its restricted order, and its monomorphism into `P`.
-Finite-poset algorithms use owned poset elements and owned finite subobjects.
+`Posets().Subobjects(P).from_predicate(predicate)` constructs the induced subposet, its restricted order, and its monomorphism into `P`. Finite-poset algorithms use owned poset elements and owned finite subobjects.
 They do not expose backend elements, Python iterators, or built-in containers.
 They expose these primitive operations:
 
@@ -269,8 +260,7 @@ Ranked finite posets add:
 | --- | --- |
 | `rank_of_element(x)` | Owned natural cardinal. |
 
-Each level set is the predicate subobject selected by `rank_of_element(x) == r`.
-The rank of a nonempty finite ranked poset is the maximum element rank.
+Each level set is the predicate subobject selected by `rank_of_element(x) == r`. The rank of a nonempty finite ranked poset is the maximum element rank.
 Ranked and graded finite posets are property subcategories with their owned containment predicates.
 
 `linear_extension()` uses the finite linear-extension algorithm.
@@ -283,8 +273,7 @@ Each public method lowers semantic inputs and reconstructs the owned result befo
 ## Thin category
 
 The named functor `Thin: Posets() -> Cat()` constructs the thin category of a poset.
-Apply it as `Thin.on_object(P)`.
-The result is an owned category.
+Apply it as `Thin.on_object(P)`. The result is an owned category.
 Its objects are the owned elements of `P`. Its fixed-endpoint category `Mor(-)(x, y)` is terminal when `x <= y` and empty otherwise.
 
 A monotone morphism induces the corresponding functor between thin categories.
@@ -301,9 +290,8 @@ Each category-owned `ObjectType`, `ElementType`, and `MorphismType` is its imple
 A leaf can use Sage or another engine through private helpers.
 
 Leaf methods remain ordinary typed mathematical methods.
-Their signatures state only the methods' ordinary Python and mathematical types. Selected
-structure functors determine the inherited implementation classes; a method signature does
-not encode a functor action or an initializer-state transport.
+Their signatures state only the methods' ordinary Python and mathematical types.
+Selected structure functors determine the inherited implementation classes; a method signature does not encode a functor action or an initializer-state transport.
 Leaf code declares only its mathematical classes and structure functors.
 
 See [Leaf category implementations](leaves.md) and [Structural resolution](resolution.md).
@@ -318,7 +306,7 @@ The implementation satisfies this specification when the public API establishes 
 
 - `Unknown` is returned only by `ask()` and never establishes partial order, totality, or monotonicity;
 
-- theorem-backed constructors handle large finite and infinite objects without exhaustive checks;
+- named mathematical constructions handle large finite and infinite objects without exhaustive checks;
 
 - the two-element equality order remains outside total-order categories;
 
@@ -330,9 +318,9 @@ The implementation satisfies this specification when the public API establishes 
 
 - iteration returns elements owned by the public ambient poset;
 
-- nonmonotone set morphisms fail poset morphism admission;
+- nonmonotone set morphisms have order-preservation proposition `False` and remain ordinary set morphisms;
 
-- theorem-backed identities, composites, projections, and standard infinite maps enter `Mor(Posets())`;
+- identities, composites, projections, and standard infinite monotone maps are constructed in `Mor(Posets())` by their mathematical owners;
 
 - the projection to sets creates poset products and their universal morphisms;
 

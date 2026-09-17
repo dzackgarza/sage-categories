@@ -6,15 +6,6 @@ Read [TODO.md](TODO.md) for the execution DAG and its governing-plan links,
 Apply `POL-WORK-002` when an issue arises, including outside the selected task.
 Capture the evidence before leaving that work; recording it does not repair it.
 
-## Owner pause — 2026-09-16
-
-The repository owner has paused this workstream. Do not start, select, continue,
-revive, wake, route, or push new work while this pause stands. If a turn was already
-mid-unit when the pause arrived, bank only that coherent unit and stop before selecting
-another. Preserve the existing dirty/shared tree. Only a later explicit owner instruction
-resumes this repository; recurrence of an older scheduled continuation does not supersede
-the pause.
-
 `sage-categories` builds a foundational category framework for Sage mathematics.
 The repository is initialized. Deliver each specified capability to its complete public consumer.
 
@@ -56,11 +47,11 @@ Each fact has one authoritative home:
 | Mathematics and public contracts | Topic specifications linked from [specs/system.md](specs/system.md#ownership-map) |
 | Decision provenance and supersession | [specs/decisions.md](specs/decisions.md) |
 | Stable policy identifiers and technical constraints | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| Repository entry point to the execution DAG | [TODO.md](TODO.md); full obligations and acceptance remain in the governing plan |
+| Repository entry point to the remediation execution DAG | [TODO.md](TODO.md); the governing plan owns remediation scope and acceptance, while topic specifications continue to own the complete public contracts |
 | Observed mathematical issues and workflow friction | [COMPLAINTS.md](COMPLAINTS.md) |
 | Execution, review, delegation, and documentation procedure | This file |
 | Remediation scope, implementation allocation, and work order | Project vault `PLAN-native-engine-remediation` |
-| Current execution and acceptance evidence | The governing plan's retained issue dependencies and exact-revision public consumers; retired planning records are historical evidence only |
+| Current remediation execution and acceptance evidence | The governing plan's retained issue dependencies and exact-revision public consumers; broader issue contracts remain live where their topic specifications require more than the remediation slice; retired planning records are historical evidence only |
 | Implemented behavior | Source and public execution at the stated Git revision |
 | Previous implementation and review history | Git history and archived vault records |
 

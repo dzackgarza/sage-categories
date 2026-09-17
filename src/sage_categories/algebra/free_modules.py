@@ -17,6 +17,7 @@ from sage_categories.algebra.abelian import (
     AbelianGroups,
     AbelianTensor,
     abelian_homomorphism,
+    indexed_free_abelian_coproduct,
     simple_tensor,
 )
 from sage_categories.cat.assembly import (
@@ -26,7 +27,14 @@ from sage_categories.cat.assembly import (
     selected_value,
 )
 from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.cones import cocone, cocones, cone, cones
+from sage_categories.cat.cones import (
+    cocone,
+    cocone_apex,
+    cocones,
+    cone,
+    cone_apex,
+    cones,
+)
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.modules import ModuleCategory, Modules
@@ -218,9 +226,65 @@ def _extend_free_stage(
     )
 
 
+def _zero_module_morphism(
+    modules: ModuleCategory,
+    source: ModuleCategory.ObjectType,
+    target: ModuleCategory.ObjectType,
+) -> ModuleMap:
+    """The additive zero map, lifted through the exact module owner."""
+    underlying = modules.forgetful()
+    arrow = modules.underlying_category().zero_morphism(
+        underlying.on_object(source),
+        underlying.on_object(target),
+    )
+    return modules.homomorphism(source, target, arrow)
+
+
+def _zero_module(modules: ModuleCategory) -> ModuleCategory.ObjectType:
+    """The zero ordinary module as the empty direct sum of regular modules."""
+    empty = Sets(())
+    carrier = indexed_free_abelian_coproduct(empty)
+    action = modules.actegory().action()
+    action_source = action.on_object(action.domain()((modules.carrier(), carrier)))
+    zero_action = modules.underlying_category().zero_morphism(action_source, carrier)
+    return modules(zero_action)
+
+
 def _new_finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategory.ObjectType:
-    assert rank >= 1
+    assert rank >= 0
     regular = regular_module(modules)
+    basis = Sets(range(rank))
+    shape = Discrete(basis)
+    family = Fun(shape, modules).constant(regular)
+
+    match rank:
+        case 0:
+            module = _zero_module(modules)
+            modules.Limits(shape).with_universal_data(
+                family,
+                module,
+                cone(
+                    family,
+                    module,
+                    lambda vertex: _zero_module_morphism(modules, module, family.on_object(vertex)),
+                ),
+                lambda candidate: _zero_module_morphism(modules, cone_apex(candidate), module),
+            )
+            modules.Colimits(shape).with_universal_data(
+                family,
+                module,
+                cocone(
+                    family,
+                    module,
+                    lambda vertex: _zero_module_morphism(modules, family.on_object(vertex), module),
+                ),
+                lambda candidate: _zero_module_morphism(modules, module, cocone_apex(candidate)),
+            )
+            select_value(modules, "finite-free-family", (module,), family)
+            return module
+        case _:
+            pass
+
     identity = Mor(modules)(regular, regular).one()
     stage = _FreeStage(
         regular,
@@ -232,9 +296,6 @@ def _new_finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategor
     for _ in range(1, rank):
         stage = _extend_free_stage(modules, stage, regular)
 
-    basis = Sets(range(rank))
-    shape = Discrete(basis)
-    family = Fun(shape, modules).constant(regular)
     vertices = tuple(shape.object_at(point) for point in basis)
     modules.Limits(shape).with_universal_data(
         family,
@@ -248,26 +309,25 @@ def _new_finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategor
         cocone(family, stage.module, lambda vertex: stage.injections[int(vertex.point().datum())]),
         lambda candidate: stage.copair(tuple(candidate.leg(vertex) for vertex in vertices)),
     )
-    select_value(
-        modules,
-        "finite-free-family",
-        (stage.module,),
-        family,
-    )
+    select_value(modules, "finite-free-family", (stage.module,), family)
     return stage.module
 
 
 def finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategory.ObjectType:
     """The finite free left module ``R^rank`` as an owned direct sum of regular modules.
 
-    ``rank`` is positive.  The construction retains the finite owned basis set, its
+    ``rank`` is nonnegative.  The construction retains the finite owned basis set, its
     constant family of regular modules, and both the product and coproduct universal
-    presentations.  No matrix or coordinate presentation defines the object.
+    presentations.  Rank zero is the empty product/direct sum.  No matrix or coordinate
+    presentation defines the object.
     """
     _require_ordinary(modules)
     rank = int(rank)
-    if rank < 1:
-        raise ValueError("this finite free-module constructor requires positive rank")
+    match rank < 0:
+        case True:
+            raise ValueError("a free-module rank is nonnegative")
+        case False:
+            pass
     return chosen_construction(
         modules,
         f"finite-free-module:{rank}",

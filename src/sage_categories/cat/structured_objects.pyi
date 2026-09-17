@@ -98,11 +98,7 @@ class _StaticRoles_InserterCategory(sage_categories.cat.cat_constructions._Stati
         def domain(self) -> InserterCategory.ObjectType: ...
         def codomain(self) -> InserterCategory.ObjectType: ...
 
-class InserterCategory[
-    ObjectRole = _StaticRoles_InserterCategory.ObjectType,
-    ElementRole = _StaticRoles_InserterCategory.ElementType,
-    MorphismRole = _StaticRoles_InserterCategory.MorphismType,
-](_StaticRoles_InserterCategory, LimitSubcategory[ObjectRole, ElementRole, MorphismRole]):
+class InserterCategory[ObjectRole, ElementRole, MorphismRole](_StaticRoles_InserterCategory, LimitSubcategory[ObjectRole, ElementRole, MorphismRole]):
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def algebra(self, carrier: CategoryOfCategories.ElementType, structure: MorphismCategory.ObjectType) -> ObjectRole: ...
     def homomorphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, arrow: MorphismCategory.ObjectType) -> MorphismRole: ...
@@ -125,11 +121,7 @@ class _StaticRoles_EquifierCategory(sage_categories.cat.properties._StaticRoles_
         def domain(self) -> EquifierCategory.ObjectType: ...
         def codomain(self) -> EquifierCategory.ObjectType: ...
 
-class EquifierCategory[
-    ObjectRole = _StaticRoles_EquifierCategory.ObjectType,
-    ElementRole = _StaticRoles_EquifierCategory.ElementType,
-    MorphismRole = _StaticRoles_EquifierCategory.MorphismType,
-](_StaticRoles_EquifierCategory, FullSubcategory[..., ..., ObjectRole, ElementRole, MorphismRole]):
+class EquifierCategory[ObjectRole, ElementRole, MorphismRole](_StaticRoles_EquifierCategory, FullSubcategory[..., ..., ObjectRole, ElementRole, MorphismRole]):
     def __init__(self, first: NaturalTransformation, second: NaturalTransformation) -> None: ...
     def __call__(self, value: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType: ...
 
@@ -214,11 +206,7 @@ class _StaticRoles_NamedOperationCategory(sage_categories.cat.cat_constructions.
         def domain(self) -> NamedOperationCategory.ObjectType: ...
         def codomain(self) -> NamedOperationCategory.ObjectType: ...
 
-class NamedOperationCategory[
-    ObjectRole = _StaticRoles_NamedOperationCategory.ObjectType,
-    ElementRole = _StaticRoles_NamedOperationCategory.ElementType,
-    MorphismRole = _StaticRoles_NamedOperationCategory.MorphismType,
-](_StaticRoles_NamedOperationCategory, LimitSubcategory[ObjectRole, ElementRole, MorphismRole]):
+class NamedOperationCategory[ObjectRole, ElementRole, MorphismRole](_StaticRoles_NamedOperationCategory, LimitSubcategory[ObjectRole, ElementRole, MorphismRole]):
     Commutative: Incomplete
 
     def neutral_category(self) -> Category: ...
@@ -291,11 +279,7 @@ class _StaticRoles_NamedMonoidsCategory(_StaticRoles_NamedOperationCategory):
         def domain(self) -> NamedMonoidsCategory.ObjectType: ...
         def codomain(self) -> NamedMonoidsCategory.ObjectType: ...
 
-class NamedMonoidsCategory[
-    ObjectRole = _StaticRoles_NamedMonoidsCategory.ObjectType,
-    ElementRole = _StaticRoles_NamedMonoidsCategory.ElementType,
-    MorphismRole = _StaticRoles_NamedMonoidsCategory.MorphismType,
-](_StaticRoles_NamedMonoidsCategory, NamedOperationCategory[ObjectRole, ElementRole, MorphismRole]):
+class NamedMonoidsCategory[ObjectRole, ElementRole, MorphismRole](_StaticRoles_NamedMonoidsCategory, NamedOperationCategory[ObjectRole, ElementRole, MorphismRole]):
     Group: Incomplete
 
 class _StaticRoles_AdditiveMonoidsCategory(_StaticRoles_NamedMonoidsCategory):

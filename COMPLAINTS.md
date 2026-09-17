@@ -28,6 +28,58 @@ Label an unresolved availability question as such.
 Record a mathematical need before proposing an engine or implementation; a package name does not establish its required domain.
 Read historical observations at their stated revisions before relying on them.
 
+## HIGHEST PRIORITY — the fundamental leaf-blackbox premise is not yet satisfied
+
+- **Mathematical need or user action:** Before extending finite posets, modules, algebras, schemes, or any other production leaf, establish the premise on which this repository is built: effort concentrated in `Cat`, `cat_kernel`, and `kernel` must make those layers effectively black-box infrastructure for a leaf author. A production leaf author should be able to state the new mathematical data, immediate structure functors, genuinely new predicates/operations, and calls to a private computation adapter without knowing how category placement, refinement, dynamic implementation classes, identity retention, caching, or native realization are implemented.
+
+- **Gap and impact:** This premise is **not yet true in the strong sense required by the repository's own architecture**. The core architecture is substantial and already supplies useful abstractions, but production leaves still know about exactly the engineering mechanisms that `specs/system.md` and `specs/leaves.md` assign below the leaf boundary. Extending the mathematical surface before repairing that boundary risks adding another generation of kernel/runtime plumbing to every new leaf and defeats the main reason to invest so heavily in `Cat` and the kernel.
+
+- **Evidence — direct contradiction of the stated layer contract:** Source inspection on 2026-09-17 finds 26 production-leaf Python files. Twelve import `sage_categories.kernel.*`; three import Sage directly (`sets/finite.py`, `algebra/abelian.py`, and `algebra/presented_groups.py`); four algebra leaf/helper files call `refine()` themselves; nine production-leaf files directly own cache/retention mechanics such as `cached_method`, `cached_function`, or `MonoDict`; six leaf/helper files explicitly manage `NativeObjectRealizations` or `NativeMorphismRealizations`; seven production leaves implement `construct_identity` or `composite`; and five leaf files still declare generic `Category[[...]]` / `PropertySubcategory[[...]]` bases. These are not inferred style preferences: `specs/leaves.md` itself names kernel imports/caches/refinement, direct Sage imports, rewritten inherited identity/composition, generic leaf class parameters, and leaf-owned value stores as red flags whose owners are the kernel, `Cat`, or private engine boundary.
+
+- **Evidence — runtime/compiler representation leaks into mathematical leaves:** Geometry repeatedly constructs morphisms with forms such as `cast(Any, self).MorphismType(...)`. A leaf writer therefore still compensates for the representation of the compiled implementation class. A successfully black-boxed kernel should make that representation irrelevant to the geometry author. The same geometry modules also import kernel caching/identity helpers directly.
+
+- **Evidence — algebra carries framework assembly rather than only algebra:** `algebra/abelian.py` is about 1,500 lines and directly contains Sage parent/element machinery, three `MonoDict` retention tables, kernel refinement, native-coordinate distinctions, and dispatch among native representations. Some of the file is genuine abelian/tensor mathematics, but a substantial fraction is implementation infrastructure. `presented_groups.py` imports Sage `FreeGroup`/`Element`, raises native groups into owned group objects itself, and manually refines those objects into monoids/groups. `_certified_commutative_ring.py` manually assembles magmas -> pointed magmas -> monoids -> additive groups -> semirings -> rings with repeated `refine()` calls and private `_pairs` / `_ring` constructors. This is almost exactly the non-mathematical assembly that the kernel was introduced to remove from leaf work.
+
+- **Evidence — this is not universal, so the abstraction is plausible rather than disproved:** Several mature files are much closer to the intended end state. `algebra/commutative_rings.py` mostly states ring-specific constructions, calls the OSCAR adapter, and reconstructs owned results; it imports neither kernel internals nor Sage directly. `geometry/sheaves.py` mostly expresses sheaf mathematics. `free_associative.py` is substantially closer to “mathematics + engine call + owned result” than `abelian.py`. The investment in `Cat` has therefore paid off, but the resulting abstraction has not been carried consistently through the production leaf boundary.
+
+- **Evidence — the architectural gate does not currently protect the claimed boundary:** The red-flag catalogue says these shapes are gated, but most corresponding ast-grep rules apply only to `tests/kernel/**/*.sage` witness categories, not production leaf source. The import-linter commentary says leaf contracts should enter as production packages arrive, but the live configuration does not contain the general leaf-to-kernel prohibition. Its “only named engine modules import Sage” contract scopes source modules to `kernel`, `cat`, and `engines`, so direct Sage imports in actual leaves are outside that contract. The repository can consequently report architecture closure while production leaves violate the architecture being claimed.
+
+- **Fundamental acceptance test:** A production leaf author should be able to write the leaf while knowing essentially nothing about kernel implementation. In particular, the leaf should not need to know about `refine`, `identity_key`, `MonoDict`, cached-method mechanics, native-retention registries, dynamic implementation classes, placement, compiler state, or Sage parent classes. It should state only:
+
+  1. its new mathematical data;
+  2. its immediate structure functors;
+  3. its genuinely new predicates and operations;
+  4. calls to a private computation adapter where an external engine is required; and
+  5. reconstruction through ordinary public `Cat`/category constructors.
+
+  The current repository does not meet this test.
+
+- **What leaf engineering is still supposed to own:** Black-boxing `Cat` and the kernel does **not** mean that every leaf must be tiny or contain no engineering. A leaf can legitimately spend substantial engineering effort on the conversion layer between its intended public mathematical API and one or more backend engines. That code may need to choose a backend, lower owned mathematical input into several native representations, normalize engine-specific conventions, recover exact owned outputs, reconcile backend limitations, and preserve enough provenance to reconstruct the public result. This is domain-local engineering and belongs with the leaf.
+
+- **Firewall requirement for backend engineering:** That conversion machinery should be isolated behind a narrow private **firewall** interface, ideally in a dedicated submodule/subpackage such as `_engine`, `_native`, `_backend`, or a similarly explicit private boundary. The rest of the leaf should depend on that firewall through owned mathematical inputs and outputs rather than importing backend types, native parents, conversion tables, or engine-specific dispatch directly. Ugly engine juggling is acceptable inside the firewall; what matters is that it is isolated from the mathematical declaration layer and from every other leaf. A backend replacement or new representation should therefore perturb the firewall and its private engine modules, not the category declaration, unrelated categorical propagation, or downstream leaves.
+
+- **The categorical-propagation premise:** The leaf should **not** spend engineering effort explaining how its structures propagate through the category tree. That is the entire reason to concentrate complexity in `Cat`, `cat_kernel`, and the kernel. Once a leaf states its mathematics and immediate structure functors, inheritance, placement, refinement, identity/composition, property pullback, functor-image transport, universal-construction reuse, and inherited implementation surfaces should follow automatically. A leaf author should never have to know the implementation mechanism by which those consequences are installed.
+
+- **Isolation and modularity are the primary objective:** The strongest intended example is `Sets()`. Do the hard set-theoretic engineering **once**, in the Sets owner and its private firewall/engine subtree. Then no other category should need to reimplement or even understand that machinery merely because it has an underlying set. A poset, group, module, ring, space, or scheme should receive the relevant set-level behavior through its declared categorical structure. If set membership, map execution, finite products, enumeration, cardinality behavior, symbolic maps, or some better set-theoretic algorithm is improved, that improvement should be made narrowly at the Sets owner and should propagate through the retained functors/category graph without coordinated edits in every downstream leaf.
+
+- **Propagation criterion:** A lower-owner improvement that is mathematically inherited should require changes at that owner and, where necessary, its private conversion firewall—not hand edits in every consumer leaf. Needing to patch `Posets`, `Groups`, `Modules`, `Rings`, `TopologicalSpaces`, and `Schemes` independently after improving a generic Sets behavior is evidence that the abstraction failed, even if each patch is individually small. Conversely, an engine-specific enhancement whose semantics really belong only to one leaf should remain confined to that leaf's firewall and should not leak new runtime concepts into `Cat`, kernel, or neighboring leaves.
+
+- **Footgun-prevention criterion:** The point of this separation is not aesthetic terseness. It is to make entire classes of mistakes structurally impossible. A ring author should not be able to choose a different identity-retention policy from a module author; a scheme author should not accidentally reconstruct inherited set maps differently from a poset author; a new backend should not silently create a second notion of category placement; and a leaf should not accidentally bypass the retained universal presentation because it happens to have native coordinates available. Central categorical propagation plus leaf-local conversion firewalls are what prevent those footguns.
+
+- **Cheap mechanical enforcement should be the default:** Many violations of this boundary do not require architectural judgment at all. Import directions between `kernel`, `cat`, `cat_kernel`, production leaves, and engine/firewall modules are static graph properties and should be enforced continuously by ordinary local dependency tooling. The same is true for direct Sage imports outside approved backend boundaries, leaf imports of kernel internals, calls to `refine()` from production leaves, leaf-owned cache/retention registries, construction of compiled role classes, and several other red-flag source shapes already enumerated in `specs/leaves.md`. These should fail a cheap local structural check immediately rather than survive until a later audit.
+
+- **Use mature dependency/QC tooling instead of bespoke review where possible:** The repository should prefer declarative import/dependency contracts and simple AST/static rules for these invariants. `import-linter` is already present and can express much of the package-direction graph; its current scope should be completed so actual production leaves and private firewall packages are covered. The existing ast-grep rules likewise already encode many leaf red flags but often target only witness files; where a rule describes a production invariant, its file scope should include production code. Similar mature dependency-graph/static-analysis tools are acceptable when they better express a boundary. The objective is not to accumulate a large custom checker framework; it is to encode obvious modularity invariants in the smallest reliable local tool that makes violations impossible to overlook.
+
+- **QC should enforce architecture, not certify mathematics:** These structural checks should remain fast and local: forbidden import edges, dependency cycles, forbidden engine leakage, banned runtime/compiler calls in leaves, and similar syntactic/graph invariants. They should not grow into theorem-proving, acceptance paperwork, or broad semantic audits. Mathematical correctness still belongs to the public consumers and category-owned laws. The value of local QC here is precisely that it cheaply protects the isolation boundary so human effort can remain on the mathematics and on genuinely difficult backend conversion problems.
+
+- **Mechanical enforcement now installed (2026-09-17):** `just architecture-boundary` runs pinned Import Linter 2.15 and ast-grep 0.45.0 without Sage. Import Linter now forbids direct production-leaf imports of `kernel`/`cat_kernel` and Sage, and forbids foundation layers from importing production leaves. The production ast-grep scope now covers the black-box red flags that are syntactically reliable there: compiler-state construction, generic leaf category parameters, hand-built property subcategories/retention, import-order wiring, rewritten inherited identity/composition, leaf-owned cache/value stores, manual category initializer threading, and post-construction refinement. Additional firewall rules forbid direct `sage_categories.engines` use and `cat.native` realization registries outside an explicit leaf-local `_firewall/` subtree, and flag `cast(Any, owner).MorphismType/ObjectType/ElementType(...)` compiler-shape leakage. Broader witness rules that produced production false positives (ordinary union annotations, datum properties, generic `is_*` methods, etc.) remain witness-only until they can be made semantically precise; the boundary gate is intended to be strict, not noisy.
+
+- **Priority and work-selection consequence:** This is the **highest-priority architectural complaint and a prerequisite to new leaf extension work**. Finite-poset, general-module, algebra, and scheme expansion should not be used to discover the same missing abstractions repeatedly. First make the leaf contract actually true for the existing production leaves. This should not become another permanent audit loop: it has a concrete terminal behavior — production leaves no longer contain kernel/runtime engineering, and adding a representative new leaf demonstrably requires only mathematical declarations plus engine delegation.
+
+- **Repair direction:** First make the architecture gates apply to actual production leaves so the stated contract cannot be violated invisibly. Then remove direct kernel imports/caches/refinement and direct Sage imports from leaves, moving engine-specific mechanics behind `engines/` or neighboring private engine modules. Give `Cat` the small missing public constructors that currently force leaves to instantiate compiled `MorphismType` classes, manually refine certified structures, or maintain native-retention registries. Eliminate rewritten inherited identity/composition and analogous runtime plumbing where structure functors should supply them. Use representative relation/poset, algebraic, and geometric leaves as proof that the black-box interface is actually sufficient.
+
+- **Repair link and acceptance:** This complaint precedes the active framework-extension nodes in [TODO.md](TODO.md). Resolve it only when the production leaf boundary satisfies the acceptance test above, the production-source architecture gates enforce that boundary, and representative order/algebra/geometry leaves can be authored without kernel/runtime implementation knowledge. Only then should the broader finite-poset/module/algebra/scheme completion DAG be treated as ordinary leaf extension work.
+
 ## Local transcript lookup can fail after daemon restart
 
 - **Mathematical need or user action:** Resume an interrupted repository work unit by searching the local ChatGPT recordings for the predecessor's last accepted/failing consumer and implementation notes.
@@ -221,6 +273,20 @@ Read historical observations at their stated revisions before relying on them.
 - **Additional evidence:** `bwrap --ro-bind / / --proc /proc --dev /dev /bin/true` fails at UID-map setup with `Permission denied`, and there is no Docker, Podman, containerd, or corresponding runtime socket on this host.
   Noninteractive `sudo` also fails.
   Thus the documented OCI research image has no executable local launch path even though `/proc/sys/kernel/unprivileged_userns_clone` is `1`.
+
+- **2026-09-15 correction:** The 2026-09-14 conclusion below incorrectly promoted missing CI/container wrapper infrastructure into a local runtime blocker.
+  The host already has a working stable Sage at `$HOME/.local/bin/sage` (Sage 10.7, Python 3.12.13).  Ordinary Sage algebra and this repository's bootstrap execute through that installation after repairing repository/environment drift: six runtime declarations using Python-3.14-only defaulted type-parameter syntax were translated to the equivalent Python-3.12-compatible `Generic` plus `typing_extensions.TypeVar(default=...)` form; the installed local `sage-categories-homotopy` binding was rebuilt from the repository source so it exposes the current `Cell.is_generator()` API; and the retained Catlab Julia project was reconciled from `PythonCall 0.9.35` to its declared `0.9.31` compatibility.
+  Local acceptance therefore uses the installed host Sage selected by `.envrc`; the `/usr/local/sage-env` wrapper remains CI/alternate-runtime infrastructure and its absence is not a local blocker.
+
+- **2026-09-16 current runtime contract:** The temporary 2026-09-15 accommodation for the host's older Sage 10.7 / Python 3.12 installation and the later Sage 10.9 Conda runtime are superseded.
+  The repository targets the source-built `dzackgarza/sage@develop` line on Python 3.14, aligned with upstream Sage `develop` (currently Sage 10.10.beta10), throughout source, static projection, `.envrc`, and runtime acceptance.
+  Older host/stable installations remain historical evidence only; they do not determine repository source syntax or supported runtime policy.
+
+- **2026-09-14 historical canonical-runtime recheck (superseded 2026-09-16):** The repository `justfile` explicitly names `ghcr.io/dzackgarza/sage:develop` plus `/usr/local/sage-env/{sage,python,sage-preparse}` as the canonical non-relocatable research-Sage execution route, and explicitly rejects substituting upstream/local Sage on Python 3.12. GHCR currently exposes package version `1160962573` with tag `develop`, created and updated 2026-08-22T19:19:16Z, so the canonical image itself still exists.
+  This host cannot execute that documented route: `docker`, `dockerd`, `podman`, and `containerd` are absent; neither Docker nor Podman runtime sockets exist; `/usr/local/sage-env/sage` is absent; noninteractive `sudo` fails; and `unshare -Ur true` fails, so there is no rootless-user-namespace fallback.
+  Existing Python 3.14 environments at `research/.venv`, `sage-indefinite-port/.venv`, `sage-categories/.venv`, and the uv-managed CPython installation all fail `import sage`; the `sage-dev-allopts` fork checkout has no built `.venv` runtime.
+  At that point the tracked `.envrc` no longer fell back to `$HOME/miniforge3/envs/sage/bin/sage`: it selected the `/usr/local/sage-env/sage` wrapper.
+  The 2026-09-16 contract above supersedes that wrapper as the local owner with the source-built fork runtime.
 
 - **2026-09-10 continuation:** `/tmp/sage314` now contains conda-forge Sage 10.9 and Python 3.14.7, but the tracked `.envrc` still selects the older path.
   The new environment's installed distributions include neither the project's SymPy dependency nor DisCoPy, JuliaCall, Maude, or the local homotopy binding.
@@ -664,6 +730,9 @@ Ideas, to be weighed, not obligations.*
 
 ## Finite category limits and colimits duplicate the same native diagram lowering
 
+**Maintenance-state correction — 2026-09-16:** The permanent `bloat-audit-loop` was retired at `6addad16`. References to that node below are historical provenance for findings recorded while the loop existed, not an active queue.
+Concrete unresolved findings belong to their source owner or to a current TODO node; the coherent in-flight findings from the final pass are incorporated by the current consolidation.
+
 - **Mathematical need or user action:** Lower one finite category-valued diagram to `FinSetsForCAP` once, then choose either the native limit or colimit operation without maintaining two copies of the object/arrow encoding.
 
 - **Evidence:** `src/sage_categories/engines/category_limits.py` currently repeats the same `vertex_positions`, per-factor `value_positions`, `native_factors`, and decorated-edge construction in both `compatible_families()` and `identified_objects()`. Only the final CAP operation and projection/injection readback differ.
@@ -805,7 +874,8 @@ Ideas, to be weighed, not obligations.*
 
 - **Evidence and impact:** The earlier audit treated ordinary Python subclassing `MagmaCategory(InserterCategory)` as if it also inherited `InserterCategory.ObjectType` and `MorphismType`.  That is not this repository's category model: `kernel/roles.py::_require_declarations` requires each category to write its own role declarations (`POL-CAT-053`, `POL-CAT-057`), and the compiler derives executable role inheritance from selected structure functors rather than the category class MRO.  After `carrier()`, `structure()`, and `underlying_morphism()` were deleted from the Magma declarations, `tests/geometry/test_ringed_spaces.sage::test_ringed_map_does_not_enumerate_a_represented_open_category` failed during `Rings(Sets)` construction because the constructed magma had no `carrier()` method.
 
-- **Repair link and acceptance:** `bloat-magma-inherited-accessors`. Restore the three Magma-local role declarations instead of changing the compiler or weakening the consumer.  `tests/algebra/test_magma_scaffold.sage::test_left_zero_magma_and_nonidentity_homomorphism` must observe the exact carrier, operation/structure, nonidentity underlying morphism, and forgetful images through the public Magma owner.
+- **Repair link and acceptance:** `bloat-magma-inherited-accessors`. Restore the three Magma-local role declarations instead of changing the compiler or weakening the consumer.
+  `tests/algebra/test_magma_scaffold.sage::test_left_zero_magma_and_nonidentity_homomorphism` must observe the exact carrier, operation/structure, nonidentity underlying morphism, and forgetful images through the public Magma owner.
 
 ## Pullback pair categories repeated faithful factor projections
 
@@ -1758,25 +1828,29 @@ Ideas, to be weighed, not obligations.*
 
 ## Finite presented categories hand-rolled two per-instance caches
 
-- **Evidence and impact:** `FinitePresentedCategory` carried nullable `_finite_arrows` and `_terminal` fields and open-coded first-call mutation in `finite_morphisms()` and `Terminal()`. Both are immutable per-instance query results, while Sage `cached_method` is already the repository owner for exactly this lifecycle. The duplicate protocol added state and branches without mathematical meaning.
+- **Evidence and impact:** `FinitePresentedCategory` carried nullable `_finite_arrows` and `_terminal` fields and open-coded first-call mutation in `finite_morphisms()` and `Terminal()`. Both are immutable per-instance query results, while Sage `cached_method` is already the repository owner for exactly this lifecycle.
+  The duplicate protocol added state and branches without mathematical meaning.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `finite_morphisms()` and `Terminal()` with Sage `cached_method`; remove both nullable fields and return the native reconstruction directly on first evaluation.
 
 ## Finite presented categories wrapped two nullary set results in one-entry MonoDicts
 
-- **Evidence and impact:** `FinitePresentedCategory.object_set()` and `_chosen_morphism_set()` each allocated a per-instance `MonoDict`, then keyed that table by the instance itself to retain exactly one nullary result. The identity table added an extra container and mutation protocol around values already determined solely by the category instance.
+- **Evidence and impact:** `FinitePresentedCategory.object_set()` and `_chosen_morphism_set()` each allocated a per-instance `MonoDict`, then keyed that table by the instance itself to retain exactly one nullary result.
+  The identity table added an extra container and mutation protocol around values already determined solely by the category instance.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache both nullary set-valued accessors with Sage `cached_method` and remove the two one-entry `MonoDict` fields.
 
 ## Limit categories wrapped one nullary structural functor in a one-entry MonoDict
 
-- **Evidence and impact:** `LimitsCategory.limit_functor()` stored its single per-instance result in `_limit_functor: MonoDict` keyed by `self`, then repeated lookup/insertion logic around the actual construction. The category already imports Sage `cached_method`, and the result is determined solely by the instance.
+- **Evidence and impact:** `LimitsCategory.limit_functor()` stored its single per-instance result in `_limit_functor: MonoDict` keyed by `self`, then repeated lookup/insertion logic around the actual construction.
+  The category already imports Sage `cached_method`, and the result is determined solely by the instance.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `limit_functor()` with `cached_method`, keep full-image/product registration inside its first evaluation, and remove the one-entry identity table.
 
 ## Slice-property defining arrows used a one-entry identity cache
 
-- **Evidence and impact:** `SliceProperty.defining_arrow()` allocated `_retained: MonoDict`, keyed it by the slice-property instance, and stored exactly one structural functor. The method result is nullary and immutable for the instance, while Sage `cached_method` is already the cache owner in the module.
+- **Evidence and impact:** `SliceProperty.defining_arrow()` allocated `_retained: MonoDict`, keyed it by the slice-property instance, and stored exactly one structural functor.
+  The method result is nullary and immutable for the instance, while Sage `cached_method` is already the cache owner in the module.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `defining_arrow()` with `cached_method` and remove the one-entry `_retained` table.
 
@@ -1794,25 +1868,29 @@ Ideas, to be weighed, not obligations.*
 
 ## Slice property families hand-rolled an identity-keyed method cache
 
-- **Evidence and impact:** `SliceLikeCategory._property()` maintained `_properties: MonoDict` and open-coded lookup/construct/store around a result determined only by the property-category argument. The identity key is required because category equality is proposition-valued, but that key policy is already supported by Sage `cached_method` through the repository `identity_key` helper.
+- **Evidence and impact:** `SliceLikeCategory._property()` maintained `_properties: MonoDict` and open-coded lookup/construct/store around a result determined only by the property-category argument.
+  The identity key is required because category equality is proposition-valued, but that key policy is already supported by Sage `cached_method` through the repository `identity_key` helper.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `_property(property_category)` with `cached_method(key=identity_key(...))`, retain the product-subobject specialization inside first construction, and remove `_properties`.
 
 ## Image categories reimplemented the generic identity cache
 
-- **Evidence and impact:** `cat/images.py::ImageCategory._identity_morphism_` repeated check/cache/store against the inherited `_identities` table even though `Category._identity_morphism_` is already the repository owner of once-per-object identity retention. The image layer only needs to specialize `construct_identity`; its duplicate lifecycle also skipped the generic owner's native-cell identity retention, self-inverse retention, and `Mor(C).Identity()` refinement.
+- **Evidence and impact:** `cat/images.py::ImageCategory._identity_morphism_` repeated check/cache/store against the inherited `_identities` table even though `Category._identity_morphism_` is already the repository owner of once-per-object identity retention.
+  The image layer only needs to specialize `construct_identity`; its duplicate lifecycle also skipped the generic owner's native-cell identity retention, self-inverse retention, and `Mor(C).Identity()` refinement.
 
 - **Repair link and acceptance:** `bloat-image-identity-override`. Delete the image override and let the generic owner call the image-specific `construct_identity`; pin repeated identity, image membership, retained self-inverse, and `Identity()` placement in the full-image consumer.
 
 ## Category slice constructors hand-rolled two identity-keyed method caches
 
-- **Evidence and impact:** `Category.SliceOver()` and `CosliceUnder()` carried `_slices` and `_coslices` `MonoDict`s and duplicated identity lookup/construct/store around results determined only by the fixed object. The object identity key is required, but Sage `cached_method` already accepts the repository `identity_key` policy.
+- **Evidence and impact:** `Category.SliceOver()` and `CosliceUnder()` carried `_slices` and `_coslices` `MonoDict`s and duplicated identity lookup/construct/store around results determined only by the fixed object.
+  The object identity key is required, but Sage `cached_method` already accepts the repository `identity_key` policy.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache both parameterized slice constructors with `cached_method(key=identity_key(...))`, remove `_slices`/`_coslices`, and keep their mathematical constructors unchanged.
 
 ## Image-category identity used module registries instead of Sage construction caches
 
-- **Evidence and impact:** strict and full images genuinely need retained construction identity: an image category can be requested before or after a functor action, and `register_full_image` can install a universal-construction category as the already-selected full image. What did not need to exist was the parallel `_strict_images`/`_full_images` `MonoDict` implementation of that cache lifecycle; Sage `cached_function` already supports identity-safe keys, cache-presence queries, and explicit `set_cache` registration.
+- **Evidence and impact:** strict and full images genuinely need retained construction identity: an image category can be requested before or after a functor action, and `register_full_image` can install a universal-construction category as the already-selected full image.
+  What did not need to exist was the parallel `_strict_images`/`_full_images` `MonoDict` implementation of that cache lifecycle; Sage `cached_function` already supports identity-safe keys, cache-presence queries, and explicit `set_cache` registration.
 
 - **Repair link and acceptance:** `bloat-image-category-registry-cache`. Make `strict_image` and `full_image` identity-keyed Sage cached functions, use `is_in_cache` for no-side-effect retention checks and `set_cache` for externally supplied full images, and delete both module registries.
 
@@ -1824,7 +1902,8 @@ Ideas, to be weighed, not obligations.*
 
 ## Category point functors hand-rolled a parameterized identity cache
 
-- **Evidence and impact:** `Category.point_functor(member_object)` maintained `_points: MonoDict` and open-coded lookup/construct/store for a result determined only by the exact member-object identity. The cache is necessary because point functors are selected during object construction before placement completes, but the table implementation is not: Sage `cached_method` already accepts the repository `identity_key` policy and preserves one result per exact argument without invoking proposition-valued equality.
+- **Evidence and impact:** `Category.point_functor(member_object)` maintained `_points: MonoDict` and open-coded lookup/construct/store for a result determined only by the exact member-object identity.
+  The cache is necessary because point functors are selected during object construction before placement completes, but the table implementation is not: Sage `cached_method` already accepts the repository `identity_key` policy and preserves one result per exact argument without invoking proposition-valued equality.
 
 - **Repair link and acceptance:** `bloat-point-functor-cache`. Make `point_functor` an identity-keyed Sage cached method, delete `_points`, and preserve the existing runtime consumer that repeated point selection returns the same functor while distinct objects receive distinct point functors.
 
@@ -1836,31 +1915,36 @@ Ideas, to be weighed, not obligations.*
 
 ## Functor-property reflection carried three hand-rolled method caches
 
-- **Evidence and impact:** `FunctorPropertyCategory` used a `TripleDict` for `identity_on_values(source, target)` and two `MonoDict`s for placement-level inheritance/subcategory decisions. All three are pure method results keyed by owned category identity; their lookup/insert branches duplicated Sage method caching while obscuring that the queue/bootstrap state, not the caches, is the only mutable declaration phase.
+- **Evidence and impact:** `FunctorPropertyCategory` used a `TripleDict` for `identity_on_values(source, target)` and two `MonoDict`s for placement-level inheritance/subcategory decisions.
+  All three are pure method results keyed by owned category identity; their lookup/insert branches duplicated Sage method caching while obscuring that the queue/bootstrap state, not the caches, is the only mutable declaration phase.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Use identity-keyed `cached_method` for `identity_on_values` and for the two post-bootstrap placement decisions; remove `_shared_value_functors`, `_declaring`, and `_inheriting` while leaving pending bootstrap declarations unchanged.
 
 ## Limit and colimit families duplicated diagram-lowering caches
 
-- **Evidence and impact:** `ApexCategory` and `ColimitsCategory` each allocated `_lowered: MonoDict` and separately implemented the same identity lookup plus full-subcategory inclusion composition. Lowering is one operation determined by the construction family and diagram, so the two tables duplicated both ownership and cache lifecycle.
+- **Evidence and impact:** `ApexCategory` and `ColimitsCategory` each allocated `_lowered: MonoDict` and separately implemented the same identity lookup plus full-subcategory inclusion composition.
+  Lowering is one operation determined by the construction family and diagram, so the two tables duplicated both ownership and cache lifecycle.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Give diagram lowering one identity-keyed cached function shared by limit and colimit families, remove both `_lowered` tables, and leave each family-specific universal-data path unchanged.
 
 ## Fixed-endpoint Hom categories hand-rolled an identity method cache
 
-- **Evidence and impact:** `MorphismCategory(A, B)` stored fixed-endpoint categories in `_fixed_endpoints: TripleDict` and open-coded identity lookup/construct/store. The category is determined solely by the exact endpoint identities, so the table duplicated Sage method caching and kept a dedicated runtime field for one constructor.
+- **Evidence and impact:** `MorphismCategory(A, B)` stored fixed-endpoint categories in `_fixed_endpoints: TripleDict` and open-coded identity lookup/construct/store.
+  The category is determined solely by the exact endpoint identities, so the table duplicated Sage method caching and kept a dedicated runtime field for one constructor.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Make `MorphismCategory.__call__(domain, codomain)` an identity-keyed `cached_method`, remove `_fixed_endpoints` and its `TripleDict` dependency, and preserve one retained Hom category per exact endpoint pair.
 
 ## Grothendieck objects hand-rolled a two-argument identity cache
 
-- **Evidence and impact:** `GrothendieckCategory(base, fiber)` stored objects in `_objects: TripleDict` and open-coded identity lookup/construct/store even though the total object is determined solely by the exact base and fiber objects. The category already uses identity-keyed Sage cached methods for its other retained constructions.
+- **Evidence and impact:** `GrothendieckCategory(base, fiber)` stored objects in `_objects: TripleDict` and open-coded identity lookup/construct/store even though the total object is determined solely by the exact base and fiber objects.
+  The category already uses identity-keyed Sage cached methods for its other retained constructions.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Make the two-argument object constructor an identity-keyed `cached_method`, remove `_objects` and the now-unused `TripleDict` dependency, and preserve one total object per exact base/fiber pair.
 
 ## Point-indexed shape objects hand-rolled two identity caches
 
-- **Evidence and impact:** `DiscreteCategory` and `ThinCategory` each allocated `_objects: MonoDict` and routed construction through `_point_shape_construct(category, objects, point)`, which open-coded one object per exact carrier point. The cache is necessary because owned point equality is proposition-valued, but both categories already import Sage `cached_method` and the repository `identity_key` policy.
+- **Evidence and impact:** `DiscreteCategory` and `ThinCategory` each allocated `_objects: MonoDict` and routed construction through `_point_shape_construct(category, objects, point)`, which open-coded one object per exact carrier point.
+  The cache is necessary because owned point equality is proposition-valued, but both categories already import Sage `cached_method` and the repository `identity_key` policy.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache both point constructors directly by point identity, remove the two `_objects` tables and the cache parameter from `_point_shape_construct`, and preserve their distinct morphism-admission/equality rules.
 
@@ -1872,145 +1956,174 @@ Ideas, to be weighed, not obligations.*
 
 ## Tagged coproduct objects hand-rolled a two-argument identity cache
 
-- **Evidence and impact:** `_TaggedCategory(index, member)` normalized the public index to a retained shape vertex, then stored the resulting tagged object in `_objects: TripleDict` with explicit lookup/construct/store. The retained object is determined solely by the exact normalized tag and member identities, and the module already carries the repository `identity_key`/`cached_method` machinery.
+- **Evidence and impact:** `_TaggedCategory(index, member)` normalized the public index to a retained shape vertex, then stored the resulting tagged object in `_objects: TripleDict` with explicit lookup/construct/store.
+  The retained object is determined solely by the exact normalized tag and member identities, and the module already carries the repository `identity_key`/`cached_method` machinery.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Keep public index normalization and summand membership checks in `__call__`, cache the normalized tag/member construction in a private identity-keyed method, and remove `_objects` plus the now-unused `TripleDict` import.
 
 ## Formal composition hand-rolled a two-argument identity cache
 
-- **Evidence and impact:** `Category.composite(second, first)` used `_composites: TripleDict` only for the no-ambient formal-composite case, with explicit identity lookup/construct/store. The composite is determined by the exact ordered factor pair; retaining its factors and native cell belongs to first construction, but the dedicated table lifecycle does not.
+- **Evidence and impact:** `Category.composite(second, first)` used `_composites: TripleDict` only for the no-ambient formal-composite case, with explicit identity lookup/construct/store.
+  The composite is determined by the exact ordered factor pair; retaining its factors and native cell belongs to first construction, but the dedicated table lifecycle does not.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Keep composability and ambient delegation in `composite`, move the no-ambient construction to an identity-keyed cached helper, and remove the per-category `_composites` table while preserving retained factors/native composite cells.
 
 ## Morphism-tower construction hand-rolled a one-level dictionary cache
 
-- **Evidence and impact:** `Category.morphism_category(level)` carried `_morphism_categories: dict` but only ever stored key `1`; higher levels recurse through the resulting category. The method itself is a pure nullary-by-level construction on one category, so the bespoke dictionary duplicated Sage method caching and retained an otherwise unused field on every category.
+- **Evidence and impact:** `Category.morphism_category(level)` carried `_morphism_categories: dict` but only ever stored key `1`; higher levels recurse through the resulting category.
+  The method itself is a pure nullary-by-level construction on one category, so the bespoke dictionary duplicated Sage method caching and retained an otherwise unused field on every category.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `morphism_category(level)` directly with Sage `cached_method`, remove `_morphism_categories`, and preserve the recursive `Mor(n+1,C)=Mor(Mor(n,C))` construction.
 
 ## Generalized elements hand-rolled an identity-keyed method cache
 
-- **Evidence and impact:** `Category.element_from_defining_morphism()` used `_elements: MonoDict` only for categories without an ambient, with explicit lookup/construct/store under the exact defining morphism. The ambient delegation is semantic, but the local retention lifecycle duplicates the same identity-keyed Sage method cache now used elsewhere in `Category`.
+- **Evidence and impact:** `Category.element_from_defining_morphism()` used `_elements: MonoDict` only for categories without an ambient, with explicit lookup/construct/store under the exact defining morphism.
+  The ambient delegation is semantic, but the local retention lifecycle duplicates the same identity-keyed Sage method cache now used elsewhere in `Category`.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Keep membership validation and ambient delegation public, move local element construction to an identity-keyed cached helper, and remove `_elements`.
 
 ## Walking-arrow diagrams hand-rolled an identity-keyed method cache
 
-- **Evidence and impact:** `Category.arrow_functor(morphism)` maintained `_arrows: MonoDict` and open-coded lookup/construct/store even though the `[1] -> C` diagram is determined solely by the exact morphism identity. The table added a category field and a second cache protocol around a pure method result.
+- **Evidence and impact:** `Category.arrow_functor(morphism)` maintained `_arrows: MonoDict` and open-coded lookup/construct/store even though the `[1] -> C` diagram is determined solely by the exact morphism identity.
+  The table added a category field and a second cache protocol around a pure method result.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Cache `arrow_functor` directly with Sage `cached_method(key=identity_key(...))`, remove `_arrows`, and keep its endpoint identities and nonidentity arrow action unchanged.
 
 ## Axiom property categories hand-rolled an identity method cache
 
-- **Evidence and impact:** `Axiom.subcategory(category, *parameters)` maintained `_constructed` under `identity_key(...)` and duplicated lookup/construct/store solely to retain one property category per exact argument tuple. Its only extra reader, `is_constructed`, needs a no-side-effect cache-presence query, which Sage `cached_method` already exposes.
+- **Evidence and impact:** `Axiom.subcategory(category, *parameters)` maintained `_constructed` under `identity_key(...)` and duplicated lookup/construct/store solely to retain one property category per exact argument tuple.
+  Its only extra reader, `is_constructed`, needs a no-side-effect cache-presence query, which Sage `cached_method` already exposes.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Make `subcategory` an identity-keyed cached method, implement `is_constructed` with `subcategory.is_in_cache(...)`, and remove `_constructed` without changing axiom construction or inverse-image semantics.
 
 ## Strict-limit compatibility hand-rolled an identity decision cache
 
-- **Evidence and impact:** `LimitCategory` stored unconditional component-agreement decisions in `_agreement: MonoDict` and the predicate handler manually checked, computed, and retained them. The cached value is a pure result of the exact candidate family under no assumptions; conditional decisions deliberately remain uncached.
+- **Evidence and impact:** `LimitCategory` stored unconditional component-agreement decisions in `_agreement: MonoDict` and the predicate handler manually checked, computed, and retained them.
+  The cached value is a pure result of the exact candidate family under no assumptions; conditional decisions deliberately remain uncached.
 
 - **Repair link and acceptance:** `bloat-audit-loop`. Put unconditional compatibility behind an identity-keyed cached method, use `is_in_cache` to reuse it under later assumptions without constructing anything, and remove `_agreement` while leaving conditional predicate evaluation unchanged.
 
 ## Finite-category evaluation hand-rolled a positive-result identity cache
 
-- **Evidence and impact:** `cat/finite_categories.py::finite_category()` kept a module-level `_retained: MonoDict` and manually implemented lookup/evaluate/store for positive finite evaluations. The cache itself is justified because native finite reconstruction is expensive, while `Unknown` must remain uncached so later retained data can make the same category finite; the parallel container protocol is not justified because Sage's cached-function API already exposes identity keys, cache-presence queries, and explicit `set_cache` for exactly that conditional-retention lifecycle.
+- **Evidence and impact:** `cat/finite_categories.py::finite_category()` kept a module-level `_retained: MonoDict` and manually implemented lookup/evaluate/store for positive finite evaluations.
+  The cache itself is justified because native finite reconstruction is expensive, while `Unknown` must remain uncached so later retained data can make the same category finite; the parallel container protocol is not justified because Sage's cached-function API already exposes identity keys, cache-presence queries, and explicit `set_cache` for exactly that conditional-retention lifecycle.
 
 - **Repair link and acceptance:** `bloat-finite-category-retention-cache`. Keep positive-only retention semantics, move the cache to an identity-keyed Sage `cached_function`, use `is_in_cache`/`set_cache` so `Unknown` is never retained, and delete the module-level `_retained` registry.
 
 ## Cat singleton used a nullable module-global memoization protocol
 
-- **Evidence and impact:** `cat/category.py` kept `_CAT: CategoryOfCategories | None` solely to store the one bootstrapped `Cat()` object; `bootstrap()` open-coded the empty check and assignment, and `Cat()` was only a getter over that cache. The singleton itself is mathematically required, but this parallel memoization mechanism is not: Sage's nullary `cached_function` already owns one-value retention and explicit `set_cache` installation for externally constructed results.
+- **Evidence and impact:** `cat/category.py` kept `_CAT: CategoryOfCategories | None` solely to store the one bootstrapped `Cat()` object; `bootstrap()` open-coded the empty check and assignment, and `Cat()` was only a getter over that cache.
+  The singleton itself is mathematically required, but this parallel memoization mechanism is not: Sage's nullary `cached_function` already owns one-value retention and explicit `set_cache` installation for externally constructed results.
 
 - **Repair link and acceptance:** `bloat-cat-singleton-cache`. Make `Cat()` a nullary Sage cached function whose uncached body fails before bootstrap, have `bootstrap()` construct the self-referential category once and install it with `set_cache`, and delete `_CAT` entirely while preserving stable singleton identity after import.
 
 ## Enumeration index inclusions hand-rolled a second retention cache
 
-- **Evidence and impact:** a chosen enumeration genuinely carries extra mathematical data: its index set embeds into `NN`, and callers may supply that inclusion explicitly, so the association itself should exist. What should not exist is the separate `_enumeration_indices: MonoDict` plus manual lookup/store protocol around it; `SetsCategory.enumeration_index_inclusion()` is already the natural method owner and Sage `cached_method` supports exact identity keys, cache-presence checks, and explicit `set_cache` installation for supplied results.
+- **Evidence and impact:** a chosen enumeration genuinely carries extra mathematical data: its index set embeds into `NN`, and callers may supply that inclusion explicitly, so the association itself should exist.
+  What should not exist is the separate `_enumeration_indices: MonoDict` plus manual lookup/store protocol around it; `SetsCategory.enumeration_index_inclusion()` is already the natural method owner and Sage `cached_method` supports exact identity keys, cache-presence checks, and explicit `set_cache` installation for supplied results.
 
 - **Repair link and acceptance:** `bloat-enumeration-index-cache`. Make `enumeration_index_inclusion()` an identity-keyed cached method, install supplied inclusions through `set_cache`, preserve conflicting re-registration failure, and delete `_enumeration_indices` entirely.
 
 ## Canonical narrowing registration still targeted the deleted cache
 
-- **Evidence and impact:** after `_narrowing(selected)` moved canonical narrowing construction to Sage `cached_method`, `Category.retain_intersection()` still read and wrote `self._narrowings`, a table that no longer exists. The external-registration mechanism itself is required because pullback/intersection construction can supply an already-built canonical narrowing, but it must seed the same cache that ordinary `intersection()` reads rather than a parallel or stale registry.
+- **Evidence and impact:** after `_narrowing(selected)` moved canonical narrowing construction to Sage `cached_method`, `Category.retain_intersection()` still read and wrote `self._narrowings`, a table that no longer exists.
+  The external-registration mechanism itself is required because pullback/intersection construction can supply an already-built canonical narrowing, but it must seed the same cache that ordinary `intersection()` reads rather than a parallel or stale registry.
 
 - **Repair link and acceptance:** `bloat-narrowing-registration-cache`. Normalize the supplied roots through `closed_roots`, use `_narrowing.is_in_cache(...)` to verify an existing registration and `_narrowing.set_cache(...)` to install a new one, and remove the final `_narrowings` references.
 
 ## Chosen enumerations hand-rolled their positive-result cache
 
-- **Evidence and impact:** a chosen enumeration is genuine retained mathematical data because callers may select a noncanonical indexing and later constructions must recover that exact choice. The module-level `_enumerations: MonoDict` and repeated lookup/store branches should not exist, however: the selection is a positive-only cache keyed by the exact set object, and Sage's `cached_function` already supports identity keys, cache-presence checks, and `set_cache` installation without ever caching `Unknown`.
+- **Evidence and impact:** a chosen enumeration is genuine retained mathematical data because callers may select a noncanonical indexing and later constructions must recover that exact choice.
+  The module-level `_enumerations: MonoDict` and repeated lookup/store branches should not exist, however: the selection is a positive-only cache keyed by the exact set object, and Sage's `cached_function` already supports identity keys, cache-presence checks, and `set_cache` installation without ever caching `Unknown`.
 
 - **Repair link and acceptance:** `bloat-chosen-enumeration-cache`. Replace `_enumerations` with an identity-keyed `_retained_enumeration` cached function whose uncached body is not a constructor; install finite, product, and supplied enumerations through `set_cache`, keep absent/unknown cases uncached, and route all enumeration-presence queries through the cache API.
 
 ## Presented groups retained a native-parent registry that factorization did not need
 
-- **Evidence and impact:** `_owned_group(engine)` wrote every reconstructed group into `_native_group_engines`, but the only reader was `GroupPresentation.factor(target, generator_images)`. Factorization already receives one image for every presentation generator, and those validated Sage group elements carry their exact native target parent. Retaining a second group-to-parent registry therefore duplicated information already present at the operation boundary and extended native-engine lifetime/state for no additional mathematical capability.
+- **Evidence and impact:** `_owned_group(engine)` wrote every reconstructed group into `_native_group_engines`, but the only reader was `GroupPresentation.factor(target, generator_images)`. Factorization already receives one image for every presentation generator, and those validated Sage group elements carry their exact native target parent.
+  Retaining a second group-to-parent registry therefore duplicated information already present at the operation boundary and extended native-engine lifetime/state for no additional mathematical capability.
 
 - **Repair link and acceptance:** `bloat-presented-group-engine-registry`. Delete `_native_group_engines` and `_native_engine`; after validating the public target points, derive their one common Sage parent from the image data and pass it directly to the native quotient homomorphism constructor.
 
 ## Indexed integer modules retained derivable owner/carrier metadata
 
-- **Evidence and impact:** `_indexed_integer_module_data` stored `(Modules(ZZ, Ab), carrier)` for every indexed free integer module. Neither value is independent construction data: the integer-module category is the already-selected cached `Modules(integer_scalar_monoid(), SelfAction(AbelianTensor()))`, and its forgetful functor recovers the module's additive carrier. Indexed-freeness itself is already certified by `_indexed_free_record(carrier)`. The registry therefore duplicated public ownership/forgetful structure and served only as a parallel marker.
+- **Evidence and impact:** `_indexed_integer_module_data` stored `(Modules(ZZ, Ab), carrier)` for every indexed free integer module.
+  Neither value is independent construction data: the integer-module category is the already-selected cached `Modules(integer_scalar_monoid(), SelfAction(AbelianTensor()))`, and its forgetful functor recovers the module's additive carrier.
+  Indexed-freeness itself is already certified by `_indexed_free_record(carrier)`. The registry therefore duplicated public ownership/forgetful structure and served only as a parallel marker.
 
 - **Repair link and acceptance:** `bloat-indexed-module-data-registry`. Delete the record class and `MonoDict`; recover the shared integer-module owner and forgetful carrier at use sites, validate the carrier through `_indexed_free_record`, and keep indexed element/support/coefficient/homomorphism operations otherwise unchanged.
 
 ## CAP cokernels retained a reverse registry for data the universal presentation already owns
 
-- **Evidence and impact:** `engines/presented_modules.py` stored `_cokernel_differences[projection] = first-second` solely so a later colift could recover the native difference from the selected projection. The owned coequalizer presentation already retains the defining parallel diagram, and `abelian.coequalizer_mediator()` explicitly locates that exact presentation before crossing the engine boundary. The reverse registry therefore duplicated universal-construction provenance and kept a second source of truth for which pair a projection coequalizes.
+- **Evidence and impact:** `engines/presented_modules.py` stored `_cokernel_differences[projection] = first-second` solely so a later colift could recover the native difference from the selected projection.
+  The owned coequalizer presentation already retains the defining parallel diagram, and `abelian.coequalizer_mediator()` explicitly locates that exact presentation before crossing the engine boundary.
+  The reverse registry therefore duplicated universal-construction provenance and kept a second source of truth for which pair a projection coequalizes.
 
 - **Repair link and acceptance:** `bloat-cokernel-difference-registry`. Pass the retained public pair to the CAP colift boundary, reconstruct its native difference from the already-retained native morphisms, and delete `_cokernel_differences` entirely.
 
 ## Relative tensor stored fake coequalizer provenance for the strict unit case
 
-- **Evidence and impact:** when both balancing actions are the selected unit actions, `relative_tensor()` returns the literal identity on the ordinary tensor product. `_identity_coequalizers` nevertheless stored that identity in a side registry so the generic additive `coequalizer_mediator()` would pretend it came from a retained cokernel presentation. The stored action pair was never read. This mechanism should not exist: the strict unit simplification belongs to the relative-tensor owner, while the additive coequalizer API should remain about actual retained coequalizers.
+- **Evidence and impact:** when both balancing actions are the selected unit actions, `relative_tensor()` returns the literal identity on the ordinary tensor product.
+  `_identity_coequalizers` nevertheless stored that identity in a side registry so the generic additive `coequalizer_mediator()` would pretend it came from a retained cokernel presentation.
+  The stored action pair was never read.
+  This mechanism should not exist: the strict unit simplification belongs to the relative-tensor owner, while the additive coequalizer API should remain about actual retained coequalizers.
 
 - **Repair link and acceptance:** `bloat-relative-identity-coequalizer-registry`. Delete the marker and its writes; factor internal relative-tensor maps directly through the cached identity in the strict unit case, and send every nonidentity relative projection through the real additive coequalizer mediator.
 
 ## Generated axiom applications duplicated their declaration owner in a registry
 
-- **Evidence and impact:** `cat_kernel/axioms.py` stored `(owner, application_name) -> axiom` in `_derived_applications` even though the generated method itself is installed on that exact owner and can retain the declaring axiom directly. The registry duplicated ownership state solely so compiler collision checks could recover information already attached to the declaration.
+- **Evidence and impact:** `cat_kernel/axioms.py` stored `(owner, application_name) -> axiom` in `_derived_applications` even though the generated method itself is installed on that exact owner and can retain the declaring axiom directly.
+  The registry duplicated ownership state solely so compiler collision checks could recover information already attached to the declaration.
 
 - **Repair link and acceptance:** `bloat-axiom-application-registry`. Retain the declaring axiom on the generated function, make `application_axiom()` read the owner's exact namespace and function state, and delete `_derived_applications` without changing generated predicate semantics or collision handling.
 
 ## Catlab functors kept a second provenance graph beside the owned category theory
 
-- **Evidence and impact:** `_functor_recipes` recorded whether an owned functor was an identity or a composite solely so lazy Catlab materialization could choose Catlab's identity/composition constructors. Those facts are already authoritative public structure: identity functors are placed in the morphism category's `Identity()` subcategory, and composites retain their exact factors through `MorphismType.retain_factors`. The recipe registry therefore duplicated semantic provenance, with two writers in `CategoryOfCategories.construct_identity` and `_composite_functor` that had to stay synchronized with the public declarations.
+- **Evidence and impact:** `_functor_recipes` recorded whether an owned functor was an identity or a composite solely so lazy Catlab materialization could choose Catlab's identity/composition constructors.
+  Those facts are already authoritative public structure: identity functors are placed in the morphism category's `Identity()` subcategory, and composites retain their exact factors through `MorphismType.retain_factors`. The recipe registry therefore duplicated semantic provenance, with two writers in `CategoryOfCategories.construct_identity` and `_composite_functor` that had to stay synchronized with the public declarations.
 
 - **Repair link and acceptance:** `bloat-catlab-functor-recipes`. Remove the functor recipe table and its writer API; when Catlab materializes a functor, read identity placement or retained factors from the owned functor itself, and use the declared callable actions only for primitive functors.
 
 ## Predicate atom classes hand-rolled a plain type cache
 
-- **Evidence and impact:** `kernel/predicates.py::_atom_type(domain)` maintained `_atom_types: dict[type, type[_OwnedValueAtom]]` with explicit lookup/store around a pure result of the exact runtime type and its retained semantic bases. The dictionary duplicated Python's standard function-cache protocol without carrying independent mathematical state.
+- **Evidence and impact:** `kernel/predicates.py::_atom_type(domain)` maintained `_atom_types: dict[type, type[_OwnedValueAtom]]` with explicit lookup/store around a pure result of the exact runtime type and its retained semantic bases.
+  The dictionary duplicated Python's standard function-cache protocol without carrying independent mathematical state.
 
 - **Repair link and acceptance:** `bloat-predicate-atom-type-cache`. Make `_atom_type` `functools.cache`-owned, remove `_atom_types`, and preserve recursive semantic-base atom construction plus owned-value refinement behavior.
 
 ## The centralized CW-open datum boundary recursed into itself
 
-- **Evidence and impact:** `geometry/cw.py::_cw_open_datum()` called itself unconditionally, so every finite-stage open preimage routed through infinite recursion. The projective-infinity path then bypassed the separately declared `_weak_cw_open_datum()` and cast the broken finite helper's result back to a weak open, leaving the refactor's two typed boundaries inconsistent and its weak helper dead.
+- **Evidence and impact:** `geometry/cw.py::_cw_open_datum()` called itself unconditionally, so every finite-stage open preimage routed through infinite recursion.
+  The projective-infinity path then bypassed the separately declared `_weak_cw_open_datum()` and cast the broken finite helper's result back to a weak open, leaving the refactor's two typed boundaries inconsistent and its weak helper dead.
 
 - **Repair link and acceptance:** `bloat-cw-open-datum-regression`. Restore the finite helper to unwrap `point().datum()`, route weak-colimit inverse images through `_weak_cw_open_datum()`, and preserve the distinct finite/weak open representations without repeated cast chains.
 
 ## Primitive Catlab transformations duplicated data already owned by NaturalTransformationData
 
-- **Evidence and impact:** every `_construct_transformation()` created a `NaturalTransformationData(assignment, source_functor, target_functor)` and then immediately copied the same three values into Catlab's `_transformation_recipes` as a `"callable"` recipe. Lazy Catlab execution already has a no-recipe path that reads `source_functor()`, `target_functor()`, and `component` directly from the transformation, so the primitive recipe did not provide a second capability; specialized identity/composition/whiskering/horizontal recipes are distinct because they select Catlab-native structural operations.
+- **Evidence and impact:** every `_construct_transformation()` created a `NaturalTransformationData(assignment, source_functor, target_functor)` and then immediately copied the same three values into Catlab's `_transformation_recipes` as a `"callable"` recipe.
+  Lazy Catlab execution already has a no-recipe path that reads `source_functor()`, `target_functor()`, and `component` directly from the transformation, so the primitive recipe did not provide a second capability; specialized identity/composition/whiskering/horizontal recipes are distinct because they select Catlab-native structural operations.
 
 - **Repair link and acceptance:** `bloat-catlab-callable-transformation-recipe`. Delete the primitive callable-recipe writer and engine export, leave primitive transformations with only their owned `NaturalTransformationData`, and keep the specialized structural recipes for native Catlab operations.
 
 ## Finite engine adapters duplicated the same identity-position helper
 
-- **Evidence and impact:** both `engines/finite_sets.py` and `engines/category_limits.py` defined the same `_identity_positions(values)` loop that built a Sage `MonoDict` mapping retained values to tuple positions. The code exists only to enforce identity-keyed indexing without invoking proposition-valued equality, which is a repository-wide retention primitive rather than engine-specific mathematics.
+- **Evidence and impact:** both `engines/finite_sets.py` and `engines/category_limits.py` defined the same `_identity_positions(values)` loop that built a Sage `MonoDict` mapping retained values to tuple positions.
+  The code exists only to enforce identity-keyed indexing without invoking proposition-valued equality, which is a repository-wide retention primitive rather than engine-specific mathematics.
 
 - **Repair link and acceptance:** `bloat-shared-identity-positions`. Move the identity-position construction beside `identity_key` in `kernel.retention`, delete both engine-local implementations, and route finite-set and category-limit lowering through the shared owner.
 
 ## Finite diagram presentations kept a third identity-position loop
 
-- **Evidence and impact:** after the finite-set and category-limit engine adapters were consolidated on `kernel.retention.identity_positions`, `cat/limit_basis.py::diagram_presentation()` still repeated the same `MonoDict` enumerate/store loop for retained vertices. That left the same identity-indexing mechanism with two owners immediately after its consolidation.
+- **Evidence and impact:** after the finite-set and category-limit engine adapters were consolidated on `kernel.retention.identity_positions`, `cat/limit_basis.py::diagram_presentation()` still repeated the same `MonoDict` enumerate/store loop for retained vertices.
+  That left the same identity-indexing mechanism with two owners immediately after its consolidation.
 
 - **Repair link and acceptance:** `bloat-limit-basis-shared-position-helper`. Reuse `identity_positions(values)` for finite diagram presentations and remove the local `MonoDict` dependency without changing the incidence maps.
 
 ## Homotopy cells retained a first-owner registry for an owner already determined by category construction
 
-- **Evidence and impact:** `engines/cells.py` stored `_cell_owners[value] = proposed_owner` on the first native-cell operation so later refinement would reuse that first owner. The owner is not independent retained data: the supplied category already states which category owns construction through `construction_owner()`, and a cell's higher `Mor` levels peel to that same root category. The registry therefore duplicated category ownership solely to defend against later placement changes.
+- **Evidence and impact:** `engines/cells.py` stored `_cell_owners[value] = proposed_owner` on the first native-cell operation so later refinement would reuse that first owner.
+  The owner is not independent retained data: the supplied category already states which category owns construction through `construction_owner()`, and a cell's higher `Mor` levels peel to that same root category.
+  The registry therefore duplicated category ownership solely to defend against later placement changes.
 
 - **Repair link and acceptance:** `bloat-cell-owner-registry`. Normalize every supplied cell owner by peeling the `MorphismCategory` tower and taking the public `construction_owner()`, then delete `_cell_owners` and `_cell_owner`; native state remains keyed only by that canonical construction owner.
 
@@ -2028,30 +2141,35 @@ Ideas, to be weighed, not obligations.*
 
 ## The additive owner retained an unused carrier-map wrapper
 
-- **Evidence and impact:** `algebra/abelian.py::_point_map()` was a two-line wrapper around `_forgetful().on_morphism(arrow)` with no source or test callers. The public forgetful functor is already the owner of that operation, so the wrapper carried no retained state, abstraction boundary, or reuse and simply enlarged the private additive surface.
+- **Evidence and impact:** `algebra/abelian.py::_point_map()` was a two-line wrapper around `_forgetful().on_morphism(arrow)` with no source or test callers.
+  The public forgetful functor is already the owner of that operation, so the wrapper carried no retained state, abstraction boundary, or reuse and simply enlarged the private additive surface.
 
 - **Repair link and acceptance:** `bloat-additive-dead-point-map`. Delete `_point_map`, keep `_points` for the still-used carrier-object boundary, and leave morphism forgetting at the public forgetful-functor call sites.
 
 ## Catlab retained an unused native-transformation lookup wrapper
 
-- **Evidence and impact:** `engines/catlab.py::_native_transformation()` only asserted retention and returned `retained_native_transformation(value).native`; no source or test caller used it. Active execution already goes through `ensure_native_transformation()` when materialization may be needed and through the retained realization API when presence is known.
+- **Evidence and impact:** `engines/catlab.py::_native_transformation()` only asserted retention and returned `retained_native_transformation(value).native`; no source or test caller used it.
+  Active execution already goes through `ensure_native_transformation()` when materialization may be needed and through the retained realization API when presence is known.
 
 - **Repair link and acceptance:** `bloat-catlab-dead-native-transformation-wrapper`. Delete the dead wrapper and keep the two actual native-transformation boundaries unchanged.
 
 ## Set morphisms retained an unused eager table accessor
 
-- **Evidence and impact:** `SetsCategory.MorphismType._table` rebuilt `{datum: image}` by evaluating every value of an enumerated domain, but no source or test caller read the property. Besides being dead surface, the accessor encoded eager materialization directly on a morphism whose ordinary execution already lives in `_action` and whose finite native realization has its own engine boundary.
+- **Evidence and impact:** `SetsCategory.MorphismType._table` rebuilt `{datum: image}` by evaluating every value of an enumerated domain, but no source or test caller read the property.
+  Besides being dead surface, the accessor encoded eager materialization directly on a morphism whose ordinary execution already lives in `_action` and whose finite native realization has its own engine boundary.
 
 - **Repair link and acceptance:** `bloat-dead-set-map-table`. Delete `_table` entirely and leave finite map tabulation/native lowering at their actual construction owners.
 
 ## The compiler retained an unused whole-runtime implementation scan
 
-- **Evidence and impact:** `kernel/compiler.py::runtime_implementation_class(declaration)` walked every `_node_runtimes` table and compared semantic declarations to recover a compiled class, but no source, test, script, or exported API referenced it. Active compiler paths already address runtime classes through exact `Node` keys and use `runtime_declaration()` only in the opposite direction.
+- **Evidence and impact:** `kernel/compiler.py::runtime_implementation_class(declaration)` walked every `_node_runtimes` table and compared semantic declarations to recover a compiled class, but no source, test, script, or exported API referenced it.
+  Active compiler paths already address runtime classes through exact `Node` keys and use `runtime_declaration()` only in the opposite direction.
 
 - **Repair link and acceptance:** `bloat-dead-runtime-implementation-lookup`. Delete the unused scan rather than retaining an O(all runtime classes) private API with no owner or consumer.
 
 ## Standard Cartesian dispatch accidentally widened the old exact-type contract
 
-- **Evidence and impact:** replacing `_cartesian_comparison_handlers[type(base)]` with `functools.singledispatch` changed dispatch from exact concrete type to MRO-based inheritance. A subclass that had not selected the finite native comparison engine could therefore inherit a handler merely from its Python base class, which is a runtime implementation relation rather than an owned categorical declaration.
+- **Evidence and impact:** replacing `_cartesian_comparison_handlers[type(base)]` with `functools.singledispatch` changed dispatch from exact concrete type to MRO-based inheritance.
+  A subclass that had not selected the finite native comparison engine could therefore inherit a handler merely from its Python base class, which is a runtime implementation relation rather than an owned categorical declaration.
 
 - **Repair link and acceptance:** `bloat-cartesian-exact-dispatch-regression`. Keep the standard dispatcher for registration, but guard each registered wrapper with `type(base) is category_type` so unregistered subclasses still fall through to no native comparison.

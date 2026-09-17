@@ -20,6 +20,7 @@ from sage_categories.cat.structured_objects import InserterCategory as InserterC
 from sage_categories.cat.structured_objects import MonoidCategory as MonoidCategory
 from sage_categories.cat.structured_objects import Monoids as Monoids
 from sage_categories.engines.presented_modules import tensor_morphism as tensor_morphism
+from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method

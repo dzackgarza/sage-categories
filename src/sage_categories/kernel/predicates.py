@@ -257,6 +257,7 @@ def bind_property_predicate(owner: OwnedPredicate, category: Category) -> None:
 
 def mark_identity_predicate(owner: OwnedPredicate) -> None:
     """Make object identity the generic exact positive case of an equality predicate."""
+
     def identical(first: _OwnedValueAtom, second: _OwnedValueAtom, assumptions: Proposition) -> bool | None:
         return True if _owned_argument(first) is _owned_argument(second) else None
 

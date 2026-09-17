@@ -210,10 +210,7 @@ def free_associative_substitution(
     if any(image.parent() is not module for image in images):
         raise ValueError("generator images belong to the algebra's underlying module")
     source_module = construction.word_module
-    image_terms = tuple(
-        indexed_free_integer_coefficients(source_module, source_module.point(image.datum()))
-        for image in images
-    )
+    image_terms = tuple(indexed_free_integer_coefficients(source_module, source_module.point(image.datum())) for image in images)
 
     def basis_image(word: Word):
         terms = _backend.substitute(algebra, {word: 1}, image_terms)

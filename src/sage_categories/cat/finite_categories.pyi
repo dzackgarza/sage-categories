@@ -1,0 +1,30 @@
+from dataclasses import dataclass
+from sage_categories.cat.canonical import FinitePresentedCategory as FinitePresentedCategory
+from sage_categories.cat.cat_constructions import LimitCategory as LimitCategory
+from sage_categories.cat.category import Category as Category, CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.comma import CommaCategory as CommaCategory
+from sage_categories.cat.declarations import Sets as Sets
+from sage_categories.cat.functors import Cat as Cat, FunctorCategory as FunctorCategory
+from sage_categories.cat.morphisms import Mor as Mor, MorphismCategory as MorphismCategory
+from sage_categories.cat.opposites import OppositeCategory as OppositeCategory, opposite_morphism as opposite_morphism
+from sage_categories.cat.predicates import Unknown as Unknown, UnknownClass as UnknownClass, ask as ask
+from sage_categories.cat.shapes import DiscreteCategory as DiscreteCategory
+from sage_categories.kernel.retention import identity_key as identity_key
+from sage_categories.kernel.sage_runtime import MonoDict as MonoDict, cached_function as cached_function
+
+@dataclass(frozen=True)
+class FiniteCategoryData:
+    objects: tuple[CategoryOfCategories.ElementType, ...]
+    morphisms: tuple[MorphismCategory.ObjectType, ...]
+
+def position[Value: CategoryOfCategories.ElementType](values: tuple[Value, ...], value: Value) -> int:
+    ...
+
+def equal(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> bool:
+    ...
+
+def finite_category(category: CategoryOfCategories.ElementType) -> FiniteCategoryData | UnknownClass:
+    ...
+
+def finite_objects(category: Category) -> tuple[CategoryOfCategories.ElementType, ...] | UnknownClass:
+    ...

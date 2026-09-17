@@ -1,6 +1,6 @@
 version = 1
 revision = 3
-requires-python = ">=3.12,<3.15"
+requires-python = "==3.14.*"
 
 [manifest]
 members = [
@@ -817,7 +817,6 @@ dependencies = [
     { name = "multimethod" },
     { name = "plum-dispatch" },
     { name = "sympy" },
-    { name = "typing-extensions" },
     { name = "wrapt" },
 ]
 
@@ -848,7 +847,6 @@ requires-dist = [
     { name = "multimethod", specifier = ">=2.1" },
     { name = "plum-dispatch", specifier = ">=2.9,<3" },
     { name = "sympy", specifier = ">=1.14,<2" },
-    { name = "typing-extensions", specifier = ">=4.12" },
     { name = "wrapt" },
 ]
 

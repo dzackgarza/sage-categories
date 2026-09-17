@@ -1597,79 +1597,61 @@ The user decided the construction and the neutral `operation()`; the choice of `
 
 ### D186
 
-`PLAN-native-engine-remediation` is the sole governing remediation and integration
-plan. Its body is the supplied detailed plan verbatim. It supersedes all earlier
-project plans and their work orders, including the core-convergence, minimal
-scaffold, categorical-ownership DAG, and separate static-projection programmes.
+`PLAN-native-engine-remediation` is the sole governing remediation and integration plan.
+Its body is the supplied detailed plan verbatim.
+It supersedes all earlier project plans and their work orders, including the core-convergence, minimal scaffold, categorical-ownership DAG, and separate static-projection programmes.
 
-The existing mathematical contracts, complete public consumers, and valid
-exact-revision evidence are retained. Historical planning references describe prior work; their
-completion labels and phase order do not establish acceptance of the native
-replacement. In particular, D184's scaffold-only delivery restriction no longer
-limits remediation. The governing plan retains its complete native integration,
-operation-family, deletion, geometry, and static-projection obligations.
+The existing mathematical contracts, complete public consumers, and valid exact-revision evidence are retained.
+Historical planning references describe prior work; their completion labels and phase order do not establish acceptance of the native replacement.
+In particular, D184's scaffold-only delivery restriction no longer limits remediation.
+The governing plan retains its complete native integration, operation-family, deletion, geometry, and static-projection obligations.
 
-Owner: the project-vault plan, retrieved with
-`agent-memory plan show PLAN-native-engine-remediation`. Repository continuation
-entrypoints link to that owner rather than duplicate its body.
+Owner: the project-vault plan, retrieved with `agent-memory plan show PLAN-native-engine-remediation`. Repository continuation entrypoints link to that owner rather than duplicate its body.
 
-Source: explicit plan-adoption and supersession instruction in the SageCategories
-remediation-consolidation conversation, 2026-09-07. The supplied artifact is
-`SageCategories-Detailed-Remediation-Plan.md`, SHA-256
-`525cb453efb5712897be5faf409b3b3c09a5cb402f3e4d7a759a450ba527cf63`.
+Source: explicit plan-adoption and supersession instruction in the SageCategories remediation-consolidation conversation, 2026-09-07. The supplied artifact is `SageCategories-Detailed-Remediation-Plan.md`, SHA-256 `525cb453efb5712897be5faf409b3b3c09a5cb402f3e4d7a759a450ba527cf63`.
 
 ### D187
 
-Infinite objects, nonenumerable objects, and infinitary constructions belong to the
-framework's mathematical scope. `ZZ`, `RR`, `CP^infty`, adeles, and infinitely
-generated modules such as the module underlying a free finitely presented algebra
-are explicit motivating requirements. Finite or enumerable engine representations
-cannot restrict that scope.
+Infinite objects, nonenumerable objects, and infinitary constructions belong to the framework's mathematical scope.
+`ZZ`, `RR`, `CP^infty`, adeles, and infinitely generated modules such as the module underlying a free finitely presented algebra are explicit motivating requirements.
+Finite or enumerable engine representations cannot restrict that scope.
 
-Owner: [Mathematical generality and computation](computational-generality.md), with
-the set, module, and algebra consequences at their topic owners. This clarifies
-`POL-GEN-012`, D27, and D68; it does not change the governing implementation order
-or certify any implementation.
+Owner: [Mathematical generality and computation](computational-generality.md), with the set, module, and algebra consequences at their topic owners.
+This clarifies `POL-GEN-012`, D27, and D68; it does not change the governing implementation order or certify any implementation.
 
-The accompanying workflow changes extend D182. They require preserving the domain
-of replaced operations, separating inner engine calls from complete consumer
-acceptance, and examining which assertions actually execute. Temporal judgments
-follow retained capabilities, regressions, and restorations over observed work
-intervals. The proposed causal chain from backend convenience to narrowed proof
-and premature acceptance is an inference from inspected work, not a claim about
-the worker's intent.
+The accompanying workflow changes extend D182. They require preserving the domain of replaced operations, separating inner engine calls from complete consumer acceptance, and examining which assertions actually execute.
+Temporal judgments follow retained capabilities, regressions, and restorations over observed work intervals.
+The proposed causal chain from backend convenience to narrowed proof and premature acceptance is an inference from inspected work, not a claim about the worker's intent.
 
-Source: explicit temporal-assessment and subsequent policy/specification instruction
-in Codex session `01a08089-fe93-77b0-b6bb-cbc9d7b0dde4`, 2026-09-08. The policy
-instruction immediately follows the temporal assessment. The transcript parser exposes the message and session locator
-but omits its precise timestamp; this source date retains that limitation.
-Evidence anchors for the operational inference: the removed rule-defined product
-path in `78e48e5`, the retained infinite consumer in
-`tests/sets/test_set_scaffold.sage`, and the 2026-09-08T02:59:49Z selected exercise
-in recorded session `2026-09-07-49d921b8` (tool call `T2CG`). The native replacement
-obligations remain in governing-plan sections 6, 19, and 20.
+Source: explicit temporal-assessment and subsequent policy/specification instruction in Codex session `01a08089-fe93-77b0-b6bb-cbc9d7b0dde4`, 2026-09-08. The policy instruction immediately follows the temporal assessment.
+The transcript parser exposes the message and session locator but omits its precise timestamp; this source date retains that limitation.
+Evidence anchors for the operational inference: the removed rule-defined product path in `78e48e5`, the retained infinite consumer in `tests/sets/test_set_scaffold.sage`, and the 2026-09-08T02:59:49Z selected exercise in recorded session `2026-09-07-49d921b8` (tool call `T2CG`). The native replacement obligations remain in governing-plan sections 6, 19, and 20.
 
 ### D188
 
-Ordinary infinitary objects must be easy to construct, express, and combine in the
-framework's mathematical vocabulary. Their defining categories, maps, families,
-and universal constructions must accommodate them without foundational redesign
-or implicit finiteness assumptions. The examples extend D187 to localizations,
-divisible groups, algebraic extension towers, series and completions, infinite
-graded algebras, products and duals, unbounded complexes, simplicial objects,
-formal and arc geometry, torsion towers, and generalized series.
+Ordinary infinitary objects must be easy to construct, express, and combine in the framework's mathematical vocabulary.
+Their defining categories, maps, families, and universal constructions must accommodate them without foundational redesign or implicit finiteness assumptions.
+The examples extend D187 to localizations, divisible groups, algebraic extension towers, series and completions, infinite graded algebras, products and duals, unbounded complexes, simplicial objects, formal and arc geometry, torsion towers, and generalized series.
 
-This is an expressibility and composability requirement. It selects no particular
-implementation, algorithm, engine, or representation for the examples and does
-not turn the catalogue into separate implementation commitments. Specialized
-computational claims retain their own scope; the ordinary vocabulary must retain
-the defining mathematical structure and maps.
+This is an expressibility and composability requirement.
+It selects no particular implementation, algorithm, engine, or representation for the examples and does not turn the catalogue into separate implementation commitments.
+Specialized computational claims retain their own scope; the ordinary vocabulary must retain the defining mathematical structure and maps.
 
-Owner: [Compositional expressibility](computational-generality.md#compositional-expressibility)
-and [Ordinary infinitary objects](computational-generality.md#ordinary-infinitary-objects).
+Owner: [Compositional expressibility](computational-generality.md#compositional-expressibility) and [Ordinary infinitary objects](computational-generality.md#ordinary-infinitary-objects).
 
-Source: explicit instruction to add the preceding infinitary-object catalogue as
-specifications or policies in Codex session `01a08089-fe93-77b0-b6bb-cbc9d7b0dde4`,
-2026-09-08. The instruction specifies ease of construction and expression without
-foundational reworks or surprising finiteness assumptions and leaves implementations
-unspecified. A precise message timestamp is not available in the supplied context.
+Source: explicit instruction to add the preceding infinitary-object catalogue as specifications or policies in Codex session `01a08089-fe93-77b0-b6bb-cbc9d7b0dde4`, 2026-09-08. The instruction specifies ease of construction and expression without foundational reworks or surprising finiteness assumptions and leaves implementations unspecified.
+A precise message timestamp is not available in the supplied context.
+
+### D189
+
+The repository runtime contract is the source-built `dzackgarza/sage@develop` line on Python 3.14, kept aligned with upstream Sage `develop`; the current baseline is Sage 10.10.beta10. Source uses Python 3.14's native PEP-695 generic syntax; the static projector consumes that same AST; `pyproject.toml` requires Python 3.14; and the tracked `.envrc` selects that fork-owned development runtime.
+An older stable or host Sage installation is not a second supported source/runtime shape.
+The OSCAR process-isolation requirement is unchanged.
+
+The completed `PLAN-native-engine-remediation` certifies its remediation slice only.
+Topic specifications remain the owners of complete public contracts under D180, so a closed remediation node may cite a GitHub issue without implying that every broader acceptance criterion later present in that issue is complete.
+The live issue DAG therefore remains valid after remediation closure and can contain unfinished topic-contract work.
+
+Owner: [Workflow](../AGENTS.md), [runtime support](../pyproject.toml), the topic specifications, and `PLAN-native-engine-remediation` for its completed remediation scope.
+
+Source: repository-owner consolidation instruction on 2026-09-16, including the explicit direction to align the repository with current Sage/Python versions rather than retain older-version compatibility machinery; reconciled with D180's existing one-owner-per-fact rule and the public Sage/Python release state on that date.

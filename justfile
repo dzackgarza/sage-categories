@@ -24,10 +24,19 @@ test-commit:
 # because it read nothing, which is not a measurement. A rule names only packages in the
 # tree, so each P-phase adds its package back to the rules it owns, exactly as the
 # pyproject comment states for the import contracts.
+# Cheap local boundary check: import graph plus structural leaf rules, no Sage runtime.
+architecture-boundary:
+    #!/usr/bin/env bash
+    set +e
+    PYTHONPATH=src uvx --python 3.14 --from 'import-linter==2.15' lint-imports --config pyproject.toml
+    import_status=$?
+    uvx --from 'ast-grep-cli==0.45.0' ast-grep scan --config .ast-grep/architecture.yml --error src tests/kernel
+    ast_status=$?
+    if [ "$import_status" -ne 0 ] || [ "$ast_status" -ne 0 ]; then exit 1; fi
+
 architecture:
     uv run --no-project --python 3.14 --with pyyaml python scripts/rule_coverage.py
-    PYTHONPATH=src uvx --python 3.14 --from import-linter lint-imports --config pyproject.toml
-    uvx --from ast-grep-cli ast-grep scan --config .ast-grep/architecture.yml --error src tests/kernel
+    just architecture-boundary
 
 # Validate the governing plan and its native issue dependencies.
 plan-state:

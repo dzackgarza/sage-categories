@@ -1,0 +1,84 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
+from enum import Enum
+from sage_categories.cat.category import Category as Category
+from sage_categories.cat.functors import Functor as Functor
+from sage_categories.kernel.functor_cache import FunctorImageCache as FunctorImageCache
+from typing import Protocol, TypeIs
+
+class Role(Enum):
+    OBJECT: str
+    ELEMENT: str
+    MORPHISM: str
+
+@contextmanager
+def building_role_classes() -> Iterator[None]:
+    ...
+
+class _AttributeWriteTracked:
+
+    def __setattr__[State](self, name: str, value: State) -> None:
+        ...
+
+class CategoryPoint(_AttributeWriteTracked):
+
+    def __hash__(self) -> int:
+        ...
+
+def prepare_category_subclass(category_class: type[CategoryPoint]) -> None:
+    ...
+
+class ObjectOfCategory(CategoryPoint):
+
+    def __init_subclass__(cls) -> None:
+        ...
+
+    def local_role_class(self, role: Role) -> type[CategoryPoint]:
+        ...
+
+    def role_class(self, role: Role) -> type[CategoryPoint]:
+        ...
+
+    def role_source(self, role: Role) -> tuple[Category, Role]:
+        ...
+
+class ElementOfObject(CategoryPoint):
+    ...
+
+class MorphismOfCategory(ObjectOfCategory):
+    ...
+
+def install_category_object_class(compiled: type[CategoryPoint]) -> None:
+    ...
+
+def is_category(value: CategoryPoint) -> TypeIs[Category]:
+    ...
+
+def category_universal_class() -> type[CategoryPoint]:
+    ...
+
+def kernel_base(role: Role) -> type[CategoryPoint]:
+    ...
+
+def install_cat_element_root(root: type[CategoryPoint]) -> None:
+    ...
+type RoleCandidate = CategoryPoint | int
+
+def role_of(candidate: RoleCandidate) -> Role | None:
+    ...
+
+def category_of(value: CategoryPoint, role: Role) -> Category:
+    ...
+
+@contextmanager
+def record_attribute_writes(value: CategoryPoint) -> Iterator[set[str]]:
+    ...
+
+def install_category_declaration_root(declaration_root: type[CategoryPoint], universal_class: type[CategoryPoint]) -> None:
+    ...
+
+def declaration_role(declaration: type[CategoryPoint]) -> Role | None:
+    ...
+
+def declared_roles() -> tuple[tuple[type[CategoryPoint], Role], ...]:
+    ...

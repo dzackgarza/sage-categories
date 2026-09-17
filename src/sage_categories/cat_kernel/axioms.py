@@ -32,6 +32,7 @@ __all__ = ["application_axiom", "generate_application", "install", "install_base
 # their applications exists (``install_base_applications``).
 _base_axioms: list[Axiom] = []
 
+
 def _predicates() -> ModuleType:
     """Load public axiom declarations at the one cycle-safe kernel/Cat boundary."""
     from sage_categories.cat import predicates

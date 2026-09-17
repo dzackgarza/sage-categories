@@ -2,14 +2,13 @@
 name = "sage-categories"
 version = "0.1.0"
 description = "Owned Sage categories."
-requires-python = ">=3.12,<3.15"
+requires-python = "==3.14.*"
 dependencies = [
     "attrs>=26.1,<27",
     "makefun>=1.16",
     "multimethod>=2.1",
     "plum-dispatch>=2.9,<3",
     "sympy>=1.14,<2",
-    "typing-extensions>=4.12",
     "wrapt",
 ]
 
@@ -77,6 +76,51 @@ name = "Cat imports no module of cat_kernel"
 type = "forbidden"
 source_modules = ["sage_categories.cat"]
 forbidden_modules = ["sage_categories.cat_kernel"]
+
+# The runtime/compiler surface is protected: production leaves consume Cat, never kernel internals.
+# Indirect dependency through Cat is expected; only direct imports are forbidden here.
+[[tool.importlinter.contracts]]
+name = "Production leaves import no kernel internals"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+    "sage_categories.sets",
+    "sage_categories.order",
+    "sage_categories.algebra",
+    "sage_categories.geometry",
+]
+forbidden_modules = ["sage_categories.kernel", "sage_categories.cat_kernel"]
+broken_contract_guidance = "Production mathematics must use Cat/public owners. Move backend conversion behind the leaf-local _firewall boundary; categorical propagation belongs to Cat/kernel."
+
+# Leaf theory never imports Sage directly. A future leaf-local _firewall may be granted an
+# exact exception deliberately; ordinary theory modules must go through owned interfaces.
+[[tool.importlinter.contracts]]
+name = "Production leaves import no Sage runtime directly"
+type = "forbidden"
+allow_indirect_imports = true
+source_modules = [
+    "sage_categories.sets",
+    "sage_categories.order",
+    "sage_categories.algebra",
+    "sage_categories.geometry",
+]
+forbidden_modules = ["sage"]
+ignore_imports = ["sage_categories.*._firewall.** -> sage"]
+unmatched_ignore_imports_alerting = "none"
+broken_contract_guidance = "Move Sage/backend conversion into an explicit private firewall/engine boundary and return owned mathematical objects."
+
+# Foundation layers must never reach upward into production mathematics.
+[[tool.importlinter.contracts]]
+name = "Foundation layers import no production leaf"
+type = "forbidden"
+source_modules = ["sage_categories.kernel", "sage_categories.cat", "sage_categories.cat_kernel"]
+forbidden_modules = [
+    "sage_categories.sets",
+    "sage_categories.order",
+    "sage_categories.algebra",
+    "sage_categories.geometry",
+]
+broken_contract_guidance = "Move the dependency to a generic Cat/kernel abstraction or invert it through a retained public functor/interface."
 
 # The third D175 edge, "no leaf imports `cat_kernel`", enters with the first leaf
 # package at P1: the tree holds no leaf (D137), and a contract whose source module does

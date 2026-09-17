@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import sys
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
@@ -13,6 +14,7 @@ def _stub_generator() -> ModuleType:
     spec = spec_from_file_location("stub_generator_under_test", path)
     assert spec is not None and spec.loader is not None
     module = module_from_spec(spec)
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -949,6 +951,7 @@ class Owner:
     class Role[T: "Owner" = "Owner"]: pass
 
 class Family[T = "Owner"]: pass
+class Variadic[**P]: pass
 """
     )
     stub = ast.parse(
@@ -957,6 +960,7 @@ class Owner:
     class Role[T: Owner = Owner]: pass
 
 class Family[T = Owner]: pass
+class Variadic[**P]: pass
 """
     )
     generator = _stub_generator()
@@ -966,6 +970,7 @@ class Family[T = Owner]: pass
     projected = ast.unparse(ast.fix_missing_locations(stub))
     assert "class Role[T: 'Owner' = 'Owner']" in projected
     assert "class Family[T = 'Owner']" in projected
+    assert "class Variadic[**P]" in projected
 
 
 def test_projector_renders_with_formatter_before_writing(tmp_path: Path) -> None:
@@ -1152,10 +1157,7 @@ def test_generated_geometry_projection_retains_exact_owned_roles() -> None:
     assert "def pullback(self) -> MorphismCategory.ObjectType" in affine
     assert "def AffineSchemes() -> AffineSchemesCategory" in affine
     assert "Spec: Functor" in affine
-    assert (
-        "def affine_structure_sheaf(scheme: AffineSchemesCategory.ObjectType) -> tuple[AffineOpenCategory, RingPresheaf[AffineOpenCategory.ObjectType]]"
-        in affine
-    )
+    assert "def affine_structure_sheaf(scheme: AffineSchemesCategory.ObjectType) -> tuple[AffineOpenCategory, RingPresheaf[AffineOpenCategory.ObjectType]]" in affine
 
     assert "def domain(self) -> SchemesCategory.ObjectType" in schemes
     assert "def codomain(self) -> SchemesCategory.ObjectType" in schemes

@@ -1,0 +1,18 @@
+id: no-engine-import-outside-leaf-firewall
+language: python
+severity: error
+files:
+  - src/sage_categories/sets/**/*.py
+  - src/sage_categories/order/**/*.py
+  - src/sage_categories/algebra/**/*.py
+  - src/sage_categories/geometry/**/*.py
+ignores:
+  - src/sage_categories/**/_firewall/**/*.py
+message: POL-LEAF-FIREWALL — production mathematics reaches backend engines only through its private _firewall boundary
+rule:
+  any:
+    - pattern: from sage_categories.engines.$$$MODULE import $$$NAMES
+    - pattern: from sage_categories.engines import $$$NAMES
+    - pattern: from sage_categories import engines
+    - pattern: import sage_categories.engines.$$$MODULE
+    - pattern: import sage_categories.engines

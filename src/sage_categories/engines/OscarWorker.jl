@@ -23,61 +23,12 @@ using .SageCategoriesOscarBridge
 const _VALUES = Dict{Int,Any}()
 const _HANDLES = IdDict{Any,Int}()
 const _NEXT_HANDLE = Ref(0)
-const _OPERATIONS = Set([
-    "version",
-    "prime_field",
-    "polynomial_ring_with_generators",
-    "quotient_ring",
-    "localization_at_element",
-    "localization_at_prime",
-    "ring_hom",
-    "localization_hom",
-    "prime_ideal_from_generators",
-    "prime_ideal_preimage",
-    "stalk_map",
-    "map_apply",
-    "map_domain",
-    "map_codomain",
-    "ring_identity",
-    "ring_compose",
-    "ring_map_equal",
-    "ring_generators",
-    "ring_contains",
-    "ring_equal",
-    "ring_zero",
-    "ring_one",
-    "ring_add",
-    "ring_multiply",
-    "ring_negate",
-    "ring_coerce",
-    "ring_inverse",
-    "same_native",
-    "affine_spec",
-    "affine_coordinate_ring",
-    "affine_morphism_from_pullback",
-    "affine_pullback",
-    "affine_domain",
-    "affine_codomain",
-    "covered_scheme_of",
-    "structure_sheaf",
-    "sheaf_value",
-    "sheaf_restriction",
-    "principal_open_subset",
-    "principal_open_ambient",
-    "principal_open_inclusion",
-    "affine_morphism_direct",
-    "simple_gluing",
-    "glued_covered_scheme",
-    "covered_patches",
-    "covered_chart_inclusion",
-    "gluing_mediator",
-    "covered_chart_map",
-    "covered_domain",
-    "covered_codomain",
-    "covered_identity",
-    "covered_compose",
-    "covered_equal",
-])
+const _OPERATIONS = Set(
+    String(name)
+    for name in names(SageCategoriesOscarBridge)
+    if name != nameof(SageCategoriesOscarBridge)
+)
+push!(_OPERATIONS, "version")
 
 function _retain(value)
     if haskey(_HANDLES, value)

@@ -660,6 +660,23 @@ def _linearized_nodes(current: Node) -> tuple[Node, ...]:
     )
 
 
+def _semantic_declarations(current: Node) -> tuple[type[CategoryPoint], ...]:
+    """The declarations whose written bodies the compiled node actually carries.
+
+    Exact-category augmentation copies each implementation role body onto the
+    already-compiled role surface instead of adding another Python base.  Those
+    declarations are nevertheless semantic owners of that surface, so consumers
+    of the compiler relation (predicate dispatch and static projection) must see
+    them in the same precedence order as the installed bodies: newest
+    augmentation first, followed by the category's original local declaration.
+    """
+    augmented = tuple(
+        vars(implementation)[current.role.value]
+        for implementation in reversed(current.category._installed_category_implementations)
+    )
+    return (*augmented, current.category.local_role_class(current.role))
+
+
 def runtime_semantic_bases(
     runtime_class: type[CategoryPoint],
 ) -> tuple[type[CategoryPoint], ...] | None:
@@ -690,7 +707,11 @@ def runtime_semantic_bases(
             if installed is not None and installed is not runtime_class:
                 return (installed,)
         return None
-    supplied = [source.category.local_role_class(source.role) for source in (current, *_linearized_nodes(current))]
+    supplied = [
+        declaration
+        for source in (current, *_linearized_nodes(current))
+        for declaration in _semantic_declarations(source)
+    ]
     result: list[type[CategoryPoint]] = [declaration for position, declaration in enumerate(supplied) if not any(declaration is later for later in supplied[position + 1 :])]
     stable_role = kernel_base(current.role)
     if not issubclass(stable_role, runtime_class) and not any(issubclass(base, stable_role) for base in result):

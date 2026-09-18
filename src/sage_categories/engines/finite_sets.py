@@ -94,9 +94,10 @@ def _index(realization: object, datum: object) -> int:
 def _native_object(value: object) -> GapElement:
     if has_finite_native_object(value):
         return finite_native_object(value).native
-    presentation = value.set_presentation()
-    assert isinstance(presentation, tuple), f"{value!r} has no chosen finite presentation"
-    indexing = presentation
+    from sage_categories.sets.finite import _finite_data
+
+    indexing = _finite_data(value)
+    assert indexing is not Unknown, f"{value!r} has no chosen finite presentation"
     category = _category()
     native = libgap.FinSet(category, len(indexing))
     retain_finite_native_object(value, native, indexing)

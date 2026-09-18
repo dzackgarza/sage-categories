@@ -23,8 +23,13 @@ __all__ = ["generate_stubs"]
 
 
 def _stubgen_main() -> Callable[[list[str]], None]:
-    """Load mypy's parse-only stub generator only when static projection runs."""
-    from mypy.stubgen import main
+    """Return the development-only stubgen boundary without importing mypy into Sage."""
+    sibling = Path(sys.executable).with_name("stubgen")
+    executable = str(sibling) if sibling.is_file() else which("stubgen")
+    assert executable is not None, "stubgen is required to emit the static projection"
+
+    def main(arguments: list[str]) -> None:
+        subprocess.run([executable, *arguments], check=True)
 
     return main
 
@@ -147,6 +152,7 @@ class _StubProjectionContext:
     source_modules: frozenset[str]
     category_parameter_counts: dict[str, int]
     category_modules: dict[str, str]
+    category_class_modules: dict[str, str]
     source_class_parameters: dict[str, tuple[str, ...]]
     hoisted_role_providers: dict[str, str]
     generic_category_bases: frozenset[str]
@@ -161,11 +167,22 @@ def _stub_projection_context(
     from sage_categories.kernel.compiler import compiler
 
     canonical_exports = _canonical_exports(package, output_directory, sources)
-    inheritance = compiler().declared_inheritance()
+    inheritance = _complete_source_property_inheritance(
+        compiler().declared_inheritance(),
+        package,
+        output_directory,
+        sources,
+    )
     runtime_aliases = _source_role_aliases(package, output_directory, sources, inheritance)
     source_modules = frozenset(_module_name(package, output_directory, source) for source in sources)
     category_parameter_counts = _source_category_parameter_counts(sources)
     category_modules = _source_category_modules(package, output_directory, sources)
+    category_class_modules = _source_category_class_modules(
+        package,
+        output_directory,
+        sources,
+        category_parameter_counts,
+    )
     hoisted_role_providers = _source_hoisted_role_providers(package, output_directory, sources)
     source_class_parameters = _include_hoisted_role_parameters(
         _source_class_type_parameters(package, output_directory, sources),
@@ -178,10 +195,81 @@ def _stub_projection_context(
         source_modules,
         category_parameter_counts,
         category_modules,
+        category_class_modules,
         source_class_parameters,
         hoisted_role_providers,
         _source_generic_category_bases(sources, category_parameter_counts),
     )
+
+
+def _complete_source_property_inheritance(
+    inheritance: dict[str, dict[str, tuple[str, ...]]],
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+) -> dict[str, dict[str, tuple[str, ...]]]:
+    """Retain declared property containments before every property node is constructed.
+
+    A property implementation registers on its source Axiom at import time, while its
+    concrete property category is constructed only when a consumer asks for it. The
+    compiler projection therefore knows every constructed semantic C3 edge but can miss
+    a registered full-subcategory relation at stub-generation time. Both pieces of the
+    missing relation are source declarations: _base_category_class_and_axiom names the
+    implementing class and Axiom(full_subcategory_of=...) names its stronger bases.
+    """
+    implementations: dict[tuple[str, str], str] = {}
+    containments: dict[tuple[str, str], tuple[str, ...]] = {}
+
+    for source in sources:
+        module = _module_name(package, output_directory, source)
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        for declaration in tree.body:
+            if not isinstance(declaration, ast.ClassDef):
+                continue
+            for statement in declaration.body:
+                if not (isinstance(statement, ast.Assign) and len(statement.targets) == 1 and isinstance(statement.targets[0], ast.Name)):
+                    continue
+                target = statement.targets[0].id
+                if target == "_base_category_class_and_axiom":
+                    if not (
+                        isinstance(statement.value, ast.Tuple)
+                        and len(statement.value.elts) == 2
+                        and isinstance(statement.value.elts[0], ast.Name)
+                        and isinstance(statement.value.elts[1], ast.Constant)
+                        and isinstance(statement.value.elts[1].value, str)
+                    ):
+                        continue
+                    declaring = statement.value.elts[0].id
+                    axiom = statement.value.elts[1].value
+                    implementations[(declaring, axiom)] = f"{module}.{declaration.name}"
+                    continue
+                if not (isinstance(statement.value, ast.Call) and _dotted_name(statement.value.func) == "Axiom"):
+                    continue
+                full = next(
+                    (keyword.value for keyword in statement.value.keywords if keyword.arg == "full_subcategory_of"),
+                    None,
+                )
+                if not isinstance(full, ast.Tuple):
+                    continue
+                parents = tuple(element.id for element in full.elts if isinstance(element, ast.Name))
+                if parents:
+                    containments[(declaration.name, target)] = parents
+
+    completed = {surface: dict(relations) for surface, relations in inheritance.items()}
+    roles = {"object": "ObjectType", "element": "ElementType", "arrow": "MorphismType"}
+    for (declaring, axiom), child in implementations.items():
+        for parent_axiom in containments.get((declaring, axiom), ()):
+            parent = implementations.get((declaring, parent_axiom))
+            if parent is None:
+                continue
+            for surface, role in roles.items():
+                relations = completed.setdefault(surface, {})
+                child_provider = f"{child}.{role}"
+                parent_provider = f"{parent}.{role}"
+                existing = relations.get(child_provider, ())
+                if parent_provider not in existing:
+                    relations[child_provider] = (parent_provider, *existing)
+    return completed
 
 
 def _project_package_stub(
@@ -220,6 +308,7 @@ def _project_package_stub(
         context.source_class_parameters,
         context.source_modules,
     )
+    _project_functor_constructor_actions(tree, module)
     _project_hoisted_role_defaults(tree, module, context.hoisted_role_providers)
     _mark_projected_generic_aliases(tree, projected_generic_aliases)
     _publicize_private_type_parameters(tree)
@@ -241,7 +330,8 @@ def _generate_stubs(package: str, output_directory: Path, ruff_config: Path) -> 
     context = _stub_projection_context(package, output_directory, sources)
     for stub_path in output_directory.rglob("*.pyi"):
         _project_package_stub(package, output_directory, stub_path, ruff_config, context)
-    projected_modules = frozenset(context.category_modules.values())
+    projected_category_names = frozenset(context.category_modules) | context.generic_category_bases
+    projected_modules = frozenset(context.category_class_modules[name] for name in projected_category_names if name in context.category_class_modules)
     _remove_non_projection_stubs(package, output_directory, projected_modules)
     stubs = tuple(sorted(output_directory.rglob("*.pyi")))
     assert stubs, "static projection emitted no stubs"
@@ -466,7 +556,6 @@ class _PrivateTypeParameterRenamer(ast.NodeTransformer):
         if replacement is None:
             return node
         return ast.copy_location(ast.Name(id=replacement, ctx=node.ctx), node)
-
 
 
 def _private_type_parameter_names(parameters: list[ast.type_param]) -> dict[str, str]:
@@ -696,19 +785,35 @@ def _source_category_parameter_counts(sources: tuple[Path, ...]) -> dict[str, in
     whether source writes their public names or an older projection uses hidden names.
     """
     result = {"CategoryDeclaration": 2, "Category": 2}
-    for source in sources:
-        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+    trees = tuple(ast.parse(source.read_text(encoding="utf-8"), filename=str(source)) for source in sources)
+    role_parameters = frozenset((*_SOURCE_CATEGORY_ROLE_PARAMETERS.values(), *_HIDDEN_CATEGORY_ROLES.values()))
+    for tree in trees:
         for statement in tree.body:
             if not isinstance(statement, ast.ClassDef):
                 continue
             bound = {name for local in statement.body for name in _statement_names(local)}
             if not set(_CATEGORY_ROLES).issubset(bound):
                 continue
-            previous = result.get(statement.name)
-            role_parameters = frozenset((*_SOURCE_CATEGORY_ROLE_PARAMETERS.values(), *_HIDDEN_CATEGORY_ROLES.values()))
             arity = sum(parameter.name not in role_parameters for parameter in statement.type_params)
+            previous = result.get(statement.name)
             assert previous is None or previous == arity, f"category class name {statement.name!r} has conflicting public arities"
             result[statement.name] = arity
+    changed = True
+    while changed:
+        changed = False
+        for tree in trees:
+            for statement in tree.body:
+                if not isinstance(statement, ast.ClassDef) or not statement.bases:
+                    continue
+                base_name = _base_name(statement.bases[0])
+                if base_name not in result:
+                    continue
+                arity = sum(parameter.name not in role_parameters for parameter in statement.type_params)
+                previous = result.get(statement.name)
+                assert previous is None or previous == arity, f"category class name {statement.name!r} has conflicting public arities"
+                if previous is None:
+                    result[statement.name] = arity
+                    changed = True
     return result
 
 
@@ -787,15 +892,32 @@ def _source_generic_category_bases(sources: tuple[Path, ...], category_parameter
     for source in sources:
         tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
         for statement in tree.body:
-            if not isinstance(statement, ast.ClassDef) or not statement.bases:
-                continue
-            bound = {name for local in statement.body for name in _statement_names(local)}
-            if not set(_CATEGORY_ROLES).issubset(bound):
+            if not isinstance(statement, ast.ClassDef) or statement.name not in category_parameter_counts or not statement.bases:
                 continue
             name = _base_name(statement.bases[0])
             if name in category_parameter_counts:
                 result.add(name)
     return frozenset(result)
+
+
+def _source_category_class_modules(
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+    category_parameter_counts: dict[str, int],
+) -> dict[str, str]:
+    """Map every source class in the category inheritance graph to its module."""
+    result: dict[str, str] = {}
+    for source in sources:
+        module = _module_name(package, output_directory, source)
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        for statement in tree.body:
+            if not isinstance(statement, ast.ClassDef) or statement.name not in category_parameter_counts:
+                continue
+            previous = result.get(statement.name)
+            assert previous is None or previous == module, f"category class name {statement.name!r} is not repository-wide unique"
+            result[statement.name] = module
+    return result
 
 
 def _source_category_modules(package: str, output_directory: Path, sources: tuple[Path, ...]) -> dict[str, str]:
@@ -1091,6 +1213,64 @@ def _project_owner_role_arguments(
     return [ast.Name(id=selected_role_parameters[role], ctx=ast.Load()) for role in _CATEGORY_ROLES], selected_role_parameters
 
 
+def _project_intermediate_category_role_parameters(
+    tree: ast.Module,
+    source: ast.Module,
+    top_level: dict[str, ast.ClassDef],
+    category_parameter_counts: dict[str, int],
+    generic_category_bases: frozenset[str],
+) -> None:
+    """Thread hidden roles through category bases that declare no local roles.
+
+    Cat-owned helper classes such as ``MorphismDataCategory`` deliberately inherit
+    their roles instead of re-declaring them. When such a helper is itself used as a
+    category base, its static projection must therefore be generic in the three roles
+    and forward those parameters to its direct category base.
+    """
+    role_owners = _source_role_owners(source)
+    source_classes = {statement.name: statement for statement in source.body if isinstance(statement, ast.ClassDef)}
+    for name in generic_category_bases:
+        if name in role_owners:
+            continue
+        source_owner = source_classes.get(name)
+        owner = top_level.get(name)
+        if source_owner is None or owner is None or not owner.bases:
+            continue
+        category_base = owner.bases[0]
+        carrier = category_base.value if isinstance(category_base, ast.Subscript) else category_base
+        base_name = _base_name(carrier)
+        if base_name not in category_parameter_counts:
+            continue
+
+        existing = {parameter.name: parameter for parameter in owner.type_params}
+        selected_role_parameters: dict[str, str] = {}
+        for role in _CATEGORY_ROLES:
+            public = _SOURCE_CATEGORY_ROLE_PARAMETERS[role]
+            hidden = _HIDDEN_CATEGORY_ROLES[role]
+            selected = next((candidate for candidate in (public, hidden) if candidate in existing), None)
+            if selected is None:
+                default = ast.Attribute(value=copy.deepcopy(carrier), attr=role, ctx=ast.Load())
+                parameter = ast.TypeVar(name=hidden, default_value=default)
+                owner.type_params.append(parameter)
+                existing[hidden] = parameter
+                selected = hidden
+            selected_role_parameters[role] = selected
+
+        public_arity = category_parameter_counts[base_name]
+        if isinstance(category_base, ast.Subscript):
+            written_arguments = _subscript_arguments(category_base)
+            assert len(written_arguments) >= public_arity, f"category base {ast.unparse(category_base)} supplies fewer than its {public_arity} public parameters"
+            arguments = written_arguments[:public_arity]
+        else:
+            arguments = [ast.Constant(value=Ellipsis) for _ in range(public_arity)]
+        arguments.extend(ast.Name(id=selected_role_parameters[role], ctx=ast.Load()) for role in _CATEGORY_ROLES)
+        owner.bases[0] = ast.Subscript(
+            value=copy.deepcopy(carrier),
+            slice=ast.Tuple(elts=arguments, ctx=ast.Load()),
+            ctx=ast.Load(),
+        )
+
+
 def _project_owner_category_base(
     owner_name: str,
     owner: ast.ClassDef,
@@ -1161,6 +1341,13 @@ def _project_category_role_parameters(
 
     top_level = {statement.name: statement for statement in tree.body if isinstance(statement, ast.ClassDef)}
     has_category_declaration = _project_category_declaration_role_parameters(tree, source, top_level)
+    _project_intermediate_category_role_parameters(
+        tree,
+        source,
+        top_level,
+        category_parameter_counts,
+        generic_category_bases,
+    )
 
     required_helper_modules: set[str] = set()
     new_helpers: list[tuple[ast.ClassDef, ast.ClassDef]] = []
@@ -2281,6 +2468,38 @@ def _project_exact_morphism_endpoints(tree: ast.Module) -> None:
         for name in ("domain", "codomain"):
             if name not in local_methods:
                 morphism_type.body.append(endpoint_method(name, owner.name, morphism_type))
+
+
+def _project_functor_constructor_actions(tree: ast.Module, module: str) -> None:
+    """Project exact action-result roles for construction of a functor."""
+    if module != "sage_categories.cat.functors":
+        return
+    owner = next(
+        (statement for statement in tree.body if isinstance(statement, ast.ClassDef) and statement.name == "FunctorCategory"),
+        None,
+    )
+    if owner is None or any(isinstance(statement, ast.FunctionDef) and statement.name == "__call__" for statement in owner.body):
+        return
+    method = ast.parse(
+        """
+def __call__[ResultObject, ResultMorphism](
+    self,
+    on_object: Callable[[CategoryOfCategories.ElementType], ResultObject],
+    on_morphism: Callable[[MorphismCategory.ObjectType], ResultMorphism],
+) -> CategoryOfCategories.MorphismType[
+    DomainCategory,
+    CodomainCategory,
+    CategoryOfCategories.ElementType,
+    CategoryOfCategories.ElementType,
+    MorphismCategory.ObjectType,
+    ResultObject,
+    CategoryOfCategories.ElementType,
+    ResultMorphism,
+]: ...
+"""
+    ).body[0]
+    assert isinstance(method, ast.FunctionDef)
+    owner.body.append(method)
 
 
 def _project_provider_bases(

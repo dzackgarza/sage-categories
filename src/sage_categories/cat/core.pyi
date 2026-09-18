@@ -71,7 +71,7 @@ class _StaticRoles_CoreMorphismCategory(sage_categories.cat.morphisms._StaticRol
 
 class CoreMorphismCategory(
     _StaticRoles_CoreMorphismCategory,
-    MorphismCategory[_StaticRoles_CoreMorphismCategory.ObjectType, _StaticRoles_CoreMorphismCategory.ElementType, _StaticRoles_CoreMorphismCategory.MorphismType],
+    MorphismCategory[..., ..., _StaticRoles_CoreMorphismCategory.ObjectType, _StaticRoles_CoreMorphismCategory.ElementType, _StaticRoles_CoreMorphismCategory.MorphismType],
 ):
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...
@@ -88,7 +88,13 @@ class _StaticRoles_CoreFixedEndpointCategory(sage_categories.cat.morphisms._Stat
 class CoreFixedEndpointCategory(
     _StaticRoles_CoreFixedEndpointCategory,
     FixedEndpointCategory[
-        _StaticRoles_CoreFixedEndpointCategory.ObjectType, _StaticRoles_CoreFixedEndpointCategory.ElementType, _StaticRoles_CoreFixedEndpointCategory.MorphismType
+        ...,
+        ...,
+        ...,
+        ...,
+        _StaticRoles_CoreFixedEndpointCategory.ObjectType,
+        _StaticRoles_CoreFixedEndpointCategory.ElementType,
+        _StaticRoles_CoreFixedEndpointCategory.MorphismType,
     ],
 ):
     def structure_functors(self) -> tuple[Functor, ...]: ...

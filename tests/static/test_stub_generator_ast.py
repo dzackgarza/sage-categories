@@ -420,6 +420,65 @@ def test_provider_projection_prunes_ancestry_across_role_surfaces() -> None:
 test_provider_projection_prunes_ancestry_across_role_surfaces()
 
 
+def test_source_property_containment_completes_unconstructed_role_edges(
+    tmp_path: Path,
+) -> None:
+    package = tmp_path / "example"
+    package.mkdir()
+    source = package / "properties.py"
+    source.write_text(
+        """
+class Base:
+    Strong = Axiom()
+    Stronger = Axiom(full_subcategory_of=(Strong,))
+
+class StrongCategory(PropertySubcategory):
+    _base_category_class_and_axiom = (Base, "Strong")
+    class ObjectType: ...
+    class ElementType: ...
+    class MorphismType: ...
+
+class StrongerCategory(PropertySubcategory):
+    _base_category_class_and_axiom = (Base, "Stronger")
+    class ObjectType: ...
+    class ElementType: ...
+    class MorphismType: ...
+"""
+    )
+    generator = _stub_generator()
+    completed = generator._complete_source_property_inheritance(
+        {},
+        "example",
+        package,
+        (source,),
+    )
+    for surface, role in (
+        ("object", "ObjectType"),
+        ("element", "ElementType"),
+        ("arrow", "MorphismType"),
+    ):
+        assert completed[surface][f"example.properties.StrongerCategory.{role}"] == (f"example.properties.StrongCategory.{role}",)
+
+
+def test_functor_constructor_projection_retains_action_result_roles() -> None:
+    stub = ast.parse(
+        """
+class FunctorCategory[DomainCategory, CodomainCategory, DomainObject, DomainElement, DomainMorphism, CodomainObject, CodomainElement, CodomainMorphism]:
+    pass
+"""
+    )
+    generator = _stub_generator()
+    generator._project_functor_constructor_actions(
+        stub,
+        "sage_categories.cat.functors",
+    )
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "def __call__[ResultObject, ResultMorphism]" in projected
+    assert "Callable[[CategoryOfCategories.ElementType], ResultObject]" in projected
+    assert "Callable[[MorphismCategory.ObjectType], ResultMorphism]" in projected
+    assert "ResultObject" in projected and "ResultMorphism" in projected
+
+
 def test_concrete_morphism_projection_has_exact_owner_object_endpoints() -> None:
     stub = ast.parse(
         """
@@ -663,6 +722,42 @@ class Fixed[
     counts = generator._source_category_parameter_counts((source,))
 
     assert counts["Fixed"] == 4
+
+
+def test_intermediate_category_base_threads_hidden_roles(tmp_path: Path) -> None:
+    source_path = tmp_path / "categories.py"
+    source_path.write_text(
+        """
+class Leaf(Category):
+    pass
+
+class Owner(Leaf):
+    class ObjectType: pass
+    class ElementType: pass
+    class MorphismType: pass
+"""
+    )
+    generator = _stub_generator()
+    counts = generator._source_category_parameter_counts((source_path,))
+    generic_bases = generator._source_generic_category_bases((source_path,), counts)
+    source = ast.parse(source_path.read_text())
+    stub = ast.parse(source_path.read_text())
+    top_level = {statement.name: statement for statement in stub.body if isinstance(statement, ast.ClassDef)}
+
+    generator._project_intermediate_category_role_parameters(
+        stub,
+        source,
+        top_level,
+        counts,
+        generic_bases,
+    )
+
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert counts["Leaf"] == 0
+    assert counts["Owner"] == 0
+    assert "Leaf" in generic_bases
+    assert "class Leaf[_ObjectRole = Category.ObjectType, _ElementRole = Category.ElementType, _MorphismRole = Category.MorphismType]" in projected
+    assert "Category[..., ..., _ObjectRole, _ElementRole, _MorphismRole]" in projected
 
 
 def test_hoisted_role_provider_keeps_source_generic_parameters() -> None:

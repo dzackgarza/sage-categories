@@ -20,7 +20,7 @@ class _StaticRoles_PointMorphismCategory(sage_categories.cat.morphisms._StaticRo
 
 class PointMorphismCategory(
     _StaticRoles_PointMorphismCategory,
-    MorphismCategory[_StaticRoles_PointMorphismCategory.ObjectType, _StaticRoles_PointMorphismCategory.ElementType, _StaticRoles_PointMorphismCategory.MorphismType],
+    MorphismCategory[[], [], _StaticRoles_PointMorphismCategory.ObjectType, _StaticRoles_PointMorphismCategory.ElementType, _StaticRoles_PointMorphismCategory.MorphismType],
 ):
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...
 

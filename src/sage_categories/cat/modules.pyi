@@ -2,6 +2,9 @@ import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.cat.structured_objects
 import sage_categories.kernel.roles
+from sage_categories.cat.assembly import has_selected_value as has_selected_value
+from sage_categories.cat.assembly import select_value as select_value
+from sage_categories.cat.assembly import selected_value as selected_value
 from sage_categories.cat.calculus import pair_maps as pair_maps
 from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
@@ -25,7 +28,7 @@ from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
-__all__ = ["ModuleCategory", "Modules"]
+__all__ = ["ModuleCategory", "Modules", "internal_endomorphism_module"]
 
 class _StaticRoles_ModuleCategory(sage_categories.cat.structured_objects._StaticRoles_EquifierCategory):
     class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
@@ -52,7 +55,12 @@ class ModuleCategory(
     def forgetful(self) -> Functor: ...
     def __call__(self, action_morphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType: ...
     def homomorphism(self, source: ModuleCategory.ObjectType, target: ModuleCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> ModuleCategory.MorphismType: ...
+    def from_endomorphism_action(self, scalar_morphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType: ...
+    def from_sage_module(self, engine_module: object) -> ModuleCategory.ObjectType: ...
     def transport(self, module: ModuleCategory.ObjectType, isomorphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType: ...
     def restriction(self, scalar_morphism: MorphismCategory.ObjectType) -> Functor: ...
 
 def Modules(scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.ObjectType) -> ModuleCategory: ...
+def internal_endomorphism_module(
+    endomorphisms: MonoidCategory.ObjectType, actegory: ActionsCategory.ObjectType, evaluation: MorphismCategory.ObjectType
+) -> ModuleCategory.ObjectType: ...

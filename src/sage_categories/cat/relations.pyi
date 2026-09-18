@@ -88,7 +88,7 @@ class _StaticRoles_RelationMorphismsCategory(sage_categories.cat.morphisms._Stat
 
 class RelationMorphismsCategory(
     _StaticRoles_RelationMorphismsCategory,
-    MorphismCategory[RelationsCategory.MorphismType, _StaticRoles_RelationMorphismsCategory.ElementType, _StaticRoles_RelationMorphismsCategory.MorphismType],
+    MorphismCategory[..., ..., RelationsCategory.MorphismType, _StaticRoles_RelationMorphismsCategory.ElementType, _StaticRoles_RelationMorphismsCategory.MorphismType],
 ):
     ObjectType = RelationsCategory.MorphismType
 

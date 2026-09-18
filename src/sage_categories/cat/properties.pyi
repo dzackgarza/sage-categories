@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from typing import Literal
 
-import sage_categories.cat.cat_constructions
 import sage_categories.cat.category
 import sage_categories.cat.constructions
 import sage_categories.cat.morphisms
@@ -44,9 +43,13 @@ class _StaticRoles_FullSubcategory:
         def domain(self) -> FullSubcategory.ObjectType: ...
         def codomain(self) -> FullSubcategory.ObjectType: ...
 
-class FullSubcategory[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole, MorphismRole](
-    _StaticRoles_FullSubcategory, Category[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]
-):
+class FullSubcategory[
+    **MorphismData,
+    **TwoMorphismData,
+    ObjectRole = _StaticRoles_FullSubcategory.ObjectType,
+    ElementRole = _StaticRoles_FullSubcategory.ElementType,
+    MorphismRole = _StaticRoles_FullSubcategory.MorphismType,
+](_StaticRoles_FullSubcategory, Category[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]):
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData]) -> None: ...
     def has_ambient(self) -> bool: ...
     def ambient(self) -> Category[MorphismData, TwoMorphismData]: ...
@@ -63,16 +66,13 @@ class FullSubcategory[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole
         self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType
     ) -> MorphismCategory.ObjectType | Literal[False] | UnknownClass: ...
     def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...] | UnknownClass: ...
+    def restrict_morphism(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType: ...
 
 class _StaticRoles_InverseImageSubcategory(_StaticRoles_FullSubcategory):
-    class ObjectType(
-        sage_categories.cat.cat_constructions._StaticRoles_LimitCategory.ObjectType,
-        sage_categories.sets.finite._StaticRoles_SetsCategory.ObjectType,
-        sage_categories.cat.constructions._StaticRoles_LimitsCategory.ElementType,
-    ): ...
-    class ElementType(sage_categories.cat.cat_constructions._StaticRoles_LimitCategory.ElementType, sage_categories.sets.finite._StaticRoles_SetsCategory.ElementType): ...
+    class ObjectType(sage_categories.sets.finite._StaticRoles_SetsCategory.ObjectType, sage_categories.cat.constructions._StaticRoles_LimitsCategory.ElementType): ...
+    class ElementType(sage_categories.sets.finite._StaticRoles_SetsCategory.ElementType): ...
 
-    class MorphismType(sage_categories.cat.cat_constructions._StaticRoles_LimitCategory.MorphismType, sage_categories.sets.finite._StaticRoles_SetsCategory.MorphismType):
+    class MorphismType(sage_categories.sets.finite._StaticRoles_SetsCategory.MorphismType):
         def domain(self) -> InverseImageSubcategory.ObjectType: ...
         def codomain(self) -> InverseImageSubcategory.ObjectType: ...
 
@@ -107,9 +107,13 @@ class _StaticRoles_PropertySubcategory(_StaticRoles_FullSubcategory):
         def domain(self) -> PropertySubcategory.ObjectType: ...
         def codomain(self) -> PropertySubcategory.ObjectType: ...
 
-class PropertySubcategory[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole, MorphismRole](
-    _StaticRoles_PropertySubcategory, FullSubcategory[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]
-):
+class PropertySubcategory[
+    **MorphismData,
+    **TwoMorphismData,
+    ObjectRole = _StaticRoles_PropertySubcategory.ObjectType,
+    ElementRole = _StaticRoles_PropertySubcategory.ElementType,
+    MorphismRole = _StaticRoles_PropertySubcategory.MorphismType,
+](_StaticRoles_PropertySubcategory, FullSubcategory[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]):
     def __init_subclass__(cls) -> None: ...
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], name: str, full_subcategory_of: tuple[Category, ...]) -> None: ...
     def name(self) -> str: ...
@@ -130,9 +134,13 @@ class _StaticRoles_PredicateSubcategory(_StaticRoles_PropertySubcategory):
         def domain(self) -> PredicateSubcategory.ObjectType: ...
         def codomain(self) -> PredicateSubcategory.ObjectType: ...
 
-class PredicateSubcategory[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole, MorphismRole](
-    _StaticRoles_PredicateSubcategory, PropertySubcategory[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]
-):
+class PredicateSubcategory[
+    **MorphismData,
+    **TwoMorphismData,
+    ObjectRole = _StaticRoles_PredicateSubcategory.ObjectType,
+    ElementRole = _StaticRoles_PredicateSubcategory.ElementType,
+    MorphismRole = _StaticRoles_PredicateSubcategory.MorphismType,
+](_StaticRoles_PredicateSubcategory, PropertySubcategory[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]):
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], name: str, full_subcategory_of: tuple[Category, ...]) -> None: ...
 
 class _StaticRoles_NarrowedProperty(_StaticRoles_FullSubcategory):
@@ -143,9 +151,13 @@ class _StaticRoles_NarrowedProperty(_StaticRoles_FullSubcategory):
         def domain(self) -> NarrowedProperty.ObjectType: ...
         def codomain(self) -> NarrowedProperty.ObjectType: ...
 
-class NarrowedProperty[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole, MorphismRole](
-    _StaticRoles_NarrowedProperty, FullSubcategory[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]
-):
+class NarrowedProperty[
+    **MorphismData,
+    **TwoMorphismData,
+    ObjectRole = _StaticRoles_NarrowedProperty.ObjectType,
+    ElementRole = _StaticRoles_NarrowedProperty.ElementType,
+    MorphismRole = _StaticRoles_NarrowedProperty.MorphismType,
+](_StaticRoles_NarrowedProperty, FullSubcategory[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]):
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], roots: tuple[FullSubcategory, ...]) -> None: ...
     def narrowing_roots(self) -> tuple[Category, ...]: ...
     def predicate(self) -> Predicate: ...
@@ -174,9 +186,13 @@ class _StaticRoles_FixedEndpointProperty(_StaticRoles_NarrowedProperty):
         def domain(self) -> FixedEndpointProperty.ObjectType: ...
         def codomain(self) -> FixedEndpointProperty.ObjectType: ...
 
-class FixedEndpointProperty[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole, MorphismRole](
-    _StaticRoles_FixedEndpointProperty, NarrowedProperty[TwoMorphismData, [], ObjectRole, ElementRole, MorphismRole]
-):
+class FixedEndpointProperty[
+    **MorphismData,
+    **TwoMorphismData,
+    ObjectRole = _StaticRoles_FixedEndpointProperty.ObjectType,
+    ElementRole = _StaticRoles_FixedEndpointProperty.ElementType,
+    MorphismRole = _StaticRoles_FixedEndpointProperty.MorphismType,
+](_StaticRoles_FixedEndpointProperty, NarrowedProperty[TwoMorphismData, [], ObjectRole, ElementRole, MorphismRole]):
     def domain(self) -> CategoryOfCategories.ElementType: ...
     def codomain(self) -> CategoryOfCategories.ElementType: ...
     def one(self) -> MorphismCategory.ObjectType: ...

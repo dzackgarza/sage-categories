@@ -12,11 +12,14 @@ from __future__ import annotations
 __all__ = [
     "BinaryRelations",
     "BinaryRelationsCategory",
+    "FiniteGradedPosetsCategory",
     "FinitePosets",
     "FinitePosetsCategory",
+    "FinitePosetsWithBottomCategory",
+    "FinitePosetsWithTopCategory",
     "FiniteRankedPosetsCategory",
-    "FiniteTotallyOrderedSetsCategory",
     "FiniteTotallyOrderedSets",
+    "FiniteTotallyOrderedSetsCategory",
     "Posets",
     "PosetsCategory",
     "Thin",
@@ -287,9 +290,7 @@ class BinaryRelationsCategory(FaithfulStructureCategory):
     ) -> BinaryRelationsCategory.MorphismType:
         source_carrier, target_carrier = source.carrier(), target.carrier()
         assert underlying.domain() is source_carrier and underlying.codomain() is target_carrier
-        assert sympy_ask(order_preserving(source, target, underlying)) is True, (
-            f"{underlying!r} is not established to preserve the relation of {source!r}"
-        )
+        assert sympy_ask(order_preserving(source, target, underlying)) is True, f"{underlying!r} is not established to preserve the relation of {source!r}"
         return self._morphism_from_data(source, target, underlying)
 
 
@@ -356,9 +357,7 @@ class PosetSubobjects(SliceProperty):
         """
         ambient = self.ambient().fixed_object()
         carrier_subobjects = Sets.Subobjects(ambient.carrier())
-        carrier_subobject = carrier_subobjects.from_predicate(
-            lambda point: predicate(ambient.point(point.datum()))
-        )
+        carrier_subobject = carrier_subobjects.from_predicate(lambda point: predicate(ambient.point(point.datum())))
         carrier_inclusion = carrier_subobjects.defining_arrow().on_object(carrier_subobject)
         selected_carrier = carrier_inclusion.domain()
 
@@ -447,29 +446,27 @@ class FinitePosetsCategory(Category):
             carrier = self.carrier()
             relation = BinaryRelations().from_predicate(
                 carrier,
-                lambda first, second: true
-                if _finite_posets_firewall.linear_extension_leq(
+                lambda first, second: (
+                    true
+                    if _finite_posets_firewall.linear_extension_leq(
                         self,
                         self.point(first.datum()),
                         self.point(second.datum()),
                     )
-                else false,
+                    else false
+                ),
             )
             return FiniteTotallyOrderedSets()(relation.relation())
 
         def lower_covers(self, member: FinitePosetsCategory.ElementType) -> PosetSubobjects.ObjectType:
             """The induced subposet of elements covered by ``member``."""
             assert member.parent() is self
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: self.covers(candidate, member)
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: self.covers(candidate, member))
 
         def upper_covers(self, member: FinitePosetsCategory.ElementType) -> PosetSubobjects.ObjectType:
             """The induced subposet of elements covering ``member``."""
             assert member.parent() is self
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: self.covers(member, candidate)
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: self.covers(member, candidate))
 
         def open_interval(
             self,
@@ -478,11 +475,7 @@ class FinitePosetsCategory(Category):
         ) -> PosetSubobjects.ObjectType:
             """The induced open interval ``{z : lower < z < upper}``."""
             assert lower.parent() is self and upper.parent() is self
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: conjunction(
-                    (_strictly_less(lower, candidate), _strictly_less(candidate, upper))
-                )
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: conjunction((_strictly_less(lower, candidate), _strictly_less(candidate, upper))))
 
         def closed_interval(
             self,
@@ -491,9 +484,7 @@ class FinitePosetsCategory(Category):
         ) -> PosetSubobjects.ObjectType:
             """The induced closed interval ``{z : lower <= z <= upper}``."""
             assert lower.parent() is self and upper.parent() is self
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: conjunction((lower <= candidate, candidate <= upper))
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: conjunction((lower <= candidate, candidate <= upper)))
 
         def principal_order_ideal(
             self,
@@ -517,11 +508,7 @@ class FinitePosetsCategory(Category):
         ) -> PosetSubobjects.ObjectType:
             """The elements covered by every member of the supplied owned subobject."""
             selected = _owned_subobject_members(self, members)
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: conjunction(
-                    self.covers(candidate, member) for member in selected
-                )
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: conjunction(self.covers(candidate, member) for member in selected))
 
         def common_upper_covers(
             self,
@@ -529,11 +516,7 @@ class FinitePosetsCategory(Category):
         ) -> PosetSubobjects.ObjectType:
             """The elements covering every member of the supplied owned subobject."""
             selected = _owned_subobject_members(self, members)
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: conjunction(
-                    self.covers(member, candidate) for member in selected
-                )
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: conjunction(self.covers(member, candidate) for member in selected))
 
         def order_ideal(
             self,
@@ -541,9 +524,7 @@ class FinitePosetsCategory(Category):
         ) -> PosetSubobjects.ObjectType:
             """The down-closure of the supplied owned subobject."""
             selected = _owned_subobject_members(self, members)
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: disjunction(candidate <= member for member in selected)
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: disjunction(candidate <= member for member in selected))
 
         def order_filter(
             self,
@@ -551,25 +532,15 @@ class FinitePosetsCategory(Category):
         ) -> PosetSubobjects.ObjectType:
             """The up-closure of the supplied owned subobject."""
             selected = _owned_subobject_members(self, members)
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: disjunction(member <= candidate for member in selected)
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: disjunction(member <= candidate for member in selected))
 
         def minimal_elements(self) -> PosetSubobjects.ObjectType:
             """The induced subposet of minimal elements."""
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: conjunction(
-                    ~_strictly_less(other, candidate) for other in self
-                )
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: conjunction(~_strictly_less(other, candidate) for other in self))
 
         def maximal_elements(self) -> PosetSubobjects.ObjectType:
             """The induced subposet of maximal elements."""
-            return Posets().Subobjects(self).from_predicate(
-                lambda candidate: conjunction(
-                    ~_strictly_less(candidate, other) for other in self
-                )
-            )
+            return Posets().Subobjects(self).from_predicate(lambda candidate: conjunction(~_strictly_less(candidate, other) for other in self))
 
         def is_chain_of_poset(self, members: PosetSubobjects.ObjectType) -> Proposition:
             """Chainhood is totality of the induced order on the owned subobject."""
@@ -646,9 +617,7 @@ class FiniteRankedPosetsCategory(PropertySubcategory):
 
             def level(vertex: CategoryOfCategories.ElementType) -> PosetSubobjects.ObjectType:
                 target_rank = Cardinal()(int(vertex.point().datum()))
-                return subobjects.from_predicate(
-                    lambda member: self.rank_of_element(member) == target_rank
-                )
+                return subobjects.from_predicate(lambda member: self.rank_of_element(member) == target_rank)
 
             return Fun(shape, subobjects).from_object_rule(level)
 
@@ -815,7 +784,6 @@ register_handler(ranked, _decide_ranked)
 register_handler(graded, _decide_graded)
 register_handler(has_bottom, _decide_has_bottom)
 register_handler(has_top, _decide_has_top)
-register_handler(BinaryRelations().equality(), BinaryRelations()._equal_morphisms)
 Cat().implement(FinitePosetsCategory)
 Cat().implement(FiniteTotallyOrderedSetsCategory)
 

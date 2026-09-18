@@ -47,7 +47,7 @@ def check_represented_open_key_boundary(
     sheaf: RingSheaf[tuple[str, int]],
     source: RingedSpacesCategory.ObjectType[tuple[str, int]],
     target: RingedSpacesCategory.ObjectType[tuple[str, int]],
-    continuous: MorphismCategory.ObjectType,
+    continuous: TopologicalSpacesCategory.MorphismType,
     open_object: CategoryOfCategories.ElementType,
     component: MorphismCategory.ObjectType,
     ringed: RingedSpacesCategory,

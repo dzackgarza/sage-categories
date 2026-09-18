@@ -1,15 +1,18 @@
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
-from typing import Literal, overload
+from typing import Any, Literal, overload
 
 from _typeshed import Incomplete
-from sage.symbolic.expression import Expression as SageExpression
 from sympy import Lambda
 
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.cat.slices
 import sage_categories.kernel.roles
+from sage_categories.cat.assembly import has_selected_value as has_selected_value
+from sage_categories.cat.assembly import point_from_datum as point_from_datum
+from sage_categories.cat.assembly import select_value as select_value
+from sage_categories.cat.assembly import selected_value as selected_value
 from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
@@ -22,6 +25,9 @@ from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.declarations import omega as omega
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
+from sage_categories.cat.leaf_categories import (
+    MorphismDataCategory as MorphismDataCategory,
+)
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Axiom as Axiom
@@ -37,16 +43,11 @@ from sage_categories.cat.shapes import (
 )
 from sage_categories.cat.slices import SliceLikeCategory as SliceLikeCategory
 from sage_categories.cat.slices import SliceProperty as SliceProperty
-from sage_categories.kernel.retention import identity_key as identity_key
-from sage_categories.kernel.retention import identity_positions as identity_positions
-from sage_categories.kernel.sage_runtime import cached_function as cached_function
-from sage_categories.kernel.sage_runtime import cached_method as cached_method
-from sage_categories.kernel.type_aliases import ContainmentInput as ContainmentInput
 
 __all__ = ["FiniteSets", "Sets", "SetsCategory"]
 type Map = Callable[[Hashable], Hashable]
 type MembershipRule = Callable[[Hashable], Proposition]
-type MapData = Map | Lambda | SageExpression | Mapping[Hashable, Hashable]
+type MapData = Map | Lambda | Mapping[Hashable, Hashable] | Any
 
 @dataclass(frozen=True, slots=True)
 class _NoSymbolicRule: ...
@@ -63,11 +64,10 @@ class _StaticRoles_SetsCategory:
         def __init__(self, presentation: tuple[Hashable, ...] | MembershipRule) -> None: ...
         def set_presentation(self) -> tuple[Hashable, ...] | MembershipRule: ...
         def representative(self, datum: Hashable) -> Hashable: ...
-        @cached_method
         def point(self, datum: Hashable) -> SetsCategory.ElementType: ...
         def __iter__(self) -> Iterator[SetsCategory.ElementType]: ...
         def __len__(self) -> int: ...
-        def __contains__(self, point: ContainmentInput) -> bool: ...
+        def __contains__(self, point: object) -> bool: ...
         def membership_proposition(self, point: CategoryOfCategories.ElementType) -> Proposition: ...
 
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject):
@@ -81,7 +81,7 @@ class _StaticRoles_SetsCategory:
         def codomain(self) -> SetsCategory.ObjectType: ...
 
 class SetsCategory(
-    _StaticRoles_SetsCategory, Category[[Map], [], _StaticRoles_SetsCategory.ObjectType, _StaticRoles_SetsCategory.ElementType, _StaticRoles_SetsCategory.MorphismType]
+    _StaticRoles_SetsCategory, MorphismDataCategory[_StaticRoles_SetsCategory.ObjectType, _StaticRoles_SetsCategory.ElementType, _StaticRoles_SetsCategory.MorphismType]
 ):
     def structure_functors(self) -> tuple[Functor, ...]: ...
     Finite: Incomplete
@@ -106,19 +106,14 @@ class SetsCategory(
     def construct_morphism(
         self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, action: MapData | _SetMap
     ) -> MorphismCategory.ObjectType: ...
-    def construct_identity(self, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType: ...
-    def composite(self, second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType: ...
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]: ...
     def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]: ...
     def quotient(
-        self,
-        ambient: SetsCategory.ObjectType,
-        equivalent: Callable[[SetsCategory.ElementType, SetsCategory.ElementType], Proposition],
+        self, ambient: SetsCategory.ObjectType, equivalent: Callable[[SetsCategory.ElementType, SetsCategory.ElementType], Proposition]
     ) -> tuple[SetsCategory.ObjectType, SetsCategory.MorphismType]: ...
     def quotient_representative(self, point: SetsCategory.ElementType) -> SetsCategory.ElementType: ...
     def image_factorization(self, arrow: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
     def factor_through_monomorphism(self, mono: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType | Literal[False]: ...
-    @cached_method
     def hom_morphisms(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType) -> tuple[MorphismCategory.ObjectType, ...]: ...
 
 class _StaticRoles_SetSubobjects(sage_categories.cat.slices._StaticRoles_SliceProperty):

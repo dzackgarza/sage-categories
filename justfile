@@ -49,7 +49,8 @@ generate-stubs:
     set -euo pipefail
     sage_bin="${SAGE_BIN:?SAGE_BIN must name the Sage executable}"
     ruff_config="${HOME}/ai-review-ci/tool-configs/ruff-global.toml"
-    "$sage_bin" -c "from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs('sage_categories', Path('src/sage_categories'), Path('$ruff_config'))"
+    projector_python="$(uv run --no-sync --group dev python -c 'import sys; print(sys.executable)')"
+    PATH="$(dirname "$projector_python"):$PATH" "$sage_bin" -c "from pathlib import Path; from sage_categories.kernel.stub_generator import _generate_stubs; _generate_stubs('sage_categories', Path('src/sage_categories'), Path('$ruff_config'))"
     mapfile -t stubs < <(find src/sage_categories -type f -name '*.pyi' -print | sort)
     test "${#stubs[@]}" -gt 0
     uvx --from ruff ruff check "${stubs[@]}"

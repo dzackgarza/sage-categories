@@ -74,9 +74,13 @@ class _StaticRoles_ApexCategory(sage_categories.cat.properties._StaticRoles_Prop
         def domain(self) -> ApexCategory.ObjectType: ...
         def codomain(self) -> ApexCategory.ObjectType: ...
 
-class ApexCategory[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole, MorphismRole](
-    _StaticRoles_ApexCategory, PropertySubcategory[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]
-):
+class ApexCategory[
+    **MorphismData,
+    **TwoMorphismData,
+    ObjectRole = _StaticRoles_ApexCategory.ObjectType,
+    ElementRole = _StaticRoles_ApexCategory.ElementType,
+    MorphismRole = _StaticRoles_ApexCategory.MorphismType,
+](_StaticRoles_ApexCategory, PropertySubcategory[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]):
     def __init__(self, ambient: Category[MorphismData, TwoMorphismData], name: str, full_subcategory_of: tuple[Category, ...]) -> None: ...
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...
     def accepts(self, diagram: Functor, shape: Category) -> None: ...

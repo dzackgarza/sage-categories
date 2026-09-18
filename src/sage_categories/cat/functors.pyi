@@ -1,9 +1,8 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Generic, overload
+from typing import overload
 
 from _typeshed import Incomplete
-from typing_extensions import TypeVar
 
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
@@ -39,14 +38,6 @@ from sage_categories.kernel.sage_runtime import LazyFamily as LazyFamily
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
 __all__ = ["CreatesLimitsCategory", "Fun", "Functor", "FunctorCategory", "FunctorProperty", "FunctorsCategory", "NaturalTransformation", "PreservesLimitsCategory"]
-DomainCategory = TypeVar("DomainCategory", default="Category[..., ...]")
-CodomainCategory = TypeVar("CodomainCategory", default="Category[..., ...]")
-DomainObject = TypeVar("DomainObject", default="CategoryOfCategories.ElementType")
-DomainElement = TypeVar("DomainElement", default="CategoryOfCategories.ElementType")
-DomainMorphism = TypeVar("DomainMorphism", default="MorphismCategory.ObjectType")
-CodomainObject = TypeVar("CodomainObject", default="CategoryOfCategories.ElementType")
-CodomainElement = TypeVar("CodomainElement", default="CategoryOfCategories.ElementType")
-CodomainMorphism = TypeVar("CodomainMorphism", default="MorphismCategory.ObjectType")
 
 @dataclass(frozen=True, eq=False, slots=True)
 class NaturalTransformationData:
@@ -56,7 +47,9 @@ class NaturalTransformationData:
 
 type Functor = sage_categories.cat.category.CategoryOfCategories.MorphismType
 
-class ShapeIndexedFunctorProperty(PropertySubcategory[[OnObject, OnMorphism], [Assignment]]):
+class ShapeIndexedFunctorProperty[ObjectRole = PropertySubcategory.ObjectType, ElementRole = PropertySubcategory.ElementType, MorphismRole = PropertySubcategory.MorphismType](
+    PropertySubcategory[[OnObject, OnMorphism], [Assignment], ObjectRole, ElementRole, MorphismRole]
+):
     def __init__(self, ambient: FunctorsCategory, name: str, full_subcategory_of: tuple[Category, ...], shape: Category | Functor) -> None: ...
     def shape(self) -> Category | Functor: ...
 
@@ -77,17 +70,49 @@ class FunctorProperty(
     def __call__(self, *args: OnObject | OnMorphism, **kwargs: OnObject | OnMorphism) -> Functor: ...
 
 class _StaticRoles_FunctorCategory(sage_categories.cat.morphisms._StaticRoles_FixedEndpointCategory):
-    class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.MorphismType, sage_categories.kernel.roles.ObjectOfCategory): ...
+    class ObjectType[
+        DomainCategory = Category[..., ...],
+        CodomainCategory = Category[..., ...],
+        DomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+        DomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+        DomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
+        CodomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+        CodomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+        CodomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
+    ](
+        sage_categories.cat.category._StaticRoles_CategoryOfCategories.MorphismType[
+            DomainCategory, CodomainCategory, DomainObject, DomainElement, DomainMorphism, CodomainObject, CodomainElement, CodomainMorphism
+        ],
+        sage_categories.kernel.roles.ObjectOfCategory,
+    ): ...
     class ElementType(_StaticRoles_FunctorsCategory.ElementType): ...
 
     class MorphismType(_StaticRoles_FunctorsCategory.MorphismType):
         def domain(self) -> FunctorCategory.ObjectType: ...
         def codomain(self) -> FunctorCategory.ObjectType: ...
 
-class FunctorCategory(
+class FunctorCategory[
+    DomainCategory = Category[..., ...],
+    CodomainCategory = Category[..., ...],
+    DomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    DomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    DomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
+    CodomainObject = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    CodomainElement = sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType,
+    CodomainMorphism = sage_categories.cat.morphisms._StaticRoles_MorphismCategory.ObjectType,
+](
     _StaticRoles_FunctorCategory,
-    FixedEndpointCategory[_StaticRoles_FunctorCategory.ObjectType, _StaticRoles_FunctorCategory.ElementType, _StaticRoles_FunctorCategory.MorphismType],
-    Generic[DomainCategory, CodomainCategory, DomainObject, DomainElement, DomainMorphism, CodomainObject, CodomainElement, CodomainMorphism],
+    FixedEndpointCategory[
+        [OnObject, OnMorphism],
+        [Assignment],
+        DomainCategory,
+        CodomainCategory,
+        _StaticRoles_FunctorCategory.ObjectType[
+            DomainCategory, CodomainCategory, DomainObject, DomainElement, DomainMorphism, CodomainObject, CodomainElement, CodomainMorphism
+        ],
+        _StaticRoles_FunctorCategory.ElementType,
+        _StaticRoles_FunctorCategory.MorphismType,
+    ],
 ):
     def __init__(self, morphisms: MorphismCategory, domain: DomainCategory, codomain: CodomainCategory) -> None: ...
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...
@@ -107,6 +132,18 @@ class FunctorCategory(
     def object_at(self, point: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType: ...
     def morphism_at(self, point: CategoryOfCategories.ElementType) -> NaturalTransformation: ...
     def narrowing_type(self) -> type[FunctorProperty]: ...
+    def __call__[ResultObject, ResultMorphism](
+        self, on_object: Callable[[CategoryOfCategories.ElementType], ResultObject], on_morphism: Callable[[MorphismCategory.ObjectType], ResultMorphism]
+    ) -> CategoryOfCategories.MorphismType[
+        DomainCategory,
+        CodomainCategory,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+        ResultObject,
+        CategoryOfCategories.ElementType,
+        ResultMorphism,
+    ]: ...
 
 class _StaticRoles_FunctorsCategory(sage_categories.cat.morphisms._StaticRoles_MorphismCategory):
     class ElementType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ElementOfObject): ...
@@ -124,25 +161,28 @@ class _StaticRoles_FunctorsCategory(sage_categories.cat.morphisms._StaticRoles_M
         def codomain(self) -> FunctorsCategory.ObjectType: ...
 
 class FunctorsCategory(
-    _StaticRoles_FunctorsCategory, MorphismCategory[CategoryOfCategories.MorphismType, _StaticRoles_FunctorsCategory.ElementType, _StaticRoles_FunctorsCategory.MorphismType]
+    _StaticRoles_FunctorsCategory,
+    MorphismCategory[
+        [OnObject, OnMorphism], [Assignment], CategoryOfCategories.MorphismType, _StaticRoles_FunctorsCategory.ElementType, _StaticRoles_FunctorsCategory.MorphismType
+    ],
 ):
     ObjectType = CategoryOfCategories.MorphismType
 
     def __init__(self, base: CategoryOfCategories) -> None: ...
     def fixed_endpoint_type(self) -> type[FunctorCategory]: ...
     @overload
-    def __call__[DomainObject, DomainElement, DomainMorphism, CodomainObject, CodomainElement, CodomainMorphism](
-        self, shape: Category[..., ..., DomainObject, DomainElement, DomainMorphism], target: Category[..., ..., CodomainObject, CodomainElement, CodomainMorphism]
-    ) -> FunctorCategory[
-        Category[..., ..., DomainObject, DomainElement, DomainMorphism],
-        Category[..., ..., CodomainObject, CodomainElement, CodomainMorphism],
+    def __call__[
         DomainObject,
         DomainElement,
         DomainMorphism,
         CodomainObject,
         CodomainElement,
         CodomainMorphism,
-    ]: ...
+        DomainCategory: Category[..., ..., DomainObject, DomainElement, DomainMorphism],
+        CodomainCategory: Category[..., ..., CodomainObject, CodomainElement, CodomainMorphism],
+    ](
+        self, shape: DomainCategory, target: CodomainCategory
+    ) -> FunctorCategory[DomainCategory, CodomainCategory, DomainObject, DomainElement, DomainMorphism, CodomainObject, CodomainElement, CodomainMorphism]: ...
     @overload
     def __call__(self, shape: Category[..., ...], target: Functor) -> Functor: ...
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...

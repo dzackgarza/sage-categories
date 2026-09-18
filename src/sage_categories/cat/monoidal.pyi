@@ -1,7 +1,5 @@
 from collections.abc import Callable
-from typing import Generic, NamedTuple
-
-from typing_extensions import TypeVar
+from typing import NamedTuple
 
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
@@ -41,9 +39,6 @@ __all__ = [
     "register_cartesian_comparisons",
 ]
 type CartesianComparisonHandler = Callable[..., MorphismCategory.ObjectType]
-BaseCategory = TypeVar("BaseCategory", default="Category[..., ...]")
-ActingCategory = TypeVar("ActingCategory", default="Category[..., ...]")
-ActedCategory = TypeVar("ActedCategory", default="Category[..., ...]")
 
 def register_cartesian_comparisons(category_type: type[Category], handler: CartesianComparisonHandler) -> None: ...
 
@@ -55,7 +50,9 @@ class _MonoidalData(NamedTuple):
     right_unitor: NaturalTransformation
 
 class _StaticRoles_MonoidalStructuresCategory:
-    class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType[BaseCategory: Category[..., ...] = Category[..., ...]](
+        sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory
+    ):
         def __init__(self, data: _MonoidalData) -> None: ...
         def underlying_category(self) -> BaseCategory: ...
         def tensor(self) -> Functor: ...
@@ -79,12 +76,15 @@ class _StaticRoles_MonoidalStructuresCategory:
         def domain(self) -> MonoidalStructuresCategory.ObjectType: ...
         def codomain(self) -> MonoidalStructuresCategory.ObjectType: ...
 
-class MonoidalStructuresCategory(
+class MonoidalStructuresCategory[BaseCategory: Category[..., ...] = Category[..., ...]](
     _StaticRoles_MonoidalStructuresCategory,
     Category[
-        [], [], _StaticRoles_MonoidalStructuresCategory.ObjectType, _StaticRoles_MonoidalStructuresCategory.ElementType, _StaticRoles_MonoidalStructuresCategory.MorphismType
+        [],
+        [],
+        _StaticRoles_MonoidalStructuresCategory.ObjectType[BaseCategory,],
+        _StaticRoles_MonoidalStructuresCategory.ElementType,
+        _StaticRoles_MonoidalStructuresCategory.MorphismType,
     ],
-    Generic[BaseCategory],
 ):
     def __init__(self, base: BaseCategory) -> None: ...
     def __call__(
@@ -108,7 +108,9 @@ class _ActionData(NamedTuple):
     unitor: NaturalTransformation
 
 class _StaticRoles_ActionsCategory:
-    class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory):
+    class ObjectType[ActingCategory: Category[..., ...] = Category[..., ...], ActedCategory: Category[..., ...] = Category[..., ...]](
+        sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory
+    ):
         def __init__(self, data: _ActionData) -> None: ...
         def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType[ActingCategory]: ...
         def underlying_category(self) -> ActedCategory: ...
@@ -126,10 +128,11 @@ class _StaticRoles_ActionsCategory:
         def domain(self) -> ActionsCategory.ObjectType: ...
         def codomain(self) -> ActionsCategory.ObjectType: ...
 
-class ActionsCategory(
+class ActionsCategory[ActingCategory: Category[..., ...] = Category[..., ...], ActedCategory: Category[..., ...] = Category[..., ...]](
     _StaticRoles_ActionsCategory,
-    Category[[], [], _StaticRoles_ActionsCategory.ObjectType, _StaticRoles_ActionsCategory.ElementType, _StaticRoles_ActionsCategory.MorphismType],
-    Generic[ActingCategory, ActedCategory],
+    Category[
+        [], [], _StaticRoles_ActionsCategory.ObjectType[ActingCategory, ActedCategory], _StaticRoles_ActionsCategory.ElementType, _StaticRoles_ActionsCategory.MorphismType
+    ],
 ):
     def __init__(self, monoidal: MonoidalStructuresCategory.ObjectType[ActingCategory], base: ActedCategory) -> None: ...
     def __call__(self, action: Functor, associator: NaturalTransformation, unitor: NaturalTransformation) -> ActionsCategory.ObjectType[ActingCategory, ActedCategory]: ...

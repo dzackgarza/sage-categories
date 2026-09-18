@@ -2,7 +2,7 @@
 
 from pytest import raises
 
-from sage_categories.cat.declarations import NN
+from sage_categories.cat.declarations import NN, omega
 from sage_categories.all import Cat, Category, Fun, Sets
 
 declared = NN
@@ -21,6 +21,12 @@ def test_named_positive_integers_retain_their_declaration_and_points() -> None:
     assert defining.on_object(Cat().Terminal()(0)) is point
     with raises(AssertionError):
         NN.point(0)
+
+
+def test_named_sequential_category_retains_its_thin_parameters() -> None:
+    assert omega.carrier() is NN
+    assert omega.order()(NN.point(2), NN.point(3)) is True
+    assert omega.order()(NN.point(3), NN.point(2)) is False
 
 
 TwoLabels = Cat().declare("TwoLabels")
@@ -55,4 +61,5 @@ def test_named_finite_set_uses_its_defining_presentation() -> None:
 
 
 test_named_positive_integers_retain_their_declaration_and_points()
+test_named_sequential_category_retains_its_thin_parameters()
 test_named_finite_set_uses_its_defining_presentation()

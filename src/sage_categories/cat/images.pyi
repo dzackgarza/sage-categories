@@ -39,7 +39,13 @@ class _StaticRoles_ImageMorphismCategory(sage_categories.cat.morphisms._StaticRo
 
 class ImageMorphismCategory[**MorphismData, **TwoMorphismData](
     _StaticRoles_ImageMorphismCategory,
-    MorphismCategory[_StaticRoles_ImageMorphismCategory.ObjectType, _StaticRoles_ImageMorphismCategory.ElementType, _StaticRoles_ImageMorphismCategory.MorphismType],
+    MorphismCategory[
+        MorphismData,
+        TwoMorphismData,
+        _StaticRoles_ImageMorphismCategory.ObjectType,
+        _StaticRoles_ImageMorphismCategory.ElementType,
+        _StaticRoles_ImageMorphismCategory.MorphismType,
+    ],
 ):
     def membership_proposition(self, candidate: CategoryOfCategories.ElementType) -> Proposition: ...
 
@@ -51,9 +57,13 @@ class _StaticRoles_ImageCategory:
         def domain(self) -> ImageCategory.ObjectType: ...
         def codomain(self) -> ImageCategory.ObjectType: ...
 
-class ImageCategory[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole, MorphismRole](
-    _StaticRoles_ImageCategory, Category[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]
-):
+class ImageCategory[
+    **MorphismData,
+    **TwoMorphismData,
+    ObjectRole = _StaticRoles_ImageCategory.ObjectType,
+    ElementRole = _StaticRoles_ImageCategory.ElementType,
+    MorphismRole = _StaticRoles_ImageCategory.MorphismType,
+](_StaticRoles_ImageCategory, Category[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole]):
     def __init__(self, defining_functor: Functor) -> None: ...
     def defining_functor(self) -> Functor: ...
     def target(self) -> Category: ...

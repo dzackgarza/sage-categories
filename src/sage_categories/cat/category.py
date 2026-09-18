@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Callable, Hashable
+from contextvars import ContextVar
 from dataclasses import dataclass
-from functools import cache
+from functools import cache, partial
 from typing import TYPE_CHECKING, ClassVar, Literal, overload
 
 from sage_categories.cat.equality import equality_predicate
@@ -1354,6 +1355,20 @@ class CategoryDeclaration[
 Category = CategoryDeclaration
 
 
+@dataclass(frozen=True, slots=True)
+class _ImplementationInvocation:
+    """The constructor currently being read by ``Cat().implement``."""
+
+    category_type: type[Category]
+    initialize: Callable[[Category], None]
+
+
+_implementation_invocation: ContextVar[_ImplementationInvocation | None] = ContextVar(
+    "category implementation invocation",
+    default=None,
+)
+
+
 def _shared_category(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> Category:
     """The narrowest category containing both operands, which owns their construction (POL-CAT-088).
 
@@ -1926,7 +1941,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """The class implementing the declaration ``name``, or ``None``."""
         return self._implementations.get(name)
 
-    def implement(self, implementation: type[Category]) -> None:
+    def implement(self, implementation: type[Category] | partial[Category]) -> None:
         """Connect ``implementation`` to the category it declares itself the implementation of (D156).
 
         The class says which category by selecting that category's identity functor
@@ -1940,7 +1955,24 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         has no category of its own to construct, so the construction stops at the
         declaration and ``Cat`` strengthens the declared value instead (``_initialize``).
         """
-        implementation()
+        match implementation:
+            case partial(func=category_type, args=arguments, keywords=keywords):
+                assert isinstance(category_type, type) and issubclass(category_type, Category)
+                options = {} if keywords is None else keywords
+
+                def initialize(category: Category) -> None:
+                    category_type.__init__(category, *arguments, **options)
+
+            case type() as category_type:
+                assert issubclass(category_type, Category)
+                initialize = category_type.__init__
+            case _:
+                raise TypeError(f"{implementation!r} is not a category implementation constructor")
+        token = _implementation_invocation.set(_ImplementationInvocation(category_type, initialize))
+        try:
+            implementation()
+        finally:
+            _implementation_invocation.reset(token)
 
     def _adopt(
         self,
@@ -1961,11 +1993,19 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         from sage_categories.kernel.compiler import implement_category
 
         assert issubclass(implementation, self.ObjectType)
+        invocation = _implementation_invocation.get()
+        assert invocation is not None and invocation.category_type is implementation
         name = self.open_declaration(declared)
         if name is not None:
             self._implementations[name] = implementation
             del self._open_declarations[declared]
-        implement_category(declared, implementation, selected_functors, augment=name is None)
+        implement_category(
+            declared,
+            implementation,
+            selected_functors,
+            invocation.initialize,
+            augment=name is None,
+        )
 
     def morphism_category_type(self) -> type[FunctorsCategory]:
         from sage_categories.cat.functors import FunctorsCategory

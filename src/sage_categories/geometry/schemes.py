@@ -74,9 +74,9 @@ __all__ = [
     "AffineToSchemes",
     "FiniteAffineGluing",
     "ProjectiveLinePresentation",
+    "SchemeOpenCategory",
     "Schemes",
     "SchemesCategory",
-    "SchemeOpenCategory",
     "native_scheme",
     "native_scheme_morphism",
     "projective_line",
@@ -177,9 +177,7 @@ class SchemeOpenCategory(ParameterizedThinCategory):
             chart_opens = self.chart_opens()
             local_rings = tuple(component.section_ring() for component in chart_opens)
 
-            def overlap_restrictions(
-                left: int, right: int
-            ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+            def overlap_restrictions(left: int, right: int) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
                 return _backend.finite_overlap_restrictions(
                     self.presentation(),
                     left,
@@ -189,7 +187,6 @@ class SchemeOpenCategory(ParameterizedThinCategory):
                 )
 
             return descent_section_ring(self, local_rings, overlap_restrictions)
-
 
         def restriction_to(self, larger: SchemeOpenCategory.ObjectType) -> MorphismCategory.ObjectType:
             return cast(SchemeOpenCategory, self.parent()).restriction_map(self, larger)
@@ -222,9 +219,7 @@ class SchemeOpenCategory(ParameterizedThinCategory):
                 )
                 for source_chart in range(len(presentation.charts))
             )
-            return self.assemble_object(
-                _SchemeOpenData(presentation, chart, affine_open, chart_opens)
-            )
+            return self.assemble_object(_SchemeOpenData(presentation, chart, affine_open, chart_opens))
 
         return cast(
             SchemeOpenCategory.ObjectType,
@@ -251,9 +246,7 @@ class SchemeOpenCategory(ParameterizedThinCategory):
                 self,
                 "global-open",
                 chart_opens,
-                lambda: self.assemble_object(
-                    _SchemeOpenData(presentation, 0, chart_opens[0], chart_opens)
-                ),
+                lambda: self.assemble_object(_SchemeOpenData(presentation, 0, chart_opens[0], chart_opens)),
             ),
         )
 
@@ -459,23 +452,13 @@ def _transition_point(
 def _finite_glued_topological_space(
     presentation: FiniteAffineGluing,
 ) -> TopologicalSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
-    def construct() -> TopologicalSpacesCategory.ObjectType[
-        SchemeOpenCategory.ObjectType
-    ]:
+    def construct() -> TopologicalSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
         def member(value: Hashable):
             match value:
-                case _TaggedAffinePoint(
-                    presentation=retained, chart=chart, point=point
-                ):
-                    match retained is presentation and 0 <= chart < len(
-                        presentation.charts
-                    ):
+                case _TaggedAffinePoint(presentation=retained, chart=chart, point=point):
+                    match retained is presentation and 0 <= chart < len(presentation.charts):
                         case True:
-                            return (
-                                true
-                                if point.scheme is presentation.charts[chart]
-                                else false
-                            )
+                            return true if point.scheme is presentation.charts[chart] else false
                         case False:
                             return false
                 case _:
@@ -491,11 +474,7 @@ def _finite_glued_topological_space(
             right = cast(_TaggedAffinePoint, second.datum())
             match left.chart == right.chart:
                 case True:
-                    return (
-                        true
-                        if prime_ideal_equal(left.point.prime, right.point.prime)
-                        else false
-                    )
+                    return true if prime_ideal_equal(left.point.prime, right.point.prime) else false
                 case False:
                     pass
             transported = _transition_point(
@@ -508,11 +487,7 @@ def _finite_glued_topological_space(
                 case None:
                     return false
                 case _:
-                    return (
-                        true
-                        if prime_ideal_equal(transported.prime, right.point.prime)
-                        else false
-                    )
+                    return true if prime_ideal_equal(transported.prime, right.point.prime) else false
 
         opens = _scheme_open_category(presentation)
 
@@ -529,9 +504,7 @@ def _finite_glued_topological_space(
             key: SchemeOpenCategory.ObjectType,
         ) -> CategoryOfCategories.ElementType:
             assert key.presentation() is presentation
-            return cast(
-                CategoryOfCategories.ElementType, cast(Any, open_carrier).point(key)
-            )
+            return cast(CategoryOfCategories.ElementType, cast(Any, open_carrier).point(key))
 
         return TopologicalSpaces().quotient_from_open_category(
             ambient,
@@ -664,9 +637,7 @@ def _finite_chart_continuous_map(
         return TopologicalSpaces().quotient_chart_morphism(
             source,
             target,
-            lambda value: _TaggedAffinePoint(
-                presentation, chart_index, cast(AffineSpectrumPoint, value)
-            ),
+            lambda value: _TaggedAffinePoint(presentation, chart_index, cast(AffineSpectrumPoint, value)),
             preimage,
         )
 
@@ -879,11 +850,7 @@ class SchemesCategory(PropertySubcategory):
     ) -> SchemesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
         """Glue a finite affine family along represented overlap covers satisfying cocycle."""
         assert len(charts) >= 2
-        expected_pairs = {
-            (left, right)
-            for left in range(len(charts))
-            for right in range(left + 1, len(charts))
-        }
+        expected_pairs = {(left, right) for left in range(len(charts)) for right in range(left + 1, len(charts))}
         assert {(overlap.left, overlap.right) for overlap in overlaps} == expected_pairs
         presentation = FiniteAffineGluing(charts, overlaps)
 
@@ -907,9 +874,7 @@ class SchemesCategory(PropertySubcategory):
                 source = self.affine(chart)
                 ambient = _finite_chart_locally_ringed_map(presentation, chart_index)
                 assert ambient.domain() is source and ambient.codomain() is value
-                inclusion = cast(
-                    SchemesCategory.MorphismType, self.restrict_morphism(ambient)
-                )
+                inclusion = cast(SchemesCategory.MorphismType, self.restrict_morphism(ambient))
                 _backend.retain_chart_inclusion(inclusion, chart, value)
                 local_opens, local_sheaf = affine_structure_sheaf(chart)
                 scheme_opens = _scheme_open_category(presentation)
@@ -946,11 +911,7 @@ class SchemesCategory(PropertySubcategory):
                     represented = cast(SchemeOpenCategory.ObjectType, global_key)
                     source_open = represented.chart_open(retained_chart_index)
                     component_maps = tuple(
-                        component.restriction_to(source_open)
-                        if index == retained_chart_index
-                        else _backend.finite_open_restriction(
-                            presentation, component, source_open
-                        )
+                        component.restriction_to(source_open) if index == retained_chart_index else _backend.finite_open_restriction(presentation, component, source_open)
                         for index, component in enumerate(represented.chart_opens())
                     )
                     return descent_lift(
@@ -966,9 +927,7 @@ class SchemesCategory(PropertySubcategory):
                     local_sheaf,
                     global_open,
                     lambda key: cast(SchemeOpenCategory.ObjectType, key).section_ring(),
-                    lambda smaller, larger: cast(
-                        SchemeOpenCategory.ObjectType, smaller
-                    ).restriction_to(cast(SchemeOpenCategory.ObjectType, larger)),
+                    lambda smaller, larger: cast(SchemeOpenCategory.ObjectType, smaller).restriction_to(cast(SchemeOpenCategory.ObjectType, larger)),
                     projection,
                     lift,
                 )
@@ -983,10 +942,10 @@ class SchemesCategory(PropertySubcategory):
             construct,
         )
 
-    def gluing_mediator(
+    def gluing_mediator[SourceOpenKey: Hashable, TargetOpenKey: Hashable](
         self,
-        source: SchemesCategory.ObjectType,
-        target: SchemesCategory.ObjectType,
+        source: SchemesCategory.ObjectType[SourceOpenKey],
+        target: SchemesCategory.ObjectType[TargetOpenKey],
         chart_maps: tuple[SchemesCategory.MorphismType, ...],
     ) -> SchemesCategory.MorphismType:
         """The unique scheme morphism induced by compatible maps on a finite affine cover."""
@@ -1009,12 +968,7 @@ class SchemesCategory(PropertySubcategory):
             def assemble_open(
                 chart_opens: tuple[CategoryOfCategories.ElementType, ...],
             ) -> CategoryOfCategories.ElementType:
-                return source_opens.from_chart_opens(
-                    tuple(
-                        cast(AffineOpenCategory.ObjectType, open_object)
-                        for open_object in chart_opens
-                    )
-                )
+                return source_opens.from_chart_opens(tuple(cast(AffineOpenCategory.ObjectType, open_object) for open_object in chart_opens))
 
             continuous = TopologicalSpaces().quotient_mediator(
                 source.space(),
@@ -1035,10 +989,7 @@ class SchemesCategory(PropertySubcategory):
                     source_open,
                     target_presheaf.section_ring(target_key),
                     source_open.section_ring(),
-                    tuple(
-                        mapping.sheaf_map().component(target_open)
-                        for mapping in chart_maps
-                    ),
+                    tuple(mapping.sheaf_map().component(target_open) for mapping in chart_maps),
                 )
 
             ringed = RingedSpaces().homomorphism(
@@ -1051,21 +1002,15 @@ class SchemesCategory(PropertySubcategory):
                 source,
                 target,
                 ringed,
-                lambda point: chart_maps[chart_point(point)[0]].stalk_map(
-                    chart_point(point)[1]
-                ),
-                lambda point, _stalk_map: chart_maps[
-                    chart_point(point)[0]
-                ].local_map_condition(chart_point(point)[1]),
+                lambda point: chart_maps[chart_point(point)[0]].stalk_map(chart_point(point)[1]),
+                lambda point, _stalk_map: chart_maps[chart_point(point)[0]].local_map_condition(chart_point(point)[1]),
             )
             arrow = cast(SchemesCategory.MorphismType, self.restrict_morphism(ambient))
             _backend.retain_covered_morphism(
                 arrow,
                 source,
                 target,
-                tuple(
-                    cast(MorphismCategory.ObjectType, mapping) for mapping in chart_maps
-                ),
+                tuple(cast(MorphismCategory.ObjectType, mapping) for mapping in chart_maps),
             )
             return arrow
 
@@ -1220,24 +1165,34 @@ def projective_line(
     schemes = Schemes()
     charts = (cover.left, cover.right)
     piece = AffineOverlapPiece(
-        cover.left_overlap, cover.right_overlap,
-        cover.right_to_left, cover.left_to_right,
+        cover.left_overlap,
+        cover.right_overlap,
+        cover.right_to_left,
+        cover.left_to_right,
     )
     overlap = schemes.affine_overlap(charts, 0, 1, (piece,))
     glued = schemes.glue_affines(charts, (overlap,))
     left_entry, right_entry = glued.affine_cover()
     left_inclusion, right_inclusion = left_entry.open_immersion, right_entry.open_immersion
 
-    swap_left = schemes.affine_morphism(AffineSchemes().construct_morphism(
-        cover.left, cover.right,
-        presented_ring_homomorphism(cover.right_ring, cover.left_ring, (cover.t,)),
-    ))
-    swap_right = schemes.affine_morphism(AffineSchemes().construct_morphism(
-        cover.right, cover.left,
-        presented_ring_homomorphism(cover.left_ring, cover.right_ring, (cover.u,)),
-    ))
+    swap_left = schemes.affine_morphism(
+        AffineSchemes().construct_morphism(
+            cover.left,
+            cover.right,
+            presented_ring_homomorphism(cover.right_ring, cover.left_ring, (cover.t,)),
+        )
+    )
+    swap_right = schemes.affine_morphism(
+        AffineSchemes().construct_morphism(
+            cover.right,
+            cover.left,
+            presented_ring_homomorphism(cover.left_ring, cover.right_ring, (cover.u,)),
+        )
+    )
     swap = schemes.gluing_mediator(
-        glued, glued, (right_inclusion * swap_left, left_inclusion * swap_right),
+        glued,
+        glued,
+        (right_inclusion * swap_left, left_inclusion * swap_right),
     )
     schemes.retain_inverses(swap, swap)
 
@@ -1260,9 +1215,13 @@ def projective_line(
     base_affine = Spec.on_object(field)
     base = schemes.affine(base_affine)
     structure_maps = tuple(
-        schemes.affine_morphism(AffineSchemes().construct_morphism(
-            chart, base_affine, polynomial_coefficient_map(chart.coordinate_ring()),
-        ))
+        schemes.affine_morphism(
+            AffineSchemes().construct_morphism(
+                chart,
+                base_affine,
+                polynomial_coefficient_map(chart.coordinate_ring()),
+            )
+        )
         for chart in charts
     )
     structure_map = schemes.gluing_mediator(glued, base, structure_maps)
@@ -1272,9 +1231,23 @@ def projective_line(
     slice_category.retain_inverses(swap_over_base, swap_over_base)
 
     return ProjectiveLinePresentation(
-        glued, cover.left, cover.right, cover.t, cover.u,
-        cover.left_overlap, cover.right_overlap,
-        left_inclusion, right_inclusion, swap, glued.sheaf(), overlap_swap,
-        left_global, right_global, overlap_global,
-        base, structure_map, over_base, swap_over_base,
+        glued,
+        cover.left,
+        cover.right,
+        cover.t,
+        cover.u,
+        cover.left_overlap,
+        cover.right_overlap,
+        left_inclusion,
+        right_inclusion,
+        swap,
+        glued.sheaf(),
+        overlap_swap,
+        left_global,
+        right_global,
+        overlap_global,
+        base,
+        structure_map,
+        over_base,
+        swap_over_base,
     )

@@ -1327,6 +1327,7 @@ def implement_category(
     category: Category,
     implementation: type[Category],
     selected_functors: tuple[Functor, ...],
+    category_initializer: Callable[[Category], None],
     *,
     augment: bool,
 ) -> None:
@@ -1342,7 +1343,7 @@ def implement_category(
     if not augment:
         object.__setattr__(category, "__class__", implementation)
         vars(category)["_own_classes"] = (implementation,)
-        implementation.__init__(category)
+        category_initializer(category)
         root = retained_object_input(category)
         context = ObjectConstructionContext(category, root.identity, CategoryPointIdentity(root.identity.category), ())
         token = activate_object_context(context)

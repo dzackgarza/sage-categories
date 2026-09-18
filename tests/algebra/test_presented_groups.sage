@@ -13,13 +13,15 @@ def test_cyclic_two_presentation_retains_relations_and_universal_factor() -> Non
     assert group in Groups(Sets)
     square = group.operation().domain()
     product = group.operation()(square.point((generator.datum(), generator.datum())))
-    unit = group.unit_morphism()(group.unit_morphism().domain().an_element())
+    unit = group.unit_morphism()(group.unit_morphism().domain().point(()))
     assert ask(product == unit) is True
     relation = presentation.relation_images()[0]
     free_generator = presentation.free_generators()[0]
     free_square = presentation.free_group().operation().domain()
-    expected_relation = presentation.free_group().operation()(
-        free_square.point((free_generator.datum(), free_generator.datum()))
+    expected_relation = presentation.free_group().object_at(
+        presentation.free_group().operation()(
+            free_square.point((free_generator.datum(), free_generator.datum()))
+        )
     )
     assert ask(relation == expected_relation) is True
     assert ask(presentation.quotient_morphism()(free_generator) == generator) is True

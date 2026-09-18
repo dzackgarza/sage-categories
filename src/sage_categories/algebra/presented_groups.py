@@ -131,10 +131,9 @@ class GroupPresentation:
         relators.  A violated relation therefore raises ``ValueError`` without a second
         repository-owned evaluator.
         """
-        target_carrier = target.operation().codomain()
         points = tuple(generator_images)
-        if any(point.parent() is not target_carrier for point in points):
-            raise ValueError("presentation generator images must be points of the target group carrier")
+        if any(point.parent() is not target for point in points):
+            raise ValueError("presentation generator images must be points of the target group")
         images = tuple(point.datum() for point in points)
         if len(images) != len(self.generator_names()):
             raise ValueError("one target image is required for every presentation generator")

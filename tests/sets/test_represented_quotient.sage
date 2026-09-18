@@ -9,10 +9,10 @@ def test_non_enumerated_quotient_uses_owned_equivalence_relation() -> None:
     integers = Sets.from_membership(lambda value: Q.integer(value))
 
     def same_parity(left, right):
-        match (left.datum() - right.datum()) % 2:
-            case 0:
+        match bool((left.datum() - right.datum()) % 2):
+            case False:
                 return true
-            case _:
+            case True:
                 return false
 
     quotient, projection = Sets.quotient(integers, same_parity)

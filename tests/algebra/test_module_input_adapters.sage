@@ -52,10 +52,10 @@ def test_endomorphism_action_is_restriction_along_the_supplied_map() -> None:
     c2 = finite_monoid(c2_carrier, lambda pair: (pair[0] + pair[1]) % 2, 0)
 
     def representation_rule(value):
-        match value:
-            case 0:
+        match bool(value):
+            case False:
                 return (0, 1)
-            case 1:
+            case True:
                 return (1, 0)
 
     representation = Monoids(structure).homomorphism(

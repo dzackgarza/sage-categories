@@ -377,6 +377,17 @@ def _projection_providers() -> Iterator[tuple[str, Category, Role, type[Category
             yield _projection_surface(role), current.category, current.role, provider
 
 
+def _installed_augmentation_declarations(current: Node) -> tuple[type[CategoryPoint], ...]:
+    """Role declarations installed only on this exact category identity.
+
+    Exact-category augmentation is semantic runtime ownership, but it is not nominal
+    ancestry of every reusable source provider whose runtime C3 happens to pass through
+    that exact value.  Runtime dispatch keeps these declarations; static projection
+    filters them from shared provider bases.
+    """
+    return tuple(vars(implementation)[current.role.value] for implementation in reversed(current.category._installed_category_implementations))
+
+
 def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
     """Project the compiler's C3 declaration order shared by each source provider.
 
@@ -391,7 +402,9 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
     observed: set[tuple[str, str]] = set()
     for surface_name, category, role, provider in _projection_providers():
         provider_name = _declaration_name(provider)
-        names = tuple(_declaration_name(declaration) for declaration in declared_inheritance(category, role))
+        current = node(category, role)
+        exact_augmentations = {declaration for source in (current, *_linearized_nodes(current)) for declaration in _installed_augmentation_declarations(source)}
+        names = tuple(_declaration_name(declaration) for declaration in declared_inheritance(category, role) if declaration not in exact_augmentations)
         entry = tuple(name for name in names if name != provider_name)
         if surface_name not in result:
             result[surface_name] = {}
@@ -670,11 +683,7 @@ def _semantic_declarations(current: Node) -> tuple[type[CategoryPoint], ...]:
     them in the same precedence order as the installed bodies: newest
     augmentation first, followed by the category's original local declaration.
     """
-    augmented = tuple(
-        vars(implementation)[current.role.value]
-        for implementation in reversed(current.category._installed_category_implementations)
-    )
-    return (*augmented, current.category.local_role_class(current.role))
+    return (*_installed_augmentation_declarations(current), current.category.local_role_class(current.role))
 
 
 def runtime_semantic_bases(
@@ -707,11 +716,7 @@ def runtime_semantic_bases(
             if installed is not None and installed is not runtime_class:
                 return (installed,)
         return None
-    supplied = [
-        declaration
-        for source in (current, *_linearized_nodes(current))
-        for declaration in _semantic_declarations(source)
-    ]
+    supplied = [declaration for source in (current, *_linearized_nodes(current)) for declaration in _semantic_declarations(source)]
     result: list[type[CategoryPoint]] = [declaration for position, declaration in enumerate(supplied) if not any(declaration is later for later in supplied[position + 1 :])]
     stable_role = kernel_base(current.role)
     if not issubclass(stable_role, runtime_class) and not any(issubclass(base, stable_role) for base in result):

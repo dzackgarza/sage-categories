@@ -963,6 +963,7 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         mediator: Mediator,
     ) -> CategoryOfCategories.ElementType:
         """Select the dual limiting cone from supplied colimit data."""
+        from sage_categories.cat.opposites import opposite_morphism
 
         assert diagram in self.diagrams()
         assert colimiting_cocone in self.diagrams().morphism_category(1)
@@ -971,7 +972,20 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
         # Keep the supplied public cocone as the authoritative presentation.  The
         # opposite limit remains the execution model, but readers of this colimit should
         # not reconstruct the same legs and mediator through the entire opposite tower.
-        self._presentations[diagram] = colimit_cocones(diagram).with_universal_data(colimiting_cocone, mediator)
+        self._presentations[diagram] = colimit_cocones(diagram).with_universal_data(
+            colimiting_cocone,
+            lambda candidate: mediator(candidate.transformation()),
+        )
+        dual_diagram = self._dual_diagram(diagram)
+        if self._dual_limits.has_construction(dual_diagram):
+            assert self._dual_limits.chosen_object(dual_diagram) is apex
+        else:
+            self._dual_limits.with_universal_data(
+                dual_diagram,
+                self.ambient().op()(apex),
+                colimiting_cocone.op(),
+                lambda candidate: opposite_morphism(mediator(candidate.op())),
+            )
         return self._associate(self._presentations[diagram])
 
     @cached_method

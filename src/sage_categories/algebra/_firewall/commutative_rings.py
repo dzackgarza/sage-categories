@@ -120,7 +120,7 @@ class _OscarCommutativeRingOperations(Category):
         first: MorphismCategory.ObjectType,
         second: MorphismCategory.ObjectType,
     ) -> bool | None:
-        if not (_morphisms.has(first) and _morphisms.has(second)):
+        if not (_oscar_morphism_is_lowerable(first) and _oscar_morphism_is_lowerable(second)):
             return None
         return _oscar_runtime().ring_map_equal(oscar_morphism_handle(first), oscar_morphism_handle(second))
 
@@ -174,6 +174,16 @@ def oscar_element_handle(value: CategoryOfCategories.ElementType) -> OscarHandle
     return datum.native
 
 
+def _oscar_morphism_is_lowerable(value: MorphismCategory.ObjectType) -> bool:
+    """Whether ``value`` is already native or a Cat-retained composite of native maps."""
+    if _morphisms.has(value):
+        return True
+    if not value.is_composite():
+        return False
+    first, second = value.factors()
+    return _oscar_morphism_is_lowerable(first) and _oscar_morphism_is_lowerable(second)
+
+
 def oscar_morphism_handle(value: MorphismCategory.ObjectType) -> OscarHandle:
     """Return or lazily assemble the OSCAR map for one owned ring morphism.
 
@@ -183,14 +193,15 @@ def oscar_morphism_handle(value: MorphismCategory.ObjectType) -> OscarHandle:
     """
     if not _morphisms.has(value):
         oscar = _oscar_runtime()
-        word = value.word()
-        if not word:
-            native = oscar.ring_identity(oscar_object_handle(value.domain()))
-        elif value.is_composite():
+        if value.is_composite():
             first, second = value.factors()
             native = oscar.ring_compose(oscar_morphism_handle(second), oscar_morphism_handle(first))
         else:
-            raise AssertionError(f"{value!r} has no OSCAR realization")
+            word = value.word()
+            if not word:
+                native = oscar.ring_identity(oscar_object_handle(value.domain()))
+            else:
+                raise AssertionError(f"{value!r} has no OSCAR realization")
         retain_oscar_native_morphism(value, native)
     native = _morphisms.realization(value).native
     assert isinstance(native, OscarHandle)

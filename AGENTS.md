@@ -701,6 +701,21 @@ the complete public consumer. A passing native probe does not replace that consu
 Check the configured Sage interpreter against the project's declared Python version
 before loading a consumer. An older installed Sage is not an interchangeable runtime.
 Acceptance and QC always use the configured stable Sage installation. Never provision, clone, or retain a second Sage distribution under `/tmp`, a cache directory, or another disposable path merely to satisfy a version or gate mismatch. If the stable Sage runtime does not satisfy the repository contract, record and repair that runtime/QC incompatibility at its owner; do not replace the host runtime with an ephemeral parallel Sage.
+
+Bulk scratch is repository-owned. Tests, acceptance runs, package probes,
+generated stubs, and native-engine work must not accumulate large state under
+global `/tmp` or `~/.cache`. Use the repository's ignored `.tmp/` surface
+for root-backed temporary state and the retained `/dev/shm` runtime staging
+where that contract already applies. If a tool needs a cache variable, point it
+at one of those owned locations rather than accepting its user-global default.
+A completed unit removes the disposable scratch it created.
+
+The historical `/tmp/sage-categories-beta10-runtime` acceptance path records
+what happened during bootstrap; it is not precedent for future runs. A need for
+a clean validation surface likewise does not justify another full repository
+checkout/worktree. Preserve the current tree and use path-scoped Git operations
+or the documented delegation mechanism when isolation is actually required.
+
 An R-gate also runs `just architecture` on its declared owned rule set.
 D132 admits exact architectural invariant checks with file-and-line failures at the architecture push tier.
 `scripts/rule_coverage.py` rejects a rule whose file glob matches nothing.

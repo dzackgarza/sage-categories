@@ -175,13 +175,13 @@ def oscar_element_handle(value: CategoryOfCategories.ElementType) -> OscarHandle
 
 
 def _oscar_morphism_is_lowerable(value: MorphismCategory.ObjectType) -> bool:
-    """Whether ``value`` is already native or a Cat-retained composite of native maps."""
+    """Whether ``value`` is native or a Cat identity/composite lowerable from native maps."""
     if _morphisms.has(value):
         return True
-    if not value.is_composite():
-        return False
-    first, second = value.factors()
-    return _oscar_morphism_is_lowerable(first) and _oscar_morphism_is_lowerable(second)
+    if value.is_composite():
+        first, second = value.factors()
+        return _oscar_morphism_is_lowerable(first) and _oscar_morphism_is_lowerable(second)
+    return not value.word()
 
 
 def oscar_morphism_handle(value: MorphismCategory.ObjectType) -> OscarHandle:

@@ -218,6 +218,17 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         return self._equal(first, second, assumptions)
 
     def _equal_morphisms(self, first: LimitCategory.MorphismType, second: LimitCategory.MorphismType, assumptions: Proposition) -> bool | None:
+        match first.domain() is second.domain() and first.codomain() is second.codomain():
+            case True:
+                match first.base_category()._morphism_equality(first, second):
+                    case True:
+                        return True
+                    case False:
+                        return False
+                    case None:
+                        pass
+            case False:
+                pass
         return self._equal(first, second, assumptions)
 
     def _equal_points(self, first: DiscreteObjectCategory.ObjectType, second: DiscreteObjectCategory.ObjectType, assumptions: Proposition) -> bool | None:
@@ -424,11 +435,13 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
     def composite(self, second: LimitCategory.MorphismType, first: LimitCategory.MorphismType) -> LimitCategory.MorphismType:
         assert first.codomain() is second.domain()
-        return self.MorphismType(
+        result = self.MorphismType(
             domain=first.domain(),
             codomain=second.codomain(),
             data=FamilyMorphismData(self.defining_diagram(), lambda vertex: second.family_component(vertex) * first.family_component(vertex)),
         )
+        result.retain_factors(first, second)
+        return result
 
     def _equal(
         self,
@@ -680,11 +693,13 @@ class _TaggedCategory(Category[[MorphismCategory.ObjectType], []]):
 
     def composite(self, second: _TaggedCategory.MorphismType, first: _TaggedCategory.MorphismType) -> _TaggedCategory.MorphismType:
         assert first.codomain() is second.domain()
-        return self.MorphismType(
+        result = self.MorphismType(
             domain=first.domain(),
             codomain=second.codomain(),
             data=_TaggedMorphismData(second.morphism() * first.morphism()),
         )
+        result.retain_factors(first, second)
+        return result
 
     def __repr__(self) -> str:
         return f"Tagged({self._diagram!r})"

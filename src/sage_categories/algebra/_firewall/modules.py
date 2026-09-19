@@ -32,6 +32,12 @@ def module_add(engine_module: Module_free_ambient, first: object, second: object
     return first + second
 
 
+def module_subtract(engine_module: Module_free_ambient, minuend: object, subtrahend: object) -> Hashable:
+    """Native subtraction after exact-parent validation."""
+    assert module_member(engine_module, minuend) and module_member(engine_module, subtrahend)
+    return minuend - subtrahend
+
+
 def integer_scale(engine_module: Module_free_ambient, scalar: object, value: object) -> Hashable:
     """The actual Sage ``ZZ`` scalar action on ``engine_module``."""
     assert module_member(engine_module, value)

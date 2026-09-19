@@ -31,13 +31,8 @@ from sympy import Integer as SympyInteger
 from sympy import ask as sympy_ask
 from sympy.core.basic import Basic
 
-from sage_categories.cat.assembly import (
-    has_selected_value,
-    point_from_datum,
-    select_value,
-    selected_value,
-)
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.declarations import NN, Sets, omega
 from sage_categories.cat.functors import Cat, Fun, Functor
@@ -62,6 +57,10 @@ type MembershipRule = Callable[[Hashable], Proposition]
 # What a set map can be constructed from: a rule on data, a SymPy ``Lambda`` or Sage callable
 # symbolic expression, or a table (``specs/sets.md``, "Morphisms").
 type MapData = Map | Lambda | Mapping[Hashable, Hashable] | Any
+
+_SET_POINTS = ChosenConstruction()
+_ENUMERATIONS: SelectedChoice[MorphismCategory.ObjectType] = SelectedChoice()
+_ENUMERATION_INDEX_INCLUSIONS: SelectedChoice[MorphismCategory.ObjectType] = SelectedChoice()
 
 
 def _finite_sets_engine():
@@ -464,7 +463,7 @@ class SetsCategory(MorphismDataCategory):
 
         def point(self, datum: Hashable) -> SetsCategory.ElementType:
             datum = self.representative(datum)
-            return point_from_datum(self, datum)
+            return _SET_POINTS(self, (datum,), lambda: self.ObjectType(datum))
 
         def __iter__(self) -> Iterator[SetsCategory.ElementType]:
             return (self.point(value) for value in self._values)
@@ -524,7 +523,7 @@ class SetsCategory(MorphismDataCategory):
             finite_sets = _finite_sets_engine()
 
             return finite_sets.equal_morphisms(first, second)
-        if has_selected_value(self, "enumeration", (domain,)):
+        if _ENUMERATIONS.has(self, (domain,)):
             points = self.finite_points(domain)
             if points is not Unknown:
                 return sympy_ask(
@@ -708,8 +707,8 @@ class SetsCategory(MorphismDataCategory):
 
     def chosen_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass:
         """The retained isomorphism ``e: I -> X`` for the supplied enumeration of ``X``."""
-        if has_selected_value(self, "enumeration", (value,)):
-            return selected_value(self, "enumeration", (value,))
+        if _ENUMERATIONS.has(self, (value,)):
+            return _ENUMERATIONS.selected(self, (value,))
         placement = value.category()
         for family in (placement, *placement.narrowing_roots()):
             for diagram in family.presenting_diagrams(value):
@@ -720,8 +719,8 @@ class SetsCategory(MorphismDataCategory):
 
     def _finite_enumeration(self, value: SetsCategory.ObjectType) -> MorphismCategory.ObjectType | UnknownClass:
         """Index the defining finite list by ``{1, ..., n}``."""
-        if has_selected_value(self, "enumeration", (value,)):
-            return selected_value(self, "enumeration", (value,))
+        if _ENUMERATIONS.has(self, (value,)):
+            return _ENUMERATIONS.selected(self, (value,))
         values = _finite_data(value)
         if values is Unknown:
             return Unknown
@@ -730,7 +729,7 @@ class SetsCategory(MorphismDataCategory):
         positions = {datum: index for index, datum in enumerate(values, start=1)}
         inverse = Mor(self)(value, indices)(lambda datum: positions[value.representative(datum)])
         self.retain_inverses(enumeration, inverse)
-        select_value(self, "enumeration", (value,), enumeration)
+        _ENUMERATIONS.select(self, (value,), enumeration)
         return enumeration
 
     def _product_enumeration(self, diagram: Functor) -> MorphismCategory.ObjectType | UnknownClass:
@@ -760,7 +759,7 @@ class SetsCategory(MorphismDataCategory):
         enumeration = limit.on_morphism(forward) * index_enumeration
         inverse = index_enumeration.inverse() * limit.on_morphism(backward)
         self.retain_inverses(enumeration, inverse)
-        select_value(self, "enumeration", (enumeration.codomain(),), enumeration)
+        _ENUMERATIONS.select(self, (enumeration.codomain(),), enumeration)
         return enumeration
 
     def finite_points(self, value: SetsCategory.ObjectType) -> tuple[SetsCategory.ElementType, ...] | UnknownClass:
@@ -775,10 +774,10 @@ class SetsCategory(MorphismDataCategory):
     def enumeration_index_inclusion(self, enumeration: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
         """The retained inclusion of the enumeration's positive index set into ``NN``."""
         assert enumeration in Mor(self).Isomorphisms()
-        if has_selected_value(self, "enumeration-index-inclusion", (enumeration,)):
-            return selected_value(self, "enumeration-index-inclusion", (enumeration,))
+        if _ENUMERATION_INDEX_INCLUSIONS.has(self, (enumeration,)):
+            return _ENUMERATION_INDEX_INCLUSIONS.selected(self, (enumeration,))
         inclusion = Mor(self)(enumeration.domain(), NN).Monomorphisms()(lambda index: index)
-        select_value(self, "enumeration-index-inclusion", (enumeration,), inclusion)
+        _ENUMERATION_INDEX_INCLUSIONS.select(self, (enumeration,), inclusion)
         return inclusion
 
     def retain_enumeration(
@@ -791,14 +790,14 @@ class SetsCategory(MorphismDataCategory):
         assert inclusion in Mor(self).Monomorphisms()
         assert inclusion.domain() is enumeration.domain() and inclusion.codomain() is NN
         value = enumeration.codomain()
-        if has_selected_value(self, "enumeration", (value,)):
-            assert selected_value(self, "enumeration", (value,)) is enumeration, "this set already has a different chosen enumeration"
+        if _ENUMERATIONS.has(self, (value,)):
+            assert _ENUMERATIONS.selected(self, (value,)) is enumeration, "this set already has a different chosen enumeration"
         else:
-            select_value(self, "enumeration", (value,), enumeration)
-        if has_selected_value(self, "enumeration-index-inclusion", (enumeration,)):
-            assert selected_value(self, "enumeration-index-inclusion", (enumeration,)) is inclusion, "this enumeration already has a different retained index inclusion"
+            _ENUMERATIONS.select(self, (value,), enumeration)
+        if _ENUMERATION_INDEX_INCLUSIONS.has(self, (enumeration,)):
+            assert _ENUMERATION_INDEX_INCLUSIONS.selected(self, (enumeration,)) is inclusion, "this enumeration already has a different retained index inclusion"
         else:
-            select_value(self, "enumeration-index-inclusion", (enumeration,), inclusion)
+            _ENUMERATION_INDEX_INCLUSIONS.select(self, (enumeration,), inclusion)
 
     def constant(self, source: SetsCategory.ObjectType, point: SetsCategory.ElementType) -> SetsCategory.MorphismType:
         """The total constant map with the supplied value."""
@@ -1081,8 +1080,8 @@ def _finite_presentation(value: SetsCategory.ObjectType, assumptions: Propositio
         return True
     if isinstance(presentation, _PredicateRule) and sympy_ask(finite_set(presentation.ambient), assumptions) is True:
         return True
-    if has_selected_value(Sets, "enumeration", (value,)):
-        enumeration = selected_value(Sets, "enumeration", (value,))
+    if _ENUMERATIONS.has(Sets, (value,)):
+        enumeration = _ENUMERATIONS.selected(Sets, (value,))
         index_presentation = enumeration.domain().set_presentation()
         while isinstance(index_presentation, _PredicateRule):
             index_presentation = index_presentation.ambient.set_presentation()

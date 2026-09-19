@@ -2,8 +2,13 @@
 
 from typing import assert_type
 
-from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.declarations import DeclaredCategory
+from sage_categories.cat.category import (
+    Cat,
+    Category,
+    CategoryDeclaration,
+    CategoryOfCategories,
+)
+from sage_categories.cat.declarations import CategoryFamily, DeclaredCategory
 from sage_categories.cat.morphisms import FixedEndpointCategory, Mor, MorphismCategory
 from sage_categories.cat.points import PointCategory
 
@@ -49,6 +54,16 @@ def fixed_endpoint_dependence(
 def nullary_categories(member: CategoryOfCategories.ElementType) -> None:
     assert_type(Mor(PointCategory(member)), MorphismCategory[[], [], PointCategory.MorphismType])
     assert_type(Mor(DeclaredCategory("C")), MorphismCategory[[], [], DeclaredCategory.MorphismType])
+
+
+def declared_category_interfaces(category: Category) -> None:
+    declared = DeclaredCategory("Declared")
+    family = CategoryFamily("Family", category)
+    assert_type(Cat().declare(declared), DeclaredCategory)
+    assert_type(Cat().declare_family(family), CategoryFamily)
+    assert_type(Cat().declarations(), tuple[CategoryDeclaration | CategoryFamily, ...])
+    assert_type(Cat().open_declaration(declared), DeclaredCategory | None)
+    assert_type(Cat().implementation(declared), type[Category] | None)
 
 
 def category_object_parameters(category: CategoryOfCategories.ObjectType[[str], [int]]) -> None:

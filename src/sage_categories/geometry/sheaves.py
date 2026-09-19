@@ -13,6 +13,7 @@ from sage_categories.algebra._certified_commutative_ring import (
 )
 from sage_categories.cat.calculus import natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
@@ -125,14 +126,7 @@ def descent_section_ring(
         one = open_key, tuple(ring.one() for ring in local_rings)
         return certified_commutative_ring(carrier, add, multiply, zero, one)
 
-    from sage_categories.cat.assembly import chosen_construction
-
-    return chosen_construction(
-        _rings(),
-        "finite-descent-section-ring",
-        (open_key,),
-        construct,
-    )
+    return _FINITE_DESCENT_SECTION_RINGS(_rings(), (open_key,), construct)
 
 
 def descent_restriction(
@@ -487,3 +481,4 @@ def ring_sheaf[OpenKey: Hashable](
 ) -> RingSheaf[OpenKey]:
     """Declare ``presheaf`` a sheaf and retain a gluing evaluator when supplied."""
     return RingSheaf(presheaf, gluing_rule)
+_FINITE_DESCENT_SECTION_RINGS = ChosenConstruction()

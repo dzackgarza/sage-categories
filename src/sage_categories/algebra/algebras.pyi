@@ -2,16 +2,14 @@ import sage_categories.cat.cat_constructions
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
-from sage_categories.cat.assembly import chosen_construction as chosen_construction
-from sage_categories.cat.assembly import has_selected_value as has_selected_value
-from sage_categories.cat.assembly import select_value as select_value
-from sage_categories.cat.assembly import selected_value as selected_value
 from sage_categories.cat.bimodules import BimoduleCategory as BimoduleCategory
 from sage_categories.cat.cat_constructions import LimitSubcategory as LimitSubcategory
 from sage_categories.cat.cat_constructions import (
     limit_of_categories as limit_of_categories,
 )
 from sage_categories.cat.category import Cat as Cat
+from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
+from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.cones import cone as cone
 from sage_categories.cat.cones import cones as cones
 from sage_categories.cat.declarations import Sets as Sets

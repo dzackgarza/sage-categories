@@ -45,7 +45,7 @@ if TYPE_CHECKING:
         LimitMorphismLift,
         UniversalPresentation,
     )
-    from sage_categories.cat.declarations import CategoryFamily
+    from sage_categories.cat.declarations import CategoryFamily, DeclaredCategory
     from sage_categories.cat.functors import (
         Functor,
         FunctorsCategory,
@@ -1881,65 +1881,72 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             return f"Functor({self.domain()!r} -> {self.codomain()!r})"
 
     def __init__(self) -> None:
-        self._declarations: dict[str, Category | CategoryFamily] = {}
-        self._implementations: dict[str, type[Category]] = {}
+        self._declarations: MonoDict = MonoDict()
+        self._implementations: MonoDict = MonoDict()
         self._open_declarations: MonoDict = MonoDict()
         super().__init__()
 
     # -- the categories Cat declares (D80, D82) ------------------------------------
 
-    def declare(self, name: str) -> Category:
-        """``Cat().declare(name)``: the category the repository expects to exist.
+    def declare(self, declared: DeclaredCategory) -> DeclaredCategory:
+        """Retain ``declared`` as a named category the repository expects to exist.
 
         A declaration is a functor into ``Cat()``, and this is the terminal-domain case:
-        the point ``* -> Cat()``, whose value is a category.  That value is constructed
-        now and is the final object -- it takes its ordinal, it is placed in ``Cat()``,
-        and its three implementation classes are compiled from ``DeclaredCategory``'s
-        declarations, which name the three kinds and no operation on any of them.  A
-        parameterized family is declared through ``declare_family`` instead
-        (POL-API-021).
+        the point ``* -> Cat()``, whose value is this already constructed category.
+        ``Cat`` retains that mathematical object by identity; its display name is data of
+        the declaration object, not a key that binds the later implementation.  A
+        parameterized family is retained through ``declare_family`` instead (POL-API-021).
 
         A declaration no implementation claims is open work, readable through
         ``declarations()``.  It is never a check that fails a build.
         """
-        from sage_categories.cat.declarations import DeclaredCategory
-
-        assert name not in self._declarations, f"{name!r} is already declared"
-        declared = DeclaredCategory(name)
-        self._declarations[name] = declared
-        self._open_declarations[declared] = name
+        assert declared not in self._declarations, f"{declared!r} is already declared"
+        self._declarations[declared] = True
+        self._open_declarations[declared] = True
         return declared
 
-    def declare_family(self, name: str, domain: Category) -> CategoryFamily:
-        """``Cat().declare_family(name, domain)``: the parameterized family the repository expects to exist.
+    def declare_family(self, declared: CategoryFamily) -> CategoryFamily:
+        """Retain ``declared`` as a parameterized category family the repository expects to exist.
 
-        ``domain`` is the domain of the functor into ``Cat()`` that the declaration is.
-        A parameterized family has no category to return until an implementation
-        supplies its object and morphism actions.
+        The family itself retains the domain of the functor into ``Cat()`` and its display
+        name.  A parameterized family has no category to return until an implementation
+        supplies its object and morphism actions; neither fact is keyed by a string here.
         """
-        from sage_categories.cat.declarations import CategoryFamily
-
-        assert name not in self._declarations, f"{name!r} is already declared"
-        declared = CategoryFamily(name, domain)
-        self._declarations[name] = declared
-        self._open_declarations[declared] = name
+        assert declared not in self._declarations, f"{declared!r} is already declared"
+        self._declarations[declared] = True
+        self._open_declarations[declared] = True
         return declared
 
-    def declarations(self) -> dict[str, Category | CategoryFamily]:
-        """The categories ``Cat`` declares, by name; one with no implementation is open work (D82)."""
-        return dict(self._declarations)
+    def declarations(self) -> tuple[CategoryDeclaration | CategoryFamily, ...]:
+        """The actual categories and category families ``Cat`` declares (D82)."""
+        return tuple(declared for declared, _ in self._declarations.items())
 
-    def open_declaration(self, declared: Category | CategoryFamily) -> str | None:
-        """The name ``declared`` was declared under while no implementation claims it, else ``None``."""
+    @overload
+    def open_declaration(self, declared: DeclaredCategory) -> DeclaredCategory | None: ...
+
+    @overload
+    def open_declaration(self, declared: CategoryFamily) -> CategoryFamily | None: ...
+
+    @overload
+    def open_declaration[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole, MorphismRole](
+        self,
+        declared: CategoryDeclaration[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole],
+    ) -> CategoryDeclaration[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole] | None: ...
+
+    def open_declaration(self, declared: CategoryDeclaration | CategoryFamily) -> CategoryDeclaration | CategoryFamily | None:
+        """Return ``declared`` itself while no implementation claims it, else ``None``."""
         match declared in self._open_declarations:
             case True:
-                return self._open_declarations[declared]
+                return declared
             case False:
                 return None
 
-    def implementation(self, name: str) -> type[Category] | None:
-        """The class implementing the declaration ``name``, or ``None``."""
-        return self._implementations.get(name)
+    def implementation[**MorphismData, **TwoMorphismData, ObjectRole, ElementRole, MorphismRole](
+        self,
+        declared: CategoryDeclaration[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole],
+    ) -> type[Category] | None:
+        """The class implementing the exact declared category ``declared``, or ``None``."""
+        return self._implementations[declared] if declared in self._implementations else None
 
     def implement(self, implementation: type[Category] | partial[Category]) -> None:
         """Connect ``implementation`` to the category it declares itself the implementation of (D156).
@@ -1976,7 +1983,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
     def _adopt(
         self,
-        declared: Category,
+        declared: CategoryDeclaration,
         implementation: type[Category],
         selected_functors: tuple[Functor, ...],
     ) -> None:
@@ -1995,16 +2002,16 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         assert issubclass(implementation, self.ObjectType)
         invocation = _implementation_invocation.get()
         assert invocation is not None and invocation.category_type is implementation
-        name = self.open_declaration(declared)
-        if name is not None:
-            self._implementations[name] = implementation
+        open_declaration = self.open_declaration(declared)
+        if open_declaration is not None:
+            self._implementations[declared] = implementation
             del self._open_declarations[declared]
         implement_category(
             declared,
             implementation,
             selected_functors,
             invocation.initialize,
-            augment=name is None,
+            augment=open_declaration is None,
         )
 
     def morphism_category_type(self) -> type[FunctorsCategory]:

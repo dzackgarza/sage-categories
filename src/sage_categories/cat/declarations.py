@@ -141,28 +141,29 @@ class CategoryFamily:
         return self._name
 
 
-# The points: a declaration with the terminal domain, whose value is a category.
-Sets: Category = Cat().declare("Sets")
-Posets: Category = Cat().declare("Posets")
+# The points: construct the named category, then retain that actual object as the
+# declaration.  The name is display/construction data and never the implementation key.
+Sets: Category = Cat().declare(DeclaredCategory("Sets"))
+Posets: Category = Cat().declare(DeclaredCategory("Posets"))
 # ``Groupoids()``: the point of ``Cat()`` the core functor lands in.  ``cat/core.py``
 # claims it and states the one arrow the documents state, its inclusion into ``Cat()``;
 # groupoid theory stands behind neither (D99).
-Groupoids: Category = Cat().declare("Groupoids")
-TotallyOrderedSets: Category = Cat().declare("TotallyOrderedSets")
+Groupoids: Category = Cat().declare(DeclaredCategory("Groupoids"))
+TotallyOrderedSets: Category = Cat().declare(DeclaredCategory("TotallyOrderedSets"))
 
 # The categories whose implementations supply distinguished arithmetic objects.
-NN: Category = Cat().declare("NN")
-ZZ: Category = Cat().declare("ZZ")
+NN: Category = Cat().declare(DeclaredCategory("NN"))
+ZZ: Category = Cat().declare(DeclaredCategory("ZZ"))
 
 # ``omega = Thin(NN, natural_order)``, the sequential shape (``specs/sets.md``, "General
 # limits and colimits").  Its carrier and its order are the mathematics of ``NN``, so the
 # category that owns them implements this one; the kernel owns ``Thin`` and names the
 # shape.
-omega: Category = Cat().declare("omega")
+omega: Category = Cat().declare(DeclaredCategory("omega"))
 
 # The construction families: functors ``Cat() -> Cat()`` carrying an ambient category to
 # the category of its internal magma, monoid, semiring, and ring objects.
-MagmaObjects: CategoryFamily = Cat().declare_family("MagmaObjects", Cat())
-MonoidObjects: CategoryFamily = Cat().declare_family("MonoidObjects", Cat())
-SemiringObjects: CategoryFamily = Cat().declare_family("SemiringObjects", Cat())
-RingObjects: CategoryFamily = Cat().declare_family("RingObjects", Cat())
+MagmaObjects: CategoryFamily = Cat().declare_family(CategoryFamily("MagmaObjects", Cat()))
+MonoidObjects: CategoryFamily = Cat().declare_family(CategoryFamily("MonoidObjects", Cat()))
+SemiringObjects: CategoryFamily = Cat().declare_family(CategoryFamily("SemiringObjects", Cat()))
+RingObjects: CategoryFamily = Cat().declare_family(CategoryFamily("RingObjects", Cat()))

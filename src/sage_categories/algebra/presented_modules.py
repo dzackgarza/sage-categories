@@ -25,8 +25,8 @@ from sage_categories.algebra.free_modules import (
     finite_free_matrix_morphism,
     finite_free_module,
 )
-from sage_categories.cat.assembly import chosen_construction
 from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone, cocones
 from sage_categories.cat.functors import Cat, Functor
 from sage_categories.cat.limit_basis import parallel_pair
@@ -45,6 +45,8 @@ __all__ = [
     "presented_module_zero",
     "relation_matrix_morphism",
 ]
+
+_FINITE_MODULE_PRESENTATIONS = ChosenConstruction()
 
 
 type ModuleMap = MorphismCategory.ObjectType
@@ -162,11 +164,8 @@ def finitely_presented_module(
     """The module presented by the finite relation matrix ``R^m -> R^n``."""
     relation = relation_matrix_morphism(modules, entries)
     zero = _zero_morphism(modules, relation.domain(), relation.codomain())
-    result: ModuleCategory.ObjectType = chosen_construction(
-        modules,
-        "finite-module-presentation",
-        (relation, zero),
-        lambda: _new_presented_module(modules, relation, zero),
+    result: ModuleCategory.ObjectType = _FINITE_MODULE_PRESENTATIONS(
+        modules, (relation, zero), lambda: _new_presented_module(modules, relation, zero)
     )
     return result
 

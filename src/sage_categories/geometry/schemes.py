@@ -21,12 +21,8 @@ from sage_categories.algebra.commutative_rings import (
     prime_ideal_extension,
     prime_ideal_preimage,
 )
-from sage_categories.cat.assembly import (
-    chosen_construction,
-    select_value,
-    selected_value,
-)
 from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.leaf_categories import ParameterizedThinCategory
@@ -136,6 +132,26 @@ class FiniteAffineGluing:
         raise AssertionError(f"missing overlap for chart pair {(left, right)!r}")
 
 
+_AFFINE_COVERS: SelectedChoice[tuple[AffineOpenChart, ...]] = SelectedChoice()
+_FINITE_AFFINE_GLUINGS: SelectedChoice[FiniteAffineGluing] = SelectedChoice()
+_CHART_AFFINE_OPENS = ChosenConstruction()
+_GLOBAL_OPENS = ChosenConstruction()
+_SCHEME_OPEN_CATEGORIES = ChosenConstruction()
+_FINITE_GLUED_TOPOLOGICAL_SPACES = ChosenConstruction()
+_FINITE_GLUED_STRUCTURE_SHEAVES = ChosenConstruction()
+_FINITE_GLUED_RINGED_SPACES = ChosenConstruction()
+_FINITE_GLUED_LOCALLY_RINGED_SPACES = ChosenConstruction()
+_FINITE_CHART_CONTINUOUS_MAPS = ChosenConstruction()
+_FINITE_CHART_RINGED_MAPS = ChosenConstruction()
+_FINITE_CHART_LOCALLY_RINGED_MAPS = ChosenConstruction()
+_FINITE_AFFINE_GLUED_SCHEMES = ChosenConstruction()
+_FINITE_GLUING_MEDIATORS = ChosenConstruction()
+_SCHEMES_FROM_AFFINES = ChosenConstruction()
+_SCHEME_AFFINE_MORPHISMS = ChosenConstruction()
+_SCHEME_TO_RINGED_SPACES = ChosenConstruction()
+_SCHEME_TO_TOPOLOGICAL_SPACES = ChosenConstruction()
+
+
 @dataclass(frozen=True, eq=False, slots=True)
 class _TaggedAffinePoint:
     presentation: FiniteAffineGluing
@@ -223,9 +239,8 @@ class SchemeOpenCategory(ParameterizedThinCategory):
 
         return cast(
             SchemeOpenCategory.ObjectType,
-            chosen_construction(
+            _CHART_AFFINE_OPENS(
                 self,
-                "chart-affine-open",
                 (chart, affine_open),
                 construct,
             ),
@@ -242,9 +257,8 @@ class SchemeOpenCategory(ParameterizedThinCategory):
             assert affine_open.scheme() is chart
         return cast(
             SchemeOpenCategory.ObjectType,
-            chosen_construction(
+            _GLOBAL_OPENS(
                 self,
-                "global-open",
                 chart_opens,
                 lambda: self.assemble_object(_SchemeOpenData(presentation, 0, chart_opens[0], chart_opens)),
             ),
@@ -342,9 +356,8 @@ class _ProjectiveLineCover:
 def _scheme_open_category(presentation: FiniteAffineGluing) -> SchemeOpenCategory:
     return cast(
         SchemeOpenCategory,
-        chosen_construction(
+        _SCHEME_OPEN_CATEGORIES(
             Cat(),
-            "finite-gluing-open-category",
             (presentation,),
             lambda: SchemeOpenCategory(presentation),
         ),
@@ -517,9 +530,8 @@ def _finite_glued_topological_space(
 
     return cast(
         TopologicalSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType],
-        chosen_construction(
+        _FINITE_GLUED_TOPOLOGICAL_SPACES(
             TopologicalSpaces(),
-            "finite-glued-topological-space",
             (presentation,),
             construct,
         ),
@@ -553,9 +565,8 @@ def _finite_glued_structure_sheaf(
 
     return cast(
         RingSheaf[SchemeOpenCategory.ObjectType],
-        chosen_construction(
+        _FINITE_GLUED_STRUCTURE_SHEAVES(
             Schemes(),
-            "finite-glued-structure-sheaf",
             (presentation,),
             construct,
         ),
@@ -567,9 +578,8 @@ def _finite_glued_ringed_space(
 ) -> RingedSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType]:
     return cast(
         RingedSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType],
-        chosen_construction(
+        _FINITE_GLUED_RINGED_SPACES(
             Schemes(),
-            "finite-glued-ringed-space",
             (presentation,),
             lambda: RingedSpaces()(
                 _finite_glued_topological_space(presentation),
@@ -598,9 +608,8 @@ def _finite_glued_locally_ringed_space(
 
     return cast(
         LocallyRingedSpacesCategory.ObjectType[SchemeOpenCategory.ObjectType],
-        chosen_construction(
+        _FINITE_GLUED_LOCALLY_RINGED_SPACES(
             Schemes(),
-            "finite-glued-locally-ringed-space",
             (presentation,),
             construct,
         ),
@@ -643,9 +652,8 @@ def _finite_chart_continuous_map(
 
     return cast(
         TopologicalSpacesCategory.MorphismType,
-        chosen_construction(
+        _FINITE_CHART_CONTINUOUS_MAPS(
             Schemes(),
-            "finite-gluing-chart-continuous-map",
             (presentation, chart_index),
             construct,
         ),
@@ -682,9 +690,8 @@ def _finite_chart_ringed_map(
 
     return cast(
         RingedSpacesCategory.MorphismType,
-        chosen_construction(
+        _FINITE_CHART_RINGED_MAPS(
             Schemes(),
-            "finite-gluing-chart-ringed-map",
             (presentation, chart_index),
             construct,
         ),
@@ -715,9 +722,8 @@ def _finite_chart_locally_ringed_map(
 
     return cast(
         LocallyRingedSpacesCategory.MorphismType,
-        chosen_construction(
+        _FINITE_CHART_LOCALLY_RINGED_MAPS(
             Schemes(),
-            "finite-gluing-chart-locally-ringed-map",
             (presentation, chart_index),
             construct,
         ),
@@ -731,13 +737,13 @@ class SchemesCategory(PropertySubcategory):
 
     class ObjectType[OpenKey: Hashable = Hashable]:
         def affine_cover(self) -> tuple[AffineOpenChart, ...]:
-            return selected_value(Schemes(), "affine-cover", (self,))
+            return _AFFINE_COVERS.selected(Schemes(), (self,))
 
         def local_affineness(self) -> tuple[AffineOpenChart, ...]:
             return self.affine_cover()
 
         def finite_affine_gluing(self) -> FiniteAffineGluing:
-            return selected_value(Schemes(), "finite-affine-gluing", (self,))
+            return _FINITE_AFFINE_GLUINGS.selected(Schemes(), (self,))
 
         def underlying_points(self) -> CategoryOfCategories.ElementType:
             """The carrier of the underlying topological space; its points are not scheme-valued points."""
@@ -811,7 +817,7 @@ class SchemesCategory(PropertySubcategory):
             source = affine_locally_ringed_space(chart.affine)
             assert chart.open_immersion.domain() is source
             assert chart.open_immersion.codomain() is scheme
-        select_value(self, "affine-cover", (scheme,), charts)
+        _AFFINE_COVERS.select(self, (scheme,), charts)
 
     def affine_overlap(
         self,
@@ -868,7 +874,7 @@ class SchemesCategory(PropertySubcategory):
             )
             assume(self.predicate()(value))
             _backend.retain_finite_glued_scheme(self, value, presentation)
-            select_value(self, "finite-affine-gluing", (value,), presentation)
+            _FINITE_AFFINE_GLUINGS.select(self, (value,), presentation)
             chart_entries: list[AffineOpenChart] = []
             for chart_index, chart in enumerate(charts):
                 source = self.affine(chart)
@@ -935,12 +941,7 @@ class SchemesCategory(PropertySubcategory):
             self.retain_affine_cover(value, tuple(chart_entries))
             return value
 
-        return chosen_construction(
-            self,
-            "finite-affine-gluing",
-            (charts, overlaps),
-            construct,
-        )
+        return _FINITE_AFFINE_GLUED_SCHEMES(self, (charts, overlaps), construct)
 
     def gluing_mediator[SourceOpenKey: Hashable, TargetOpenKey: Hashable](
         self,
@@ -1014,12 +1015,7 @@ class SchemesCategory(PropertySubcategory):
             )
             return arrow
 
-        return chosen_construction(
-            self,
-            "finite-gluing-mediator",
-            (source, target, chart_maps),
-            construct,
-        )
+        return _FINITE_GLUING_MEDIATORS(self, (source, target, chart_maps), construct)
 
     def affine(self, affine: AffineSchemesCategory.ObjectType) -> SchemesCategory.ObjectType[AffineOpenCategory.ObjectType]:
         def construct() -> SchemesCategory.ObjectType[AffineOpenCategory.ObjectType]:
@@ -1045,7 +1041,7 @@ class SchemesCategory(PropertySubcategory):
             )
             return value
 
-        return chosen_construction(self, "affine-scheme", (affine,), construct)
+        return _SCHEMES_FROM_AFFINES(self, (affine,), construct)
 
     def affine_morphism(
         self,
@@ -1066,7 +1062,7 @@ class SchemesCategory(PropertySubcategory):
             )
             return arrow
 
-        return chosen_construction(self, "affine-morphism", (mapping,), construct)
+        return _SCHEME_AFFINE_MORPHISMS(self, (mapping,), construct)
 
     def to_locally_ringed_spaces(self) -> Functor:
         return self.subcategory_monomorphism()
@@ -1074,9 +1070,8 @@ class SchemesCategory(PropertySubcategory):
     def to_ringed_spaces(self) -> Functor:
         return cast(
             Functor,
-            chosen_construction(
+            _SCHEME_TO_RINGED_SPACES(
                 self,
-                "to-ringed-spaces",
                 (),
                 lambda: LocallyRingedSpaces().to_ringed_spaces() * self.to_locally_ringed_spaces(),
             ),
@@ -1085,9 +1080,8 @@ class SchemesCategory(PropertySubcategory):
     def to_topological_spaces(self) -> Functor:
         return cast(
             Functor,
-            chosen_construction(
+            _SCHEME_TO_TOPOLOGICAL_SPACES(
                 self,
-                "to-topological-spaces",
                 (),
                 lambda: RingedSpaces().to_spaces() * self.to_ringed_spaces(),
             ),

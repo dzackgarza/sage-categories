@@ -12,15 +12,18 @@ from sympy import false, true
 import sage_categories.algebra.abelian as _abelian
 from sage_categories.algebra._firewall import modules as _backend
 from sage_categories.algebra.indexed_modules import integer_scalar_monoid
-from sage_categories.cat.assembly import chosen_construction, select_value
 from sage_categories.cat.calculus import binary_product_data
 from sage_categories.cat.certified_structures import certified_additive_group
-from sage_categories.cat.modules import ModuleCategory
+from sage_categories.cat.choices import ChosenConstruction
+from sage_categories.cat.modules import ModuleCategory, select_native_module_adapter
 from sage_categories.cat.monoidal import Cartesian
 from sage_categories.cat.morphisms import Mor
 from sage_categories.sets.finite import Sets
 
 __all__ = ["install_sage_module_adapter", "sage_module_from_engine"]
+
+_SAGE_MODULE_ADDITIVE_CARRIERS = ChosenConstruction()
+_SAGE_MODULES = ChosenConstruction()
 
 
 def _owned_additive_carrier(engine_module: object):
@@ -40,7 +43,10 @@ def _owned_additive_carrier(engine_module: object):
         addition = Mor(Sets)(square, carrier)(lambda pair: _backend.module_add(native, pair[0], pair[1]))
         cartesian = Cartesian(Sets())
         zero = Mor(Sets)(cartesian.unit(), carrier)(lambda _point: _backend.module_zero(native))
-        group = certified_additive_group(carrier, addition, zero, cartesian, commutative=True)
+        inverse_shear = Mor(Sets)(square, square)(
+            lambda pair: (pair[0], _backend.module_subtract(native, pair[1], pair[0]))
+        )
+        group = certified_additive_group(carrier, addition, zero, inverse_shear, cartesian, commutative=True)
         coordinates = _abelian._CoordinateBridge(
             (0,) * _backend.module_rank(native),
             lambda datum: _backend.module_coordinates(native, datum),
@@ -49,7 +55,7 @@ def _owned_additive_carrier(engine_module: object):
         _abelian._retain_coordinates(group, coordinates)
         return group
 
-    return chosen_construction(_abelian.AbelianGroups(), "sage-module-additive-carrier", (native,), construct)
+    return _SAGE_MODULE_ADDITIVE_CARRIERS(_abelian.AbelianGroups(), (native,), construct)
 
 
 def sage_module_from_engine(
@@ -78,7 +84,7 @@ def sage_module_from_engine(
         )
         return modules(action)
 
-    return chosen_construction(modules, "sage-module", (native,), construct)
+    return _SAGE_MODULES(modules, (native,), construct)
 
 
 def _selected_sage_adapter(modules: ModuleCategory, engine_module: object) -> ModuleCategory.ObjectType:
@@ -90,4 +96,4 @@ def install_sage_module_adapter() -> None:
     # Native ingestion is a capability of the exact acted-on category, not of Cat
     # itself. ModuleCategory.from_sage_module reads this selection and returns through
     # its own owner.
-    select_value(_abelian.AbelianGroups(), "native-module-adapter", (), _selected_sage_adapter)
+    select_native_module_adapter(_abelian.AbelianGroups(), _selected_sage_adapter)

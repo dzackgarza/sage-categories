@@ -611,6 +611,24 @@ def realize_implementation_class(value: CategoryPoint, category_type: type[Categ
     _install_class_join(value, own)
 
 
+def _realize_category_augmentation(category: Category, implementation: type[Category]) -> None:
+    """Install one exact-category augmentation with newest implementation precedence.
+
+    A category keeps the classes it owns independently of augmentation first.  Exact
+    implementation classes are then ordered newest-first, matching the semantic
+    declaration order used for their role bodies.  Ordinary object realization keeps
+    using ``realize_implementation_class`` and therefore preserves its construction
+    class before a later category realization.
+    """
+    installed = category._installed_category_implementations
+    assert installed and installed[-1] is implementation
+    own = _own_classes(category)
+    structural = tuple(cls for cls in own if not any(cls is augmented for augmented in installed))
+    classes = (*structural, *reversed(installed))
+    vars(category)["_own_classes"] = classes
+    _install_class_join(category, classes)
+
+
 def _refine_implementation_class(value: CategoryPoint, role_class: type[CategoryPoint]) -> None:
     """Refine one owned value with a compiled implementation class.
 
@@ -1383,7 +1401,7 @@ def implement_category(
         *category._installed_category_implementations,
         implementation,
     )
-    realize_implementation_class(category, implementation)
+    _realize_category_augmentation(category, implementation)
     category_initializer = vars(implementation).get("__init__")
     if category_initializer is not None:
         category_initializer(category)

@@ -11,15 +11,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-__all__ = ["ModuleCategory", "Modules", "internal_endomorphism_module"]
+__all__ = ["ModuleCategory", "Modules", "internal_endomorphism_module", "select_native_module_adapter"]
 
-from sage_categories.cat.assembly import (
-    has_selected_value,
-    select_value,
-    selected_value,
-)
 from sage_categories.cat.calculus import pair_maps
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.choices import SelectedChoice
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.monoidal import ActionsCategory, tensor_morphism
 from sage_categories.cat.morphisms import MorphismCategory
@@ -155,14 +151,10 @@ class ModuleCategory(EquifierCategory):
             f"{scalar_morphism!r} does not start at the acting monoid {self.scalars()!r}"
         )
         endomorphism_modules = Modules(scalar_morphism.codomain(), self.actegory())
-        assert has_selected_value(endomorphism_modules, "internal-endomorphism-module", ()), (
+        assert _INTERNAL_ENDOMORPHISM_MODULES.has(endomorphism_modules, ()), (
             f"{scalar_morphism.codomain()!r} has no selected internal-endomorphism evaluation in {self.actegory()!r}"
         )
-        tautological: ModuleCategory.ObjectType = selected_value(
-            endomorphism_modules,
-            "internal-endomorphism-module",
-            (),
-        )
+        tautological = _INTERNAL_ENDOMORPHISM_MODULES.selected(endomorphism_modules, ())
         result = endomorphism_modules.restriction(scalar_morphism).on_object(tautological)
         assert result in self
         return result
@@ -174,17 +166,13 @@ class ModuleCategory(EquifierCategory):
         that knows how to reconstruct Sage data selects the conversion rule on this exact
         module category; the backend object itself never becomes the public module.
         """
-        match has_selected_value(self, "native-module-adapter", ()):
+        match _NATIVE_MODULE_ADAPTERS.has(self, ()):
             case True:
-                owner: object = self
+                owner = self
             case False:
                 owner = self.underlying_category()
-        assert has_selected_value(owner, "native-module-adapter", ()), f"{self!r} has no selected native-module adapter"
-        adapter: Callable[[ModuleCategory, object], ModuleCategory.ObjectType] = selected_value(
-            owner,
-            "native-module-adapter",
-            (),
-        )
+        assert _NATIVE_MODULE_ADAPTERS.has(owner, ()), f"{self!r} has no selected native-module adapter"
+        adapter = _NATIVE_MODULE_ADAPTERS.selected(owner, ())
         result = adapter(self, engine_module)
         assert result in self
         return result
@@ -216,6 +204,12 @@ class ModuleCategory(EquifierCategory):
             return target.homomorphism(on_object(arrow.domain()), on_object(arrow.codomain()), self.forgetful().on_morphism(arrow))
 
         return Fun(self, target)(on_object, on_morphism)
+
+
+type NativeModuleAdapter = Callable[[ModuleCategory, object], ModuleCategory.ObjectType]
+
+_INTERNAL_ENDOMORPHISM_MODULES: SelectedChoice[ModuleCategory.ObjectType] = SelectedChoice()
+_NATIVE_MODULE_ADAPTERS: SelectedChoice[NativeModuleAdapter] = SelectedChoice()
 
 
 @cached_function(key=identity_key)
@@ -273,5 +267,10 @@ def internal_endomorphism_module(
     """
     modules = Modules(endomorphisms, actegory)
     module = modules(evaluation)
-    select_value(modules, "internal-endomorphism-module", (), module)
+    _INTERNAL_ENDOMORPHISM_MODULES.select(modules, (), module)
     return module
+
+
+def select_native_module_adapter(owner: Category, adapter: NativeModuleAdapter) -> None:
+    """Select the private native-ingestion adapter for modules whose underlying category is ``owner``."""
+    _NATIVE_MODULE_ADAPTERS.select(owner, (), adapter)

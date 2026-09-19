@@ -16,7 +16,9 @@ def interval_arrow(category: FinitePresentedCategory, first: int, last: int) -> 
 
 
 def test_declared_implementation_initializes_its_mathematical_parameters() -> None:
-    residues = Cat().declare("ResiduesForConstruction")
+    from sage_categories.cat.declarations import DeclaredCategory
+
+    residues = Cat().declare(DeclaredCategory("ResiduesForConstruction"))
 
     class Residues(Category):
         class ObjectType:

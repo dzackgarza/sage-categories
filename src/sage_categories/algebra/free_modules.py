@@ -20,13 +20,8 @@ from sage_categories.algebra.abelian import (
     indexed_free_abelian_coproduct,
     simple_tensor,
 )
-from sage_categories.cat.assembly import (
-    chosen_construction,
-    has_selected_value,
-    select_value,
-    selected_value,
-)
 from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.cones import (
     cocone,
     cocone_apex,
@@ -61,6 +56,10 @@ type ModuleMap = MorphismCategory.ObjectType
 type PairRule = Callable[[tuple[ModuleMap, ...]], ModuleMap]
 type BasisImageRule = Callable[[CategoryOfCategories.ElementType], ModuleMap]
 
+_REGULAR_MODULES = ChosenConstruction()
+_FINITE_FREE_MODULES = ChosenConstruction()
+_FINITE_FREE_FAMILIES: SelectedChoice[Functor] = SelectedChoice()
+
 
 def ordinary_modules(scalars: MonoidCategory.ObjectType) -> ModuleCategory:
     """The ordinary category of left modules over ``scalars`` in ``(Ab, tensor)``."""
@@ -79,12 +78,7 @@ def _require_ordinary(modules: ModuleCategory) -> None:
 def regular_module(modules: ModuleCategory) -> ModuleCategory.ObjectType:
     """The regular left module ``R`` in this exact ordinary module category."""
     _require_ordinary(modules)
-    return chosen_construction(
-        modules,
-        "regular-module",
-        (),
-        lambda: modules(modules.scalars().operation()),
-    )
+    return _REGULAR_MODULES(modules, (), lambda: modules(modules.scalars().operation()))
 
 
 def _binary_module_biproduct(
@@ -280,7 +274,7 @@ def _new_finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategor
                 ),
                 lambda candidate: _zero_module_morphism(modules, module, cocone_apex(candidate)),
             )
-            select_value(modules, "finite-free-family", (module,), family)
+            _FINITE_FREE_FAMILIES.select(modules, (module,), family)
             return module
         case _:
             pass
@@ -309,7 +303,7 @@ def _new_finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategor
         cocone(family, stage.module, lambda vertex: stage.injections[int(vertex.point().datum())]),
         lambda candidate: stage.copair(tuple(candidate.leg(vertex) for vertex in vertices)),
     )
-    select_value(modules, "finite-free-family", (stage.module,), family)
+    _FINITE_FREE_FAMILIES.select(modules, (stage.module,), family)
     return stage.module
 
 
@@ -328,18 +322,13 @@ def finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategory.Obj
             raise ValueError("a free-module rank is nonnegative")
         case False:
             pass
-    return chosen_construction(
-        modules,
-        f"finite-free-module:{rank}",
-        (),
-        lambda: _new_finite_free_module(modules, rank),
-    )
+    return _FINITE_FREE_MODULES(modules, (rank,), lambda: _new_finite_free_module(modules, rank))
 
 
 def _free_family(modules: ModuleCategory, module: ModuleCategory.ObjectType) -> Functor:
     assert module in modules
-    assert has_selected_value(modules, "finite-free-family", (module,)), f"{module!r} has no retained finite free-module basis"
-    return selected_value(modules, "finite-free-family", (module,))
+    assert _FINITE_FREE_FAMILIES.has(modules, (module,)), f"{module!r} has no retained finite free-module basis"
+    return _FINITE_FREE_FAMILIES.selected(modules, (module,))
 
 
 def finite_free_basis(modules: ModuleCategory, module: ModuleCategory.ObjectType) -> CategoryOfCategories.ElementType:

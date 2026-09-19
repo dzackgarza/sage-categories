@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Hashable, Iterable, Mapping
+from collections.abc import Hashable, Iterable, Mapping
 from dataclasses import dataclass
 from operator import add, neg
 from types import ModuleType
 
 from sage.categories.sets_cat import Sets as SageSets
 from sage.combinat.free_module import CombinatorialFreeModule
-from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup_class
+from sage.groups.additive_abelian.additive_abelian_group import (
+    AdditiveAbelianGroup_class,
+)
 from sage.groups.generic import multiple
 from sage.modules.fg_pid.fgp_element import FGP_Element
 from sage.modules.fg_pid.fgp_module import FGP_Module_class
@@ -113,6 +115,13 @@ def indexed_member(engine: object, value: object) -> bool:
 def indexed_zero(engine: object) -> Hashable:
     assert isinstance(engine, CombinatorialFreeModule)
     return engine.zero()
+
+
+def indexed_subtract(engine: object, minuend: object, subtrahend: object) -> Hashable:
+    """Native subtraction in one exact indexed free module."""
+    assert isinstance(engine, CombinatorialFreeModule)
+    assert has_native_parent(minuend, engine) and has_native_parent(subtrahend, engine)
+    return minuend - subtrahend
 
 
 def retain_indexed(group: CategoryOfCategories.ElementType, index_set: CategoryOfCategories.ElementType, engine: object) -> None:

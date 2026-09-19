@@ -9,14 +9,9 @@ therefore remain owned by the ordinary generic monoid construction.
 
 from __future__ import annotations
 
-from sage_categories.cat.assembly import (
-    chosen_construction,
-    has_selected_value,
-    select_value,
-    selected_value,
-)
 from sage_categories.cat.bimodules import BimoduleCategory
 from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
+from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.cones import cone, cones
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.diagrams import from_sequence, sequence_position
@@ -34,7 +29,8 @@ __all__ = [
 ]
 
 
-_MODULE_MONOIDAL_SELECTION = "base-relative-algebra-monoidal-structure"
+_BASE_RELATIVE_ALGEBRAS = ChosenConstruction()
+_MODULE_MONOIDAL_STRUCTURES: SelectedChoice[MonoidalStructuresCategory.ObjectType] = SelectedChoice()
 
 
 class AlgebraCategory(LimitSubcategory):
@@ -167,7 +163,7 @@ def select_module_monoidal_structure(
 ) -> None:
     """Select the relative tensor structure used by ``Algebras(R,C)`` on this exact module owner."""
     assert monoidal.underlying_category() is modules
-    select_value(modules, _MODULE_MONOIDAL_SELECTION, (), monoidal)
+    _MODULE_MONOIDAL_STRUCTURES.select(modules, (), monoidal)
 
 
 def _monoidal_context(
@@ -178,10 +174,10 @@ def _monoidal_context(
     match owner:
         case ActionsCategory():
             modules = Modules(base, context)
-            assert has_selected_value(modules, _MODULE_MONOIDAL_SELECTION, ()), (
+            assert _MODULE_MONOIDAL_STRUCTURES.has(modules, ()), (
                 f"{modules!r} has no selected relative tensor structure for Algebras"
             )
-            return selected_value(modules, _MODULE_MONOIDAL_SELECTION, ())
+            return _MODULE_MONOIDAL_STRUCTURES.selected(modules, ())
         case MonoidalStructuresCategory():
             relative = context.underlying_category()
             match relative:
@@ -238,9 +234,4 @@ def Algebras(
     directly.  Both routes produce the same base-relative presentation shape.
     """
     monoidal = _monoidal_context(base, context)
-    return chosen_construction(
-        monoidal,
-        "base-relative-algebras",
-        (base,),
-        lambda: _new_algebra_category(monoidal),
-    )
+    return _BASE_RELATIVE_ALGEBRAS(monoidal, (base,), lambda: _new_algebra_category(monoidal))

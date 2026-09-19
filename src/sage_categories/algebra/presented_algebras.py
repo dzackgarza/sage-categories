@@ -24,8 +24,8 @@ from sage_categories.algebra.indexed_modules import (
     indexed_free_integer_element,
     indexed_free_integer_homomorphism,
 )
-from sage_categories.cat.assembly import chosen_construction
 from sage_categories.cat.category import CategoryOfCategories, ask
+from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone, cocones
 from sage_categories.cat.functors import Cat, Functor
 from sage_categories.cat.limit_basis import parallel_pair
@@ -43,6 +43,8 @@ __all__ = [
 ]
 
 type AlgebraMap = AlgebraCategory.MorphismType
+
+_SPLIT_ALGEBRA_PRESENTATIONS = ChosenConstruction()
 
 
 def integer_free_algebra(
@@ -248,9 +250,8 @@ def retain_split_algebra_presentation(
     any concrete evaluation domain.  The mathematical result is stored only as the
     ordinary coequalizer presentation of the exact base-relative algebra category.
     """
-    return chosen_construction(
+    return _SPLIT_ALGEBRA_PRESENTATIONS(
         algebras,
-        "split-algebra-presentation",
         (first, second, projection, section),
         lambda: _new_split_algebra_presentation(
             algebras,

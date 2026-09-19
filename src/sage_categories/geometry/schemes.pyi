@@ -31,11 +31,10 @@ from sage_categories.algebra.commutative_rings import (
 from sage_categories.algebra.commutative_rings import (
     prime_ideal_preimage as prime_ideal_preimage,
 )
-from sage_categories.cat.assembly import chosen_construction as chosen_construction
-from sage_categories.cat.assembly import select_value as select_value
-from sage_categories.cat.assembly import selected_value as selected_value
 from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
+from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor

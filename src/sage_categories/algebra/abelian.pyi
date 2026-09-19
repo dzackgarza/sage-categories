@@ -2,10 +2,6 @@ from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 
 from sage_categories.algebra._firewall.abelian import Engine as Engine
-from sage_categories.cat.assembly import chosen_construction as chosen_construction
-from sage_categories.cat.assembly import has_selected_value as has_selected_value
-from sage_categories.cat.assembly import select_value as select_value
-from sage_categories.cat.assembly import selected_value as selected_value
 from sage_categories.cat.bimodules import Bimodules as Bimodules
 from sage_categories.cat.calculus import binary_product_data as binary_product_data
 from sage_categories.cat.calculus import natural_isomorphism as natural_isomorphism
@@ -15,6 +11,8 @@ from sage_categories.cat.category import CategoryOfCategories as CategoryOfCateg
 from sage_categories.cat.certified_structures import (
     certified_additive_group as certified_additive_group,
 )
+from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
+from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.cones import ConeCategory as ConeCategory
 from sage_categories.cat.cones import cocone as cocone
 from sage_categories.cat.cones import cocone_apex as cocone_apex

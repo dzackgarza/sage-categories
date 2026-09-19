@@ -22,8 +22,8 @@ from sage_categories.algebra.local_fields import (
     exact_real_field,
     prime_indices,
 )
-from sage_categories.cat.assembly import chosen_construction
 from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Predicate, Proposition, register_handler
@@ -43,6 +43,10 @@ __all__ = [
     "AdeleValue",
     "adeles_of_rationals",
 ]
+
+_ADELE_COMPONENT_MAPS = ChosenConstruction()
+_ADELE_DIAGONAL_MAP = ChosenConstruction()
+_ADELES_OF_RATIONALS = ChosenConstruction()
 
 
 IntegralityCertificate = Callable[[int], bool]
@@ -279,12 +283,7 @@ class AdelePresentation:
         )
 
     def component_map(self, place: str | int) -> MorphismCategory.ObjectType:
-        return chosen_construction(
-            self,
-            f"component-map-{place!r}",
-            (),
-            lambda: self._new_component_map(place),
-        )
+        return _ADELE_COMPONENT_MAPS(self, (place,), lambda: self._new_component_map(place))
 
     def _new_component_map(self, place: str | int) -> MorphismCategory.ObjectType:
         rings = Rings(Sets)
@@ -301,7 +300,7 @@ class AdelePresentation:
         return rings.homomorphism(self.ring, target.ring, carrier_map)
 
     def diagonal_map(self) -> MorphismCategory.ObjectType:
-        return chosen_construction(self, "diagonal-map", (), self._new_diagonal_map)
+        return _ADELE_DIAGONAL_MAP(self, (), self._new_diagonal_map)
 
     def _new_diagonal_map(self) -> MorphismCategory.ObjectType:
         rings = Rings(Sets)
@@ -419,7 +418,7 @@ def _adele_topological_ring(
 
 def adeles_of_rationals() -> AdelePresentation:
     """Return the exact restricted product ``R x product'_p Q_p`` relative to ``Z_p``."""
-    return chosen_construction(TopologicalRings(), "adeles-of-rationals", (), _new_adeles_of_rationals)
+    return _ADELES_OF_RATIONALS(TopologicalRings(), (), _new_adeles_of_rationals)
 
 
 def _new_adeles_of_rationals() -> AdelePresentation:

@@ -60,9 +60,9 @@ from sage_categories.algebra._firewall import abelian as _backend
 from sage_categories.algebra._firewall.abelian import Engine
 from sage_categories.cat.bimodules import Bimodules
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
-from sage_categories.cat.certified_structures import certified_additive_group
-from sage_categories.cat.assembly import chosen_construction, has_selected_value, select_value, selected_value
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.certified_structures import certified_additive_group
+from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.cones import ConeCategory, cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor
@@ -84,6 +84,7 @@ from sage_categories.cat.structured_objects import (
     Monoids,
 )
 from sage_categories.sets.finite import Sets
+
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _CoordinateBridge:
@@ -140,6 +141,19 @@ class _IndexedPairTensorData:
 
     first: CategoryOfCategories.ElementType
     second: CategoryOfCategories.ElementType
+
+
+_SMITH_COORDINATES: SelectedChoice[_CoordinateBridge] = SelectedChoice()
+_TENSOR_DATA: SelectedChoice[_TensorData | _IndexedTensorData | _IndexedPairTensorData] = SelectedChoice()
+_PRESENTED_ABELIAN_GROUPS = ChosenConstruction()
+_INTEGER_GROUP = ChosenConstruction()
+_INDEXED_FREE_ABELIAN_GROUPS = ChosenConstruction()
+_TENSOR_OBJECTS = ChosenConstruction()
+_ABELIAN_TENSOR = ChosenConstruction()
+_RELATIVE_TENSORS = ChosenConstruction()
+_BIMODULE_TENSORS = ChosenConstruction()
+_BIMODULE_ASSOCIATOR_COMPONENTS = ChosenConstruction()
+_BIMODULE_UNITOR_COMPONENTS = ChosenConstruction()
 
 
 def _structure() -> MonoidalStructuresCategory.ObjectType:
@@ -201,23 +215,23 @@ def _points(group: CategoryOfCategories.ElementType) -> CategoryOfCategories.Ele
 def _coordinates(group: CategoryOfCategories.ElementType) -> _CoordinateBridge:
     """The Smith presentation this leaf retained for a group object; a group built elsewhere has none."""
     assert _has_coordinates(group), f"{group!r} was not constructed from a presented engine, so it has no Smith coordinates"
-    return selected_value(AbelianGroups(), "smith-coordinates", (group,))
+    return _SMITH_COORDINATES.selected(AbelianGroups(), (group,))
 
 
 def _has_coordinates(group: CategoryOfCategories.ElementType) -> bool:
-    return has_selected_value(AbelianGroups(), "smith-coordinates", (group,))
+    return _SMITH_COORDINATES.has(AbelianGroups(), (group,))
 
 
 def _retain_coordinates(group: CategoryOfCategories.ElementType, form: _CoordinateBridge) -> None:
-    select_value(AbelianGroups(), "smith-coordinates", (group,), form)
+    _SMITH_COORDINATES.select(AbelianGroups(), (group,), form)
 
 
 def _tensor_info(group: CategoryOfCategories.ElementType) -> _TensorData | _IndexedTensorData | _IndexedPairTensorData:
-    return selected_value(AbelianGroups(), "tensor-data", (group,))
+    return _TENSOR_DATA.selected(AbelianGroups(), (group,))
 
 
 def _retain_tensor_info(group: CategoryOfCategories.ElementType, data: _TensorData | _IndexedTensorData | _IndexedPairTensorData) -> None:
-    select_value(AbelianGroups(), "tensor-data", (group,), data)
+    _TENSOR_DATA.select(AbelianGroups(), (group,), data)
 
 
 def _group_from_operations(
@@ -231,7 +245,14 @@ def _group_from_operations(
     square = binary_product_data(Sets(), carrier, carrier).apex()
     addition = Mor(Sets)(square, carrier)(addition_rule)
     unit = Mor(Sets)(structure.unit(), carrier)(lambda _point: zero)
-    group = _certified_abelian_group(carrier, addition, unit)
+
+    def negate(value: Hashable) -> Hashable:
+        return form.element(tuple(-coefficient for coefficient in form.coordinates(value)))
+
+    inverse_shear = Mor(Sets)(square, square)(
+        lambda pair: (pair[0], addition_rule((negate(pair[0]), pair[1])))
+    )
+    group = _certified_abelian_group(carrier, addition, unit, inverse_shear)
     _retain_coordinates(group, form)
     return group
 
@@ -267,12 +288,12 @@ def _engine_membership(engine: Engine, datum: Hashable) -> Proposition:
 
 def presented_abelian_group(engine: Engine) -> CategoryOfCategories.ElementType:
     """The object of ``Ab`` whose points are the elements of a finitely generated presented Sage abelian group, with its addition; one object per engine."""
-    return chosen_construction(AbelianGroups(), "presented-abelian-group", (engine,), lambda: _group_from_engine(engine))
+    return _PRESENTED_ABELIAN_GROUPS(AbelianGroups(), (engine,), lambda: _group_from_engine(engine))
 
 
 def integer_group() -> CategoryOfCategories.ElementType:
     """``Z`` as an object of ``Ab``: the rule-defined integers, the free group on one generator."""
-    return chosen_construction(AbelianGroups(), "integer-group", (), _new_integer_group)
+    return _INTEGER_GROUP(AbelianGroups(), (), _new_integer_group)
 
 
 def _new_integer_group() -> CategoryOfCategories.ElementType:
@@ -285,9 +306,10 @@ def _certified_abelian_group(
     carrier: CategoryOfCategories.ElementType,
     addition: MorphismCategory.ObjectType,
     zero: MorphismCategory.ObjectType,
+    inverse_shear: MorphismCategory.ObjectType,
 ) -> CategoryOfCategories.ElementType:
     """Reconstruct an engine-certified commutative additive group on ``carrier``."""
-    return certified_additive_group(carrier, addition, zero, _structure(), commutative=True)
+    return certified_additive_group(carrier, addition, zero, inverse_shear, _structure(), commutative=True)
 
 
 def _rule_abelian_homomorphism(
@@ -318,7 +340,7 @@ def indexed_free_abelian_group(
     full basis-key parent.  The owned group retains ``S`` itself; no chosen
     enumeration, finite prefix, or common support bound is introduced.
     """
-    return chosen_construction(AbelianGroups(), "indexed-free-abelian-group", (index_set,), lambda: _new_indexed_free_abelian_group(index_set))
+    return _INDEXED_FREE_ABELIAN_GROUPS(AbelianGroups(), (index_set,), lambda: _new_indexed_free_abelian_group(index_set))
 
 
 def _new_indexed_free_abelian_group(
@@ -331,7 +353,10 @@ def _new_indexed_free_abelian_group(
     square = binary_product_data(Sets(), carrier, carrier).apex()
     addition = Mor(Sets)(square, carrier)(lambda pair: pair[0] + pair[1])
     zero = Mor(Sets)(_structure().unit(), carrier)(lambda _point: _backend.indexed_zero(engine))
-    group = _certified_abelian_group(carrier, addition, zero)
+    inverse_shear = Mor(Sets)(square, square)(
+        lambda pair: (pair[0], _backend.indexed_subtract(engine, pair[1], pair[0]))
+    )
+    group = _certified_abelian_group(carrier, addition, zero, inverse_shear)
     _backend.retain_indexed(group, index_set, engine)
     return group
 
@@ -651,7 +676,7 @@ def _pair_vector(
 
 
 def _tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-    return chosen_construction(AbelianGroups(), "tensor-object", (first, second), lambda: _new_tensor_object(first, second))
+    return _TENSOR_OBJECTS(AbelianGroups(), (first, second), lambda: _new_tensor_object(first, second))
 
 
 def _new_tensor_object(first: CategoryOfCategories.ElementType, second: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
@@ -1049,7 +1074,7 @@ def _tensor_unitor_component(
 
 def AbelianTensor() -> MonoidalStructuresCategory.ObjectType:
     """``(Ab, ⊗, Z)``: the tensor product of abelian groups as a selected monoidal structure on ``AbelianGroups()``."""
-    return chosen_construction(AbelianGroups(), "abelian-tensor", (), _new_abelian_tensor)
+    return _ABELIAN_TENSOR(AbelianGroups(), (), _new_abelian_tensor)
 
 
 def _new_abelian_tensor() -> MonoidalStructuresCategory.ObjectType:
@@ -1095,12 +1120,7 @@ def relative_tensor(
     the projection are homomorphisms of ``Ab`` carrying matrices on Smith generators, so
     the quotient is presented and needs no enumeration.
     """
-    return chosen_construction(
-        AbelianTensor(),
-        "relative-tensor",
-        (right_action, left_action),
-        lambda: _new_relative_tensor(right_action, left_action),
-    )
+    return _RELATIVE_TENSORS(AbelianTensor(), (right_action, left_action), lambda: _new_relative_tensor(right_action, left_action))
 
 
 def _new_relative_tensor(
@@ -1365,12 +1385,7 @@ def AbelianBimoduleTensor(
     associator, and unit comparisons descend from ``AbelianTensor()``.  The unit is
     the regular ``(R,R)``-bimodule.
     """
-    return chosen_construction(
-        AbelianTensor(),
-        "bimodule-tensor",
-        (scalars,),
-        lambda: _new_abelian_bimodule_tensor(scalars),
-    )
+    return _BIMODULE_TENSORS(AbelianTensor(), (scalars,), lambda: _new_abelian_bimodule_tensor(scalars))
 
 
 def _new_abelian_bimodule_tensor(
@@ -1410,12 +1425,7 @@ def _new_abelian_bimodule_tensor(
     def associator_components(
         triple: CategoryOfCategories.ElementType,
     ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-        return chosen_construction(
-            tensor,
-            "bimodule-associator-components",
-            (triple,),
-            lambda: _bimodule_associator_components(tensor, triple),
-        )
+        return _BIMODULE_ASSOCIATOR_COMPONENTS(tensor, (triple,), lambda: _bimodule_associator_components(tensor, triple))
 
     left_parenthesized, right_parenthesized = tensor_parentheses(tensor)
     associator = natural_isomorphism(
@@ -1429,10 +1439,9 @@ def _new_abelian_bimodule_tensor(
         value: CategoryOfCategories.ElementType,
         side: Literal["left", "right"],
     ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-        return chosen_construction(
+        return _BIMODULE_UNITOR_COMPONENTS(
             tensor,
-            f"bimodule-{side}-unitor-components",
-            (value,),
+            (side, value),
             lambda: _bimodule_unitor_components(tensor, pairs, unit, bimodules, scalars, value, side),
         )
 

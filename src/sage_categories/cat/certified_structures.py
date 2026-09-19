@@ -44,13 +44,13 @@ def certified_additive_group(
     carrier: CategoryOfCategories.ElementType,
     addition: MorphismCategory.ObjectType,
     zero: MorphismCategory.ObjectType,
+    inverse_shear: MorphismCategory.ObjectType,
     monoidal: MonoidalStructuresCategory.ObjectType,
     *,
     commutative: bool = False,
 ) -> CategoryOfCategories.ElementType:
     """Construct a named additive group from externally certified group operations."""
-    monoid = certified_monoid(carrier, addition, zero, monoidal)
-    refine(monoid, Groups(monoidal))
+    monoid = certified_group(carrier, addition, zero, inverse_shear, monoidal)
     group = AdditiveGroups(monoidal).renamed(monoid)
     if commutative:
         refine(group, AdditiveGroups(monoidal).Commutative())

@@ -2,7 +2,7 @@
 
 from pytest import raises
 
-from sage_categories.cat.declarations import NN, omega
+from sage_categories.cat.declarations import NN, DeclaredCategory, omega
 from sage_categories.all import Cat, Category, Fun, Sets
 
 declared = NN
@@ -29,7 +29,8 @@ def test_named_sequential_category_retains_its_thin_parameters() -> None:
     assert omega.order()(NN.point(3), NN.point(2)) is False
 
 
-TwoLabels = Cat().declare("TwoLabels")
+TwoLabels = Cat().declare(DeclaredCategory("TwoLabels"))
+TwoLabelsIdentity = Fun(TwoLabels, TwoLabels).one()
 
 
 class TwoLabelsCategory(Category):
@@ -46,14 +47,18 @@ class TwoLabelsCategory(Category):
         return ("left", "right")
 
     def structure_functors(self) -> tuple[Fun.ObjectType, ...]:
-        return (Fun(TwoLabels, TwoLabels).one(), Sets.Point())
+        return (TwoLabelsIdentity, Sets.Point())
 
 
 Cat().implement(TwoLabelsCategory)
 
 
 def test_named_finite_set_uses_its_defining_presentation() -> None:
+    assert Cat().implementation(TwoLabels) is TwoLabelsCategory
+    assert any(declaration is TwoLabels for declaration in Cat().declarations())
+    assert TwoLabels.selected_functors()[0] is TwoLabelsIdentity
     point = TwoLabels.point("right")
+    assert TwoLabelsIdentity.on_object(point) is point
     assert point.parent() is TwoLabels
     assert point.datum() == "right"
     enumeration = Sets.chosen_enumeration(TwoLabels)

@@ -7,12 +7,12 @@ identifications add a second key for a result before dependent declarations run.
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Hashable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial, wraps
 from graphlib import TopologicalSorter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
@@ -20,7 +20,66 @@ if TYPE_CHECKING:
     from sage_categories.cat.category import Category
     from sage_categories.cat.functors import Functor
 
-__all__ = ["category_construction_functors", "complete_constructions", "deferred_category", "identity_key", "identity_positions", "retained_involution"]
+__all__ = [
+    "RetainedConstruction",
+    "RetainedSelection",
+    "category_construction_functors",
+    "complete_constructions",
+    "deferred_category",
+    "identity_key",
+    "identity_positions",
+    "retained_involution",
+]
+
+
+class RetainedConstruction:
+    """Private identity retention for one mathematical construction family."""
+
+    def __init__(self) -> None:
+        self._owners: dict[tuple[tuple[int, Hashable], ...], dict[tuple[tuple[int, Hashable], ...], Hashable]] = {}
+
+    def _values[Owner: Hashable](self, owner: Owner) -> dict[tuple[tuple[int, Hashable], ...], Hashable]:
+        owner_key = identity_key(owner)
+        if owner_key not in self._owners:
+            self._owners[owner_key] = {}
+        return self._owners[owner_key]
+
+    def value[Owner: Hashable, Value: Hashable](
+        self,
+        owner: Owner,
+        parameters: tuple[Hashable, ...],
+        construct: Callable[[], Value],
+    ) -> Value:
+        values = self._values(owner)
+        key = identity_key(*parameters)
+        if key not in values:
+            values[key] = construct()
+        return cast(Value, values[key])
+
+
+class RetainedSelection[Owner: Hashable, Value]:
+    """Private identity retention for one mathematical choice family."""
+
+    def __init__(self) -> None:
+        self._owners: dict[tuple[tuple[int, Owner], ...], dict[tuple[tuple[int, Hashable], ...], Value]] = {}
+
+    def _values(self, owner: Owner) -> dict[tuple[tuple[int, Hashable], ...], Value]:
+        owner_key = identity_key(owner)
+        if owner_key not in self._owners:
+            self._owners[owner_key] = {}
+        return self._owners[owner_key]
+
+    def has(self, owner: Owner, parameters: tuple[Hashable, ...]) -> bool:
+        return identity_key(*parameters) in self._values(owner)
+
+    def select(self, owner: Owner, parameters: tuple[Hashable, ...], value: Value) -> None:
+        self._values(owner)[identity_key(*parameters)] = value
+
+    def selected(self, owner: Owner, parameters: tuple[Hashable, ...]) -> Value:
+        values = self._values(owner)
+        key = identity_key(*parameters)
+        assert key in values, f"this mathematical choice has no selected value for {parameters!r}"
+        return values[key]
 
 
 def identity_key[Value](*values: Value) -> tuple[tuple[int, Value], ...]:

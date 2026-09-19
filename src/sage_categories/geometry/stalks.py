@@ -14,8 +14,8 @@ from dataclasses import dataclass
 
 from sympy import false, true
 
-from sage_categories.cat.assembly import chosen_construction
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone, cocones
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import MorphismCategory
@@ -33,6 +33,9 @@ __all__ = [
     "stalk_germ",
     "stalk_presentation",
 ]
+
+_FINITE_STALK_DATA = ChosenConstruction()
+_FINITE_RING_STALKS = ChosenConstruction()
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -113,12 +116,7 @@ def _stalk_data[PointDatum: Hashable](
     sheaf: RingSheaf[frozenset[PointDatum]],
     point: CategoryOfCategories.ElementType,
 ) -> _FiniteStalkData[PointDatum]:
-    return chosen_construction(
-        sheaf.presheaf.functor,
-        "finite-ring-stalk-data",
-        (point,),
-        lambda: _new_stalk_data(sheaf, point),
-    )
+    return _FINITE_STALK_DATA(sheaf.presheaf.functor, (point,), lambda: _new_stalk_data(sheaf, point))
 
 
 def _open_key_at_vertex[PointDatum: Hashable](
@@ -170,12 +168,7 @@ def ring_stalk[PointDatum: Hashable](
 ) -> CategoryOfCategories.ElementType:
     """The owned stalk ring ``O_{X,point}`` as a retained neighborhood colimit."""
     data = _stalk_data(sheaf, point)
-    return chosen_construction(
-        sheaf.presheaf.functor,
-        "finite-ring-stalk",
-        (point,),
-        lambda: _new_ring_stalk(data),
-    )
+    return _FINITE_RING_STALKS(sheaf.presheaf.functor, (point,), lambda: _new_ring_stalk(data))
 
 
 def stalk_diagram[PointDatum: Hashable](

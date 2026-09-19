@@ -27,8 +27,8 @@ from sage_categories.algebra.abelian import (
     integer_group,
     presented_abelian_group,
 )
-from sage_categories.cat.assembly import chosen_construction
 from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.cones import ConeCategory, cocone
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.modules import ModuleCategory, Modules
@@ -52,6 +52,12 @@ __all__ = [
     "presented_integer_module",
 ]
 
+_INTEGER_SCALAR_MONOID = ChosenConstruction()
+_INTEGER_REGULAR_MODULE = ChosenConstruction()
+_INDEXED_FREE_INTEGER_MODULES = ChosenConstruction()
+_INTEGER_MODULES = ChosenConstruction()
+_FINITE_FREE_INTEGER_MODULES = ChosenConstruction()
+
 
 def integer_scalar_monoid() -> CategoryOfCategories.ElementType:
     r"""The tensor-unit ring ``ZZ`` as a monoid object of ``(Ab, tensor)``.
@@ -60,7 +66,7 @@ def integer_scalar_monoid() -> CategoryOfCategories.ElementType:
     the unit ``ZZ -> ZZ`` is the identity.  Thus this is not a second integer
     object: its carrier is literally :func:`integer_group`.
     """
-    return chosen_construction(AbelianTensor(), "integer-scalar-monoid", (), _new_integer_scalar_monoid)
+    return _INTEGER_SCALAR_MONOID(AbelianTensor(), (), _new_integer_scalar_monoid)
 
 
 def _new_integer_scalar_monoid() -> CategoryOfCategories.ElementType:
@@ -90,7 +96,7 @@ def _indexed_integer_carrier(
 
 def integer_regular_module() -> ModuleCategory.ObjectType:
     r"""The regular left ``ZZ``-module in ``Modules(ZZ, Ab)``."""
-    return chosen_construction(_integer_modules(), "integer-regular-module", (), _new_integer_regular_module)
+    return _INTEGER_REGULAR_MODULE(_integer_modules(), (), _new_integer_regular_module)
 
 
 def _new_integer_regular_module() -> ModuleCategory.ObjectType:
@@ -125,12 +131,7 @@ def indexed_free_integer_module(
     and the universal mediator in ``Modules(ZZ, Ab)``.
     """
     assert index_set in Sets
-    return chosen_construction(
-        _integer_modules(),
-        "indexed-free-integer-module",
-        (index_set,),
-        lambda: _new_indexed_free_integer_module(index_set),
-    )
+    return _INDEXED_FREE_INTEGER_MODULES(_integer_modules(), (index_set,), lambda: _new_indexed_free_integer_module(index_set))
 
 
 def _new_indexed_free_integer_module(
@@ -239,12 +240,7 @@ def integer_module(
 ) -> ModuleCategory.ObjectType:
     r"""Equip a represented abelian group with its canonical left ``ZZ`` action."""
     assert additive_group in AbelianGroups()
-    return chosen_construction(
-        _integer_modules(),
-        "integer-module",
-        (additive_group,),
-        lambda: _certified_integer_module(additive_group),
-    )
+    return _INTEGER_MODULES(_integer_modules(), (additive_group,), lambda: _certified_integer_module(additive_group))
 
 
 def finite_free_integer_module(rank: int) -> ModuleCategory.ObjectType:
@@ -252,10 +248,9 @@ def finite_free_integer_module(rank: int) -> ModuleCategory.ObjectType:
     rank = int(rank)
     if rank < 0:
         raise ValueError("a free-module rank is nonnegative")
-    return chosen_construction(
+    return _FINITE_FREE_INTEGER_MODULES(
         _integer_modules(),
-        f"finite-free-integer-module-{rank}",
-        (),
+        (rank,),
         lambda: integer_module(presented_abelian_group(_backend.finite_free_engine(rank))),
     )
 

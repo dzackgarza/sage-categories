@@ -8,8 +8,8 @@ from typing import Any, cast
 
 from sympy import false, true
 
-from sage_categories.cat.assembly import select_value, selected_value
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.choices import SelectedChoice
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.leaf_categories import MorphismDataCategory
@@ -17,6 +17,8 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.order.posets import BinaryRelations, Posets, Thin
 
 __all__ = ["TopologicalSpaces", "TopologicalSpacesCategory"]
+
+_QUOTIENT_PROJECTIONS: SelectedChoice[MorphismCategory.ObjectType] = SelectedChoice()
 
 
 def _topological_space_projection(source: Category) -> Functor:
@@ -171,7 +173,7 @@ class TopologicalSpacesCategory(MorphismDataCategory):
             open_point_rule,
             open_object_rule,
         )
-        select_value(self, "quotient-projection", (space,), projection)
+        _QUOTIENT_PROJECTIONS.select(self, (space,), projection)
         return space
 
     def quotient_projection(
@@ -179,7 +181,7 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         space: TopologicalSpacesCategory.ObjectType,
     ) -> MorphismCategory.ObjectType:
         """The retained set quotient map underlying a quotient topology."""
-        return selected_value(self, "quotient-projection", (space,))
+        return _QUOTIENT_PROJECTIONS.selected(self, (space,))
 
     def quotient_chart_morphism[SourceKey: Hashable, TargetKey: Hashable](
         self,

@@ -2,10 +2,9 @@ from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 
 import sage_categories.sets.finite
-from sage_categories.cat.assembly import select_value as select_value
-from sage_categories.cat.assembly import selected_value as selected_value
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor

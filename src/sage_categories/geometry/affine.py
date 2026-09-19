@@ -15,13 +15,8 @@ from sage_categories.algebra.commutative_rings import (
     localize_at_prime,
     prime_ideal,
 )
-from sage_categories.cat.assembly import (
-    chosen_construction,
-    has_selected_value,
-    select_value,
-    selected_value,
-)
 from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.leaf_categories import (
@@ -65,6 +60,22 @@ __all__ = [
     "native_affine_morphism",
     "native_affine_scheme",
 ]
+
+_ROOT_OPENS = ChosenConstruction()
+_PRINCIPAL_OPENS = ChosenConstruction()
+_FINITE_OPEN_UNIONS = ChosenConstruction()
+_AFFINE_SCHEMES = ChosenConstruction()
+_AFFINE_OPEN_CATEGORIES = ChosenConstruction()
+_AFFINE_TOPOLOGICAL_SPACES = ChosenConstruction()
+_AFFINE_OPEN_PREIMAGES = ChosenConstruction()
+_AFFINE_CONTINUOUS_MAPS = ChosenConstruction()
+_AFFINE_RING_SHEAVES = ChosenConstruction()
+_AFFINE_RINGED_SPACES = ChosenConstruction()
+_AFFINE_RINGED_MAPS = ChosenConstruction()
+_AFFINE_LOCALLY_RINGED_SPACES = ChosenConstruction()
+_AFFINE_LOCALLY_RINGED_MAPS = ChosenConstruction()
+_OPEN_RESTRICTIONS: SelectedChoice[MorphismCategory.ObjectType] = SelectedChoice()
+_OPEN_COVERS: SelectedChoice[tuple[AffineOpenCategory.ObjectType, ...]] = SelectedChoice()
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -125,9 +136,10 @@ class AffineOpenCategory(ParameterizedThinCategory):
             return _affine_open_category(self.scheme()).restriction_map(self, ancestor)
 
         def covering_pieces(self) -> tuple[AffineOpenCategory.ObjectType, ...]:
-            match has_selected_value(_affine_open_category(self.scheme()), "open-cover", (self,)):
+            owner = _affine_open_category(self.scheme())
+            match _OPEN_COVERS.has(owner, (self,)):
                 case True:
-                    return selected_value(_affine_open_category(self.scheme()), "open-cover", (self,))
+                    return _OPEN_COVERS.selected(owner, (self,))
                 case False:
                     return ()
 
@@ -159,7 +171,7 @@ class AffineOpenCategory(ParameterizedThinCategory):
             )
             return cast(AffineOpenCategory.ObjectType, value)
 
-        return chosen_construction(self, "root-open", (), construct)
+        return _ROOT_OPENS(self, (), construct)
 
     def _retain_restriction(
         self,
@@ -169,7 +181,7 @@ class AffineOpenCategory(ParameterizedThinCategory):
     ) -> None:
         assert restriction.domain() is larger.section_ring()
         assert restriction.codomain() is smaller.section_ring()
-        select_value(self, "open-restriction", (smaller, larger), restriction)
+        _OPEN_RESTRICTIONS.select(self, (smaller, larger), restriction)
 
     def restriction_map(
         self,
@@ -182,9 +194,9 @@ class AffineOpenCategory(ParameterizedThinCategory):
                 return Mor(_rings())(larger.section_ring(), larger.section_ring()).one()
             case False:
                 pass
-        match has_selected_value(self, "open-restriction", (smaller, larger)):
+        match _OPEN_RESTRICTIONS.has(self, (smaller, larger)):
             case True:
-                return selected_value(self, "open-restriction", (smaller, larger))
+                return _OPEN_RESTRICTIONS.selected(self, (smaller, larger))
             case False:
                 pass
         match smaller.parent_open():
@@ -237,12 +249,7 @@ class AffineOpenCategory(ParameterizedThinCategory):
                 self._retain_restriction(value, ancestor, restriction)
             return value
 
-        return chosen_construction(
-            self,
-            "principal-open",
-            (parent, element),
-            build,
-        )
+        return _PRINCIPAL_OPENS(self, (parent, element), build)
 
     def finite_union(
         self,
@@ -279,7 +286,7 @@ class AffineOpenCategory(ParameterizedThinCategory):
                 self._retain_restriction(value, root, root_restriction)
                 for piece, restriction in zip(pieces, piece_restrictions, strict=True):
                     self._retain_restriction(piece, value, restriction)
-                select_value(self, "open-cover", (value,), pieces)
+                _OPEN_COVERS.select(self, (value,), pieces)
                 return value
 
             return cast(
@@ -287,7 +294,7 @@ class AffineOpenCategory(ParameterizedThinCategory):
                 _backend.open_union(root, pieces, construction, construct),
             )
 
-        return chosen_construction(self, "finite-open-union", pieces, build)
+        return _FINITE_OPEN_UNIONS(self, pieces, build)
 
     def _admits_morphism(
         self,
@@ -299,7 +306,7 @@ class AffineOpenCategory(ParameterizedThinCategory):
                 return True
             case False:
                 pass
-        match has_selected_value(self, "open-restriction", (domain, codomain)):
+        match _OPEN_RESTRICTIONS.has(self, (domain, codomain)):
             case True:
                 return True
             case False:
@@ -408,7 +415,7 @@ class AffineSchemesCategory(ContravariantFaithfulStructureCategory):
 
 
 def AffineSchemes() -> AffineSchemesCategory:
-    return cast(AffineSchemesCategory, chosen_construction(Cat(), "affine-schemes", (), AffineSchemesCategory))
+    return cast(AffineSchemesCategory, _AFFINE_SCHEMES(Cat(), (), AffineSchemesCategory))
 
 
 def native_affine_scheme(
@@ -442,9 +449,8 @@ def _affine_open_category(
 ) -> AffineOpenCategory:
     return cast(
         AffineOpenCategory,
-        chosen_construction(
+        _AFFINE_OPEN_CATEGORIES(
             AffineSchemes(),
-            "affine-open-category",
             (scheme,),
             lambda: AffineOpenCategory(scheme),
         ),
@@ -534,9 +540,8 @@ def affine_topological_space(
 
     return cast(
         TopologicalSpacesCategory.ObjectType[AffineOpenCategory.ObjectType],
-        chosen_construction(
+        _AFFINE_TOPOLOGICAL_SPACES(
             AffineSchemes(),
-            "affine-topological-space",
             (scheme,),
             construct,
         ),
@@ -584,9 +589,8 @@ def affine_open_preimage(
                 )
                 return source_open, section_map
 
-    return chosen_construction(
+    return _AFFINE_OPEN_PREIMAGES(
         AffineSchemes(),
-        "affine-open-preimage",
         (mapping, target_open),
         construct,
     )
@@ -632,9 +636,8 @@ def affine_continuous_map(
 
     return cast(
         TopologicalSpacesCategory.MorphismType,
-        chosen_construction(
+        _AFFINE_CONTINUOUS_MAPS(
             AffineSchemes(),
-            "affine-continuous-map",
             (mapping,),
             construct,
         ),
@@ -648,9 +651,8 @@ def affine_ring_sheaf(
     _, presheaf = affine_structure_sheaf(scheme)
     return cast(
         RingSheaf[AffineOpenCategory.ObjectType],
-        chosen_construction(
+        _AFFINE_RING_SHEAVES(
             AffineSchemes(),
-            "affine-ring-sheaf",
             (scheme,),
             lambda: ring_sheaf(presheaf),
         ),
@@ -663,9 +665,8 @@ def affine_ringed_space(
     """The ringed space carried by an affine scheme."""
     return cast(
         RingedSpacesCategory.ObjectType[AffineOpenCategory.ObjectType],
-        chosen_construction(
+        _AFFINE_RINGED_SPACES(
             AffineSchemes(),
-            "affine-ringed-space",
             (scheme,),
             lambda: RingedSpaces()(
                 affine_topological_space(scheme),
@@ -690,9 +691,8 @@ def affine_ringed_map(
 
     return cast(
         RingedSpacesCategory.MorphismType,
-        chosen_construction(
+        _AFFINE_RINGED_MAPS(
             AffineSchemes(),
-            "affine-ringed-map",
             (mapping,),
             construct,
         ),
@@ -721,9 +721,8 @@ def affine_locally_ringed_space(
 
     return cast(
         LocallyRingedSpacesCategory.ObjectType[AffineOpenCategory.ObjectType],
-        chosen_construction(
+        _AFFINE_LOCALLY_RINGED_SPACES(
             AffineSchemes(),
-            "affine-locally-ringed-space",
             (scheme,),
             construct,
         ),
@@ -752,9 +751,8 @@ def affine_locally_ringed_map(
 
     return cast(
         LocallyRingedSpacesCategory.MorphismType,
-        chosen_construction(
+        _AFFINE_LOCALLY_RINGED_MAPS(
             AffineSchemes(),
-            "affine-locally-ringed-map",
             (mapping,),
             construct,
         ),

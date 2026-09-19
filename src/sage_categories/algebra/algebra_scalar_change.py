@@ -17,14 +17,16 @@ from sage_categories.algebra.abelian import (
     relative_tensor_mediator,
 )
 from sage_categories.algebra.algebras import AlgebraCategory
-from sage_categories.cat.assembly import chosen_construction
 from sage_categories.cat.bimodules import BimoduleCategory
+from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.monoidal import tensor_morphism, tensor_object
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.structured_objects import Magmas, Monoids
 
 __all__ = ["restrict_algebra_scalars"]
+
+_ALGEBRA_RESTRICTIONS = ChosenConstruction()
 
 
 def _relative_carrier(
@@ -141,9 +143,8 @@ def restrict_algebra_scalars(
     )
 
     def on_object(algebra: AlgebraCategory.ObjectType) -> AlgebraCategory.ObjectType:
-        return chosen_construction(
+        return _ALGEBRA_RESTRICTIONS(
             source,
-            "algebra-restriction-of-scalars",
             (target, scalar_morphism, algebra),
             lambda: _restrict_object(source, target, scalar_morphism, algebra),
         )

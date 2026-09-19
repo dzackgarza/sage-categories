@@ -3,6 +3,7 @@
 import pytest
 
 from sage_categories.cat.category import Axiom, Cat, Category, CategoryOfCategories, OnMorphism, OnObject, ask, is_placed, is_subcategory
+from sage_categories.cat.declarations import DeclaredCategory
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.images import full_image, strict_image
@@ -63,8 +64,9 @@ class Marks(Category):
 
 # A category ``Cat`` declares, and the class that implements it: the identity functor of
 # the declaration, selected first, is the whole implementation declaration (D156).
-GLYPHS = Cat().declare("Glyphs")
+GLYPHS = Cat().declare(DeclaredCategory("Glyphs"))
 GLYPHS_ORDINAL = GLYPHS.ordinal()
+GLYPHS_IDENTITY = Fun(GLYPHS, GLYPHS).one()
 
 
 class GlyphsCategory(Category):
@@ -107,7 +109,7 @@ class GlyphsCategory(Category):
         constructed when this declaration is read, which is why the read happens on the
         value under construction and not on the class.
         """
-        return (Fun(GLYPHS, GLYPHS).one(), self.to_tokens())
+        return (GLYPHS_IDENTITY, self.to_tokens())
 
 
 Cat().implement(GlyphsCategory)
@@ -845,18 +847,22 @@ def test_a_class_says_which_declared_category_it_implements_by_that_category_ide
     assert type(GLYPHS) is GlyphsCategory
     assert GLYPHS.ordinal() == GLYPHS_ORDINAL
     assert Cat().open_declaration(GLYPHS) is None
+    assert Cat().implementation(GLYPHS) is GlyphsCategory
+    assert any(declaration is GLYPHS for declaration in Cat().declarations())
 
     # The identity functor is what said which category, and it is the first selected.
-    assert GLYPHS.selected_functors()[0] is Fun(GLYPHS, GLYPHS).one()
+    assert GLYPHS.selected_functors()[0] is GLYPHS_IDENTITY
+    glyph = GLYPHS("a")
+    assert GLYPHS_IDENTITY.on_object(glyph) is glyph
 
     # The functor written against ``self`` was built over the declared value, not over a
     # second one: this is what a read taken off the class instead of the construction
     # cannot do.
     assert GLYPHS.selected_functors()[1].domain() is GLYPHS
-    assert GLYPHS.selected_functors()[1].on_object(GLYPHS("a")) is TOKENS("a")
+    assert GLYPHS.selected_functors()[1].on_object(glyph) is TOKENS("a")
 
     # The class's mathematics reaches the value every earlier reference already holds.
-    assert GLYPHS("a").glyph() == "a"
+    assert glyph.glyph() == "a"
 
     # The identity functor is the only thing that says "I implement that one": a class
     # selecting an ordinary structure functor first declares its own category, and the
@@ -881,13 +887,19 @@ def test_a_class_says_which_declared_category_it_implements_by_that_category_ide
     assert its_own.ambient() is GLYPHS
     assert type(GLYPHS) is GlyphsCategory
 
-    # An identity naming a category Cat declared nothing for is refused rather than
-    # silently adopted.
-    class ImplementsNoDeclaration(Category):
-        """A class selecting the identity of a category no declaration of Cat awaits."""
+    # Exact-category augmentation is the later contract: a category that already exists
+    # independently of Cat's named-declaration registry can receive another implementation
+    # surface in place, without replacing its existing objects, maps, or selected functors.
+    token = TOKENS("retained before exact augmentation")
+    token_identity = Mor(TOKENS)(token, token).one()
+    token_functors = TOKENS.selected_functors()
+
+    class ExactTokenOperations(Category):
+        """An additional exact implementation surface on the already-authored TOKENS."""
 
         class ObjectType:
-            pass
+            def exact_token_operation(self):
+                return self
 
         class ElementType:
             pass
@@ -898,8 +910,27 @@ def test_a_class_says_which_declared_category_it_implements_by_that_category_ide
         def structure_functors(self) -> tuple[Functor, ...]:
             return (Fun(TOKENS, TOKENS).one(),)
 
-    with pytest.raises(AssertionError):
-        Cat().implement(ImplementsNoDeclaration)
+    Cat().implement(ExactTokenOperations)
+    assert token.exact_token_operation() is token
+    assert Mor(TOKENS)(token, token).one() is token_identity
+    assert len(TOKENS.selected_functors()) == len(token_functors)
+    assert all(after is before for after, before in zip(TOKENS.selected_functors(), token_functors))
+    assert Cat().implementation(TOKENS) is None
+
+
+def test_declared_categories_are_owned_by_identity_not_display_name() -> None:
+    """Two declarations may share display data without becoming one semantic owner."""
+    first = Cat().declare(DeclaredCategory("RepeatedDisplayName"))
+    second = Cat().declare(DeclaredCategory("RepeatedDisplayName"))
+
+    assert first is not second
+    assert Cat().open_declaration(first) is first
+    assert Cat().open_declaration(second) is second
+    assert Cat().implementation(first) is None
+    assert Cat().implementation(second) is None
+    declared = Cat().declarations()
+    assert any(category is first for category in declared)
+    assert any(category is second for category in declared)
 
 
 def test_the_core_functor_target_is_implemented_through_that_same_declaration() -> None:
@@ -1059,6 +1090,7 @@ test_an_axiom_parameterized_by_a_functor_is_the_essential_image()
 test_strict_and_full_image_inclusions_are_the_direct_zero_argument_call()
 test_applying_a_functor_whose_full_image_exists_retains_the_image_and_places_nothing()
 test_a_class_says_which_declared_category_it_implements_by_that_category_identity_functor()
+test_declared_categories_are_owned_by_identity_not_display_name()
 test_the_core_functor_target_is_implemented_through_that_same_declaration()
 test_the_core_constructs_its_morphisms_through_the_isomorphisms_of_its_ambient()
 test_incomparable_fixed_homs_join_in_their_common_full_ambient()

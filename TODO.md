@@ -3,34 +3,59 @@
 The active DAG converges on two milestones, in order:
 
 - **A — Complete kernel and Cat subtree:** the shared foundation supplies the full specified categorical interface, inheritance, initialization, coherence, universal constructions, and static projection through a small mathematical declaration surface.
-- **B — Correct, minimal mathematical leaves:** every production leaf uses that foundation through mathematical data, immediate functors, local operations and comparison data, with private backend wiring. The shared machinery is blackboxed in actual leaf code and execution.
 
-This file owns the execution order. [DECISIONS.md](DECISIONS.md) records the architectural direction; [the system ownership map](specs/system.md#ownership-map) and its topic specifications own the full mathematical/public contracts. The [native-engine remediation plan][plan] is archived and explicitly delegates subsequent framework completion to this DAG. Its engine allocations and preservation obligations remain applicable; its historical completion does not establish either milestone below.
+- **B — Correct, minimal mathematical leaves:** every production leaf uses that foundation through mathematical data, immediate functors, local operations and comparison data, with private backend wiring.
+  The shared machinery is blackboxed in actual leaf code and execution.
 
-The existing public work belongs under [framework #36](https://github.com/dzackgarza/sage-categories/issues/36), with foundational obligations in #4/#34 and downstream obligations under #38. Existing issue contracts and dependencies remain binding. A closed remediation slice does not close a broader issue or establish the stronger architectural acceptance requested here.
+This file owns the execution order.
+[DECISIONS.md](DECISIONS.md) records the architectural direction; [the system ownership map](specs/system.md#ownership-map) and its topic specifications own the full mathematical/public contracts.
+The [native-engine remediation plan][plan] is archived and explicitly delegates subsequent framework completion to this DAG. Its engine allocations and preservation obligations remain applicable; its historical completion does not establish either milestone below.
 
-Start from delivered source and valid consumer evidence, and preserve work already in flight. The new nodes are open acceptance obligations, not assertions that every listed capability is absent. Reuse working implementations and still-valid evidence; repair concrete missing behavior at its owner. Earlier completion and remediation rows are retained below as historical inputs, not competing work selectors.
+The existing public work belongs under [framework #36](https://github.com/dzackgarza/sage-categories/issues/36), with foundational obligations in #4/#34 and downstream obligations under #38. Existing issue contracts and dependencies remain binding.
+A closed remediation slice does not close a broader issue or establish the stronger architectural acceptance requested here.
+
+Start from delivered source and valid consumer evidence, and preserve work already in flight.
+The new nodes are open acceptance obligations, not assertions that every listed capability is absent.
+Reuse working implementations and still-valid evidence; repair concrete missing behavior at its owner.
+Earlier completion and remediation rows are retained below as historical inputs, not competing work selectors.
 
 Read [AGENTS.md](AGENTS.md), the named [contribution policies](CONTRIBUTING.md), and [COMPLAINTS.md](COMPLAINTS.md) before selecting affected work.
 The [continuation locator](docs/remediation-handoff.md) supplies plan retrieval when the local vault link is unavailable.
 
 ## Active framework-completion DAG
 
-An ID in another node's `Needs` column is a prerequisite; multiple prerequisites are conjunctive. Among ready active nodes, select the first row unless a later owner instruction selects another ready node. Finish that node's complete public consumer before changing fronts.
+An ID in another node's `Needs` column is a prerequisite; multiple prerequisites are conjunctive.
+Among ready active nodes, select the first row unless a later owner instruction selects another ready node.
+Finish that node's complete public consumer before changing fronts.
 
-Milestone A includes the smallest real leaf consumers needed to prove its generic capabilities. Such prerequisite repairs and consumers belong to A; full production-leaf convergence belongs to B. This avoids a cycle in which the kernel is declared complete before any leaf can use it, or leaves must repair missing generic machinery themselves. A leaf-discovered generic defect reopens its A owner and affected acceptance, without invalidating unrelated evidence.
+Milestone A includes the smallest real leaf consumers needed to prove its generic capabilities.
+Such prerequisite repairs and consumers belong to A; full production-leaf convergence belongs to B. This avoids a cycle in which the kernel is declared complete before any leaf can use it, or leaves must repair missing generic machinery themselves.
+A leaf-discovered generic defect reopens its A owner and affected acceptance, without invalidating unrelated evidence.
 
-Every behavioral node carries its exact static consumer and applicable architecture checks. Integration nodes combine already-exercised capabilities at one committed revision; they never postpone a capability's first working consumer. Closure covers the complete contracts at the linked owners, including infinite and nonenumerable domains. Finite examples, green import checks, or a few representative leaves cannot discharge a universal claim.
+Every behavioral node carries its exact static consumer and applicable architecture checks.
+Integration nodes combine already-exercised capabilities at one committed revision; they never postpone a capability's first working consumer.
+Closure covers the complete contracts at the linked owners, including infinite and nonenumerable domains.
+Finite examples, green import checks, or a few representative leaves cannot discharge a universal claim.
 
-Before authoring a node, follow its existing owners below through the named public consumer. Identify the exact contract it fails and extend that owner by the smallest missing behavior. If the consumer already satisfies the full obligation, retain its implementation and evidence; an open acceptance row is not permission to rewrite it. Record the demonstrated failure and repair with the existing issue/commit evidence. A replacement must transfer the complete responsibility and preserve every affected consumer. Reuse Sage's C3/class construction, SymPy's propositions, native cells and existing engine derivations directly; a wrapper around a second implementation does not count as reuse.
+Before authoring a node, follow its existing owners below through the named public consumer.
+Identify the exact contract it fails and extend that owner by the smallest missing behavior.
+If the consumer already satisfies the full obligation, retain its implementation and evidence; an open acceptance row is not permission to rewrite it.
+Record the demonstrated failure and repair with the existing issue/commit evidence.
+A replacement must transfer the complete responsibility and preserve every affected consumer.
+Reuse Sage's C3/class construction, SymPy's propositions, native cells and existing engine derivations directly; a wrapper around a second implementation does not count as reuse.
 
-A's enforcement obligation is to implement and exercise general admission, import, typing and mathematical-contract mechanisms through their first real consumers, including invalid nearby declarations and real engine reconstruction. B's enforcement obligation is to establish conformance of **every** production leaf and helper to those mechanisms and its full mathematical contract. A does not require B's all-leaf review to have finished. Every existing mandatory gate remains binding: a failing gate is repaired at its responsible prerequisite, never suppressed, excluded, or recorded as accepted to break this sequencing boundary.
+A's enforcement obligation is to implement and exercise general admission, import, typing and mathematical-contract mechanisms through their first real consumers, including invalid nearby declarations and real engine reconstruction.
+B's enforcement obligation is to establish conformance of **every** production leaf and helper to those mechanisms and its full mathematical contract.
+A does not require B's all-leaf review to have finished.
+Every existing mandatory gate remains binding: a failing gate is repaired at its responsible prerequisite, never suppressed, excluded, or recorded as accepted to break this sequencing boundary.
 
 ### Milestone A — Complete kernel and Cat subtree
 
 **Consumer:** a mathematical author introduces a category using its defining data and immediate functors, then obtains inherited object, point, and morphism operations, comparisons and universal constructions without orchestrating runtime state.
 
-**Scope:** all responsibilities of `kernel`, `cat`, and `cat_kernel`, their bootstrap, and the private native integrations that execute their contracts. Completeness is measured against every applicable public declaration and topic contract in the system ownership map, including the corrections in `DECISIONS.md`; it is not restricted to the illustrative consumers named in the rows. Mathematical algorithms remain delegated to their existing engines.
+**Scope:** all responsibilities of `kernel`, `cat`, and `cat_kernel`, their bootstrap, and the private native integrations that execute their contracts.
+Completeness is measured against every applicable public declaration and topic contract in the system ownership map, including the corrections in `DECISIONS.md`; it is not restricted to the illustrative consumers named in the rows.
+Mathematical algorithms remain delegated to their existing engines.
 
 | ID | Work and complete consumer boundary | Needs |
 | --- | --- | --- |
@@ -49,9 +74,14 @@ A's enforcement obligation is to implement and exercise general admission, impor
 
 ### Milestone B — Correct, minimal mathematical leaves
 
-**Consumer:** a mathematician reads or extends any production leaf in the language of that domain. Its public source states mathematical data, immediate functors, hypotheses, local operations and genuinely additional comparison/lifting data. Private adapters wire mature engines to owned inputs and outputs.
+**Consumer:** a mathematician reads or extends any production leaf in the language of that domain.
+Its public source states mathematical data, immediate functors, hypotheses, local operations and genuinely additional comparison/lifting data.
+Private adapters wire mature engines to owned inputs and outputs.
 
-**Scope:** every production module and helper in `sets`, `order`, `algebra` and `geometry`, including their public exports and private engine boundaries. Any production package introduced during this work enters the same acceptance domain. A firewall may contain backend conversion, but cannot hide category propagation, generic composition, refinement or a duplicate mathematical evaluator. Mathematical directness is an ownership and semantic criterion, not a line-count target.
+**Scope:** every production module and helper in `sets`, `order`, `algebra` and `geometry`, including their public exports and private engine boundaries.
+Any production package introduced during this work enters the same acceptance domain.
+A firewall may contain backend conversion, but cannot hide category propagation, generic composition, refinement or a duplicate mathematical evaluator.
+Mathematical directness is an ownership and semantic criterion, not a line-count target.
 
 | ID | Work and complete consumer boundary | Needs |
 | --- | --- | --- |
@@ -65,10 +95,12 @@ A's enforcement obligation is to implement and exercise general admission, impor
 
 ### Retained implementation evidence
 
-The following rows preserve their original IDs, prerequisites, acceptance text and revision-scoped status. They provide inputs and regression obligations to A and B. In particular, `leaf-blackbox-boundary` records its earlier representative scope; it does not certify every current leaf or the strengthened coherence contract. Source/static closure that deferred runtime remains only source/static evidence until the corresponding current consumer executes. Historical helper extraction or relocation is not an architectural standard for new work.
+The following rows preserve their original IDs, prerequisites, acceptance text and revision-scoped status.
+They provide inputs and regression obligations to A and B. In particular, `leaf-blackbox-boundary` records its earlier representative scope; it does not certify every current leaf or the strengthened coherence contract.
+Source/static closure that deferred runtime remains only source/static evidence until the corresponding current consumer executes.
+Historical helper extraction or relocation is not an architectural standard for new work.
 
-<details>
-<summary>Earlier framework implementation and acceptance records</summary>
+<details> <summary>Earlier framework implementation and acceptance records</summary>
 
 | ID | Work and complete consumer boundary | Needs |
 | --- | --- | --- |
@@ -102,10 +134,10 @@ The following rows preserve their original IDs, prerequisites, acceptance text a
 
 ## Native-engine remediation and consolidation DAG
 
-These historical records retain their IDs and obligations for reuse and regression analysis. They do not supply an alternative active work order.
+These historical records retain their IDs and obligations for reuse and regression analysis.
+They do not supply an alternative active work order.
 
-<details>
-<summary>Accepted native-engine remediation and consolidation records</summary>
+<details> <summary>Accepted native-engine remediation and consolidation records</summary>
 
 `A` in `B`'s Needs column means `A -> B`: B consumes the stated output of A. `none` means no prerequisite node in this table; existing mathematical inputs and the plan's retained issue contracts still apply.
 Acceptance belongs to the linked contract, not the short node name.
@@ -405,7 +437,10 @@ Repository audit skills remain available as diagnostic lenses when a concrete ri
 
 ## Decision coverage at acceptance
 
-This mapping connects the complete [architectural decisions](DECISIONS.md) to implementation and acceptance owners. It is a review obligation, not a keyword-based certificate. Each node's full topic contracts and every applicable declaration remain in scope even when an example is not named here. Source paths in the active rows are relative to `src/sage_categories` unless otherwise specified, and unqualified Python filenames continue the preceding directory; named `.sage` consumers are in `tests/kernel`.
+This mapping connects the complete [architectural decisions](DECISIONS.md) to implementation and acceptance owners.
+It is a review obligation, not a keyword-based certificate.
+Each node's full topic contracts and every applicable declaration remain in scope even when an example is not named here.
+Source paths in the active rows are relative to `src/sage_categories` unless otherwise specified, and unqualified Python filenames continue the preceding directory; named `.sage` consumers are in `tests/kernel`.
 
 | Decision and controlling nuance | Implementation owner | Required acceptance |
 | --- | --- | --- |
@@ -427,17 +462,27 @@ The active milestone A and B tables are the work selector.
 Their top-to-bottom order is the tie-breaker among ready nodes; `Needs` records only real data/behavior dependencies.
 Do not manufacture dependency edges merely to force scheduling.
 
-Complete the shared foundation through its real first consumers before full leaf convergence. Finish the selected node through its complete public consumer before moving to another family. Preserve accepted runtime, engine and static capabilities while repairing ownership; a foundational defect belongs to its A owner even when a B consumer exposes it.
+Complete the shared foundation through its real first consumers before full leaf convergence.
+Finish the selected node through its complete public consumer before moving to another family.
+Preserve accepted runtime, engine and static capabilities while repairing ownership; a foundational defect belongs to its A owner even when a B consumer exposes it.
 
 A node that adds or changes public mathematics carries its static projection in the same unit.
-`core-static-and-boundaries` verifies the shared integrated projection; `completion-current-head-acceptance` verifies the complete leaf projection and runtime together. The retained `completion-static-integration` row supplies earlier evidence, not present acceptance. Neither integration node postpones a feature's first behavioral consumer or per-feature typing.
+`core-static-and-boundaries` verifies the shared integrated projection; `completion-current-head-acceptance` verifies the complete leaf projection and runtime together.
+The retained `completion-static-integration` row supplies earlier evidence, not present acceptance.
+Neither integration node postpones a feature's first behavioral consumer or per-feature typing.
 
 The source-built Sage runtime is an external prerequisite only for execution acceptance.
 While it is building, continue source work whose correctness can be established by source/specification reasoning without running Sage.
 Do not create a second Sage runtime or weaken a consumer to make progress.
 
-`publish-for-consumers` retains its independently authorized historical publication. Any subsequent publication follows the repository-owner policy in `README.md`. The terminal `framework-complete` node requires the revision satisfying both A and B to be reachable from `origin/main`; publishing an intermediate snapshot establishes neither milestone.
+`publish-for-consumers` retains its independently authorized historical publication.
+Any subsequent publication follows the repository-owner policy in `README.md`. The terminal `framework-complete` node requires the revision satisfying both A and B to be reachable from `origin/main`; publishing an intermediate snapshot establishes neither milestone.
 
-After changing this graph, run `just plan-state`. Its local validator checks unique IDs, resolved prerequisites, closed prerequisites of closed nodes, acyclicity, historical/active separation, and a path from every active node through its milestone to `framework-complete`. Every B node must depend transitively on `kernel-cat-complete`; A's first consumers must not depend on B's closure. The A/B headings delimit active scope, including closed active nodes; rows outside that scope must be closed historical evidence and cannot depend on current work. Reopening an old obligation requires routing it into the appropriate active milestone. Preserve the earlier IDs and obligations when moving historical rows. Graph validation does not prove semantic coverage: compare the [decision-to-consumer mapping](#decision-coverage-at-acceptance) with the full decisions and topic contracts whenever obligations change. Keep implementation evidence in source, consumers, issues, and commits; this table is routing, not a second proof ledger.
+After changing this graph, run `just plan-state`. Its local validator checks unique IDs, resolved prerequisites, closed prerequisites of closed nodes, acyclicity, historical/active separation, and a path from every active node through its milestone to `framework-complete`. Every B node must depend transitively on `kernel-cat-complete`; A's first consumers must not depend on B's closure.
+The A/B headings delimit active scope, including closed active nodes; rows outside that scope must be closed historical evidence and cannot depend on current work.
+Reopening an old obligation requires routing it into the appropriate active milestone.
+Preserve the earlier IDs and obligations when moving historical rows.
+Graph validation does not prove semantic coverage: compare the [decision-to-consumer mapping](#decision-coverage-at-acceptance) with the full decisions and topic contracts whenever obligations change.
+Keep implementation evidence in source, consumers, issues, and commits; this table is routing, not a second proof ledger.
 
 [plan]: .agents/plans/features/FEATURE-functor-owned-category-framework/plans/PLAN-native-engine-remediation/PLAN-native-engine-remediation.md

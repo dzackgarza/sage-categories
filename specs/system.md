@@ -1,12 +1,14 @@
 # System architecture
 
 This file owns layer responsibilities, source dependencies, and the foundation bootstrap.
-Topic specifications own the mathematics. [AGENTS.md](../AGENTS.md#sources-of-truth) owns document authority and work procedure.
+Topic specifications own the mathematics.
+[AGENTS.md](../AGENTS.md#sources-of-truth) owns document authority and work procedure.
 
 ## System shape
 
 The mathematical foundation is `Cat`, its morphisms and functors, and generic constructions.
-Properties and queries use that foundation. Production categories build on these through named functors.
+Properties and queries use that foundation.
+Production categories build on these through named functors.
 The private runtime makes the mathematics executable.
 
 | Layer | Responsibility |
@@ -45,11 +47,17 @@ The kernel executes class refinement; the property category owns what that refin
 ## Dependency directions
 
 - The kernel imports neither `Cat`, `cat_kernel`, nor a production leaf.
+
 - `Cat` imports neither `cat_kernel` nor a production leaf.
+
 - `cat_kernel` imports the kernel and `Cat`. A leaf imports neither kernel internals nor `cat_kernel`.
+
 - A leaf reaches `Cat`, its immediate mathematical targets, and its private engine helpers.
+
 - Only `kernel/sage_runtime.py` and the engine modules named in the import contract import Sage.
+
 - Engine helpers neither register categories nor control placement, refinement, or assumptions.
+
 - Generated projections derive from mathematical declarations and compiler interpretation.
 
 `cat_kernel` supplies callback references through package bootstrap; the kernel holds those references and executes its engineering operations.
@@ -57,9 +65,9 @@ The kernel executes class refinement; the property category owns what that refin
 
 Sage supplies controlled C3, dynamic classes, refinement, and identity facilities.
 SymPy supplies proposition algebra, assumptions, and proposition dispatch.
-Typed queries use private exact dispatch. CAP, GAP packages, Catlab, and GATlab serve their declared computation domains.
-Finite evaluator restrictions do not restrict the owned mathematical universe; see
-[mathematical generality](computational-generality.md#mathematical-domain).
+Typed queries use private exact dispatch.
+CAP, GAP packages, Catlab, and GATlab serve their declared computation domains.
+Finite evaluator restrictions do not restrict the owned mathematical universe; see [mathematical generality](computational-generality.md#mathematical-domain).
 The exact dependency scope is recorded once in [resolution.md](resolution.md#fixed-private-dependencies).
 Every public computation returns an owned value or the authorized public SymPy expression containing private identity atoms.
 
@@ -68,11 +76,19 @@ Every public computation returns an owned value or the authorized public SymPy e
 Minimal leaf scaffolding follows mathematical prerequisites:
 
 1. Complete `Cat`, `Mor`, `Fun`, properties, and generic constructions.
+
 2. Implement the declared `Sets()` and integrate the finite-set consumer through its finite property category.
-3. Build relation structures and posets, then total orders. Independently, build magmas and monoids from the supplied tensor structure.
-4. Build additive groups, semirings, and rings. Supply abelian-group tensor products and monoidal actions at their owners.
+
+3. Build relation structures and posets, then total orders.
+   Independently, build magmas and monoids from the supplied tensor structure.
+
+4. Build additive groups, semirings, and rings.
+   Supply abelian-group tensor products and monoidal actions at their owners.
+
 5. Build modules, commuting bimodule actions, and relative tensor products, then algebra objects in those monoidal categories.
+
 6. Supply the commutative-ring presentations, spaces, sheaves, and locally ringed spaces needed for affine schemes.
+
 7. Build schemes with affine charts and executable gluing.
 
 The [scaffolding contract](leaf-scaffolding.md) bounds the first consumer of each layer.
@@ -95,5 +111,4 @@ A runtime mechanism enters with its first complete mathematical consumer.
 Its specification can precede implementation; its acceptance cannot precede a working consumer.
 
 The active TODO node names that consumer and the full constructor and functor path.
-Procedure remains with [AGENTS.md](../AGENTS.md); execution routing and its evidence
-owners are linked from [TODO.md](../TODO.md).
+Procedure remains with [AGENTS.md](../AGENTS.md); execution routing and its evidence owners are linked from [TODO.md](../TODO.md).

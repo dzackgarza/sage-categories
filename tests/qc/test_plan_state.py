@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 import yaml
-
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -58,10 +57,12 @@ def test_milestone_routing_at_cli(tmp_path: Path, before: str, after: str, expec
     "todo",
     [
         MILESTONE_DAG.replace(
-            "`core` | **Open.** | none", "`core` | **Open.** | `leaf`",
+            "`core` | **Open.** | none",
+            "`core` | **Open.** | `leaf`",
         ).replace("`leaf` | **Open.** | `kernel-cat-complete`", "`leaf` | **Open.** | none"),
         MILESTONE_DAG.replace("**Open.**", "**Closed.**").replace(
-            "`historical` | **Closed.** | none", "`historical` | **Closed.** | `core`",
+            "`historical` | **Closed.** | none",
+            "`historical` | **Closed.** | `core`",
         ),
         MILESTONE_DAG.replace("### Milestone B — Leaves", "### Milestone A — Leaves"),
     ],
@@ -120,12 +121,7 @@ def gate_repo(tmp_path: Path) -> tuple[Path, dict[str, str]]:
         "print(pathlib.Path(name).read_text())\n"
     )
     uv = binaries / "uv"
-    uv.write_text(
-        f"#!{sys.executable}\n"
-        "import os, sys\n"
-        "arguments = sys.argv[sys.argv.index('python') + 1:]\n"
-        "os.execv(sys.executable, [sys.executable, *arguments])\n"
-    )
+    uv.write_text(f"#!{sys.executable}\nimport os, sys\narguments = sys.argv[sys.argv.index('python') + 1:]\nos.execv(sys.executable, [sys.executable, *arguments])\n")
     uvx.chmod(0o755)
     uv.chmod(0o755)
     return tmp_path, {**os.environ, "PATH": str(binaries) + os.pathsep + os.environ["PATH"]}
@@ -134,7 +130,11 @@ def gate_repo(tmp_path: Path) -> tuple[Path, dict[str, str]]:
 def run_gate(repo: Path, environment: dict[str, str], *arguments: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["bash", "scripts/plan_state.sh", *arguments],
-        cwd=repo, env=environment, capture_output=True, text=True, timeout=20,
+        cwd=repo,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=20,
     )
 
 
@@ -161,7 +161,10 @@ def test_issue_dag_does_not_reactivate_archived_phases(gate_repo: tuple[Path, di
     ],
 )
 def test_wrong_or_invalid_native_owner_fails(
-    gate_repo: tuple[Path, dict[str, str]], filename: str, path: tuple[str, ...], value: object,
+    gate_repo: tuple[Path, dict[str, str]],
+    filename: str,
+    path: tuple[str, ...],
+    value: object,
 ) -> None:
     repo, env = gate_repo
     data = json.loads((repo / filename).read_text())
@@ -209,20 +212,34 @@ def test_historical_phase_model(gate_repo: tuple[Path, dict[str, str]], fault: s
     first: dict[str, object] = {"id": "PHASE-A", "status": "complete"}
     second: dict[str, object] = {"id": "PHASE-B", "status": "in-progress", "dependsOn": ["[[PHASE-A]]"]}
     match fault:
-        case "prerequisite": first["status"] = "unstarted"
-        case "missing": second["dependsOn"] = ["[[PHASE-missing]]"]
-        case "core-order": core["status"] = "in-progress"
-        case "archived": second["archived"] = True
-        case "two-active": write_card(phases / "PHASE-C.md", {"id": "PHASE-C", "status": "in-progress"})
-        case "no-active": second["status"] = "complete"
-        case None | "revision": pass
+        case "prerequisite":
+            first["status"] = "unstarted"
+        case "missing":
+            second["dependsOn"] = ["[[PHASE-missing]]"]
+        case "core-order":
+            core["status"] = "in-progress"
+        case "archived":
+            second["archived"] = True
+        case "two-active":
+            write_card(phases / "PHASE-C.md", {"id": "PHASE-C", "status": "in-progress"})
+        case "no-active":
+            second["status"] = "complete"
+        case None | "revision":
+            pass
     write_card(phases / "core.md", core)
     write_card(phases / "PHASE-A.md", first, accepted=fault != "revision")
     write_card(phases / "PHASE-B.md", second)
     before = {p: p.read_bytes() for p in phases.iterdir()}
     result = run_gate(
-        repo, env, "phase-managed", "--phase-root", str(phases),
-        "--core-plan", str(phases / "core.md"), "--source-root", str(source),
+        repo,
+        env,
+        "phase-managed",
+        "--phase-root",
+        str(phases),
+        "--core-plan",
+        str(phases / "core.md"),
+        "--source-root",
+        str(source),
     )
     assert (result.returncode == 0) == (fault is None), result.stdout + result.stderr
     assert {p: p.read_bytes() for p in phases.iterdir()} == before

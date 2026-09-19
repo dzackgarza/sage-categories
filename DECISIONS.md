@@ -1,65 +1,97 @@
-Yes. There is substantial prior work, including work specifically about mathematical inheritance hierarchies. **The strongest route is to make the desired architecture a consequence of the interfaces and compilation model, then check those boundaries mechanically.** That can eliminate whole classes of drift without enumerating every bad implementation pattern.
+# Categorical architecture and enforcement
 
-For this repository, the most relevant precedents are **Sage’s category framework, CAP’s operation derivations, GATlab’s explicit mathematical models, and MathComp’s hierarchy/coherence work**. Several are already among the project’s chosen dependencies.
+The primary mechanism is **categorical transport along selected functors, with coherence expressed by actual cells in `Cat`**. The intended semantics are ∞-categorical through every level, including the higher cells needed by the construction. Runtime classes and computation engines make that mathematics executable.
 
-**For remediation, I would concentrate on five structural changes.**
+Make the desired architecture a consequence of the public interfaces and their compilation, then check the resulting boundaries mechanically. This can eliminate whole classes of drift without enumerating every bad implementation pattern.
 
-**1. Complete the existing declaration-to-runtime compiler so leaves supply mathematical information only.**
+## Contents
 
-The underlying principle is *information hiding*: a module should conceal a design decision, allowing its consumers to work without understanding that decision. Here, those concealed decisions include class construction, initialization order, retained image storage, method resolution, and backend representation. This is the architectural criterion in [Parnas’s original modularity paper](https://www.cs.lafayette.edu/~gexia/cs301/resources/parnas.html).
+- [Functorial inheritance and leaf simplicity](#functorial-inheritance-and-leaf-simplicity)
+- [Coherence and compiler diagnostics](#coherence-and-compiler-diagnostics)
+- [Generic constructions and named categories](#generic-constructions-and-named-categories)
+- [Engine delegation and research precedents](#engine-delegation-and-research-precedents)
+- [Mathematical ownership and typed interfaces](#mathematical-ownership-and-typed-interfaces)
+- [Architectural enforcement](#architectural-enforcement)
 
-A leaf’s authoring interface should consequently consist of:
+## Functorial inheritance and leaf simplicity
+
+Complete the existing declaration-to-runtime compiler around the repository's categorical contracts. A leaf supplies:
 
 - Its mathematical data and public constructors.
-- Its immediate named functors, including their actions.
-- Its additional operations and hypotheses.
+- Its immediate named functors, including their ordinary object and morphism actions.
+- Its additional operations, hypotheses, and genuinely new comparison or lifting data.
 - Private bindings to computational engines.
 
-The existing owners should elaborate those declarations: `Cat` supplies mathematical constructions; `cat_kernel` interprets the declarations relevant to inheritance; the kernel performs runtime construction and initialization. Leaves should receive the consequences automatically.
+`Cat` owns common categorical mathematics and universal constructions. `cat_kernel` interprets declared functor properties relevant to inheritance and placement. The kernel performs class compilation, initialization, identity retention, and runtime placement. Private engine adapters lower owned inputs, compute, and reconstruct owned results. These responsibilities and import directions remain those of [the system specification](specs/system.md#system-shape): leaves reach `Cat`, their immediate mathematical targets, and their own helpers; neither `Cat` nor the kernel imports production leaves.
 
-This closely follows Sage’s established approach: reconstruct inheritance from mathematical information and attach generic operations and tests through categories. The applicable precedent is its engineering machinery; the project’s own mathematical category graph remains authoritative. [Sage category primer](https://doc.sagemath.org/html/en/reference/categories/sage/categories/primer.html).
+The central semantic consequence for an eligible selected functor `F: C -> D` is:
 
-The practical criterion is demanding: **an ordinary new leaf should require no knowledge of how inherited state gets initialized or retained.** Moving a lifecycle helper behind a nicer import does not meet that criterion if leaf authors must still orchestrate it.
+```text
+x.f() := F(x).f()
+```
 
-**2. Represent mathematical structures explicitly; treat multiple inheritance as a coherence problem.**
+This expresses equality of mathematical values. The specified runtime executes the inherited method directly on the structured source instance. The kernel obtains the target initialization from the datum supplied through the ordinary functor action; public application `F(x)` returns the separate image of the completed source. A leaf supplies no second description of transport and calls no inherited initializer. See [inherited execution](specs/functor.md#cobjecttype-celementtype-and-cmorphismtype) and [runtime initialization](specs/resolution.md#direct-inherited-execution).
 
-The same carrier can support several structures. Dispatch based only on its Python class—or a single preferred inheritance path—cannot express that distinction reliably.
+Inheritance follows every eligible selected path. Eligibility matters: an arbitrary functor that exists in `Fun(C, D)` does not automatically contribute inherited execution. The repository licenses inheritance through a selected declaration in `Isofibrations()` or a subcategory of it; in that selection context, the declaration also asserts faithfulness. An arbitrary isofibration need not be faithful. See [structure functors](specs/functor.md#structure-functors-and-inherited-classes).
 
-GATlab’s developers describe precisely this problem: identical Julia representations occur in different categories, so they make the mathematical *model* an explicit argument governing the operations. Their example distinguishes finite-set and matrix categories whose objects both use integers. [GATlab’s explicit-model design](https://blog.algebraicjulia.org/post/2025/02/refactor1/index.html).
+Reading an operation on `F(x)` and constructing a result back in `C` are distinct obligations. An isofibration supplies lifting of isomorphisms. A construction returning an object or morphism of `C` can require additional preservation, creation, or executable lifting structure. The selected-isofibration convention is the repository's inheritance contract, not a theorem that every isofibration lifts every operation.
 
-For this project, that suggests retaining each selected structure through its **named functor and owning category**, rather than collapsing all images with the same target into one representative. In particular:
+The practical criterion is that **an ordinary new leaf requires no knowledge of how inherited state gets initialized or retained**. Moving a lifecycle helper behind a different import does not satisfy that criterion if the leaf still orchestrates it.
 
-- The additive and multiplicative magma structures on a carrier remain distinct.
-- Two paths declared to represent the *same* inherited structure must agree in the required sense.
-- Initialization follows dependencies between those retained structures.
-- Method precedence operates only after those mathematical distinctions are settled.
+This is information hiding in Parnas's sense: conceal design decisions such as runtime class construction, method resolution, image storage, and backend representation behind stable mathematical interfaces. [Parnas's modularity paper](https://www.cs.lafayette.edu/~gexia/cs301/resources/parnas.html).
 
-The current [single-point-functor restriction](/home/dzack/gitclones/sage-categories/src/sage_categories/cat/category.py:374) needs this kind of solution. Merely accepting a longer list would leave the hard problem unresolved.
+## Coherence and compiler diagnostics
 
-MathComp provides especially relevant research. *Validating Mathematical Structures* identifies coherence and hierarchy invariants and supplies checking algorithms; Hierarchy Builder elaborates compact declarations into packed structures. These are design references, not Python dependencies to install. Their exact assumptions also should not be imposed indiscriminately on your richer functor graph. [Sakaguchi, IJCAR 2020](https://arxiv.org/html/2002.00620v2), [Hierarchy Builder](https://github.com/math-comp/hierarchy-builder).
+For two composites of eligible selected functors
 
-**3. Delegate generic operation derivation to established machinery.**
+\[
+P,Q:C\longrightarrow D,
+\]
 
-CAP already implements a particularly close match:
+the relevant comparison is an actual cell \(\alpha:P\Rightarrow Q\) in `Cat`, constructed through the ordinary natural-transformation machinery of `Fun`. It is mathematical data, not a separate coherence certificate, proof record, route registry, or second functor declaration. See [the coherence contract](specs/resolution.md#diamond-diagnostics-and-future-coherence).
 
-- Register primitive operations.
-- Describe derived operations through their prerequisites and applicability conditions.
-- Compute available derivations and select implementations by weights.
-- Expose a derivation tree explaining how an operation became available.
+Interchangeability of the paths generally requires an **invertible comparison**, together with compatibility of the operation with that comparison. An arbitrary noninvertible 2-cell supplies a directed comparison. Choosing either path yields corresponding results under the specified transport; it need not yield identical Python representations or literally equal untransported outputs.
 
-Its documented saturation operation repeats derivation updates until nothing changes. The relevant TCS structure is **dependency closure with weighted, multi-prerequisite derivations**. This supplies a principled alternative to accumulating special cases in inheritance and dispatch code. [CAP: Managing Derived Methods](https://homalg-project.github.io/CAP_project/CAP/doc/chap8_mj.html).
+The same carrier may support several distinct structures. Its additive and multiplicative magma structures, for example, must retain their distinct named functors and images. Sharing a target category or implementation class does not identify those structures. Agreement is required where paths are declared to represent the same inherited structure and an operation depends on that identification.
 
-For operations CAP already owns, use that implementation through the existing engine boundary. The Python framework should contribute the semantic connection to its public categories and reconstruct complete public results.
+The existing runtime contract gives a shared implementation owner one controlled-C3 occurrence and one initialization. Mathematical access to all selected paths does not require duplicating the shared runtime class. Declaration order supplies the current path preference. It is an execution convention, not mathematical evidence that competing paths are interchangeable.
 
-GATlab supplies a complementary mechanism: **typed terms, theories, models, and interpretation**. It can represent a categorical expression independently of the chosen computational interpretation. That is useful for keeping generic constructions independent of backend storage. It does not automatically prove that arbitrary backend implementations satisfy all declared laws. [GATlab documentation](https://algebraicjulia.github.io/GATlab.jl/dev/).
+The compiler should identify missing mathematical data from the declared functors, their composites and endpoints, and the operation whose interpretation depends on the choice. A useful diagnostic identifies:
 
-These tools have different jobs: CAP derives computational operations; GATlab organizes typed mathematical expressions and their interpretations; Sage supplies runtime infrastructure. Their domains and integration requirements need to remain explicit.
+- The competing composites `P, Q: C -> D`.
+- The inherited operation affected by choosing between them.
+- The exact category of the required comparison, for example an isomorphism between `P` and `Q` in `Fun(C, D)`.
+- Any remaining compatibility needed to transport that operation.
 
-**4. Express leaf constructions using their actual universal structure.**
+First obtain comparisons already supplied by generic constructions, adjunctions, or retained universal presentations. A leaf supplies only genuinely additional mathematical data. Discovering a required cell's boundary can often be mechanical; constructing the cell may require new mathematics. The compiler treats ordinary functor actions as opaque and cannot infer arbitrary mathematical facts from their Python bodies.
 
-This is where mathematical directness should remove substantial code.
+The current [diamond policy](specs/functor.md#structural-diamonds-and-coherence) accepts unresolved diamonds, emits an opt-in `DEBUG` diagnostic, and continues with declaration-order preference and once-only C3 behavior. More informative diagnostics fit that policy. Making missing coherence a mandatory compilation failure would change it. An unresolved comparison remains distinct from a demonstrated justification for freely interchanging paths.
 
-For example, the compatible-family construction in [sheaves.py](/home/dzack/gitclones/sage-categories/src/sage_categories/geometry/sheaves.py:57) has the familiar shape
+In higher categorical semantics, comparisons can themselves require higher compatibility data. Those are actual higher cells, with composition and whiskering supplied generically. Pairwise comparisons alone do not automatically provide every higher coherence. Homotopy coherent diagrams and constructions are the relevant research setting. [Riehl and Verity, homotopy coherent adjunctions](https://arxiv.org/abs/1310.8279).
+
+The [current morphism-tower specification](specs/functor.md#the-morn-c-tower) calls `Cat()` a strict 2-category. This specifies the ordinary category/functor/natural-transformation fragment. Its iterated `Mor` interface alone does not specify general weak higher coherence. That fragment can sit within the intended broader semantics; a full higher-coherence implementation must specify the additional structure explicitly.
+
+The [single-point-functor restriction](src/sage_categories/cat/category.py) must be addressed at this categorical and runtime boundary. Accepting a longer list alone does not establish correct transport, separation of distinct structures, or coherence.
+
+## Generic constructions and named categories
+
+`Cat` owns generic limits, colimits, products, coproducts, equalizers, coequalizers, their presentations, and their induced maps. A leaf supplies local data to these constructions and receives their categorical consequences.
+
+When a leaf must reconstruct a product, equalizer, mediator, or induced morphism because the shared construction cannot supply it, the deficiency belongs to the generic owner. When a usable shared construction exists but the leaf bypasses it, the defect is leaf integration. Repair the corresponding public consumer through its actual owner in either case.
+
+`Cat` can contain a named mathematical category such as `Sets()` before that category has a computational implementation. Generic constructions and definitions can refer to the existing object. In particular, `Cat().Concrete()` can express the existence of a faithful functor to `Sets()` without importing the sets leaf.
+
+A later leaf implements the already-named category through its identity functor. The existing [named-category implementation contract](specs/functor.md#implementing-a-named-category) strengthens the same object in place, preserving identity and references. The declaration uses the actual category and its identity functor, with no string binding field.
+
+A registry, where needed internally, retains these actual owned mathematical objects. Leaf authors select the category, functor, or retained projection itself. They do not coordinate declarations through string names.
+
+The [concrete-category contract](specs/functor.md#concrete-categories) derives the selected faithful route to `Sets()` by composing existing structure functors. That supplies `functor_to_sets()`, `underlying_set()`, and `underlying_map()` at their generic owner. A leaf need not redeclare the entire route. Failure to find such a route does not prove that no faithful functor exists.
+
+Generic reductions of ordinary limits to products and equalizers, and ordinary colimits to coproducts and coequalizers, also belong in `Cat`, under the relevant existence hypotheses. [Stacks Project, colimits from coproducts and coequalizers](https://stacks.math.columbia.edu/tag/002P). Higher categorical versions must retain the corresponding homotopy-coherent information; the ordinary formula alone does not supply it.
+
+**Concreteness alone does not authorize computing every construction in sets and lifting it back.** The chosen functor must carry the required preservation, creation, or lifting structure. The existing [limit transport contract](specs/functor.md#diagram-shapes-and-universal-constructions) expresses shape-dependent hypotheses through `CreatesLimits(I)` and retains executable lifting data. A theorem declaration and chosen executable data have distinct roles.
+
+For example, the compatible-family construction in [sheaves.py](src/sage_categories/geometry/sheaves.py) has the familiar shape
 
 \[
 \operatorname{Eq}\!\left(
@@ -67,50 +99,75 @@ For example, the compatible-family construction in [sheaves.py](/home/dzack/gitc
 \right).
 \]
 
-Under the relevant gluing hypotheses, the leaf should supply the rings and overlap maps. The generic construction should supply the resulting ring, projections, and mediator. The equalizer description is standard mathematics. [Stacks Project, gluing algebraic structures](https://stacks.math.columbia.edu/tag/00AM).
+Under the relevant gluing hypotheses, the leaf supplies the rings and overlap maps. The generic construction supplies the resulting ring, projections, and mediator. [Stacks Project, gluing algebraic structures](https://stacks.math.columbia.edu/tag/00AM).
 
-Likewise, composition of ringed-space morphisms should use the generic operations on their underlying maps and sheaf transformations. The local-ring condition adds a mathematical restriction; it should not require another implementation of ringed-space composition.
+Likewise, composition of ringed-space morphisms uses generic operations on their underlying maps and sheaf transformations. The local-ring condition adds a mathematical restriction; it does not require another implementation of ringed-space composition.
 
-The existing [`lift_limit`](/home/dzack/gitclones/sage-categories/src/sage_categories/cat/constructions.py:416) is already the right *kind* of abstraction: the leaf supplies additional structure while the generic owner retains the universal data.
+The existing `lift_limit` in [constructions.py](src/sage_categories/cat/constructions.py) illustrates the intended division: local additional structure is supplied once, while the generic owner retains the universal data. An engine that computes an apex does not thereby supply projections, a mediator, or support for every declared input domain.
 
-This must preserve the full construction. An engine that computes an apex does not thereby supply projections, a mediator, or support for every declared input domain.
+## Engine delegation and research precedents
 
-**5. Give retained data a mathematical owner and hide engine representations.**
+Research starts from the project's categories, functors, cells, fibrations, and universal constructions, then identifies dependencies that execute the required mathematics faithfully. The public categorical semantics remain authoritative.
 
-The string-keyed surface in [cat/assembly.py](/home/dzack/gitclones/sage-categories/src/sage_categories/cat/assembly.py:29) combines responsibilities that should have distinct owners:
+Sage's category framework supplies an established engineering precedent: reconstruct inheritance from mathematical information and attach generic operations and tests through categories. Use its runtime machinery while retaining the repository's own category graph. [Sage category primer](https://doc.sagemath.org/html/en/reference/categories/sage/categories/primer.html).
+
+CAP supplies operation derivations:
+
+- Register primitive operations.
+- Describe derived operations by prerequisites and applicability conditions.
+- Compute available derivations and select implementations by weights.
+- Expose a derivation tree explaining how an operation became available.
+
+Its saturation operation repeats derivation updates until nothing changes. The relevant TCS structure is dependency closure with weighted, multi-prerequisite derivations. For operations CAP owns, use its implementation through the private engine boundary and reconstruct complete public results. This computational selection does not replace the categorical comparison needed to identify different inherited structures. [CAP: Managing Derived Methods](https://homalg-project.github.io/CAP_project/CAP/doc/chap8_mj.html).
+
+GATlab supplies typed terms, theories, models, and interpretation for suitable computational fragments. These notions can themselves have categorical meanings. Its explicit-model design addresses the fact that identical Julia representations can occur in different mathematical categories; its finite-set and matrix-category example uses integers as objects of both. [GATlab's explicit-model design](https://blog.algebraicjulia.org/post/2025/02/refactor1/index.html).
+
+Use that machinery within an appropriate private computational domain. It must not introduce a competing public semantics or replace the owned functors and cells with a second hierarchy of models. Typed expressions alone do not prove backend laws or supply general higher coherence. [GATlab documentation](https://algebraicjulia.github.io/GATlab.jl/dev/).
+
+MathComp's coherence and hierarchy algorithms, and Hierarchy Builder's elaboration of declarations into packed structures, are secondary design references. They are not Python dependencies or the primary semantics of this project. Their hierarchy assumptions must not be imposed indiscriminately on the richer functor graph. [Sakaguchi, IJCAR 2020](https://arxiv.org/html/2002.00620v2), [Hierarchy Builder](https://github.com/math-comp/hierarchy-builder).
+
+Keep each engine's domain and integration requirements explicit. Finite or presented evaluation restrictions belong to the computation and do not narrow the owned mathematical universe.
+
+## Mathematical ownership and typed interfaces
+
+String-keyed interfaces are inappropriate for semantic ownership, category implementation, retained constructions, and coherence. A string identifies neither a mathematical owner nor a type, endpoint, or universal property. The interface should expose the actual category, functor, presentation, projection, or cell. The [leaf contract](specs/leaves.md#pol-leaf-077--declaration-lookup-by-name-string) already prohibits declaration lookup by name string.
+
+Private dictionaries can remain implementation details. Leaf authors must not coordinate mathematical structure through string families or `Any`-valued registries. Concrete typed interfaces preserve the mathematical distinctions.
+
+The responsibilities combined in [cat/assembly.py](src/sage_categories/cat/assembly.py) have distinct owners:
 
 | Data | Appropriate owner |
-|---|---|
+| --- | --- |
 | Chosen basis, cone, presentation, or other mathematical choice | The corresponding mathematical object or construction |
 | Constructor interning and runtime identity | Kernel |
 | Native engine value and conversion machinery | Private adapter |
 | Derived functor image | Its declared functor and the generic retention machinery |
+| Comparison between functor paths | The actual cell in the appropriate owned functor or morphism category |
 
-Use concrete typed interfaces for these objects. A mathematical author should request a presentation or projection, not select a string family and manipulate its cache.
+A mathematical author requests a presentation or projection and applies a named functor. Runtime identity, mathematical equality, and comparison by an invertible cell remain distinct obligations.
 
-This is ordinary abstract-data-type design. It also prevents the abstraction boundary from being weakened by `Any`-valued registries that let every caller participate in implementation decisions.
+## Architectural enforcement
 
-**For enforcement, use several complementary boundaries.**
+Architecture conformance compares source dependencies with the intended ownership relationships. Software reflexion models formalized this approach: map source modules into an architectural model and expose agreements and discrepancies. [Murphy, Notkin, and Sullivan, FSE 1995](https://www.cs.ubc.ca/~murphy/papers/rm/fse95.html).
 
-The established research term is *architecture conformance*: map source modules to the intended architecture and compare actual dependencies with permitted relationships. Software reflexion models formalized this approach decades ago. [Murphy, Notkin, and Sullivan, FSE 1995](https://www.cs.ubc.ca/~murphy/papers/rm/fse95.html).
-
-For this repository:
+Use complementary boundaries:
 
 | Obligation | Enforcement |
-|---|---|
-| Every module has an architectural role | Import Linter **exhaustive** contracts, so newly added modules require classification |
-| Only designated owners access runtime or engine internals | **Protected-module** contracts with allowed importers |
+| --- | --- |
+| Every module has an architectural role | Import Linter exhaustive contracts, so newly added modules require classification |
+| Only designated owners access runtime or engine internals | Protected-module contracts with allowed importers |
 | Dependencies respect the intended direction | Layer/forbidden contracts, including indirect paths where appropriate |
 | Public mathematical interfaces preserve types | Existing mypy checks, explicit exports, and checks against `Any` propagation |
 | Inheritance preserves owners, endpoints, and selected structures | Validation in the existing declaration compiler |
+| A path comparison is needed | A diagnostic naming the actual cells and compatibility required, under the existing diamond policy |
 | Generic operations actually work in leaves | Automatically applicable mathematical contract tests through public consumers |
 
-Import Linter already supports [exhaustive layers](https://import-linter.readthedocs.io/en/stable/contract_types/layers/) and [protected modules](https://import-linter.readthedocs.io/en/stable/contract_types/protected/). Those are stronger than maintaining an expanding list of known offending imports. Preserve legitimate mathematical dependencies between leaves; “isolatable” does not mean every leaf must be independent of every other leaf.
+Import Linter supports [exhaustive layers](https://import-linter.readthedocs.io/en/stable/contract_types/layers/) and [protected modules](https://import-linter.readthedocs.io/en/stable/contract_types/protected/). These express architectural relationships without maintaining an expanding list of known offending imports. Preserve legitimate dependencies on immediate mathematical targets: isolatable leaves need not be mutually independent.
 
-Types provide another boundary. Explicit exports and restrictions on untyped calls and `Any` propagation help prevent implementation details from escaping through otherwise permitted modules. Mypy has these controls already. They complement import checks; neither establishes semantic ownership by itself. [Mypy’s documented controls](https://mypy.readthedocs.io/en/stable/command_line.html).
+Explicit exports and restrictions on untyped calls and `Any` propagation help prevent implementation details from escaping through otherwise permitted modules. Mypy already provides these controls. Types and import checks complement each other; neither establishes semantic ownership or mathematical correctness by itself. [Mypy's documented controls](https://mypy.readthedocs.io/en/stable/command_line.html).
 
-The compiler should validate **positive invariants** derived from its authoritative declarations: initialized image dependencies, correct endpoints, distinct selected structures, and agreement of paths where agreement is required. Those checks address the meaning of the construction regardless of the particular code pattern that violates it.
+The compiler validates positive invariants from authoritative declarations: initialized image dependencies, correct endpoints, distinct selected structures, and the supplied comparisons where an operation requires them. It reports unresolved coherence through the specified diagnostic policy. This targets the mathematical obligation regardless of the particular implementation pattern that violates it.
 
-Finally, make generic tests follow the same ownership model as generic operations. Test category and functor laws, universal mediators, owner separation, and reconstruction through real adapters. Use Hypothesis where generated inputs or operation sequences expose interactions—especially construction order, repeated construction, and multiple structures on one carrier. Its stateful testing generates and shrinks sequences, so you need not anticipate each failing sequence manually. [Hypothesis stateful testing](https://hypothesis.readthedocs.io/en/latest/stateful.html).
+Generic tests follow the same ownership model as generic operations. Test category and functor laws, transport compatibility, universal mediators, owner separation, and reconstruction through real adapters. Use Hypothesis where generated inputs or operation sequences expose construction-order interactions, repeated construction, and multiple structures on one carrier. Stateful testing generates and shrinks sequences, reducing the need to anticipate each failing sequence manually. [Hypothesis stateful testing](https://hypothesis.readthedocs.io/en/latest/stateful.html).
 
-**The strongest achievable guarantee is that whole classes of architectural violations become unrepresentable through the supported interface, or fail a general invariant check.** Arbitrary mathematical correctness inside unrestricted Python still requires semantic evidence. For your project, the highest leverage lies in making selected structures explicit, completing generic derivation and transport, and reducing the leaf extension interface until mathematical declarations and engine bindings are sufficient.
+The strongest achievable guarantee is that whole classes of architectural violations become unrepresentable through the supported interface or are exposed by a general invariant check. Mathematical correctness inside unrestricted Python still requires semantic evidence. Completing categorical transport, actual coherence data, and generic constructions is what makes the small leaf interface sufficient; enforcement protects that architecture once supplied.

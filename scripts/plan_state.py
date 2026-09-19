@@ -62,6 +62,48 @@ def todo_nodes(text: str) -> dict[str, Node]:
     return nodes
 
 
+def validate_milestones(text: str, nodes: dict[str, Node]) -> None:
+    """Check routing to A, B and delivery; mathematical coverage needs review."""
+    groups: dict[str, set[str]] = {"A": set(), "B": set(), "history": set()}
+    section = "history"
+    milestones: list[str] = []
+    for line in text.splitlines():
+        if re.match(r"#{1,3} ", line):
+            heading = re.match(r"### Milestone ([AB]) — ", line)
+            section = heading.group(1) if heading else "history"
+            if heading:
+                milestones.append(section)
+        row = re.match(r"\| `([^`]+)` \|", line)
+        if row:
+            groups[section].add(row.group(1))
+    require(milestones == ["A", "B"], "TODO requires exactly milestone A then milestone B")
+    foundation, leaves, delivery = "kernel-cat-complete", "leaves-complete", "framework-complete"
+    require(foundation in groups["A"], f"{foundation} must belong to milestone A")
+    require(leaves in groups["B"], f"{leaves} must belong to milestone B")
+    require(delivery in groups["B"], f"{delivery} must follow the milestones in the active table")
+    groups["B"].remove(delivery)
+    active = groups["A"] | groups["B"] | {delivery}
+
+    # Prerequisites precede consumers in this order, so each closure is derived
+    # once from the already-validated graph rather than enumerating all paths.
+    ancestors: dict[str, set[str]] = {}
+    for name in TopologicalSorter({name: node.needs for name, node in nodes.items()}).static_order():
+        ancestors[name] = set(nodes[name].needs)
+        for dependency in nodes[name].needs:
+            ancestors[name].update(ancestors[dependency])
+
+    for name in groups["history"]:
+        require(nodes[name].state == "Closed", f"{name}: unfinished work outside active milestones")
+        require(not ancestors[name] & active, f"{name}: historical evidence depends on active work")
+    for name in groups["A"]:
+        require(not ancestors[name] & (groups["B"] | {delivery}), f"{name}: milestone A depends on B or delivery")
+        require(name == foundation or name in ancestors[foundation], f"{name}: does not feed milestone A")
+    for name in groups["B"]:
+        require(foundation in ancestors[name], f"{name}: milestone B bypasses milestone A")
+        require(name == leaves or name in ancestors[leaves], f"{name}: does not feed milestone B")
+    require(active - {delivery} <= ancestors[delivery], "active work does not all feed framework-complete")
+
+
 def read_card(path: Path) -> tuple[dict[str, object], str]:
     import yaml
 
@@ -122,7 +164,9 @@ def main() -> int:
     try:
         match args.model:
             case "issue-dag":
-                nodes = todo_nodes((ROOT / "TODO.md").read_text())
+                text = (ROOT / "TODO.md").read_text()
+                nodes = todo_nodes(text)
+                validate_milestones(text, nodes)
                 print(f"plan-state: current TODO prerequisite graph valid ({len(nodes)} nodes)")
             case "phase-managed":
                 core = args.core_plan or args.phase_root / "features/FEATURE-functor-owned-category-framework/plans/PLAN-pr-8-kernel-cat-architecture-convergence/PLAN-pr-8-kernel-cat-architecture-convergence.md"

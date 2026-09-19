@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Remediation execution ownership is PLAN-native-engine-remediation. The GitHub issue
-# tree also contains broader topic-contract work, so completion of this remediation
-# plan does not imply that every reachable framework issue is closed.
+# Current execution ownership is the active A/B DAG in TODO.md. The archived
+# PLAN-native-engine-remediation retains native allocations and preservation duties.
+# The GitHub issue tree also carries the broader public topic contracts.
 # Historical phase cards are evidence, not active execution prerequisites.
 set -euo pipefail
 
@@ -38,8 +38,8 @@ jq -e '
     and .root.ref.repo_ref == {owner: "dzackgarza", repo: "sage-categories"}
 ' <<<"$report" >/dev/null
 
-# The governing plan delegates the revision-scoped completion frontier to TODO.
+# The archived plan delegates subsequent execution to the active TODO milestones.
 uv run --no-project --python 3.14 python scripts/plan_state.py --model issue-dag
 
 open_work_units="$(jq -r '.metrics.open_work_units' <<<"$report")"
-printf 'plan-state: %s; remediation state valid; live issue DAG valid (%s broader open work units)\n' "$plan_id" "$open_work_units"
+printf 'plan-state: TODO milestones valid; %s retained contract valid; live issue DAG valid (%s broader open work units)\n' "$plan_id" "$open_work_units"

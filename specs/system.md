@@ -82,7 +82,7 @@ Cardinality integration is a separate extension.
 Its cycle is cut by implementing sets first, then internal algebraic objects, then ordinals and cardinals, and finally the set cardinality queries.
 Order and algebraic scaffolds require none of the cardinality extension's algorithms.
 
-The vault DAG holds work boundaries and current acceptance.
+The active A/B DAG in [TODO.md](../TODO.md) owns work boundaries and milestone acceptance.
 Generic pullbacks needed by property intersections and inverse images enter with those first consumers.
 Later universal-construction work extends that same calculus.
 A domain's separating-family constructions enter after the domain category and `Sets()` exist.
@@ -94,5 +94,6 @@ A leaf supplies local data and immediate functors, then receives the remaining i
 A runtime mechanism enters with its first complete mathematical consumer.
 Its specification can precede implementation; its acceptance cannot precede a working consumer.
 
-The active phase names that consumer and the full constructor and functor path.
-Procedure and status remain with [AGENTS.md](../AGENTS.md) and the vault cards.
+The active TODO node names that consumer and the full constructor and functor path.
+Procedure remains with [AGENTS.md](../AGENTS.md); execution routing and its evidence
+owners are linked from [TODO.md](../TODO.md).

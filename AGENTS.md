@@ -1,6 +1,6 @@
 # Agent instructions
 
-Read [TODO.md](TODO.md) for the execution DAG and its governing-plan links,
+Read [TODO.md](TODO.md) for the active A/B execution DAG and its contract links,
 [CONTRIBUTING.md](CONTRIBUTING.md) for named policies, and
 [COMPLAINTS.md](COMPLAINTS.md) for observed mathematical issues and papercuts.
 Apply `POL-WORK-002` when an issue arises, including outside the selected task.
@@ -45,13 +45,13 @@ Each fact has one authoritative home:
 | --- | --- |
 | System layers, imports, and bootstrap order | [specs/system.md](specs/system.md) |
 | Mathematics and public contracts | Topic specifications linked from [specs/system.md](specs/system.md#ownership-map) |
-| Decision provenance and supersession | [specs/decisions.md](specs/decisions.md) |
+| Decision provenance and supersession | [specs/decisions.md](specs/decisions.md); the later categorical architecture decisions are in [DECISIONS.md](DECISIONS.md) |
 | Stable policy identifiers and technical constraints | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| Repository entry point to the remediation execution DAG | [TODO.md](TODO.md); the governing plan owns remediation scope and acceptance, while topic specifications continue to own the complete public contracts |
+| Current execution order and milestone acceptance | The active A/B tables in [TODO.md](TODO.md); topic specifications own the complete public contracts |
 | Observed mathematical issues and workflow friction | [COMPLAINTS.md](COMPLAINTS.md) |
 | Execution, review, delegation, and documentation procedure | This file |
-| Remediation scope, implementation allocation, and work order | Project vault `PLAN-native-engine-remediation` |
-| Current remediation execution and acceptance evidence | The governing plan's retained issue dependencies and exact-revision public consumers; broader issue contracts remain live where their topic specifications require more than the remediation slice; retired planning records are historical evidence only |
+| Historical native-engine allocation and preservation obligations | Archived project-vault `PLAN-native-engine-remediation`; its completion does not certify current A/B acceptance |
+| Current execution and acceptance evidence | Active TODO nodes, retained public issue contracts/dependencies, and exact-revision public consumers; historical records supply reusable evidence, not another scheduler |
 | Implemented behavior | Source and public execution at the stated Git revision |
 | Previous implementation and review history | Git history and archived vault records |
 
@@ -65,7 +65,13 @@ Read [specs/glossary.md](specs/glossary.md) when writing project terminology. Us
 
 ## Starting a work unit
 
-For implementation, retrieve the governing plan through agent-memory:
+Select work from the active A/B tables in [TODO.md](TODO.md), using their `Needs`
+edges and ready-node ordering. Follow the node's existing implementation owners,
+decision mapping and full topic contracts through its complete public consumer.
+Extend only the demonstrated missing behavior. Existing working implementations and
+valid evidence are reused; historical labels do not certify the current milestone.
+
+Retrieve the historical native-engine allocation when the selected consumer needs it:
 
 ```bash
 agent-memory plan show PLAN-native-engine-remediation
@@ -74,18 +80,13 @@ agent-memory plan show PLAN-native-engine-remediation
 When the installed command is unavailable, use the same command through
 `uvx --python 3.14 --from git+https://github.com/dzackgarza/agent-memory agent-memory`.
 
-`PLAN-native-engine-remediation` contains the approved detailed plan with its current
-amendments. It supersedes every earlier project plan, including their core, production, scaffold,
-static-projection, and remediation execution orders. Sections 19 and 20 own the
-integration order and complete consumer requirements. Retain the issue dependencies
-and mathematical contracts incorporated there, not an independent older plan.
-
-Use `card dag` for current routing. Superseded plans and phases have been removed
-from the execution graph. Their historical records remain retrievable through
-[the continuation locator](docs/remediation-handoff.md).
-Their statuses and acceptance records do not certify the replacement or impose an
-additional active-phase prerequisite. Static projection accompanies the same
-native-backed operations under section 18.
+That plan is archived. Its retained sections 19 and 20 delegate subsequent execution
+to TODO and preserve the native allocation and public consumers. Retain applicable
+issue dependencies and mathematical obligations; do not revive its earlier phase
+sequence or select current work through `card dag`. The
+[continuation locator](docs/remediation-handoff.md) retains access to historical
+records. Static projection accompanies each changed public operation in its active
+node; integration does not postpone its first static or runtime consumer.
 
 Start inspection with `tree` at the smallest useful depth.
 Read the complete target and immediate owners. Use focused `rg` queries.
@@ -97,7 +98,7 @@ Write this short frame once before implementation or delegation:
 ```text
 Assigned objective:
 Mathematical owner:
-Governing plan section, issue owner, and direct prerequisites:
+Active TODO node, topic/decision owner, issue owner, and direct prerequisites:
 Complete consumer boundary:
 Acceptance at the exact revision:
 ```
@@ -173,7 +174,7 @@ Documentation is the deliverable when the user requests documentation; that does
 
   **The propagation cost is why this is stricter here than elsewhere.** This is a repository of code that other agents read and imitate. An ill-typed or dynamically-shaped construction does not stay where it was written; the next worker copies the pattern from a neighbouring module, and a single tolerated defect becomes the house style. The static and type checks are the only thing standing between one bad construction and a corpus of them, and they are cheap — the full commit tier measured 62 seconds on 2026-09-11. A cheap check against a compounding failure is worth failing on, every time, at commit tier. Do not propose moving it later to get past it.
 
-- **Single-front closure.** Work exactly one [TODO.md](TODO.md) node at a time, in the DAG's dependency order, and drive it to its governing-plan acceptance before opening any other front. Shared-substrate (kernel) edits are in scope only when the current node's contract requires them. If multiple fronts are already open, close the nearest-to-acceptance front before any new authoring.
+- **Single-front closure.** Work exactly one [TODO.md](TODO.md) node at a time, in the DAG's dependency order, and drive it to its full topic-contract and milestone acceptance before opening any other front. Shared-substrate (kernel) edits are in scope only when the current node's contract requires them. If multiple fronts are already open, close the nearest-to-acceptance front before any new authoring.
 
 - **Claim freshness.** At every claim and every release, reconcile the shared queue and claim state against actual repository state across all branches before selecting work. Never select work from a queue older than your last branch sync. All authoring requires a live claim; batch-committing work authored off-ledger is prohibited.
 
@@ -198,10 +199,10 @@ Exercise actual multiple-target declarations when multiple inheritance is introd
 Later integration phases compose accepted capabilities; they cannot own an earlier capability's first working example.
 
 If an integration requires unfinished prerequisite work, complete it at its prerequisite owner before proceeding.
-Follow the governing plan's section 19 and the retained issue dependencies; preserve the required behavior.
+Follow the active TODO prerequisites and retained public issue dependencies; preserve the required behavior.
 The archived core-closure and scaffold sequences are not additional execution prerequisites.
 Respect the dependency directions in `specs/system.md` and keep shared-interface edits serialized.
-A generic repair stays at its generic owner and includes the complete public consumer required by the governing plan.
+A generic repair stays at its generic owner and includes the complete public consumer required by its active node and topic contract.
 
 A generic defect belongs to its generic owner. A leaf defect belongs to that leaf.
 Repair the complete duplicated responsibility and affected sibling constructions within the authorized boundary.
@@ -325,7 +326,7 @@ The infinite and nonenumerable obligations are at their
 A complete implementation unit receives independent review at a fixed committed revision.
 Use `r-gate` for the owned acceptance boundary. Archived R0–R6 and P1–P7 phase
 procedures preserve historical evidence; they do not reinstate the superseded
-execution order or require recreating those phases for the governing plan.
+execution order or require recreating those phases for the active A/B DAG.
 Supply the unchanged acceptance contract, owner sections, revision, and complete consumer boundary.
 The reviewer reads that packet and relevant implementation. Expand it only for a concrete dependency.
 
@@ -348,7 +349,7 @@ A documentation location error alone does not invalidate executable behavior.
 Record out-of-unit findings with their issue or mathematical owner. They do not block an unrelated unit.
 Keep one current acceptance record and one unresolved-work section on each card.
 Archive detailed reviews once; do not paste them into subsequent cards or prompts.
-The governing plan's complete integration consumers determine closure; historical R6 status does not substitute for them.
+The active node's full contracts and complete integration consumers determine closure; historical R6 status does not substitute for them.
 
 ### Checkpoints and progress over time
 
@@ -721,10 +722,12 @@ D132 admits exact architectural invariant checks with file-and-line failures at 
 `scripts/rule_coverage.py` rejects a rule whose file glob matches nothing.
 Retain static projection. Add no automated convention enforcement before 1.0.
 
-`just plan-state` validates the governing plan and its retained native issue DAG.
-Its successful result establishes execution-state consistency, not implementation
-acceptance. Exact public consumers and prerequisite evidence remain required by
-the governing plan. Preserve archived phase evidence without reactivating it.
+`just plan-state` validates the active TODO graph, A-before-B reachability and
+historical separation, the retained native allocation record, and public issue-DAG
+health. Its success establishes structural routing, not semantic coverage or
+implementation acceptance. Review the decision-to-consumer mapping in TODO against
+the complete decisions and topic contracts. Preserve archived evidence without
+reactivating it as an independent work selector.
 Keep known red checks, owners, reasons, and permitted checkpoint commands in the active plan.
 For a documented red baseline, run required owned architecture and plan-state checks before a kernel checkpoint.
 Use `--no-verify` only under that recorded exception, naming the red gate in the commit message.

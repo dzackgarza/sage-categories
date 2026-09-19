@@ -15,6 +15,66 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 
+MILESTONE_DAG = """### Milestone A — Foundation
+| `core` | **Open.** | none |
+| `core-consumer` | **Open.** | `core` |
+| `kernel-cat-complete` | **Open.** | `core-consumer` |
+### Milestone B — Leaves
+| `leaf` | **Open.** | `kernel-cat-complete` |
+| `leaf-consumer` | **Open.** | `leaf` |
+| `leaves-complete` | **Open.** | `leaf-consumer` |
+| `framework-complete` | **Open.** | `leaves-complete` |
+### Retained implementation evidence
+| `historical` | **Closed.** | none |
+"""
+
+
+@pytest.mark.parametrize(
+    ("before", "after", "expected_exit"),
+    [
+        ("", "", 0),
+        ("`core-consumer` |\n", "`core` |\n", 1),
+        ("`leaf-consumer` |\n", "`leaf` |\n", 1),
+        ("`leaf` | **Open.** | `kernel-cat-complete`", "`leaf` | **Open.** | none", 1),
+        ("`core` | **Open.** | none", "`core` | **Open.** | `leaf`", 1),
+        ("`historical` | **Closed.**", "`historical` | **Open.**", 1),
+        ("### Milestone A — Foundation", "### Historical foundation", 1),
+        ("`framework-complete` | **Open.** | `leaves-complete`", "`framework-complete` | **Open.** | `kernel-cat-complete`", 1),
+        ("| `core` | **Open.** | none |", "| `core` | **Closed.** | none |", 0),
+    ],
+)
+def test_milestone_routing_at_cli(tmp_path: Path, before: str, after: str, expected_exit: int) -> None:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    validator = scripts / "plan_state.py"
+    shutil.copyfile(ROOT / "scripts/plan_state.py", validator)
+    text = MILESTONE_DAG.replace(before, after) if before else MILESTONE_DAG
+    (tmp_path / "TODO.md").write_text(text)
+    result = subprocess.run([sys.executable, str(validator)], capture_output=True, text=True)
+    assert result.returncode == expected_exit, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    "todo",
+    [
+        MILESTONE_DAG.replace(
+            "`core` | **Open.** | none", "`core` | **Open.** | `leaf`",
+        ).replace("`leaf` | **Open.** | `kernel-cat-complete`", "`leaf` | **Open.** | none"),
+        MILESTONE_DAG.replace("**Open.**", "**Closed.**").replace(
+            "`historical` | **Closed.** | none", "`historical` | **Closed.** | `core`",
+        ),
+        MILESTONE_DAG.replace("### Milestone B — Leaves", "### Milestone A — Leaves"),
+    ],
+)
+def test_acyclic_graph_cannot_reverse_or_hide_milestone_work(tmp_path: Path, todo: str) -> None:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    validator = scripts / "plan_state.py"
+    shutil.copyfile(ROOT / "scripts/plan_state.py", validator)
+    (tmp_path / "TODO.md").write_text(todo)
+    result = subprocess.run([sys.executable, str(validator)], capture_output=True, text=True)
+    assert result.returncode == 1, result.stdout + result.stderr
+
 
 @pytest.fixture
 def gate_repo(tmp_path: Path) -> tuple[Path, dict[str, str]]:
@@ -22,10 +82,7 @@ def gate_repo(tmp_path: Path) -> tuple[Path, dict[str, str]]:
     scripts.mkdir()
     for name in ("plan_state.sh", "plan_state.py"):
         shutil.copyfile(ROOT / "scripts" / name, scripts / name)
-    (tmp_path / "TODO.md").write_text(
-        "| `core` | **Closed.** Accepted. | none |\n"
-        "| `leaf` | **Open.** Pending. | `core` |\n"
-    )
+    (tmp_path / "TODO.md").write_text(MILESTONE_DAG)
     plan = {
         "id": "PLAN-native-engine-remediation",
         "type": "plan",

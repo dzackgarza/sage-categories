@@ -2108,7 +2108,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         self,
         source: CategoryOfCategories.ElementType,
         target: CategoryOfCategories.ElementType,
-        assignment: Assignment,
+        assignment: Assignment | None,
         source_functor: Functor | None = None,
         target_functor: Functor | None = None,
     ) -> NaturalTransformation:
@@ -2163,21 +2163,31 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def compose_two_morphisms(self, second: NaturalTransformation, first: NaturalTransformation) -> NaturalTransformation:
         """Vertical composition in Catlab and homotopy-core, with one owned result."""
         assert first.codomain() is second.domain()
-        catlab, cells = _catlab_engine(), _cells_engine()
+        cells = _cells_engine()
+        match first._has_component_rule() and second._has_component_rule():
+            case True:
 
-        def component(
-            value: CategoryOfCategories.ElementType,
-        ) -> MorphismCategory.ObjectType:
-            return first.source_functor().codomain().compose_morphisms(second.component(value), first.component(value))
+                def component(
+                    value: CategoryOfCategories.ElementType,
+                ) -> MorphismCategory.ObjectType:
+                    return first.source_functor().codomain().compose_morphisms(second.component(value), first.component(value))
 
-        result = self._construct_transformation(
-            first.domain(),
-            second.codomain(),
-            component,
-            first.source_functor(),
-            second.target_functor(),
-        )
-        catlab.compose_transformations(result, first, second)
+                result = self._construct_transformation(
+                    first.domain(),
+                    second.codomain(),
+                    component,
+                    first.source_functor(),
+                    second.target_functor(),
+                )
+                _catlab_engine().compose_transformations(result, first, second)
+            case False:
+                result = self._construct_transformation(
+                    first.domain(),
+                    second.codomain(),
+                    None,
+                    first.source_functor(),
+                    second.target_functor(),
+                )
         result.retain_factors(first, second)
         cells.retain_composite(self.morphism_category(1), result, first, second)
         return result
@@ -2206,18 +2216,23 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """``H . eta: H F => H G`` for ``eta: F => G`` in ``Fun(I, D)`` and ``H: D -> E``; its component at ``X`` is ``H(eta_X)``."""
         source = transformation.source_functor()
         assert source.codomain() is functor.domain()
-        catlab, cells = _catlab_engine(), _cells_engine()
+        cells = _cells_engine()
 
         source_image = self.postcompose(functor, transformation.domain())
         target_image = self.postcompose(functor, transformation.codomain())
 
-        def component(
-            value: CategoryOfCategories.ElementType,
-        ) -> MorphismCategory.ObjectType:
-            return functor.on_morphism(transformation.component(value))
+        match transformation._has_component_rule():
+            case True:
 
-        result = self._construct_transformation(source_image, target_image, component)
-        catlab.whisker_left(result, functor, transformation)
+                def component(
+                    value: CategoryOfCategories.ElementType,
+                ) -> MorphismCategory.ObjectType:
+                    return functor.on_morphism(transformation.component(value))
+
+                result = self._construct_transformation(source_image, target_image, component)
+                _catlab_engine().whisker_left(result, functor, transformation)
+            case False:
+                result = self._construct_transformation(source_image, target_image, None)
         cells.retain_whisker_left(self.morphism_category(1), result, functor, transformation)
         return result
 
@@ -2228,18 +2243,23 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             transformation.target_functor(),
         )
         assert functor.codomain() is source.domain()
-        catlab, cells = _catlab_engine(), _cells_engine()
+        cells = _cells_engine()
 
         source_image = self.compose_morphisms(source, functor)
         target_image = self.compose_morphisms(target, functor)
 
-        def component(
-            value: CategoryOfCategories.ElementType,
-        ) -> MorphismCategory.ObjectType:
-            return transformation.component(functor.on_object(value))
+        match transformation._has_component_rule():
+            case True:
 
-        result = self._construct_transformation(source_image, target_image, component)
-        catlab.whisker_right(result, transformation, functor)
+                def component(
+                    value: CategoryOfCategories.ElementType,
+                ) -> MorphismCategory.ObjectType:
+                    return transformation.component(functor.on_object(value))
+
+                result = self._construct_transformation(source_image, target_image, component)
+                _catlab_engine().whisker_right(result, transformation, functor)
+            case False:
+                result = self._construct_transformation(source_image, target_image, None)
         cells.retain_whisker_right(self.morphism_category(1), result, transformation, functor)
         return result
 
@@ -2257,15 +2277,19 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         """
         outer = self.whisker_right(second, first.source_functor())
         inner = self.whisker_left(second.target_functor(), first)
-        catlab, cells = _catlab_engine(), _cells_engine()
+        cells = _cells_engine()
+        match outer._has_component_rule() and inner._has_component_rule():
+            case True:
 
-        def component(
-            value: CategoryOfCategories.ElementType,
-        ) -> MorphismCategory.ObjectType:
-            return inner.component(value) * outer.component(value)
+                def component(
+                    value: CategoryOfCategories.ElementType,
+                ) -> MorphismCategory.ObjectType:
+                    return inner.component(value) * outer.component(value)
 
-        result = self._construct_transformation(outer.domain(), inner.codomain(), component)
-        catlab.horizontal_composite(result, first, second)
+                result = self._construct_transformation(outer.domain(), inner.codomain(), component)
+                _catlab_engine().horizontal_composite(result, first, second)
+            case False:
+                result = self._construct_transformation(outer.domain(), inner.codomain(), None)
         cells.retain_composite(self.morphism_category(1), result, outer, inner)
         return result
 

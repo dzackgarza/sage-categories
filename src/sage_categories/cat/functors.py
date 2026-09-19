@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
-from typing import overload
+from typing import Literal, overload
 
 from sympy import ask as sympy_ask
 
@@ -96,7 +96,7 @@ def _defining_functor_equal(
 class NaturalTransformationData:
     """The local state introduced by the natural-transformation role."""
 
-    assignment: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
+    assignment: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType] | None
     source: CategoryOfCategories.MorphismType
     target: CategoryOfCategories.MorphismType
 
@@ -349,6 +349,44 @@ class FunctorCategory[
     def construct_identity(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation:
         return Cat().identity_two_morphism(value)
 
+    def _formal_transformation(
+        self,
+        source: CategoryOfCategories.ElementType,
+        target: CategoryOfCategories.ElementType,
+    ) -> NaturalTransformation:
+        """One owned formal 2-cell value, before its native generator is retained."""
+        return Cat()._construct_transformation(
+            source,
+            target,
+            None,
+            self.diagram(source),
+            self.diagram(target),
+        )
+
+    def formal_generator(
+        self,
+        source: CategoryOfCategories.ElementType,
+        target: CategoryOfCategories.ElementType,
+        *,
+        invertibility: Literal["directed", "invertible"] = "directed",
+    ) -> NaturalTransformation:
+        """Construct a formal generating 2-cell with no executable component rule."""
+        from sage_categories.engines import cells
+
+        transformation = self._formal_transformation(source, target)
+        cells.retain_generator(
+            Cat().morphism_category(1),
+            transformation,
+            invertibility=invertibility,
+        )
+        match invertibility:
+            case "directed":
+                return transformation
+            case "invertible":
+                inverse = self._formal_transformation(target, source)
+                self.retain_inverses(transformation, inverse)
+                return transformation
+
     # -- diagrams (POL-FUN-029) -----------------------------------------------------
 
     def evaluation(self, vertex: CategoryOfCategories.ElementType) -> Functor:
@@ -463,10 +501,16 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         def target_functor(self) -> Functor:
             return self._target_functor
 
+        def _has_component_rule(self) -> bool:
+            """Whether this 2-cell has executable Catlab component semantics."""
+            return self._assignment is not None
+
         def _declared_component(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
             """Execute the primitive component assignment without re-entering Catlab materialization."""
             source, target = self.source_functor(), self.target_functor()
-            component = self._assignment(member_object)
+            assignment = self._assignment
+            assert assignment is not None, f"{self!r} is a formal 2-cell and has no executable component rule"
+            component = assignment(member_object)
             expected = source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
             assert component in expected, f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
             return component
@@ -490,6 +534,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             equality (D60, POL-SAGE-013).
             """
             assert member_object in self.source_functor().domain(), f"{member_object!r} is not an object of {self.source_functor().domain()!r}"
+            assert self._has_component_rule(), f"{self!r} is a formal 2-cell and has no executable component rule"
             return self._component_family[member_object]
 
         def op(self) -> NaturalTransformation:
@@ -592,7 +637,13 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         inspected 2026-08-27), and its inverse has components ``(eta_X)⁻¹``.
         """
         source, target = transformation.domain(), transformation.codomain()
-        return self.morphism_category(1)(target, source).Isomorphisms()(lambda member_object: transformation.component(member_object).inverse())
+        match transformation._has_component_rule():
+            case True:
+                return self.morphism_category(1)(target, source).Isomorphisms()(lambda member_object: transformation.component(member_object).inverse())
+            case False:
+                base = transformation.base_category()
+                assert isinstance(base, FunctorCategory)
+                return base._formal_transformation(target, source)
 
     # -- the functor property categories (POL-FUN-024, POL-CAT-090, POL-FUN-039) ---------
 

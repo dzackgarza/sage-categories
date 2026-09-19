@@ -1,7 +1,7 @@
 """Catlab executes functor and transformation composites over a nonfinite source."""
 
 from sage_categories.all import Cat, Category, Fun, Mor, ask
-from sage_categories.cat.canonical import FinitePresentedCategory
+from sage_categories.cat.canonical import FinitePresentedCategory, walking_isomorphism
 from sage_categories.cat.category import is_placed
 from sage_categories.cat.native import (
     has_native_category,
@@ -239,5 +239,86 @@ def test_horizontal_interchange_uses_nonidentity_components() -> None:
     assert vertical_then_horizontal.codomain() is horizontal_then_vertical.codomain()
 
 
+def test_formal_cells_and_executable_natural_isomorphisms_remain_distinct() -> None:
+    category = Cat().WalkingParallelPair()
+    identity = Fun(category, category).one()
+    functors = Fun(category, category)
+
+    directed = functors.formal_generator(identity, identity)
+    assert directed.cell_dimension() == 2
+    assert directed.boundary("source") is identity
+    assert directed.boundary("target") is identity
+    directed.typecheck_cell()
+    try:
+        directed.component(category(0))
+    except AssertionError as error:
+        assert "formal 2-cell" in str(error)
+    else:
+        raise AssertionError("a formal directed 2-cell acquired executable components")
+    native_directed = cells.native_cell(directed.base_category(), directed)
+    try:
+        cells.native_signature(directed.base_category()).typecheck(
+            native_directed.inverse(),
+            True,
+        )
+    except ValueError as error:
+        assert "directed generator" in str(error)
+    else:
+        raise AssertionError("a directed formal 2-cell acquired a native inverse")
+
+    formal = functors.formal_generator(
+        identity,
+        identity,
+        invertibility="invertible",
+    )
+    inverse = formal.inverse()
+    assert inverse.inverse() is formal
+    assert inverse.domain() is identity
+    assert inverse.codomain() is identity
+    assert inverse.cell_dimension() == 2
+    inverse.typecheck_cell()
+    try:
+        inverse.component(category(1))
+    except AssertionError as error:
+        assert "formal 2-cell" in str(error)
+    else:
+        raise AssertionError("a formal inverse acquired executable components")
+
+    formal_results = (
+        formal * directed,
+        formal.whisker_left(identity),
+        formal.whisker_right(identity),
+        formal.horizontal(directed),
+    )
+    for result in formal_results:
+        assert result.cell_dimension() == 2
+        assert result.boundary("source") is result.domain()
+        assert result.boundary("target") is result.codomain()
+        result.typecheck_cell()
+        try:
+            result.component(category(0))
+        except AssertionError as error:
+            assert "formal 2-cell" in str(error)
+        else:
+            raise AssertionError("formal cell calculus acquired executable components")
+
+    walking_iso = walking_isomorphism()
+    star = Cat().Terminal()
+    source = walking_iso.point_functor(walking_iso(0))
+    target = walking_iso.point_functor(walking_iso(1))
+    point_functors = Fun(star, walking_iso)
+    executable = Mor(point_functors)(source, target).Isomorphisms()(
+        lambda _value: walking_iso.generator("f")
+    )
+    executable_inverse = executable.inverse()
+    star_object = star(0)
+    assert executable.component(star_object) is walking_iso.generator("f")
+    assert executable_inverse.component(star_object) is walking_iso.generator("g")
+    assert executable_inverse.inverse() is executable
+    executable.typecheck_cell()
+    executable_inverse.typecheck_cell()
+
+
 test_catlab_functor_calculus()
 test_horizontal_interchange_uses_nonidentity_components()
+test_formal_cells_and_executable_natural_isomorphisms_remain_distinct()

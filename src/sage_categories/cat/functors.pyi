@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import overload
+from typing import Literal, overload
 
 from _typeshed import Incomplete
 
@@ -41,7 +41,7 @@ __all__ = ["CreatesLimitsCategory", "Fun", "Functor", "FunctorCategory", "Functo
 
 @dataclass(frozen=True, eq=False, slots=True)
 class NaturalTransformationData:
-    assignment: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
+    assignment: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType] | None
     source: CategoryOfCategories.MorphismType
     target: CategoryOfCategories.MorphismType
 
@@ -119,6 +119,9 @@ class FunctorCategory[
     def diagram(self, value: CategoryOfCategories.ElementType) -> Functor: ...
     def construct_morphism(self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, assignment: Assignment) -> NaturalTransformation: ...
     def construct_identity(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation: ...
+    def formal_generator(
+        self, source: CategoryOfCategories.ElementType, target: CategoryOfCategories.ElementType, *, invertibility: Literal["directed", "invertible"] = "directed"
+    ) -> NaturalTransformation: ...
     def evaluation(self, vertex: CategoryOfCategories.ElementType) -> Functor: ...
     def ev(self, vertex: CategoryOfCategories.ElementType | int) -> Functor: ...
     def constant(self, value: CategoryOfCategories.ElementType) -> Functor: ...

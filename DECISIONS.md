@@ -2,6 +2,8 @@
 
 The primary mechanism is **categorical transport along selected functors, with coherence expressed by actual cells in `Cat`**. The intended semantics are ∞-categorical through every level, including the higher cells needed by the construction. Runtime classes and computation engines make that mathematics executable.
 
+The repository already connects its owned `Mor` tower to `homotopy-core` and supplies executable natural transformations through `Cat` and Catlab. Requiring leaf comparison cells is compiler integration over that existing infrastructure. It does not require creating a new higher-category engine.
+
 Make the desired architecture a consequence of the public interfaces and their compilation, then check the resulting boundaries mechanically. This can eliminate whole classes of drift without enumerating every bad implementation pattern.
 
 ## Contents
@@ -50,7 +52,29 @@ P,Q:C\longrightarrow D,
 
 the relevant comparison is an actual cell \(\alpha:P\Rightarrow Q\) in `Cat`, constructed through the ordinary natural-transformation machinery of `Fun`. It is mathematical data, not a separate coherence certificate, proof record, route registry, or second functor declaration. See [the coherence contract](specs/resolution.md#diamond-diagnostics-and-future-coherence).
 
+### Existing machinery and declaration data
+
+The [native binding](native/homotopy-python/src/lib.rs) already exposes `Signature.add_generator(source, target, invertibility=...)`. The dimension follows from the boundaries. Cells support identities, inverses, boundary access, and attachment/composition; signatures provide typechecking. The [owned-cell adapter](src/sage_categories/engines/cells.py) connects the `Mor` tower to native signatures and retains identities, composites, whiskering, and inverses through `homotopy-core`. Leaves use the owned mathematical objects; the native declaration remains private.
+
+For a **formal generating 2-cell**, the essential declaration consists of the parallel source and target functors, possibly composites, and the invertibility classification. The engine supplies the generator's identity and formal operations. Declaring it invertible requires neither a leaf-written inverse algorithm nor an infinite sequence of inverse witnesses. This declaration style is demonstrated in [homotopy.io's tutorial](https://github.com/homotopy-io/homotopy-rs/blob/master/TUTORIAL.md).
+
+For an **executable natural isomorphism**, the declaration also needs its interpretation: a component rule
+
+\[
+X\longmapsto\alpha_X:P(X)\longrightarrow Q(X).
+\]
+
+The rule can use an existing canonical construction, an identity where the endpoints permit it, or a small private backend conversion. It is not an enumeration of the objects of `C`. The current [natural-transformation contract](specs/functor.md#functors-as-morphisms-of-cat) constructs this as `Mor(Fun(C, D))(P, Q)(assignment)` and explicitly trusts naturality. A formal declaration alone does not supply this executable interpretation.
+
+The existing [natural_isomorphism helper](src/sage_categories/cat/calculus.py) accepts forward and inverse component rules and retains them as mutually inverse. The [functor category](src/sage_categories/cat/functors.py) also constructs the inverse of a declared natural isomorphism componentwise. Supplying both rules is therefore not an intrinsic leaf obligation when executable component inversion is already available. A formal inverse and an executable inverse remain distinct when component inversion itself has no executable rule.
+
+These are already consumed mathematical interfaces: [monoidal structures](src/sage_categories/cat/monoidal.py) accept associators and unitors as actual natural isomorphisms. The [Catlab adapter](src/sage_categories/engines/catlab.py) realizes component assignments and transformation composition and whiskering. Reuse these constructors and operations for inheritance comparisons.
+
+### Path selection and compiler integration
+
 Interchangeability of the paths generally requires an **invertible comparison**, together with compatibility of the operation with that comparison. An arbitrary noninvertible 2-cell supplies a directed comparison. Choosing either path yields corresponding results under the specified transport; it need not yield identical Python representations or literally equal untransported outputs.
+
+When changing paths changes a representation, execution must use the comparison to transport the affected arguments or results. Declaring two representations equivalent does not tell Python how to convert between them. This transport belongs to the generic interpretation of the supplied cell and operation.
 
 The same carrier may support several distinct structures. Its additive and multiplicative magma structures, for example, must retain their distinct named functors and images. Sharing a target category or implementation class does not identify those structures. Agreement is required where paths are declared to represent the same inherited structure and an operation depends on that identification.
 
@@ -63,13 +87,19 @@ The compiler should identify missing mathematical data from the declared functor
 - The exact category of the required comparison, for example an isomorphism between `P` and `Q` in `Fun(C, D)`.
 - Any remaining compatibility needed to transport that operation.
 
-First obtain comparisons already supplied by generic constructions, adjunctions, or retained universal presentations. A leaf supplies only genuinely additional mathematical data. Discovering a required cell's boundary can often be mechanical; constructing the cell may require new mathematics. The compiler treats ordinary functor actions as opaque and cannot infer arbitrary mathematical facts from their Python bodies.
+First obtain comparisons already supplied by generic constructions, adjunctions, or retained universal presentations. A leaf supplies only genuinely additional mathematical data. Discovering a required cell's boundary can often be mechanical, and declaring a formal generator uses the existing constructor. Supplying its executable interpretation or establishing its mathematical validity is a separate obligation. The compiler treats ordinary functor actions as opaque and cannot infer arbitrary mathematical facts from their Python bodies.
 
-The current [diamond policy](specs/functor.md#structural-diamonds-and-coherence) accepts unresolved diamonds, emits an opt-in `DEBUG` diagnostic, and continues with declaration-order preference and once-only C3 behavior. More informative diagnostics fit that policy. Making missing coherence a mandatory compilation failure would change it. An unresolved comparison remains distinct from a demonstrated justification for freely interchanging paths.
+The current [diamond handler](src/sage_categories/kernel/compiler.py), `_debug_unresolved_diamonds`, collects competing category paths and emits an opt-in `DEBUG` diagnostic. It does not consult comparison cells. The concrete integration is to retain the actual functor composites, consume their supplied comparisons, use the required transport, and identify missing declarations. The existing cell calculus supplies the underlying operations; its availability alone does not establish that this compiler consumer works.
 
-In higher categorical semantics, comparisons can themselves require higher compatibility data. Those are actual higher cells, with composition and whiskering supplied generically. Pairwise comparisons alone do not automatically provide every higher coherence. Homotopy coherent diagrams and constructions are the relevant research setting. [Riehl and Verity, homotopy coherent adjunctions](https://arxiv.org/abs/1310.8279).
+The current [diamond policy](specs/functor.md#structural-diamonds-and-coherence) accepts unresolved diamonds and continues with declaration-order preference and once-only C3 behavior. Requiring a declaration where an operation needs path interchangeability is an enforcement change at that compiler boundary. It uses the same mathematical interface as an informative missing-cell diagnostic. An unresolved comparison remains distinct from a demonstrated justification for freely interchanging paths.
 
-The [current morphism-tower specification](specs/functor.md#the-morn-c-tower) calls `Cat()` a strict 2-category. This specifies the ordinary category/functor/natural-transformation fragment. Its iterated `Mor` interface alone does not specify general weak higher coherence. That fragment can sit within the intended broader semantics; a full higher-coherence implementation must specify the additional structure explicitly.
+### Higher invertibility and mathematical audit
+
+Declaring mathematical structure and auditing a leaf's interpretation are separate responsibilities. The machinery can accept trusted declarations, as it already does for naturality. A leaf-specific audit establishes whether the supplied components, inverse assertions, and compatibility laws hold. Requiring those proofs before exposing the declaration machinery would impose an additional contract.
+
+If all cells above a chosen dimension are stipulated invertible, that is an ambient semantic condition to handle centrally. **Invertibility of all higher cells does not imply that every desired higher comparison exists.** It provides inverses to existing cells; it does not make every parallel pair connected or every coherence diagram commute. Pairwise comparisons alone therefore do not supply every higher compatibility. Derive structural consequences generically and let leaves declare additional mathematical coherence where needed, with its validity audited separately. This does not require leaves to author an infinite tower of witnesses. Homotopy coherent diagrams and constructions remain the relevant mathematical setting. [Riehl and Verity, homotopy coherent adjunctions](https://arxiv.org/abs/1310.8279).
+
+The [current morphism-tower specification](specs/functor.md#the-morn-c-tower) calls `Cat()` a strict 2-category. This describes the ordinary category/functor/natural-transformation fragment; it does not negate the generic higher-dimensional backend already connected to `Mor`. The intended broader semantics require the appropriate declarations and their interpretation through that infrastructure. The concrete inheritance work identified here is compiler integration, not a new foundational machinery project.
 
 The [single-point-functor restriction](src/sage_categories/cat/category.py) must be addressed at this categorical and runtime boundary. Accepting a longer list alone does not establish correct transport, separation of distinct structures, or coherence.
 
@@ -108,6 +138,8 @@ The existing `lift_limit` in [constructions.py](src/sage_categories/cat/construc
 ## Engine delegation and research precedents
 
 Research starts from the project's categories, functors, cells, fibrations, and universal constructions, then identifies dependencies that execute the required mathematics faithfully. The public categorical semantics remain authoritative.
+
+Start with the existing `homotopy-core` and Catlab integrations described under [coherence](#existing-machinery-and-declaration-data). They already provide the formal cell calculus and executable transformation operations relevant to this boundary. The precedents below address complementary concerns.
 
 Sage's category framework supplies an established engineering precedent: reconstruct inheritance from mathematical information and attach generic operations and tests through categories. Use its runtime machinery while retaining the repository's own category graph. [Sage category primer](https://doc.sagemath.org/html/en/reference/categories/sage/categories/primer.html).
 
@@ -159,14 +191,14 @@ Use complementary boundaries:
 | Dependencies respect the intended direction | Layer/forbidden contracts, including indirect paths where appropriate |
 | Public mathematical interfaces preserve types | Existing mypy checks, explicit exports, and checks against `Any` propagation |
 | Inheritance preserves owners, endpoints, and selected structures | Validation in the existing declaration compiler |
-| A path comparison is needed | A diagnostic naming the actual cells and compatibility required, under the existing diamond policy |
+| A path comparison is needed | The compiler consumes owned comparison cells and names missing boundaries and compatibility; the current diagnostic-only policy and mandatory enforcement remain distinct |
 | Generic operations actually work in leaves | Automatically applicable mathematical contract tests through public consumers |
 
 Import Linter supports [exhaustive layers](https://import-linter.readthedocs.io/en/stable/contract_types/layers/) and [protected modules](https://import-linter.readthedocs.io/en/stable/contract_types/protected/). These express architectural relationships without maintaining an expanding list of known offending imports. Preserve legitimate dependencies on immediate mathematical targets: isolatable leaves need not be mutually independent.
 
 Explicit exports and restrictions on untyped calls and `Any` propagation help prevent implementation details from escaping through otherwise permitted modules. Mypy already provides these controls. Types and import checks complement each other; neither establishes semantic ownership or mathematical correctness by itself. [Mypy's documented controls](https://mypy.readthedocs.io/en/stable/command_line.html).
 
-The compiler validates positive invariants from authoritative declarations: initialized image dependencies, correct endpoints, distinct selected structures, and the supplied comparisons where an operation requires them. It reports unresolved coherence through the specified diagnostic policy. This targets the mathematical obligation regardless of the particular implementation pattern that violates it.
+The compiler should validate positive invariants from authoritative declarations: initialized image dependencies, correct endpoints, distinct selected structures, and supplied comparisons where an operation requires them. Completing its comparison consumer and the selected missing-declaration policy protects path interchangeability; the existing diagnostic handler alone does not. Mathematical audits establish the truth of trusted leaf declarations separately. These checks target the mathematical obligation regardless of the particular implementation pattern that violates it.
 
 Generic tests follow the same ownership model as generic operations. Test category and functor laws, transport compatibility, universal mediators, owner separation, and reconstruction through real adapters. Use Hypothesis where generated inputs or operation sequences expose construction-order interactions, repeated construction, and multiple structures on one carrier. Stateful testing generates and shrinks sequences, reducing the need to anticipate each failing sequence manually. [Hypothesis stateful testing](https://hypothesis.readthedocs.io/en/latest/stateful.html).
 

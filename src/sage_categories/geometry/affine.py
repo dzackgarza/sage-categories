@@ -226,10 +226,7 @@ class AffineOpenCategory(ParameterizedThinCategory):
                 section_ring: CategoryOfCategories.ElementType,
                 restriction: MorphismCategory.ObjectType,
             ) -> CategoryOfCategories.ElementType:
-                ancestor_restrictions = tuple(
-                    (ancestor, restriction * parent.restriction_to(ancestor))
-                    for ancestor in parent._ancestors
-                )
+                ancestor_restrictions = tuple((ancestor, restriction * parent.restriction_to(ancestor)) for ancestor in parent._ancestors)
                 return self.assemble_object(
                     _AffineOpenData(
                         self.scheme(),
@@ -351,9 +348,13 @@ class AffineSchemesCategory(ContravariantFaithfulStructureCategory):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         opposite_rings = _rings().op()
-        coordinate_ring = Fun(self, opposite_rings).Faithful().Isofibrations()(
-            lambda scheme: scheme.coordinate_ring(),
-            lambda arrow: opposite_morphism(arrow.pullback()),
+        coordinate_ring = (
+            Fun(self, opposite_rings)
+            .Faithful()
+            .Isofibrations()(
+                lambda scheme: scheme.coordinate_ring(),
+                lambda arrow: opposite_morphism(arrow.pullback()),
+            )
         )
         return (*super().structure_functors(), coordinate_ring)
 
@@ -563,9 +564,7 @@ def affine_open_preimage(
             case ():
                 pass
             case pieces:
-                source_pieces = tuple(
-                    affine_open_preimage(mapping, piece)[0] for piece in pieces
-                )
+                source_pieces = tuple(affine_open_preimage(mapping, piece)[0] for piece in pieces)
                 source_open = source_opens.finite_union(source_pieces)
                 return source_open, _backend.open_pullback(mapping, source_open, target_open)
         match target_open.parent_open():

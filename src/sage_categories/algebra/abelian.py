@@ -249,9 +249,7 @@ def _group_from_operations(
     def negate(value: Hashable) -> Hashable:
         return form.element(tuple(-coefficient for coefficient in form.coordinates(value)))
 
-    inverse_shear = Mor(Sets)(square, square)(
-        lambda pair: (pair[0], addition_rule((negate(pair[0]), pair[1])))
-    )
+    inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], addition_rule((negate(pair[0]), pair[1]))))
     group = _certified_abelian_group(carrier, addition, unit, inverse_shear)
     _retain_coordinates(group, form)
     return group
@@ -353,9 +351,7 @@ def _new_indexed_free_abelian_group(
     square = binary_product_data(Sets(), carrier, carrier).apex()
     addition = Mor(Sets)(square, carrier)(lambda pair: pair[0] + pair[1])
     zero = Mor(Sets)(_structure().unit(), carrier)(lambda _point: _backend.indexed_zero(engine))
-    inverse_shear = Mor(Sets)(square, square)(
-        lambda pair: (pair[0], _backend.indexed_subtract(engine, pair[1], pair[0]))
-    )
+    inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], _backend.indexed_subtract(engine, pair[1], pair[0])))
     group = _certified_abelian_group(carrier, addition, zero, inverse_shear)
     _backend.retain_indexed(group, index_set, engine)
     return group
@@ -382,6 +378,7 @@ def indexed_free_abelian_mediator(
     only the finite monomial support of its argument and sums those component
     images using the target's own additive-group operation.
     """
+
     def evaluate(value: Hashable) -> Hashable:
         total = target.zero()
         for index, coefficient in _backend.indexed_coefficients(group, value).items():
@@ -693,12 +690,15 @@ def _new_tensor_object(first: CategoryOfCategories.ElementType, second: Category
         if presented_form.orders == (0,):
             indexed = first if first_indexed else second
             result = _new_indexed_free_abelian_group(_backend.indexed_index_set(indexed))
-            _retain_tensor_info(result, _IndexedTensorData(
-                first,
-                second,
-                indexed,
-                not first_indexed,
-            ))
+            _retain_tensor_info(
+                result,
+                _IndexedTensorData(
+                    first,
+                    second,
+                    indexed,
+                    not first_indexed,
+                ),
+            )
             return result
     result = _backend.tensor_object(first, second)
     _retain_tensor_info(result, _TensorData(first, second))
@@ -751,6 +751,7 @@ def tensor_mediator(
     result = _tensor_object(first, second)
     data = _tensor_info(result)
     if isinstance(data, _IndexedPairTensorData):
+
         def evaluate(value: Hashable) -> Hashable:
             total = target.zero()
             for pair, coefficient in _backend.indexed_coefficients(result, value).items():
@@ -797,18 +798,10 @@ def _tensor_morphism(first: MorphismCategory.ObjectType, second: MorphismCategor
         case True, _, _IndexedTensorData(rank_one_on_left=True):
             # Naturality of the left unitor determines ``1_ZZ ⊗ g`` even when
             # ``g`` lands in an indexed-free group with no Smith coordinates.
-            return (
-                _tensor_unitor_component(unit, second.codomain(), "left", True)
-                * second
-                * _tensor_unitor_component(unit, second.domain(), "left", False)
-            )
+            return _tensor_unitor_component(unit, second.codomain(), "left", True) * second * _tensor_unitor_component(unit, second.domain(), "left", False)
         case _, True, _IndexedTensorData(rank_one_on_left=False):
             # The right-unit case is the symmetric naturality square.
-            return (
-                _tensor_unitor_component(unit, first.codomain(), "right", True)
-                * first
-                * _tensor_unitor_component(unit, first.domain(), "right", False)
-            )
+            return _tensor_unitor_component(unit, first.codomain(), "right", True) * first * _tensor_unitor_component(unit, first.domain(), "right", False)
         case _:
             pass
     if isinstance(_tensor_info(source), _TensorData) and isinstance(_tensor_info(target), _TensorData):
@@ -844,6 +837,7 @@ def _indexed_free_reindex(
     index_map: Callable[[Hashable], Hashable],
 ) -> MorphismCategory.ObjectType:
     """The linear map of indexed free groups induced by a map of their basis indices."""
+
     def evaluate(value: Hashable) -> Hashable:
         target_index = _backend.indexed_index_set(target)
         return _backend.indexed_sum_terms(

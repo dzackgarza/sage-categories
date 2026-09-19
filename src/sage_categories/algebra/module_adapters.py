@@ -43,9 +43,7 @@ def _owned_additive_carrier(engine_module: object):
         addition = Mor(Sets)(square, carrier)(lambda pair: _backend.module_add(native, pair[0], pair[1]))
         cartesian = Cartesian(Sets())
         zero = Mor(Sets)(cartesian.unit(), carrier)(lambda _point: _backend.module_zero(native))
-        inverse_shear = Mor(Sets)(square, square)(
-            lambda pair: (pair[0], _backend.module_subtract(native, pair[1], pair[0]))
-        )
+        inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], _backend.module_subtract(native, pair[1], pair[0])))
         group = certified_additive_group(carrier, addition, zero, inverse_shear, cartesian, commutative=True)
         coordinates = _abelian._CoordinateBridge(
             (0,) * _backend.module_rank(native),
@@ -69,9 +67,7 @@ def sage_module_from_engine(
     addition, and zero; the action is the native scalar multiplication factored through
     the retained abelian tensor product.  No native module object is exposed publicly.
     """
-    assert modules.scalars() is integer_scalar_monoid(), (
-        f"the Sage module adapter currently requires the canonical integer scalar monoid, not {modules.scalars()!r}"
-    )
+    assert modules.scalars() is integer_scalar_monoid(), f"the Sage module adapter currently requires the canonical integer scalar monoid, not {modules.scalars()!r}"
     native = _backend.require_integer_module(engine_module)
 
     def construct() -> ModuleCategory.ObjectType:

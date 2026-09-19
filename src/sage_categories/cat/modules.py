@@ -147,9 +147,7 @@ class ModuleCategory(EquifierCategory):
         produces the ``A``-action on the same exact carrier, so no identity action or
         replacement carrier can enter this route.
         """
-        assert scalar_morphism.domain() is self.scalars(), (
-            f"{scalar_morphism!r} does not start at the acting monoid {self.scalars()!r}"
-        )
+        assert scalar_morphism.domain() is self.scalars(), f"{scalar_morphism!r} does not start at the acting monoid {self.scalars()!r}"
         endomorphism_modules = Modules(scalar_morphism.codomain(), self.actegory())
         assert _INTERNAL_ENDOMORPHISM_MODULES.has(endomorphism_modules, ()), (
             f"{scalar_morphism.codomain()!r} has no selected internal-endomorphism evaluation in {self.actegory()!r}"

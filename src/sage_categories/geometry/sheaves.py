@@ -58,9 +58,7 @@ def _apply_ring_map(
 def descent_section_ring(
     open_key: Hashable,
     local_rings: tuple[CategoryOfCategories.ElementType, ...],
-    overlap_restrictions: Callable[
-        [int, int], tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]
-    ],
+    overlap_restrictions: Callable[[int, int], tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]],
 ) -> CategoryOfCategories.ElementType:
     """The ring of compatible local sections for one represented finite cover.
 
@@ -76,27 +74,15 @@ def descent_section_ring(
                 case (owner, values) if owner is open_key and isinstance(values, tuple):
                     if len(values) != len(local_rings):
                         return false
-                    sections = cast(
-                        tuple[CategoryOfCategories.ElementType, ...], values
-                    )
+                    sections = cast(tuple[CategoryOfCategories.ElementType, ...], values)
                     if any(
-                        not isinstance(section, CategoryOfCategories.ElementType)
-                        or section.parent() is not ring
-                        for section, ring in zip(sections, local_rings, strict=True)
+                        not isinstance(section, CategoryOfCategories.ElementType) or section.parent() is not ring for section, ring in zip(sections, local_rings, strict=True)
                     ):
                         return false
                     for left_index in range(len(sections)):
                         for right_index in range(left_index + 1, len(sections)):
-                            left_map, right_map = overlap_restrictions(
-                                left_index, right_index
-                            )
-                            if (
-                                ask(
-                                    left_map(sections[left_index])
-                                    == right_map(sections[right_index])
-                                )
-                                is not True
-                            ):
+                            left_map, right_map = overlap_restrictions(left_index, right_index)
+                            if ask(left_map(sections[left_index]) == right_map(sections[right_index])) is not True:
                                 return false
                     return true
                 case _:
@@ -108,19 +94,13 @@ def descent_section_ring(
             left_owner, left_values = cast(tuple[object, tuple[Any, ...]], pair[0])
             right_owner, right_values = cast(tuple[object, tuple[Any, ...]], pair[1])
             assert left_owner is open_key and right_owner is open_key
-            return open_key, tuple(
-                left + right
-                for left, right in zip(left_values, right_values, strict=True)
-            )
+            return open_key, tuple(left + right for left, right in zip(left_values, right_values, strict=True))
 
         def multiply(pair: tuple[Hashable, Hashable]) -> Hashable:
             left_owner, left_values = cast(tuple[object, tuple[Any, ...]], pair[0])
             right_owner, right_values = cast(tuple[object, tuple[Any, ...]], pair[1])
             assert left_owner is open_key and right_owner is open_key
-            return open_key, tuple(
-                left * right
-                for left, right in zip(left_values, right_values, strict=True)
-            )
+            return open_key, tuple(left * right for left, right in zip(left_values, right_values, strict=True))
 
         zero = open_key, tuple(ring.zero() for ring in local_rings)
         one = open_key, tuple(ring.one() for ring in local_rings)
@@ -145,18 +125,11 @@ def descent_restriction(
         assert owner is larger_key
         return (
             smaller_key,
-            tuple(
-                restriction(section)
-                for restriction, section in zip(
-                    component_restrictions, sections, strict=True
-                )
-            ),
+            tuple(restriction(section) for restriction, section in zip(component_restrictions, sections, strict=True)),
         )
 
     underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    return _rings().restrict_morphism(
-        Rings(Sets).homomorphism(source_ring, target_ring, underlying)
-    )
+    return _rings().restrict_morphism(Rings(Sets).homomorphism(source_ring, target_ring, underlying))
 
 
 def descent_projection(
@@ -175,9 +148,7 @@ def descent_projection(
         return cast(CategoryOfCategories.ElementType, sections[component_index]).datum()
 
     underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    return _rings().restrict_morphism(
-        Rings(Sets).homomorphism(section_ring, local_ring, underlying)
-    )
+    return _rings().restrict_morphism(Rings(Sets).homomorphism(section_ring, local_ring, underlying))
 
 
 def descent_lift(
@@ -196,9 +167,7 @@ def descent_lift(
         return open_key, tuple(component(section) for component in component_maps)
 
     underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    lift = _rings().restrict_morphism(
-        Rings(Sets).homomorphism(local_ring, section_ring, underlying)
-    )
+    lift = _rings().restrict_morphism(Rings(Sets).homomorphism(local_ring, section_ring, underlying))
     projection = descent_projection(open_key, section_ring, local_ring, component_index)
     _rings().retain_inverses(projection, lift)
     return lift
@@ -219,9 +188,7 @@ def descent_map(
         return open_key, tuple(component(section) for component in component_maps)
 
     underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    return _rings().restrict_morphism(
-        Rings(Sets).homomorphism(source_ring, target_ring, underlying)
-    )
+    return _rings().restrict_morphism(Rings(Sets).homomorphism(source_ring, target_ring, underlying))
 
 
 def descent_chart_comparison(
@@ -481,4 +448,6 @@ def ring_sheaf[OpenKey: Hashable](
 ) -> RingSheaf[OpenKey]:
     """Declare ``presheaf`` a sheaf and retain a gluing evaluator when supplied."""
     return RingSheaf(presheaf, gluing_rule)
+
+
 _FINITE_DESCENT_SECTION_RINGS = ChosenConstruction()

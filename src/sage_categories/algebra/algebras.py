@@ -64,15 +64,10 @@ class AlgebraCategory(LimitSubcategory):
             case BimoduleCategory():
                 left = underlying.left_modules().scalars()
                 right = underlying.right_modules().scalars()
-                assert (
-                    right.operation() is left.operation()
-                    and right.unit_morphism() is left.unit_morphism()
-                ), f"{underlying!r} is not an (R,R)-bimodule category"
+                assert right.operation() is left.operation() and right.unit_morphism() is left.unit_morphism(), f"{underlying!r} is not an (R,R)-bimodule category"
                 return left
             case _:
-                raise AssertionError(
-                    f"{underlying!r} is not a module or (R,R)-bimodule category"
-                )
+                raise AssertionError(f"{underlying!r} is not a module or (R,R)-bimodule category")
 
     def module_category(self) -> ModuleCategory:
         """The left ``R``-module owner reached by the algebra's relative carrier."""
@@ -83,9 +78,7 @@ class AlgebraCategory(LimitSubcategory):
             case BimoduleCategory():
                 return underlying.left_modules()
             case _:
-                raise AssertionError(
-                    f"{underlying!r} has no retained left-module owner"
-                )
+                raise AssertionError(f"{underlying!r} has no retained left-module owner")
 
     def monoid_presentation(self) -> Functor:
         """The retained equivalence ``Algebras(R,C) -> Monoids(V_R)``."""
@@ -95,9 +88,7 @@ class AlgebraCategory(LimitSubcategory):
         """The monoid presentation is the sole immediate structure functor."""
         return (self.monoid_presentation(),)
 
-    def from_monoid(
-        self, monoid: MonoidCategory.ObjectType
-    ) -> AlgebraCategory.ObjectType:
+    def from_monoid(self, monoid: MonoidCategory.ObjectType) -> AlgebraCategory.ObjectType:
         """Read a monoid object of ``V_R`` as the corresponding base-relative algebra."""
         assert monoid in self.monoid_category()
         result = self.monoid_presentation().inverse().on_object(monoid)
@@ -133,20 +124,14 @@ class AlgebraCategory(LimitSubcategory):
         """The retained composite from algebras to their exact left ``R``-modules."""
         monoids = self.monoid_category()
         relative = self.monoidal_structure().underlying_category()
-        to_relative = (
-            Magmas(self.monoidal_structure()).forgetful()
-            * monoids.to_magmas()
-            * self.monoid_presentation()
-        )
+        to_relative = Magmas(self.monoidal_structure()).forgetful() * monoids.to_magmas() * self.monoid_presentation()
         match relative:
             case ModuleCategory():
                 return to_relative
             case BimoduleCategory():
                 return relative.to_left() * to_relative
             case _:
-                raise AssertionError(
-                    f"{relative!r} has no retained left-module forgetful route"
-                )
+                raise AssertionError(f"{relative!r} has no retained left-module forgetful route")
 
     def U_R(self) -> Functor:
         """The named composite from algebras through modules to the ambient category ``C``."""
@@ -174,9 +159,7 @@ def _monoidal_context(
     match owner:
         case ActionsCategory():
             modules = Modules(base, context)
-            assert _MODULE_MONOIDAL_STRUCTURES.has(modules, ()), (
-                f"{modules!r} has no selected relative tensor structure for Algebras"
-            )
+            assert _MODULE_MONOIDAL_STRUCTURES.has(modules, ()), f"{modules!r} has no selected relative tensor structure for Algebras"
             return _MODULE_MONOIDAL_STRUCTURES.selected(modules, ())
         case MonoidalStructuresCategory():
             relative = context.underlying_category()
@@ -186,19 +169,12 @@ def _monoidal_context(
                 case BimoduleCategory():
                     assert relative.left_modules().scalars() is base
                     right = relative.right_modules().scalars()
-                    assert (
-                        right.operation() is base.operation()
-                        and right.unit_morphism() is base.unit_morphism()
-                    )
+                    assert right.operation() is base.operation() and right.unit_morphism() is base.unit_morphism()
                 case _:
-                    raise AssertionError(
-                        f"{relative!r} is not a relative module category for {base!r}"
-                    )
+                    raise AssertionError(f"{relative!r} is not a relative module category for {base!r}")
             return context
         case _:
-            raise AssertionError(
-                f"{context!r} is neither an actegory nor a supplied relative monoidal structure"
-            )
+            raise AssertionError(f"{context!r} is neither an actegory nor a supplied relative monoidal structure")
 
 
 def _new_algebra_category(
@@ -214,9 +190,7 @@ def _new_algebra_category(
         Fun(monoids, monoids).one(),
         Fun(monoids, tag).constant(tag(next(iter(tag.index_set())))),
     )
-    section_cone = cone(
-        diagram, monoids, lambda vertex: legs[sequence_position(vertex)]
-    )
+    section_cone = cone(diagram, monoids, lambda vertex: legs[sequence_position(vertex)])
     section = family.universal_data(diagram).lift(cones(diagram)(section_cone))
     Cat().retain_inverses(algebras.monoid_presentation(), section)
     return algebras

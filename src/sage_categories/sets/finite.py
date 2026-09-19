@@ -890,9 +890,7 @@ class SetsCategory(MorphismDataCategory):
         """
         rule = _QuotientRule(ambient, equivalent)
         quotient = self.from_membership(rule)
-        projection = Mor(self)(ambient, quotient)(
-            lambda value: _QuotientValue(rule, ambient.representative(value))
-        )
+        projection = Mor(self)(ambient, quotient)(lambda value: _QuotientValue(rule, ambient.representative(value)))
         return quotient, projection
 
     def quotient_representative(
@@ -923,6 +921,7 @@ class SetsCategory(MorphismDataCategory):
         """
         factors = tuple(diagram.on_object(vertex) for vertex in vertices)
         apex = self.from_membership(_ProductRule(factors))
+
         def leg(
             vertex: CategoryOfCategories.ElementType,
         ) -> MorphismCategory.ObjectType:

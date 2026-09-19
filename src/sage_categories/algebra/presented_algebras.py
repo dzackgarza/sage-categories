@@ -57,9 +57,7 @@ def integer_free_algebra(
     the corresponding object of ``algebras`` rather than the raw monoid presentation.
     """
     neutral = integer_free_associative_algebra(names)
-    assert neutral in algebras.monoid_category(), (
-        f"the native integer free algebra belongs to {neutral.category()!r}, not {algebras.monoid_category()!r}"
-    )
+    assert neutral in algebras.monoid_category(), f"the native integer free algebra belongs to {neutral.category()!r}, not {algebras.monoid_category()!r}"
     return algebras.from_monoid(neutral)
 
 
@@ -148,9 +146,7 @@ def integer_free_algebra_homomorphism(
     """
     construction = _free_construction(algebras, source)
     images = tuple(generator_images)
-    assert len(images) == len(construction.names), (
-        "one image is required for every free generator"
-    )
+    assert len(images) == len(construction.names), "one image is required for every free generator"
     source_module = algebras.to_modules().on_object(source)
     target_module = algebras.to_modules().on_object(target)
     assert all(image.parent() is target_module for image in images)
@@ -160,9 +156,7 @@ def integer_free_algebra_homomorphism(
         result = _integer_algebra_one(algebras, target)
         for position in word:
             assert isinstance(position, int) and 0 <= position < len(images)
-            result = _integer_algebra_product(
-                algebras, target, result, images[position]
-            )
+            result = _integer_algebra_product(algebras, target, result, images[position])
         return result
 
     linear = indexed_free_integer_homomorphism(
@@ -189,22 +183,14 @@ def _new_split_algebra_presentation(
 ) -> AlgebraCategory.ObjectType:
     """Retain a supplied split coequalizer as universal data in ``algebras``."""
     assert first.domain() is second.domain() and first.codomain() is second.codomain()
-    assert first in algebras.morphism_category(
-        1
-    ) and second in algebras.morphism_category(1)
+    assert first in algebras.morphism_category(1) and second in algebras.morphism_category(1)
     quotient = projection.codomain()
     target = first.codomain()
     assert projection.domain() is target and quotient in algebras
     assert section.domain() is quotient and section.codomain() is target
     assert section in algebras.morphism_category(1)
     assert ask(projection * first == projection * second) is True
-    assert (
-        ask(
-            projection * section
-            == algebras.morphism_category(1)(quotient, quotient).one()
-        )
-        is True
-    )
+    assert ask(projection * section == algebras.morphism_category(1)(quotient, quotient).one()) is True
 
     diagram = parallel_pair(first, second)
     shape = diagram.domain()
@@ -222,9 +208,7 @@ def _new_split_algebra_presentation(
     def mediator(candidate: ConeCategory.ObjectType) -> AlgebraMap:
         coequalizing = candidate.leg(target_vertex)
         factor = coequalizing * section
-        assert ask(factor * projection == coequalizing) is True, (
-            "the supplied split quotient does not factor this coequalizing algebra map"
-        )
+        assert ask(factor * projection == coequalizing) is True, "the supplied split quotient does not factor this coequalizing algebra map"
         return factor
 
     retained = algebras.Colimits(shape).with_universal_data(
@@ -270,9 +254,7 @@ def presented_algebra_diagram(
     """The retained parallel pair presenting ``algebra``."""
     family = algebras.Colimits(Cat().WalkingParallelPair())
     diagrams = family.presenting_diagrams(algebra)
-    assert len(diagrams) == 1, (
-        f"{algebra!r} has {len(diagrams)} retained algebra presentations"
-    )
+    assert len(diagrams) == 1, f"{algebra!r} has {len(diagrams)} retained algebra presentations"
     return diagrams[0]
 
 
@@ -305,12 +287,8 @@ def presented_algebra_factor(
     shape = diagram.domain()
     first = diagram.on_morphism(shape.generator("f"))
     second = diagram.on_morphism(shape.generator("g"))
-    assert (
-        coequalizing.domain() is first.codomain() and coequalizing.codomain() is target
-    )
-    assert ask(coequalizing * first == coequalizing * second) is True, (
-        "the supplied algebra map does not respect the retained relations"
-    )
+    assert coequalizing.domain() is first.codomain() and coequalizing.codomain() is target
+    assert ask(coequalizing * first == coequalizing * second) is True, "the supplied algebra map does not respect the retained relations"
 
     source_vertex = shape(0)
 

@@ -40,12 +40,8 @@ def _relative_carrier(
 
 def _ordinary_bimodules(algebras: AlgebraCategory) -> BimoduleCategory:
     relative = algebras.monoidal_structure().underlying_category()
-    assert isinstance(relative, BimoduleCategory), (
-        f"{algebras!r} is not presented by ordinary bimodules"
-    )
-    assert relative.monoidal_structure() is AbelianTensor(), (
-        f"{algebras!r} does not use the ordinary tensor of abelian groups"
-    )
+    assert isinstance(relative, BimoduleCategory), f"{algebras!r} is not presented by ordinary bimodules"
+    assert relative.monoidal_structure() is AbelianTensor(), f"{algebras!r} does not use the ordinary tensor of abelian groups"
     return relative
 
 
@@ -54,11 +50,7 @@ def _underlying_scalar_map(
 ) -> MorphismCategory.ObjectType:
     monoids = Monoids(AbelianTensor())
     to_magmas = monoids.to_magmas()
-    return (
-        to_magmas.codomain()
-        .forgetful()
-        .on_morphism(to_magmas.on_morphism(scalar_morphism))
-    )
+    return to_magmas.codomain().forgetful().on_morphism(to_magmas.on_morphism(scalar_morphism))
 
 
 def _restrict_object(
@@ -90,9 +82,7 @@ def _restrict_object(
         restricted.right_action(),
         restricted.left_action(),
     )
-    source_multiplication = source_relative.forgetful().on_morphism(
-        source_monoid.operation()
-    )
+    source_multiplication = source_relative.forgetful().on_morphism(source_monoid.operation())
 
     def multiply(left, right):
         source_tensor = balanced_tensor(source_projection, left, right)
@@ -103,9 +93,7 @@ def _restrict_object(
         group,
         multiply,
     )
-    tensor_square = tensor_object(
-        target.monoidal_structure().tensor(), restricted, restricted
-    )
+    tensor_square = tensor_object(target.monoidal_structure().tensor(), restricted, restricted)
     multiplication = target_relative.homomorphism(
         tensor_square,
         restricted,
@@ -119,9 +107,7 @@ def _restrict_object(
         restricted,
         underlying_unit,
     )
-    return target.from_monoid(
-        Monoids(target.monoidal_structure())(multiplication, unit)
-    )
+    return target.from_monoid(Monoids(target.monoidal_structure())(multiplication, unit))
 
 
 def restrict_algebra_scalars(
@@ -154,9 +140,7 @@ def restrict_algebra_scalars(
     ) -> AlgebraCategory.MorphismType:
         source_monoid = source.monoid_presentation().on_morphism(arrow)
         source_magma = source.monoid_category().to_magmas().on_morphism(source_monoid)
-        source_bimodule_map = (
-            Magmas(source.monoidal_structure()).forgetful().on_morphism(source_magma)
-        )
+        source_bimodule_map = Magmas(source.monoidal_structure()).forgetful().on_morphism(source_magma)
         underlying = source_relative.forgetful().on_morphism(source_bimodule_map)
         restricted_source, restricted_target = (
             on_object(arrow.domain()),

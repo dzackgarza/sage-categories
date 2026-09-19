@@ -70,24 +70,16 @@ def _new_stalk_data[PointDatum: Hashable](
 ) -> _FiniteStalkData[PointDatum]:
     presheaf = sheaf.presheaf
     space = presheaf.space
-    assert point.parent() is space.carrier(), (
-        f"{point!r} is not a point of this sheaf's space"
-    )
+    assert point.parent() is space.carrier(), f"{point!r} is not a point of this sheaf's space"
     ambient = space.opens()
-    assert ambient in FinitePosets(), (
-        "the first stalk evaluator requires a finite represented open poset"
-    )
+    assert ambient in FinitePosets(), "the first stalk evaluator requires a finite represented open poset"
 
     subobjects = Posets().Subobjects(ambient)
-    neighborhoods = subobjects.from_predicate(
-        lambda open_point: _contains_point(point, open_point)
-    )
+    neighborhoods = subobjects.from_predicate(lambda open_point: _contains_point(point, open_point))
     inclusion = subobjects.defining_arrow().on_object(neighborhoods)
     neighborhood_poset = inclusion.domain()
     assert neighborhood_poset in FinitePosets()
-    assert ask(neighborhood_poset.is_with_bottom()) is True, (
-        "the represented neighborhoods of a point must have their finite intersection"
-    )
+    assert ask(neighborhood_poset.is_with_bottom()) is True, "the represented neighborhoods of a point must have their finite intersection"
     least = neighborhood_poset.bottom()
     ambient_least = inclusion(least)
     least_key = ambient_least.datum()
@@ -228,9 +220,7 @@ def ringed_stalk_map(
         assert germ.domain() is component.codomain() and germ.codomain() is source_stalk
         return germ * component
 
-    candidate = cocones(target_diagram)(
-        cocone(target_diagram, source_stalk, induced_germ)
-    )
+    candidate = cocones(target_diagram)(cocone(target_diagram, source_stalk, induced_germ))
     result = stalk_presentation(target_sheaf, target_point).lift(candidate)
     assert result.domain() is target_stalk and result.codomain() is source_stalk
     return result

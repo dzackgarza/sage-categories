@@ -87,9 +87,13 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         return next(functor for functor in self.selected_functors() if functor.codomain() is Sets)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        underlying = Fun(self, Sets).Faithful().Isofibrations()(
-            lambda space: space.carrier(),
-            lambda arrow: arrow.underlying_map(),
+        underlying = (
+            Fun(self, Sets)
+            .Faithful()
+            .Isofibrations()(
+                lambda space: space.carrier(),
+                lambda arrow: arrow.underlying_map(),
+            )
         )
         return (*super().structure_functors(), underlying)
 
@@ -188,9 +192,7 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         source: TopologicalSpacesCategory.ObjectType[SourceKey],
         target: TopologicalSpacesCategory.ObjectType[TargetKey],
         tag_rule: Callable[[Hashable], Hashable],
-        preimage_rule: Callable[
-            [CategoryOfCategories.ElementType], CategoryOfCategories.ElementType
-        ],
+        preimage_rule: Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType],
     ) -> TopologicalSpacesCategory.MorphismType:
         """The continuous chart map into a represented quotient topology."""
         projection = self.quotient_projection(target)
@@ -241,12 +243,7 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         def preimage(
             open_object: CategoryOfCategories.ElementType,
         ) -> CategoryOfCategories.ElementType:
-            return assemble_open(
-                tuple(
-                    mapping.inverse_image().on_object(open_object)
-                    for mapping in chart_maps
-                )
-            )
+            return assemble_open(tuple(mapping.inverse_image().on_object(open_object) for mapping in chart_maps))
 
         inverse = Fun(target_opens, source_opens)(
             preimage,

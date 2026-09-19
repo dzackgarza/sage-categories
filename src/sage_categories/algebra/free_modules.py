@@ -123,14 +123,8 @@ def _binary_module_biproduct(
     )
     result = modules(module_action)
 
-    injections = tuple(
-        modules.homomorphism(source, result, coproduct.leg(shape(position)))
-        for position, source in enumerate((first, second))
-    )
-    projections = tuple(
-        modules.homomorphism(result, target, product.leg(shape(position)))
-        for position, target in enumerate((first, second))
-    )
+    injections = tuple(modules.homomorphism(source, result, coproduct.leg(shape(position))) for position, source in enumerate((first, second)))
+    projections = tuple(modules.homomorphism(result, target, product.leg(shape(position))) for position, target in enumerate((first, second)))
 
     def pair(left: ModuleMap, right: ModuleMap) -> ModuleMap:
         assert left.domain() is right.domain()
@@ -394,9 +388,7 @@ def free_module_homomorphism(
         assert arrow.domain() is regular and arrow.codomain() is target
         return arrow
 
-    return modules.Colimits(family.domain()).universal_data(family).lift(
-        cocones(family)(cocone(family, target, component))
-    )
+    return modules.Colimits(family.domain()).universal_data(family).lift(cocones(family)(cocone(family, target, component)))
 
 
 def _right_scalar_morphism(

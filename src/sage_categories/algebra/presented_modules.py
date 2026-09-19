@@ -164,9 +164,7 @@ def finitely_presented_module(
     """The module presented by the finite relation matrix ``R^m -> R^n``."""
     relation = relation_matrix_morphism(modules, entries)
     zero = _zero_morphism(modules, relation.domain(), relation.codomain())
-    result: ModuleCategory.ObjectType = _FINITE_MODULE_PRESENTATIONS(
-        modules, (relation, zero), lambda: _new_presented_module(modules, relation, zero)
-    )
+    result: ModuleCategory.ObjectType = _FINITE_MODULE_PRESENTATIONS(modules, (relation, zero), lambda: _new_presented_module(modules, relation, zero))
     return result
 
 
@@ -236,6 +234,7 @@ def presented_module_factor(
     assert ask(coequalizing * relation == coequalizing * zero) is True, "the supplied map does not respect the retained module relations"
     shape = diagram.domain()
     source_vertex = shape(0)
+
     def candidate_leg(vertex: CategoryOfCategories.ElementType) -> ModuleMap:
         match vertex is source_vertex:
             case True:

@@ -126,15 +126,11 @@ class CategoryFamily:
     def implemented_by(self, implementation: Functor) -> None:
         from sage_categories.cat.functors import Fun
 
-        assert implementation in Fun(self._domain, Cat()), (
-            f"{implementation!r} implements the declared family {self._name!r} and is not a functor {self._domain!r} -> Cat"
-        )
+        assert implementation in Fun(self._domain, Cat()), f"{implementation!r} implements the declared family {self._name!r} and is not a functor {self._domain!r} -> Cat"
         self._functor = implementation
 
     def __call__(self, argument: CategoryOfCategories.ElementType) -> Category:
-        assert self._functor is not None, (
-            f"{self._name} is declared and no implementation claims it, so it has no category to return"
-        )
+        assert self._functor is not None, f"{self._name} is declared and no implementation claims it, so it has no category to return"
         return self._functor.on_object(argument)
 
     def __repr__(self) -> str:

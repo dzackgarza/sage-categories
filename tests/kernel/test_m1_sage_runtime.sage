@@ -718,11 +718,135 @@ def test_unresolved_structural_diamond_is_debug_only(caplog: pytest.LogCaptureFi
                 Fun(self, RIGHT).Isofibrations()(lambda member: RIGHT(self._label(member)), lambda morphism: RIGHT.morphism_category(1)(RIGHT(self._label(morphism.domain())), RIGHT(self._label(morphism.codomain()))).one()),
             )
 
-    LoggedDiamond()
+    logged = LoggedDiamond()
 
-    records = [record for record in caplog.records if "unresolved structural diamond" in record.getMessage()]
+    records = [
+        record
+        for record in caplog.records
+        if "unresolved structural diamond" in record.getMessage() and record.args[0] is logged
+    ]
     assert records
     assert all(record.levelno == logging.DEBUG for record in records)
+    assert all("competing composites" in record.getMessage() for record in records)
+    assert all("required comparison" in record.getMessage() for record in records)
+    assert all("inherited initialization" in record.getMessage() for record in records)
+
+
+def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pytest.LogCaptureFixture) -> None:
+    import logging
+
+    from sage_categories.cat.calculus import natural_isomorphism
+
+    transported: list[CategoryPoint] = []
+    retained: dict[str, MorphismCategory.ObjectType] = {}
+
+    class ComparisonLeft(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._synthetic_label = label
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            return (_synthetic_isofibration(self, BASE, lambda member: BASE(self._label(member))),)
+
+    left = ComparisonLeft()
+
+    class ComparisonRight(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._synthetic_label = label
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            def on_object(member: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+                transported.append(member)
+                return BASE(self._label(member) + 1)
+
+            return (_synthetic_isofibration(self, BASE, on_object),)
+
+    right = ComparisonRight()
+
+    class CoherentDiamond(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._synthetic_label = label
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            to_left = _synthetic_isofibration(self, left, lambda member: left(self._label(member)))
+            to_right = _synthetic_isofibration(self, right, lambda member: right(self._label(member)))
+            first = left.selected_functors()[0] * to_left
+            second = right.selected_functors()[0] * to_right
+            comparison = natural_isomorphism(
+                first,
+                second,
+                lambda member: Mor(BASE)(first.on_object(member), second.on_object(member))(),
+                lambda member: Mor(BASE)(second.on_object(member), first.on_object(member))(),
+            )
+            retained["comparison"] = comparison
+            return (to_left, to_right)
+
+    caplog.set_level(logging.DEBUG, logger="sage_categories.kernel.compiler")
+    coherent = CoherentDiamond()
+    member = coherent(4)
+
+    # The compiler, not an explicit later read of the natural transformation, executes
+    # the alternate route once and consumes the comparison component during construction.
+    assert transported == [right(4)]
+    comparison = retained["comparison"]
+    component = comparison.component(member)
+    assert component.domain() is BASE(4)
+    assert component.codomain() is BASE(5)
+    assert component.domain() is not component.codomain()
+    records = [
+        record
+        for record in caplog.records
+        if "unresolved structural diamond" in record.getMessage() and record.args[0] is coherent
+    ]
+    assert not records
+
+    class IllTypedDiamond(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._synthetic_label = label
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            to_left = _synthetic_isofibration(self, left, lambda member: left(self._label(member)))
+            to_right = _synthetic_isofibration(self, right, lambda member: right(self._label(member)))
+            first = left.selected_functors()[0] * to_left
+            second = right.selected_functors()[0] * to_right
+            natural_isomorphism(
+                first,
+                second,
+                lambda member: Mor(BASE)(first.on_object(member), first.on_object(member)).one(),
+                lambda member: Mor(BASE)(second.on_object(member), first.on_object(member))(),
+            )
+            return (to_left, to_right)
+
+    ill_typed = IllTypedDiamond()
+    with pytest.raises(AssertionError, match="not a morphism of"):
+        ill_typed(6)
 
 def test_point_functor_places_the_class_and_shifts_the_level() -> None:
     # ``STRUCTURED.Point()`` constructs the arrow ``* -> STRUCTURED`` selecting the class

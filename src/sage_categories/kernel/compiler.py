@@ -80,6 +80,7 @@ __all__ = [
     "inheriting_functors",
     "install_method_result_projection_reader",
     "install_on_declaration",
+    "install_structural_comparison_readers",
     "node",
     "realize_implementation_class",
     "recompile_category",
@@ -91,6 +92,12 @@ _LOGGER = logging.getLogger(__name__)
 type MethodResultProjection = tuple[str, tuple[tuple[int, int], ...]]
 type MethodResultProjectionReader = Callable[[], dict[str, MethodResultProjection]]
 _method_result_projection_reader: MethodResultProjectionReader | None = None
+type StructuralComparisonReader = Callable[[MorphismOfCategory, MorphismOfCategory], tuple[MorphismOfCategory, ...]]
+type ComparisonExecutabilityReader = Callable[[MorphismOfCategory], bool]
+type ComparisonComponentReader = Callable[[MorphismOfCategory, CategoryPoint], MorphismOfCategory]
+_structural_comparison_reader: StructuralComparisonReader | None = None
+_comparison_executability_reader: ComparisonExecutabilityReader | None = None
+_comparison_component_reader: ComparisonComponentReader | None = None
 
 
 def _refinement() -> ModuleType:
@@ -107,6 +114,21 @@ def install_method_result_projection_reader(
     global _method_result_projection_reader
     assert _method_result_projection_reader is None or _method_result_projection_reader is reader
     _method_result_projection_reader = reader
+
+
+def install_structural_comparison_readers(
+    comparisons: StructuralComparisonReader,
+    executable: ComparisonExecutabilityReader,
+    component: ComparisonComponentReader,
+) -> None:
+    """Install Cat readers of retained invertible comparisons between structural paths."""
+    global _structural_comparison_reader, _comparison_executability_reader, _comparison_component_reader
+    assert _structural_comparison_reader is None or _structural_comparison_reader is comparisons
+    assert _comparison_executability_reader is None or _comparison_executability_reader is executable
+    assert _comparison_component_reader is None or _comparison_component_reader is component
+    _structural_comparison_reader = comparisons
+    _comparison_executability_reader = executable
+    _comparison_component_reader = component
 
 
 _runtime_ordinals = count()
@@ -453,7 +475,7 @@ def _subtyping_projection() -> dict[str, dict[str, tuple[str, ...]]]:
         if surface_name not in result:
             result[surface_name] = {}
         relations = result[surface_name]
-        existing = relations[provider_name] if provider_name in relations else ()
+        existing = relations.get(provider_name, ())
         relations[provider_name] = tuple(dict.fromkeys(existing + entry))
     return result
 
@@ -763,6 +785,7 @@ class _SelectedAction(NamedTuple):
     target: Node
     datum: object
     representative: CategoryPoint
+    path: tuple[Functor, ...] | None
 
 
 def _initialize_kernel_roots(instance: CategoryPoint, role: Role) -> None:
@@ -878,9 +901,68 @@ def _resolved_value(
     return next(((datum, value) for known, datum, value in resolved if same_node(known, owner)), None)
 
 
+def _resolved_path(
+    resolved_paths: list[tuple[Node, tuple[Functor, ...]]],
+    owner: Node,
+) -> tuple[Functor, ...] | None:
+    """The selected-functor path by which one initializer owner was first reached."""
+    return next((path for known, path in resolved_paths if same_node(known, owner)), None)
+
+
+def _composite_structural_path(path: tuple[Functor, ...]) -> Functor:
+    """The retained composite functor represented by a nonempty structural path."""
+    assert path
+    composite = path[0]
+    for functor in path[1:]:
+        composite = functor * composite
+    return composite
+
+
+def _unique_executable_comparison(first: Functor, second: Functor) -> MorphismOfCategory | None:
+    """The unique retained executable invertible comparison from first to second, if any."""
+    if first is second or _structural_comparison_reader is None or _comparison_executability_reader is None:
+        return None
+    executable = tuple(comparison for comparison in _structural_comparison_reader(first, second) if _comparison_executability_reader(comparison))
+    return executable[0] if len(executable) == 1 else None
+
+
+def _transport_alternate_object_path(
+    action: _SelectedAction,
+    first_representative: CategoryPoint,
+    first_path: tuple[Functor, ...],
+    root: CategoryPoint,
+    image_datum: _ImageDatum,
+) -> None:
+    """Interpret an executable comparison between preferred and alternate object paths."""
+    if not first_path or action.path is None:
+        return
+    first = _composite_structural_path(first_path)
+    second = _composite_structural_path(action.path)
+    if first is second:
+        return
+    comparison = _unique_executable_comparison(first, second)
+    if comparison is None or _comparison_component_reader is None:
+        return
+    alternate, built, _ = image_datum(action.functor, action.representative)
+    assert same_node(built, action.target) or not _runtime(action.target).written, (
+        f"{action.functor!r} constructs the alternate coherent image at "
+        f"{type(built.category).__name__}.{built.role.value}, not at "
+        f"{type(action.target.category).__name__}.{action.target.role.value}"
+    )
+    component = _comparison_component_reader(comparison, root)
+    assert component.domain() is first_representative, (
+        f"{comparison!r} does not transport the preferred structural image {first_representative!r}: its component starts at {component.domain()!r}"
+    )
+    assert component.codomain() is alternate, (
+        f"{comparison!r} does not transport to the alternate structural image {alternate!r}: its component ends at {component.codomain()!r}"
+    )
+
+
 def _run_selected_action(
     queued: list[_SelectedAction],
     resolved: list[tuple[Node, object, CategoryPoint]],
+    resolved_paths: list[tuple[Node, tuple[Functor, ...]]],
+    root: CategoryPoint,
     image_datum: _ImageDatum,
 ) -> bool:
     """Run one unresolved selected action and retain the target's construction input."""
@@ -889,7 +971,11 @@ def _run_selected_action(
         match _resolved_value(resolved, action.target):
             case None:
                 pass
-            case _:
+            case (_, representative):
+                if action.target.role is Role.OBJECT:
+                    first_path = _resolved_path(resolved_paths, action.target)
+                    assert first_path is not None
+                    _transport_alternate_object_path(action, representative, first_path, root, image_datum)
                 continue
         image, built, image_data = image_datum(action.functor, action.representative)
         match image is action.representative:
@@ -904,11 +990,15 @@ def _run_selected_action(
             f"{type(action.target.category).__name__}.{action.target.role.value}, whose declaration initializes local state"
         )
         resolved.append((action.target, image_data, image))
+        if action.path is not None:
+            resolved_paths.append((action.target, action.path))
         match same_node(built, action.target):
             case True:
                 pass
             case False:
                 resolved.append((built, image_data, image))
+                if action.path is not None:
+                    resolved_paths.append((built, action.path))
         return True
     return False
 
@@ -960,6 +1050,7 @@ def _initialize_graph(
     # its domain; the source value carries the owner's implementation without being one
     # of its objects (POL-MATH-046).
     resolved: list[tuple[Node, object, CategoryPoint]] = [(current, data, instance)]
+    resolved_paths: list[tuple[Node, tuple[Functor, ...]]] = [(current, ())]
     queued: list[_SelectedAction] = []
     # Each name written on the instance, held by the owner whose turn wrote it first, so
     # that a later owner's turn cannot displace it (``_keep_first_state``).  Every name
@@ -971,7 +1062,17 @@ def _initialize_graph(
     installed: dict[str, tuple[object, Node]] = {}
     for owner in _initialization_order(context, current):
         is_point_node = _is_cat_element_root(owner) or (owner.role is Role.ELEMENT and current.role is not Role.ELEMENT)
-        while not is_point_node and _resolved_value(resolved, owner) is None and _run_selected_action(queued, resolved, image_datum):
+        while (
+            not is_point_node
+            and _resolved_value(resolved, owner) is None
+            and _run_selected_action(
+                queued,
+                resolved,
+                resolved_paths,
+                instance,
+                image_datum,
+            )
+        ):
             pass
         found = (data, instance) if is_point_node else _resolved_value(resolved, owner)
         assert found is not None, f"no selected functor reaches {owner.category!r}.{owner.role.value} from {current.category!r}"
@@ -993,7 +1094,33 @@ def _initialize_graph(
         _keep_first_state(instance, installed, kernel_state, owner, written)
         if owner.role is not current.role:
             continue
-        queued.extend(_SelectedAction(functor, owner, target, datum, representative) for functor, target in successors(owner))
+        owner_path = _resolved_path(resolved_paths, owner)
+        queued.extend(
+            _SelectedAction(
+                functor,
+                owner,
+                target,
+                datum,
+                representative,
+                None if owner_path is None else (*owner_path, functor),
+            )
+            for functor, target in successors(owner)
+        )
+
+    # The C3 owner loop initializes each reached implementation owner once.  A second
+    # structural path to an owner therefore remains queued after that owner's turn; it is
+    # not another initializer, but it can carry the comparison needed to interpret the
+    # path choice.  Drain exactly those already-resolved actions after initialization so
+    # their executable comparison components transport the alternate object images.
+    if queued:
+        assert all(_resolved_value(resolved, action.target) is not None for action in queued), "the constructor chain ended with an unresolved selected-functor target"
+        assert not _run_selected_action(
+            queued,
+            resolved,
+            resolved_paths,
+            instance,
+            image_datum,
+        )
 
 
 def _object_image_datum(functor: Functor, instance: CategoryPoint) -> tuple[CategoryPoint, Node, object]:
@@ -1251,41 +1378,59 @@ def _initialize_morphism[Datum](
     _construct_morphism_root(current, instance, identity, data)
 
 
-def _debug_unresolved_diamonds(category: Category) -> None:
-    """Log each repeated structural target in the owned graph, without resolving it.
-
-    The graph declaration is mathematical input.  A repeated target means two distinct
-    structural paths reach one implementation owner.  Controlled C3 still contributes
-    that implementation class once; until owned 2-morphism data explicitly records the
-    coherence, the only runtime effect is this opt-in diagnostic (D37).
-    """
-    if not _LOGGER.isEnabledFor(logging.DEBUG):
-        return
+def _structural_paths(category: Category) -> MonoDict:
+    """All nonempty inherited-functor paths out of a category, grouped by target."""
     paths: MonoDict = MonoDict()
 
-    def walk(source: Category, path: tuple[Category, ...]) -> None:
+    def walk(source: Category, ancestors: tuple[Category, ...], path: tuple[Functor, ...]) -> None:
         for functor in inheriting_functors(source):
             target = functor.codomain()
             if target is source:
                 continue
-            next_path = (*path, target)
+            assert not any(target is ancestor for ancestor in ancestors), f"the structural graph contains a cycle through {target!r}"
+            next_path = (*path, functor)
             if target not in paths:
                 paths[target] = []
             paths[target].append(next_path)
-            assert not any(target is ancestor for ancestor in path), f"the structural graph contains a cycle through {target!r}"
-            walk(target, next_path)
+            walk(target, (*ancestors, target), next_path)
 
-    walk(category, (category,))
-    for target, target_paths in paths.items():
+    walk(category, (category,), ())
+    return paths
+
+
+def _debug_unresolved_diamonds(category: Category) -> None:
+    """Log repeated structural paths lacking one executable invertible comparison."""
+    if not _LOGGER.isEnabledFor(logging.DEBUG):
+        return
+    for target, target_paths in _structural_paths(category).items():
         if len(target_paths) < 2:
             continue
-        rendered = " ; ".join(" -> ".join(repr(node) for node in path) for path in target_paths)
-        _LOGGER.debug(
-            "unresolved structural diamond to %r from %r: %s",
-            target,
-            category,
-            rendered,
-        )
+        first = _composite_structural_path(target_paths[0])
+        for other_path in target_paths[1:]:
+            second = _composite_structural_path(other_path)
+            if first is second:
+                continue
+            candidates = () if _structural_comparison_reader is None else _structural_comparison_reader(first, second)
+            executable = () if _comparison_executability_reader is None else tuple(candidate for candidate in candidates if _comparison_executability_reader(candidate))
+            if len(executable) == 1:
+                continue
+            if not candidates:
+                reason = "no retained invertible comparison"
+            elif not executable:
+                reason = "the retained comparison is formal and has no executable component transport"
+            else:
+                reason = f"{len(executable)} executable comparisons are retained, so no comparison is uniquely selected"
+            _LOGGER.debug(
+                "unresolved structural diamond from %r to %r: competing composites %r and %r affect inherited initialization; "
+                "required comparison is one executable invertible natural transformation between them in Fun(%r, %r); %s",
+                category,
+                target,
+                first,
+                second,
+                category,
+                target,
+                reason,
+            )
 
 
 def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:

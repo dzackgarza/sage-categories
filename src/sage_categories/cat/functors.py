@@ -512,7 +512,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
             assert assignment is not None, f"{self!r} is a formal 2-cell and has no executable component rule"
             component = assignment(member_object)
             expected = source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
-            assert component in expected, f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
+            assert ask(expected.membership_proposition(component)) is True, f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
             return component
 
         @cached_method(key=lambda self, member_object: identity_key(member_object))
@@ -522,7 +522,7 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
 
             component = catlab.transformation_component(self, member_object)
             expected = source.codomain().morphism_category(1)(source.on_object(member_object), target.on_object(member_object))
-            assert component in expected, f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
+            assert ask(expected.membership_proposition(component)) is True, f"{component!r} is not a morphism of {expected!r}, so it is not a component of {self!r}"
             return component
 
         def component(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:

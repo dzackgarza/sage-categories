@@ -170,7 +170,7 @@ def vertex_of(
             return index
         return vertex_of(shape.original(), index)
     if isinstance(shape, FinitePresentedCategory):
-        return shape.object_at(shape.object_set().point(index))
+        return shape(index)
     return shape.object_at(shape.object_set().point(index))
 
 

@@ -119,7 +119,105 @@ def test_functor_implementation_preserves_its_source_object_role() -> None:
     assert source.selected_functors()[0].on_object(value) is represented
 
 
+class PointStructureAmbient(Category):
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+
+POINT_STRUCTURE_AMBIENT = PointStructureAmbient()
+
+
+class FirstPointStructure(Category):
+    class ObjectType:
+        def first_category_structure(self) -> str:
+            return "first category structure"
+
+    class ElementType:
+        def first_point_structure(self) -> str:
+            return "first point structure"
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (
+            Fun(self, POINT_STRUCTURE_AMBIENT)
+            .Monomorphisms()
+            .Isofibrations()
+            .Full()(),
+        )
+
+
+FIRST_POINT_STRUCTURE = FirstPointStructure()
+
+
+class SecondPointStructure(Category):
+    class ObjectType:
+        def second_category_structure(self) -> str:
+            return "second category structure"
+
+    class ElementType:
+        def second_point_structure(self) -> str:
+            return "second point structure"
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (
+            Fun(self, POINT_STRUCTURE_AMBIENT)
+            .Monomorphisms()
+            .Isofibrations()
+            .Full()(),
+        )
+
+
+SECOND_POINT_STRUCTURE = SecondPointStructure()
+
+
+class TwoPointStructures(Category):
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __init__(self, reverse: bool) -> None:
+        self._reverse = reverse
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        points = (
+            FIRST_POINT_STRUCTURE.Point(),
+            SECOND_POINT_STRUCTURE.Point(),
+        )
+        return tuple(reversed(points)) if self._reverse else points
+
+
+def test_multiple_point_placements_keep_both_level_shifted_structures() -> None:
+    for reverse in (False, True):
+        source = TwoPointStructures(reverse)
+        assert source in FIRST_POINT_STRUCTURE
+        assert source in SECOND_POINT_STRUCTURE
+        assert source in POINT_STRUCTURE_AMBIENT
+        assert source.first_category_structure() == "first category structure"
+        assert source.second_category_structure() == "second category structure"
+
+        value = source.ObjectType()
+        assert value.first_point_structure() == "first point structure"
+        assert value.second_point_structure() == "second point structure"
+
+
 test_named_point_retains_its_category_and_element_data()
 test_set_point_is_a_functor_to_its_owned_parent()
 test_functor_transports_points_and_generalized_elements_by_composition()
 test_functor_implementation_preserves_its_source_object_role()
+test_multiple_point_placements_keep_both_level_shifted_structures()

@@ -360,8 +360,8 @@ class CategoryDeclaration[
         self._place_selected_point(functors)
 
     def _place_selected_point(self, functors: tuple[Functor, ...]) -> None:
-        """Place this category at the object selected by its defining point functor."""
-        from sage_categories.kernel.refinement import place
+        """Place this category at every object selected by its defining point functors."""
+        from sage_categories.kernel.refinement import place, refine
 
         # A selected point functor ``* -> D`` places this category as an object of ``D``
         # rather than of its universe, and the level shift follows that placement (D154,
@@ -371,12 +371,13 @@ class CategoryDeclaration[
         # generates, so the placement is read off that inclusion (``specs/functor.md``,
         # "Point categories and point functors").
         points = tuple(functor for functor in functors if _declares_point(functor))
-        assert len(points) <= 1, (
-            f"{self!r} selects {len(points)} point functors; the kernel places a category along one point functor today. "
-            "Several is the shape D161 describes for NN lifting its point to magmas in two ways, a kernel capability that does not exist yet"
-        )
         inclusions = tuple(functor.codomain().EssentialImage(functor).inclusion_functor() for functor in points)
-        place(self, inclusions[0].codomain() if inclusions else self.category())
+        if not inclusions:
+            place(self, self.category())
+            return
+        place(self, inclusions[0].codomain())
+        for inclusion in inclusions[1:]:
+            refine(self, inclusion.codomain())
 
     def _select_functors(self) -> tuple[Functor, ...]:
         """Read the declaration ``structure_functors()`` once and retain what it selected.
@@ -950,7 +951,7 @@ class CategoryDeclaration[
     # essential image of the nontrivial product functor, and axioms can be parameterized
     # (D168).  Its parameter is the functor, a morphism of ``Cat()`` rather than an
     # object, which is the whole of what it turns on; ``cat/images.py`` implements it.
-    EssentialImage = Axiom()
+    EssentialImage = Axiom(parameter_owner=lambda defining_functor: defining_functor.codomain())
 
     def Pullbacks(self) -> Category:
         """``C.Limits(L(2, 2))``: limits over the walking cospan."""

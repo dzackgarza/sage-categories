@@ -29,7 +29,12 @@ from sage_categories.kernel.predicates import (
     OwnedPredicate as Predicate,
 )
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import Unknown, UnknownClass, cached_method, uncamelcase
+from sage_categories.kernel.sage_runtime import (
+    Unknown,
+    UnknownClass,
+    cached_method,
+    uncamelcase,
+)
 from sage_categories.kernel.type_aliases import EqualityInput
 
 if TYPE_CHECKING:
@@ -329,6 +334,13 @@ class Axiom:
     turns on is the functor itself, and retention by identity is what such a parameter
     needs.
 
+    A parameter can also determine the exact category that owns the construction.
+    ``D.EssentialImage(F)`` is owned by ``D = F.codomain()`` even when ``D`` is itself
+    a declared subcategory; it is not the inverse image of the ambient category's
+    essential image of ``F``, because ``F`` does not land in that ambient as its exact
+    codomain.  Such a declaration supplies ``parameter_owner``.  Axioms without that
+    declaration keep the ordinary ambient inverse-image rule unchanged.
+
     ``full_subcategory_of`` lists the categories ``C.P()`` is a full subcategory of beyond
     its ambient, by their axioms; each is recorded on the constructed subcategory as the
     monomorphism ``C.P() -> C.Q()`` (D83).
@@ -361,9 +373,11 @@ class Axiom:
         deciding: DecidingProposition | None = None,
         *,
         full_subcategory_of: tuple[Axiom, ...] = (),
+        parameter_owner: Callable[..., Category] | None = None,
     ) -> None:
         self._deciding = deciding
         self._full_subcategory_of = full_subcategory_of
+        self._parameter_owner = parameter_owner
         self._implementation: type[PropertySubcategory] | None = None
 
     def __set_name__(self, declaring_class: type[Category], name: str) -> None:
@@ -447,6 +461,12 @@ class Axiom:
         supplies no such axiom, so that declaration reaches the second branch, where it
         has an owner to be constructed at.
         """
+        # A parameter-owned instance is constructed at that exact category before the
+        # ordinary subcategory-inheritance rule is considered.  This is the semantic
+        # distinction between D.EssentialImage(F), with F landing in D, and an ambient
+        # property such as Finite whose predicate is pulled back along D -> C.
+        if self._parameter_owner is not None and self._parameter_owner(*parameters) is category:
+            return self._construct_declared(category, *parameters)
         if category.has_ambient():
             defining_functor = category.subcategory_monomorphism()
             if declared_axiom(defining_functor.codomain(), self._name) is self:

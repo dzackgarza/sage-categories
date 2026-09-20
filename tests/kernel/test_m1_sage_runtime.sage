@@ -6,16 +6,10 @@ from typing import Self
 import pytest
 
 from sage_categories.cat import Fun
-from sage_categories.cat.category import (
-    Axiom,
-    Cat,
-    Category,
-    CategoryOfCategories,
-    ask,
-    assume,
-)
+from sage_categories.cat.category import Cat, Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
+from sage_categories.cat.predicates import Axiom, ask, assume
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.compiler import SemanticCollisionError, declared_inheritance
 from sage_categories.kernel.construction import active_object_context

@@ -848,6 +848,54 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
     with pytest.raises(AssertionError, match="not a morphism of"):
         ill_typed(6)
 
+
+def test_distinct_structures_sharing_a_target_keep_separate_images() -> None:
+    first_calls: list[CategoryPoint] = []
+    second_calls: list[CategoryPoint] = []
+
+    class SameTargetStructures(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._synthetic_label = label
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            def first(member: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+                first_calls.append(member)
+                return BASE(self._label(member))
+
+            def second(member: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+                second_calls.append(member)
+                return BASE(self._label(member) + 10)
+
+            return (
+                _synthetic_isofibration(self, BASE, first),
+                _synthetic_isofibration(self, BASE, second),
+            )
+
+    source = SameTargetStructures()
+    first, second = source.selected_functors()
+    member = source(3)
+
+    # Declaration order selects the one inherited BASE initializer.  Sharing BASE as a
+    # target does not license the compiler to run or identify the unrelated second
+    # structure when no comparison between the two functors was supplied.
+    assert first_calls == [member]
+    assert second_calls == []
+
+    first_image = first.on_object(member)
+    second_image = second.on_object(member)
+    assert first_calls == [member]
+    assert second_calls == [member]
+    assert first_image is BASE(3)
+    assert second_image is BASE(13)
+    assert first_image is not second_image
+
 def test_point_functor_places_the_class_and_shifts_the_level() -> None:
     # ``STRUCTURED.Point()`` constructs the arrow ``* -> STRUCTURED`` selecting the class
     # in ``Fun(*, STRUCTURED).Monomorphisms()``, and that call is the whole declaration.

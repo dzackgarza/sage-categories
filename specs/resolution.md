@@ -1,8 +1,7 @@
 # Private Sage runtime
 
 This specification owns the private class compiler and runtime support.
-It implements D94, D109 through D114, D118, and D123.
-It also implements `POL-CAT-012`, `POL-KERNEL-017`, and `POL-KERNEL-028` through `POL-KERNEL-036`.
+It implements D94, D109 through D114, D118, and D123. It also implements `POL-CAT-012`, `POL-KERNEL-017`, and `POL-KERNEL-028` through `POL-KERNEL-036`.
 
 The public category theory lives in [functor.md](functor.md).
 The leaf boundary lives in [leaves.md](leaves.md).
@@ -11,38 +10,36 @@ Nothing in this file adds a public mathematical object or a leaf declaration.
 ## The closed kernel surface
 
 Layer ownership and imports are defined in [system.md](system.md#system-shape).
-The three private role classes of `kernel/roles.py` exist so that Sage has a stable Python
-end for each compiled role.
-Their surface is closed, exactly as the leaf writer's contract is closed under D77, and for
-the same reason: a method outside it is mathematics that has lost its owner.
+The three private role classes of `kernel/roles.py` exist so that Sage has a stable Python end for each compiled role.
+Their surface is closed, exactly as the leaf writer's contract is closed under D77, and for the same reason: a method outside it is mathematics that has lost its owner.
 
 A kernel role class declares only:
 
-- `__init_subclass__`, and the class-compilation entry points the compiler calls on a
-  declaration (`_compile_category`, `_recompile_category`, `local_role_class`, `role_class`,
-  `role_source`, `_object_role_source`);
-- the initializers the construction context calls (`_initialize_identity`,
-  `_initialize_placement`, `_initialize_functor_image_cache`);
+- `__init_subclass__`, and the class-compilation entry points the compiler calls on a declaration (`_compile_category`, `_recompile_category`, `local_role_class`, `role_class`, `role_source`, `_object_role_source`);
+
+- the initializers the construction context calls (`_initialize_identity`, `_initialize_placement`, `_initialize_functor_image_cache`);
+
 - the role test used by the compiler (`_is_object`, `_is_element`, `_is_morphism`);
+
 - the functor image cache reads (`_cached_object_image`, `_cached_morphism_image`);
+
 - `__hash__`, which is Python object identity.
 
 The kernel reads a construction context and hands the value to the compiled class.
 The generic mathematical operation remains with its owner in [functor.md](functor.md).
 
-`cat_kernel` installs callbacks for the layers that consume its interpretation. `sage_categories/__init__.py` installs it, before
-`Cat` is loaded: the kernel asks whether a functor carries placement while `Fun` is still
-building its own property categories, and `Cat()`'s own class declares axioms in its body.
-So `cat_kernel` reaches `Cat` when a reader is called, not when it is imported, and the
-slots are in the kernel, the one layer `Cat` and `cat_kernel` both import. The kernel
-holds the reference and states none of the work.
+`cat_kernel` installs callbacks for the layers that consume its interpretation.
+`sage_categories/__init__.py` installs it, before `Cat` is loaded: the kernel asks whether a functor carries placement while `Fun` is still building its own property categories, and `Cat()`'s own class declares axioms in its body.
+So `cat_kernel` reaches `Cat` when a reader is called, not when it is imported, and the slots are in the kernel, the one layer `Cat` and `cat_kernel` both import.
+The kernel holds the reference and states none of the work.
 
 `POL-KERNEL-038` carries this rule and a D132 check fails on a method outside the list.
 
 ## Fixed private dependencies
 
-The project runs in the fixed Sage research environment on Python `>=3.14,<3.15`.
-Python packages use uv. GAP packages use PackageManager. Julia and its packages use JuliaPkg.
+The project runs in the fixed Sage research environment on Python `>=3.14,<3.15`. Python packages use uv.
+GAP packages use PackageManager.
+Julia and its packages use JuliaPkg.
 The private runtime assigns these responsibilities:
 
 | Responsibility | Dependency | Verified scope |
@@ -57,68 +54,43 @@ The private runtime assigns these responsibilities:
 | Residual wrapper and descriptor behavior | wrapt | Private Python call and descriptor behavior. |
 | Private slotted frozen records | attrs `>=26.1,<27` | Private execution records only. |
 
-`kernel/sage_runtime.py` is the one module through which the kernel and `Cat` import Sage's runtime facilities. A leaf's private engine module imports Sage directly and is named in the import contract. No other module imports `sage` (D40).
+`kernel/sage_runtime.py` is the one module through which the kernel and `Cat` import Sage's runtime facilities.
+A leaf's private engine module imports Sage directly and is named in the import contract.
+No other module imports `sage` (D40).
 
 Each category-specific computation adapter lowers owned inputs and reconstructs the exact owned result.
 SymPy proposition expressions are the sole public engine values.
 Their mathematical predicates remain category-owned.
 No dependency defines the category graph, category containment, or another semantic owner.
 
-The finite table and finite presentation interfaces in this table describe those
-interfaces' scope, not the full capabilities of their packages or a restriction on
-owned `Fun(I, C)`. Native callable actions, symbolic presentations, and exact
-algorithms have distinct input requirements. Verify the actual operation before
-claiming an external dependency cannot supply it.
+The finite table and finite presentation interfaces in this table describe those interfaces' scope, not the full capabilities of their packages or a restriction on owned `Fun(I, C)`. Native callable actions, symbolic presentations, and exact algorithms have distinct input requirements.
+Verify the actual operation before claiming an external dependency cannot supply it.
 
-For `Sets`, finite chosen diagrams lower to `FinSetsForCAP`/`ToolsForCategoricalTowers`.
-A discrete diagram whose index or factors have no chosen finite realization remains an
-owned represented product or coproduct: product points retain an indexed component rule,
-coproduct points retain one index and one summand datum, and their universal maps evaluate
-only requested components. The sequential shape `omega = Thin(NN, <=)` is represented
-without enumerating its stages; its colimit retains stage representatives and decides a
-positive equality by transport to a common later stage, leaving unresolved cases `Unknown`.
-These represented cases are the general public construction, not a fallback finite engine.
-The owned theory retains general functor categories and universal presentations;
-their required public actions follow the mathematical contract in
-[computational-generality.md](computational-generality.md#representation-and-execution).
+For `Sets`, finite chosen diagrams lower to `FinSetsForCAP`/`ToolsForCategoricalTowers`. A discrete diagram whose index or factors have no chosen finite realization remains an owned represented product or coproduct: product points retain an indexed component rule, coproduct points retain one index and one summand datum, and their universal maps evaluate only requested components.
+The sequential shape `omega = Thin(NN, <=)` is represented without enumerating its stages; its colimit retains stage representatives and decides a positive equality by transport to a common later stage, leaving unresolved cases `Unknown`. These represented cases are the general public construction, not a fallback finite engine.
+The owned theory retains general functor categories and universal presentations; their required public actions follow the mathematical contract in [computational-generality.md](computational-generality.md#representation-and-execution).
 
-The sequential topological consumer keeps the same separation of owners. `Sets`
-owns the stage-representative colimit of the underlying carriers, while
-`TopologicalSpaces()` owns each `CP^n`, its standard inclusions, the weak CW topology
-on `CP^infty`, and the topological colimit presentation. An open of the weak topology
-retains its compatible open on every finite skeleton; no finite skeleton, finite cell
-list, or finite family of opens replaces the colimit topology. The colimit mediator
-descends its underlying map through the `Sets` colimit and retains the inverse-image
-functor stagewise. In particular, compatible complex conjugations on all `CP^n`
-induce the retained nonidentity endomorphism of `CP^infty`.
+The sequential topological consumer keeps the same separation of owners.
+`Sets` owns the stage-representative colimit of the underlying carriers, while `TopologicalSpaces()` owns each `CP^n`, its standard inclusions, the weak CW topology on `CP^infty`, and the topological colimit presentation.
+An open of the weak topology retains its compatible open on every finite skeleton; no finite skeleton, finite cell list, or finite family of opens replaces the colimit topology.
+The colimit mediator descends its underlying map through the `Sets` colimit and retains the inverse-image functor stagewise.
+In particular, compatible complex conjugations on all `CP^n` induce the retained nonidentity endomorphism of `CP^infty`.
 
-The adelic consumer similarly separates exact mathematical values from numerical
-realizations. The installed OSCAR/Hecke `PadicField` interface is precision-bearing,
-so its elements are not used as exact `QQ_p` values. Exact local-field values retain
-symbolic field expressions, exact rational embeddings, and exact valuations whenever
-the retained expression determines them; finite-precision local-field values remain
-possible future approximations rather than representatives of the exact carrier.
-The prime index is a predicate-defined infinite set. An adele retains a real
-component, a callable component at every prime, a finite set of possibly nonintegral
-primes, and the defining integrality rule at every other prime. Addition and
-multiplication act componentwise and combine exceptional sets by finite union.
-`TopologicalRings()` retains the same underlying set for the ordinary `Rings(Sets)`
-object and its topology, together with represented product-topology preimages that
-witness continuity of addition and multiplication. Basic adelic opens retain only
-their finite exceptional local conditions; `ZZ_p` remains the required local
-condition at every other prime.
+The adelic consumer similarly separates exact mathematical values from numerical realizations.
+The installed OSCAR/Hecke `PadicField` interface is precision-bearing, so its elements are not used as exact `QQ_p` values.
+Exact local-field values retain symbolic field expressions, exact rational embeddings, and exact valuations whenever the retained expression determines them; finite-precision local-field values remain possible future approximations rather than representatives of the exact carrier.
+The prime index is a predicate-defined infinite set.
+An adele retains a real component, a callable component at every prime, a finite set of possibly nonintegral primes, and the defining integrality rule at every other prime.
+Addition and multiplication act componentwise and combine exceptional sets by finite union.
+`TopologicalRings()` retains the same underlying set for the ordinary `Rings(Sets)` object and its topology, together with represented product-topology preimages that witness continuity of addition and multiplication.
+Basic adelic opens retain only their finite exceptional local conditions; `ZZ_p` remains the required local condition at every other prime.
 
-CAP object-level pullbacks alone do not establish pullbacks in owned `Cat`.
-An uncovered construction or missing Python--GAP--Julia interoperation remains an
-implementation obligation under the governing plan. Mathlib and Agda Categories
-remain formal references for generic functor and comma categories; a formal
-reference alone supplies no executable adapter for this runtime.
-Repository-owned implementation of an uncovered generic construction requires
-owner approval before its work unit starts. Existing approval in the governing
-plan remains approval; a missing adapter does not authorize duplicate algorithms.
+CAP object-level pullbacks alone do not establish pullbacks in owned `Cat`. An uncovered construction or missing Python--GAP--Julia interoperation remains an implementation obligation under the governing plan.
+Mathlib and Agda Categories remain formal references for generic functor and comma categories; a formal reference alone supplies no executable adapter for this runtime.
+Repository-owned implementation of an uncovered generic construction requires owner approval before its work unit starts.
+Existing approval in the governing plan remains approval; a missing adapter does not authorize duplicate algorithms.
 
-Development uses pytest `>=9.1,<10`, Hypothesis `>=6.165,<7`, Ruff `>=0.16.5,<1`, mypy `>=2`, and `dzackgarza/sagemath-mypy-plugin@main`.
-Migration uses LibCST `>=1.9,<2` until its codemods finish.
+Development uses pytest `>=9.1,<10`, Hypothesis `>=6.165,<7`, Ruff `>=0.16.5,<1`, mypy `>=2`, and `dzackgarza/sagemath-mypy-plugin@main`. Migration uses LibCST `>=1.9,<2` until its codemods finish.
 D114 continues to assign `tree-sitter-sage` to Sage syntax and `makefun` to a later generated-signature need.
 
 The CAP runtime and the Catlab runtime remain separate private engines.
@@ -130,15 +102,17 @@ CompilerForCAP compiles only pure GAP CAP regions.
 For each category `C`, the compiler receives:
 
 - the local `C.ObjectType`, `C.ElementType`, and `C.MorphismType` declarations;
+
 - the immediate named functors selected by `C.structure_functors()`;
+
 - the applicable target implementation class for each selected functor;
+
 - the exact property categories and construction categories already built in `Cat`.
 
-These inputs describe the repository's owned category graph. The kernel does not inspect
-or extend Sage's mathematical category graph. It builds a private Sage runtime mirror only
-to obtain Sage's class-building behavior. The implementation classes ultimately share the
-ordinary Sage/Python `Parent` ancestry propagated at the `Cat().ObjectType` root; that
-runtime ancestry is not a categorical relation in the owned graph.
+These inputs describe the repository's owned category graph.
+The kernel does not inspect or extend Sage's mathematical category graph.
+It builds a private Sage runtime mirror only to obtain Sage's class-building behavior.
+The implementation classes ultimately share the ordinary Sage/Python `Parent` ancestry propagated at the `Cat().ObjectType` root; that runtime ancestry is not a categorical relation in the owned graph.
 
 The compiler treats each functor action as opaque.
 It does not interpret its source code, fields, result data, or private helpers.
@@ -152,9 +126,13 @@ The kernel gives that category the applicable immediate target categories and th
 Use these Sage facilities:
 
 - `Category._all_super_categories`;
+
 - `Category._super_categories_for_classes`;
+
 - `Category._make_named_class`;
+
 - `C3_sorted_merge`;
+
 - `dynamic_class`.
 
 Sage owns graph traversal, controlled C3 linearization, dynamic class identity, and method resolution.
@@ -166,40 +144,30 @@ Local declarations take precedence over inherited declarations.
 
 ## Direct inherited execution
 
-For an inheritance-carrying selected functor `F: C -> D`, the applicable `D` implementation class occurs in the compiled class of `C`.
-[functor.md](functor.md#structure-functors-and-inherited-classes) owns the inheritance condition.
+For an inheritance-carrying selected functor `F: C -> D`, the applicable `D` implementation class occurs in the compiled class of `C`. [functor.md](functor.md#structure-functors-and-inherited-classes) owns the inheritance condition.
 Methods declared by `D` run directly on the source value.
 Python special methods follow the same rule.
 
-The two ordinary actions of `F` remain the sole public description of how target values are
-constructed (D123). The kernel runs `F.on_object` on the source value after the source's own
-local initializer has run, and initializes the `D` implementation on that same value from the
-datum the action feeds to `D`'s constructor (D13). During construction, the action reads the source's local state and state supplied by earlier-declared initialized targets.
+The two ordinary actions of `F` remain the sole public description of how target values are constructed (D123). The kernel runs `F.on_object` on the source value after the source's own local initializer has run, and initializes the `D` implementation on that same value from the datum the action feeds to `D`'s constructor (D13). During construction, the action reads the source's local state and state supplied by earlier-declared initialized targets.
 Public application receives a completed source and returns the separate image the action constructs.
 
-Initializer threading follows the compiled implementation DAG. The kernel runs each reached
-implementation class's local initializer once, in controlled C3 order, with that class's own
-datum. No declaration calls a base-class initializer. If several structural paths reach one implementation
-owner, controlled C3 contributes one shared occurrence and the other paths do not cause
-second initialization or competing public image construction. Route preference, wherever
-needed, remains the declaration-order rule of D56 rather than a second C3-specific rule.
-Any private execution record or cached class data remains implementation-only and cannot
-become a second leaf-authored description of a functor action.
+Initializer threading follows the compiled implementation DAG. The kernel runs each reached implementation class's local initializer once, in controlled C3 order, with that class's own datum.
+No declaration calls a base-class initializer.
+If several structural paths reach one implementation owner, controlled C3 contributes one shared occurrence and the other paths do not cause second initialization or competing public image construction.
+Route preference, wherever needed, remains the declaration-order rule of D56 rather than a second C3-specific rule.
+Any private execution record or cached class data remains implementation-only and cannot become a second leaf-authored description of a functor action.
 
-## Diamond diagnostics and future coherence
+## Diamond diagnostics and coherence {#diamond-diagnostics-and-future-coherence}
 
-Every diamond in the owned structure-functor graph is accepted. Until the owned theory
-explicitly supplies coherence between the relevant composites, the kernel emits a
-`DEBUG`-level diagnostic identifying the unresolved diamond. If the diagnostic names a
-preferred path, it uses D56's declaration order. Debugging is opt-in: the same condition
-is never a warning or compilation failure.
+A repeated target in the owned structure-functor graph still contributes one runtime implementation owner through controlled C3. Declaration order selects the preferred initialization path; it is not evidence that another path is interchangeable with it.
 
-The core compiler requires only this diagnostic and the once-only C3 behavior. A later kernel extension
-can consume ordinary owned 2-morphism data between the composite functors and suppress the
-diagnostic for that diamond. That future mechanism must reuse the natural-transformation
-machinery of `Fun`; it must not add a coherence certificate, proof record, route registry,
-or second functor declaration. No public hook spelling or exact 2-cell property is fixed in
-the core compiler.
+The compiler forms the actual composite functors represented by competing inheritance paths and consumes ordinary retained 2-morphism data between those exact composites.
+If exactly one retained invertible natural transformation has executable components, the preferred target image is initialized once and the alternate object action is evaluated afterward; the comparison component must have the preferred image as its domain and the alternate image as its codomain.
+Thus differing representations are related by the supplied natural isomorphism rather than silently identified.
+
+A missing, merely formal, or non-unique executable comparison leaves the declaration-order path in place and emits an opt-in `DEBUG` diagnostic naming the competing composites, the affected inherited initialization, and the required comparison category.
+An executable comparison whose component has the wrong boundary fails at that natural-transformation component boundary.
+None of this introduces a coherence certificate, proof record, route registry, or second functor declaration: comparison discovery reads the ordinary retained `Mor(Fun(C, D))` values and their retained inverses.
 
 ## Runtime categories and caches
 
@@ -210,7 +178,9 @@ In particular, use `Mor(C).ObjectType = C.MorphismType`.
 Use Sage cache facilities according to key equality:
 
 - use `CachedRepresentation`, `UniqueRepresentation`, and `cached_method` for ordinary exact keys;
+
 - use `MonoDict` and `TripleDict` for identity tables, or Sage cached functions and methods with `kernel.retention.identity_key` for constructors whose arguments have proposition-valued equality;
+
 - use `dynamic_class(..., cache=True)` for a class built directly by the kernel.
 
 These caches preserve runtime identity only.
@@ -218,59 +188,42 @@ They do not own mathematical equality or categorical structure.
 
 ### Construction retention versus Sage representation caches
 
-Sage's ``CachedRepresentation`` is a weak cache of *class construction calls*: its
-cache key is formed from constructor arguments and compares those arguments by their
-ordinary equality and hash. ``UniqueRepresentation`` adds ``WithEqualityById`` to that
-contract, so instances compare equal exactly when they are identical. Neither is a
-replacement for the kernel's construction-retention tables.
+Sage's `CachedRepresentation` is a weak cache of *class construction calls*: its cache key is formed from constructor arguments and compares those arguments by their ordinary equality and hash.
+`UniqueRepresentation` adds `WithEqualityById` to that contract, so instances compare equal exactly when they are identical.
+Neither is a replacement for the kernel's construction-retention tables.
 
 The distinction is concrete here:
 
-- ``construction._object_inputs``, ``_element_inputs``, and ``_morphism_inputs`` are
-  provenance registries for values that already exist. Refinement and exact-category
-  augmentation later recover the original root datum from the same value in order to
-  initialize newly reached role nodes. The value's compiled Python class may have been
-  rebuilt or replaced by then. A class-call cache does not provide this post-construction
-  provenance, and ``UniqueRepresentation`` would additionally contradict the public
-  category-owned ``__eq__``, which returns a proposition and can identify distinct
-  instances mathematically.
-- ``construction._objects_by_owned_datum`` and ``_objects_by_datum`` implement D111's
-  one-object-per-datum rule *for an owned category*, independently of the current dynamic
-  ``ObjectType`` class. Recompilation can replace that class while the already retained
-  object must remain canonical. For an owned datum, D111 also requires identity rather
-  than its proposition-valued mathematical equality. ``CachedRepresentation`` is
-  class-local and equality/hash-keyed, so using it would change both persistence and key
-  semantics.
-- ``compiler._runtime_categories`` and ``_node_runtimes`` map owned category identities
-  to runtime metadata that is deliberately rebuilt or replaced. Sage already owns the
-  actual dynamic-class identity through ``dynamic_class(..., cache=True)``; these maps are
-  not duplicate instance constructors.
-- ``FunctorImageCache`` retains the chosen action image of an already-existing source
-  object or morphism. Its identity key is required because two mathematically equal
-  owned values can still be distinct inputs whose retained functor images must not be
-  silently merged.
-- ``predicates._atoms`` maps an existing owned value to the private SymPy atom for its
-  *current* semantic class. Refinement can change that class in place, and the atom is
-  then replaced while still resolving to the same value. A constructor-representation
-  cache cannot express that replacement lifecycle.
+- `construction._object_inputs`, `_element_inputs`, and `_morphism_inputs` are provenance registries for values that already exist.
+  Refinement and exact-category augmentation later recover the original root datum from the same value in order to initialize newly reached role nodes.
+  The value's compiled Python class may have been rebuilt or replaced by then.
+  A class-call cache does not provide this post-construction provenance, and `UniqueRepresentation` would additionally contradict the public category-owned `__eq__`, which returns a proposition and can identify distinct instances mathematically.
 
-There are also construction paths that intentionally do not pass through an ordinary
-class call: the ``Cat()`` bootstrap allocates its provisional value with ``__new__``
-directly, staged categories are allocated before declaration completion, and exact
-implementations can replace a retained category's ``__class__`` in place. Therefore no
-kernel invariant may depend on ``ClasscallMetaclass`` having mediated every retained
-value. Engine-backed leaves add a second separation: the owned value and the external
-native object are constructed on opposite sides of the adapter and associated only after
-the owned value exists.
+- `construction._objects_by_owned_datum` and `_objects_by_datum` implement D111's one-object-per-datum rule *for an owned category*, independently of the current dynamic `ObjectType` class.
+  Recompilation can replace that class while the already retained object must remain canonical.
+  For an owned datum, D111 also requires identity rather than its proposition-valued mathematical equality.
+  `CachedRepresentation` is class-local and equality/hash-keyed, so using it would change both persistence and key semantics.
+
+- `compiler._runtime_categories` and `_node_runtimes` map owned category identities to runtime metadata that is deliberately rebuilt or replaced.
+  Sage already owns the actual dynamic-class identity through `dynamic_class(..., cache=True)`; these maps are not duplicate instance constructors.
+
+- `FunctorImageCache` retains the chosen action image of an already-existing source object or morphism.
+  Its identity key is required because two mathematically equal owned values can still be distinct inputs whose retained functor images must not be silently merged.
+
+- `predicates._atoms` maps an existing owned value to the private SymPy atom for its *current* semantic class.
+  Refinement can change that class in place, and the atom is then replaced while still resolving to the same value.
+  A constructor-representation cache cannot express that replacement lifecycle.
+
+There are also construction paths that intentionally do not pass through an ordinary class call: the `Cat()` bootstrap allocates its provisional value with `__new__` directly, staged categories are allocated before declaration completion, and exact implementations can replace a retained category's `__class__` in place.
+Therefore no kernel invariant may depend on `ClasscallMetaclass` having mediated every retained value.
+Engine-backed leaves add a second separation: the owned value and the external native object are constructed on opposite sides of the adapter and associated only after the owned value exists.
 
 For ordinary exact, instance-local memoization, use Sage's cache machinery directly.
-In particular, ``SchemesCategory.affine()`` is a ``cached_method``; it does not maintain a
-parallel ``MonoDict``.
+In particular, `SchemesCategory.affine()` is a `cached_method`; it does not maintain a parallel `MonoDict`.
 
 `kernel.retention` completes mutually identified constructions after registering their identities.
 A staged category first receives its local state, runtime roles, and placement.
-The kernel then reads all pending declarations and compiles their selected targets before their sources, using Python's `TopologicalSorter`.
-`Cat` supplies each construction and its required identity relations, including opposite involutions and intersection identifications.
+The kernel then reads all pending declarations and compiles their selected targets before their sources, using Python's `TopologicalSorter`. `Cat` supplies each construction and its required identity relations, including opposite involutions and intersection identifications.
 The kernel resolves chains of declared role identities through `role_source`; this includes shared objects and the morphism tower.
 
 The kernel also installs a category implementation on its retained declaration.
@@ -279,10 +232,8 @@ It runs the implementing class's ordinary initializer before recompiling the rol
 ## Properties and constructions
 
 Use Sage `CategoryWithAxiom` and `_base_category_class_and_axiom` for private property-class binding.
-The public declaration this binding realizes is the identity structure functor the implementing class selects ([functor.md](functor.md#implementing-a-named-category); D156).
-Use Sage `uncamelcase(identifier, "_")` when an axiom identifier needs snake case.
-The owned predicate meaning stays with the property category that declares it (D142, `undecidable-properties.md` "each predicate meaning has one mathematical owner"); `Cat` owns the inverse images; the property category and its subcategory monomorphism are built by `cat_kernel` from the axiom declaration (D148, D175).
-Its public predicate class, applied proposition, assumptions, and exact proposition dispatch use SymPy.
+The public declaration this binding realizes is the identity structure functor the implementing class selects ([functor.md](functor.md#implementing-a-named-category); D156). Use Sage `uncamelcase(identifier, "_")` when an axiom identifier needs snake case.
+The owned predicate meaning stays with the property category that declares it (D142, `undecidable-properties.md` "each predicate meaning has one mathematical owner"); `Cat` owns the inverse images; the property category and its subcategory monomorphism are built by `cat_kernel` from the axiom declaration (D148, D175). Its public predicate class, applied proposition, assumptions, and exact proposition dispatch use SymPy.
 Private identity atoms recover owned values inside exact SymPy handlers.
 Typed-query dispatch remains separate and private.
 
@@ -305,8 +256,7 @@ Do not force an abstract category object to become a Sage `Parent`.
 
 ## Declarations and signatures
 
-Read ordinary Python declarations and generated stubs with Python 3.14 `ast`.
-Migration codemods use LibCST when they must preserve source formatting.
+Read ordinary Python declarations and generated stubs with Python 3.14 `ast`. Migration codemods use LibCST when they must preserve source formatting.
 Use ordinary declared functions for fixed wrappers.
 Use Sage introspection and wrapt for residual callable, descriptor, and signature behavior.
 
@@ -320,31 +270,50 @@ It does not decide whether two unrelated mathematical owners can use one public 
 
 Keep one semantic collision check.
 Reject a compiled class when unrelated declaring categories define different mathematical operations with the same public name.
-A declaration's instance-attribute names are its other spelling, so reject a constructed value when unrelated declaring categories write one attribute name on it (`POL-API-024`, D178).
-Do not use selection order to resolve that conflict.
+A declaration's instance-attribute names are its other spelling, so reject a constructed value when unrelated declaring categories write one attribute name on it (`POL-API-024`, D178). Do not use selection order to resolve that conflict.
 
 ## Acceptance conditions
 
 The private runtime satisfies this specification when:
 
 - Sage constructs each owned implementation class from local methods and inheritance-carrying immediate targets;
+
 - the same mechanism handles objects, elements, and morphisms;
+
 - both branches of a class diamond contribute their local methods;
+
 - a shared target class occurs once and initializes once;
+
 - unresolved owned structural diamonds compile and appear only in opt-in `DEBUG` logs;
+
 - local declarations take precedence;
+
 - inherited methods run directly on the source value;
+
 - public functor application returns its separate owned image;
+
 - the kernel initializes each inherited implementation from its structure functor's object action, and no declaration calls a base-class initializer;
+
 - a selected point functor places its object and supplies the codomain's surfaces through the exact categorical level shift;
+
 - the private Sage implementation graph remains distinct from Sage's mathematical category graph;
+
 - temporary runtime data has no public mathematical effect;
+
 - unrelated mathematical declarations with one spelling, a public method name or an instance-attribute name, fail as a semantic collision;
+
 - theory modules import no private runtime type;
+
 - the kernel supplies inherited element construction and object retention, `Cat` supplies identity and composition, and `cat_kernel` supplies axiom-subcategory routing with the predicates it generates, so no leaf carries a shape listed in [`leaves.md`](leaves.md) "Red flags" (D133, D173, D175);
+
 - every method a kernel module defines on a role class is on the closed surface below, and the kernel imports no module of `Cat` (D173);
+
 - public engine values are limited to authorized SymPy proposition expressions;
+
 - their nested identity atoms expose no independent public API;
+
 - every fixed dependency owns only its assigned private responsibility;
+
 - each category-specific computation adapter reconstructs the exact owned mathematical result;
+
 - proposition construction and evaluation return the authorized SymPy and Sage results.

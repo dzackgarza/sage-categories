@@ -605,10 +605,14 @@ The private Sage runtime mirror gives those targets to controlled C3, which plac
 Declaration order remains the existing preference rule of D56 wherever a path preference is required.
 
 Coherence of a diamond is mathematical information about the relevant composite functors.
-Its absence is not a compiler failure.
-Until explicit owned coherence is supplied, the kernel reports the diamond only through opt-in `DEBUG` logging and continues with the single controlled-C3 implementation occurrence.
-A future extension can let theory code supply an actual 2-morphism, using the ordinary natural-transformation machinery of `Fun`, to mark the composites as coherent and silence that diagnostic.
-This extension must not introduce a proof record, certificate, route registry, or second functor declaration; its exact spelling is deferred.
+Its absence is not by itself a compiler failure.
+The compiler forms the two retained composite functors and reads ordinary invertible natural transformations between their exact endpoints.
+When exactly one such comparison has executable components, the declaration-order path remains the once-only initializer and the comparison component transports its object image to the alternate path's image.
+The component is checked in the exact target Hom, so an ill-typed supplied comparison fails where that component is interpreted.
+
+If no executable comparison is retained, if the retained comparison is formal only, or if several executable comparisons leave the choice ambiguous, the kernel keeps the preferred path and reports the unresolved boundary through opt-in `DEBUG` logging.
+The diagnostic names the competing composites, the affected inherited initialization and the required comparison category.
+Comparison data are ordinary morphisms of `Fun`; there is no proof record, certificate, route registry, or second functor declaration.
 
 ### `C.ObjectType`, `C.ElementType`, and `C.MorphismType`
 
@@ -702,8 +706,7 @@ The compiler projector is the sole consumer of this model.
 It derives every `.pyi` symbol from the authoritative category declarations, selected structure functors, and the compiler's declared inheritance computation.
 No source module maintains a parallel hand-written type graph; generated stubs are output-only and do not become semantic authority (`POL-TYPE-025`, `POL-TYPE-026`).
 
-An adjacent stub is emitted only for a module that owns a compiler-built category declaration with its `ObjectType`, `ElementType`, and `MorphismType`.
-The projector may build temporary syntax stubs for other modules while computing that output, but it deletes them before publishing the projection so ordinary Python bodies remain visible to mypy.
+An adjacent stub is emitted only for a module that owns a compiler-built category declaration with its `ObjectType`, `ElementType`, and `MorphismType`. The projector may build temporary syntax stubs for other modules while computing that output, but it deletes them before publishing the projection so ordinary Python bodies remain visible to mypy.
 This boundary is measured rather than assumed: checking `algebra/free_associative.py` directly exposed body diagnostics that disappeared when its old adjacent stub shadowed the module, so a package-wide `.pyi` mirror would hide source obligations instead of projecting only dynamic category semantics.
 
 ## Category classes and category-valued families
@@ -1115,8 +1118,7 @@ This follows the standard cone-category description in [Mathlib, cone categories
 Cocones and colimit cocones derive through `Op`.
 
 For fixed `I`, the total category of limiting cones has a diagram projection to `Fun(I, C)` and an apex functor to `C`. A chosen limit functor is a section of the diagram projection followed by the apex functor.
-Such a section requires a chosen limiting presentation for every diagram in `Fun(I, C)`.
-The category of presentations exists independently of that choice.
+Such a section requires a chosen limiting presentation for every diagram in `Fun(I, C)`. The category of presentations exists independently of that choice.
 Thus the diagram, universal presentation, and apex are three distinct objects.
 The fiber of the apex functor over `X` is the category of limiting presentations with apex `X`.
 
@@ -1145,9 +1147,7 @@ Code that must select among presentations uses `p.leg(i)`. A category-owned stan
 
 For a point `x: * -> p.apex()`, its component at `i` is the composite `p.leg(i) after x`. This construction belongs to the selected product presentation.
 
-`C.Limits(I)` and `C.Colimits(I)` are intrinsic families for the supplied category `C` and shape `I`.
-Their universal properties quantify over cones and cocones in `C`.
-For a full subcategory `D` of `C`, `D.Limits(I)` and `D.Colimits(I)` retain `D` as their ambient category.
+`C.Limits(I)` and `C.Colimits(I)` are intrinsic families for the supplied category `C` and shape `I`. Their universal properties quantify over cones and cocones in `C`. For a full subcategory `D` of `C`, `D.Limits(I)` and `D.Colimits(I)` retain `D` as their ambient category.
 Transporting a presentation along the inclusion requires the corresponding preservation or creation data.
 The named conveniences are instances:
 
@@ -1165,8 +1165,7 @@ Its induced morphisms come from the retained universal mediators.
 The colimit functor uses the dual construction.
 Supplying individual presentations retains their diagrams and maps independently of this total choice.
 
-Membership in an intrinsic family names its category explicitly: `C.Coproducts().membership_proposition(X)`.
-A shared object can have different universal properties in different full subcategories.
+Membership in an intrinsic family names its category explicitly: `C.Coproducts().membership_proposition(X)`. A shared object can have different universal properties in different full subcategories.
 The generic `X.is_coproducts()` query uses its declared base category, as described in [property refinement](property-refinement.md#property-category).
 
 For `F: C -> D`, the shape-indexed property categories

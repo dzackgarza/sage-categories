@@ -21,6 +21,7 @@ from sage_categories.cat.predicates import (
     Unknown,
     UnknownClass,
     ask,
+    assume,
     register_handler,
 )
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
@@ -62,6 +63,7 @@ __all__ = [
     "CategoryOfCategories",
     "OnMorphism",
     "OnObject",
+    "assume",
     "member",
 ]
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import logging
 from collections.abc import Callable, Iterator
-from itertools import count
+from itertools import count, pairwise
 from types import FunctionType, GenericAlias, ModuleType
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple, cast
 
@@ -191,7 +191,12 @@ class _RuntimeImplementationCategory(SageCategory):
 
     @property
     def _cmp_key(self) -> tuple[int, int, int, int]:
-        return (0, self._depth, _ROLE_POSITIONS[self._current.role], self._ordinal)
+        return (
+            0,
+            self._depth,
+            _ROLE_POSITIONS[self._current.role],
+            _declared_rank(self._current),
+        )
 
     @lazy_attribute
     def _depth(self) -> int:
@@ -247,6 +252,126 @@ _ROLE_POSITIONS: dict[Role, int] = {
 }
 
 _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
+
+_declared_ranks: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+_compiled_orders: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+
+
+def _declared_rank(current: Node) -> int:
+    """The declared-precedence rank supplied to Sage's controlled C3 comparison key."""
+    ranks = _declared_ranks[current.role]
+    assert current.category in ranks, f"{current.category!r}.{current.role.value} is not ranked"
+    return ranks[current.category]
+
+
+def _selected_in_role(category: Category, role: Role) -> list[Category]:
+    """The categories reached by inheritance-carrying selections in this role."""
+    return [target.category for _, target in successors(Node(category, role)) if target.role is role]
+
+
+def _ordered_in_role(category: Category, role: Role) -> list[Category]:
+    """The selected targets whose declaration order contributes precedence."""
+    return [target.category for functor, target in successors(Node(category, role)) if target.role is role and not _refinement().traces_placement(functor)]
+
+
+def _rank_declaration(category: Category, role: Role) -> None:
+    """Extend the role's controlled-C3 total order by one declared selection."""
+    ranks = _declared_ranks[role]
+    reached = _ordered_in_role(category, role)
+    if category not in ranks and all(ahead in ranks and behind in ranks and ranks[ahead] > ranks[behind] for ahead, behind in pairwise(reached)):
+        ranks[category] = 1 + max((rank for _, rank in ranks.items()), default=0)
+        return
+    _declared_ranks[role] = _rank_declarations(role, (category,))
+
+
+def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict:
+    """Rank structural owners while preserving declaration precedence where compatible.
+
+    Sage's controlled C3 remains the sole linearizer.  This function supplies its total
+    comparison order: structural edges outrank their targets, and an ordered selected
+    list adds precedence relations between otherwise unordered targets (D56, D165-D167).
+    Existing ranks break ties so later declarations do not gratuitously reorder owners.
+    """
+    incoming: MonoDict = MonoDict()
+    ordered: MonoDict = MonoDict()
+
+    def expand(category: Category) -> None:
+        if category in incoming:
+            return
+        incoming[category] = []
+        ordered[category] = _ordered_in_role(category, role)
+        for target in _selected_in_role(category, role):
+            expand(target)
+            incoming[target].append(category)
+
+    for root in (*roots, *(category for category, _ in _runtime_categories[role].items())):
+        expand(root)
+
+    def outranks(source: Category, category: Category) -> bool:
+        frontier = [category]
+        seen: MonoDict = MonoDict()
+        while frontier:
+            for above in incoming[frontier.pop()]:
+                if above is source:
+                    return True
+                if above in seen:
+                    continue
+                seen[above] = None
+                frontier.append(above)
+        return False
+
+    # Every C3 chain already used to construct a Sage runtime class is immutable. Feed
+    # those pairwise relations back into subsequent rank recomputations so a later
+    # declaration can refine previously-unordered owners but cannot make an existing
+    # cached superclass list cease to be sorted by the comparison key.
+    for behind, above in _compiled_orders[role].items():
+        if behind in incoming:
+            incoming[behind].extend(ahead for ahead in above if ahead in incoming)
+
+    preferred = _declared_ranks[role]
+    declaring = [category for category, _ in ordered.items()]
+    declaring.sort(key=lambda category: category.ordinal())
+    for category in declaring:
+        for ahead, behind in pairwise(ordered[category]):
+            if ahead in preferred and behind in preferred and preferred[ahead] > preferred[behind]:
+                continue
+            if not outranks(behind, ahead):
+                incoming[behind].append(ahead)
+
+    unranked = 1 + sum(1 for _ in incoming.items())
+    pending = [category for category, _ in incoming.items()]
+
+    def previous_rank(category: Category) -> int:
+        match category in preferred:
+            case True:
+                return preferred[category]
+            case False:
+                return unranked
+
+    pending.sort(
+        key=lambda category: (
+            previous_rank(category),
+            category.ordinal(),
+        ),
+        reverse=True,
+    )
+    ranked: list[Category] = []
+    placed: MonoDict = MonoDict()
+
+    def place(category: Category) -> None:
+        if category in placed:
+            return
+        placed[category] = None
+        for source in incoming[category]:
+            place(source)
+        ranked.append(category)
+
+    for category in pending:
+        place(category)
+    ranks: MonoDict = MonoDict()
+    for position, category in enumerate(ranked):
+        ranks[category] = len(ranked) - position
+    return ranks
 
 
 def node(category: Category, role: Role) -> Node:
@@ -538,6 +663,16 @@ def _compiled_class(current: Node) -> type[CategoryPoint]:
     with building_role_classes():
         compiled = _runtime_category(current).parent_class
     _install_written_body(compiled, current.category.local_role_class(current.role))
+    fixed = _compiled_orders[current.role]
+    chain = [
+        current.category,
+        *(owner.category for owner in _linearized_nodes(current) if owner.role is current.role),
+    ]
+    for ahead, behind in pairwise(chain):
+        if behind not in fixed:
+            fixed[behind] = []
+        if not any(known is ahead for known in fixed[behind]):
+            fixed[behind].append(ahead)
     return compiled
 
 
@@ -1454,6 +1589,10 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         assert open_codomain is None, f"{category!r} selects {functor!r} into {open_codomain}, which Cat declares and no implementation claims"
     assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), f"{category!r} selects one functor twice"
     _debug_unresolved_diamonds(category)
+    for role in Role:
+        declaring = node(category, role)
+        if declaring.role is role:
+            _rank_declaration(declaring.category, role)
     for role in _COMPILE_ORDER:
         current = node(category, role)
         if current.category is not category:

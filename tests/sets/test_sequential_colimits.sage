@@ -1,7 +1,7 @@
 from sympy import Q
 
 from sage_categories import omega
-from sage_categories.all import Fun, Mor, Sets, Unknown, ask
+from sage_categories.all import NN, Fun, Mor, Sets, Unknown, ask
 from sage_categories.cat.cones import cocone, cocones
 
 integers = Sets.from_membership(lambda value: Q.integer(value))
@@ -49,12 +49,13 @@ at_seven = data.leg(7)(integers.point(12))
 at_seven_shifted = data.leg(7)(integers.point(13))
 assert induced_shift.domain() is colimit
 assert induced_shift.codomain() is colimit
+assert ask(induced_shift == induced_shift) is True
 assert ask(at_four == at_seven) is True
 assert ask(induced_shift(at_four) == at_four_shifted) is True
 assert ask(induced_shift(at_seven) == at_seven_shifted) is True
 assert ask(induced_shift(at_four) == induced_shift(at_seven)) is True
 for stage_index in (4, 7):
-    vertex = omega(stage_index)
+    vertex = omega(NN.point(stage_index))
     assert ask(
         induced_shift * data.leg(vertex)
         == data.leg(vertex) * shift.component(vertex)

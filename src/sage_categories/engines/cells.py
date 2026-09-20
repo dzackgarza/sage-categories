@@ -64,7 +64,19 @@ def native_object(owner: Category, value: object) -> homotopy.Cell:
     owner = owner.construction_owner()
     match owner:
         case MorphismCategory():
-            return native_cell(owner.base_category(), value)
+            # ``Fun = Mor(Cat())`` admits the ordinary values that denote diagrams:
+            # a morphism of ``C`` is an object of ``Fun([1], C)`` and an object of
+            # ``C`` is an object of ``Fun(1, C)``.  Those public objects remain the
+            # endpoints of a natural transformation, while homotopy-core's 1-cell
+            # boundary is the Cat morphism they denote.  Normalize only at this
+            # private native boundary; every other Mor(C) object is already a
+            # literal morphism of C.
+            from sage_categories.cat.functors import Fun, diagram_of
+
+            return native_cell(
+                owner.base_category(),
+                diagram_of(value) if owner is Fun else value,
+            )
         case Category():
             pass
     state = _state(owner)

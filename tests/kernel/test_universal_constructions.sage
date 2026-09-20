@@ -1,11 +1,21 @@
 """Presented pushouts and pointwise Kan universal maps through public consumers."""
 
-from sage_categories.all import Cat, Fun, Mor, ask
-from sage_categories.cat.cones import cocone
-from sage_categories.all import left_kan_extension, left_kan_unit, left_kan_desc
-from sage_categories.all import right_kan_extension, right_kan_counit, right_kan_lift
-from sage_categories.cat.diagrams import span_diagram
+from sage_categories.all import (
+    Cat,
+    Fun,
+    Mor,
+    ask,
+    left_kan_desc,
+    left_kan_extension,
+    left_kan_unit,
+    right_kan_counit,
+    right_kan_extension,
+    right_kan_lift,
+)
 from sage_categories.cat.canonical import FinitePresentedCategory
+from sage_categories.cat.cones import cocone, cone
+from sage_categories.cat.diagrams import span_diagram
+from sage_categories.cat.functors import Functor
 
 
 def test_pushout_composes_arrows_from_both_factors() -> None:
@@ -85,6 +95,42 @@ def test_coequalizer_identifies_functor_images_of_a_generator() -> None:
     assert injection.on_object(group(0)) in quotient
 
 
+def test_distinct_diagrams_keep_distinct_presentations_on_one_apex() -> None:
+    shape = Cat().Simplex(0)
+    terminal = Cat().Terminal()
+    apex = terminal(0)
+    identity = Mor(terminal)(apex, apex).one()
+
+    def diagram() -> Functor:
+        return Fun(shape, terminal)(
+            lambda _vertex: apex,
+            lambda _arrow: identity,
+        )
+
+    first, second = diagram(), diagram()
+    assert first is not second
+    family = terminal.Limits(shape)
+
+    for selected in (first, second):
+        family.with_universal_data(
+            selected,
+            apex,
+            cone(selected, apex, lambda _vertex: identity),
+            lambda _candidate: identity,
+        )
+
+    assert family.presenting_diagrams(apex) == (first, second)
+    assert family.universal_data(first).diagram() is first
+    assert family.universal_data(second).diagram() is second
+    try:
+        family.presentation(apex)
+    except AssertionError as error:
+        assert "read the universal data at the diagram" in str(error)
+    else:
+        raise AssertionError("one apex with two diagrams acquired an ambiguous presentation")
+
+
 test_pushout_composes_arrows_from_both_factors()
 test_kan_maps_factor_nonidentity_transformations()
 test_coequalizer_identifies_functor_images_of_a_generator()
+test_distinct_diagrams_keep_distinct_presentations_on_one_apex()

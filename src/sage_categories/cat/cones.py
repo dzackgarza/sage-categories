@@ -5,7 +5,12 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from types import ModuleType
 
-from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.category import (
+    Category,
+    CategoryOfCategories,
+    retain_deferred_universal_composite,
+    retain_universal_composite,
+)
 from sage_categories.cat.comma import CommaSpecialization
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
@@ -13,7 +18,7 @@ from sage_categories.cat.predicates import Axiom, ask
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_function, cached_method
+from sage_categories.kernel.sage_runtime import MonoDict, cached_function, cached_method
 
 __all__ = [
     "ConeCategory",
@@ -31,6 +36,74 @@ __all__ = [
 
 type Components = Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
 type Lift = Callable[[ConeCategory.ObjectType], MorphismCategory.ObjectType]
+
+
+_PRESENTATION_LEGS: MonoDict = MonoDict()
+_PRESENTATION_FACTORS: MonoDict = MonoDict()
+
+
+def _is_cocone_presentation(presentation: ConeCategory.ObjectType) -> bool:
+    """Whether ``presentation`` belongs to the cocone orientation of its cone category."""
+    return presentation.category().narrowing_base()._dual
+
+
+def _retain_universal_equation(
+    presentation: ConeCategory.ObjectType,
+    candidate: ConeCategory.ObjectType,
+    mediator: MorphismCategory.ObjectType,
+    vertex: CategoryOfCategories.ElementType,
+    leg: MorphismCategory.ObjectType,
+) -> None:
+    """Retain the one leg equation selected by a universal factorization."""
+
+    def component() -> MorphismCategory.ObjectType:
+        result = candidate.leg(vertex)
+        transformation = candidate.transformation()
+        match transformation.is_composite():
+            case True:
+                first, second = transformation.factors()
+                retain_universal_composite(
+                    second.component(vertex),
+                    first.component(vertex),
+                    result,
+                )
+            case False:
+                pass
+        return result
+
+    match _is_cocone_presentation(presentation):
+        case True:
+            retain_deferred_universal_composite(mediator, leg, component)
+        case False:
+            retain_deferred_universal_composite(leg, mediator, component)
+
+
+def _retain_presentation_leg(
+    presentation: ConeCategory.ObjectType,
+    vertex: CategoryOfCategories.ElementType,
+    leg: MorphismCategory.ObjectType,
+) -> None:
+    """Retain one requested leg and all universal equations already known at it."""
+    legs = _PRESENTATION_LEGS[presentation] if presentation in _PRESENTATION_LEGS else ()
+    if not any(known_vertex is vertex and known_leg is leg for known_vertex, known_leg in legs):
+        _PRESENTATION_LEGS[presentation] = (*legs, (vertex, leg))
+    factors = _PRESENTATION_FACTORS[presentation] if presentation in _PRESENTATION_FACTORS else ()
+    for candidate, mediator in factors:
+        _retain_universal_equation(presentation, candidate, mediator, vertex, leg)
+
+
+def _retain_factorization(
+    presentation: ConeCategory.ObjectType,
+    candidate: ConeCategory.ObjectType,
+    mediator: MorphismCategory.ObjectType,
+) -> None:
+    """Retain one universal factor and its equations at every leg already requested."""
+    factors = _PRESENTATION_FACTORS[presentation] if presentation in _PRESENTATION_FACTORS else ()
+    if not any(known_candidate is candidate and known_mediator is mediator for known_candidate, known_mediator in factors):
+        _PRESENTATION_FACTORS[presentation] = (*factors, (candidate, mediator))
+    legs = _PRESENTATION_LEGS[presentation] if presentation in _PRESENTATION_LEGS else ()
+    for vertex, leg in legs:
+        _retain_universal_equation(presentation, candidate, mediator, vertex, leg)
 
 
 def _opposites() -> ModuleType:
@@ -120,7 +193,10 @@ class ConeCategory(CommaSpecialization):
             self,
             index: CategoryOfCategories.ElementType | Hashable,
         ) -> MorphismCategory.ObjectType:
-            return self.arrow().component(vertex_of(self.diagram().domain(), index))
+            vertex = vertex_of(self.diagram().domain(), index)
+            leg = self.arrow().component(vertex)
+            _retain_presentation_leg(self, vertex, leg)
+            return leg
 
         def transformation(self) -> NaturalTransformation:
             return self.arrow()
@@ -199,7 +275,9 @@ class LimitConesCategory(PropertySubcategory[[MorphismCategory.ObjectType], []])
 
         def lift(self, candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
             assert candidate.diagram() is self.diagram()
-            return self._cone_lift(candidate)
+            mediator = self._cone_lift(candidate)
+            _retain_factorization(self, candidate, mediator)
+            return mediator
 
     class ElementType:
         """A generalized element of a limiting cone."""

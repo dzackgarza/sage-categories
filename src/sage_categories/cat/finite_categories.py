@@ -218,17 +218,22 @@ def _arrows(category: FunctorCategory) -> FiniteCategoryData | UnknownClass:
 
 def _reconstruct_limit_family(
     category: LimitCategory,
+    vertices: tuple[CategoryOfCategories.ElementType, ...],
     object_components: tuple[tuple[object, ...], ...],
     morphism_components: tuple[tuple[object, ...], ...],
 ) -> FiniteCategoryData:
-    """Reconstruct owned limit objects and arrows from their finite component families."""
-    objects = tuple(category(components) for components in object_components)
+    """Reconstruct owned limit objects and arrows from components indexed by the finite shape vertices."""
+
+    def component_rule[Value](components: tuple[Value, ...]):
+        return lambda vertex: components[position(vertices, vertex)]
+
+    objects = tuple(category.from_components(component_rule(components)) for components in object_components)
     by_components = {identity_key(*components): value for components, value in zip(object_components, objects, strict=True)}
     morphisms = tuple(
-        category.construct_morphism(
+        category.morphism_from_components(
             by_components[identity_key(*(component.domain() for component in components))],
             by_components[identity_key(*(component.codomain() for component in components))],
-            components,
+            component_rule(components),
         )
         for components in morphism_components
     )
@@ -254,7 +259,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
             tuple(factor.objects for factor in concrete_factors),
             tuple(factor.morphisms for factor in concrete_factors),
         )
-        return _reconstruct_limit_family(category, object_components, morphism_components)
+        return _reconstruct_limit_family(category, vertices, object_components, morphism_components)
 
     category_limits = _category_limits_engine()
     concrete_factors = tuple(factor for factor in factors if factor is not Unknown)
@@ -273,7 +278,7 @@ def _limit(category: LimitCategory) -> FiniteCategoryData | UnknownClass:
         lambda arrow, value: diagram.on_morphism(arrow).on_morphism(value),
         position,
     )
-    return _reconstruct_limit_family(category, object_components, morphism_components)
+    return _reconstruct_limit_family(category, vertices, object_components, morphism_components)
 
 
 def _slice(category: object) -> FiniteCategoryData | UnknownClass:

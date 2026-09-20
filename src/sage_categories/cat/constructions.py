@@ -58,6 +58,7 @@ from sage_categories.cat.cones import (
     LimitConesCategory,
     cocone,
     cocone_apex,
+    cocones,
     colimit_cocones,
     cone,
     cone_apex,
@@ -84,7 +85,7 @@ from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_fun
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
-    from sage_categories.cat.universal_arrows import RightUniversalArrows
+    from sage_categories.cat.universal_arrows import LeftUniversalArrows, RightUniversalArrows
 
 __all__ = [
     "ApexCategory",
@@ -990,8 +991,8 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
 
     @cached_method
     def colimit_functor(self) -> Functor:
-        """``Colim_I: Fun(I, C) -> C``, derived from the opposite limit functor."""
-        functor = self._dual_limits.limit_functor().op() * self._duality.forward()
+        """``Colim_I: Fun(I, C) -> C``, derived from the retained public cocones."""
+        functor = colimit_functor(self)
         _register_construction_full_image(functor, self)
         if self._shape.is_discrete():
             self.ambient().Coproducts().retain_full_image(self)
@@ -1109,6 +1110,11 @@ def limit_functor(family: Category) -> Functor:
     return _limit_universal_arrows(family).functor()
 
 
+def colimit_functor(family: Category) -> Functor:
+    """The left adjoint to the diagonal, from initial cocone presentations."""
+    return _colimit_universal_arrows(family).functor()
+
+
 @cached_function(key=identity_key)
 def _limit_universal_arrows(family: Category) -> RightUniversalArrows:
     from sage_categories.cat.comma import comma_objects
@@ -1138,6 +1144,34 @@ def _limit_universal_arrows(family: Category) -> RightUniversalArrows:
         )
 
     return RightUniversalArrows(diagonal, choose)
+
+
+@cached_function(key=identity_key)
+def _colimit_universal_arrows(family: Category) -> LeftUniversalArrows:
+    from sage_categories.cat.comma import comma_objects
+    from sage_categories.cat.universal_arrows import InitialObjects, LeftUniversalArrows
+
+    family.ambient().colimit_construction(family.shape())
+    diagonal = family.diagrams().diagonal()
+
+    def choose(diagram: Functor) -> CategoryOfCategories.ElementType:
+        family(diagram)
+        presentation = family.universal_data(diagram)
+        comma = comma_objects(family.diagrams().point_functor(diagram), diagonal)
+        star = Cat().Terminal()(0)
+        value = comma.from_arrow(star, presentation.apex(), presentation.transformation())
+        star_identity = Cat().Terminal().morphism_category(1)(star, star).one()
+        return InitialObjects(comma)(
+            value,
+            lambda candidate: comma.morphism_from_pair(
+                value,
+                candidate,
+                star_identity,
+                presentation.lift(cocones(diagram)(candidate.arrow())),
+            ),
+        )
+
+    return LeftUniversalArrows(diagonal, choose)
 
 
 def limit_adjunction(family: Category) -> CategoryOfCategories.ElementType:

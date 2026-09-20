@@ -81,8 +81,9 @@ def ensure_native_functor(functor: MorphismCategory.ObjectType) -> object:
         return retained_native_functor(functor).native
     source, target = functor.domain(), functor.codomain()
     bridge = _bridge()
-    base = functor.base_category()
-    if is_placed(functor, base.morphism_category(1).Identity()):
+    from sage_categories.cat.functors import Cat
+
+    if is_placed(functor, Cat().morphism_category(1).Identity()):
         native = bridge.identity_functor(ensure_native_category(source))
     elif functor.is_composite():
         first, second = functor.factors()
@@ -148,6 +149,17 @@ def ensure_native_transformation(value: MorphismCategory.ObjectType) -> object:
             )
         case _:
             raise AssertionError(f"unknown Catlab transformation recipe {recipe!r}")
+    # Derived Catlab operations construct their own native composite functors.  The
+    # owned runtime, however, has one retained source/target functor for this exact
+    # transformation (including arrow- and point-backed objects of Fun(I,C)).  Rebind
+    # only the native boundary to those exact functors so subsequent Catlab vertical
+    # composition sees the same middle endpoint; component execution remains the
+    # transformation Catlab just constructed.
+    native = bridge.rebind_transformation(
+        native,
+        ensure_native_functor(value.source_functor()),
+        ensure_native_functor(value.target_functor()),
+    )
     retain_native_transformation(value, domain, codomain, native)
     return native
 

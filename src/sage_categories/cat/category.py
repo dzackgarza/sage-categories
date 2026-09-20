@@ -695,6 +695,9 @@ class CategoryDeclaration[
             return second
         if self._identity_morphism_.is_in_cache(second.domain()) and self._identity_morphism_(second.domain()) is second:
             return first
+        universal = _universal_composite(second, first)
+        if universal is not None:
+            return universal
         composite = self.composite(second, first)
         if first in self._inverses and second in self._inverses and composite not in self._inverses:
             self.retain_inverses(composite, self.composite(self._inverses[first], self._inverses[second]))
@@ -1401,6 +1404,72 @@ type LiftRule = Callable[
 # ``Cat()``: an explicit composite names its construction (``specs/functor.md``,
 # "Structural inheritance": a selected composite retains its factor functors).
 _composite_factors: MonoDict = MonoDict()
+
+# Exact composites forced by retained universal presentations. A limiting or colimiting
+# presentation supplies the equation between its mediator, each requested leg, and the
+# corresponding component of the competing cone/cocone. The cone owner records those
+# equations lazily, so infinite shapes never need to enumerate their vertices.
+_universal_composites: MonoDict = MonoDict()
+
+
+@dataclass(slots=True)
+class _DeferredUniversalComposite:
+    construct: Callable[[], MorphismCategory.ObjectType]
+    resolving: bool = False
+
+
+def retain_universal_composite(
+    second: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+    result: MorphismCategory.ObjectType,
+) -> None:
+    """Retain the universal reduction ``second * first = result`` on exact morphisms."""
+    assert first.codomain() is second.domain()
+    assert result.domain() is first.domain() and result.codomain() is second.codomain()
+    by_first = _universal_composites[second] if second in _universal_composites else MonoDict()
+    if first not in by_first:
+        by_first[first] = result
+        _universal_composites[second] = by_first
+    elif isinstance(by_first[first], _DeferredUniversalComposite):
+        by_first[first] = result
+
+
+def retain_deferred_universal_composite(
+    second: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+    construct: Callable[[], MorphismCategory.ObjectType],
+) -> None:
+    """Retain a universal reduction whose resulting component is computed on demand."""
+    assert first.codomain() is second.domain()
+    by_first = _universal_composites[second] if second in _universal_composites else MonoDict()
+    if first not in by_first:
+        by_first[first] = _DeferredUniversalComposite(construct)
+        _universal_composites[second] = by_first
+
+
+def _universal_composite(
+    second: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType | None:
+    """Return a retained universal reduction for this exact pair, when one exists."""
+    if second not in _universal_composites:
+        return None
+    by_first = _universal_composites[second]
+    if first not in by_first:
+        return None
+    retained = by_first[first]
+    if not isinstance(retained, _DeferredUniversalComposite):
+        return retained
+    if retained.resolving:
+        return None
+    retained.resolving = True
+    try:
+        result = retained.construct()
+    finally:
+        retained.resolving = False
+    assert result.domain() is first.domain() and result.codomain() is second.codomain()
+    by_first[first] = result
+    return result
 
 
 def retain_composite_factors(

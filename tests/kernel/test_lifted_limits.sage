@@ -6,13 +6,18 @@ from collections.abc import Callable, Hashable
 from itertools import product
 
 from sage_categories.all import Cat, Category, Fun, Mor
-from sage_categories.cat.cones import cone, cone_apex, cones, LimitConesCategory
+from sage_categories.cat.cones import LimitConesCategory, cone, cone_apex, cones
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Functor
+from sage_categories.cat.leaf_categories import (
+    FaithfulStructureCategory,
+    MorphismDataCategory,
+)
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.shapes import Discrete
 
 
-class FiniteSets(Category):
+class FiniteSets(MorphismDataCategory):
     """Finite sets and total maps, with the compatible-family limit construction."""
 
     class ObjectType:
@@ -26,17 +31,11 @@ class FiniteSets(Category):
         pass
 
     class MorphismType:
-        def __init__(self, data: object) -> None:
-            self._function = dict(data) if isinstance(data, tuple) else None
+        def __init__(self, data: tuple[tuple[Hashable, Hashable], ...]) -> None:
+            self._function = dict(data)
 
         def apply(self, value: Hashable) -> Hashable:
-            if self._function is not None:
-                return self._function[value]
-            if self.is_composite():
-                first, second = self.factors()
-                return second.apply(first.apply(value))
-            assert self.domain() is self.codomain()
-            return value
+            return self._function[value]
 
     def __call__(self, values: frozenset[Hashable]) -> FiniteSets.ObjectType:
         return self.ObjectType(values)
@@ -45,7 +44,17 @@ class FiniteSets(Category):
                            action: Callable[[Hashable], Hashable]) -> FiniteSets.MorphismType:
         pairs = tuple((value, action(value)) for value in source.values())
         assert all(image in target.values() for _, image in pairs)
-        return self.MorphismType(domain=source, codomain=target, data=pairs)
+        return self._morphism_from_data(source, target, pairs)
+
+    def _identity_data(self, member_object: FiniteSets.ObjectType) -> tuple[tuple[Hashable, Hashable], ...]:
+        return tuple((value, value) for value in member_object.values())
+
+    def _composite_data(
+        self,
+        second: MorphismCategory.ObjectType,
+        first: MorphismCategory.ObjectType,
+    ) -> tuple[tuple[Hashable, Hashable], ...]:
+        return tuple((value, second.apply(first.apply(value))) for value in first.domain().values())
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], FiniteSets.ObjectType]:
         # The compatible-family construction of limits in Set (Mac Lane, V.2).
@@ -69,7 +78,7 @@ class FiniteSets(Category):
         return construct
 
 
-class FinitePosets(Category):
+class FinitePosets(FaithfulStructureCategory):
     """Finite partial orders and monotone maps."""
 
     class ObjectType:
@@ -83,19 +92,11 @@ class FinitePosets(Category):
         pass
 
     class MorphismType:
-        def __init__(self, data: object) -> None:
-            self._written_underlying = data if isinstance(data, FiniteSets.MorphismType) else None
+        def __init__(self, underlying: MorphismCategory.ObjectType) -> None:
+            self._written_underlying = underlying
 
-        def underlying_map(self) -> FiniteSets.MorphismType:
-            if self._written_underlying is not None:
-                return self._written_underlying
-            source = self.domain()._poset_set
-            target = self.codomain()._poset_set
-            if self.is_composite():
-                first, second = self.factors()
-                return second.underlying_map() * first.underlying_map()
-            assert source is target
-            return Mor(self.category().base_category()._sets)(source, target).one()
+        def underlying_map(self) -> MorphismCategory.ObjectType:
+            return self._written_underlying
 
     def __init__(self, sets: FiniteSets) -> None:
         self._sets = sets
@@ -125,7 +126,7 @@ class FinitePosets(Category):
         return (forget,)
 
 
-class PointedFiniteSets(Category):
+class PointedFiniteSets(FaithfulStructureCategory):
     """Finite sets with a chosen point and maps preserving it."""
 
     class ObjectType:
@@ -139,19 +140,11 @@ class PointedFiniteSets(Category):
         pass
 
     class MorphismType:
-        def __init__(self, data: object) -> None:
-            self._written_underlying = data if isinstance(data, FiniteSets.MorphismType) else None
+        def __init__(self, underlying: MorphismCategory.ObjectType) -> None:
+            self._written_underlying = underlying
 
-        def underlying_map(self) -> FiniteSets.MorphismType:
-            if self._written_underlying is not None:
-                return self._written_underlying
-            source = self.domain()._pointed_set
-            target = self.codomain()._pointed_set
-            if self.is_composite():
-                first, second = self.factors()
-                return second.underlying_map() * first.underlying_map()
-            assert source is target
-            return Mor(self.category().base_category()._sets)(source, target).one()
+        def underlying_map(self) -> MorphismCategory.ObjectType:
+            return self._written_underlying
 
     def __init__(self, sets: FiniteSets) -> None:
         self._sets = sets
@@ -239,7 +232,7 @@ def test_lifted_limit_respects_nonidentity_diagram_arrows() -> None:
     second = Mor(posets)(p, q)(Mor(sets)(three, two)(lambda x: int(x >= 1)))
     shape = Cat().WalkingParallelPair()
     arrows = shape.generating_morphisms()
-    source, target = arrows[0].domain(), arrows[0].codomain()
+    source = arrows[0].domain()
     diagram = Fun(shape, posets)(lambda vertex: p if vertex is source else q,
         lambda arrow: Mor(posets)(p if arrow.domain() is source else q,
                                  p if arrow.domain() is source else q).one() if not arrow.word()

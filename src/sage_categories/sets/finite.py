@@ -514,6 +514,8 @@ class SetsCategory(MorphismDataCategory):
         second: SetsCategory.MorphismType,
         assumptions: Proposition,
     ) -> bool | None:
+        if first is second:
+            return True
         if first.domain() is not second.domain() or first.codomain() is not second.codomain():
             return False
         domain = first.domain()

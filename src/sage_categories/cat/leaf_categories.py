@@ -12,7 +12,8 @@ from __future__ import annotations
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Proposition
+from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.sage_runtime import cached_method
 
 __all__ = [
     "ContravariantFaithfulStructureCategory",
@@ -69,6 +70,7 @@ class MorphismDataCategory(LeafCategory):
     def construct_identity(self, member_object: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         return self._morphism_from_data(member_object, member_object, self._identity_data(member_object))
 
+    @cached_method(key=lambda self, second, first: identity_key(second, first))
     def composite(
         self,
         second: MorphismCategory.ObjectType,

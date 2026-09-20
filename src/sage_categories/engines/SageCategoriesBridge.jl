@@ -9,7 +9,7 @@ using GATlab
 export callable_category, callable_functor, callable_transformation,
        compose_functors, identity_functor, functor_object_image, functor_morphism_image,
        transformation_component, identity_transformation, compose_transformations,
-       whisker_left, whisker_right, horizontal_composite, presented_coproduct,
+       whisker_left, whisker_right, horizontal_composite, rebind_transformation, presented_coproduct,
        presented_coproduct_data, presented_coproduct_object_image,
        presented_coproduct_path_image, presented_functor, presented_functor_morphism_image
 
@@ -67,6 +67,8 @@ callable_transformation(component, source::AbsFunctor, target::AbsFunctor) =
     Transformation(CallableTransformation(component, source, target))
 
 transformation_component(transformation::Transformation, value) = component(transformation, value)
+rebind_transformation(transformation::Transformation, source::AbsFunctor, target::AbsFunctor) =
+    callable_transformation(value -> component(transformation, value), source, target)
 identity_transformation(functor::AbsFunctor) = callable_transformation(
     value -> id(codom(functor), ob_map(functor, value)), functor, functor,
 )

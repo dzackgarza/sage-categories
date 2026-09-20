@@ -12,6 +12,7 @@ from sage_categories.cat.cones import ConeCategory as ConeCategory
 from sage_categories.cat.cones import LimitConesCategory as LimitConesCategory
 from sage_categories.cat.cones import cocone as cocone
 from sage_categories.cat.cones import cocone_apex as cocone_apex
+from sage_categories.cat.cones import cocones as cocones
 from sage_categories.cat.cones import colimit_cocones as colimit_cocones
 from sage_categories.cat.cones import cone as cone
 from sage_categories.cat.cones import cone_apex as cone_apex
@@ -31,6 +32,9 @@ from sage_categories.cat.predicates import Unknown as Unknown
 from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.properties import PredicateSubcategory as PredicateSubcategory
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
+from sage_categories.cat.universal_arrows import (
+    LeftUniversalArrows as LeftUniversalArrows,
+)
 from sage_categories.cat.universal_arrows import (
     RightUniversalArrows as RightUniversalArrows,
 )

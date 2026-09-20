@@ -6,6 +6,12 @@ import sage_categories.cat.comma
 import sage_categories.cat.properties
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.category import (
+    retain_deferred_universal_composite as retain_deferred_universal_composite,
+)
+from sage_categories.cat.category import (
+    retain_universal_composite as retain_universal_composite,
+)
 from sage_categories.cat.comma import CommaSpecialization as CommaSpecialization
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
@@ -16,6 +22,7 @@ from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.retention import identity_key as identity_key
+from sage_categories.kernel.sage_runtime import MonoDict as MonoDict
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 

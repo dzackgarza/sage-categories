@@ -36,6 +36,7 @@ from sage_categories.cat.predicates import Query as Query
 from sage_categories.cat.predicates import Unknown as Unknown
 from sage_categories.cat.predicates import UnknownClass as UnknownClass
 from sage_categories.cat.predicates import ask as ask
+from sage_categories.cat.predicates import assume as assume
 from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.refinement import is_subcategory as is_subcategory
@@ -54,7 +55,7 @@ from sage_categories.kernel.sage_runtime import cached_method as cached_method
 from sage_categories.kernel.type_aliases import ContainmentInput as ContainmentInput
 from sage_categories.kernel.type_aliases import EqualityInput as EqualityInput
 
-__all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "member"]
+__all__ = ["Assignment", "Cat", "Category", "CategoryOfCategories", "OnMorphism", "OnObject", "assume", "member"]
 type OnObject = Callable[[CategoryOfCategories.ElementType], CategoryOfCategories.ElementType]
 type OnMorphism = Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType]
 type Assignment = Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType]
@@ -313,6 +314,10 @@ def Cat() -> CategoryOfCategories: ...
 
 concrete_category: Predicate
 
+def retain_universal_composite(second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType, result: MorphismCategory.ObjectType) -> None: ...
+def retain_deferred_universal_composite(
+    second: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType, construct: Callable[[], MorphismCategory.ObjectType]
+) -> None: ...
 def retain_composite_factors(composite: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> None: ...
 def composite_factors(composite: MorphismCategory.ObjectType) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
 def is_composite(morphism: MorphismCategory.ObjectType) -> bool: ...

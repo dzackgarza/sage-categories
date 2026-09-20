@@ -3,7 +3,8 @@ from sage_categories.cat.category import CategoryOfCategories as CategoryOfCateg
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
-from sage_categories.cat.predicates import Proposition as Proposition
+from sage_categories.kernel.retention import identity_key as identity_key
+from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
 __all__ = ["ContravariantFaithfulStructureCategory", "FaithfulStructureCategory", "LeafCategory", "MorphismDataCategory", "ParameterizedThinCategory"]
 

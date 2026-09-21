@@ -269,7 +269,7 @@ def evaluate_path(
             cat.Ob(tokens[target]),
             data=arrow,
         )
-        for index, (source, target, arrow) in enumerate(zip(chain, chain[1:], arrows, strict=True))
+        for index, (source, target, arrow) in enumerate(zip(chain[:-1], chain[1:], arrows, strict=True))
     )
     functor = cat.Functor(
         lambda token: ObjectValue(token_values[token.name]),

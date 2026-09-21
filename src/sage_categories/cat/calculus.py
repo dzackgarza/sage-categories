@@ -321,8 +321,22 @@ def natural_isomorphism(
     inverses: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType],
 ) -> NaturalTransformation:
     """Retain a natural isomorphism with both executable component assignments."""
+    target = first.codomain()
+    assert second.domain() is first.domain() and second.codomain() is target
+
+    @cached_function(key=identity_key)
+    def component_pair(
+        value: CategoryOfCategories.ElementType,
+    ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+        forward_component = components(value)
+        inverse_component = inverses(value)
+        assert forward_component in Mor(target)(first.on_object(value), second.on_object(value))
+        assert inverse_component in Mor(target)(second.on_object(value), first.on_object(value))
+        target.retain_inverses(forward_component, inverse_component)
+        return forward_component, inverse_component
+
     category = Fun(first.domain(), first.codomain())
-    forward = Mor(category)(first, second)(components)
-    backward = Mor(category)(second, first)(inverses)
+    forward = Mor(category)(first, second)(lambda value: component_pair(value)[0])
+    backward = Mor(category)(second, first)(lambda value: component_pair(value)[1])
     category.retain_inverses(forward, backward)
     return forward

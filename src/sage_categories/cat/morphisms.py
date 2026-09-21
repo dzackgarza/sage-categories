@@ -42,9 +42,10 @@ from sage_categories.cat.properties import (
     PredicateSubcategory,
     PropertySubcategory,
 )
+from sage_categories.kernel.construction import retained_morphism_input
 from sage_categories.kernel.refinement import common_ancestor, is_placed
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.roles import Role
+from sage_categories.kernel.roles import Role, role_of
 from sage_categories.kernel.sage_runtime import Integer, Unknown, cached_method
 from sage_categories.kernel.type_aliases import EqualityInput
 
@@ -180,9 +181,11 @@ def _equal_words(
     assumptions: Proposition,
 ) -> Decision:
     """Morphism equality through the leaf engine first, then Maude's typed reductions."""
+    if role_of(first) is not Role.MORPHISM or role_of(second) is not Role.MORPHISM:
+        return Unknown
     if first.domain() is not second.domain() or first.codomain() is not second.codomain():
         return Unknown
-    match first.base_category()._morphism_equality(first, second):
+    match _morphism_equality_decision(first, second):
         case True:
             return True
         case False:
@@ -190,6 +193,40 @@ def _equal_words(
         case None:
             pass
     return True if _equations_engine().equal_morphisms(first, second) else Unknown
+
+
+def _morphism_equality_decision(
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> bool | None:
+    """Ask the strongest semantic Hom owner available for equality of two parallel arrows.
+
+    A full subcategory has exactly the ambient morphisms between its objects.  Therefore
+    an arrow constructed in an ambient category can still be compared by a narrower
+    endpoint owner once both endpoints lie there.  The arrow's current placement is not
+    the owner of that equality question: it records how the value was constructed or
+    refined, while the fixed Hom is determined by the parallel endpoints.
+    """
+    if first.domain() is not second.domain() or first.codomain() is not second.codomain():
+        return None
+    endpoint_owner = common_ancestor(first.domain().category(), first.codomain().category())
+    if endpoint_owner is not None:
+        candidates = (endpoint_owner, *(root for root in endpoint_owner.narrowing_roots() if root is not endpoint_owner))
+        for candidate in candidates:
+            morphisms = candidate.morphism_category(1)
+            if decide(morphisms.membership_proposition(first)) is not True or decide(morphisms.membership_proposition(second)) is not True:
+                continue
+            decision = candidate._morphism_equality(first, second)
+            if decision is not None:
+                return decision
+    first_owner = retained_morphism_input(first).identity.category.base_category()
+    decision = first_owner._morphism_equality(first, second)
+    if decision is not None:
+        return decision
+    second_owner = retained_morphism_input(second).identity.category.base_category()
+    if second_owner is first_owner:
+        return None
+    return second_owner._morphism_equality(first, second)
 
 
 class MorphismCategory[

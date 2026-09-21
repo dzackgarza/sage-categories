@@ -53,7 +53,7 @@ from sage_categories.cat.constructions import cone, cone_apex, vertex_of
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.diagrams import cospan_diagram, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.morphisms import MorphismCategory, _morphism_equality_decision
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import (
     Predicate,
@@ -73,7 +73,11 @@ from sage_categories.cat.shapes import (
     carrier_comparison,
 )
 from sage_categories.kernel.refinement import is_placed
-from sage_categories.kernel.retention import complete_constructions, deferred_category, identity_key
+from sage_categories.kernel.retention import (
+    complete_constructions,
+    deferred_category,
+    identity_key,
+)
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
 if TYPE_CHECKING:
@@ -220,7 +224,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     def _equal_morphisms(self, first: LimitCategory.MorphismType, second: LimitCategory.MorphismType, assumptions: Proposition) -> bool | None:
         match first.domain() is second.domain() and first.codomain() is second.codomain():
             case True:
-                match first.base_category()._morphism_equality(first, second):
+                match _morphism_equality_decision(first, second):
                     case True:
                         return True
                     case False:

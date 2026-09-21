@@ -206,13 +206,19 @@ def _native_matrix_from_public(value: object) -> GapElement:
 def _native_morphism(value: object) -> GapElement:
     if has_presented_native_morphism(value):
         return presented_native_morphism(value).native
+    native = _native_morphism_on_selected_endpoints(value)
+    retain_presented_native_morphism(value, native)
+    return native
+
+
+def _native_morphism_on_selected_endpoints(value: object) -> GapElement:
+    """Rebuild one public arrow on the exact retained native endpoint presentations."""
     native = libgap.PresentationMorphism(
         _native_object(value.domain()),
         _native_matrix_from_public(value),
         _native_object(value.codomain()),
     )
     assert bool(libgap.IsWellDefined(native)), f"CAP rejected the public morphism {value!r}"
-    retain_presented_native_morphism(value, native)
     return native
 
 
@@ -364,7 +370,15 @@ def _owned_morphism_from_native(source: object, target: object, native: GapEleme
 
     owned = abelian._rule_abelian_homomorphism(source, target, evaluate)
     refine(owned, Mor(abelian.AbelianGroups())(source, target))
-    retain_presented_native_morphism(owned, native)
+    exact_source = _native_object(source)
+    exact_target = _native_object(target)
+    exact_endpoints = bool(libgap.IsIdenticalObj(libgap.Source(native), exact_source)) and bool(libgap.IsIdenticalObj(libgap.Range(native), exact_target))
+    match exact_endpoints:
+        case True:
+            retained = native
+        case False:
+            retained = _native_morphism_on_selected_endpoints(owned)
+    retain_presented_native_morphism(owned, retained)
     return owned
 
 

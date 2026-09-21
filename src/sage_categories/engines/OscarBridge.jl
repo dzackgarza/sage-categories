@@ -87,7 +87,27 @@ map_domain(map) = domain(map)
 map_codomain(map) = codomain(map)
 ring_identity(ring) = identity_map(ring)
 ring_compose(second, first) = compose(first, second)
-ring_map_equal(first, second) = first == second
+function ring_map_equal(first, second)
+    first === second && return true
+    domain(first) === domain(second) || return false
+    codomain(first) === codomain(second) || return false
+    first == second && return true
+
+    # OSCAR's specialized map equalities dispatch on the concrete map type.  A
+    # universal localization map and a generic identity can therefore represent
+    # the same homomorphism without reaching the same ``==`` method.  All ring
+    # presentations exposed by this bridge are generated from ZZ or a prime field,
+    # so equality on ring generators decides the heterogeneous representation case.
+    source = domain(first)
+    if applicable(gens, source)
+        return all(generator -> first(generator) == second(generator), gens(source))
+    end
+    source === ZZ && return true
+    if applicable(prime_field, source) && prime_field(source) === source
+        return true
+    end
+    return false
+end
 ring_generators(ring) = gens(ring)
 ring_contains(ring, element) = try
     parent(element) === ring

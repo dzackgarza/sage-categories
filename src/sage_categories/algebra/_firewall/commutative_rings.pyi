@@ -16,7 +16,6 @@ from sage_categories.cat.native import (
 from sage_categories.cat.native import (
     NativeObjectRealizations as NativeObjectRealizations,
 )
-from sage_categories.cat.predicates import assume as assume
 from sage_categories.engines.julia_bridge import OscarHandle as OscarHandle
 
 __all__ = [

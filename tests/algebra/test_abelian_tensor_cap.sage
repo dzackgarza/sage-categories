@@ -57,8 +57,21 @@ def test_cap_computes_finite_presented_tensor_object_and_nonidentity_tensor_map(
     left_unitor = monoidal.left_unitor().component(four)
     right_unitor = monoidal.right_unitor().component(six)
     for comparison in (associator, left_unitor, right_unitor):
-        assert presented_native_morphism(comparison).value is comparison
-        assert presented_native_morphism(comparison.inverse()).value is comparison.inverse()
+        for arrow in (comparison, comparison.inverse()):
+            native_arrow = presented_native_morphism(arrow)
+            assert native_arrow.value is arrow
+            assert bool(
+                libgap.IsIdenticalObj(
+                    libgap.Source(native_arrow.native),
+                    presented_native_object(arrow.domain()).native,
+                )
+            )
+            assert bool(
+                libgap.IsIdenticalObj(
+                    libgap.Range(native_arrow.native),
+                    presented_native_object(arrow.codomain()).native,
+                )
+            )
 
 
 def test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis() -> None:

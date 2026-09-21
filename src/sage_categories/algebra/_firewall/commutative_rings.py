@@ -16,7 +16,6 @@ from sage_categories.cat.native import (
     NativeObjectRealization,
     NativeObjectRealizations,
 )
-from sage_categories.cat.predicates import assume
 from sage_categories.engines.julia_bridge import OscarHandle
 
 if TYPE_CHECKING:
@@ -286,8 +285,7 @@ def reconstruct_oscar_morphism(
             oscar.map_apply(native, _native_ring_element(element, source_native)),
         )
     )
-    arrow = rings.homomorphism(source, target, carrier_map)
-    assume(_owner().morphism_category(1).membership_proposition(arrow))
+    arrow = _owner().restrict_morphism(rings.homomorphism(source, target, carrier_map))
     retain_oscar_native_morphism(arrow, native)
     return cast(MorphismCategory.ObjectType, arrow)
 
@@ -336,9 +334,7 @@ def polynomial_coefficient_map(
     base: CategoryOfCategories.ElementType,
     polynomial: CategoryOfCategories.ElementType,
 ) -> MorphismCategory.ObjectType:
-    native = _oscar_runtime().polynomial_coefficient_map(
-        oscar_object_handle(base), oscar_object_handle(polynomial)
-    )
+    native = _oscar_runtime().polynomial_coefficient_map(oscar_object_handle(base), oscar_object_handle(polynomial))
     return reconstruct_oscar_morphism(base, polynomial, native)
 
 
@@ -374,10 +370,7 @@ def _prime_ideal_handle(value: object) -> OscarHandle:
 def prime_ideal_generators(value: object) -> tuple[CategoryOfCategories.ElementType, ...]:
     """Reconstruct the native generators of one retained prime in its exact owned ring."""
     ring = cast(Any, value).ring
-    return tuple(
-        reconstruct_oscar_element(ring, generator)
-        for generator in _oscar_runtime().ideal_generators(_prime_ideal_handle(value))
-    )
+    return tuple(reconstruct_oscar_element(ring, generator) for generator in _oscar_runtime().ideal_generators(_prime_ideal_handle(value)))
 
 
 def prime_ideal_contains(

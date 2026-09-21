@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Hashable
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from sage_categories.kernel.retention import RetainedConstruction, RetainedSelection
@@ -19,10 +19,10 @@ class ChosenConstruction:
     def __init__(self) -> None:
         self._retained = RetainedConstruction()
 
-    def __call__[Owner: Hashable, Value: Hashable](
+    def __call__[Owner, Value](
         self,
         owner: Owner,
-        parameters: tuple[Hashable, ...],
+        parameters: tuple[object, ...],
         construct: Callable[[], Value],
     ) -> Value:
         return self._retained.value(owner, parameters, construct)
@@ -34,16 +34,16 @@ class SelectedChoice[Value]:
     def __init__(self) -> None:
         self._retained: RetainedSelection[CategoryOfCategories.ElementType, Value] = RetainedSelection()
 
-    def has(self, owner: CategoryOfCategories.ElementType, parameters: tuple[Hashable, ...]) -> bool:
+    def has(self, owner: CategoryOfCategories.ElementType, parameters: tuple[object, ...]) -> bool:
         return self._retained.has(owner, parameters)
 
     def select(
         self,
         owner: CategoryOfCategories.ElementType,
-        parameters: tuple[Hashable, ...],
+        parameters: tuple[object, ...],
         value: Value,
     ) -> None:
         self._retained.select(owner, parameters, value)
 
-    def selected(self, owner: CategoryOfCategories.ElementType, parameters: tuple[Hashable, ...]) -> Value:
+    def selected(self, owner: CategoryOfCategories.ElementType, parameters: tuple[object, ...]) -> Value:
         return self._retained.selected(owner, parameters)

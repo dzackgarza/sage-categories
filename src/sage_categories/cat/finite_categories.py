@@ -21,7 +21,7 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import OppositeCategory, opposite_morphism
 from sage_categories.cat.predicates import Unknown, UnknownClass, ask
 from sage_categories.cat.shapes import DiscreteCategory
-from sage_categories.kernel.retention import identity_key
+from sage_categories.kernel.retention import IdentityKey, identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
 
@@ -302,11 +302,11 @@ def _comma_objects(
     arrow_vertex: CategoryOfCategories.ElementType,
 ) -> tuple[
     tuple[CategoryOfCategories.ElementType, ...],
-    dict[tuple[tuple[int, object], ...], CategoryOfCategories.ElementType],
+    dict[IdentityKey, CategoryOfCategories.ElementType],
 ]:
     """Reconstruct owned comma objects from the finite pullback families."""
     objects: list[CategoryOfCategories.ElementType] = []
-    by_components: dict[tuple[tuple[int, object], ...], CategoryOfCategories.ElementType] = {}
+    by_components: dict[IdentityKey, CategoryOfCategories.ElementType] = {}
     for value in data.objects:
         pair = value.family_component(pair_vertex)
         arrow = value.family_component(arrow_vertex)
@@ -322,7 +322,7 @@ def _comma_endpoint(
     family: CategoryOfCategories.ElementType,
     pair_vertex: CategoryOfCategories.ElementType,
     arrow_vertex: CategoryOfCategories.ElementType,
-    by_components: dict[tuple[tuple[int, object], ...], CategoryOfCategories.ElementType],
+    by_components: dict[IdentityKey, CategoryOfCategories.ElementType],
 ) -> CategoryOfCategories.ElementType:
     """Recover one owned comma endpoint from its retained pullback components."""
     pair_object = family.family_component(pair_vertex)
@@ -335,7 +335,7 @@ def _comma_morphisms(
     data: FiniteCategoryData,
     pair_vertex: CategoryOfCategories.ElementType,
     arrow_vertex: CategoryOfCategories.ElementType,
-    by_components: dict[tuple[tuple[int, object], ...], CategoryOfCategories.ElementType],
+    by_components: dict[IdentityKey, CategoryOfCategories.ElementType],
 ) -> tuple[CategoryOfCategories.ElementType, ...]:
     """Reconstruct owned comma morphisms from the finite pullback family maps."""
     morphisms = []

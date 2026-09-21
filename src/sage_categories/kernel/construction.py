@@ -241,16 +241,49 @@ def retained_morphism_input[Value: MorphismOfCategory, Datum](value: Value) -> M
 # it cannot be a CachedRepresentation cache attached to that transient class.  The outer
 # key is the constructing category, by identity.  D111 assigns the inner key by the
 # datum's equality: an owned datum has proposition-valued equality and is keyed by
-# identity in a Sage ``MonoDict``; any other datum is an ordinary exact key and is kept
-# in a dict.  See specs/resolution.md, "Construction retention versus Sage representation
+# identity in a Sage ``MonoDict``; any other datum is an ordinary exact key.  Hashable
+# exact data use a dict, while unhashable exact data use the same equality by linear
+# lookup.  See specs/resolution.md, "Construction retention versus Sage representation
 # caches".
 _objects_by_owned_datum: MonoDict = MonoDict()
 _objects_by_datum: MonoDict = MonoDict()
 
 
-def _objects_by[Datum](category: Category, datum: Datum) -> MonoDict | dict[Datum, ObjectOfCategory]:
+class _ExactDatumMap:
+    """Exact-key retention for ordinary data, including unhashable values."""
+
+    def __init__(self) -> None:
+        self._hashable: dict[object, ObjectOfCategory] = {}
+        self._unhashable: list[tuple[object, ObjectOfCategory]] = []
+
+    @staticmethod
+    def _is_hashable(datum: object) -> bool:
+        try:
+            hash(datum)
+        except TypeError:
+            return False
+        return True
+
+    def __contains__(self, datum: object) -> bool:
+        if self._is_hashable(datum):
+            return datum in self._hashable
+        return any(candidate is datum or candidate == datum for candidate, _value in self._unhashable)
+
+    def __getitem__(self, datum: object) -> ObjectOfCategory:
+        if self._is_hashable(datum):
+            return self._hashable[datum]
+        return next(value for candidate, value in self._unhashable if candidate is datum or candidate == datum)
+
+    def __setitem__(self, datum: object, value: ObjectOfCategory) -> None:
+        if self._is_hashable(datum):
+            self._hashable[datum] = value
+            return
+        self._unhashable.append((datum, value))
+
+
+def _objects_by[Datum](category: Category, datum: Datum) -> MonoDict | _ExactDatumMap:
     """The table ``category`` retains its objects in for a datum of this equality (D111)."""
-    tables, empty = (_objects_by_owned_datum, MonoDict) if isinstance(datum, CategoryPoint) else (_objects_by_datum, dict)
+    tables, empty = (_objects_by_owned_datum, MonoDict) if isinstance(datum, CategoryPoint) else (_objects_by_datum, _ExactDatumMap)
     if category not in tables:
         tables[category] = empty()
     return tables[category]

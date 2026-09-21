@@ -7,7 +7,7 @@ identifications add a second key for a result before dependent declarations run.
 from __future__ import annotations
 
 from collections import deque
-from collections.abc import Callable, Hashable, Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial, wraps
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from sage_categories.cat.functors import Functor
 
 __all__ = [
+    "IdentityKey",
     "RetainedConstruction",
     "RetainedSelection",
     "category_construction_functors",
@@ -32,22 +33,42 @@ __all__ = [
 ]
 
 
+class IdentityKey:
+    """A strong-reference tuple key with componentwise identity semantics."""
+
+    __slots__ = ("_hash", "_values")
+
+    def __init__(self, values: tuple[object, ...]) -> None:
+        self._values = values
+        self._hash = hash(tuple(id(value) for value in values))
+
+    def __hash__(self) -> int:
+        return self._hash
+
+    def __eq__(self, candidate: object) -> bool:
+        return (
+            isinstance(candidate, IdentityKey)
+            and len(self._values) == len(candidate._values)
+            and all(first is second for first, second in zip(self._values, candidate._values, strict=True))
+        )
+
+
 class RetainedConstruction:
     """Private identity retention for one mathematical construction family."""
 
     def __init__(self) -> None:
-        self._owners: dict[tuple[tuple[int, Hashable], ...], dict[tuple[tuple[int, Hashable], ...], Hashable]] = {}
+        self._owners: dict[IdentityKey, dict[IdentityKey, object]] = {}
 
-    def _values[Owner: Hashable](self, owner: Owner) -> dict[tuple[tuple[int, Hashable], ...], Hashable]:
+    def _values[Owner](self, owner: Owner) -> dict[IdentityKey, object]:
         owner_key = identity_key(owner)
         if owner_key not in self._owners:
             self._owners[owner_key] = {}
         return self._owners[owner_key]
 
-    def value[Owner: Hashable, Value: Hashable](
+    def value[Owner, Value](
         self,
         owner: Owner,
-        parameters: tuple[Hashable, ...],
+        parameters: tuple[object, ...],
         construct: Callable[[], Value],
     ) -> Value:
         values = self._values(owner)
@@ -57,34 +78,34 @@ class RetainedConstruction:
         return cast(Value, values[key])
 
 
-class RetainedSelection[Owner: Hashable, Value]:
+class RetainedSelection[Owner, Value]:
     """Private identity retention for one mathematical choice family."""
 
     def __init__(self) -> None:
-        self._owners: dict[tuple[tuple[int, Owner], ...], dict[tuple[tuple[int, Hashable], ...], Value]] = {}
+        self._owners: dict[IdentityKey, dict[IdentityKey, Value]] = {}
 
-    def _values(self, owner: Owner) -> dict[tuple[tuple[int, Hashable], ...], Value]:
+    def _values(self, owner: Owner) -> dict[IdentityKey, Value]:
         owner_key = identity_key(owner)
         if owner_key not in self._owners:
             self._owners[owner_key] = {}
         return self._owners[owner_key]
 
-    def has(self, owner: Owner, parameters: tuple[Hashable, ...]) -> bool:
+    def has(self, owner: Owner, parameters: tuple[object, ...]) -> bool:
         return identity_key(*parameters) in self._values(owner)
 
-    def select(self, owner: Owner, parameters: tuple[Hashable, ...], value: Value) -> None:
+    def select(self, owner: Owner, parameters: tuple[object, ...], value: Value) -> None:
         self._values(owner)[identity_key(*parameters)] = value
 
-    def selected(self, owner: Owner, parameters: tuple[Hashable, ...]) -> Value:
+    def selected(self, owner: Owner, parameters: tuple[object, ...]) -> Value:
         values = self._values(owner)
         key = identity_key(*parameters)
         assert key in values, f"this mathematical choice has no selected value for {parameters!r}"
         return values[key]
 
 
-def identity_key[Value](*values: Value) -> tuple[tuple[int, Value], ...]:
+def identity_key(*values: object) -> IdentityKey:
     """Keep each argument alive and compare its identity before its equality."""
-    return tuple((id(value), value) for value in values)
+    return IdentityKey(values)
 
 
 def identity_positions[Value](values: tuple[Value, ...]) -> MonoDict:
@@ -109,7 +130,7 @@ def complete_constructions() -> Iterator[None]:
     token = _completions.set(pending)
     try:
         yield
-        declarations: dict[tuple[tuple[int, Category], ...], tuple[Category, tuple[Functor, ...]]] = {}
+        declarations: dict[IdentityKey, tuple[Category, tuple[Functor, ...]]] = {}
         while pending:
             category = pending.popleft()
             declarations[identity_key(category)] = (category, category._complete_declarations())

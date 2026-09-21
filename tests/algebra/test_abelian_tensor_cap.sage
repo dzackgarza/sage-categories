@@ -85,9 +85,8 @@ def test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis() -> None:
     tensor_functor = AbelianTensor().tensor()
     product = tensor_object(tensor_functor, quotient, two)
 
-    quotient_generator = quotient.object_at(
-        projection(square.point(square_element(1, 0))).datum()
-    )
+    quotient_generator = projection(square.point(square_element(1, 0)))
+    assert quotient_generator.parent() is quotient
     generator = simple_tensor(quotient, two, quotient_generator.datum(), two_engine.gen(0))
     assert generator.parent() is product
 

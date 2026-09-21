@@ -1868,6 +1868,18 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
             return opposite_functor(self)
 
+        def restricted_yoneda(self, hom: Functor) -> Functor:
+            """Return the restricted Yoneda functor along this functor."""
+            from sage_categories.cat.weighted import restricted_yoneda
+
+            return restricted_yoneda(self, hom)
+
+        def separating_evaluation(self, hom: Functor) -> NaturalTransformation:
+            """Return the canonical evaluation transformation for a separating functor."""
+            from sage_categories.cat.weighted import separating_evaluation
+
+            return separating_evaluation(self, hom)
+
         def Fiber(self, member_object: CategoryOfCategories.ElementType) -> Category:
             """Return the strict fiber over ``member_object``."""
             from sage_categories.cat.fibers import fiber

@@ -17,7 +17,7 @@ from sage.libs.gap.libgap import libgap
 
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.predicates import Unknown, UnknownClass
+from sage_categories.cat.predicates import Unknown, UnknownClass, ask
 from sage_categories.engines.gap import FINITE_SETS_PACKAGES, load_packages
 from sage_categories.kernel.retention import identity_positions
 from sage_categories.kernel.sage_runtime import MonoDict
@@ -74,6 +74,17 @@ def _finite_category_data(
     return finite_category(category)
 
 
+def _retained_vertex_position(
+    vertices: tuple[object, ...],
+    positions: MonoDict,
+    vertex: object,
+) -> int:
+    """Resolve an equivalent queried vertex to the retained finite vertex position."""
+    from sage_categories.cat.finite_categories import position
+
+    return positions[vertices[position(vertices, vertex)]]
+
+
 def _cones() -> ModuleType:
     """Load cone/cocone execution at the one cycle-safe finite-set engine boundary."""
     from sage_categories.cat import cones
@@ -84,9 +95,9 @@ def _cones() -> ModuleType:
 def _index(realization: object, datum: object) -> int:
     indexing = realization.construction.data
     owner = realization.value
-    representative = owner.representative(datum)
+    representative = owner.point(owner.representative(datum))
     for index, candidate in enumerate(indexing):
-        if owner.representative(candidate) == representative:
+        if ask(owner.point(owner.representative(candidate)) == representative) is True:
             return index
     raise AssertionError(f"{datum!r} has no private finite index in {owner!r}")
 
@@ -381,7 +392,7 @@ def finite_limit(diagram: Functor) -> object:
         .with_universal_data(
             diagram,
             apex,
-            cones.cone(diagram, apex, lambda vertex: legs[positions[vertex]]),
+            cones.cone(diagram, apex, lambda vertex: legs[_retained_vertex_position(vertices, positions, vertex)]),
             lift,
         )
     )
@@ -435,7 +446,7 @@ def finite_colimit(diagram: Functor) -> object:
         .with_universal_data(
             diagram,
             apex,
-            cones.cocone(diagram, apex, lambda vertex: legs[positions[vertex]]),
+            cones.cocone(diagram, apex, lambda vertex: legs[_retained_vertex_position(vertices, positions, vertex)]),
             descent,
         )
     )
@@ -486,7 +497,7 @@ def _product(diagram: Functor, vertices: tuple[object, ...]) -> object:
         .with_universal_data(
             diagram,
             apex,
-            cones.cone(diagram, apex, lambda vertex: legs[positions[vertex]]),
+            cones.cone(diagram, apex, lambda vertex: legs[_retained_vertex_position(vertices, positions, vertex)]),
             lift,
         )
     )
@@ -583,7 +594,7 @@ def _coproduct(diagram: Functor, vertices: tuple[object, ...]) -> object:
         .with_universal_data(
             diagram,
             apex,
-            cones.cocone(diagram, apex, lambda vertex: legs[positions[vertex]]),
+            cones.cocone(diagram, apex, lambda vertex: legs[_retained_vertex_position(vertices, positions, vertex)]),
             descent,
         )
     )

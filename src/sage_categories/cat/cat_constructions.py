@@ -404,8 +404,26 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         codomain: LimitCategory.ObjectType,
         family: MorphismRule | tuple[MorphismCategory.ObjectType, ...],
     ) -> LimitCategory.MorphismType:
-        rule = family if callable(family) else _sequence_rule(tuple(family))
-        return self.morphism_from_components(domain, codomain, rule)
+        if callable(family):
+            return self.morphism_from_components(domain, codomain, family)
+
+        components = tuple(family)
+        result = self.morphism_from_components(domain, codomain, _sequence_rule(components))
+        vertices = self._vertices()
+        assert vertices is not Unknown and len(vertices) == len(components), "a sequence must supply one component per vertex"
+        inverses: list[MorphismCategory.ObjectType] = []
+        for position, component in enumerate(components):
+            inverse = self.factor(position).retained_inverse(component)
+            if inverse is None:
+                return result
+            inverses.append(inverse)
+        inverse = self.morphism_from_components(
+            codomain,
+            domain,
+            _sequence_rule(tuple(inverses)),
+        )
+        self.retain_inverses(result, inverse)
+        return result
 
     def morphism_from_components(
         self,

@@ -82,12 +82,15 @@ def tensor_object(tensor: Functor, first: CategoryOfCategories.ElementType, seco
 
 def tensor_morphism(tensor: Functor, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
     pairs = tensor.domain()
-    return tensor.on_morphism(
-        Mor(pairs)(
-            pairs((first.domain(), second.domain())),
-            pairs((first.codomain(), second.codomain())),
-        )((first, second))
-    )
+    source = pairs((first.domain(), second.domain()))
+    target = pairs((first.codomain(), second.codomain()))
+    paired = Mor(pairs)(source, target)((first, second))
+    first_inverse = first.base_category().retained_inverse(first)
+    second_inverse = second.base_category().retained_inverse(second)
+    if first_inverse is not None and second_inverse is not None and pairs.retained_inverse(paired) is None:
+        inverse = Mor(pairs)(target, source)((first_inverse, second_inverse))
+        pairs.retain_inverses(paired, inverse)
+    return tensor.on_morphism(paired)
 
 
 def _identity_only_morphism[Morphism](

@@ -17,6 +17,11 @@ from sage_categories.cat.predicates import Proposition, register_handler
 from sage_categories.engines import cells
 
 
+def rational(value) -> Fraction:
+    """Construct a Python Fraction without passing Sage-preparsed integers to it."""
+    return value if isinstance(value, Fraction) else Fraction(str(value))
+
+
 class RationalLine(Category):
     """The one-object category of one-dimensional rational linear maps."""
 
@@ -29,7 +34,7 @@ class RationalLine(Category):
 
     class MorphismType:
         def __init__(self, data: object) -> None:
-            self._written_scalar = Fraction(data) if data is not None else None
+            self._written_scalar = rational(data) if data is not None else None
 
         def scalar(self) -> Fraction:
             if self._written_scalar is not None:
@@ -37,7 +42,7 @@ class RationalLine(Category):
             if self.is_composite():
                 first, second = self.factors()
                 return second.scalar() * first.scalar()
-            return Fraction(1)
+            return Fraction("1")
 
     def __call__(self, name: str) -> RationalLine.ObjectType:
         return self.ObjectType(name)
@@ -83,7 +88,7 @@ def test_scaled_associator_pentagon_retains_eight_versus_four() -> None:
         left,
         right,
         lambda triple: category.construct_morphism(line, line, 2),
-        lambda triple: category.construct_morphism(line, line, Fraction(1, 2)),
+        lambda triple: category.construct_morphism(line, line, Fraction("1/2")),
     )
     left_unit, right_unit = tensor_units(tensor, line)
     identity = Fun(category, category).one()
@@ -115,7 +120,7 @@ def test_scaled_associator_pentagon_retains_eight_versus_four() -> None:
     left_box = structure.diagram_box("left", (line,), (line,), identity_arrow)
     right_box = structure.diagram_box("right", (line, line), (line,), identity_arrow)
     interpreted_tensor = structure.interpret(left_box @ right_box)
-    assert interpreted_tensor.scalar() == 2
+    assert interpreted_tensor.scalar() == rational(2)
 
     # A formal box carrying an ordinary noninvertible arrow remains that exact arrow
     # after interpretation.  Native syntax does not manufacture an inverse for it.
@@ -147,8 +152,8 @@ def test_scaled_associator_pentagon_retains_eight_versus_four() -> None:
     long = last * middle * first
     short = component(line, line, yz) * component(xy, line, line)
 
-    assert long.scalar() == 8
-    assert short.scalar() == 4
+    assert long.scalar() == rational(8)
+    assert short.scalar() == rational(4)
     assert ask(structure.pentagon(line, line, line, line)) is False
 
 

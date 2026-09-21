@@ -816,6 +816,11 @@ class _NodeRuntime[Value: CategoryPoint, Datum](NamedTuple):
 # Per-node initializers are replaced when declarations are recompiled/augmented, so this
 # identity map is runtime metadata rather than a representation cache.
 _node_runtimes: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+# One declaration can be compiled at a different categorical level from its first
+# source owner (Mor(K).ObjectType = K.MorphismType).  Retain the first role in which
+# the declaration is actually installed so semantic-base lookup need not rescan every
+# live category to rediscover that level.
+_runtime_declaration_roles: dict[type[CategoryPoint], Role] = {}
 
 
 def _runtime_node(runtime_class: type[CategoryPoint]) -> Node | None:
@@ -879,14 +884,9 @@ def runtime_semantic_bases(
     """
     current = _runtime_node(runtime_class)
     if current is None:
-        for role, table in _node_runtimes.items():
-            for item in table.items():
-                category = item[0]
-                if category.local_role_class(role) is runtime_class:
-                    installed = _installed_root_declarations.get(kernel_base(role))
-                    if installed is not None and installed is not runtime_class:
-                        return (installed,)
-        role = declaration_role(runtime_class)
+        role = _runtime_declaration_roles.get(runtime_class)
+        if role is None:
+            role = declaration_role(runtime_class)
         if role is not None:
             installed = _installed_root_declarations.get(kernel_base(role))
             if installed is not None and installed is not runtime_class:
@@ -1110,8 +1110,8 @@ def _run_selected_action(
             case (_, representative):
                 if action.target.role is Role.OBJECT:
                     first_path = _resolved_path(resolved_paths, action.target)
-                    assert first_path is not None
-                    _transport_alternate_object_path(action, representative, first_path, root, image_datum)
+                    if first_path is not None:
+                        _transport_alternate_object_path(action, representative, first_path, root, image_datum)
                 continue
         image, built, image_data = image_datum(action.functor, action.representative)
         match image is action.representative:
@@ -1133,8 +1133,10 @@ def _run_selected_action(
                 pass
             case False:
                 resolved.append((built, image_data, image))
-                if action.path is not None:
-                    resolved_paths.append((built, action.path))
+                # built is the category that constructed the image value, not a
+                # selected-functor target.  The retained path ends at action.target;
+                # assigning it to built would make a later successor appear composable
+                # after a functor whose codomain is a different category.
         return True
     return False
 
@@ -1616,6 +1618,10 @@ def _install_runtime_node(current: Node) -> type[CategoryPoint]:
     """Install one compiled node from its private Sage runtime category."""
     compiled = _compiled_class(current)
     compiled._category_runtime_node = current
+    _runtime_declaration_roles.setdefault(
+        current.category.local_role_class(current.role),
+        current.role,
+    )
     _assert_no_semantic_collisions(compiled)
     node_initializer = vars(current.category.local_role_class(current.role)).get("__init__")
     written = node_initializer is not None
@@ -1727,24 +1733,34 @@ def implement_category(
                 local_initializer(value, retained_input(value).datum)
 
 
-def _runtime_reaches(runtime: _RuntimeImplementationCategory, target: Node) -> bool:
-    """Whether the selected-functor graph below ``runtime`` reaches ``target``."""
-    frontier = [runtime._current]
-    seen: list[Node] = []
+def _runtimes_reaching(target: Node) -> tuple[_RuntimeImplementationCategory, ...]:
+    """All runtime nodes whose selected-functor graph reaches ``target``.
+
+    Build the immediate reverse graph once, then walk it from ``target``.  The former
+    implementation traversed the same forward graph independently for every runtime,
+    making a level shift quadratic in the live compiler graph.
+    """
+    runtimes = tuple(runtime for table in _runtime_categories.values() for _, runtime in table.items())
+
+    def key(current: Node) -> tuple[int, Role]:
+        return id(current.category), current.role
+
+    predecessors: dict[tuple[int, Role], list[Node]] = {}
+    for runtime in runtimes:
+        for _, reached in successors(runtime._current):
+            predecessors.setdefault(key(reached), []).append(runtime._current)
+
+    reached: set[tuple[int, Role]] = set()
+    frontier = [target]
     while frontier:
-        candidate = frontier.pop(0)
-        match same_node(candidate, target):
-            case True:
-                return True
-            case False:
-                pass
-        match any(same_node(candidate, known) for known in seen):
-            case True:
-                continue
-            case False:
-                seen.append(candidate)
-                frontier.extend(reached for _, reached in successors(candidate))
-    return False
+        candidate = frontier.pop()
+        candidate_key = key(candidate)
+        if candidate_key in reached:
+            continue
+        reached.add(candidate_key)
+        frontier.extend(predecessors.get(candidate_key, ()))
+
+    return tuple(runtime for runtime in runtimes if key(runtime._current) in reached)
 
 
 def _migrate_level_shift_values(
@@ -1788,7 +1804,7 @@ def apply_level_shift(member: Category, placement: Category) -> None:
         case False:
             pass
 
-    affected = tuple(runtime for table in _runtime_categories.values() for _, runtime in table.items() if _runtime_reaches(runtime, current))
+    affected = _runtimes_reaching(current)
     old_classes = {runtime.parent_class: runtime for runtime in affected}
     old_nodes = {runtime: _linearized_nodes(runtime._current) for runtime in affected}
     changed._targets = _runtime_targets(current)

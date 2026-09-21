@@ -218,6 +218,7 @@ _runtime_categories: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 _RUNTIME_CACHE_NAMES = (
     "_depth",
+    "subcategory_class",
     "parent_class",
     "_all_super_categories",
     "_all_super_categories_proper",

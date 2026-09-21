@@ -2,10 +2,18 @@
 
 from sympy import Q
 
-from sage_categories.all import Cat, Fun, Mor, NN, Sets, ask, assume
+from sage_categories.all import (
+    Cat,
+    Fun,
+    Mor,
+    NN,
+    Sets,
+    ask,
+    assume,
+    separating_evaluation_injection,
+)
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.shapes import Discrete
-from sage_categories.cat.weighted import separating_evaluation_injection
 
 
 def test_restricted_yoneda_and_separating_evaluation_are_nonenumerative():

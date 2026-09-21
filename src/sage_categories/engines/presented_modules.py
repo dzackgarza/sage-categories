@@ -603,6 +603,7 @@ def tensor_mediator(
         _homalg_matrix(tuple(rows), target_raw_rank),
         target_native,
     )
+    assert bool(libgap.IsWellDefined(native)), "the supplied biadditive rule does not respect the relations"
     return _owned_morphism_from_native(tensor, target, native)
 
 

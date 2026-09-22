@@ -97,9 +97,13 @@ class ModuleCategory(EquifierCategory):
     @cached_method
     def forgetful(self) -> Functor:
         """``U_A: Modules(A, C) -> C``, ``(X, ρ_X) ↦ X`` and ``f ↦ f``."""
-        return Fun(self, self.underlying_category()).Faithful().Isofibrations()(
-            lambda module: module.carrier(),
-            lambda arrow: arrow.underlying_morphism(),
+        return (
+            Fun(self, self.underlying_category())
+            .Faithful()
+            .Isofibrations()(
+                lambda module: module.carrier(),
+                lambda arrow: arrow.underlying_morphism(),
+            )
         )
 
     def structure_functors(self) -> tuple[Functor, ...]:
@@ -113,20 +117,17 @@ class ModuleCategory(EquifierCategory):
         unit = monoidal.unit()
         base = monoidal.underlying_category()
         canonical_unit_action = (
-            self.actegory().action() is monoidal.tensor()
-            and self.actegory().associator() is monoidal.associator()
-            and self.actegory().unitor() is monoidal.left_unitor()
-            and self.carrier() is unit
+            self.carrier() is unit
             and self.scalars().operation() is monoidal.left_unitor().component(unit)
             and self.scalars().unit_morphism() is base.morphism_category(1)(unit, unit).one()
             and action_morphism is self.actegory().unitor().component(action_morphism.codomain())
         )
         match canonical_unit_action:
             case True:
-                # The unit object acts on every object by the left unitor.  Its unit
-                # and associativity module diagrams are exactly the triangle/pentagon
-                # coherence of the selected self-action, so this route does not ask an
-                # equality engine to rediscover those laws extensionally.
+                # The tensor unit acts on every object of any selected actegory by
+                # its action unitor.  The module laws follow from that action's
+                # triangle and monoidal unit coherence, even when M and C differ;
+                # no extensional equality decision on X is required.
                 refine(algebra, self.ambient())
                 refine(algebra, self)
                 return algebra

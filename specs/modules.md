@@ -88,6 +88,11 @@ Modules(A, C)(rho_X)
 The codomain of `rho_X: A bullet X -> X` determines `X`. The constructor checks the action endpoints and asserts the two module diagrams.
 It does not ask the caller to repeat `X`.
 
+For the tensor unit with its canonical monoid structure, the selected actegory
+unitor `I bullet X -> X` defines a module by action coherence. This construction
+applies even when the acting and acted-on categories differ and requires no
+enumeration of `X` or extensional equality decision on its maps.
+
 Named constructors can accept other complete semantic presentations:
 
 ```python

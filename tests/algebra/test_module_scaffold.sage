@@ -46,6 +46,11 @@ def test_boolean_monoid_acting_on_three_points() -> None:
     with pytest.raises(AssertionError):
         modules(Mor(Sets)(acted, three)(lambda pair: pair[1] if pair[0] == 0 else 2))
 
+    # The unit acts correctly, but a three-cycle cannot represent the idempotent 0.
+    # This satisfies the unit law independently of the failed action law.
+    with pytest.raises(AssertionError):
+        modules(Mor(Sets)(acted, three)(lambda pair: pair[1] if pair[0] == 1 else (pair[1] + 1) % 3))
+
     # Collapsing 0 and 1 to 0 while fixing the sink is equivariant; sending everything to 1 is not.
     two = Sets((0, 2))
     acted_two = binary_product_data(Sets(), booleans, two).apex()
@@ -91,6 +96,20 @@ def test_two_scalar_actions_on_one_carrier_and_restriction() -> None:
     assert restricted.action()(small_acted.point((0, 1))).datum() == 0
     assert restricted.action()(small_acted.point((1, 1))).datum() == 1
     assert Modules(small, actegory).forgetful().on_object(restricted) is booleans
+
+    # Restriction preserves a nonidentity equivariant map, its exact endpoints,
+    # and identities/composition, not just the action on objects.
+    modules = Modules(scalars, actegory)
+    zero = Mor(Sets)(booleans, booleans)(lambda value: 0)
+    endomorphism = modules.homomorphism(by_second, by_second, zero)
+    restricted_map = restriction.on_morphism(endomorphism)
+    assert restricted_map.domain() is restricted
+    assert restricted_map.codomain() is restricted
+    assert Modules(small, actegory).forgetful().on_morphism(restricted_map) is zero
+    assert restricted_map(restricted.point(1)).datum() == 0
+    identity = Mor(modules)(by_second, by_second).one()
+    assert ask(restriction.on_morphism(identity) == Mor(Modules(small, actegory))(restricted, restricted).one()) is True
+    assert ask(restriction.on_morphism(endomorphism * endomorphism) == restricted_map * restricted_map) is True
 
 
 test_boolean_monoid_acting_on_three_points()

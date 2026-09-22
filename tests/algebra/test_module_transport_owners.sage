@@ -1,6 +1,8 @@
 """Transport a nonconstant scalar action in Sets and in Sets × 1."""
 
-from sage_categories.all import Cat, Fun, Mor, Sets, Cartesian, SelfAction, ask
+from sympy import Q
+
+from sage_categories.all import Cat, Fun, Mor, Sets, Cartesian, SelfAction, Unknown, ask
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism, pair_maps
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Functor
@@ -118,5 +120,31 @@ def test_self_action_transport() -> None:
     transport_boolean_action(SelfAction(Cartesian(Sets)), identity, identity)
 
 
+def test_tensor_unit_acts_on_a_rule_defined_carrier_in_a_distinct_category() -> None:
+    structure = Cartesian(Sets)
+    actegory, projection, section = action_on_product(structure)
+    unit = structure.unit()
+    scalars = Monoids(structure)(structure.left_unitor().component(unit), Mor(Sets)(unit, unit).one())
+    integers = Sets.from_membership(lambda value: Q.integer(value))
+    carrier = section.on_object(integers)
+    action = actegory.unitor().component(carrier)
+    modules = Modules(scalars, actegory)
+
+    # This is the action unitor of Sets acting on Sets × 1, not the tensor's
+    # left unitor.  Its module laws follow from coherence without enumerating Z.
+    assert actegory.underlying_category() is not structure.underlying_category()
+    assert actegory.unitor() is not structure.left_unitor()
+    assert ask(integers.is_finite()) is Unknown
+    module = modules(action)
+    assert module in modules
+    assert module.action() is action
+    assert modules.forgetful().on_object(module) is carrier
+    observed = projection.on_morphism(module.action())
+    image = observed(observed.domain().point(((), 7)))
+    assert image.parent() is integers
+    assert image.datum() == 7
+
+
 test_distinct_acting_and_acted_categories()
 test_self_action_transport()
+test_tensor_unit_acts_on_a_rule_defined_carrier_in_a_distinct_category()

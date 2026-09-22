@@ -10,15 +10,21 @@ monoid laws are over pointed magmas.
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import partial
 
 __all__ = ["ModuleCategory", "Modules", "internal_endomorphism_module", "select_native_module_adapter"]
 
 from sage_categories.cat.calculus import pair_maps
+from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.choices import SelectedChoice
-from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
+from sage_categories.cat.cones import cone, cones
+from sage_categories.cat.declarations import Sets
+from sage_categories.cat.diagrams import from_sequence, sequence_position
+from sage_categories.cat.functors import Cat, Fun, Functor
 from sage_categories.cat.monoidal import ActionsCategory, tensor_morphism
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import (
     EndofunctorAlgebras,
     Equifier,
@@ -44,7 +50,7 @@ def _underlying_object(scalars: MonoidCategory.ObjectType) -> CategoryOfCategori
     return scalars.carrier().carrier()
 
 
-class ModuleCategory(EquifierCategory):
+class ModuleCategory(LimitSubcategory):
     """``Modules(A, C)``: module objects over ``A`` in the actegory ``C``.
 
     An object is ``(X, ρ_X: A • X -> X)`` with the unit law ``ρ ∘ (η • X) = λ_X`` and the
@@ -54,26 +60,39 @@ class ModuleCategory(EquifierCategory):
     """
 
     class ObjectType:
+        def _law_object(self) -> EquifierCategory.ObjectType:
+            """The retained equifier presentation of this module."""
+            return self.family_component(0)
+
+        def carrier(self) -> CategoryOfCategories.ElementType:
+            """The object of the acted-on category."""
+            return self._law_object().carrier()
+
         def action(self) -> MorphismCategory.ObjectType:
             """``ρ_X: A • X -> X``, the module action."""
-            return self.structure()
+            return self._law_object().structure()
 
     class ElementType:
         pass
 
     class MorphismType:
-        pass
+        def _law_morphism(self) -> MorphismCategory.ObjectType:
+            """The retained morphism of the module-law equifier."""
+            return self.family_component(0)
+
+        def underlying_morphism(self) -> MorphismCategory.ObjectType:
+            """The morphism of the acted-on category carrying this module map."""
+            return self._law_morphism().underlying_morphism()
 
     def __init__(
         self,
-        first: NaturalTransformation,
-        second: NaturalTransformation,
+        diagram: Functor,
         scalars: MonoidCategory.ObjectType,
         actegory: ActionsCategory.ObjectType,
         algebras: InserterCategory,
     ) -> None:
         self._scalars, self._actegory, self._algebras = scalars, actegory, algebras
-        super().__init__(first, second)
+        super().__init__(diagram)
 
     def scalars(self) -> MonoidCategory.ObjectType:
         """``A``, the monoid object acting."""
@@ -94,13 +113,21 @@ class ModuleCategory(EquifierCategory):
         """``A``, the object of ``M`` carrying the acting monoid."""
         return _underlying_object(self._scalars)
 
+    def _law_category(self) -> EquifierCategory:
+        """The equifier that owns the two module laws."""
+        laws = self.factor(0)
+        assert isinstance(laws, EquifierCategory)
+        return laws
+
+    def _law_presentation(self) -> Functor:
+        """The retained equivalence to the module-law category."""
+        return self.product_projection(0)
+
     @cached_method
     def forgetful(self) -> Functor:
         """``U_A: Modules(A, C) -> C``, ``(X, ρ_X) ↦ X`` and ``f ↦ f``."""
-        return Fun(self, self.underlying_category()).Faithful().Isofibrations()(
-            lambda module: module.carrier(),
-            lambda arrow: arrow.underlying_morphism(),
-        )
+        laws_to_algebras = Fun.full_subcategory_monomorphism(self._law_category(), self._algebras)
+        return self._algebras.forgetful() * laws_to_algebras * self._law_presentation()
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """``U_A`` is the sole immediate structure functor of ``Modules(A, C)``."""
@@ -109,6 +136,7 @@ class ModuleCategory(EquifierCategory):
     def __call__(self, action_morphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
         """The module with action ``ρ_X: A • X -> X``; its codomain is ``X``."""
         algebra = self._algebras.algebra(action_morphism.codomain(), action_morphism)
+        laws = self._law_category()
         monoidal = self.actegory().monoidal_structure()
         unit = monoidal.unit()
         base = monoidal.underlying_category()
@@ -127,11 +155,14 @@ class ModuleCategory(EquifierCategory):
                 # and associativity module diagrams are exactly the triangle/pentagon
                 # coherence of the selected self-action, so this route does not ask an
                 # equality engine to rediscover those laws extensionally.
-                refine(algebra, self.ambient())
-                refine(algebra, self)
-                return algebra
+                refine(algebra, laws.ambient())
+                refine(algebra, laws)
+                law_object = algebra
             case False:
-                return super().__call__(algebra)
+                law_object = laws(algebra)
+        result = self._law_presentation().inverse().on_object(law_object)
+        assert result in self
+        return result
 
     def homomorphism(
         self,
@@ -140,7 +171,14 @@ class ModuleCategory(EquifierCategory):
         arrow: MorphismCategory.ObjectType,
     ) -> ModuleCategory.MorphismType:
         """The module morphism over ``f: X -> Y`` in ``C``; the algebra square ``f ∘ ρ_X = ρ_Y ∘ (A • f)`` must commute."""
-        return self._algebras.homomorphism(source, target, arrow)
+        presentation = self._law_presentation()
+        law_source = presentation.on_object(source)
+        law_target = presentation.on_object(target)
+        algebra_map = self._algebras.homomorphism(law_source, law_target, arrow)
+        law_map = self._law_category().restrict_morphism(algebra_map)
+        result = presentation.inverse().on_morphism(law_map)
+        assert result.domain() is source and result.codomain() is target
+        return result
 
     def from_endomorphism_action(
         self,
@@ -217,6 +255,31 @@ _INTERNAL_ENDOMORPHISM_MODULES: SelectedChoice[ModuleCategory.ObjectType] = Sele
 _NATIVE_MODULE_ADAPTERS: SelectedChoice[NativeModuleAdapter] = SelectedChoice()
 
 
+def _retained_module_category(
+    laws: EquifierCategory,
+    scalars: MonoidCategory.ObjectType,
+    actegory: ActionsCategory.ObjectType,
+    algebras: InserterCategory,
+) -> ModuleCategory:
+    """Retain a distinct module category and the inverse of its law presentation."""
+    tag = Discrete(Sets(("module",)))
+    diagram = from_sequence(Cat(), (laws, tag))
+    family = Cat().Limits(diagram.domain())
+    modules = limit_of_categories(
+        diagram,
+        family,
+        partial(ModuleCategory, scalars=scalars, actegory=actegory, algebras=algebras),
+    )
+    legs = (
+        Fun(laws, laws).one(),
+        Fun(laws, tag).constant(tag(next(iter(tag.index_set())))),
+    )
+    section_cone = cone(diagram, laws, lambda vertex: legs[sequence_position(vertex)])
+    section = family.universal_data(diagram).lift(cones(diagram)(section_cone))
+    Cat().retain_inverses(modules._law_presentation(), section)
+    return modules
+
+
 @cached_function(key=identity_key)
 def Modules(scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.ObjectType) -> ModuleCategory:
     """``Modules(A, C)``: module objects over the monoid object ``A`` in the selected actegory ``C``."""
@@ -255,7 +318,8 @@ def Modules(scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.Object
     unital = Equifier(*equations[0])
     inclusion = Fun.full_subcategory_monomorphism(unital, algebras)
     first, second = equations[1]
-    return ModuleCategory(first.whisker_right(inclusion), second.whisker_right(inclusion), scalars, actegory, algebras)
+    laws = Equifier(first.whisker_right(inclusion), second.whisker_right(inclusion))
+    return _retained_module_category(laws, scalars, actegory, algebras)
 
 
 def internal_endomorphism_module(

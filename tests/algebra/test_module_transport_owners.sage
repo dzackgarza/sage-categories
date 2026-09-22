@@ -1,5 +1,7 @@
 """Transport a nonconstant scalar action in Sets and in Sets × 1."""
 
+import pytest
+
 from sympy import Q
 
 from sage_categories.all import Cat, Fun, Mor, Sets, Cartesian, SelfAction, Unknown, ask
@@ -9,7 +11,7 @@ from sage_categories.cat.functors import Functor
 from sage_categories.cat.modules import Modules
 from sage_categories.cat.monoidal import Actions, ActionsCategory, MonoidalStructuresCategory
 from sage_categories.cat.morphisms import MorphismCategory
-from sage_categories.cat.structured_objects import Monoids
+from sage_categories.cat.structured_objects import EndofunctorAlgebras, Monoids
 
 
 def action_on_product(structure: MonoidalStructuresCategory.ObjectType) -> tuple[ActionsCategory.ObjectType, Functor, Functor]:
@@ -86,6 +88,18 @@ def transport_boolean_action(actegory: ActionsCategory.ObjectType, projection: F
     assert isomorphism.inverse() is inverse
     assert inverse.inverse() is isomorphism
 
+    # An endofunctor algebra with a bad unit law is not an admitted module.
+    bad_action = section.on_morphism(Mor(monoidal)(acted_set, source_set)(lambda pair: 2))
+    algebra = EndofunctorAlgebras(modules.scalar_endofunctor()).algebra(source, bad_action)
+    with pytest.raises(AssertionError):
+        modules.transport(algebra, isomorphism)
+
+    # Transport still requires an isomorphism; a constant map cannot carry
+    # an action to this three-point target by conjugation.
+    collapse = section.on_morphism(Mor(monoidal)(source_set, target_set)(lambda value: 10))
+    with pytest.raises(AssertionError):
+        modules.transport(module, collapse)
+
     transported = modules.transport(module, isomorphism)
     action = actegory.action()
     pairs = action.domain()
@@ -143,6 +157,32 @@ def test_tensor_unit_acts_on_a_rule_defined_carrier_in_a_distinct_category() -> 
     image = observed(observed.domain().point(((), 7)))
     assert image.parent() is integers
     assert image.datum() == 7
+
+    # Conjugating an admitted action by an isomorphism preserves its laws.
+    # Neither carrier is enumerated; no extensional equality decision is needed.
+    translated = Sets.from_membership(lambda value: Q.integer(value))
+    assert translated is not integers
+    shift = Mor(Sets)(integers, translated)(lambda value: value + 1)
+    unshift = Mor(Sets)(translated, integers)(lambda value: value - 1)
+    Sets.retain_inverses(shift, unshift)
+    isomorphism = section.on_morphism(shift)
+    target = section.on_object(translated)
+    transported = modules.transport(module, isomorphism)
+    assert transported in modules
+    assert modules.forgetful().on_object(transported) is target
+    observed = projection.on_morphism(transported.action())
+    image = observed(observed.domain().point(((), 8)))
+    assert image.parent() is translated
+    assert image.datum() == 8
+
+    lifted = modules.homomorphism(module, transported, isomorphism)
+    assert lifted.domain() is module
+    assert lifted.codomain() is transported
+    assert modules.forgetful().on_morphism(lifted) is isomorphism
+    recovered = modules.transport(transported, isomorphism.inverse())
+    assert modules.forgetful().on_object(recovered) is carrier
+    recovered_action = projection.on_morphism(recovered.action())
+    assert recovered_action(recovered_action.domain().point(((), 7))).datum() == 7
 
 
 test_distinct_acting_and_acted_categories()

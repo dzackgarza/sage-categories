@@ -88,10 +88,8 @@ Modules(A, C)(rho_X)
 The codomain of `rho_X: A bullet X -> X` determines `X`. The constructor checks the action endpoints and asserts the two module diagrams.
 It does not ask the caller to repeat `X`.
 
-For the tensor unit with its canonical monoid structure, the selected actegory
-unitor `I bullet X -> X` defines a module by action coherence. This construction
-applies even when the acting and acted-on categories differ and requires no
-enumeration of `X` or extensional equality decision on its maps.
+For the tensor unit with its canonical monoid structure, the selected actegory unitor `I bullet X -> X` defines a module by action coherence.
+This construction applies even when the acting and acted-on categories differ and requires no enumeration of `X` or extensional equality decision on its maps.
 
 Named constructors can accept other complete semantic presentations:
 
@@ -149,8 +147,12 @@ X.action()
 
 `action()` returns `rho_X` in `Mor(C)(A bullet X, X)`. At compatible point domains, scalar action evaluates this morphism through the selected actegory action.
 `Modules(A, C).homomorphism(source, target, f)` constructs the module morphism over `f`, and the algebra square `f rho_X = rho_Y (A bullet f)` must commute.
-`transport(module, phi)` moves an action along an isomorphism `phi` of `C` by the conjugation `phi rho_X (A bullet phi^{-1})`. `restriction(f)` is the restriction-of-scalars functor along a monoid morphism `f: B -> A`, sending `(X, rho)` to `(X, rho (f bullet X))`.
-`carrier()` is the object of `M` carrying `A`, and `scalar_endofunctor()` is `A bullet -`, the endofunctor whose algebras the module laws cut; [bimodules.md](bimodules.md) writes the commuting law of two actions on it.
+`transport(module, phi)` moves an action along an isomorphism `phi` of `C` by the conjugation `phi rho_X (A bullet phi^{-1})`. `restriction(f)` is the restriction-of-scalars functor along a monoid morphism `f: B -> A`, sending `(X, rho)` to `(X, rho (f bullet X))`. `carrier()` is the object of `M` carrying `A`, and `scalar_endofunctor()` is `A bullet -`, the endofunctor whose algebras the module laws cut; [bimodules.md](bimodules.md) writes the commuting law of two actions on it.
+
+Transport requires an admitted module and an isomorphism in the acted-on category.
+Functoriality and naturality of the action coherence conjugate the original module diagrams to the transported ones.
+The resulting action therefore enters the same law equifiers without requiring a fresh extensional equality decision on the new carrier.
+This applies to arbitrary scalar monoids and arbitrary carriers, not only to tensor-unit actions or finite sets.
 
 All other capabilities come through the structure functor to `C` or through later property subcategories of `Modules(A, C)`.
 
@@ -166,40 +168,30 @@ A\longrightarrow \operatorname{End}_C(X)
 in `M`. This is the closed or enriched presentation of the same module action.
 The action morphism `A bullet X -> X` remains the definition under the weaker actegory hypotheses.
 
-In the ordinary module setting, elements and morphisms use the specified tensor
-representation. Vector and matrix constructors are its coordinate special cases,
-with the necessary chosen data and base ring (D46). A finite matrix is not the
-definition of an arbitrary module morphism.
+In the ordinary module setting, elements and morphisms use the specified tensor representation.
+Vector and matrix constructors are its coordinate special cases, with the necessary chosen data and base ring (D46). A finite matrix is not the definition of an arbitrary module morphism.
 
 For ordinary left modules over a ring `R`, take `M = Ab`, regard `R` as a monoid object under tensor product, and use the standard `Ab`-action on `Ab`.
 
 ## Size and coordinate presentations
 
-`Modules(A, C)` imposes no finite generation, finite rank, freeness, basis, or chosen
-enumeration beyond the supplied ambient hypotheses. Finite-dimensional linear
-algebra engines compute their stated special cases. They cannot determine the
-domain of the module category or its inherited operations; see
-[computational generality](computational-generality.md).
+`Modules(A, C)` imposes no finite generation, finite rank, freeness, basis, or chosen enumeration beyond the supplied ambient hypotheses.
+Finite-dimensional linear algebra engines compute their stated special cases.
+They cannot determine the domain of the module category or its inherited operations; see [computational generality](computational-generality.md).
 
-For an ordinary ring `R` and index set `S`, the free module `R^(S)` is the algebraic
-direct sum of copies of `R`. Its elements have finite support in `S`, even when `S`
-is infinite or nonenumerable. This finiteness concerns each element separately.
-The full module and its defining injections retain all of `S`.
-The direct product `R^S` permits arbitrary component families and is a different
-construction when `S` is infinite and `R` is nonzero.
+For an ordinary ring `R` and index set `S`, the free module `R^(S)` is the algebraic direct sum of copies of `R`. Its elements have finite support in `S`, even when `S` is infinite or nonenumerable.
+This finiteness concerns each element separately.
+The full module and its defining injections retain all of `S`. The direct product `R^S` permits arbitrary component families and is a different construction when `S` is infinite and `R` is nonzero.
 
-A linear map out of `R^(S)` is determined by a supplied family of images of its
-basis elements. That family need not be materialized. Evaluation on a finite
-linear combination needs only its support and the corresponding images. Matrices
-require the appropriate bases and index families; a finite rectangular matrix
-cannot replace a morphism on an infinite rank module. General modules need not
-have a basis at all.
+A linear map out of `R^(S)` is determined by a supplied family of images of its basis elements.
+That family need not be materialized.
+Evaluation on a finite linear combination needs only its support and the corresponding images.
+Matrices require the appropriate bases and index families; a finite rectangular matrix cannot replace a morphism on an infinite rank module.
+General modules need not have a basis at all.
 
-The structure functors retain the entire underlying object and action. In
-particular, the module underlying a finitely presented algebra need not be finitely
-generated; [algebras.md](algebras.md#finite-presentation-and-the-underlying-module)
-fixes a distinguishing consumer. A coordinate algorithm's limitation must not
-truncate that functor image or narrow its declared target.
+The structure functors retain the entire underlying object and action.
+In particular, the module underlying a finitely presented algebra need not be finitely generated; [algebras.md](algebras.md#finite-presentation-and-the-underlying-module) fixes a distinguishing consumer.
+A coordinate algorithm's limitation must not truncate that functor image or narrow its declared target.
 
 ## Instances
 
@@ -225,9 +217,7 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 
 - The underlying object of a module is an object of the supplied category `C`.
 
-- Ordinary infinite rank module consumers retain their full index and scalar
-  action; evaluation of a map on a finite-support element uses its supplied
-  component images, without imposing a common finite basis on the module.
+- Ordinary infinite rank module consumers retain their full index and scalar action; evaluation of a map on a finite-support element uses its supplied component images, without imposing a common finite basis on the module.
 
 - The action is a morphism `A bullet X -> X` in `C`.
 

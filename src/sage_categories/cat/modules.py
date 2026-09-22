@@ -186,11 +186,20 @@ class ModuleCategory(EquifierCategory):
     def transport(self, module: ModuleCategory.ObjectType, isomorphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
         """The module on ``Y`` along an isomorphism ``φ: X -> Y`` of ``C``: ``ρ_Y = φ ∘ ρ_X ∘ (A • φ⁻¹)``."""
         base = self.underlying_category()
+        assert module in self, f"{module!r} is not a module in {self!r}"
         assert isomorphism.domain() is self.forgetful().on_object(module)
         assert isomorphism in base.morphism_category(1).Isomorphisms(), f"{isomorphism!r} is not an isomorphism of {base!r}"
         acting_category = self.actegory().monoidal_structure().underlying_category()
         identity = acting_category.morphism_category(1)(self.carrier(), self.carrier()).one()
-        return self(isomorphism * module.action() * tensor_morphism(self._actegory.action(), identity, isomorphism.inverse()))
+        action = isomorphism * module.action() * tensor_morphism(self._actegory.action(), identity, isomorphism.inverse())
+        transported = self._algebras.algebra(isomorphism.codomain(), action)
+        # Functoriality of A • - and naturality of the action's unitor and
+        # associator conjugate the two admitted module diagrams to those of
+        # this action.  Their validity does not require a fresh extensional
+        # equality decision on Y, which may have no enumeration.
+        refine(transported, self.ambient())
+        refine(transported, self)
+        return transported
 
     @cached_method(key=identity_key)
     def restriction(self, scalar_morphism: MorphismCategory.ObjectType) -> Functor:

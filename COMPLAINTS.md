@@ -177,6 +177,10 @@ Read historical observations at their stated revisions before relying on them.
   On 2026-09-11 two further benign status/result reads for the retained static-stub generator were blocked by the same indeterminate safety response; later ordinary terminal reads succeeded, and the blocked calls were not treated as process evidence.
   A new bounded read-only delegation attempt again returned `UNIDENTIFIED_CALLER` and created no workers.
 
+- **Current dispatch evidence (2026-09-22):** Two read-only `r-gate` launch attempts for the module-transport repair at `04bfc84c` returned “The worker run could not cross its durable acceptance barrier” and reported rolled-back spawns.
+  Neither returned a reviewer result.
+  The transport consumers, static check, and normal commit gate do not establish independent review.
+
 - **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.
 
 ## Documented repository CLI entry points are not directly on PATH

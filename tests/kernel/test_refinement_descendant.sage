@@ -3,8 +3,9 @@
 from sage_categories.cat.category import Axiom, Category, ask
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.morphisms import Mor
-from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
 from sage_categories.kernel.construction import retained_object_input
+from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.sets.finite import Sets
 
 
@@ -93,6 +94,55 @@ class TaggedRefinementUpper(PropertySubcategory):
             return self
 
 
+class PlacementTarget(Category):
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+
+class PlacementSource(Category):
+    class ObjectType:
+        def __init__(self, value: int) -> None:
+            self._placement_value = value
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __init__(self, target: PlacementTarget) -> None:
+        self._target = target
+        super().__init__()
+
+    def __call__(self, value: int) -> PlacementSource.ObjectType:
+        return self.ObjectType(value)
+
+    def structure_functors(self):
+        return (Fun.full_subcategory_monomorphism(self, self._target),)
+
+
+class DetachedPlacement(FullSubcategory):
+    """A narrowing whose public structural graph deliberately omits its ambient inclusion."""
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def structure_functors(self):
+        return ()
+
+
 def test_refining_intermediate_category_preserves_existing_placed_descendant() -> None:
     middle = RefinementMiddle()
     upper = RefinementUpper(middle)
@@ -127,4 +177,24 @@ def test_refining_intermediate_category_preserves_existing_placed_descendant() -
     assert Mor(tagged)(value, value).one() is identity
 
 
+def test_refined_value_still_traces_its_retained_construction_placement() -> None:
+    target = PlacementTarget()
+    source = PlacementSource(target)
+    detached = DetachedPlacement(source)
+    value = source(11)
+    identity = Mor(source)(value, value).one()
+    assert is_placed(value, target)
+    assert is_placed(identity, Mor(target))
+
+    refine(value, detached)
+    refine(identity, Mor(detached))
+    assert value.category() is detached
+    assert is_placed(value, source)
+    assert is_placed(value, target)
+    assert is_placed(identity, Mor(detached))
+    assert is_placed(identity, Mor(source))
+    assert is_placed(identity, Mor(target))
+
+
 test_refining_intermediate_category_preserves_existing_placed_descendant()
+test_refined_value_still_traces_its_retained_construction_placement()

@@ -147,13 +147,27 @@ def is_placed(candidate: RoleCandidate, category: Category) -> bool:
                 return True
     target = compiler.node(category, Role.OBJECT)
     placements = [_placement_node(candidate)]
-    if role is Role.OBJECT:
-        from sage_categories.kernel.construction import retained_object_input
+    match role:
+        case Role.OBJECT:
+            from sage_categories.kernel.construction import retained_object_input
 
-        assert isinstance(candidate, ObjectOfCategory)
-        identity = retained_object_input(candidate).identity
-        if identity.universe is not None:
-            placements.append(compiler.node(identity.universe, Role.OBJECT))
+            assert isinstance(candidate, ObjectOfCategory)
+            identity = retained_object_input(candidate).identity
+            # Refinement changes the value's strongest current placement, not the
+            # category in which the value was constructed.  Start from that retained
+            # placement as well so its placement-tracing structural graph remains
+            # reachable after a narrower category selects a different immediate graph.
+            placements.append(compiler.node(identity.category, Role.OBJECT))
+            if identity.universe is not None:
+                placements.append(compiler.node(identity.universe, Role.OBJECT))
+        case Role.MORPHISM:
+            from sage_categories.kernel.construction import retained_morphism_input
+
+            assert isinstance(candidate, MorphismOfCategory)
+            identity = retained_morphism_input(candidate).identity
+            placements.append(compiler.node(identity.category, Role.OBJECT))
+        case Role.ELEMENT:
+            pass
     return any(compiler.same_node(target, found) for placement in placements for found in _reached_placements(placement))
 
 

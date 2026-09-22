@@ -32,6 +32,8 @@ def test_boolean_monoid_acting_on_three_points() -> None:
     # 1 acts as the identity and 0 sends everything to the sink 2.
     rho = Mor(Sets)(acted, three)(lambda pair: pair[1] if pair[0] == 1 else 2)
     modules = Modules(scalars, actegory)
+    assert modules.structure_functors() == (modules.forgetful(),)
+    assert modules.selected_functors() == (modules.forgetful(),)
     module = modules(rho)
     assert module in modules
     assert module.action() is rho

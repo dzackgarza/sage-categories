@@ -27,11 +27,15 @@ from sage_categories.cat.properties import (
 from sage_categories.cat.properties import FullSubcategory as FullSubcategory
 from sage_categories.cat.properties import PredicateSubcategory as PredicateSubcategory
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
+from sage_categories.kernel.construction import (
+    retained_morphism_input as retained_morphism_input,
+)
 from sage_categories.kernel.refinement import common_ancestor as common_ancestor
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.roles import Role as Role
+from sage_categories.kernel.roles import role_of as role_of
 from sage_categories.kernel.sage_runtime import Integer as Integer
 from sage_categories.kernel.sage_runtime import Unknown as Unknown
 from sage_categories.kernel.sage_runtime import cached_method as cached_method

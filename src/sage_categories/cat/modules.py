@@ -97,7 +97,14 @@ class ModuleCategory(EquifierCategory):
     @cached_method
     def forgetful(self) -> Functor:
         """``U_A: Modules(A, C) -> C``, ``(X, ρ_X) ↦ X`` and ``f ↦ f``."""
-        return self._algebras.forgetful() * Fun.full_subcategory_monomorphism(self, self._algebras)
+        return Fun(self, self.underlying_category()).Faithful().Isofibrations()(
+            lambda module: module.carrier(),
+            lambda arrow: arrow.underlying_morphism(),
+        )
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """``U_A`` is the sole immediate structure functor of ``Modules(A, C)``."""
+        return (self.forgetful(),)
 
     def __call__(self, action_morphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
         """The module with action ``ρ_X: A • X -> X``; its codomain is ``X``."""

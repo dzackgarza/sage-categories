@@ -2,10 +2,12 @@
 
 import pytest
 
-from sage_categories.all import Mor, Sets, Cartesian, SelfAction, ask
+from sage_categories import Mor, ask
+from sage_categories.cat.monoidal import Cartesian, SelfAction
 from sage_categories.cat.modules import Modules
 from sage_categories.cat.structured_objects import Monoids
 from sage_categories.cat.calculus import binary_product_data
+from sage_categories.sets import Sets
 
 
 def conjunction_monoid(carrier):

@@ -180,6 +180,7 @@ Read historical observations at their stated revisions before relying on them.
 - **Current dispatch evidence (2026-09-22):** Two read-only `r-gate` launch attempts for the module-transport repair at `04bfc84c` returned “The worker run could not cross its durable acceptance barrier” and reported rolled-back spawns.
   Neither returned a reviewer result.
   The transport consumers, static check, and normal commit gate do not establish independent review.
+  A subsequent read-only review request for the restriction-of-scalars repair at `1a7b558a` returned the same acceptance-barrier error and rolled back its spawn; it also returned no reviewer result.
 
 - **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.
 
@@ -810,6 +811,8 @@ Ideas, to be weighed, not obligations.*
   It preparses a temporary copy with only top-level direct test invocations removed, then runs the selected unchanged function through verbose pytest under `SAGE_BIN`, so collection, test start, and completion are visible while one test bounds the resident set.
   On 2026-09-12 `tests/sets/test_set_scaffold.sage::test_rule_defined_infinite_set` completed in 45.09 seconds under Sage 10.9 / Python 3.14.7; the same staging shape completed `test_finite_set_universal_maps` in 70.45 seconds.
   This is the reproducible targeted route for runtime acceptance on this host; it does not claim that the whole public-consumer suite can run in one process.
+
+- **Current bounded-run evidence (2026-09-22):** At `59003e1e`, the two named restriction-of-scalars consumers reported `2 passed` in 142.81 seconds, but their shared Sage process exceeded its 150-second cap after that summary and exited 124. Both consumers also completed with clean exit 0 in separate bounded runs: the rule-defined-carrier regression through pytest at `1f2b455f`, and the unchanged finite-action test function invoked directly at `59003e1e`. The combined timeout is not an assertion failure; its process-exit cause has not been isolated.
 
 - **Gap and impact:** The compatible runtime now exists, but this host cannot reliably execute several cold Sage/Julia consumers while the filesystem and memory are under this pressure.
   Source/static/architecture checks remain usable; long runtime acceptance can be nondiagnostic or terminated externally before an assertion is reached.

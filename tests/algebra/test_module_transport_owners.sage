@@ -4,14 +4,15 @@ import pytest
 
 from sympy import Q
 
-from sage_categories.all import Cat, Fun, Mor, Sets, Cartesian, SelfAction, Unknown, ask
+from sage_categories import Cat, Fun, Mor, Unknown, ask
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism, pair_maps
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.modules import Modules
-from sage_categories.cat.monoidal import Actions, ActionsCategory, MonoidalStructuresCategory
+from sage_categories.cat.monoidal import Actions, ActionsCategory, Cartesian, MonoidalStructuresCategory, SelfAction
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import EndofunctorAlgebras, Monoids
+from sage_categories.sets import Sets
 
 
 def action_on_product(structure: MonoidalStructuresCategory.ObjectType) -> tuple[ActionsCategory.ObjectType, Functor, Functor]:
@@ -185,6 +186,65 @@ def test_tensor_unit_acts_on_a_rule_defined_carrier_in_a_distinct_category() -> 
     assert recovered_action(recovered_action.domain().point(((), 7))).datum() == 7
 
 
+def test_restriction_preserves_modules_on_rule_defined_carriers() -> None:
+    structure = Cartesian(Sets)
+    actegory, projection, section = action_on_product(structure)
+    unit = structure.unit()
+    monoids = Monoids(structure)
+    scalars = monoids(structure.left_unitor().component(unit), Mor(Sets)(unit, unit).one())
+    booleans = Sets((0, 1))
+    square = binary_product_data(Sets, booleans, booleans).apex()
+    smaller = monoids(
+        Mor(Sets)(square, booleans)(lambda pair: min(pair)),
+        Mor(Sets)(unit, booleans)(lambda point: 1),
+    )
+    scalar_map = monoids.homomorphism(smaller, scalars, Mor(Sets)(booleans, unit)(lambda value: ()))
+    modules = Modules(scalars, actegory)
+    integers = Sets.from_membership(lambda value: Q.integer(value))
+    carrier = section.on_object(integers)
+    module = modules(actegory.unitor().component(carrier))
+    assert ask(integers.is_finite()) is Unknown
+
+    # The noninvertible monoid map makes both Boolean scalars act trivially.
+    # The admitted action and monoid map imply the restricted module laws;
+    # a fresh extensional equality decision on integers is not required.
+    restriction = modules.restriction(scalar_map)
+    bad_action = section.on_morphism(Mor(Sets)(binary_product_data(Sets, unit, integers).apex(), integers)(lambda pair: 0))
+    bad_algebra = EndofunctorAlgebras(modules.scalar_endofunctor()).algebra(carrier, bad_action)
+    with pytest.raises(AssertionError):
+        restriction.on_object(bad_algebra)
+    restricted = restriction.on_object(module)
+    smaller_modules = Modules(smaller, actegory)
+    assert restriction.domain() is modules
+    assert restriction.codomain() is smaller_modules
+    assert restricted in smaller_modules
+    assert smaller_modules.forgetful().on_object(restricted) is carrier
+    observed = projection.on_morphism(restricted.action())
+    assert observed(observed.domain().point((0, 7))).datum() == 7
+    assert observed(observed.domain().point((1, -4))).datum() == -4
+
+    translated = Sets.from_membership(lambda value: Q.integer(value))
+    shift = Mor(Sets)(integers, translated)(lambda value: value + 1)
+    unshift = Mor(Sets)(translated, integers)(lambda value: value - 1)
+    Sets.retain_inverses(shift, unshift)
+    isomorphism = section.on_morphism(shift)
+    transported = modules.transport(module, isomorphism)
+    lifted = modules.homomorphism(module, transported, isomorphism)
+    restricted_target = restriction.on_object(transported)
+    restricted_map = restriction.on_morphism(lifted)
+    assert restricted_map.domain() is restricted
+    assert restricted_map.codomain() is restricted_target
+    assert smaller_modules.forgetful().on_morphism(restricted_map) is isomorphism
+    observed_map = projection.on_morphism(smaller_modules.forgetful().on_morphism(restricted_map))
+    assert observed_map(integers.point(7)).datum() == 8
+    identity = Mor(modules)(module, module).one()
+    assert ask(restriction.on_morphism(identity) == Mor(smaller_modules)(restricted, restricted).one()) is True
+    inverse = modules.homomorphism(transported, module, section.on_morphism(unshift))
+    restricted_inverse = restriction.on_morphism(inverse)
+    assert ask(restriction.on_morphism(inverse * lifted) == restricted_inverse * restricted_map) is True
+
+
 test_distinct_acting_and_acted_categories()
 test_self_action_transport()
 test_tensor_unit_acts_on_a_rule_defined_carrier_in_a_distinct_category()
+test_restriction_preserves_modules_on_rule_defined_carriers()

@@ -205,6 +205,7 @@ class ModuleCategory(EquifierCategory):
     def restriction(self, scalar_morphism: MorphismCategory.ObjectType) -> Functor:
         """Restriction of scalars along a monoid morphism ``f: B -> A``: ``Modules(A, C) -> Modules(B, C)``, ``(X, ρ) ↦ (X, ρ ∘ (f • X))``."""
         monoids = Monoids(self._actegory.monoidal_structure())
+        assert scalar_morphism in monoids.morphism_category(1), f"{scalar_morphism!r} is not a monoid morphism in {monoids!r}"
         assert scalar_morphism.codomain() is self._scalars, f"{scalar_morphism!r} does not end at {self._scalars!r}"
         target = Modules(scalar_morphism.domain(), self._actegory)
         to_magmas = monoids.to_magmas()
@@ -212,13 +213,23 @@ class ModuleCategory(EquifierCategory):
         base = self.underlying_category()
 
         def on_object(module: ModuleCategory.ObjectType) -> ModuleCategory.ObjectType:
+            assert module in self, f"{module!r} is not a module in {self!r}"
             carrier = self.forgetful().on_object(module)
-            return target(module.action() * tensor_morphism(self._actegory.action(), underlying, base.morphism_category(1)(carrier, carrier).one()))
+            action = module.action() * tensor_morphism(self._actegory.action(), underlying, base.morphism_category(1)(carrier, carrier).one())
+            restricted = target._algebras.algebra(carrier, action)
+            # The monoid morphism preserves unit and multiplication.  Substituting
+            # it into the admitted module diagrams, using action functoriality
+            # and associator naturality, gives the restricted module diagrams.
+            # This implication does not require extensional equality on X.
+            refine(restricted, target.ambient())
+            refine(restricted, target)
+            return restricted
 
         def on_morphism(arrow: ModuleCategory.MorphismType) -> ModuleCategory.MorphismType:
-            return target.homomorphism(on_object(arrow.domain()), on_object(arrow.codomain()), self.forgetful().on_morphism(arrow))
+            return target.homomorphism(restriction.on_object(arrow.domain()), restriction.on_object(arrow.codomain()), self.forgetful().on_morphism(arrow))
 
-        return Fun(self, target)(on_object, on_morphism)
+        restriction = Fun(self, target)(on_object, on_morphism)
+        return restriction
 
 
 type NativeModuleAdapter = Callable[[ModuleCategory, object], ModuleCategory.ObjectType]

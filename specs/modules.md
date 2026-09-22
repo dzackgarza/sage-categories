@@ -154,6 +154,11 @@ Functoriality and naturality of the action coherence conjugate the original modu
 The resulting action therefore enters the same law equifiers without requiring a fresh extensional equality decision on the new carrier.
 This applies to arbitrary scalar monoids and arbitrary carriers, not only to tensor-unit actions or finite sets.
 
+Restriction of scalars requires an admitted monoid morphism and an admitted source module.
+Preservation of unit and multiplication, together with action functoriality and associator naturality, carries the source module diagrams to the restricted action.
+The restricted action enters the same defining inserter and law equifiers without a fresh extensional equality decision on its carrier.
+The restriction functor retains that exact carrier and sends each module morphism to the same ambient map with its restricted source and target actions.
+
 All other capabilities come through the structure functor to `C` or through later property subcategories of `Modules(A, C)`.
 
 ## Closed and enriched presentation

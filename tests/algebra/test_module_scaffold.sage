@@ -44,6 +44,8 @@ def test_boolean_monoid_acting_on_three_points() -> None:
     assert modules.forgetful() is defining_forgetful
     assert modules.structure_functors() == (modules.forgetful(),)
     assert modules.selected_functors() == (modules.forgetful(),)
+    assert modules.forgetful() in Fun(modules, Sets).Faithful()
+    assert modules.forgetful() in Fun(modules, Sets).Isofibrations()
     module = modules(rho)
     assert module in modules
     assert module.action() is rho

@@ -341,9 +341,7 @@ class MonoidCategory(EquifierCategory):
         tensor_unit = monoidal.unit()
         base = monoidal.underlying_category()
         canonical_unit_monoid = (
-            operation.codomain() is tensor_unit
-            and operation is monoidal.left_unitor().component(tensor_unit)
-            and unit is Mor(base)(tensor_unit, tensor_unit).one()
+            operation.codomain() is tensor_unit and operation is monoidal.left_unitor().component(tensor_unit) and unit is Mor(base)(tensor_unit, tensor_unit).one()
         )
         match canonical_unit_monoid:
             case True:
@@ -378,15 +376,21 @@ def Monoids(
         carrier = value.carrier().carrier()
         operation, unit = value.carrier().operation(), value.structure()
         identity = Mor(base)(carrier, carrier).one()
-        return operation * tensor_morphism(tensor, unit if left else identity, identity if left else unit)
+        match left:
+            case True:
+                return operation * tensor_morphism(tensor, unit, identity)
+            case False:
+                return operation * tensor_morphism(tensor, identity, unit)
 
     def associative(value: CategoryOfCategories.ElementType, left: bool) -> MorphismCategory.ObjectType:
         carrier, operation = value.carrier().carrier(), value.carrier().operation()
         identity = Mor(base)(carrier, carrier).one()
-        if left:
-            return operation * tensor_morphism(tensor, operation, identity)
-        associator = structure.associator().component(structure.associator().domain().domain()((carrier, carrier, carrier)))
-        return operation * tensor_morphism(tensor, identity, operation) * associator
+        match left:
+            case True:
+                return operation * tensor_morphism(tensor, operation, identity)
+            case False:
+                associator = structure.associator().component(structure.associator().domain().domain()((carrier, carrier, carrier)))
+                return operation * tensor_morphism(tensor, identity, operation) * associator
 
     transformations = Mor(Fun(pointed, base))
     left_unit, right_unit = tensor_units(tensor, structure.unit())
@@ -965,46 +969,50 @@ def _semiring_law_equations(
 
     def left_distributive(value: CategoryOfCategories.ElementType, law: bool) -> MorphismCategory.ObjectType:
         x, alpha, mu, _ = operations(value)
-        if law:
-            return mu * tensor_morphism(tensor, Mor(base)(x, x).one(), alpha)
-        inner = binary_product_data(base, x, x)
-        outer = binary_product_data(base, x, inner.apex())
-        first, second, third = (
-            outer.leg(0),
-            inner.leg(0) * outer.leg(1),
-            inner.leg(1) * outer.leg(1),
-        )
-        return alpha * pair_maps(
-            base,
-            mu * pair_maps(base, first, second),
-            mu * pair_maps(base, first, third),
-        )
+        match law:
+            case True:
+                return mu * tensor_morphism(tensor, Mor(base)(x, x).one(), alpha)
+            case False:
+                inner = binary_product_data(base, x, x)
+                outer = binary_product_data(base, x, inner.apex())
+                first, second, third = (
+                    outer.leg(0),
+                    inner.leg(0) * outer.leg(1),
+                    inner.leg(1) * outer.leg(1),
+                )
+                return alpha * pair_maps(
+                    base,
+                    mu * pair_maps(base, first, second),
+                    mu * pair_maps(base, first, third),
+                )
 
     def right_distributive(value: CategoryOfCategories.ElementType, law: bool) -> MorphismCategory.ObjectType:
         x, alpha, mu, _ = operations(value)
-        if law:
-            return mu * tensor_morphism(tensor, alpha, Mor(base)(x, x).one())
-        inner = binary_product_data(base, x, x)
-        outer = binary_product_data(base, inner.apex(), x)
-        first, second, third = (
-            inner.leg(0) * outer.leg(0),
-            inner.leg(1) * outer.leg(0),
-            outer.leg(1),
-        )
-        return alpha * pair_maps(
-            base,
-            mu * pair_maps(base, first, third),
-            mu * pair_maps(base, second, third),
-        )
+        match law:
+            case True:
+                return mu * tensor_morphism(tensor, alpha, Mor(base)(x, x).one())
+            case False:
+                inner = binary_product_data(base, x, x)
+                outer = binary_product_data(base, inner.apex(), x)
+                first, second, third = (
+                    inner.leg(0) * outer.leg(0),
+                    inner.leg(1) * outer.leg(0),
+                    outer.leg(1),
+                )
+                return alpha * pair_maps(
+                    base,
+                    mu * pair_maps(base, first, third),
+                    mu * pair_maps(base, second, third),
+                )
 
     def absorbing(value: CategoryOfCategories.ElementType, left: bool) -> MorphismCategory.ObjectType:
         x, _, mu, zero_everywhere = operations(value)
         identity = Mor(base)(x, x).one()
-        return mu * pair_maps(
-            base,
-            zero_everywhere if left else identity,
-            identity if left else zero_everywhere,
-        )
+        match left:
+            case True:
+                return mu * pair_maps(base, zero_everywhere, identity)
+            case False:
+                return mu * pair_maps(base, identity, zero_everywhere)
 
     transformations = Mor(Fun(pairs, base))
     triples = monoidal.associator().domain().domain()

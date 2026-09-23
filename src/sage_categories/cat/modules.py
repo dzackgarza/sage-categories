@@ -253,17 +253,21 @@ def Modules(scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.Object
     def unit_law(value: CategoryOfCategories.ElementType, law: bool) -> MorphismCategory.ObjectType:
         """``ρ ∘ (η • X)`` and ``λ_X`` on ``I • X``."""
         x, rho = value.carrier(), value.structure()
-        if law:
-            return rho * tensor_morphism(action, unit, base.morphism_category(1)(x, x).one())
-        return actegory.unitor().component(x)
+        match law:
+            case True:
+                return rho * tensor_morphism(action, unit, base.morphism_category(1)(x, x).one())
+            case False:
+                return actegory.unitor().component(x)
 
     def action_law(value: CategoryOfCategories.ElementType, law: bool) -> MorphismCategory.ObjectType:
         """``ρ ∘ (μ • X)`` and ``ρ ∘ (A • ρ) ∘ a_{A,A,X}`` on ``(A ⊗ A) • X``."""
         x, rho = value.carrier(), value.structure()
-        if law:
-            return rho * tensor_morphism(action, operation, base.morphism_category(1)(x, x).one())
-        triples = actegory.associator().domain().domain()
-        return rho * tensor_morphism(action, identity_scalar, rho) * actegory.associator().component(triples((carrier, carrier, x)))
+        match law:
+            case True:
+                return rho * tensor_morphism(action, operation, base.morphism_category(1)(x, x).one())
+            case False:
+                triples = actegory.associator().domain().domain()
+                return rho * tensor_morphism(action, identity_scalar, rho) * actegory.associator().component(triples((carrier, carrier, x)))
 
     transformations = Fun(algebras, base).morphism_category(1)
     unit_source = _scalar_endofunctor(actegory, monoidal.unit()) * forget

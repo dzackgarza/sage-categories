@@ -196,10 +196,12 @@ def Bimodules(
         """``lambda (1 (x) rho)`` and ``rho (lambda (x) 1) a^-1`` on ``R (x) (X (x) S)``."""
         x = value.family_component(2)
         lam, rho = value.family_component(0).action(), value.family_component(1).action()
-        if through_the_left:
-            return lam * tensor_morphism(tensor, Mor(base)(scalars, scalars).one(), rho)
-        rebracket = associator.component(triples((scalars, x, co_scalars)))
-        return rho * tensor_morphism(tensor, lam, Mor(base)(co_scalars, co_scalars).one()) * rebracket
+        match through_the_left:
+            case True:
+                return lam * tensor_morphism(tensor, Mor(base)(scalars, scalars).one(), rho)
+            case False:
+                rebracket = associator.component(triples((scalars, x, co_scalars)))
+                return rho * tensor_morphism(tensor, lam, Mor(base)(co_scalars, co_scalars).one()) * rebracket
 
     source = left.scalar_endofunctor() * right.scalar_endofunctor() * carrier
     transformations = Mor(Fun(pairs, base))

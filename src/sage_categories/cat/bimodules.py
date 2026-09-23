@@ -164,7 +164,7 @@ class BimoduleCategory(EquifierCategory):
         arrow: MorphismCategory.ObjectType,
     ) -> BimoduleCategory.MorphismType:
         """The bimodule morphism over a map of ``V`` preserving both actions; fullness makes it a morphism here."""
-        return self._pairs.homomorphism(source, target, arrow)
+        return self.restrict_morphism(self._pairs.homomorphism(source, target, arrow))
 
 
 @cached_function(key=identity_key)

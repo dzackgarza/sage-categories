@@ -30,6 +30,11 @@ It is the pullback of the left and right module categories over their forgetful 
 
 on `R tensor (X tensor S)`. The pullback supplies one carrier and both actions; the equifier imposes the commuting law.
 `Bimodules(R, S, V)(left_action, right_action)` is the object constructor, `to_left()` and `to_right()` are the retained legs, `forgetful()` is the carrier functor, and `homomorphism(source, target, f)` constructs the morphism over a map of `V` that preserves both actions.
+Its source and target must already belong to the commuting-law equifier, not merely
+to the pullback of the two module categories. The map preserving both actions is
+restricted through that full-subcategory inclusion, retaining the same arrow and
+both module projections. Identity and composition remain inherited from the
+action-pair category.
 
 For ordinary rings, take `V` to be abelian groups under tensor product over the integers.
 An `(R,S)`-bimodule then has a unital left `R`-action and a unital right `S`-action on one abelian group.

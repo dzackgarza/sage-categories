@@ -87,9 +87,16 @@ def tensor_morphism(tensor: Functor, first: MorphismCategory.ObjectType, second:
     paired = Mor(pairs)(source, target)((first, second))
     first_inverse = first.base_category().retained_inverse(first)
     second_inverse = second.base_category().retained_inverse(second)
-    if first_inverse is not None and second_inverse is not None and pairs.retained_inverse(paired) is None:
-        inverse = Mor(pairs)(target, source)((first_inverse, second_inverse))
-        pairs.retain_inverses(paired, inverse)
+    match first_inverse, second_inverse:
+        case (None, _) | (_, None):
+            pass
+        case first_inverse, second_inverse:
+            match pairs.retained_inverse(paired):
+                case None:
+                    inverse = Mor(pairs)(target, source)((first_inverse, second_inverse))
+                    pairs.retain_inverses(paired, inverse)
+                case _:
+                    pass
     return tensor.on_morphism(paired)
 
 

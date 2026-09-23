@@ -96,14 +96,13 @@ class ModuleCategory(EquifierCategory):
 
     @cached_method
     def forgetful(self) -> Functor:
-        """``U_A: Modules(A, C) -> C``, ``(X, ρ_X) ↦ X`` and ``f ↦ f``."""
+        """``U_A: Modules(A, C) -> C``, retained from the defining inserter and equifiers."""
+        unital = self.ambient()
+        assert unital.ambient() is self._algebras
         return (
-            Fun(self, self.underlying_category())
-            .Faithful()
-            .Isofibrations()(
-                lambda module: module.carrier(),
-                lambda arrow: arrow.underlying_morphism(),
-            )
+            self._algebras.forgetful()
+            * Fun.full_subcategory_monomorphism(unital, self._algebras)
+            * Fun.full_subcategory_monomorphism(self, unital)
         )
 
     def structure_functors(self) -> tuple[Functor, ...]:

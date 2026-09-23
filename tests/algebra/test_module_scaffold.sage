@@ -2,7 +2,7 @@
 
 import pytest
 
-from sage_categories import Mor, ask
+from sage_categories import Fun, Mor, ask
 from sage_categories.cat.monoidal import Cartesian, SelfAction
 from sage_categories.cat.modules import Modules
 from sage_categories.cat.structured_objects import Monoids
@@ -34,6 +34,14 @@ def test_boolean_monoid_acting_on_three_points() -> None:
     # 1 acts as the identity and 0 sends everything to the sink 2.
     rho = Mor(Sets)(acted, three)(lambda pair: pair[1] if pair[0] == 1 else 2)
     modules = Modules(scalars, actegory)
+    unital_algebras = modules.ambient()
+    algebras = unital_algebras.ambient()
+    defining_forgetful = (
+        algebras.forgetful()
+        * Fun.full_subcategory_monomorphism(unital_algebras, algebras)
+        * Fun.full_subcategory_monomorphism(modules, unital_algebras)
+    )
+    assert modules.forgetful() is defining_forgetful
     assert modules.structure_functors() == (modules.forgetful(),)
     assert modules.selected_functors() == (modules.forgetful(),)
     module = modules(rho)

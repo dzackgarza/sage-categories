@@ -5,8 +5,32 @@ from __future__ import annotations
 from sage_categories.all import Cat, Category, Fun, Mor, ask
 from sage_categories.cat.adjunctions import Adjunctions, Equivalences
 from sage_categories.cat.canonical import FinitePresentedCategory
+from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
 from sage_categories.cat.cones import cone, cones
-from sage_categories.cat.dual_functor_categories import dual_functor_category_equivalence
+from sage_categories.cat.diagrams import from_sequence
+from sage_categories.cat.dual_functor_categories import (
+    dual_functor_category_equivalence,
+)
+from sage_categories.cat.functors import Functor
+
+
+class FirstFactorPresentation(LimitSubcategory):
+    """A specified Cat-limit whose own initialization is carried by its first projection."""
+
+    class ObjectType:
+        pass
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def first_factor(self) -> Functor:
+        return self.product_projection(0)
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        return (self.first_factor(),)
 
 
 def interval_arrow(category: FinitePresentedCategory, first: int, last: int) -> FinitePresentedCategory.MorphismType:
@@ -50,6 +74,35 @@ def test_declared_implementation_initializes_its_mathematical_parameters() -> No
     assert residues(10).residue() == 3
     assert residues(19).residue() == 5
     assert residues(10) is residues(10)
+
+
+def test_specialized_limit_projection_reads_retained_family_during_initialization() -> None:
+    first, second = Cat().Simplex(1), Cat().Simplex(1)
+    diagram = from_sequence(Cat(), (first, second))
+    specialized = limit_of_categories(
+        diagram,
+        Cat().Limits(diagram.domain()),
+        FirstFactorPresentation,
+    )
+    source = specialized((first(0), second(0)))
+    target = specialized((first(1), second(0)))
+    first_projection = specialized.product_projection(0)
+    second_projection = specialized.product_projection(1)
+
+    assert first_projection.on_object(source) is first(0)
+    assert first_projection.on_object(target) is first(1)
+    assert second_projection.on_object(source) is second(0)
+
+    arrow = specialized.construct_morphism(
+        source,
+        target,
+        (
+            first.generator("0->1"),
+            Mor(second)(second(0), second(0)).one(),
+        ),
+    )
+    assert ask(first_projection.on_morphism(arrow) == first.generator("0->1")) is True
+    assert ask(second_projection.on_morphism(arrow) == Mor(second)(second(0), second(0)).one()) is True
 
 
 def test_comma_objects_squares_and_composition() -> None:
@@ -149,6 +202,7 @@ def test_duality_retains_equivalence_data_and_transports_transformations() -> No
 
 
 test_declared_implementation_initializes_its_mathematical_parameters()
+test_specialized_limit_projection_reads_retained_family_during_initialization()
 test_comma_objects_squares_and_composition()
 test_total_cones_inherit_comma_maps_and_universal_mediators()
 test_duality_retains_equivalence_data_and_transports_transformations()

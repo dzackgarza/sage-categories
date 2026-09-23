@@ -72,6 +72,7 @@ from sage_categories.cat.shapes import (
     DiscreteObjectCategory,
     carrier_comparison,
 )
+from sage_categories.kernel.construction import retained_input
 from sage_categories.kernel.refinement import is_placed
 from sage_categories.kernel.retention import (
     complete_constructions,
@@ -528,9 +529,19 @@ def limit_of_categories(
 
     @cached_function(key=identity_key)
     def projection(vertex: CategoryOfCategories.ElementType) -> Functor:
+        def object_component(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            data = retained_input(member_object).datum
+            assert isinstance(data, FamilyObjectData)
+            return data.component(vertex)
+
+        def morphism_component(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            data = retained_input(morphism).datum
+            assert isinstance(data, FamilyMorphismData)
+            return data.component(vertex)
+
         return Fun(limit, diagram.on_object(vertex))(
-            lambda member_object: member_object.family_component(vertex),
-            lambda morphism: morphism.family_component(vertex),
+            object_component,
+            morphism_component,
         )
 
     def mediator(candidate_cone: NaturalTransformation) -> Functor:

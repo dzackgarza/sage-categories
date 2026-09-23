@@ -1,13 +1,10 @@
 # Bimodule objects
 
-Fix a monoidal category `V` and monoid objects `R` and `S` in `V`.
-`Bimodules(R, S, V)` has objects `X` with a left action `R tensor X -> X` and a right action `X tensor S -> X`.
-Both actions satisfy their unit and associativity diagrams.
+Fix a monoidal category `V` and monoid objects `R` and `S` in `V`. `Bimodules(R, S, V)` has objects `X` with a left action `R tensor X -> X` and a right action `X tensor S -> X`. Both actions satisfy their unit and associativity diagrams.
 They commute: the two maps `(R tensor X) tensor S -> X` agree after the associator identifies the action domains.
 
 A morphism is one morphism of `V` preserving both actions.
-The two action projections reach the same object and morphism of `V`.
-Cat's inserters, equifiers, and pullbacks retain this compatibility and its projections.
+The two action projections reach the same object and morphism of `V`. Cat's inserters, equifiers, and pullbacks retain this compatibility and its projections.
 The bimodule category owns the two action equations and their interpretation.
 
 ## Right actions through the reverse
@@ -15,8 +12,7 @@ The bimodule category owns the two action equations and their interpretation.
 `Reversed(V)` is the reverse monoidal category `V^rev`, with `x tensor^rev y = y tensor x`, the same unit, `a^rev_{x,y,z} = a_{z,y,x}^{-1}`, and the two unitors exchanged.
 Reversing needs no braiding on `V`.
 
-A right `S`-action `X tensor S -> X` is a left action of `S` in `V^rev`, because `S bullet X` there is `X tensor S`.
-`S tensor^rev S` is `S tensor S`, so the multiplication and unit of `S` present a monoid object of `V^rev` without further data; that monoid object is the opposite monoid.
+A right `S`-action `X tensor S -> X` is a left action of `S` in `V^rev`, because `S bullet X` there is `X tensor S`. `S tensor^rev S` is `S tensor S`, so the multiplication and unit of `S` present a monoid object of `V^rev` without further data; that monoid object is the opposite monoid.
 Right `S`-modules are therefore `Modules(S_opposite, SelfAction(Reversed(V)))`, and the module construction in [modules.md](modules.md) covers both sides.
 
 `Bimodules(R, S, V)` takes `R` and `S` as monoid objects of `V` and reads `S` in `V^rev` itself, so a caller writes no opposite by hand.
@@ -30,11 +26,9 @@ It is the pullback of the left and right module categories over their forgetful 
 
 on `R tensor (X tensor S)`. The pullback supplies one carrier and both actions; the equifier imposes the commuting law.
 `Bimodules(R, S, V)(left_action, right_action)` is the object constructor, `to_left()` and `to_right()` are the retained legs, `forgetful()` is the carrier functor, and `homomorphism(source, target, f)` constructs the morphism over a map of `V` that preserves both actions.
-Its source and target must already belong to the commuting-law equifier, not merely
-to the pullback of the two module categories. The map preserving both actions is
-restricted through that full-subcategory inclusion, retaining the same arrow and
-both module projections. Identity and composition remain inherited from the
-action-pair category.
+Its source and target must already belong to the commuting-law equifier, not merely to the pullback of the two module categories.
+The map preserving both actions is restricted through that full-subcategory inclusion, retaining the same arrow and both module projections.
+Identity and composition remain inherited from the action-pair category.
 
 For ordinary rings, take `V` to be abelian groups under tensor product over the integers.
 An `(R,S)`-bimodule then has a unital left `R`-action and a unital right `S`-action on one abelian group.
@@ -52,8 +46,7 @@ X\otimes S\otimes Y\rightrightarrows X\otimes Y
   \longrightarrow X\otimes_S Y,
 \]
 
-where the parallel maps use the right action on `X` and the left action on `Y`.
-The associator fixes the bracketing in this diagram.
+where the parallel maps use the right action on `X` and the left action on `Y`. The associator fixes the bracketing in this diagram.
 The ambient category must supply these coequalizers, and tensoring must preserve the ones used to induce the outer actions.
 The retained balanced map and mediator are part of the result.
 For ordinary modules this is the usual balanced tensor product; see [Stacks, bimodules and tensor product](https://stacks.math.columbia.edu/tag/0FQM).
@@ -65,11 +58,10 @@ In Smith generators the quotient adjoins the rows of the difference matrix to th
 `balanced_tensor(q, x, y)` is the point `x tensor_S y`, and `relative_tensor_mediator(q, C, h)` is the map out of the relative tensor through which a biadditive `S`-balanced rule factors.
 `induced_left_action(q, lambda_X)` and `induced_right_action(q, rho_Y)` are the outer actions: acting on the outer factor commutes with the identification the middle monoid makes, so each action descends to the quotient.
 `relative_tensor_morphism(q, q', f, g)` is `f tensor_S g`, the map a map of each factor induces.
-`relative_left_unitor(q, lambda_Y, eta)` gives `S tensor_S Y -> Y` and `relative_right_unitor(q, rho_X, eta)` gives `X tensor_S S -> X`, each with its inverse. Acting is itself balanced, so the comparison is the action read on the quotient, and the inverse tensors with the unit; both composites are checked on construction.
-Descended outer actions and associativity maps are constructed through the
-tensorized quotient epimorphisms themselves.  The private CAP realization uses
-its epimorphism-colift operation, so relative tensor does not choose element
-representatives of a quotient in order to define these maps.
+`relative_left_unitor(q, lambda_Y, eta)` gives `S tensor_S Y -> Y` and `relative_right_unitor(q, rho_X, eta)` gives `X tensor_S S -> X`, each with its inverse.
+Acting is itself balanced, so the comparison is the action read on the quotient, and the inverse tensors with the unit; both composites are checked on construction.
+Descended outer actions and associativity maps are constructed through the tensorized quotient epimorphisms themselves.
+The private CAP realization uses its epimorphism-colift operation, so relative tensor does not choose element representatives of a quotient in order to define these maps.
 
 The tensor product acts on pairs of compatible bimodule morphisms.
 For `R=S=T`, the regular bimodule is the unit, with comparison isomorphisms induced by its actions.

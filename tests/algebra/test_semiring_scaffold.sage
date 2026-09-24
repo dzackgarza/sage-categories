@@ -2,9 +2,14 @@
 
 import pytest
 
-from sage_categories.all import Mor, Sets, Cartesian, ask
-from sage_categories.cat.structured_objects import AdditiveMonoids, MultiplicativeMonoids, Semirings
+from sage_categories.all import Cartesian, Mor, Sets, ask
 from sage_categories.cat.calculus import binary_product_data
+from sage_categories.cat.structured_objects import (
+    AdditiveMonoids,
+    Monoids,
+    MultiplicativeMonoids,
+    Semirings,
+)
 
 
 def boolean_operations():
@@ -20,7 +25,7 @@ def boolean_operations():
 
 
 def test_boolean_semiring_has_two_distinct_operations() -> None:
-    carrier, disjunction, conjunction, _, zero, one = boolean_operations()
+    _, disjunction, conjunction, _, zero, one = boolean_operations()
     semirings = Semirings(Sets())
     boolean = semirings(disjunction, zero, conjunction, one)
     assert boolean in semirings
@@ -51,5 +56,38 @@ def test_incompatible_operations_fail_distributivity() -> None:
         Semirings(Sets())(exclusive, zero, disjunction, one)
 
 
+def test_semiring_morphisms_require_semiring_endpoints() -> None:
+    carrier = Sets((0, 1, 2))
+    structure = Cartesian(Sets())
+    square = binary_product_data(Sets(), carrier, carrier).apex()
+    addition = Mor(Sets)(square, carrier)(lambda pair: max(pair))
+    zero = Mor(Sets)(structure.unit(), carrier)(lambda _: 0)
+
+    # This associative monoid distributes over max on both sides and satisfies
+    # 0*x=0, but not x*0=0: its last row is constantly 2.  It therefore lies in
+    # the ambient of the final semiring equifier but is not a semiring.
+    multiplication = Mor(Sets)(
+        square,
+        carrier,
+    )(
+        lambda pair: (
+            (0, 0, 0),
+            (0, 1, 2),
+            (2, 2, 2),
+        )[pair[0]][pair[1]]
+    )
+    one = Mor(Sets)(structure.unit(), carrier)(lambda _: 1)
+    additive = AdditiveMonoids(structure).renamed(Monoids(structure)(addition, zero))
+    multiplicative = MultiplicativeMonoids(structure).renamed(Monoids(structure)(multiplication, one))
+    semirings = Semirings(Sets())
+    pairs = semirings.ambient().ambient().ambient().ambient()
+    almost = semirings.ambient()(pairs((additive, multiplicative, carrier)))
+    assert almost in semirings.ambient()
+    assert almost not in semirings
+    with pytest.raises(AssertionError):
+        semirings.homomorphism(almost, almost, Mor(Sets)(carrier, carrier).one())
+
+
 test_boolean_semiring_has_two_distinct_operations()
 test_incompatible_operations_fail_distributivity()
+test_semiring_morphisms_require_semiring_endpoints()

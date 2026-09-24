@@ -938,7 +938,7 @@ class SemiringCategory(EquifierCategory):
         arrow: MorphismCategory.ObjectType,
     ) -> SemiringCategory.MorphismType:
         """The semiring morphism over a carrier map preserving both structures: the pair morphism, which fullness makes a morphism here."""
-        return self._pairs.homomorphism(source, target, arrow)
+        return self.restrict_morphism(self._pairs.homomorphism(source, target, arrow))
 
     def __call__(
         self,

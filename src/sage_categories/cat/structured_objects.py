@@ -285,10 +285,6 @@ class MonoidCategory(EquifierCategory):
     """Monoid objects with one operation and a unit in their supplied ambient."""
 
     class ObjectType:
-        def operation(self) -> MorphismCategory.ObjectType:
-            """The operation ``μ_X: X ⊗ X -> X`` of the underlying magma."""
-            return self.carrier().operation()
-
         def unit_morphism(self) -> MorphismCategory.ObjectType:
             return self.structure()
 

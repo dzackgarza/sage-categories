@@ -5,7 +5,6 @@ from functools import partial
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.category import member as member
@@ -15,6 +14,7 @@ from sage_categories.cat.cones import vertex_of as vertex_of
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.diagrams import cospan_diagram as cospan_diagram
 from sage_categories.cat.diagrams import sequence_position as sequence_position
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation

@@ -7,7 +7,6 @@ from sage_categories.cat.cat_constructions import LimitSubcategory as LimitSubca
 from sage_categories.cat.cat_constructions import (
     limit_of_categories as limit_of_categories,
 )
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
 from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.cones import cone as cone
@@ -15,6 +14,7 @@ from sage_categories.cat.cones import cones as cones
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.diagrams import from_sequence as from_sequence
 from sage_categories.cat.diagrams import sequence_position as sequence_position
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.modules import ModuleCategory as ModuleCategory

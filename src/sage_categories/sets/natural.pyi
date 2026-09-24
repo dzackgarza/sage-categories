@@ -4,12 +4,12 @@ import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
 import sage_categories.sets.finite
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.declarations import NN as NN
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.declarations import omega as omega
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.predicates import Proposition as Proposition

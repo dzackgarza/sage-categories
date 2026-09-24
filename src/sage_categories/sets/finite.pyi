@@ -9,7 +9,6 @@ import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.cat.slices
 import sage_categories.kernel.roles
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
@@ -21,6 +20,7 @@ from sage_categories.cat.cones import cone_apex as cone_apex
 from sage_categories.cat.declarations import NN as NN
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.declarations import omega as omega
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.leaf_categories import (

@@ -5,10 +5,10 @@ import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.comma import comma_objects as comma_objects
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation

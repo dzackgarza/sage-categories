@@ -18,11 +18,11 @@ from sage_categories.algebra.commutative_rings import (
     localize_at_prime as localize_at_prime,
 )
 from sage_categories.algebra.commutative_rings import prime_ideal as prime_ideal
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
 from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.declarations import Sets as Sets
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.leaf_categories import (

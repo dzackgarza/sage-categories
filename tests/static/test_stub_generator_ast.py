@@ -1146,6 +1146,56 @@ value: Incomplete
     ]
 
 
+def test_canonical_import_projection_keeps_a_declaring_internal_owner() -> None:
+    source = ast.parse(
+        """
+from sage_categories.cat.monoidal import tensor_morphism
+"""
+    )
+    tree = ast.parse(
+        """
+from sage_categories.engines.presented_modules import tensor_morphism as tensor_morphism
+"""
+    )
+    generator = _stub_generator()
+    generator._canonicalize_imports(
+        tree,
+        source,
+        "sage_categories",
+        {"tensor_morphism": "sage_categories.engines.presented_modules"},
+        {
+            "sage_categories.cat.monoidal": frozenset({"tensor_morphism"}),
+            "sage_categories.engines.presented_modules": frozenset({"tensor_morphism"}),
+        },
+    )
+    assert ast.unparse(tree) == "from sage_categories.cat.monoidal import tensor_morphism as tensor_morphism"
+
+
+def test_canonical_import_projection_redirects_a_reexport_to_its_public_owner() -> None:
+    source = ast.parse(
+        """
+from sage_categories.facade import Owner
+"""
+    )
+    tree = ast.parse(
+        """
+from sage_categories.facade import Owner as Owner
+"""
+    )
+    generator = _stub_generator()
+    generator._canonicalize_imports(
+        tree,
+        source,
+        "sage_categories",
+        {"Owner": "sage_categories.cat.owner"},
+        {
+            "sage_categories.facade": frozenset(),
+            "sage_categories.cat.owner": frozenset({"Owner"}),
+        },
+    )
+    assert ast.unparse(tree) == "from sage_categories.cat.owner import Owner as Owner"
+
+
 def test_final_projection_marks_owned_generic_aliases() -> None:
     source = ast.parse(
         """
@@ -1259,3 +1309,11 @@ def test_generated_geometry_projection_retains_exact_owned_roles() -> None:
     assert "def Schemes() -> SchemesCategory" in schemes
     assert ") -> SchemesCategory.MorphismType" in schemes
     assert "def projective_line(field: CategoryOfCategories.ElementType) -> ProjectiveLinePresentation" in schemes
+
+
+def test_generated_module_projection_keeps_the_monoidal_tensor_owner() -> None:
+    modules = (Path(__file__).parents[2] / "src/sage_categories/cat/modules.pyi").read_text()
+
+    assert "from sage_categories.cat.monoidal import" in modules
+    assert "tensor_morphism as tensor_morphism" in modules
+    assert "from sage_categories.engines.presented_modules import tensor_morphism" not in modules

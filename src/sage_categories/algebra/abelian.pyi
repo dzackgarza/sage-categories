@@ -5,7 +5,6 @@ from sage_categories.algebra._firewall.abelian import Engine as Engine
 from sage_categories.cat.bimodules import Bimodules as Bimodules
 from sage_categories.cat.calculus import binary_product_data as binary_product_data
 from sage_categories.cat.calculus import natural_isomorphism as natural_isomorphism
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.certified_structures import (
@@ -21,6 +20,7 @@ from sage_categories.cat.cones import cone_apex as cone_apex
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.diagrams import from_sequence as from_sequence
 from sage_categories.cat.diagrams import sequence_position as sequence_position
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.limit_basis import parallel_pair as parallel_pair
@@ -29,6 +29,7 @@ from sage_categories.cat.monoidal import MonoidalStructures as MonoidalStructure
 from sage_categories.cat.monoidal import (
     MonoidalStructuresCategory as MonoidalStructuresCategory,
 )
+from sage_categories.cat.monoidal import tensor_morphism as tensor_morphism
 from sage_categories.cat.monoidal import tensor_parentheses as tensor_parentheses
 from sage_categories.cat.monoidal import tensor_units as tensor_units
 from sage_categories.cat.morphisms import Mor as Mor
@@ -39,7 +40,6 @@ from sage_categories.cat.shapes import Discrete as Discrete
 from sage_categories.cat.structured_objects import AdditiveGroups as AdditiveGroups
 from sage_categories.cat.structured_objects import MonoidCategory as MonoidCategory
 from sage_categories.cat.structured_objects import Monoids as Monoids
-from sage_categories.engines.presented_modules import tensor_morphism as tensor_morphism
 
 __all__ = [
     "AbelianBimoduleTensor",

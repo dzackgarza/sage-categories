@@ -1,9 +1,9 @@
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.kernel.roles
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Functor as Functor
 
 __all__ = [

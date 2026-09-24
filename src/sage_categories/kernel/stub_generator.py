@@ -147,6 +147,7 @@ class _StubProjectionContext:
     """Package-wide source facts consumed by the final static-projection pass."""
 
     canonical_exports: dict[str, str]
+    declarations_by_module: dict[str, frozenset[str]]
     inheritance: dict[str, dict[str, tuple[str, ...]]]
     runtime_aliases: dict[str, dict[str, str]]
     source_modules: frozenset[str]
@@ -167,6 +168,7 @@ def _stub_projection_context(
     from sage_categories.kernel.compiler import compiler
 
     canonical_exports = _canonical_exports(package, output_directory, sources)
+    declarations_by_module = _source_declarations_by_module(package, output_directory, sources)
     inheritance = _complete_source_property_inheritance(
         compiler().declared_inheritance(),
         package,
@@ -190,6 +192,7 @@ def _stub_projection_context(
     )
     return _StubProjectionContext(
         canonical_exports,
+        declarations_by_module,
         inheritance,
         runtime_aliases,
         source_modules,
@@ -286,7 +289,13 @@ def _project_package_stub(
     source_tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
     tree = ast.parse(stub_path.read_text(encoding="utf-8"), filename=str(stub_path))
     _project_public_exports(tree, source_tree)
-    _canonicalize_imports(tree, package, context.canonical_exports)
+    _canonicalize_imports(
+        tree,
+        source_tree,
+        package,
+        context.canonical_exports,
+        context.declarations_by_module,
+    )
     projected_generic_aliases = _project_class_aliases(tree, source_tree)
     match module in context.runtime_aliases:
         case True:
@@ -1717,6 +1726,17 @@ def _canonical_exports(
     return {name: canonical for name, modules in candidates.items() if len(modules) == 1 for canonical in modules}
 
 
+def _source_declarations_by_module(
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+) -> dict[str, frozenset[str]]:
+    """Return every top-level name declared by each source module."""
+    return {
+        _module_name(package, output_directory, source): frozenset(_declared_names(ast.parse(source.read_text(encoding="utf-8"), filename=str(source)))) for source in sources
+    }
+
+
 def _declared_names(tree: ast.Module) -> set[str]:
     names: set[str] = set()
     for statement in tree.body:
@@ -1784,6 +1804,19 @@ def _source_module_aliases(source: ast.Module) -> dict[str, str]:
             case _:
                 pass
     return module_aliases
+
+
+def _source_from_import_bindings(
+    source: ast.Module,
+) -> dict[str, tuple[str, str]]:
+    """Map each source-bound absolute from-import to its exact module and name."""
+    bindings: dict[str, tuple[str, str]] = {}
+    for statement in source.body:
+        if not isinstance(statement, ast.ImportFrom) or statement.module is None or statement.level != 0:
+            continue
+        for alias in statement.names:
+            bindings[alias.asname or alias.name] = (statement.module, alias.name)
+    return bindings
 
 
 def _source_attribute_aliases(
@@ -1948,8 +1981,10 @@ def _project_public_exports(tree: ast.Module, source: ast.Module) -> None:
 
 def _canonicalize_imports(
     tree: ast.Module,
+    source: ast.Module,
     package: str,
     canonical_exports: dict[str, str],
+    declarations_by_module: dict[str, frozenset[str]],
 ) -> None:
     """Replace an imported runtime alias with its uniquely declared public owner.
 
@@ -1959,6 +1994,7 @@ def _canonicalize_imports(
     package declares a ``Category`` states that the private Sage runtime mirror stands on
     the owned declaration, which is D173's direction reversed.
     """
+    source_bindings = _source_from_import_bindings(source)
     statements: list[ast.stmt] = []
     for statement in tree.body:
         if not isinstance(statement, ast.ImportFrom) or statement.module is None:
@@ -1969,10 +2005,18 @@ def _canonicalize_imports(
             continue
         grouped: dict[str, list[ast.alias]] = {}
         for alias in statement.names:
-            match alias.name in canonical_exports:
-                case True:
+            bound = alias.asname or alias.name
+            source_binding = source_bindings.get(bound)
+            match source_binding:
+                case (source_module, source_name) if (
+                    source_name == alias.name
+                    and (source_module == package or source_module.startswith(f"{package}."))
+                    and alias.name in declarations_by_module.get(source_module, frozenset())
+                ):
+                    module = source_module
+                case _ if alias.name in canonical_exports:
                     module = canonical_exports[alias.name]
-                case False:
+                case _:
                     module = statement.module
             _list_bucket(grouped, module).append(alias)
         statements.extend(ast.ImportFrom(module=module, names=aliases, level=statement.level) for module, aliases in grouped.items())

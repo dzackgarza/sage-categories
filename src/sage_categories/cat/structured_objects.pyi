@@ -19,7 +19,6 @@ from sage_categories.cat.cat_constructions import LimitSubcategory as LimitSubca
 from sage_categories.cat.cat_constructions import (
     limit_of_categories as limit_of_categories,
 )
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.comma import comma_objects as comma_objects
@@ -30,6 +29,7 @@ from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.diagrams import cospan_diagram as cospan_diagram
 from sage_categories.cat.diagrams import from_sequence as from_sequence
 from sage_categories.cat.diagrams import sequence_position as sequence_position
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
@@ -37,6 +37,7 @@ from sage_categories.cat.monoidal import Cartesian as Cartesian
 from sage_categories.cat.monoidal import (
     MonoidalStructuresCategory as MonoidalStructuresCategory,
 )
+from sage_categories.cat.monoidal import tensor_morphism as tensor_morphism
 from sage_categories.cat.monoidal import tensor_parentheses as tensor_parentheses
 from sage_categories.cat.monoidal import tensor_units as tensor_units
 from sage_categories.cat.morphisms import Mor as Mor
@@ -48,7 +49,6 @@ from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.properties import FullSubcategory as FullSubcategory
 from sage_categories.cat.properties import PropertySubcategory as PropertySubcategory
 from sage_categories.cat.shapes import Discrete as Discrete
-from sage_categories.engines.presented_modules import tensor_morphism as tensor_morphism
 from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.retention import (
     complete_constructions as complete_constructions,

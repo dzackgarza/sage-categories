@@ -4,7 +4,6 @@ import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.cat.properties
 import sage_categories.kernel.roles
-from sage_categories.cat.category import Cat as Cat
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.category import member as member
@@ -23,6 +22,7 @@ from sage_categories.cat.diagrams import from_sequence as from_sequence
 from sage_categories.cat.dual_functor_categories import (
     dual_functor_category_equivalence as dual_functor_category_equivalence,
 )
+from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation

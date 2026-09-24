@@ -812,7 +812,9 @@ unit has been integrated is a retirement obligation, not a second writer.
 A tree that advanced while you were not editing is not evidence of a second writer.
 Compare it against your own last commit and this session's edits before concluding one.
 Stage exact files and commit each substantive unit. Push authorized work so it can be recovered.
-Use system trash for deletions. Do not use destructive Git operations.
+Use system trash for deletions of repository or user content. A temporary directory a
+command created for its own run is not such content: delete it outright, because trashing
+it keeps every run's bytes on disk. Do not use destructive Git operations.
 Keep user messages private; public documents contain neutral technical decisions and source locators.
 
 On resume, read the current card and actual tree. Reuse valid prerequisite evidence.

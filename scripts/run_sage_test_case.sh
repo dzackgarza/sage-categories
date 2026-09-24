@@ -36,7 +36,7 @@ test -f "$repo_root/$source_file"
 work=$(mktemp -d "${TMPDIR:-/tmp}/sage-categories-targeted.XXXXXX")
 cleanup() {
     if [ -e "$work" ]; then
-        gio trash "$work"
+        rm -rf -- "$work"
     fi
 }
 trap cleanup EXIT

@@ -99,6 +99,8 @@ def test_composition_tensor() -> None:
     monoid = monoids(multiplication, unit)
     assert monoid in Monoids(structure)
     assert monoid.carrier().carrier() is closure
+    assert monoid.operation() is multiplication
+    assert monoid.unit_morphism() is unit
     assert ask(monoid.unit_morphism().component(C(0)) == edge(0, 1)) is True
     assert monoid.unit_morphism().domain() is identity
     assert monoid.unit_morphism().codomain() is closure

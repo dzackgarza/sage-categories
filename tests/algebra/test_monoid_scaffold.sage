@@ -17,6 +17,8 @@ def test_additive_monoid_and_doubling_automorphism() -> None:
     monoid = Monoids(structure)(addition, unit)
     assert monoid in Monoids(structure)
     assert monoid.carrier().carrier() is carrier
+    assert monoid.operation() is addition
+    assert monoid.unit_morphism() is unit
     assert ask(addition(square.point((2, 2))) == carrier.point(1)) is True
 
     magma = Monoids(structure).to_magmas().on_object(monoid)

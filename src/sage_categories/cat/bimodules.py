@@ -148,6 +148,10 @@ class BimoduleCategory(EquifierCategory):
         """``U: Bimodules(R, S, V) -> V``, the one carrier both actions live on."""
         return self._left.forgetful() * self.to_left()
 
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """Retain the law-equifier inclusion and both ordered module projections."""
+        return (*super().structure_functors(), self.to_left(), self.to_right())
+
     def __call__(
         self,
         left_action: MorphismCategory.ObjectType,

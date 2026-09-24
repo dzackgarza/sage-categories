@@ -360,6 +360,10 @@ class MonoidCategory(EquifierCategory):
         pointed = PointedMagmas(monoidal.tensor(), monoidal.unit())
         return pointed.forgetful() * Fun.full_subcategory_monomorphism(self, pointed)
 
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """Retain the law-equifier inclusion and the public ``Monoids(V) -> Magmas(V)`` edge."""
+        return (*super().structure_functors(), self.to_magmas())
+
 
 @cached_function(key=identity_key)
 def Monoids(
@@ -922,6 +926,10 @@ class SemiringCategory(EquifierCategory):
     def to_carrier(self) -> Functor:
         """The retained carrier functor of a semiring."""
         return self._pairs.to_carrier() * Fun.full_subcategory_monomorphism(self, self._pairs)
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """Retain the law-equifier inclusion and both ordered monoid projections."""
+        return (*super().structure_functors(), self.to_additive(), self.to_multiplicative())
 
     def homomorphism(
         self,

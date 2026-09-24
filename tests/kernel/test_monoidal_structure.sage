@@ -1,6 +1,15 @@
 """Coherence and nonidentity morphisms for supplied monoidal structures."""
 
-from sage_categories.all import Cat, Fun, Mor, Sets, Cartesian, Composition, SelfAction, ask
+from sage_categories.all import (
+    Cartesian,
+    Cat,
+    Composition,
+    Fun,
+    Mor,
+    SelfAction,
+    Sets,
+    ask,
+)
 from sage_categories.cat.monoidal import TrivialAction
 from sage_categories.cat.structured_objects import Magmas, Monoids
 
@@ -86,14 +95,17 @@ def test_composition_tensor() -> None:
     comparison = Mor(E)(closure, top)(lambda x: edge(max(1, C.label(x)), 2))
     magma_map = Magmas(structure).homomorphism(magma, top_magma, comparison)
     assert ask(Magmas(structure).forgetful().on_morphism(magma_map).component(C(1)) == edge(1, 2)) is True
-    monoid = Monoids(structure)(multiplication, unit)
+    monoids = Monoids(structure)
+    monoid = monoids(multiplication, unit)
     assert monoid in Monoids(structure)
     assert monoid.carrier().carrier() is closure
     assert ask(monoid.unit_morphism().component(C(0)) == edge(0, 1)) is True
     assert monoid.unit_morphism().domain() is identity
     assert monoid.unit_morphism().codomain() is closure
     assert monoid.operation().component(C(2)).codomain() is C(2)
-    assert Monoids(structure).to_magmas().on_object(monoid) is magma
+    assert monoids.structure_functors()[-1] is monoids.to_magmas()
+    assert Fun.declares_inheritance(monoids.to_magmas())
+    assert monoids.to_magmas().on_object(monoid) is magma
 
 
 def test_closure_monad_on_two_element_chain() -> None:

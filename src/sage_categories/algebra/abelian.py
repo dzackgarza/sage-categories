@@ -63,9 +63,9 @@ from sage_categories.cat.calculus import binary_product_data, natural_isomorphis
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.certified_structures import certified_additive_group
 from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
-from sage_categories.cat.cones import ConeCategory, cocone, cocone_apex, cone, cone_apex
+from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.diagrams import from_sequence, sequence_position
-from sage_categories.cat.functors import Cat, Fun, Functor
+from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.limit_basis import parallel_pair
 from sage_categories.cat.monoidal import (
     Cartesian,
@@ -413,7 +413,7 @@ def indexed_free_abelian_coproduct(
 
     selected = cocone(diagram, apex, leg)
 
-    def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
+    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
         target = cocone_apex(candidate)
 
         def component(index: Hashable) -> MorphismCategory.ObjectType:
@@ -476,7 +476,7 @@ def _biproduct(
     def product_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         return projections[sequence_position(vertex)]
 
-    def product_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+    def product_lift(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
         components = tuple(candidate.component(shape(index)) for index in (0, 1))
         source = cone_apex(candidate)
         return _backend.direct_sum_product_lift((first, second), apex, source, components)
@@ -492,9 +492,9 @@ def _biproduct(
     def coproduct_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
         return inclusions[sequence_position(vertex)]
 
-    def coproduct_lift(candidate: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        components = tuple(candidate.leg(index) for index in (0, 1))
-        target = candidate.apex()
+    def coproduct_lift(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+        components = tuple(candidate.component(shape(index)) for index in (0, 1))
+        target = cocone_apex(candidate)
         return _backend.direct_sum_coproduct_lift((first, second), apex, target, components)
 
     coproduct_apex = abelian.Colimits(shape).with_universal_data(
@@ -567,7 +567,7 @@ def _abelian_coequalizer(diagram: Functor) -> CategoryOfCategories.ElementType:
 
     selected = cocone(diagram, apex, selected_leg)
 
-    def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
+    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
         return _coequalizer_mediator(projection, candidate.component(target_vertex), first, second)
 
     return abelian.Colimits(shape).with_universal_data(

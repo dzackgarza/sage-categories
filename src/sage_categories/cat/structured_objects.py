@@ -1084,9 +1084,11 @@ def _monoid_homomorphism(
     arrow: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """The monoid morphism over a carrier map, through the magma and pointed-magma constructors."""
-    to_magmas = Monoids(monoidal).to_magmas()
+    monoids = Monoids(monoidal)
+    to_magmas = monoids.to_magmas()
     magma_map = Magmas(monoidal).homomorphism(to_magmas.on_object(source), to_magmas.on_object(target), arrow)
-    return PointedMagmas(monoidal.tensor(), monoidal.unit()).homomorphism(source, target, magma_map)
+    pointed_map = PointedMagmas(monoidal.tensor(), monoidal.unit()).homomorphism(source, target, magma_map)
+    return monoids.restrict_morphism(pointed_map)
 
 
 class RingCategory(LimitSubcategory):

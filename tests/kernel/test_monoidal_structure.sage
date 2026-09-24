@@ -11,9 +11,10 @@ from sage_categories.all import (
     Sets,
     ask,
 )
-from sage_categories.cat.calculus import natural_isomorphism
+from sage_categories.cat.calculus import natural_isomorphism, pair_maps
 from sage_categories.cat.modules import Modules
 from sage_categories.cat.monoidal import (
+    Actions,
     MonoidalStructures,
     TrivialAction,
     tensor_parentheses,
@@ -181,6 +182,55 @@ def test_internal_monoid_uses_a_supplied_nonstrict_associator() -> None:
     assert module in modules
     assert modules.forgetful().on_object(module) is acted
     assert module.action()(acted.point(2)).datum() == 2
+
+    acted_category = ChaoticPair()
+    register_handler(acted_category.equality(), acted_category._equal_objects)
+    register_handler(acted_category.equality(), acted_category._equal_morphisms)
+    acted_zero, acted_one = acted_category(0), acted_category(1)
+    action_pairs = Cat().Products()((category, acted_category))
+
+    def acted_unique(source, target):
+        return acted_category.construct_morphism(source, target, (source.label(), target.label()))
+
+    def action_object(pair):
+        scalar, value = pair.family_component(0), pair.family_component(1)
+        return acted_category((scalar.label() + value.label()) % 2)
+
+    def action_morphism(arrow):
+        return acted_unique(action.on_object(arrow.domain()), action.on_object(arrow.codomain()))
+
+    action = Fun(action_pairs, acted_category)(action_object, action_morphism)
+    action_triples = Cat().Products()((category, category, acted_category))
+    first, second, third = (action_triples.product_projection(index) for index in range(3))
+    action_left = action * pair_maps(Cat(), tensor * pair_maps(Cat(), first, second), third)
+    action_right = action * pair_maps(Cat(), first, action * pair_maps(Cat(), second, third))
+    action_associator = natural_isomorphism(
+        action_left,
+        action_right,
+        lambda triple: acted_unique(action_left.on_object(triple), action_right.on_object(triple)),
+        lambda triple: acted_unique(action_right.on_object(triple), action_left.on_object(triple)),
+    )
+    acted_identity = Fun(acted_category, acted_category).one()
+    unit_constant = Fun(acted_category, category).constant(zero)
+    action_unital = action * pair_maps(Cat(), unit_constant, acted_identity)
+    action_unitor = natural_isomorphism(
+        action_unital,
+        acted_identity,
+        lambda value: acted_unique(action_unital.on_object(value), value),
+        lambda value: acted_unique(value, action_unital.on_object(value)),
+    )
+    nontrivial = Actions(structure, acted_category)(action, action_associator, action_unitor)
+    assert nontrivial.underlying_category() is acted_category
+    assert ask(action.on_object(action_pairs((one, acted_zero))) == acted_one) is True
+    assert ask(nontrivial.pentagon(zero, one, zero, acted_zero)) is True
+    assert ask(nontrivial.triangle(one, acted_zero)) is True
+
+    nontrivial_modules = Modules(monoid, nontrivial)
+    acted_module = nontrivial_modules(Mor(acted_category)(acted_zero, acted_zero).one())
+    changed = nontrivial_modules.transport(acted_module, acted_unique(acted_zero, acted_one))
+    assert nontrivial_modules.forgetful().on_object(changed) is acted_one
+    assert ask(changed.action().domain() == action.on_object(action_pairs((zero, acted_one)))) is True
+    assert changed.action().codomain() is acted_one
 
 
 def test_composition_tensor() -> None:

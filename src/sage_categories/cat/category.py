@@ -1528,8 +1528,10 @@ def _same_universal_composite_result(
     second: MorphismCategory.ObjectType,
 ) -> bool:
     """Whether two exact morphisms are retained results of one composite equation."""
-    for by_first in _universal_composites.values():
-        for retained in by_first.values():
+    for outer_entry in _universal_composites.items():
+        by_first = outer_entry[1]
+        for inner_entry in by_first.items():
+            retained = inner_entry[1]
             first_retained = any(result is first for result in retained.results)
             second_retained = any(result is second for result in retained.results)
             if first_retained and second_retained:

@@ -701,12 +701,7 @@ class CategoryDeclaration[
         if universal is not None:
             return universal
         retained = _universal_composite_record(second, first)
-        pending_universal_result = (
-            retained is not None
-            and not retained.resolving
-            and not retained.constructs
-            and not retained.results
-        )
+        pending_universal_result = retained is not None and not retained.resolving and not retained.constructs and not retained.results
         composite = self.composite(second, first)
         if pending_universal_result:
             retain_universal_composite(second, first, composite)

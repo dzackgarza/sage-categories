@@ -122,7 +122,7 @@ def test_internal_monoid_uses_a_supplied_nonstrict_associator() -> None:
         return tensor_values[pair.family_component(0).label()]
 
     def unique(source, target):
-        return category.construct_morphism(source, target, None)
+        return category.construct_morphism(source, target, (source.label(), target.label()))
 
     tensor = Fun(pairs, category)(
         tensor_object,

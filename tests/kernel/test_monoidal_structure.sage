@@ -227,7 +227,9 @@ def test_internal_monoid_uses_a_supplied_nonstrict_associator() -> None:
 
     nontrivial_modules = Modules(monoid, nontrivial)
     acted_module = nontrivial_modules(Mor(acted_category)(acted_zero, acted_zero).one())
-    changed = nontrivial_modules.transport(acted_module, acted_unique(acted_zero, acted_one))
+    transport_isomorphism = acted_unique(acted_zero, acted_one)
+    acted_category.retain_inverses(transport_isomorphism, acted_unique(acted_one, acted_zero))
+    changed = nontrivial_modules.transport(acted_module, transport_isomorphism)
     assert nontrivial_modules.forgetful().on_object(changed) is acted_one
     assert ask(changed.action().domain() == action.on_object(action_pairs((zero, acted_one)))) is True
     assert changed.action().codomain() is acted_one

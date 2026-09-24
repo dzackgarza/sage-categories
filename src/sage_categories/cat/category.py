@@ -700,7 +700,16 @@ class CategoryDeclaration[
         universal = _universal_composite(second, first)
         if universal is not None:
             return universal
+        retained = _universal_composite_record(second, first)
+        pending_universal_result = (
+            retained is not None
+            and not retained.resolving
+            and not retained.constructs
+            and not retained.results
+        )
         composite = self.composite(second, first)
+        if pending_universal_result:
+            retain_universal_composite(second, first, composite)
         if first in self._inverses and second in self._inverses and composite not in self._inverses:
             self.retain_inverses(composite, self.composite(self._inverses[first], self._inverses[second]))
         return composite
@@ -1854,14 +1863,6 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._composition_action_images[morphism] = image
             self._retain_composition_action_result(morphism, image)
 
-        def _image_of_composite(
-            self,
-            second: MorphismCategory.ObjectType,
-            first: MorphismCategory.ObjectType,
-        ) -> MorphismCategory.ObjectType:
-            """Map the composite selected by the source category."""
-            return self.on_morphism(self.domain().compose_morphisms(second, first))
-
         def _retain_composition_action_result(
             self,
             morphism: MorphismCategory.ObjectType,
@@ -1907,17 +1908,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             source_reduction = _universal_composite_record(second, first)
             if source_reduction is None:
                 return
+            _ensure_universal_composite_record(second_image, first_image)
             _observe_universal_composite(
                 second,
                 first,
                 partial(self._retain_source_composite_image, second_image, first_image),
-            )
-            if not source_reduction.constructs:
-                return
-            retain_deferred_universal_composite(
-                second_image,
-                first_image,
-                partial(self._image_of_composite, second, first),
             )
 
         def _retain_source_composite_image(

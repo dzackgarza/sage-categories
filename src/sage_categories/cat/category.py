@@ -1735,6 +1735,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __init__(self, data: FunctorData | _StructuralFunctorData) -> None:
             self._functor_data = data
             self._limit_liftings: MonoDict = MonoDict()
+            self._composition_action_images: MonoDict = MonoDict()
             self._cartesian_lift_rule = None
             self._cocartesian_lift_rule = None
             self._constant_diagram_value: tuple[CategoryOfCategories.ElementType, ...] = ()
@@ -1802,6 +1803,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 inverse = source.retained_inverse(morphism)
                 if inverse is not None and target.retained_inverse(image) is None:
                     inverse_image = self._cached_morphism_image(inverse, on_object, construct)
+                    self._retain_composition_action_once(inverse, inverse_image)
                     target.retain_inverses(image, inverse_image)
                 refine(image, target.morphism_category(1).Isomorphisms())
             return image
@@ -1813,6 +1815,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 self.on_object,
                 self._construct_morphism_image,
             )
+            self._retain_composition_action_once(morphism, image)
             return self._retain_isomorphism_image(
                 morphism,
                 image,
@@ -1837,8 +1840,19 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             from sage_categories.cat.images import retain_morphism_image
 
             retain_morphism_image(self, image)
-            self._retain_composition_action_result(morphism, image)
             return image
+
+        def _retain_composition_action_once(
+            self,
+            morphism: MorphismCategory.ObjectType,
+            image: MorphismCategory.ObjectType,
+        ) -> None:
+            """Retain composition equations after ``morphism`` has entered the image cache."""
+            if morphism in self._composition_action_images:
+                assert self._composition_action_images[morphism] is image
+                return
+            self._composition_action_images[morphism] = image
+            self._retain_composition_action_result(morphism, image)
 
         def _image_of_composite(
             self,
@@ -1934,6 +1948,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 self._declared_object_image,
                 construct,
             )
+            self._retain_composition_action_once(morphism, image)
             return self._retain_isomorphism_image(
                 morphism,
                 image,

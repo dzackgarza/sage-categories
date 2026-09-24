@@ -12,6 +12,7 @@ from sage_categories.all import (
     ask,
 )
 from sage_categories.cat.calculus import natural_isomorphism
+from sage_categories.cat.modules import Modules
 from sage_categories.cat.monoidal import (
     MonoidalStructures,
     TrivialAction,
@@ -167,6 +168,19 @@ def test_internal_monoid_uses_a_supplied_nonstrict_associator() -> None:
     assert monoid.operation() is operation
     assert monoid.unit_morphism() is unit
     assert monoids.to_magmas().on_object(monoid).operation() is operation
+
+    acted = Sets((0, 1, 2))
+    trivial = TrivialAction(structure, Sets)
+    assert trivial.monoidal_structure() is structure
+    assert trivial.underlying_category() is Sets
+    assert ask(trivial.pentagon(zero, one, zero, acted)) is True
+    assert ask(trivial.triangle(one, acted)) is True
+
+    modules = Modules(monoid, trivial)
+    module = modules(trivial.unitor().component(acted))
+    assert module in modules
+    assert modules.forgetful().on_object(module) is acted
+    assert module.action()(acted.point(2)).datum() == 2
 
 
 def test_composition_tensor() -> None:

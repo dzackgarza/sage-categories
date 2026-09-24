@@ -1,4 +1,5 @@
-from collections.abc import Callable, Hashable
+from collections.abc import Callable
+from collections.abc import Hashable as Hashable
 from dataclasses import dataclass
 
 from _typeshed import Incomplete
@@ -22,7 +23,6 @@ from sage_categories.geometry.ringed_spaces import (
     RingedSpacesCategory as RingedSpacesCategory,
 )
 from sage_categories.geometry.sheaves import RingSheaf as RingSheaf
-from sage_categories.geometry.spaces import TopologicalSpaces as TopologicalSpaces
 from sage_categories.geometry.spaces import (
     TopologicalSpacesCategory as TopologicalSpacesCategory,
 )

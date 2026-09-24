@@ -38,6 +38,7 @@ __all__ = [
     "Semirings",
 ]
 
+from collections.abc import Callable
 from functools import partial
 
 from sage_categories.cat.calculus import (
@@ -54,7 +55,7 @@ from sage_categories.cat.cat_constructions import (
 )
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.comma import comma_objects
-from sage_categories.cat.cones import cone, cones
+from sage_categories.cat.cones import LimitConesCategory, cone, cones
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.diagrams import (
     cospan_diagram,
@@ -512,7 +513,7 @@ def _carrier_point(
     """The point read in the carrier through the retained point comparison, as its morphism ``1_C -> X``, with ``C``."""
     comparison = point.parent().point_comparison()
     carrier = comparison.codomain().index_set()
-    base = carrier.category()
+    base = carrier.category().construction_owner()
     return base, base.point_morphism(comparison.on_object(point).point())
 
 
@@ -1128,6 +1129,88 @@ class RingCategory(LimitSubcategory):
     def forgetful(self) -> Functor:
         """The retained carrier functor ``Rings(C) -> C`` through the semiring leg."""
         return self.factor(0).to_carrier() * self.to_semiring()
+
+    def _limit_apex(
+        self,
+        diagram: Functor,
+        ambient_limit: LimitConesCategory.ObjectType,
+    ) -> RingCategory.ObjectType:
+        """Lift an ambient product/equalizer apex with the pointwise ring operations."""
+        base = self.monoidal_structure().underlying_category()
+        image_diagram = ambient_limit.diagram()
+        apex = ambient_limit.apex()
+        square = binary_product_data(base, apex, apex)
+
+        def binary_operation(
+            operation: Callable[[RingCategory.ObjectType], MorphismCategory.ObjectType],
+        ) -> MorphismCategory.ObjectType:
+            candidate = cone(
+                image_diagram,
+                square.apex(),
+                lambda vertex: (
+                    operation(diagram.on_object(vertex))
+                    * pair_maps(
+                        base,
+                        ambient_limit.leg(vertex) * square.leg(0),
+                        ambient_limit.leg(vertex) * square.leg(1),
+                    )
+                ),
+            )
+            return ambient_limit.lift(cones(image_diagram)(candidate))
+
+        def unit_operation(
+            point: Callable[[RingCategory.ObjectType], CategoryOfCategories.ElementType],
+        ) -> MorphismCategory.ObjectType:
+            unit = self.monoidal_structure().unit()
+            candidate = cone(
+                image_diagram,
+                unit,
+                lambda vertex: _carrier_point(point(diagram.on_object(vertex)))[1],
+            )
+            return ambient_limit.lift(cones(image_diagram)(candidate))
+
+        return self(
+            binary_operation(lambda ring: ring.addition()),
+            unit_operation(lambda ring: ring.zero()),
+            binary_operation(lambda ring: ring.multiplication()),
+            unit_operation(lambda ring: ring.one()),
+        )
+
+    def _lift_limit_morphism(
+        self,
+        source: RingCategory.ObjectType,
+        target: RingCategory.ObjectType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> RingCategory.MorphismType:
+        """Lift an ambient universal arrow between lifted ring endpoints."""
+        return self.homomorphism(source, target, arrow)
+
+    @cached_method
+    def _limit_forgetful(self) -> Functor:
+        """The carrier functor with chosen discrete and equalizer limit lifts."""
+        forgetful = self.forgetful()
+        forgetful.with_limit_lifting(Discrete, self._limit_apex, self._lift_limit_morphism)
+        forgetful.with_limit_lifting(Cat().WalkingParallelPair(), self._limit_apex, self._lift_limit_morphism)
+        return forgetful
+
+    def limit_construction(
+        self,
+        shape: Category,
+    ) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+        """Create products/equalizers through the faithful carrier functor."""
+        lifting = self._limit_forgetful().limit_lifting(shape)
+        match lifting:
+            case None:
+                return super().limit_construction(shape)
+            case (on_apex, on_morphism):
+                from sage_categories.cat.constructions import lift_limit
+
+                return lambda diagram: lift_limit(
+                    self._limit_forgetful(),
+                    diagram,
+                    on_apex,
+                    on_morphism,
+                )
 
     def structure_functors(self) -> tuple[Functor, ...]:
         return (

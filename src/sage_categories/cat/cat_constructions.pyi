@@ -33,6 +33,7 @@ from sage_categories.cat.shapes import Discrete as Discrete
 from sage_categories.cat.shapes import DiscreteCategory as DiscreteCategory
 from sage_categories.cat.shapes import DiscreteObjectCategory as DiscreteObjectCategory
 from sage_categories.cat.shapes import carrier_comparison as carrier_comparison
+from sage_categories.kernel.construction import retained_input as retained_input
 from sage_categories.kernel.refinement import is_placed as is_placed
 from sage_categories.kernel.retention import (
     complete_constructions as complete_constructions,

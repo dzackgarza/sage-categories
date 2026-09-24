@@ -2,9 +2,10 @@
 
 import pytest
 
-from sage_categories.all import Mor, Sets, Cartesian, ask
-from sage_categories.cat.structured_objects import Rings, Semirings
+from sage_categories.all import Cartesian, Mor, Sets, ask, parallel_pair
 from sage_categories.cat.calculus import binary_product_data
+from sage_categories.cat.cones import cone, cones
+from sage_categories.cat.structured_objects import Rings, Semirings
 
 
 def residue_operations(modulus):
@@ -117,8 +118,47 @@ def test_matrix_ring_opposite_reverses_multiplication_and_maps() -> None:
     assert opposite_map(opposite_e12).datum() == opposite_e12.datum()
 
 
+def test_ring_products_and_equalizers_are_created_on_carriers() -> None:
+    rings = Rings(Sets())
+    two_data = residue_operations(2)
+    two = rings(*two_data[1:])
+    product = rings.Products()((two, two))
+    first, second = product.product_projection(0), product.product_projection(1)
+    assert first in Mor(rings)(product, two)
+    assert second in Mor(rings)(product, two)
+    off_diagonal = product.point((0, 1))
+    assert first(off_diagonal).datum() == 0
+    assert second(off_diagonal).datum() == 1
+    assert (product.point((1, 1)) + product.point((1, 1))).datum() == (0, 0)
+
+    diagram = parallel_pair(first, second)
+    equalizer = rings.Limits(diagram.domain())(diagram)
+    presentation = rings.Limits(diagram.domain()).universal_data(diagram)
+    source = diagram.domain().generating_morphisms()[0].domain()
+    projection = presentation.leg(source)
+    diagonal_point = equalizer.point((1, 1))
+    assert projection(diagonal_point).datum() == (1, 1)
+    with pytest.raises(AssertionError):
+        equalizer.point((0, 1))
+
+    forgetful = rings.forgetful()
+    diagonal_carrier = Mor(Sets)(forgetful.on_object(two), forgetful.on_object(product))(
+        lambda value: (value, value)
+    )
+    diagonal = rings.homomorphism(two, product, diagonal_carrier)
+    target_leg = first * diagonal
+    candidate = cone(
+        diagram,
+        two,
+        lambda vertex: diagonal if vertex is source else target_leg,
+    )
+    mediator = presentation.lift(cones(diagram)(candidate))
+    assert ask(projection * mediator == diagonal) is True
+
+
 test_residue_ring_operations()
 test_quotient_ring_homomorphism()
 test_boolean_semiring_is_not_a_ring()
 test_additive_nonunital_map_is_not_a_ring_map()
 test_matrix_ring_opposite_reverses_multiplication_and_maps()
+test_ring_products_and_equalizers_are_created_on_carriers()

@@ -15,7 +15,7 @@ from sage_categories.cat.predicates import Axiom, Proposition
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
 from sage_categories.geometry.sheaves import RingSheaf
-from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
+from sage_categories.geometry.spaces import TopologicalSpacesCategory
 from sage_categories.geometry.stalks import ring_stalk, ringed_stalk_map
 
 __all__ = ["LocallyRingedSpaces", "LocallyRingedSpacesCategory"]
@@ -51,50 +51,6 @@ class _LocallyRingedMorphismData:
     ringed_map: RingedSpacesCategory.MorphismType
     stalk_map_rule: StalkMapRule
     local_map_rule: LocalMapRule
-
-
-def _ringed_identity(
-    ringed_space: RingedSpacesCategory.ObjectType,
-) -> RingedSpacesCategory.MorphismType:
-    spaces = TopologicalSpaces()
-    space = ringed_space.space()
-    continuous = Mor(spaces)(space, space).one()
-    sheaf = ringed_space.sheaf()
-
-    def component(open_key: Hashable) -> MorphismCategory.ObjectType:
-        ring = sheaf.presheaf.section_ring(open_key)
-        return Mor(_rings())(ring, ring).one()
-
-    return RingedSpaces().homomorphism(
-        ringed_space,
-        ringed_space,
-        continuous,
-        component,
-    )
-
-
-def _ringed_composite(
-    second: RingedSpacesCategory.MorphismType,
-    first: RingedSpacesCategory.MorphismType,
-) -> RingedSpacesCategory.MorphismType:
-    assert first.codomain() is second.domain()
-    source, target = first.domain(), second.codomain()
-    continuous = second.continuous_map() * first.continuous_map()
-
-    def component(target_key: Hashable) -> MorphismCategory.ObjectType:
-        target_open = target.sheaf().presheaf.open_object(target_key)
-        middle_open = second.continuous_map().inverse_image().on_object(target_open)
-        second_component = second.sheaf_map().component(target_open)
-        first_component = first.sheaf_map().component(middle_open)
-        assert second_component.codomain() is first_component.domain()
-        return first_component * second_component
-
-    return RingedSpaces().homomorphism(
-        source,
-        target,
-        continuous,
-        component,
-    )
 
 
 class LocallyRingedSpacesCategory(MorphismDataCategory):
@@ -161,11 +117,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
             )
 
     def to_ringed_spaces(self) -> Functor:
-        return next(
-            functor
-            for functor in self.selected_functors()
-            if functor.codomain() is RingedSpaces()
-        )
+        return next(functor for functor in self.selected_functors() if functor.codomain() is RingedSpaces())
 
     def structure_functors(self) -> tuple[Functor, ...]:
         forgetful = Fun(self, RingedSpaces()).Faithful()(
@@ -193,9 +145,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
     ) -> LocallyRingedSpacesCategory.ObjectType[OpenKey]:
         """Construct from a supplied stalk evaluator with the same public LRS surface."""
         assert ringed_space in RingedSpaces()
-        return self.ObjectType(
-            _LocallyRingedSpaceData(ringed_space, stalk_rule, local_ring_rule)
-        )
+        return self.ObjectType(_LocallyRingedSpaceData(ringed_space, stalk_rule, local_ring_rule))
 
     def homomorphism(
         self,
@@ -240,7 +190,10 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
             return Mor(_rings())(stalk, stalk).one()
 
         return _LocallyRingedMorphismData(
-            _ringed_identity(member_object.ringed_space()),
+            Mor(RingedSpaces())(
+                member_object.ringed_space(),
+                member_object.ringed_space(),
+            ).one(),
             identity_stalk_map,
             lambda _point, _stalk_map: true,
         )
@@ -257,9 +210,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
             _stalk_map: MorphismCategory.ObjectType,
         ) -> Proposition:
             middle_point = first_map.continuous_map().underlying_map()(source_point)
-            return first.local_map_condition(source_point) & second.local_map_condition(
-                middle_point
-            )
+            return first.local_map_condition(source_point) & second.local_map_condition(middle_point)
 
         def stalk_map_at(
             source_point: CategoryOfCategories.ElementType,
@@ -268,7 +219,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
             return first.stalk_map(source_point) * second.stalk_map(middle_point)
 
         return _LocallyRingedMorphismData(
-            _ringed_composite(second_map, first_map),
+            second_map * first_map,
             stalk_map_at,
             local_at,
         )

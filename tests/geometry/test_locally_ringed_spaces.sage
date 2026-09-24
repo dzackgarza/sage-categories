@@ -119,11 +119,13 @@ def test_locally_ringed_owner_forgets_to_ringed_spaces_and_retains_local_stalk_m
     assert ask(mapping.stalk_map(zero) == identity) is True
     assert ask(mapping.local_map_condition(zero)) is True
 
-    # Identity and composition are owned here but assembled from the retained
-    # ringed-space/sheaf data.  Locality composes stalkwise.
+    # Locality and stalk data compose here; the underlying ringed map uses the
+    # generic composition already owned by RingedSpaces.
     identity_local = Mor(locally)(local, local).one()
+    assert identity_local.ringed_map() is Mor(ringed)(ringed_space, ringed_space).one()
     assert ask(identity_local.stalk_map(zero) == identity) is True
     composite = mapping * mapping
+    assert composite.ringed_map() is ringed_map * ringed_map
     assert composite.continuous_map().underlying_map()(zero) is one
     assert ask(composite.stalk_map(zero) == identity) is True
     assert ask(composite.local_map_condition(zero)) is True

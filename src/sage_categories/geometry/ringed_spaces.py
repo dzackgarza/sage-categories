@@ -82,6 +82,19 @@ class RingedSpacesCategory(MorphismDataCategory):
         component_rule: SheafComponentRule[TargetKey],
     ) -> RingedSpacesCategory.MorphismType:
         """A morphism ``X -> Y`` with ``O_Y -> O_X (f^-1)^op`` as an actual natural transformation."""
+        return self._morphism_from_data(
+            source,
+            target,
+            self._ringed_morphism_data(source, target, continuous, component_rule),
+        )
+
+    def _ringed_morphism_data[SourceKey: Hashable, TargetKey: Hashable](
+        self,
+        source: RingedSpacesCategory.ObjectType[SourceKey],
+        target: RingedSpacesCategory.ObjectType[TargetKey],
+        continuous: TopologicalSpacesCategory.MorphismType,
+        component_rule: SheafComponentRule[TargetKey],
+    ) -> tuple[TopologicalSpacesCategory.MorphismType, NaturalTransformation]:
         assert continuous.domain() is source.space() and continuous.codomain() is target.space()
         inverse_op = cast(Any, continuous).inverse_image().op()
         target_sheaf = target.sheaf().presheaf.functor
@@ -99,7 +112,50 @@ class RingedSpacesCategory(MorphismDataCategory):
         # trusted").  Do not enumerate the represented open category here: ringed-space
         # morphisms must also work for topologies supplied by ``from_open_category``.
         transformation = Mor(Fun(target_sheaf.domain(), _rings()))(target_sheaf, pushed_source)(component)
-        return self._morphism_from_data(source, target, (continuous, transformation))
+        return continuous, transformation
+
+    def _identity_data(
+        self,
+        member_object: RingedSpacesCategory.ObjectType,
+    ) -> tuple[TopologicalSpacesCategory.MorphismType, NaturalTransformation]:
+        spaces = self._space_category()
+        space = member_object.space()
+        continuous = Mor(spaces)(space, space).one()
+        sheaf = member_object.sheaf()
+
+        def component(open_key: Hashable) -> MorphismCategory.ObjectType:
+            ring = sheaf.presheaf.section_ring(open_key)
+            return Mor(_rings())(ring, ring).one()
+
+        return self._ringed_morphism_data(
+            member_object,
+            member_object,
+            continuous,
+            component,
+        )
+
+    def _composite_data(
+        self,
+        second: RingedSpacesCategory.MorphismType,
+        first: RingedSpacesCategory.MorphismType,
+    ) -> tuple[TopologicalSpacesCategory.MorphismType, NaturalTransformation]:
+        source, target = first.domain(), second.codomain()
+        continuous = second.continuous_map() * first.continuous_map()
+
+        def component(target_key: Hashable) -> MorphismCategory.ObjectType:
+            target_open = target.sheaf().presheaf.open_object(target_key)
+            middle_open = second.continuous_map().inverse_image().on_object(target_open)
+            second_component = second.sheaf_map().component(target_open)
+            first_component = first.sheaf_map().component(middle_open)
+            assert second_component.codomain() is first_component.domain()
+            return first_component * second_component
+
+        return self._ringed_morphism_data(
+            source,
+            target,
+            continuous,
+            component,
+        )
 
     def __repr__(self) -> str:
         return "RingedSpaces"

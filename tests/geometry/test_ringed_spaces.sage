@@ -1,7 +1,7 @@
 """Ringed-space morphisms retain their continuous map and natural sheaf action."""
 
 from sage_categories import omega
-from sage_categories.all import NN, Cartesian, Fun, Mor, Sets
+from sage_categories.all import NN, Cartesian, Fun, Mor, Sets, ask
 from sage_categories.cat.calculus import binary_product_data
 from sage_categories.cat.structured_objects import Rings
 from sage_categories.geometry import (
@@ -67,6 +67,15 @@ def test_ringed_map_has_natural_sheaf_action_with_exact_endpoints() -> None:
     sheaf_component = morphism.sheaf_map().component(full)
     assert sheaf_component.domain() is target_sheaf.presheaf.section_ring(frozenset((0, 1)))
     assert sheaf_component.codomain() is source_sheaf.presheaf.section_ring(frozenset((0,)))
+
+    identity = Mor(ringed)(source, source).one()
+    assert identity.continuous_map() is Mor(spaces)(source_space, source_space).one()
+    source_full = source_space.open_object(frozenset((0,)))
+    assert identity.sheaf_map().component(source_full) is Mor(Rings(Sets))(ring_data[0], ring_data[0]).one()
+
+    composite = morphism * identity
+    assert composite.continuous_map() is continuous * identity.continuous_map()
+    assert ask(composite.sheaf_map().component(full) == sheaf_component) is True
 
 
 def test_ringed_map_does_not_enumerate_a_represented_open_category() -> None:

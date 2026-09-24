@@ -3,6 +3,7 @@
 from sage_categories.all import (
     Cartesian,
     Cat,
+    Category,
     Composition,
     Fun,
     Mor,
@@ -10,7 +11,14 @@ from sage_categories.all import (
     Sets,
     ask,
 )
-from sage_categories.cat.monoidal import TrivialAction
+from sage_categories.cat.calculus import natural_isomorphism
+from sage_categories.cat.monoidal import (
+    MonoidalStructures,
+    TrivialAction,
+    tensor_parentheses,
+    tensor_units,
+)
+from sage_categories.cat.predicates import Proposition, register_handler
 from sage_categories.cat.structured_objects import Magmas, Monoids
 
 
@@ -61,6 +69,104 @@ def test_cartesian_coherence() -> None:
     assert trivial.action().on_object(pairs((X, Y))) is Y
     assert trivial.action().on_morphism(Mor(pairs)(pairs((X, Y)), pairs((Y, Z)))((f, g))) is g
     assert trivial.unitor().component(X)(X.point(1)).datum() == 1
+
+
+class ChaoticPair(Category):
+    """The two-object chaotic groupoid, used to make coherence maps observably nonidentity."""
+
+    class ObjectType:
+        def __init__(self, label: int) -> None:
+            self._label = label
+
+        def label(self) -> int:
+            return self._label
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        pass
+
+    def __call__(self, label: int) -> ChaoticPair.ObjectType:
+        return self.ObjectType(label)
+
+    def _equal_objects(
+        self,
+        first: ChaoticPair.ObjectType,
+        second: ChaoticPair.ObjectType,
+        assumptions: Proposition,
+    ) -> bool:
+        return first.label() == second.label()
+
+    def _equal_morphisms(
+        self,
+        first: ChaoticPair.MorphismType,
+        second: ChaoticPair.MorphismType,
+        assumptions: Proposition,
+    ) -> bool:
+        return first.domain() is second.domain() and first.codomain() is second.codomain()
+
+
+def test_internal_monoid_uses_a_supplied_nonstrict_associator() -> None:
+    category = ChaoticPair()
+    register_handler(category.equality(), category._equal_objects)
+    register_handler(category.equality(), category._equal_morphisms)
+    zero, one = category(0), category(1)
+    pairs = Cat().Products()((category, category))
+
+    # x tensor y = not x.  Thus tensor is intentionally nonassociative on
+    # objects, while the chaotic groupoid supplies the unique comparison map.
+    tensor_values = (one, zero)
+
+    def tensor_object(pair):
+        return tensor_values[pair.family_component(0).label()]
+
+    def unique(source, target):
+        return category.construct_morphism(source, target, None)
+
+    tensor = Fun(pairs, category)(
+        tensor_object,
+        lambda arrow: unique(tensor_object(arrow.domain()), tensor_object(arrow.codomain())),
+    )
+    left, right = tensor_parentheses(tensor)
+    triples = left.domain()
+    associator = natural_isomorphism(
+        left,
+        right,
+        lambda triple: unique(left.on_object(triple), right.on_object(triple)),
+        lambda triple: unique(right.on_object(triple), left.on_object(triple)),
+    )
+    left_unit, right_unit = tensor_units(tensor, zero)
+    identity = Fun(category, category).one()
+    left_unitor = natural_isomorphism(
+        left_unit,
+        identity,
+        lambda value: unique(left_unit.on_object(value), value),
+        lambda value: unique(value, left_unit.on_object(value)),
+    )
+    right_unitor = natural_isomorphism(
+        right_unit,
+        identity,
+        lambda value: unique(right_unit.on_object(value), value),
+        lambda value: unique(value, right_unit.on_object(value)),
+    )
+    structure = MonoidalStructures(category)(tensor, zero, associator, left_unitor, right_unitor)
+
+    triple_zero = triples((zero, zero, zero))
+    comparison = structure.associator().component(triple_zero)
+    assert comparison.domain() is zero
+    assert comparison.codomain() is one
+    assert ask(structure.pentagon(zero, zero, zero, zero)) is True
+    assert ask(structure.triangle(zero, zero)) is True
+
+    operation = unique(tensor.on_object(pairs((zero, zero))), zero)
+    unit = Mor(category)(zero, zero).one()
+    monoids = Monoids(structure)
+    monoid = monoids(operation, unit)
+    assert monoid in monoids
+    assert monoid.operation() is operation
+    assert monoid.unit_morphism() is unit
+    assert monoids.to_magmas().on_object(monoid).operation() is operation
 
 
 def test_composition_tensor() -> None:
@@ -135,5 +241,6 @@ def test_closure_monad_on_two_element_chain() -> None:
 
 test_functor_and_transformation_equality()
 test_cartesian_coherence()
+test_internal_monoid_uses_a_supplied_nonstrict_associator()
 test_composition_tensor()
 test_closure_monad_on_two_element_chain()

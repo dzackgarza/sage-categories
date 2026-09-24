@@ -85,8 +85,9 @@ def _retain_presentation_leg(
 ) -> None:
     """Retain one requested leg and all universal equations already known at it."""
     legs = _PRESENTATION_LEGS[presentation] if presentation in _PRESENTATION_LEGS else ()
-    if not any(known_vertex is vertex and known_leg is leg for known_vertex, known_leg in legs):
-        _PRESENTATION_LEGS[presentation] = (*legs, (vertex, leg))
+    if any(known_vertex is vertex and known_leg is leg for known_vertex, known_leg in legs):
+        return
+    _PRESENTATION_LEGS[presentation] = (*legs, (vertex, leg))
     factors = _PRESENTATION_FACTORS[presentation] if presentation in _PRESENTATION_FACTORS else ()
     for candidate, mediator in factors:
         _retain_universal_equation(presentation, candidate, mediator, vertex, leg)
@@ -99,8 +100,9 @@ def _retain_factorization(
 ) -> None:
     """Retain one universal factor and its equations at every leg already requested."""
     factors = _PRESENTATION_FACTORS[presentation] if presentation in _PRESENTATION_FACTORS else ()
-    if not any(known_candidate is candidate and known_mediator is mediator for known_candidate, known_mediator in factors):
-        _PRESENTATION_FACTORS[presentation] = (*factors, (candidate, mediator))
+    if any(known_candidate is candidate and known_mediator is mediator for known_candidate, known_mediator in factors):
+        return
+    _PRESENTATION_FACTORS[presentation] = (*factors, (candidate, mediator))
     legs = _PRESENTATION_LEGS[presentation] if presentation in _PRESENTATION_LEGS else ()
     for vertex, leg in legs:
         _retain_universal_equation(presentation, candidate, mediator, vertex, leg)

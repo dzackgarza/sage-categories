@@ -185,6 +185,8 @@ def _equal_words(
         return Unknown
     if first.domain() is not second.domain() or first.codomain() is not second.codomain():
         return Unknown
+    if _category._same_universal_composite_result(first, second):
+        return True
     match _morphism_equality_decision(first, second):
         case True:
             return True

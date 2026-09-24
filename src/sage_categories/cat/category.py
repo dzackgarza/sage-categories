@@ -1415,9 +1415,47 @@ _universal_composites: MonoDict = MonoDict()
 
 
 @dataclass(slots=True)
-class _DeferredUniversalComposite:
-    construct: Callable[[], MorphismCategory.ObjectType]
+class _RetainedUniversalComposite:
+    """All exact results retained for one composite equation.
+
+    Several universal presentations can force the same exact pair ``second * first``
+    to equal distinct owned morphism representatives.  The representatives remain
+    distinct action inputs, while this record retains that they are results of the same
+    composite.  Deferred component rules stay lazy until the composite is requested.
+    """
+
+    constructs: tuple[Callable[[], MorphismCategory.ObjectType], ...] = ()
+    results: tuple[MorphismCategory.ObjectType, ...] = ()
     resolving: bool = False
+    observers: tuple[Callable[[MorphismCategory.ObjectType], None], ...] = ()
+
+
+def _universal_composite_record(
+    second: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+) -> _RetainedUniversalComposite | None:
+    """Return the retained equation record for this exact composable pair."""
+    if second not in _universal_composites:
+        return None
+    by_first = _universal_composites[second]
+    if first not in by_first:
+        return None
+    return by_first[first]
+
+
+def _ensure_universal_composite_record(
+    second: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+) -> _RetainedUniversalComposite:
+    """Return or create the one equation record for this exact composable pair."""
+    retained = _universal_composite_record(second, first)
+    if retained is not None:
+        return retained
+    by_first = _universal_composites[second] if second in _universal_composites else MonoDict()
+    retained = _RetainedUniversalComposite()
+    by_first[first] = retained
+    _universal_composites[second] = by_first
+    return retained
 
 
 def retain_universal_composite(
@@ -1428,12 +1466,12 @@ def retain_universal_composite(
     """Retain the universal reduction ``second * first = result`` on exact morphisms."""
     assert first.codomain() is second.domain()
     assert result.domain() is first.domain() and result.codomain() is second.codomain()
-    by_first = _universal_composites[second] if second in _universal_composites else MonoDict()
-    if first not in by_first:
-        by_first[first] = result
-        _universal_composites[second] = by_first
-    elif isinstance(by_first[first], _DeferredUniversalComposite):
-        by_first[first] = result
+    retained = _ensure_universal_composite_record(second, first)
+    if any(known is result for known in retained.results):
+        return
+    retained.results = (*retained.results, result)
+    for observer in retained.observers:
+        observer(result)
 
 
 def retain_deferred_universal_composite(
@@ -1443,10 +1481,8 @@ def retain_deferred_universal_composite(
 ) -> None:
     """Retain a universal reduction whose resulting component is computed on demand."""
     assert first.codomain() is second.domain()
-    by_first = _universal_composites[second] if second in _universal_composites else MonoDict()
-    if first not in by_first:
-        by_first[first] = _DeferredUniversalComposite(construct)
-        _universal_composites[second] = by_first
+    retained = _ensure_universal_composite_record(second, first)
+    retained.constructs = (*retained.constructs, construct)
 
 
 def _universal_composite(
@@ -1454,24 +1490,51 @@ def _universal_composite(
     first: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType | None:
     """Return a retained universal reduction for this exact pair, when one exists."""
-    if second not in _universal_composites:
+    retained = _universal_composite_record(second, first)
+    if retained is None:
         return None
-    by_first = _universal_composites[second]
-    if first not in by_first:
-        return None
-    retained = by_first[first]
-    if not isinstance(retained, _DeferredUniversalComposite):
-        return retained
     if retained.resolving:
         return None
     retained.resolving = True
     try:
-        result = retained.construct()
+        while retained.constructs:
+            constructs, retained.constructs = retained.constructs, ()
+            for construct in constructs:
+                result = construct()
+                assert result.domain() is first.domain() and result.codomain() is second.codomain()
+                retain_universal_composite(second, first, result)
     finally:
         retained.resolving = False
-    assert result.domain() is first.domain() and result.codomain() is second.codomain()
-    by_first[first] = result
-    return result
+    return retained.results[0] if retained.results else None
+
+
+def _observe_universal_composite(
+    second: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+    observer: Callable[[MorphismCategory.ObjectType], None],
+) -> bool:
+    """Observe every result of an existing reduction without forcing construction."""
+    retained = _universal_composite_record(second, first)
+    if retained is None:
+        return False
+    retained.observers = (*retained.observers, observer)
+    for result in retained.results:
+        observer(result)
+    return True
+
+
+def _same_universal_composite_result(
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> bool:
+    """Whether two exact morphisms are retained results of one composite equation."""
+    for by_first in _universal_composites.values():
+        for retained in by_first.values():
+            first_retained = any(result is first for result in retained.results)
+            second_retained = any(result is second for result in retained.results)
+            if first_retained and second_retained:
+                return True
+    return False
 
 
 def retain_composite_factors(
@@ -1772,7 +1835,83 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             from sage_categories.cat.images import retain_morphism_image
 
             retain_morphism_image(self, image)
+            self._retain_composition_action_result(morphism, image)
             return image
+
+        def _image_of_composite(
+            self,
+            second: MorphismCategory.ObjectType,
+            first: MorphismCategory.ObjectType,
+        ) -> MorphismCategory.ObjectType:
+            """Map the composite selected by the source category."""
+            return self.on_morphism(self.domain().compose_morphisms(second, first))
+
+        def _retain_composition_action_result(
+            self,
+            morphism: MorphismCategory.ObjectType,
+            image: MorphismCategory.ObjectType,
+        ) -> None:
+            """Retain functoriality against every already-mapped composable arrow.
+
+            The target equation is lazy in the image of the source composite.  Thus a
+            source universal reduction remains authoritative: resolving the target
+            composite first composes in the source and only then applies this functor.
+            """
+            if morphism.domain() is morphism.codomain():
+                self._retain_composable_images(morphism, morphism, image, image)
+            for other, other_image in self._image_cache.retained_morphism_images():
+                if morphism.codomain() is other.domain():
+                    self._retain_composable_images(
+                        other,
+                        morphism,
+                        other_image,
+                        image,
+                    )
+                if other.codomain() is morphism.domain():
+                    self._retain_composable_images(
+                        morphism,
+                        other,
+                        image,
+                        other_image,
+                    )
+
+        def _retain_composable_images(
+            self,
+            second: MorphismCategory.ObjectType,
+            first: MorphismCategory.ObjectType,
+            second_image: MorphismCategory.ObjectType,
+            first_image: MorphismCategory.ObjectType,
+        ) -> None:
+            """Transport a retained source reduction through this functor.
+
+            Explicit source composites need no registry entry: ``_construct_morphism_image``
+            maps their retained factors directly.  Only a source pair whose composition
+            has a non-formal retained reduction needs a corresponding target equation.
+            """
+            source_reduction = _universal_composite_record(second, first)
+            if source_reduction is None:
+                return
+            _observe_universal_composite(
+                second,
+                first,
+                partial(self._retain_source_composite_image, second_image, first_image),
+            )
+            if not source_reduction.constructs:
+                return
+            retain_deferred_universal_composite(
+                second_image,
+                first_image,
+                partial(self._image_of_composite, second, first),
+            )
+
+        def _retain_source_composite_image(
+            self,
+            second_image: MorphismCategory.ObjectType,
+            first_image: MorphismCategory.ObjectType,
+            source_result: MorphismCategory.ObjectType,
+        ) -> None:
+            """Transport one retained source composite equation through this functor."""
+            retain_universal_composite(second_image, first_image, self.on_morphism(source_result))
 
         def _declared_morphism_image(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
             """Execute this functor's declared morphism action through its retained image cache."""
@@ -1801,6 +1940,16 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             )
 
         def _construct_morphism_image(self, morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+            if morphism.is_composite():
+                first, second = morphism.factors()
+                return self._retain_morphism_action_result(
+                    morphism,
+                    self.codomain().compose_morphisms(
+                        self.on_morphism(second),
+                        self.on_morphism(first),
+                    ),
+                    self.on_object,
+                )
             catlab = _catlab_engine()
 
             return self._retain_morphism_action_result(

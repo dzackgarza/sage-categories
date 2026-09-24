@@ -170,7 +170,7 @@ def _forgetful() -> Functor:
     groups = AdditiveGroups(_structure())
     monoids = groups.named_monoids()
     magmas = monoids.named_magmas()
-    return magmas.to_carrier() * monoids.to_named_magmas() * groups.to_named_monoids()
+    return magmas.to_carrier() * monoids.to_named_magmas() * groups.to_named_monoids() * AbelianGroups().subcategory_monomorphism()
 
 
 class _AbelianOperations(Category):

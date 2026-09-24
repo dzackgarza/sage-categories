@@ -107,8 +107,8 @@ def _faithful_isofibration_projection(limit: LimitCategory, index: int) -> Funct
         Fun(limit, limit.factor(index))
         .Faithful()
         .Isofibrations()(
-            lambda value: value.family_component(index),
-            lambda arrow: arrow.family_component(index),
+            lambda value: _retained_object_component(value, index),
+            lambda arrow: _retained_morphism_component(arrow, index),
         )
     )
 
@@ -144,6 +144,33 @@ class FamilyMorphismData:
         return result
 
 
+def _retained_object_component(
+    candidate: CategoryOfCategories.ElementType,
+    index: CategoryOfCategories.ElementType | Hashable,
+) -> CategoryOfCategories.ElementType:
+    """Read one strict-limit object component from its retained constructor datum."""
+    data = retained_input(candidate).datum
+    assert isinstance(data, FamilyObjectData)
+    return data.component(index)
+
+
+def _retained_morphism_component(
+    candidate: MorphismCategory.ObjectType,
+    index: CategoryOfCategories.ElementType | Hashable,
+) -> MorphismCategory.ObjectType:
+    """Read one strict-limit morphism component and verify its fixed endpoints."""
+    data = retained_input(candidate).datum
+    assert isinstance(data, FamilyMorphismData)
+    vertex = vertex_of(data.diagram.domain(), index)
+    result = data.component(vertex)
+    expected = data.diagram.on_object(vertex).morphism_category(1)(
+        _retained_object_component(candidate.domain(), vertex),
+        _retained_object_component(candidate.codomain(), vertex),
+    )
+    assert result in expected
+    return result
+
+
 # ``components_agree(family, L)``: the diagram carries the components of the family to
 # one another, so the family is an object (or a morphism) of the strict limit ``L``.
 class _ComponentsAgreePredicate(Predicate):
@@ -168,7 +195,7 @@ def _components_agree_along_diagram(
         return retained(candidate)
     if unconditional(assumptions):
         return retained(candidate)
-    return decide(limit._agrees(candidate.family_component), assumptions)
+    return decide(limit._agrees(limit._component_rule(candidate)), assumptions)
 
 
 register_handler(components_agree, _components_agree_along_diagram)
@@ -200,8 +227,8 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
             vertex = vertex_of(self._family_data.diagram.domain(), index)
             result = self._family_data.component(vertex)
             expected = self._family_data.diagram.on_object(vertex).morphism_category(1)(
-                self.domain().family_component(vertex),
-                self.codomain().family_component(vertex),
+                _retained_object_component(self.domain(), vertex),
+                _retained_object_component(self.codomain(), vertex),
             )
             assert result in expected
             return result
@@ -236,6 +263,16 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
                 pass
         return self._equal(first, second, assumptions)
 
+    def _morphism_equality(
+        self,
+        first: MorphismCategory.ObjectType,
+        second: MorphismCategory.ObjectType,
+    ) -> bool | None:
+        """Decide equality of parallel family morphisms through their retained components."""
+        if first.domain() is not second.domain() or first.codomain() is not second.codomain():
+            return None
+        return self._equal(first, second, True)
+
     def _equal_points(self, first: DiscreteObjectCategory.ObjectType, second: DiscreteObjectCategory.ObjectType, assumptions: Proposition) -> bool | None:
         """Two points of an object of this category are equal when their carrier points are.
 
@@ -251,7 +288,16 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
     @cached_method(key=lambda self, candidate: identity_key(candidate))
     def _unconditional_agreement(self, candidate: CategoryOfCategories.ElementType) -> bool | None:
         """The retained compatibility decision with no local assumptions."""
-        return decide(self._agrees(candidate.family_component), True)
+        return decide(self._agrees(self._component_rule(candidate)), True)
+
+    def _component_rule(self, candidate: CategoryOfCategories.ElementType) -> ObjectRule | MorphismRule:
+        """Recover the compatible-family rule after the candidate's runtime class changes."""
+        match is_placed(candidate, self):
+            case True:
+                return partial(_retained_object_component, candidate)
+            case False:
+                assert is_placed(candidate, self.morphism_category(1))
+                return partial(_retained_morphism_component, candidate)
 
     def shape(self) -> Category:
         return self._diagram.domain()
@@ -447,7 +493,7 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
 
     def construct_identity(self, member_object: LimitCategory.ObjectType) -> LimitCategory.MorphismType:
         def component_identity(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-            component = member_object.family_component(vertex)
+            component = _retained_object_component(member_object, vertex)
             return self.factor(vertex).morphism_category(1)(component, component).one()
 
         return self.MorphismType(
@@ -461,7 +507,10 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         result = self.MorphismType(
             domain=first.domain(),
             codomain=second.codomain(),
-            data=FamilyMorphismData(self.defining_diagram(), lambda vertex: second.family_component(vertex) * first.family_component(vertex)),
+            data=FamilyMorphismData(
+                self.defining_diagram(),
+                lambda vertex: _retained_morphism_component(second, vertex) * _retained_morphism_component(first, vertex),
+            ),
         )
         result.retain_factors(first, second)
         return result
@@ -479,8 +528,10 @@ class LimitCategory(Category[[MorphismRule | tuple[MorphismCategory.ObjectType, 
         vertices = self._vertices()
         if vertices is Unknown:
             return None
+        first_rule = self._component_rule(first)
+        candidate_rule = self._component_rule(candidate)
         return decide(
-            conjunction(first.family_component(vertex) == candidate.family_component(vertex) for vertex in vertices),
+            conjunction(first_rule(vertex) == candidate_rule(vertex) for vertex in vertices),
             assumptions,
         )
 
@@ -529,19 +580,9 @@ def limit_of_categories(
 
     @cached_function(key=identity_key)
     def projection(vertex: CategoryOfCategories.ElementType) -> Functor:
-        def object_component(member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-            data = retained_input(member_object).datum
-            assert isinstance(data, FamilyObjectData)
-            return data.component(vertex)
-
-        def morphism_component(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-            data = retained_input(morphism).datum
-            assert isinstance(data, FamilyMorphismData)
-            return data.component(vertex)
-
         return Fun(limit, diagram.on_object(vertex))(
-            object_component,
-            morphism_component,
+            lambda member_object: _retained_object_component(member_object, vertex),
+            lambda morphism: _retained_morphism_component(morphism, vertex),
         )
 
     def mediator(candidate_cone: NaturalTransformation) -> Functor:

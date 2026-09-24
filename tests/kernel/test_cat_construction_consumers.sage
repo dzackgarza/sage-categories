@@ -104,6 +104,23 @@ def test_specialized_limit_projection_reads_retained_family_during_initializatio
     assert ask(first_projection.on_morphism(arrow) == first.generator("0->1")) is True
     assert ask(second_projection.on_morphism(arrow) == Mor(second)(second(0), second(0)).one()) is True
 
+    duplicate = specialized.construct_morphism(
+        source,
+        target,
+        (
+            first.generator("0->1"),
+            Mor(second)(second(0), second(0)).one(),
+        ),
+    )
+    source_identity = Mor(specialized)(source, source).one()
+    target_identity = Mor(specialized)(target, target).one()
+
+    assert ask(arrow == duplicate) is True
+    assert ask(first_projection.on_morphism(source_identity) == Mor(first)(first(0), first(0)).one()) is True
+    assert ask(second_projection.on_morphism(source_identity) == Mor(second)(second(0), second(0)).one()) is True
+    assert ask(arrow * source_identity == arrow) is True
+    assert ask(target_identity * arrow == arrow) is True
+
 
 def test_comma_objects_squares_and_composition() -> None:
     source, target = Cat().Simplex(2), Cat().Simplex(3)

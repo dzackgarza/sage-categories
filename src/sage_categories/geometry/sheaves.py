@@ -6,12 +6,16 @@ from collections.abc import Callable, Hashable, Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
-from sage_categories.cat.calculus import natural_isomorphism
+from sage_categories.cat.calculus import (
+    finite_product_data,
+    finite_product_morphism,
+    finite_product_projection,
+    natural_isomorphism,
+)
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.cones import cone, cones
 from sage_categories.cat.constructions import UniversalPresentation
-from sage_categories.cat.diagrams import sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.limit_basis import parallel_pair
 from sage_categories.cat.morphisms import Mor, MorphismCategory
@@ -58,7 +62,7 @@ def _descent_presentation(
 ) -> UniversalPresentation:
     """The retained descent equalizer with the exact supplied local-product source."""
     family = _rings().Equalizers()
-    local_product, _projections, _lift = _ring_product(local_rings)
+    local_product = finite_product_data(_rings(), local_rings).apex()
     source_vertex = Cat().WalkingParallelPair()(0)
     diagrams = tuple(diagram for diagram in family.presenting_diagrams(section_ring) if diagram.on_object(source_vertex) is local_product)
     assert len(diagrams) == 1, f"{section_ring!r} has {len(diagrams)} descent presentations over {local_product!r}"
@@ -127,41 +131,6 @@ def _descent_lift(
     return presentation.lift(cones(diagram)(candidate))
 
 
-def _ring_product(
-    factors: tuple[CategoryOfCategories.ElementType, ...],
-) -> tuple[
-    CategoryOfCategories.ElementType,
-    tuple[MorphismCategory.ObjectType, ...],
-    Callable[[CategoryOfCategories.ElementType, tuple[MorphismCategory.ObjectType, ...]], MorphismCategory.ObjectType],
-]:
-    """A finite ring product together with its generic projections and mediator."""
-    assert factors, "a finite descent cover must have at least one local ring"
-    rings = _rings()
-    match len(factors):
-        case 1:
-            factor = factors[0]
-            identity = Mor(rings)(factor, factor).one()
-            return factor, (identity,), lambda _source, components: components[0]
-        case _:
-            product = rings.Products()(factors)
-            projections = tuple(product.product_projection(index) for index in range(len(factors)))
-            diagram = product.product_factors()
-
-            def lift(
-                source: CategoryOfCategories.ElementType,
-                components: tuple[MorphismCategory.ObjectType, ...],
-            ) -> MorphismCategory.ObjectType:
-                assert len(components) == len(factors)
-                candidate = cone(
-                    diagram,
-                    source,
-                    lambda vertex: components[sequence_position(vertex)],
-                )
-                return product.lift(cones(diagram)(candidate))
-
-            return product, projections, lift
-
-
 def descent_section_ring(
     open_key: Hashable,
     local_rings: tuple[CategoryOfCategories.ElementType, ...],
@@ -171,7 +140,10 @@ def descent_section_ring(
 
     def construct() -> CategoryOfCategories.ElementType:
         rings = _rings()
-        local_product, local_projections, _local_lift = _ring_product(local_rings)
+        assert local_rings, "a finite descent cover must have at least one local ring"
+        local_data = finite_product_data(rings, local_rings)
+        local_product = local_data.apex()
+        local_projections = tuple(finite_product_projection(local_data, index) for index in range(len(local_rings)))
         overlaps: list[tuple[int, int, MorphismCategory.ObjectType, MorphismCategory.ObjectType]] = []
         for left_index in range(len(local_rings)):
             for right_index in range(left_index + 1, len(local_rings)):
@@ -184,12 +156,14 @@ def descent_section_ring(
                 first = second = Mor(rings)(local_product, local_product).one()
             case _:
                 overlap_rings = tuple(left_map.codomain() for _, _, left_map, _ in overlaps)
-                _overlap_product, _overlap_projections, overlap_lift = _ring_product(overlap_rings)
-                first = overlap_lift(
+                overlap_data = finite_product_data(rings, overlap_rings)
+                first = finite_product_morphism(
+                    overlap_data,
                     local_product,
                     tuple(left_map * local_projections[left_index] for left_index, _, left_map, _ in overlaps),
                 )
-                second = overlap_lift(
+                second = finite_product_morphism(
+                    overlap_data,
                     local_product,
                     tuple(right_map * local_projections[right_index] for _, right_index, _, right_map in overlaps),
                 )
@@ -260,8 +234,8 @@ def descent_map(
     target_rings = tuple(component.codomain() for component in component_maps)
     target = _descent_presentation(target_ring, target_rings)
     target_product = _descent_inclusion(target).codomain()
-    _product, _projections, product_lift = _ring_product(target_rings)
-    into_product = product_lift(source_ring, component_maps)
+    product_data = finite_product_data(_rings(), target_rings)
+    into_product = finite_product_morphism(product_data, source_ring, component_maps)
     assert into_product.codomain() is target_product
     return _descent_lift(target, source_ring, into_product)
 

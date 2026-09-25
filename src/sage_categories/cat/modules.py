@@ -114,7 +114,20 @@ class ModuleCategory(EquifierCategory):
         """``U_A: Modules(A, C) -> C``, retained from the defining inserter and equifiers."""
         unital = self.ambient()
         assert unital.ambient() is self._algebras
-        return self._algebras.forgetful() * Fun.full_subcategory_monomorphism(unital, self._algebras) * Fun.full_subcategory_monomorphism(self, unital)
+        forgetful = self._algebras.forgetful() * Fun.full_subcategory_monomorphism(unital, self._algebras) * Fun.full_subcategory_monomorphism(self, unital)
+        forgetful.retain_cartesian_lifts(self._cartesian_lift)
+        return forgetful
+
+    def _cartesian_lift(
+        self,
+        morphism: MorphismCategory.ObjectType,
+        target: ModuleCategory.ObjectType,
+    ) -> ModuleCategory.MorphismType:
+        """Lift an isomorphism ``Y -> U_A(X)`` by transporting the action to ``Y``."""
+        base = self.underlying_category()
+        assert morphism in base.morphism_category(1).Isomorphisms()
+        source = self.transport(target, morphism.inverse())
+        return self.homomorphism(source, target, morphism)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """``U_A`` is the sole immediate structure functor of ``Modules(A, C)``."""

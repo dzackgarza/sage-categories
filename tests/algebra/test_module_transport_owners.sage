@@ -117,6 +117,13 @@ def transport_boolean_action(actegory: ActionsCategory.ObjectType, projection: F
     observed = projection.on_morphism(transported.action())
     assert ask(observed(observed.domain().point((0, 10))) == target_set.point(20)) is True
     assert ask(observed(observed.domain().point((1, 10))) == target_set.point(10)) is True
+
+    lift = modules.forgetful().cartesian_lift(isomorphism.inverse(), module)
+    assert lift.codomain() is module
+    assert modules.forgetful().on_morphism(lift) is isomorphism.inverse()
+    assert modules.forgetful().on_object(lift.domain()) is target
+    assert ask(lift.domain() == transported) is True
+
     recovered = modules.transport(transported, isomorphism.inverse())
     assert modules.forgetful().on_object(recovered) is source
     assert ask(recovered.action() == module.action()) is True

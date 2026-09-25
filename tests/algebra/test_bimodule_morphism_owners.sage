@@ -69,6 +69,11 @@ def test_bimodule_morphisms_require_commuting_endpoints() -> None:
         image = projection.on_morphism(arrow)
         assert image in Mor(modules)(projection.on_object(module), projection.on_object(translated))
         assert modules.forgetful().on_morphism(image) is forward
+        image_inverse = projection.on_morphism(inverse)
+        lift = projection.cartesian_lift(image_inverse, module)
+        assert lift.codomain() is module
+        assert projection.on_morphism(lift) is image_inverse
+        assert ask(lift.domain() == translated) is True
     assert module.left_action()(left_domain.point((0, 1))).datum() == 0
     assert module.right_action()(right_domain.point((1, 0))).datum() == 1
     assert bimodules.forgetful().on_morphism(arrow)(source.point(1)).datum() == 11

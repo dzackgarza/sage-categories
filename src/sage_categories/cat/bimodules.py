@@ -39,6 +39,7 @@ from sage_categories.cat.structured_objects import (
     MonoidCategory,
     Monoids,
 )
+from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
@@ -63,11 +64,37 @@ class ActionPairsCategory(LimitSubcategory):
 
     @cached_method
     def to_left(self) -> Functor:
-        return _faithful_isofibration_projection(self, 0)
+        projection = _faithful_isofibration_projection(self, 0)
+        projection.retain_cartesian_lifts(lambda morphism, target: self._cartesian_lift(0, morphism, target))
+        return projection
 
     @cached_method
     def to_right(self) -> Functor:
-        return _faithful_isofibration_projection(self, 1)
+        projection = _faithful_isofibration_projection(self, 1)
+        projection.retain_cartesian_lifts(lambda morphism, target: self._cartesian_lift(1, morphism, target))
+        return projection
+
+    def _cartesian_lift(
+        self,
+        index: int,
+        morphism: MorphismCategory.ObjectType,
+        target: ActionPairsCategory.ObjectType,
+    ) -> ActionPairsCategory.MorphismType:
+        """Pull back the other module action along the shared carrier isomorphism."""
+        selected, other = self.factor(index), self.factor(1 - index)
+        carrier_map = selected.forgetful().on_morphism(morphism)
+        other_target = _retained_object_component(target, 1 - index)
+        other_lift = other.forgetful().cartesian_lift(carrier_map, other_target)
+        match index:
+            case 0:
+                source = self((morphism.domain(), other_lift.domain(), carrier_map.domain()))
+                arrows = (morphism, other_lift, carrier_map)
+            case 1:
+                source = self((other_lift.domain(), morphism.domain(), carrier_map.domain()))
+                arrows = (other_lift, morphism, carrier_map)
+            case _:
+                raise AssertionError(f"{index} is not a bimodule-action projection index")
+        return self.construct_morphism(source, target, arrows)
 
     def homomorphism(
         self,
@@ -137,12 +164,34 @@ class BimoduleCategory(EquifierCategory):
     @cached_method
     def to_left(self) -> Functor:
         """The retained leg to the left module category."""
-        return self._pairs.to_left() * Fun.full_subcategory_monomorphism(self, self._pairs)
+        projection = self._pairs.to_left() * Fun.full_subcategory_monomorphism(self, self._pairs)
+        projection.retain_cartesian_lifts(lambda morphism, target: self._cartesian_lift(0, morphism, target))
+        return projection
 
     @cached_method
     def to_right(self) -> Functor:
         """The retained leg to the right module category."""
-        return self._pairs.to_right() * Fun.full_subcategory_monomorphism(self, self._pairs)
+        projection = self._pairs.to_right() * Fun.full_subcategory_monomorphism(self, self._pairs)
+        projection.retain_cartesian_lifts(lambda morphism, target: self._cartesian_lift(1, morphism, target))
+        return projection
+
+    def _cartesian_lift(
+        self,
+        index: int,
+        morphism: MorphismCategory.ObjectType,
+        target: BimoduleCategory.ObjectType,
+    ) -> BimoduleCategory.MorphismType:
+        """Restrict the action-pair lift; commuting is preserved by conjugation."""
+        match index:
+            case 0:
+                projection = self._pairs.to_left()
+            case 1:
+                projection = self._pairs.to_right()
+            case _:
+                raise AssertionError(f"{index} is not a bimodule-action projection index")
+        lift = projection.cartesian_lift(morphism, target)
+        refine(lift.domain(), self)
+        return self.restrict_morphism(lift)
 
     @cached_method
     def forgetful(self) -> Functor:

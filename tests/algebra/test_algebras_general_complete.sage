@@ -74,6 +74,10 @@ def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
         integer_algebras,
         scalar_map,
     )
+    assert (
+        restrict_algebra_scalars(field_algebras, integer_algebras, scalar_map)
+        is restriction
+    )
     restricted = restriction.on_object(field_algebra)
     assert restricted in integer_algebras
     assert integer_algebras.base() is integers

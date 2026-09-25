@@ -2,6 +2,7 @@
 
 from sage_categories.all import Cat, Fun, Mor, ask
 from sage_categories.cat.diagrams import cospan_diagram
+from sage_categories.cat.predicates import assume
 
 
 def shifted_interval():
@@ -88,5 +89,24 @@ def test_base_change_of_opfibration_retains_cocartesian_lifts():
     assert ask(lift.family_component(2) == along.on_morphism(arrow)) is True
 
 
+def test_terminal_identity_base_change_reuses_selected_lifts():
+    terminal = Cat().Terminal()
+    star = terminal(0)
+    identity = Fun(terminal, terminal).one()
+    arrow = Mor(terminal)(star, star).one()
+    identity.retain_cartesian_lifts(lambda morphism, target: morphism)
+    identity.retain_cocartesian_lifts(lambda morphism, source: morphism)
+    assume(Fun.Fibrations().membership_proposition(identity))
+    assume(Fun.Opfibrations().membership_proposition(identity))
+
+    projection = identity.base_change(identity)
+
+    assert projection is identity
+    assert projection.domain() is terminal
+    assert projection.cartesian_lift(arrow, star) is arrow
+    assert projection.cocartesian_lift(arrow, star) is arrow
+
+
 test_base_change_of_fibration_retains_cartesian_lifts()
 test_base_change_of_opfibration_retains_cocartesian_lifts()
+test_terminal_identity_base_change_reuses_selected_lifts()

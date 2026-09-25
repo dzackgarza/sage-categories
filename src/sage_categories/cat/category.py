@@ -681,6 +681,10 @@ class CategoryDeclaration[
     ) -> None:
         """Record two morphisms as mutually inverse; both enter ``Mor(self).Isomorphisms()`` (POL-MATH-037)."""
 
+        morphisms = self.morphism_category(1)
+        assert forward in morphisms, f"{forward!r} is not a morphism of {self!r}"
+        assert backward in morphisms, f"{backward!r} is not a morphism of {self!r}"
+        assert forward.domain() is backward.codomain() and forward.codomain() is backward.domain(), f"{forward!r} and {backward!r} do not have opposite endpoints"
         self._inverses[forward] = backward
         self._inverses[backward] = forward
         isomorphisms = self.morphism_category(1).Isomorphisms()

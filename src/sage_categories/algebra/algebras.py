@@ -21,6 +21,7 @@ from sage_categories.cat.monoidal import ActionsCategory, MonoidalStructuresCate
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoids
+from sage_categories.kernel.sage_runtime import cached_method
 
 __all__ = [
     "AlgebraCategory",
@@ -78,9 +79,27 @@ class AlgebraCategory(LimitSubcategory):
             case _:
                 raise AssertionError(f"{underlying!r} has no retained left-module owner")
 
+    @cached_method
     def monoid_presentation(self) -> Functor:
         """The retained equivalence ``Algebras(R,C) -> Monoids(V_R)``."""
-        return self.product_projection(0)
+        projection = self.product_projection(0)
+        presentation = Fun(self, self.monoid_category()).Equivalences()(
+            projection.on_object,
+            projection.on_morphism,
+        )
+        presentation.retain_cartesian_lifts(self._cartesian_lift)
+        return presentation
+
+    def _cartesian_lift(
+        self,
+        morphism: MorphismCategory.ObjectType,
+        target: AlgebraCategory.ObjectType,
+    ) -> AlgebraCategory.MorphismType:
+        """Lift a monoid isomorphism through the retained algebra presentation."""
+        presentation = self.monoid_presentation()
+        lift = presentation.inverse().on_morphism(morphism)
+        assert lift.codomain() is target
+        return lift
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """The monoid presentation is the sole immediate structure functor."""

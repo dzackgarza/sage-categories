@@ -16,6 +16,7 @@ from sage_categories.kernel.compiler import SemanticCollisionError, declared_inh
 from sage_categories.kernel.construction import active_object_context
 from sage_categories.kernel.refinement import (
     declares_point,
+    refine,
     traces_inheritance,
     traces_placement,
 )
@@ -648,6 +649,62 @@ def test_the_declared_order_of_the_selected_isofibrations_ranks_inheritance() ->
         "SecondDeclaredCategory.ObjectType",
         "BaseCategory.ObjectType",
     ]
+
+
+def test_late_functor_property_refinement_does_not_change_compiled_inheritance() -> None:
+    target_initializations: list[CategoryPoint] = []
+
+    class LateTarget(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                target_initializations.append(self)
+                self._synthetic_label = label
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+    target = LateTarget()
+
+    class StableSource(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._synthetic_label = label
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            def on_object(member: CategoryPoint) -> CategoryPoint:
+                return target(self._label(member))
+
+            def on_morphism(morphism: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+                return target.morphism_category(1)(
+                    on_object(morphism.domain()),
+                    on_object(morphism.codomain()),
+                ).one()
+
+            return (Fun(self, target)(on_object, on_morphism),)
+
+    source = StableSource()
+    selected = source.selected_functors()[0]
+    assert not traces_inheritance(selected)
+
+    # Refining a retained functor after its source compiled can change the live property
+    # query, but it cannot retroactively add a superclass to the Sage C3 already chosen
+    # for that source.  Construction therefore follows the inheritance edges retained
+    # with the compiled runtime rather than rereading the now-stronger property.
+    refine(selected, Fun(source, target).Isofibrations())
+    assert traces_inheritance(selected)
+
+    member = source(7)
+    assert target_initializations == []
+    assert not isinstance(member, target.ObjectType)
 
 
 def test_a_selected_action_runs_on_a_value_the_targets_ahead_of_it_have_initialized() -> None:

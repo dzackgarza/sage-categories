@@ -185,6 +185,7 @@ class _RuntimeImplementationCategory(SageCategory):
     ) -> None:
         self._current = current
         self._targets = targets
+        self._selected_successors: tuple[tuple[Functor, Node], ...] = ()
         self._ordinal = next(_runtime_ordinals)
         self.ParentMethods = declaration
         super().__init__()
@@ -392,20 +393,25 @@ def _runtime_category(current: Node) -> _RuntimeImplementationCategory:
     table = _runtime_categories[current.role]
     if current.category in table:
         return table[current.category]
+    selected_successors = successors(current)
     # Sage CachedRepresentation keys on constructor arguments. A retained category
     # can acquire a new written implementation through Cat.implement.
     runtime = _RuntimeImplementationCategory(
         current,
-        _runtime_targets(current),
+        _runtime_targets(current, selected_successors),
         current.category.local_role_class(current.role),
     )
+    runtime._selected_successors = selected_successors
     table[current.category] = runtime
     return runtime
 
 
-def _runtime_targets(current: Node) -> tuple[SageCategory, ...]:
+def _runtime_targets(
+    current: Node,
+    selected_successors: tuple[tuple[Functor, Node], ...],
+) -> tuple[SageCategory, ...]:
     """The immediate Sage runtime targets of one implementation node."""
-    targets: list[SageCategory] = [_runtime_category(target) for _, target in successors(current)]
+    targets: list[SageCategory] = [_runtime_category(target) for _, target in selected_successors]
     if not targets:
         targets.append(_cat_element_role_root() if _is_cat_element_root(current) else _kernel_role_root(current.role))
     if current.role is Role.OBJECT:
@@ -445,6 +451,11 @@ def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
     return tuple(
         (functor, target) for functor in inheriting_functors(current.category) for target in (node(functor.codomain(), current.role),) if not same_node(current, target)
     )
+
+
+def _compiled_successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
+    """The selected inheritance edges retained when ``current``'s Sage runtime was compiled."""
+    return _runtime_category(current)._selected_successors
 
 
 def declared_inheritance(
@@ -1155,7 +1166,7 @@ def _initialization_order(
                 continue
             case False:
                 ordered.append(owner)
-                pending.extend(reversed([target for _, target in successors(owner)]))
+                pending.extend(reversed([target for _, target in _compiled_successors(owner)]))
     ordered.extend(owner for owner in context.nodes if not any(same_node(owner, known) for known in ordered))
     return tuple(ordered)
 
@@ -1242,7 +1253,7 @@ def _initialize_graph(
                 representative,
                 None if owner_path is None else (*owner_path, functor),
             )
-            for functor, target in successors(owner)
+            for functor, target in _compiled_successors(owner)
         )
 
     # The C3 owner loop initializes each reached implementation owner once.  A second
@@ -1747,7 +1758,7 @@ def _runtimes_reaching(target: Node) -> tuple[_RuntimeImplementationCategory, ..
 
     predecessors: dict[tuple[int, Role], list[Node]] = {}
     for runtime in runtimes:
-        for _, reached in successors(runtime._current):
+        for _, reached in _compiled_successors(runtime._current):
             predecessors.setdefault(key(reached), []).append(runtime._current)
 
     reached: set[tuple[int, Role]] = set()
@@ -1807,7 +1818,7 @@ def apply_level_shift(member: Category, placement: Category) -> None:
     affected = _runtimes_reaching(current)
     old_classes = {runtime.parent_class: runtime for runtime in affected}
     old_nodes = {runtime: _linearized_nodes(runtime._current) for runtime in affected}
-    changed._targets = _runtime_targets(current)
+    changed._targets = _runtime_targets(current, changed._selected_successors)
     for runtime in affected:
         for name in _RUNTIME_CACHE_NAMES:
             runtime.__dict__.pop(name, None)

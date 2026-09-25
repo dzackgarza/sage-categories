@@ -1,6 +1,15 @@
 """The base-relative algebra owner is the retained presentation of monoids in relative modules."""
 
-from sage_categories.algebra.abelian import AbelianBimoduleTensor
+from sage.groups.additive_abelian.additive_abelian_group import AdditiveAbelianGroup
+
+from sage_categories.algebra.abelian import (
+    AbelianBimoduleTensor,
+    AbelianGroups,
+    AbelianModuleTensor,
+    abelian_homomorphism,
+    integer_group,
+    presented_abelian_group,
+)
 from sage_categories.algebra.algebras import Algebras
 from sage_categories.algebra.free_associative import (
     free_associative_generator,
@@ -74,4 +83,60 @@ def test_relative_algebra_owner_retains_monoid_equivalence_and_forgetful_composi
     )
 
 
+def test_algebra_presentation_retains_cartesian_lift() -> None:
+    scalars = integer_scalar_monoid()
+    structure = AbelianModuleTensor(scalars)
+    modules = structure.underlying_category()
+    monoids = Monoids(structure)
+    algebras = Algebras(scalars, structure)
+    presentation = algebras.monoid_presentation()
+    regular = structure.unit()
+    monoid = monoids(
+        structure.left_unitor().component(regular),
+        Mor(modules)(regular, regular).one(),
+    )
+    algebra = algebras.from_monoid(monoid)
+
+    copy_engine = AdditiveAbelianGroup([0])
+    copy = presented_abelian_group(copy_engine)
+    generator = copy_engine.gen(0)
+    forward = abelian_homomorphism(
+        copy,
+        integer_group(),
+        lambda value: int(value.vector()[0]),
+    )
+    backward = abelian_homomorphism(
+        integer_group(),
+        copy,
+        lambda value: int(value) * generator,
+    )
+    AbelianGroups().retain_inverses(forward, backward)
+
+    module_map = modules.forgetful().cartesian_lift(forward, regular)
+    copy_module = module_map.domain()
+    reverse_module_map = modules.homomorphism(regular, copy_module, backward)
+    modules.retain_inverses(module_map, reverse_module_map)
+
+    magmas = Magmas(structure)
+    magma = monoids.to_magmas().on_object(monoid)
+    magma_map = magmas.forgetful().cartesian_lift(module_map, magma)
+    copy_magma = magma_map.domain()
+    reverse_magma_map = magmas.homomorphism(magma, copy_magma, reverse_module_map)
+    magmas.retain_inverses(magma_map, reverse_magma_map)
+
+    monoid_map = monoids.to_magmas().cartesian_lift(magma_map, monoid)
+    copy_monoid = monoid_map.domain()
+    reverse_monoid_map = monoids.homomorphism(monoid, copy_monoid, reverse_magma_map)
+    monoids.retain_inverses(monoid_map, reverse_monoid_map)
+
+    lift = presentation.cartesian_lift(monoid_map, algebra)
+
+    assert presentation in Fun(algebras, monoids).Isofibrations()
+    assert lift.codomain() is algebra
+    assert presentation.on_morphism(lift) is monoid_map
+    assert presentation.on_object(lift.domain()) is copy_monoid
+    assert modules.forgetful().on_object(copy_module) is copy
+
+
 test_relative_algebra_owner_retains_monoid_equivalence_and_forgetful_composites()
+test_algebra_presentation_retains_cartesian_lift()

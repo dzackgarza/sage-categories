@@ -15,7 +15,7 @@ from sage_categories.algebra._presented_modules_cap import (
     presented_native_morphism,
     presented_native_object,
 )
-from sage_categories.algebra.abelian import _coordinates
+from sage_categories.algebra.abelian import _coordinates, _tensor_swap
 from sage_categories.cat.monoidal import tensor_morphism, tensor_object
 from sage_categories.cat.predicates import ask
 
@@ -117,6 +117,16 @@ def test_cap_reconstructs_formal_composites_from_retained_native_factors() -> No
     )
 
 
+def test_tensor_swap_is_retained_on_exact_factors() -> None:
+    two = presented_abelian_group(AdditiveAbelianGroup([2]))
+
+    first = _tensor_swap(two, two)
+    second = _tensor_swap(two, two)
+
+    assert first is second
+    assert presented_native_morphism(second).value is first
+
+
 def test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis() -> None:
     cyclic_engine = AdditiveAbelianGroup([4])
     square_engine = AdditiveAbelianGroup([4, 4])
@@ -165,4 +175,5 @@ def test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis() -> None:
 
 test_cap_computes_finite_presented_tensor_object_and_nonidentity_tensor_map()
 test_cap_reconstructs_formal_composites_from_retained_native_factors()
+test_tensor_swap_is_retained_on_exact_factors()
 test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis()

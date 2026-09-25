@@ -152,6 +152,7 @@ _PRESENTED_ABELIAN_GROUPS = ChosenConstruction()
 _INTEGER_GROUP = ChosenConstruction()
 _INDEXED_FREE_ABELIAN_GROUPS = ChosenConstruction()
 _TENSOR_OBJECTS = ChosenConstruction()
+_TENSOR_SWAPS = ChosenConstruction()
 _ABELIAN_TENSOR = ChosenConstruction()
 _RELATIVE_TENSORS = ChosenConstruction()
 _BIMODULE_TENSORS = ChosenConstruction()
@@ -1573,7 +1574,19 @@ def _tensor_swap(
     first: CategoryOfCategories.ElementType,
     second: CategoryOfCategories.ElementType,
 ) -> MorphismCategory.ObjectType:
-    """The symmetry from A tensor B to B tensor A of the presented abelian tensor product."""
+    """The retained symmetry from A tensor B to B tensor A."""
+    return _TENSOR_SWAPS(
+        AbelianTensor(),
+        (first, second),
+        lambda: _new_tensor_swap(first, second),
+    )
+
+
+def _new_tensor_swap(
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """Construct the symmetry on one exact pair of presented factors."""
     target = _tensor_object(second, first)
     return tensor_mediator(
         first,

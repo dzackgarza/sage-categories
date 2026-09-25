@@ -183,6 +183,8 @@ Read historical observations at their stated revisions before relying on them.
   A subsequent read-only review request for the restriction-of-scalars repair at `1a7b558a` returned the same acceptance-barrier error and rolled back its spawn; it also returned no reviewer result.
   On 2026-09-23 the read-only `r-gate` request for bimodule morphism admission at `f325fe12` returned the same acceptance-barrier error and rolled back its spawn.
   The passing complete bimodule consumer does not discharge that independent-review requirement.
+  On 2026-09-25 two read-only `r-gate` requests for the complete `core-algebraic-calculus` boundary at `2f9aac11` returned the same durable-acceptance-barrier error and explicitly rolled back their spawns.
+  The fixed-revision architecture check and focused public consumers therefore remain execution evidence, not independent acceptance.
 
 - **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.
 

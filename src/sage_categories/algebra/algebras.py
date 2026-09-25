@@ -21,7 +21,6 @@ from sage_categories.cat.monoidal import ActionsCategory, MonoidalStructuresCate
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoids
-from sage_categories.kernel.sage_runtime import cached_method
 
 __all__ = [
     "AlgebraCategory",
@@ -79,16 +78,9 @@ class AlgebraCategory(LimitSubcategory):
             case _:
                 raise AssertionError(f"{underlying!r} has no retained left-module owner")
 
-    @cached_method
     def monoid_presentation(self) -> Functor:
         """The retained equivalence ``Algebras(R,C) -> Monoids(V_R)``."""
-        projection = self.product_projection(0)
-        presentation = Fun(self, self.monoid_category()).Equivalences()(
-            projection.on_object,
-            projection.on_morphism,
-        )
-        presentation.retain_cartesian_lifts(self._cartesian_lift)
-        return presentation
+        return self.product_projection(0)
 
     def _cartesian_lift(
         self,
@@ -199,7 +191,9 @@ def _new_algebra_category(
     )
     section_cone = cone(diagram, monoids, lambda vertex: legs[sequence_position(vertex)])
     section = family.universal_data(diagram).lift(cones(diagram)(section_cone))
-    Cat().retain_inverses(algebras.monoid_presentation(), section)
+    presentation = algebras.monoid_presentation()
+    Cat().retain_inverses(presentation, section)
+    presentation.retain_cartesian_lifts(algebras._cartesian_lift)
     return algebras
 
 

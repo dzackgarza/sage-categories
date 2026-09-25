@@ -16,7 +16,6 @@ from sage_categories.kernel.compiler import SemanticCollisionError, declared_inh
 from sage_categories.kernel.construction import active_object_context
 from sage_categories.kernel.refinement import (
     declares_point,
-    refine,
     traces_inheritance,
     traces_placement,
 )
@@ -699,7 +698,7 @@ def test_late_functor_property_refinement_does_not_change_compiled_inheritance()
     # query, but it cannot retroactively add a superclass to the Sage C3 already chosen
     # for that source.  Construction therefore follows the inheritance edges retained
     # with the compiled runtime rather than rereading the now-stronger property.
-    refine(selected, Fun(source, target).Isofibrations())
+    assume(selected.is_isofibrations())
     assert traces_inheritance(selected)
 
     member = source(7)

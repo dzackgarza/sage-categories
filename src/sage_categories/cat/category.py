@@ -682,8 +682,12 @@ class CategoryDeclaration[
         """Record two morphisms as mutually inverse; both enter ``Mor(self).Isomorphisms()`` (POL-MATH-037)."""
 
         morphisms = self.morphism_category(1)
-        assert forward in morphisms, f"{forward!r} is not a morphism of {self!r}"
-        assert backward in morphisms, f"{backward!r} is not a morphism of {self!r}"
+        # An exactly owned morphism already carries this admission fact in its retained
+        # construction identity.  Keep the proposition-backed membership fallback for a
+        # morphism admitted through a full subcategory, but do not construct that machinery
+        # on every identity/inverse retained by its exact owner.
+        assert forward.base_category() is self or forward in morphisms, f"{forward!r} is not a morphism of {self!r}"
+        assert backward.base_category() is self or backward in morphisms, f"{backward!r} is not a morphism of {self!r}"
         assert forward.domain() is backward.codomain() and forward.codomain() is backward.domain(), f"{forward!r} and {backward!r} do not have opposite endpoints"
         self._inverses[forward] = backward
         self._inverses[backward] = forward

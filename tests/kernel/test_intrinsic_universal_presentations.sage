@@ -6,6 +6,7 @@ from sage_categories.all import Cat, Discrete, Fun, Mor, Sets, ask
 from sage_categories.algebra.abelian import AbelianGroups
 from sage_categories.cat.canonical import FinitePresentedCategory
 from sage_categories.cat.cones import cocone, cocones, cocone_apex, cone, cones, limit_cones
+from sage_categories.cat.constructions import preserved_colimit, retain_colimit_preservation
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.properties import PredicateSubcategory
 from sage_categories.cat.predicates import Proposition
@@ -26,6 +27,44 @@ def test_abelian_colimit_family_has_its_intrinsic_owner() -> None:
     family = abelian.Colimits(shape)
     assert family.ambient() is abelian
     assert family.diagrams().codomain() is abelian
+
+
+def test_preserved_colimit_transports_retained_universal_data() -> None:
+    base = Cat().Simplex(1)
+    shape = Cat().WalkingParallelPair()
+    source_vertex, target_vertex = shape(0), shape(1)
+    source, target = base(0), base(1)
+    edge = base.generator("0->1")
+    diagram = Fun(shape, base)(
+        lambda vertex: source if vertex is source_vertex else target,
+        lambda _arrow: edge,
+    )
+    identity = Mor(base)(target, target).one()
+    family = base.Colimits(shape)
+    family.with_universal_data(
+        diagram,
+        target,
+        cocone(diagram, target, lambda vertex: edge if vertex is source_vertex else identity),
+        lambda candidate: candidate.component(target_vertex),
+    )
+    original = family.universal_data(diagram)
+    identity_functor = Fun(base, base).one()
+    retain_colimit_preservation(
+        identity_functor,
+        shape,
+        lambda _presentation, candidate: candidate.component(target_vertex),
+    )
+    transported = preserved_colimit(identity_functor, original)
+    assert transported.apex() is target
+    assert ask(transported.leg(target_vertex) == identity) is True
+    candidate = cocones(transported.diagram())(
+        cocone(
+            transported.diagram(),
+            target,
+            lambda vertex: edge if vertex is source_vertex else identity,
+        )
+    )
+    assert ask(transported.lift(candidate) == identity) is True
 
 
 def test_intrinsic_coproduct_retains_distinct_presentations() -> None:
@@ -191,6 +230,7 @@ def test_nonstandard_indexed_predicate_subobject_keeps_selected_universal_data()
     assert family.ambient() is intrinsic
 
 test_abelian_colimit_family_has_its_intrinsic_owner()
+test_preserved_colimit_transports_retained_universal_data()
 test_intrinsic_coproduct_retains_distinct_presentations()
 test_limiting_presentations_of_one_apex_retain_their_legs()
 test_dual_indexed_coproduct_retains_its_universal_map()

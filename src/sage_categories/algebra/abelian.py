@@ -64,7 +64,11 @@ from sage_categories.cat.calculus import binary_product_data, natural_isomorphis
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.certified_structures import certified_additive_group
 from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
-from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
+from sage_categories.cat.cones import cocone, cocone_apex, cocones, cone, cone_apex
+from sage_categories.cat.constructions import (
+    preserved_colimit,
+    retain_colimit_preservation,
+)
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.limit_basis import parallel_pair
@@ -613,30 +617,24 @@ def coequalizer_mediator(
         diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
     )
     assert len(matching) == 1, f"{projection!r} is not the selected leg of one retained coequalizer presentation"
-    # The retained presentation establishes that ``projection`` is the chosen
-    # coequalizer leg.  Factor through that exact epimorphism, rather than assuming the
-    # public choice is CAP's freshly allocated cokernel projection.  This also supports
-    # canonical algebraic presentations such as ``R tensor_R M = M`` with the action as
-    # the chosen quotient map.
-    return _backend.colift_along_epimorphism(projection, coequalizing)
+    diagram = matching[0]
+    presentation = family.universal_data(diagram)
+    shape = diagram.domain()
+    source_vertex = shape(0)
+    candidate = cocone(
+        diagram,
+        coequalizing.codomain(),
+        lambda vertex: coequalizing * diagram.on_morphism(shape.generator("f")) if vertex is source_vertex else coequalizing,
+    )
+    return presentation.lift(cocones(diagram)(candidate))
 
 
 def _factor_relative_projection(
     projection: MorphismCategory.ObjectType,
     arrow: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
-    """Factor through a relative-tensor quotient, including its strict unit case.
-
-    ``relative_tensor`` returns the literal identity when both balancing actions are the
-    selected unit actions.  That case belongs to the relative-tensor owner and needs no
-    pretend coequalizer provenance: factoring through an identity is just ``arrow``.
-    Every nonidentity relative projection is an actual retained additive coequalizer.
-    """
+    """Factor through the retained relative-tensor coequalizer presentation."""
     assert arrow.domain() is projection.domain()
-    if projection.domain() is projection.codomain():
-        identity = Mor(AbelianGroups())(projection.domain(), projection.domain()).one()
-        if projection is identity:
-            return arrow
     return coequalizer_mediator(projection, arrow)
 
 
@@ -1148,9 +1146,94 @@ def _new_relative_tensor(
     selected_left = monoidal.left_unitor().component(second)
     if right_action is selected_right and left_action is selected_left:
         product = _tensor_object(first, second)
-        return Mor(base)(product, product).one()
+        through_the_right, through_the_left = _relative_tensor_parallel_pair(right_action, left_action)
+        diagram = parallel_pair(through_the_right, through_the_left)
+        shape = diagram.domain()
+        source_vertex, target_vertex = shape(0), shape(1)
+        identity = Mor(base)(product, product).one()
+        selected = cocone(
+            diagram,
+            product,
+            lambda vertex: through_the_right if vertex is source_vertex else identity,
+        )
+        base.Colimits(shape).with_universal_data(
+            diagram,
+            product,
+            selected,
+            lambda candidate: candidate.component(target_vertex),
+        )
+        return identity
     through_the_right, through_the_left = _relative_tensor_parallel_pair(right_action, left_action)
     return coequalizer_projection(through_the_right, through_the_left)
+
+
+def _relative_tensor_presentation(
+    projection: MorphismCategory.ObjectType,
+):
+    family = AbelianGroups().Colimits(Cat().WalkingParallelPair())
+    matching = tuple(
+        diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
+    )
+    assert len(matching) == 1, f"{projection!r} has no unique retained relative-tensor presentation"
+    return family.universal_data(matching[0])
+
+
+_FIXED_TENSOR_FUNCTORS = ChosenConstruction()
+
+
+def _fixed_tensor_functor(
+    value: CategoryOfCategories.ElementType,
+    side: Literal["left", "right"],
+) -> Functor:
+    """Tensor by one fixed abelian group, with executable coequalizer preservation."""
+
+    def construct() -> Functor:
+        monoidal = AbelianTensor()
+        base, tensor = monoidal.underlying_category(), monoidal.tensor()
+        identity = Mor(base)(value, value).one()
+        match side:
+            case "left":
+                result = Fun(base, base)(
+                    lambda other: _tensor_object(value, other),
+                    lambda arrow: tensor_morphism(tensor, identity, arrow),
+                )
+            case "right":
+                result = Fun(base, base)(
+                    lambda other: _tensor_object(other, value),
+                    lambda arrow: tensor_morphism(tensor, arrow, identity),
+                )
+
+        shape = Cat().WalkingParallelPair()
+
+        def preserved_mediator(_presentation, candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+            projection = result.on_morphism(_presentation.leg(shape(1)))
+            if projection.domain() is projection.codomain() and projection is Mor(base)(projection.domain(), projection.domain()).one():
+                return candidate.component(shape(1))
+            return _backend.colift_along_epimorphism(projection, candidate.component(shape(1)))
+
+        retain_colimit_preservation(result, shape, preserved_mediator)
+        return result
+
+    return _FIXED_TENSOR_FUNCTORS(AbelianTensor(), (value, side), construct)
+
+
+def _factor_preserved_relative_projection(
+    projection: MorphismCategory.ObjectType,
+    functor: Functor,
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Factor through the tensor image of a relative-tensor coequalizer."""
+    presentation = preserved_colimit(functor, _relative_tensor_presentation(projection))
+    diagram = presentation.diagram()
+    shape = diagram.domain()
+    source_vertex, target_vertex = shape(0), shape(1)
+    assert presentation.leg(target_vertex) is functor.on_morphism(projection)
+    candidate = cocone(
+        diagram,
+        arrow.codomain(),
+        lambda vertex: arrow * diagram.on_morphism(shape.generator("f")) if vertex is source_vertex else arrow,
+    )
+    return presentation.lift(cocones(diagram)(candidate))
 
 
 def balanced_tensor(
@@ -1177,14 +1260,6 @@ def relative_tensor_mediator(
     return _factor_relative_projection(projection, tensor_mediator(factors.first, factors.second, target, balanced))
 
 
-def _colift_presented_epimorphism(
-    epimorphism: MorphismCategory.ObjectType,
-    arrow: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    """Colift through a retained CAP epimorphism at the cycle-safe additive boundary."""
-    return _backend.colift_along_epimorphism(epimorphism, arrow)
-
-
 def induced_left_action(
     projection: MorphismCategory.ObjectType,
     left_action: MorphismCategory.ObjectType,
@@ -1204,12 +1279,8 @@ def induced_left_action(
     triples = monoidal.associator().domain().domain()
     rebracket = monoidal.associator().inverse().component(triples((scalars, first, second)))
     acting = projection * tensor_morphism(tensor, left_action, Mor(base)(second, second).one()) * rebracket
-    tensorized_projection = tensor_morphism(
-        tensor,
-        Mor(base)(scalars, scalars).one(),
-        projection,
-    )
-    return _colift_presented_epimorphism(tensorized_projection, acting)
+    tensor_by_scalars = _fixed_tensor_functor(scalars, "left")
+    return _factor_preserved_relative_projection(projection, tensor_by_scalars, acting)
 
 
 def induced_right_action(
@@ -1227,12 +1298,8 @@ def induced_right_action(
     triples = monoidal.associator().domain().domain()
     rebracket = monoidal.associator().component(triples((first, second, scalars)))
     acting = projection * tensor_morphism(tensor, Mor(base)(first, first).one(), right_action) * rebracket
-    tensorized_projection = tensor_morphism(
-        tensor,
-        projection,
-        Mor(base)(scalars, scalars).one(),
-    )
-    return _colift_presented_epimorphism(tensorized_projection, acting)
+    tensor_by_scalars = _fixed_tensor_functor(scalars, "right")
+    return _factor_preserved_relative_projection(projection, tensor_by_scalars, acting)
 
 
 def relative_tensor_morphism(
@@ -1248,14 +1315,9 @@ def relative_tensor_morphism(
     the source quotient (``specs/bimodules.md``).
     """
 
-    def apply(arrow: MorphismCategory.ObjectType, datum: Hashable) -> Hashable:
-        return arrow(arrow.domain().point(datum)).datum()
-
-    return relative_tensor_mediator(
-        source,
-        target.codomain(),
-        lambda left, right: balanced_tensor(target, apply(first, left), apply(second, right)).datum(),
-    )
+    tensor = AbelianTensor().tensor()
+    underlying = target * tensor_morphism(tensor, first, second)
+    return _factor_relative_projection(source, underlying)
 
 
 def _monoid_one(unit_morphism: MorphismCategory.ObjectType) -> Hashable:
@@ -1395,13 +1457,15 @@ def _relative_associator_underlying(
     forward_from_unbalanced = target_projection * tensor_morphism(abelian_tensor, identity_first, second_third_projection) * rebracket
     backward_from_unbalanced = source_projection * tensor_morphism(abelian_tensor, first_second_projection, identity_third) * unbracket
 
-    through_first_quotient = _colift_presented_epimorphism(
-        tensor_morphism(abelian_tensor, first_second_projection, identity_third),
+    through_first_quotient = _factor_preserved_relative_projection(
+        first_second_projection,
+        _fixed_tensor_functor(third_group, "right"),
         forward_from_unbalanced,
     )
     forward_underlying = factor_source(through_first_quotient)
-    through_second_quotient = _colift_presented_epimorphism(
-        tensor_morphism(abelian_tensor, identity_first, second_third_projection),
+    through_second_quotient = _factor_preserved_relative_projection(
+        second_third_projection,
+        _fixed_tensor_functor(first_group, "left"),
         backward_from_unbalanced,
     )
     backward_underlying = factor_target(through_second_quotient)

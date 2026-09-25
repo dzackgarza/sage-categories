@@ -53,6 +53,7 @@ from collections.abc import Callable, Hashable
 from typing import TYPE_CHECKING
 
 from sage_categories.cat.category import Category, member
+from sage_categories.cat.choices import SelectedChoice
 from sage_categories.cat.cones import (
     ConeCategory,
     LimitConesCategory,
@@ -81,11 +82,19 @@ from sage_categories.kernel.refinement import (
     traces_placement,
 )
 from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import MonoDict, TripleDict, cached_function, cached_method
+from sage_categories.kernel.sage_runtime import (
+    MonoDict,
+    TripleDict,
+    cached_function,
+    cached_method,
+)
 
 if TYPE_CHECKING:
     from sage_categories.cat.category import CategoryOfCategories
-    from sage_categories.cat.universal_arrows import LeftUniversalArrows, RightUniversalArrows
+    from sage_categories.cat.universal_arrows import (
+        LeftUniversalArrows,
+        RightUniversalArrows,
+    )
 
 __all__ = [
     "ApexCategory",
@@ -101,6 +110,8 @@ __all__ = [
     "cone_apex",
     "lift_limit",
     "presenting_family",
+    "preserved_colimit",
+    "retain_colimit_preservation",
     "vertex_of",
 ]
 
@@ -109,6 +120,50 @@ type Construction = Callable[[Functor], "CategoryOfCategories.ElementType"]
 
 
 type UniversalPresentation = LimitConesCategory.ObjectType
+type ColimitPreservationMediator = Callable[[UniversalPresentation, NaturalTransformation], MorphismCategory.ObjectType]
+
+
+_COLIMIT_PRESERVATION: SelectedChoice[ColimitPreservationMediator] = SelectedChoice()
+
+
+def retain_colimit_preservation(
+    functor: Functor,
+    shape: Category,
+    mediator: ColimitPreservationMediator,
+) -> None:
+    """Retain executable evidence that ``functor`` preserves chosen ``shape``-colimits.
+
+    The generic construction owner transports the source cocone and retains the image
+    universal presentation.  A concrete evaluator supplies only the factorization rule
+    witnessing preservation; it does not rebuild cocones or universal-map ownership.
+    """
+    _COLIMIT_PRESERVATION.select(functor, (shape,), mediator)
+
+
+def preserved_colimit(
+    functor: Functor,
+    presentation: UniversalPresentation,
+) -> UniversalPresentation:
+    """Transport one retained colimit presentation through a preserving functor."""
+    diagram = presentation.diagram()
+    shape = diagram.domain()
+    assert diagram.codomain() is functor.domain()
+    image_diagram = functor * diagram
+    apex = functor.on_object(presentation.apex())
+    image_cocone = cocone(
+        image_diagram,
+        apex,
+        lambda vertex: functor.on_morphism(presentation.leg(vertex)),
+    )
+    factor = _COLIMIT_PRESERVATION.selected(functor, (shape,))
+    family = functor.codomain().Colimits(shape)
+    family.with_universal_data(
+        image_diagram,
+        apex,
+        image_cocone,
+        lambda candidate: factor(presentation, candidate),
+    )
+    return family.universal_data(image_diagram)
 
 
 def _construction_membership_proposition(

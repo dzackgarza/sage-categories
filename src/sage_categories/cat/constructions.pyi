@@ -7,6 +7,7 @@ import sage_categories.kernel.roles
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.category import member as member
+from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.cones import ConeCategory as ConeCategory
 from sage_categories.cat.cones import LimitConesCategory as LimitConesCategory
 from sage_categories.cat.cones import cocone as cocone
@@ -62,12 +63,17 @@ __all__ = [
     "cone_apex",
     "lift_limit",
     "presenting_family",
+    "preserved_colimit",
+    "retain_colimit_preservation",
     "vertex_of",
 ]
 type Mediator = Callable[[NaturalTransformation], MorphismCategory.ObjectType]
 type Construction = Callable[[Functor], CategoryOfCategories.ElementType]
 type UniversalPresentation = LimitConesCategory.ObjectType
+type ColimitPreservationMediator = Callable[[UniversalPresentation, NaturalTransformation], MorphismCategory.ObjectType]
 
+def retain_colimit_preservation(functor: Functor, shape: Category, mediator: ColimitPreservationMediator) -> None: ...
+def preserved_colimit(functor: Functor, presentation: UniversalPresentation) -> UniversalPresentation: ...
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category: ...
 
 class _StaticRoles_ApexCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):

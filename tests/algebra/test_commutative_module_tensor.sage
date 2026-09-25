@@ -20,9 +20,9 @@ from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.structured_objects import Monoids
 
 
-def prime_field_five():
-    """F_5 as a commutative monoid object of (Ab, tensor)."""
-    engine = AdditiveAbelianGroup([5])
+def cyclic_ring(order):
+    """Z/order as a commutative monoid object of (Ab, tensor)."""
+    engine = AdditiveAbelianGroup([order])
     group = presented_abelian_group(engine)
     element = lambda value: engine.linear_combination_of_smith_form_gens(
         vector(ZZ, [value])
@@ -42,7 +42,7 @@ def prime_field_five():
 
 
 def test_commutative_base_uses_the_selected_left_module_tensor() -> None:
-    group, field = prime_field_five()
+    group, field = cyclic_ring(5)
     ambient = AbelianTensor()
     actegory = SelfAction(ambient)
     structure = AbelianModuleTensor(field)
@@ -107,4 +107,46 @@ def test_commutative_base_uses_the_selected_left_module_tensor() -> None:
     assert associator.inverse() is associator_inverse
 
 
+def test_nonfield_commutative_base_retains_torsion_module_tensor() -> None:
+    ring_group, ring = cyclic_ring(4)
+    two_engine = AdditiveAbelianGroup([2])
+    two = presented_abelian_group(two_engine)
+    modules = Modules(ring, SelfAction(AbelianTensor()))
+    structure = AbelianModuleTensor(ring)
+    action = tensor_mediator(
+        ring_group,
+        two,
+        two,
+        lambda scalar, value: int(scalar.vector()[0]) * value,
+    )
+    module = modules(action)
+    square = tensor_object(structure.tensor(), module, module)
+    carrier = modules.forgetful().on_object(square)
+
+    assert square in modules
+    assert modules.monoidal_structure() is structure
+
+    zero = modules.homomorphism(
+        module,
+        module,
+        abelian_homomorphism(two, two, lambda value: 0 * value),
+    )
+    identity = Mor(modules)(module, module).one()
+    induced_zero = tensor_morphism(structure.tensor(), zero, identity)
+    zero_square = modules.homomorphism(
+        square,
+        square,
+        abelian_homomorphism(carrier, carrier, lambda value: 0 * value),
+    )
+    square_identity = Mor(modules)(square, square).one()
+
+    assert ask(induced_zero == zero_square) is True
+    assert ask(zero_square == square_identity) is False
+
+    left_unitor = structure.left_unitor().component(module)
+    left_unitor_inverse = structure.left_unitor().inverse().component(module)
+    assert ask(left_unitor * left_unitor_inverse == Mor(modules)(module, module).one()) is True
+
+
 test_commutative_base_uses_the_selected_left_module_tensor()
+test_nonfield_commutative_base_retains_torsion_module_tensor()

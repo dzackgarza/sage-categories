@@ -1567,9 +1567,7 @@ def _module_associator_components(
     second_third = tensor.on_object(pairs((second, third)))
     source = tensor.on_object(pairs((first_second, third)))
     target = tensor.on_object(pairs((first, second_third)))
-    first_group, second_group, third_group = (
-        forgetful.on_object(value) for value in (first, second, third)
-    )
+    first_group, second_group, third_group = (forgetful.on_object(value) for value in (first, second, third))
 
     first_second_projection = _commutative_module_projection(modules, first, second)
     second_third_projection = _commutative_module_projection(modules, second, third)
@@ -1623,18 +1621,10 @@ def _new_abelian_module_tensor(
 
     def on_morphism(arrow: MorphismCategory.ObjectType) -> ModuleCategory.MorphismType:
         source_pair, target_pair = arrow.domain(), arrow.codomain()
-        source_first, source_second = (
-            source_pair.family_component(index) for index in range(2)
-        )
-        target_first, target_second = (
-            target_pair.family_component(index) for index in range(2)
-        )
-        source_projection = _commutative_module_projection(
-            modules, source_first, source_second
-        )
-        target_projection = _commutative_module_projection(
-            modules, target_first, target_second
-        )
+        source_first, source_second = (source_pair.family_component(index) for index in range(2))
+        target_first, target_second = (target_pair.family_component(index) for index in range(2))
+        source_projection = _commutative_module_projection(modules, source_first, source_second)
+        target_projection = _commutative_module_projection(modules, target_first, target_second)
         underlying = relative_tensor_morphism(
             source_projection,
             target_projection,

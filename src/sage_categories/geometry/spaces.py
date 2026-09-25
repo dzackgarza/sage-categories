@@ -21,14 +21,6 @@ __all__ = ["TopologicalSpaces", "TopologicalSpacesCategory"]
 _QUOTIENT_PROJECTIONS: SelectedChoice[MorphismCategory.ObjectType] = SelectedChoice()
 
 
-def _topological_space_projection(source: Category) -> Functor:
-    """Forget a structured topological category through its retained space/map accessors."""
-    return Fun(source, TopologicalSpaces())(
-        lambda value: cast(Any, value).space(),
-        lambda arrow: cast(Any, arrow).continuous_map(),
-    )
-
-
 @dataclass(frozen=True, eq=False, slots=True)
 class _TopologyData[OpenKey: Hashable]:
     carrier: CategoryOfCategories.ElementType

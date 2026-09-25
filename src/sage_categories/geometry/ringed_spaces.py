@@ -11,10 +11,7 @@ from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.sheaves import RingSheaf
-from sage_categories.geometry.spaces import (
-    TopologicalSpacesCategory,
-    _topological_space_projection,
-)
+from sage_categories.geometry.spaces import TopologicalSpacesCategory
 
 __all__ = ["RingedSpaces", "RingedSpacesCategory"]
 
@@ -63,7 +60,12 @@ class RingedSpacesCategory(MorphismDataCategory):
         return TopologicalSpaces()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (*super().structure_functors(), _topological_space_projection(self))
+        spaces = self._space_category()
+        to_spaces = Fun(self, spaces)(
+            lambda value: value.space(),
+            lambda arrow: arrow.continuous_map(),
+        )
+        return (*super().structure_functors(), to_spaces)
 
     def __call__[OpenKey: Hashable](
         self,

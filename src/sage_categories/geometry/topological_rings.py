@@ -12,11 +12,7 @@ from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import ask
 from sage_categories.geometry._ring_categories import rings as _rings
-from sage_categories.geometry.spaces import (
-    TopologicalSpaces,
-    TopologicalSpacesCategory,
-    _topological_space_projection,
-)
+from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 
 __all__ = [
     "BinaryContinuity",
@@ -122,11 +118,19 @@ class TopologicalRingsCategory(MorphismDataCategory):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         rings = _rings()
-        to_rings = Fun(self, rings).Faithful().Isofibrations()(
-            lambda value: cast(Any, value).ring(),
-            lambda arrow: cast(Any, arrow).ring_map(),
+        to_rings = (
+            Fun(self, rings)
+            .Faithful()
+            .Isofibrations()(
+                lambda value: value.ring(),
+                lambda arrow: arrow.ring_map(),
+            )
         )
-        to_spaces = _topological_space_projection(self)
+        spaces = TopologicalSpaces()
+        to_spaces = Fun(self, spaces)(
+            lambda value: value.space(),
+            lambda arrow: arrow.continuous_map(),
+        )
         return (*super().structure_functors(), to_rings, to_spaces)
 
     def __call__(

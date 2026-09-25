@@ -925,7 +925,10 @@ class ColimitsCategory(PropertySubcategory[[MorphismCategory.ObjectType], []]):
     def presenting_diagrams(self, constructed: CategoryOfCategories.ElementType) -> tuple[Functor, ...]:
         direct = tuple(diagram for diagram, presentation in self._presentations.items() if presentation.apex() is constructed)
         dual = tuple(
-            diagram for dual_diagram in self._dual_limits.presenting_diagrams(constructed) for diagram in self._original_diagrams(dual_diagram) if diagram not in direct
+            diagram
+            for dual_diagram in self._dual_limits.presenting_diagrams(constructed)
+            for diagram in self._original_diagrams(dual_diagram)
+            if not any(diagram is retained for retained in direct)
         )
         return (*direct, *dual)
 

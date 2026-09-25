@@ -56,6 +56,7 @@ def test_commutative_base_uses_the_selected_left_module_tensor() -> None:
     assert modules.forgetful().on_object(unit) is group
 
     tensor_square = tensor_object(structure.tensor(), unit, unit)
+    assert tensor_square is unit
     multiplication = structure.left_unitor().component(unit)
     identity = Mor(modules)(unit, unit).one()
     assert multiplication in Mor(modules)(tensor_square, unit)
@@ -82,6 +83,8 @@ def test_commutative_base_uses_the_selected_left_module_tensor() -> None:
         lambda scalar, value: int(scalar.vector()[0]) * value,
     )
     module = modules(action)
+    assert tensor_object(structure.tensor(), unit, module) is module
+    assert tensor_object(structure.tensor(), module, unit) is module
     module_square = tensor_object(structure.tensor(), module, module)
     assert module_square in modules
     assert modules.forgetful().on_object(module_square) is not plane

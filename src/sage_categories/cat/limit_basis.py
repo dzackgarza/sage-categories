@@ -10,8 +10,12 @@ from __future__ import annotations
 
 __all__ = [
     "DiagramPresentation",
+    "coequalizer_factor",
+    "coequalizer_presentation",
     "colimit_from_coproducts_coequalizers",
     "diagram_presentation",
+    "equalizer_factor",
+    "equalizer_presentation",
     "limit_from_products_equalizers",
     "parallel_pair",
 ]
@@ -24,6 +28,8 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import (
     ConeCategory,
     LimitConesCategory,
+    cocone,
+    cocones,
     cone,
     cones,
     limit_cones,
@@ -118,6 +124,70 @@ def parallel_pair(first: MorphismCategory.ObjectType, second: MorphismCategory.O
             ).one()
         ),
     )
+
+
+def equalizer_presentation(
+    base: Category,
+    apex: CategoryOfCategories.ElementType,
+    source: CategoryOfCategories.ElementType,
+) -> LimitConesCategory.ObjectType:
+    """The retained equalizer presentation of ``apex`` with the supplied pair source."""
+    shape = Cat().WalkingParallelPair()
+    family = base.Equalizers()
+    source_vertex = shape(0)
+    matching = tuple(diagram for diagram in family.presenting_diagrams(apex) if diagram.on_object(source_vertex) is source)
+    assert len(matching) == 1, f"{apex!r} has {len(matching)} equalizer presentations with source {source!r}"
+    return family.universal_data(matching[0])
+
+
+def equalizer_factor(
+    presentation: LimitConesCategory.ObjectType,
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Factor an equalizing arrow through a retained equalizer presentation."""
+    diagram = presentation.diagram()
+    shape = diagram.domain()
+    source_vertex = shape.generator("f").domain()
+    assert arrow.codomain() is diagram.on_object(source_vertex)
+    target_leg = diagram.on_morphism(shape.generator("f")) * arrow
+    candidate = cone(
+        diagram,
+        arrow.domain(),
+        lambda vertex: arrow if vertex is source_vertex else target_leg,
+    )
+    return presentation.lift(cones(diagram)(candidate))
+
+
+def coequalizer_presentation(
+    base: Category,
+    projection: MorphismCategory.ObjectType,
+) -> LimitConesCategory.ObjectType:
+    """The retained coequalizer presentation whose target leg is ``projection``."""
+    shape = Cat().WalkingParallelPair()
+    family = base.Coequalizers()
+    target_vertex = shape(1)
+    matching = tuple(diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(target_vertex) is projection)
+    assert len(matching) == 1, f"{projection!r} is not the target leg of one retained coequalizer presentation"
+    return family.universal_data(matching[0])
+
+
+def coequalizer_factor(
+    presentation: LimitConesCategory.ObjectType,
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Factor a coequalizing arrow through a retained coequalizer presentation."""
+    diagram = presentation.diagram()
+    shape = diagram.domain()
+    source_vertex = shape.generator("f").domain()
+    target_vertex = shape.generator("f").codomain()
+    projection = presentation.leg(target_vertex)
+    assert arrow.domain() is projection.domain()
+    candidate = cocone(
+        diagram,
+        arrow.codomain(),
+        lambda vertex: arrow * diagram.on_morphism(shape.generator("f")) if vertex is source_vertex else arrow,
+    )
+    return presentation.lift(cocones(diagram)(candidate))
 
 
 type LimitChoice = Callable[[Functor], LimitConesCategory.ObjectType]

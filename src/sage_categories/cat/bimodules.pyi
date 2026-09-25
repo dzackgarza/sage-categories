@@ -13,14 +13,16 @@ from sage_categories.cat.cat_constructions import (
 )
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
-from sage_categories.cat.cones import LimitConesCategory as LimitConesCategory
 from sage_categories.cat.cones import cocone as cocone
-from sage_categories.cat.cones import cocones as cocones
 from sage_categories.cat.diagrams import cospan_diagram as cospan_diagram
 from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
+from sage_categories.cat.limit_basis import coequalizer_factor as coequalizer_factor
+from sage_categories.cat.limit_basis import (
+    coequalizer_presentation as coequalizer_presentation,
+)
 from sage_categories.cat.limit_basis import parallel_pair as parallel_pair
 from sage_categories.cat.modules import ModuleCategory as ModuleCategory
 from sage_categories.cat.modules import Modules as Modules
@@ -51,7 +53,6 @@ __all__ = [
     "relative_tensor",
     "relative_tensor_factor",
     "relative_tensor_morphism",
-    "relative_tensor_presentation",
     "relative_tensor_preserved_factor",
 ]
 
@@ -62,7 +63,6 @@ def relative_tensor(
     right_action: MorphismCategory.ObjectType,
     left_action: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType: ...
-def relative_tensor_presentation(monoidal: MonoidalStructuresCategory.ObjectType, projection: MorphismCategory.ObjectType) -> LimitConesCategory.ObjectType: ...
 def relative_tensor_factor(
     monoidal: MonoidalStructuresCategory.ObjectType, projection: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType
 ) -> MorphismCategory.ObjectType: ...

@@ -10,11 +10,9 @@ from sage_categories.cat.bimodules import (
     relative_tensor,
     relative_tensor_factor,
     relative_tensor_morphism,
-    relative_tensor_presentation,
     relative_tensor_preserved_factor,
 )
 from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.cones import LimitConesCategory
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.monoidal import MonoidalStructuresCategory
 from sage_categories.cat.morphisms import MorphismCategory
@@ -61,7 +59,6 @@ def relative_tensor_calculus_types(
     assert_type(fixed_tensor_functor(monoidal, first, "left"), Functor)
     assert_type(fixed_tensor_functor(monoidal, second, "right"), Functor)
     assert_type(relative_tensor(monoidal, middle, right_action, left_action), MorphismCategory.ObjectType)
-    assert_type(relative_tensor_presentation(monoidal, projection), LimitConesCategory.ObjectType)
     assert_type(relative_tensor_factor(monoidal, projection, arrow), MorphismCategory.ObjectType)
     assert_type(relative_tensor_preserved_factor(monoidal, projection, preserving, arrow), MorphismCategory.ObjectType)
     assert_type(induced_left_action(monoidal, projection, scalars, second, left_action), MorphismCategory.ObjectType)

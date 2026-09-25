@@ -27,7 +27,6 @@ __all__ = [
     "relative_tensor",
     "relative_tensor_factor",
     "relative_tensor_morphism",
-    "relative_tensor_presentation",
     "relative_tensor_preserved_factor",
 ]
 
@@ -39,10 +38,14 @@ from sage_categories.cat.cat_constructions import (
     limit_of_categories,
 )
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.cones import LimitConesCategory, cocone, cocones
+from sage_categories.cat.cones import cocone
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.limit_basis import parallel_pair
+from sage_categories.cat.limit_basis import (
+    coequalizer_factor,
+    coequalizer_presentation,
+    parallel_pair,
+)
 from sage_categories.cat.modules import ModuleCategory, Modules
 from sage_categories.cat.monoidal import (
     MonoidalStructuresCategory,
@@ -136,35 +139,14 @@ def relative_tensor(
             return family.universal_data(diagram).leg(target_vertex)
 
 
-def relative_tensor_presentation(
-    monoidal: MonoidalStructuresCategory.ObjectType,
-    projection: MorphismCategory.ObjectType,
-) -> LimitConesCategory.ObjectType:
-    """Return the retained coequalizer presentation whose target leg is projection."""
-    shape = Cat().WalkingParallelPair()
-    family = monoidal.underlying_category().Colimits(shape)
-    matching = tuple(diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(shape(1)) is projection)
-    assert len(matching) == 1, f"{projection!r} has no unique retained relative-tensor presentation"
-    return family.universal_data(matching[0])
-
-
 def relative_tensor_factor(
     monoidal: MonoidalStructuresCategory.ObjectType,
     projection: MorphismCategory.ObjectType,
     arrow: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Factor a balanced map through the retained relative-tensor coequalizer."""
-    assert arrow.domain() is projection.domain()
-    presentation = relative_tensor_presentation(monoidal, projection)
-    diagram = presentation.diagram()
-    shape = diagram.domain()
-    source_vertex = shape(0)
-    candidate = cocone(
-        diagram,
-        arrow.codomain(),
-        lambda vertex: arrow * diagram.on_morphism(shape.generator("f")) if vertex is source_vertex else arrow,
-    )
-    return presentation.lift(cocones(diagram)(candidate))
+    presentation = coequalizer_presentation(monoidal.underlying_category(), projection)
+    return coequalizer_factor(presentation, arrow)
 
 
 def relative_tensor_preserved_factor(
@@ -174,17 +156,9 @@ def relative_tensor_preserved_factor(
     arrow: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Factor through the image of a relative tensor under a preserving functor."""
-    presentation = functor.preserved_colimit(relative_tensor_presentation(monoidal, projection))
-    diagram = presentation.diagram()
-    shape = diagram.domain()
-    source_vertex, target_vertex = shape(0), shape(1)
-    assert presentation.leg(target_vertex) is functor.on_morphism(projection)
-    candidate = cocone(
-        diagram,
-        arrow.codomain(),
-        lambda vertex: arrow * diagram.on_morphism(shape.generator("f")) if vertex is source_vertex else arrow,
-    )
-    return presentation.lift(cocones(diagram)(candidate))
+    presentation = coequalizer_presentation(monoidal.underlying_category(), projection)
+    preserved = functor.preserved_colimit(presentation)
+    return coequalizer_factor(preserved, arrow)
 
 
 def induced_left_action(

@@ -14,10 +14,13 @@ from sage_categories.cat.calculus import (
 )
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import cone, cones
 from sage_categories.cat.constructions import UniversalPresentation
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.limit_basis import parallel_pair
+from sage_categories.cat.limit_basis import (
+    equalizer_factor,
+    equalizer_presentation,
+    parallel_pair,
+)
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import Unknown, ask
@@ -56,19 +59,6 @@ def _apply_ring_map(
     return cast(CategoryOfCategories.ElementType, cast(Any, arrow)(section))
 
 
-def _descent_presentation(
-    section_ring: CategoryOfCategories.ElementType,
-    local_rings: tuple[CategoryOfCategories.ElementType, ...],
-) -> UniversalPresentation:
-    """The retained descent equalizer with the exact supplied local-product source."""
-    family = _rings().Equalizers()
-    local_product = finite_product_data(_rings(), local_rings).apex()
-    source_vertex = Cat().WalkingParallelPair()(0)
-    diagrams = tuple(diagram for diagram in family.presenting_diagrams(section_ring) if diagram.on_object(source_vertex) is local_product)
-    assert len(diagrams) == 1, f"{section_ring!r} has {len(diagrams)} descent presentations over {local_product!r}"
-    return family.universal_data(diagrams[0])
-
-
 def _descent_presentation_for_component(
     section_ring: CategoryOfCategories.ElementType,
     local_ring: CategoryOfCategories.ElementType,
@@ -91,14 +81,6 @@ def _descent_presentation_for_component(
     return family.universal_data(diagrams[0])
 
 
-def _descent_inclusion(
-    presentation: UniversalPresentation,
-) -> MorphismCategory.ObjectType:
-    """The equalizer inclusion into the product of local section rings."""
-    source_vertex = presentation.diagram().domain().generator("f").domain()
-    return presentation.leg(source_vertex)
-
-
 def _local_projection(
     local_product: CategoryOfCategories.ElementType,
     local_ring: CategoryOfCategories.ElementType,
@@ -111,24 +93,6 @@ def _local_projection(
             return Mor(_rings())(local_ring, local_ring).one()
         case False:
             return local_product.product_projection(component_index)
-
-
-def _descent_lift(
-    presentation: UniversalPresentation,
-    source: CategoryOfCategories.ElementType,
-    into_product: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    """Use the retained equalizer universal map for a compatible family."""
-    diagram = presentation.diagram()
-    shape = diagram.domain()
-    source_vertex = shape.generator("f").domain()
-    target_leg = diagram.on_morphism(shape.generator("f")) * into_product
-    candidate = cone(
-        diagram,
-        source,
-        lambda vertex: into_product if vertex is source_vertex else target_leg,
-    )
-    return presentation.lift(cones(diagram)(candidate))
 
 
 def descent_section_ring(
@@ -186,9 +150,10 @@ def descent_restriction(
     """Restrict through the generic product/equalizer presentations."""
     _ = (larger_key, smaller_key)
     source_rings = tuple(restriction.domain() for restriction in component_restrictions)
-    source = _descent_presentation(source_ring, source_rings)
+    local_product = finite_product_data(_rings(), source_rings).apex()
+    source = equalizer_presentation(_rings(), source_ring, local_product)
     local_product = source.diagram().on_object(source.diagram().domain().generator("f").domain())
-    inclusion = _descent_inclusion(source)
+    inclusion = source.leg(source.diagram().domain().generator("f").domain())
     components = tuple(restriction * _local_projection(local_product, restriction.domain(), index) * inclusion for index, restriction in enumerate(component_restrictions))
     return descent_map(smaller_key, source_ring, target_ring, components)
 
@@ -202,7 +167,7 @@ def descent_projection(
     """Project using the retained equalizer inclusion followed by a product projection."""
     _ = open_key
     data = _descent_presentation_for_component(section_ring, local_ring, component_index)
-    inclusion = _descent_inclusion(data)
+    inclusion = data.leg(data.diagram().domain().generator("f").domain())
     local_product = inclusion.codomain()
     projection = _local_projection(local_product, local_ring, component_index) * inclusion
     assert projection.codomain() is local_ring
@@ -232,12 +197,12 @@ def descent_map(
     """Map into a compatible-family ring through its retained limit mediator."""
     _ = open_key
     target_rings = tuple(component.codomain() for component in component_maps)
-    target = _descent_presentation(target_ring, target_rings)
-    target_product = _descent_inclusion(target).codomain()
     product_data = finite_product_data(_rings(), target_rings)
+    target_product = product_data.apex()
+    target = equalizer_presentation(_rings(), target_ring, target_product)
     into_product = finite_product_morphism(product_data, source_ring, component_maps)
     assert into_product.codomain() is target_product
-    return _descent_lift(target, source_ring, into_product)
+    return equalizer_factor(target, into_product)
 
 
 def descent_chart_comparison(

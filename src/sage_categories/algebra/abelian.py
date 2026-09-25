@@ -1525,7 +1525,7 @@ def _new_abelian_module_tensor(
 ) -> MonoidalStructuresCategory.ObjectType:
     """Derive the left-module tensor from the existing bimodule tensor calculus."""
     monoidal = AbelianTensor()
-    scalar = scalars.carrier()
+    scalar = scalars.operation().codomain()
     assert ask(
         scalars.operation() * _tensor_swap(scalar, scalar) == scalars.operation()
     ) is True, f"{scalars!r} is not commutative"

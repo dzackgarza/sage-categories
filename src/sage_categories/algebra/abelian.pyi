@@ -22,7 +22,6 @@ from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
 from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.cones import cocone as cocone
 from sage_categories.cat.cones import cocone_apex as cocone_apex
-from sage_categories.cat.cones import cocones as cocones
 from sage_categories.cat.cones import cone as cone
 from sage_categories.cat.cones import cone_apex as cone_apex
 from sage_categories.cat.declarations import Sets as Sets
@@ -32,6 +31,10 @@ from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
+from sage_categories.cat.limit_basis import coequalizer_factor as coequalizer_factor
+from sage_categories.cat.limit_basis import (
+    coequalizer_presentation as coequalizer_presentation,
+)
 from sage_categories.cat.limit_basis import parallel_pair as parallel_pair
 from sage_categories.cat.modules import ModuleCategory as ModuleCategory
 from sage_categories.cat.modules import Modules as Modules

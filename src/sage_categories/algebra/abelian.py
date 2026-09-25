@@ -82,10 +82,14 @@ from sage_categories.cat.calculus import binary_product_data, natural_isomorphis
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.certified_structures import certified_additive_group
 from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
-from sage_categories.cat.cones import cocone, cocone_apex, cocones, cone, cone_apex
+from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.limit_basis import parallel_pair
+from sage_categories.cat.limit_basis import (
+    coequalizer_factor,
+    coequalizer_presentation,
+    parallel_pair,
+)
 from sage_categories.cat.modules import ModuleCategory, Modules
 from sage_categories.cat.monoidal import (
     Cartesian,
@@ -625,21 +629,8 @@ def coequalizer_mediator(
     coequalizing: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Factor ``coequalizing`` through the retained coequalizer presentation of ``projection``."""
-    family = AbelianGroups().Colimits(Cat().WalkingParallelPair())
-    matching = tuple(
-        diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
-    )
-    assert len(matching) == 1, f"{projection!r} is not the selected leg of one retained coequalizer presentation"
-    diagram = matching[0]
-    presentation = family.universal_data(diagram)
-    shape = diagram.domain()
-    source_vertex = shape(0)
-    candidate = cocone(
-        diagram,
-        coequalizing.codomain(),
-        lambda vertex: coequalizing * diagram.on_morphism(shape.generator("f")) if vertex is source_vertex else coequalizing,
-    )
-    return presentation.lift(cocones(diagram)(candidate))
+    presentation = coequalizer_presentation(AbelianGroups(), projection)
+    return coequalizer_factor(presentation, coequalizing)
 
 
 def _factor_relative_projection(

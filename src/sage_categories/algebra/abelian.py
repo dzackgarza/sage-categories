@@ -1298,6 +1298,8 @@ def _bimodule_associator_components(
         second_third_projection,
         source_projection,
         target_projection,
+        partial(_factor_relative_projection, source_projection),
+        partial(_factor_relative_projection, target_projection),
     )
     return (
         bimodules.homomorphism(source, target, forward_underlying),

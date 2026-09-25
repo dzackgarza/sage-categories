@@ -2331,6 +2331,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         ):
             if is_placed(first, property_category) and is_placed(second, property_category):
                 refine(composite, property_category)
+                if property_category is Fun.Isofibrations():
+                    self._retain_composite_cartesian_lifts(composite, first, second)
         return composite
 
     @cached_method(key=lambda self, factors, first, second: identity_key(*factors))
@@ -2357,6 +2359,24 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         composite.retain_factors(first, second)
         _cells_engine().retain_composite(self, composite, first, second)
         return composite
+
+    @cached_method(key=lambda self, composite, first, second: identity_key(composite, first, second))
+    def _retain_composite_cartesian_lifts(
+        self,
+        composite: CategoryOfCategories.MorphismType,
+        first: CategoryOfCategories.MorphismType,
+        second: CategoryOfCategories.MorphismType,
+    ) -> None:
+        """Retain the successive isomorphism lift for a composite isofibration."""
+
+        def lift(
+            morphism: MorphismCategory.ObjectType,
+            target: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
+            through_second = second.cartesian_lift(morphism, first.on_object(target))
+            return first.cartesian_lift(through_second, target)
+
+        composite.retain_cartesian_lifts(lift)
 
     def _construct_transformation(
         self,

@@ -4,6 +4,7 @@ from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.predicates import ask
+from sage_categories.sets import Sets
 
 
 class TransportBase(Category):
@@ -107,4 +108,31 @@ def test_composite_isofibration_transports_generic_state() -> None:
     assert composite.on_object(value) is base_image
 
 
+def test_composite_isofibration_retains_successive_lift_rule() -> None:
+    endofunctors = Fun(Sets, Sets)
+    first = endofunctors.Isofibrations()(
+        lambda value: value,
+        lambda morphism: morphism,
+    )
+    second = endofunctors.Isofibrations()(
+        lambda value: value,
+        lambda morphism: morphism,
+    )
+    first.retain_cartesian_lifts(lambda morphism, target: morphism)
+    second.retain_cartesian_lifts(lambda morphism, target: morphism)
+    composite = second * first
+
+    source = Sets((0, 1))
+    target = Sets((10, 20))
+    forward = Mor(Sets)(source, target)(lambda value: {0: 10, 1: 20}[value])
+    backward = Mor(Sets)(target, source)(lambda value: {10: 0, 20: 1}[value])
+    Sets.retain_inverses(forward, backward)
+
+    lift = composite.cartesian_lift(forward, target)
+    assert composite in endofunctors.Isofibrations()
+    assert lift is forward
+    assert composite.on_morphism(lift) is forward
+
+
 test_composite_isofibration_transports_generic_state()
+test_composite_isofibration_retains_successive_lift_rule()

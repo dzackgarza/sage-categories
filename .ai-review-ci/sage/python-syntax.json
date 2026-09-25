@@ -1,6 +1,0 @@
-{
-  "check": "python-syntax",
-  "diagnostics": ".ai-review-ci/sage/python-syntax.diagnostics.log",
-  "log": ".ai-review-ci/sage/python-syntax.log",
-  "status": 0
-}

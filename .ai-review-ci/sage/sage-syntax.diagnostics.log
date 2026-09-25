@@ -1,6 +1,0 @@
-4:ERROR: Sage virtual-environment Python is not executable: /home/dzack/sage-mypy-plugin/sage-stubs/sage-src/python
-7:  LOCAL QC FAILURE — DIRECT REPAIR REQUIRED
-10:  Fix the reported compiler, formatter, type, or test failure in the object
-14:  Do not weaken the checker, suppress the diagnostic, golf the error count, or
-18:error: Recipe `_sage-python` failed with exit code 1
-19:error: Recipe `_sage-syntax` failed with exit code 1

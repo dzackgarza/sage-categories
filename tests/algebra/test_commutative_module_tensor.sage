@@ -15,7 +15,7 @@ from sage_categories.algebra.abelian import (
 from sage_categories.algebra.algebras import Algebras
 from sage_categories.cat.category import ask
 from sage_categories.cat.modules import Modules
-from sage_categories.cat.monoidal import SelfAction, tensor_object
+from sage_categories.cat.monoidal import SelfAction, tensor_morphism, tensor_object
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.structured_objects import Monoids
 
@@ -72,6 +72,39 @@ def test_commutative_base_uses_the_selected_left_module_tensor() -> None:
     assert algebras.monoid_presentation().on_object(algebra) is neutral
     assert neutral.operation() is multiplication
     assert neutral.unit_morphism() is identity
+
+    plane_engine = AdditiveAbelianGroup([5, 5])
+    plane = presented_abelian_group(plane_engine)
+    action = tensor_mediator(
+        group,
+        plane,
+        plane,
+        lambda scalar, value: int(scalar.vector()[0]) * value,
+    )
+    module = modules(action)
+    module_square = tensor_object(structure.tensor(), module, module)
+    assert module_square in modules
+    assert modules.forgetful().on_object(module_square) is not plane
+
+    doubling = modules.homomorphism(
+        module,
+        module,
+        abelian_homomorphism(plane, plane, lambda value: 2 * value),
+    )
+    doubled_tensor = tensor_morphism(structure.tensor(), doubling, doubling)
+    assert doubled_tensor in Mor(modules)(module_square, module_square)
+    assert ask(doubled_tensor == Mor(modules)(module_square, module_square).one()) is False
+
+    left_unitor = structure.left_unitor().component(module)
+    left_unitor_inverse = structure.left_unitor().inverse().component(module)
+    assert left_unitor.inverse() is left_unitor_inverse
+    assert ask(left_unitor * left_unitor_inverse == Mor(modules)(module, module).one()) is True
+
+    triples = structure.associator().domain().domain()
+    triple = triples((module, module, module))
+    associator = structure.associator().component(triple)
+    associator_inverse = structure.associator().inverse().component(triple)
+    assert associator.inverse() is associator_inverse
 
 
 test_commutative_base_uses_the_selected_left_module_tensor()

@@ -1805,6 +1805,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             )
 
         def _construct_object_image(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            if self._is_identity_on_values():
+                # Identities and zero-action subcategory inclusions are literally the
+                # identity on the owned values they share. Their public action therefore
+                # has no computation to delegate; native materialization remains available
+                # when Catlab itself needs this functor as part of a composite or cell.
+                return self._retain_object_action_result(member_object, member_object)
             catlab = _catlab_engine()
 
             return self._retain_object_action_result(
@@ -1979,6 +1985,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                     ),
                     self.on_object,
                 )
+            if self._is_identity_on_values():
+                return self._retain_morphism_action_result(
+                    morphism,
+                    morphism,
+                    self.on_object,
+                )
             catlab = _catlab_engine()
 
             return self._retain_morphism_action_result(
@@ -1999,6 +2011,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 return self.on_object(value)
             assert value in self.domain().morphism_category(1), f"{value!r} is neither an object nor a morphism of {self.domain()!r}"
             return self.on_morphism(value)
+
+        def _is_identity_on_values(self) -> bool:
+            """Whether retained structural data makes this functor identity on shared values."""
+            return isinstance(self._functor_data, _StructuralFunctorData) and not self.is_composite()
 
         def inverse_image(self, subcategory: Category) -> Category:
             """``F.inverse_image(P) = D ×_C P`` for a subcategory ``P -> C``."""

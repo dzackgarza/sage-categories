@@ -60,13 +60,6 @@ def _diagrams() -> ModuleType:
     return diagrams
 
 
-def identity_on_values(
-    value: CategoryOfCategories.ElementType,
-) -> CategoryOfCategories.ElementType:
-    """The object and morphism action of every subcategory monomorphism: the identity on the shared values (POL-FUN-027)."""
-    return value
-
-
 def diagram_of(value: CategoryOfCategories.ElementType) -> Functor:
     """Return the functor represented by a functor, object, or morphism value."""
     if is_placed(value, Fun):
@@ -748,7 +741,12 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         states nothing about which relation holds: the caller declares that by placing the
         result, and a placement made twice for one pair narrows the one retained value.
         """
-        return self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
+        assert source in self._base and target in self._base
+        return self._base.MorphismType(
+            domain=source,
+            codomain=target,
+            data=_category._StructuralFunctorData(),
+        )
 
     def _shared_value_functor(self, source: Category, target: Category, full: bool) -> Functor:
         """The identity-on-values functor ``source -> target``, placed in the declared property.

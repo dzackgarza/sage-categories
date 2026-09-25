@@ -8,6 +8,7 @@ from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.images import full_image, strict_image
 from sage_categories.cat.morphisms import FixedEndpointCategory, Mor, MorphismCategory
+from sage_categories.cat.native import has_native_functor
 from sage_categories.cat.opposites import Op, op_squared_isomorphism
 from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import Proposition, Unknown, register_handler
@@ -748,6 +749,11 @@ def test_strict_and_full_image_inclusions_are_the_direct_zero_argument_call() ->
     assert strict_inclusion is Fun(strict, TOKENS).Monomorphisms()()
     assert is_placed(strict_inclusion, Fun(strict, TOKENS).Monomorphisms())
     assert ask(Fun.Isofibrations().membership_proposition(strict_inclusion)) is Unknown
+    assert not has_native_functor(strict_inclusion)
+    assert strict_inclusion.on_object(strict_member) is strict_member
+    strict_identity = Mor(strict)(strict_member, strict_member).one()
+    assert strict_inclusion.on_morphism(strict_identity) is strict_identity
+    assert not has_native_functor(strict_inclusion)
 
     full = full_image(TOKENS, defining)
     assert full_image(TOKENS, defining) is full

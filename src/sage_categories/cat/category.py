@@ -2367,7 +2367,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         first: CategoryOfCategories.MorphismType,
         second: CategoryOfCategories.MorphismType,
     ) -> None:
-        """Retain the successive isomorphism lift for a composite isofibration."""
+        """Retain the successive lift when both isofibration factors execute lifts."""
+        if first._cartesian_lift_rule is None or second._cartesian_lift_rule is None:
+            return
 
         def lift(
             morphism: MorphismCategory.ObjectType,

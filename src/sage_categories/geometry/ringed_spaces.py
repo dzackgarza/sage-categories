@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
-from typing import Any, cast
 
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
@@ -96,7 +95,7 @@ class RingedSpacesCategory(MorphismDataCategory):
         component_rule: SheafComponentRule[TargetKey],
     ) -> tuple[TopologicalSpacesCategory.MorphismType, NaturalTransformation]:
         assert continuous.domain() is source.space() and continuous.codomain() is target.space()
-        inverse_op = cast(Any, continuous).inverse_image().op()
+        inverse_op = continuous.inverse_image().op()
         target_sheaf = target.sheaf().presheaf.functor
         pushed_source = source.sheaf().presheaf.functor * inverse_op
         assert target_sheaf.domain() is pushed_source.domain() and target_sheaf.codomain() is pushed_source.codomain()

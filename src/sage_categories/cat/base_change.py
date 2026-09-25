@@ -18,15 +18,12 @@ __all__ = ["base_change"]
 def _cartesian_lift(
     base_functor: Functor,
     defining_functor: Functor,
-    pullback: Category,
+    pullback: LimitCategory,
     morphism: MorphismCategory.ObjectType,
     target: CategoryOfCategories.ElementType,
 ) -> MorphismCategory.ObjectType:
     """Pull back one selected cartesian lift componentwise."""
     image = base_functor.on_morphism(morphism)
-    if not isinstance(pullback, LimitCategory):
-        assert pullback is Cat().Terminal(), f"{pullback!r} is not the strict or terminal Cat pullback"
-        return pullback.morphism_category(1)(target, target).one()
     lifted = defining_functor.cartesian_lift(image, _retained_object_component(target, 1))
     source = pullback((morphism.domain(), lifted.domain(), image.domain()))
     return pullback.construct_morphism(source, target, (morphism, lifted, image))
@@ -35,15 +32,12 @@ def _cartesian_lift(
 def _cocartesian_lift(
     base_functor: Functor,
     defining_functor: Functor,
-    pullback: Category,
+    pullback: LimitCategory,
     morphism: MorphismCategory.ObjectType,
     source: CategoryOfCategories.ElementType,
 ) -> MorphismCategory.ObjectType:
     """Pull back one selected cocartesian lift componentwise."""
     image = base_functor.on_morphism(morphism)
-    if not isinstance(pullback, LimitCategory):
-        assert pullback is Cat().Terminal(), f"{pullback!r} is not the strict or terminal Cat pullback"
-        return pullback.morphism_category(1)(source, source).one()
     lifted = defining_functor.cocartesian_lift(image, _retained_object_component(source, 1))
     target = pullback((morphism.codomain(), lifted.codomain(), image.codomain()))
     return pullback.construct_morphism(source, target, (morphism, lifted, image))
@@ -78,6 +72,7 @@ def _retain_cartesian_base_change(
     pullback, projection = _base_change_data(base_functor, defining_functor)
     if projection is defining_functor:
         return
+    assert isinstance(pullback, LimitCategory), f"{pullback!r} is not the strict Cat pullback"
     refine(projection, Fun.Fibrations())
     projection.retain_cartesian_lifts(
         lambda morphism, target: _cartesian_lift(
@@ -99,6 +94,7 @@ def _retain_cocartesian_base_change(
     pullback, projection = _base_change_data(base_functor, defining_functor)
     if projection is defining_functor:
         return
+    assert isinstance(pullback, LimitCategory), f"{pullback!r} is not the strict Cat pullback"
     refine(projection, Fun.Opfibrations())
     projection.retain_cocartesian_lifts(
         lambda morphism, source: _cocartesian_lift(

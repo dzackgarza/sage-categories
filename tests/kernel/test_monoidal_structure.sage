@@ -277,7 +277,7 @@ def test_composition_tensor() -> None:
     assert monoid.unit_morphism().domain() is identity
     assert monoid.unit_morphism().codomain() is closure
     assert monoid.operation().component(C(2)).codomain() is C(2)
-    assert monoids.structure_functors()[-1] is monoids.to_magmas()
+    assert monoids.structure_functors() == (monoids.to_magmas(),)
     assert Fun.declares_inheritance(monoids.to_magmas())
     assert monoids.to_magmas().on_object(monoid) is magma
 

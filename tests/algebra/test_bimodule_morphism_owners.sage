@@ -19,7 +19,7 @@ def test_bimodule_morphisms_require_commuting_endpoints() -> None:
         Mor(Sets)(structure.unit(), scalars)(lambda point: 1),
     )
     bimodules = Bimodules(monoid, monoid, structure)
-    assert bimodules.structure_functors()[-2:] == (bimodules.to_left(), bimodules.to_right())
+    assert bimodules.structure_functors() == (bimodules.to_left(), bimodules.to_right())
     assert Fun.declares_inheritance(bimodules.to_left())
     assert Fun.declares_inheritance(bimodules.to_right())
     source, target = Sets((0, 1, 2)), Sets((10, 11, 12))

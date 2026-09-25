@@ -99,11 +99,7 @@ class ModuleCategory(EquifierCategory):
         """``U_A: Modules(A, C) -> C``, retained from the defining inserter and equifiers."""
         unital = self.ambient()
         assert unital.ambient() is self._algebras
-        return (
-            self._algebras.forgetful()
-            * Fun.full_subcategory_monomorphism(unital, self._algebras)
-            * Fun.full_subcategory_monomorphism(self, unital)
-        )
+        return self._algebras.forgetful() * Fun.full_subcategory_monomorphism(unital, self._algebras) * Fun.full_subcategory_monomorphism(self, unital)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """``U_A`` is the sole immediate structure functor of ``Modules(A, C)``."""

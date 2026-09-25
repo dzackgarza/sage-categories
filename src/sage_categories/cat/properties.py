@@ -135,9 +135,17 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
     def has_ambient(self) -> bool:
         return True
 
+    def has_full_ambient(self) -> bool:
+        """A full subcategory is full by construction, independently of its named structure functors."""
+        return True
+
     def ambient(self) -> Category[MorphismData, TwoMorphismData]:
         """The ambient is construction data: this category declares exactly one subcategory monomorphism."""
         return self._ambient
+
+    def subcategory_monomorphism(self) -> Functor:
+        """The construction-owned full inclusion, which need not be a named immediate structure functor."""
+        return _functors().full_subcategory_monomorphism(self, self._ambient)
 
     def narrowing_base(self) -> Category:
         return self._ambient.narrowing_base()

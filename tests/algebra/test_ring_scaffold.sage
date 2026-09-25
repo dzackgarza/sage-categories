@@ -21,6 +21,7 @@ def residue_operations(modulus):
 
 def test_residue_ring_operations() -> None:
     rings = Rings(Sets())
+    assert rings.structure_functors() == (rings.to_semiring(), rings.to_additive_group())
     _, addition, zero, multiplication, one = residue_operations(4)
     ring = rings(addition, zero, multiplication, one)
     assert ring in rings

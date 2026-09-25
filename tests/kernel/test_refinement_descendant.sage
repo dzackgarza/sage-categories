@@ -3,9 +3,10 @@
 from sage_categories.cat.category import Axiom, Category, ask
 from sage_categories.cat.functors import Fun
 from sage_categories.cat.morphisms import Mor
-from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
+from sage_categories.cat.predicates import assume
+from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.kernel.construction import retained_object_input
-from sage_categories.kernel.refinement import is_placed, refine
+from sage_categories.kernel.refinement import is_placed
 from sage_categories.sets.finite import Sets
 
 
@@ -106,6 +107,8 @@ class PlacementTarget(Category):
 
 
 class PlacementSource(Category):
+    Detached = Axiom()
+
     class ObjectType:
         def __init__(self, value: int) -> None:
             self._placement_value = value
@@ -118,7 +121,6 @@ class PlacementSource(Category):
 
     def __init__(self, target: PlacementTarget) -> None:
         self._target = target
-        super().__init__()
 
     def __call__(self, value: int) -> PlacementSource.ObjectType:
         return self.ObjectType(value)
@@ -127,8 +129,10 @@ class PlacementSource(Category):
         return (Fun.full_subcategory_monomorphism(self, self._target),)
 
 
-class DetachedPlacement(FullSubcategory):
+class DetachedPlacement(PropertySubcategory):
     """A narrowing whose public structural graph deliberately omits its ambient inclusion."""
+
+    _base_category_class_and_axiom = (PlacementSource, "Detached")
 
     class ObjectType:
         pass
@@ -186,8 +190,8 @@ def test_refined_value_still_traces_its_retained_construction_placement() -> Non
     assert is_placed(value, target)
     assert is_placed(identity, Mor(target))
 
-    refine(value, detached)
-    refine(identity, Mor(detached))
+    assume(value.is_detached())
+    assert Mor(detached)(value, value).one() is identity
     assert value.category() is detached
     assert is_placed(value, source)
     assert is_placed(value, target)

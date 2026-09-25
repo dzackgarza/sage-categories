@@ -559,6 +559,20 @@ class LimitSubcategory(LimitCategory):
         """The category of families this specified construction specializes."""
         return LimitCategory(diagram)
 
+    def has_ambient(self) -> bool:
+        return True
+
+    def has_full_ambient(self) -> bool:
+        return True
+
+    def ambient(self) -> LimitCategory:
+        """The compatible-family category is construction data, not an additional named structure."""
+        return self._family_category
+
+    def subcategory_monomorphism(self) -> Functor:
+        """The construction-owned inclusion into the compatible-family category."""
+        return Fun.full_subcategory_monomorphism(self, self._family_category)
+
     def structure_functors(self) -> tuple[Functor, ...]:
         return (Fun.full_subcategory_monomorphism(self, self._family_category),)
 

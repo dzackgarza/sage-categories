@@ -51,6 +51,8 @@ from sage_categories.cat.cat_constructions import (
     FamilyObjectData,
     LimitSubcategory,
     _faithful_isofibration_projection,
+    _retained_morphism_component,
+    _retained_object_component,
     limit_of_categories,
 )
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -119,10 +121,15 @@ class InserterCategory(LimitSubcategory):
             target,
             (
                 arrow,
-                comma.morphism_from_pair(source.family_component(1), target.family_component(1), arrow, arrow),
+                comma.morphism_from_pair(
+                    _retained_object_component(source, 1),
+                    _retained_object_component(target, 1),
+                    arrow,
+                    arrow,
+                ),
                 pairs.construct_morphism(
-                    source.family_component(2),
-                    target.family_component(2),
+                    _retained_object_component(source, 2),
+                    _retained_object_component(target, 2),
                     (arrow, arrow),
                 ),
             ),
@@ -218,10 +225,10 @@ class MagmaCategory(InserterCategory):
 
     class ObjectType:
         def carrier(self) -> CategoryOfCategories.ElementType:
-            return self.family_component(0)
+            return _retained_object_component(self, 0)
 
         def structure(self) -> MorphismCategory.ObjectType:
-            return self.family_component(1).arrow()
+            return _retained_object_component(self, 1).arrow()
 
         def operation(self) -> MorphismCategory.ObjectType:
             """The operation ``μ_X: X ⊗ X -> X``, the algebra structure of the endofunctor ``X ↦ X ⊗ X``."""
@@ -232,7 +239,7 @@ class MagmaCategory(InserterCategory):
 
     class MorphismType:
         def underlying_morphism(self) -> MorphismCategory.ObjectType:
-            return self.family_component(0)
+            return _retained_morphism_component(self, 0)
 
     def __init__(self, diagram: Functor, tensor: Functor) -> None:
         self._tensor = tensor
@@ -241,6 +248,10 @@ class MagmaCategory(InserterCategory):
     def tensor(self) -> Functor:
         """The selected tensor bifunctor ``⊗: C × C -> C`` whose algebras these are."""
         return self._tensor
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        """The carrier projection is the sole immediate structure functor of ``Magmas(V)``."""
+        return (self.forgetful(),)
 
     def _commutative(self, magma: MagmaCategory.ObjectType) -> Proposition:
         """``μ ∘ τ_{X,X} == μ``: for the cartesian tensor the braiding is the swap ``⟨π_1, π_0⟩`` (nLab, commutative monoid in a symmetric monoidal category).
@@ -362,8 +373,8 @@ class MonoidCategory(EquifierCategory):
         return pointed.forgetful() * Fun.full_subcategory_monomorphism(self, pointed)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """Retain the law-equifier inclusion and the public ``Monoids(V) -> Magmas(V)`` edge."""
-        return (*super().structure_functors(), self.to_magmas())
+        """Forget associativity and the unit, retaining exactly the underlying magma."""
+        return (self.to_magmas(),)
 
 
 @cached_function(key=identity_key)
@@ -851,12 +862,12 @@ class MonoidPairsCategory(LimitSubcategory):
             multiplicative.product_projection(0),
         )
         additive_source, additive_target = (
-            source.family_component(0),
-            target.family_component(0),
+            _retained_object_component(source, 0),
+            _retained_object_component(target, 0),
         )
         multiplicative_source, multiplicative_target = (
-            source.family_component(1),
-            target.family_component(1),
+            _retained_object_component(source, 1),
+            _retained_object_component(target, 1),
         )
         additive_map = additive.homomorphism(
             additive_source,
@@ -929,8 +940,8 @@ class SemiringCategory(EquifierCategory):
         return self._pairs.to_carrier() * Fun.full_subcategory_monomorphism(self, self._pairs)
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """Retain the law-equifier inclusion and both ordered monoid projections."""
-        return (*super().structure_functors(), self.to_additive(), self.to_multiplicative())
+        """Retain exactly the ordered additive and multiplicative monoid projections."""
+        return (self.to_additive(), self.to_multiplicative())
 
     def homomorphism(
         self,
@@ -1213,11 +1224,7 @@ class RingCategory(LimitSubcategory):
                 )
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (
-            *super().structure_functors(),
-            self.to_semiring(),
-            self.to_additive_group(),
-        )
+        return (self.to_semiring(), self.to_additive_group())
 
     def __call__(
         self,
@@ -1259,11 +1266,15 @@ class RingCategory(LimitSubcategory):
         """The ring morphism over a carrier map ``f: R -> S`` preserving addition, zero, multiplication, and one."""
         monoidal = self.monoidal_structure()
         semirings, additive_groups = self.factor(0), AdditiveGroups(monoidal)
-        semiring_map = semirings.homomorphism(source.family_component(0), target.family_component(0), arrow)
+        semiring_map = semirings.homomorphism(
+            _retained_object_component(source, 0),
+            _retained_object_component(target, 0),
+            arrow,
+        )
         renaming = additive_groups.product_projection(0)
         group_source, group_target = (
-            source.family_component(1),
-            target.family_component(1),
+            _retained_object_component(source, 1),
+            _retained_object_component(target, 1),
         )
         group_map = additive_groups.homomorphism(
             group_source,
@@ -1318,7 +1329,7 @@ class RingCategory(LimitSubcategory):
 
         def on_morphism(arrow: RingCategory.MorphismType) -> RingCategory.MorphismType:
             semiring_map = self.to_semiring().on_morphism(arrow)
-            carrier_map = semiring_map.family_component(2)
+            carrier_map = _retained_morphism_component(semiring_map, 2)
             return self.homomorphism(on_object(arrow.domain()), on_object(arrow.codomain()), carrier_map)
 
         return Fun(self, self)(on_object, on_morphism)

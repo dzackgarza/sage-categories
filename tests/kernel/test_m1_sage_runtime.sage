@@ -11,6 +11,7 @@ from sage_categories.cat.functors import Functor
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Axiom, ask, assume
 from sage_categories.cat.properties import PropertySubcategory
+from sage_categories.cat_kernel.functor_declarations import retained_invertible_comparisons
 from sage_categories.kernel.compiler import SemanticCollisionError, declared_inheritance
 from sage_categories.kernel.construction import active_object_context
 from sage_categories.kernel.refinement import (
@@ -738,7 +739,6 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
     from sage_categories.cat.calculus import natural_isomorphism
 
     transported: list[CategoryPoint] = []
-    retained: dict[str, MorphismCategory.ObjectType] = {}
 
     class ComparisonLeft(_SyntheticCategoryOperations, Category):
         class ObjectType:
@@ -798,7 +798,6 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
                 lambda member: Mor(BASE)(first.on_object(member), second.on_object(member))(),
                 lambda member: Mor(BASE)(second.on_object(member), first.on_object(member))(),
             )
-            retained["comparison"] = comparison
             return (to_left, to_right)
 
     caplog.set_level(logging.DEBUG, logger="sage_categories.kernel.compiler")
@@ -808,7 +807,10 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
     # The compiler, not an explicit later read of the natural transformation, executes
     # the alternate route once and consumes the comparison component during construction.
     assert transported == [right(4)]
-    comparison = retained["comparison"]
+    to_left, to_right = coherent.selected_functors()
+    first = left.selected_functors()[0] * to_left
+    second = right.selected_functors()[0] * to_right
+    (comparison,) = retained_invertible_comparisons(first, second)
     component = comparison.component(member)
     assert component.domain() is BASE(4)
     assert component.codomain() is BASE(5)

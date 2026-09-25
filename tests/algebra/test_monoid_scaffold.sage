@@ -15,6 +15,8 @@ def test_additive_monoid_and_doubling_automorphism() -> None:
     unit = Mor(Sets)(structure.unit(), carrier)(lambda _: 0)
 
     monoid = Monoids(structure)(addition, unit)
+    assert Magmas(structure).structure_functors() == (Magmas(structure).forgetful(),)
+    assert Monoids(structure).structure_functors() == (Monoids(structure).to_magmas(),)
     assert monoid in Monoids(structure)
     assert monoid.carrier().carrier() is carrier
     assert monoid.operation() is addition

@@ -79,7 +79,7 @@ def test_named_operations_keep_their_images_after_refinement() -> None:
     zero = Mor(Sets)(structure.unit(), carrier)(lambda _: 0)
     one = Mor(Sets)(structure.unit(), carrier)(lambda _: 1)
     semirings = Semirings(Sets())
-    assert semirings.structure_functors()[-2:] == (semirings.to_additive(), semirings.to_multiplicative())
+    assert semirings.structure_functors() == (semirings.to_additive(), semirings.to_multiplicative())
     assert Fun.declares_inheritance(semirings.to_additive())
     assert Fun.declares_inheritance(semirings.to_multiplicative())
     field = semirings(addition, zero, multiplication, one)

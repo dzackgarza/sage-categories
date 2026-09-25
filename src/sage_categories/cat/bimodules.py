@@ -149,8 +149,8 @@ class BimoduleCategory(EquifierCategory):
         return self._left.forgetful() * self.to_left()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        """Retain the law-equifier inclusion and both ordered module projections."""
-        return (*super().structure_functors(), self.to_left(), self.to_right())
+        """Retain exactly the ordered left- and right-module projections."""
+        return (self.to_left(), self.to_right())
 
     def __call__(
         self,

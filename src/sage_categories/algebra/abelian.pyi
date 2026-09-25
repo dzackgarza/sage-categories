@@ -26,6 +26,7 @@ from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
 from sage_categories.cat.limit_basis import parallel_pair as parallel_pair
 from sage_categories.cat.modules import ModuleCategory as ModuleCategory
+from sage_categories.cat.modules import Modules as Modules
 from sage_categories.cat.monoidal import Cartesian as Cartesian
 from sage_categories.cat.monoidal import MonoidalStructures as MonoidalStructures
 from sage_categories.cat.monoidal import (

@@ -2,6 +2,9 @@
 
 from typing import assert_type
 
+from sage.modules.free_module import FreeModule_generic
+from sage.rings.integer import Integer
+
 from sage_categories.algebra.modules import (
     finite_free_matrix_morphism,
     finite_free_module,
@@ -22,7 +25,7 @@ def unified_module_types(
     coefficient: CategoryOfCategories.ElementType,
     target: ModuleCategory.ObjectType,
     coequalizing: MorphismCategory.ObjectType,
-    engine_module: object,
+    engine_module: FreeModule_generic[Integer],
 ) -> None:
     modules = ordinary_modules(scalars)
     assert_type(modules, ModuleCategory)

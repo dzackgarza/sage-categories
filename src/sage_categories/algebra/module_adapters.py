@@ -7,31 +7,35 @@ this module reconstructs the owned additive carrier and its actual scalar action
 
 from __future__ import annotations
 
+from collections.abc import Hashable
+
 from sympy import false, true
 
 import sage_categories.algebra.abelian as _abelian
 from sage_categories.algebra._firewall import modules as _backend
+from sage_categories.algebra._firewall.modules import Engine
 from sage_categories.algebra.indexed_modules import integer_scalar_monoid
 from sage_categories.cat.calculus import binary_product_data
+from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.certified_structures import certified_additive_group
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.modules import ModuleCategory, select_native_module_adapter
+from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import Cartesian
 from sage_categories.cat.morphisms import Mor
 from sage_categories.sets.finite import Sets
 
-__all__ = ["install_sage_module_adapter", "sage_module_from_engine"]
+__all__ = ["sage_module_from_engine"]
 
 _SAGE_MODULE_ADDITIVE_CARRIERS = ChosenConstruction()
 _SAGE_MODULES = ChosenConstruction()
 
 
-def _owned_additive_carrier(engine_module: object):
+def _owned_additive_carrier(engine_module: Engine) -> CategoryOfCategories.ElementType:
     """Reconstruct the native module's exact additive group as an owned object of ``Ab``."""
     native = _backend.require_integer_module(engine_module)
 
-    def construct():
-        def member(datum):
+    def construct() -> CategoryOfCategories.ElementType:
+        def member(datum: Hashable):
             match _backend.module_member(native, datum):
                 case True:
                     return true
@@ -58,7 +62,7 @@ def _owned_additive_carrier(engine_module: object):
 
 def sage_module_from_engine(
     modules: ModuleCategory,
-    engine_module: object,
+    engine_module: Engine,
 ) -> ModuleCategory.ObjectType:
     """Reconstruct a Sage ``ZZ``-module inside the exact supplied generic module category.
 
@@ -81,15 +85,3 @@ def sage_module_from_engine(
         return modules(action)
 
     return _SAGE_MODULES(modules, (native,), construct)
-
-
-def _selected_sage_adapter(modules: ModuleCategory, engine_module: object) -> ModuleCategory.ObjectType:
-    return sage_module_from_engine(modules, engine_module)
-
-
-def install_sage_module_adapter() -> None:
-    """Select the Sage-ingestion rule on the exact ordinary additive owner."""
-    # Native ingestion is a capability of the exact acted-on category, not of Cat
-    # itself. ModuleCategory.from_sage_module reads this selection and returns through
-    # its own owner.
-    select_native_module_adapter(_abelian.AbelianGroups(), _selected_sage_adapter)

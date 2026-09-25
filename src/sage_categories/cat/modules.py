@@ -9,9 +9,7 @@ monoid laws are over pointed magmas.
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
-__all__ = ["ModuleCategory", "Modules", "internal_endomorphism_module", "select_native_module_adapter"]
+__all__ = ["ModuleCategory", "Modules", "internal_endomorphism_module"]
 
 from sage_categories.cat.calculus import pair_maps
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -177,24 +175,6 @@ class ModuleCategory(EquifierCategory):
         assert result in self
         return result
 
-    def from_sage_module(self, engine_module: object) -> ModuleCategory.ObjectType:
-        """Ingest a Sage module through the native adapter selected for this exact owner.
-
-        ``Cat`` owns only the dispatch into the already selected ``Modules(A,C)``.  A leaf
-        that knows how to reconstruct Sage data selects the conversion rule on this exact
-        module category; the backend object itself never becomes the public module.
-        """
-        match _NATIVE_MODULE_ADAPTERS.has(self, ()):
-            case True:
-                owner = self
-            case False:
-                owner = self.underlying_category()
-        assert _NATIVE_MODULE_ADAPTERS.has(owner, ()), f"{self!r} has no selected native-module adapter"
-        adapter = _NATIVE_MODULE_ADAPTERS.selected(owner, ())
-        result = adapter(self, engine_module)
-        assert result in self
-        return result
-
     def transport(self, module: ModuleCategory.ObjectType, isomorphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
         """The module on ``Y`` along an isomorphism ``φ: X -> Y`` of ``C``: ``ρ_Y = φ ∘ ρ_X ∘ (A • φ⁻¹)``."""
         base = self.underlying_category()
@@ -244,10 +224,7 @@ class ModuleCategory(EquifierCategory):
         return restriction
 
 
-type NativeModuleAdapter = Callable[[ModuleCategory, object], ModuleCategory.ObjectType]
-
 _INTERNAL_ENDOMORPHISM_MODULES: SelectedChoice[ModuleCategory.ObjectType] = SelectedChoice()
-_NATIVE_MODULE_ADAPTERS: SelectedChoice[NativeModuleAdapter] = SelectedChoice()
 _MODULE_MONOIDAL_STRUCTURES: SelectedChoice[MonoidalStructuresCategory.ObjectType] = SelectedChoice()
 
 
@@ -312,8 +289,3 @@ def internal_endomorphism_module(
     module = modules(evaluation)
     _INTERNAL_ENDOMORPHISM_MODULES.select(modules, (), module)
     return module
-
-
-def select_native_module_adapter(owner: Category, adapter: NativeModuleAdapter) -> None:
-    """Select the private native-ingestion adapter for modules whose underlying category is ``owner``."""
-    _NATIVE_MODULE_ADAPTERS.select(owner, (), adapter)

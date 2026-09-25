@@ -91,15 +91,15 @@ It does not ask the caller to repeat `X`.
 For the tensor unit with its canonical monoid structure, the selected actegory unitor `I bullet X -> X` defines a module by action coherence.
 This construction applies even when the acting and acted-on categories differ and requires no enumeration of `X` or extensional equality decision on its maps.
 
-Named constructors can accept other complete semantic presentations:
+Alternative complete semantic presentations stay at the narrowest owner that can type their input exactly:
 
 ```python
 Modules(A, C).from_endomorphism_action(A_to_End_X)
-Modules(A, C).from_sage_module(engine_module)
+sage_module_from_engine(Modules(A, C), engine_module)
 ```
 
-The first route requires the stated closed or enriched structure and its tensor-hom adjunction.
-The second route is an engine-ingestion boundary.
+The first route is a category-owned named constructor and requires the stated closed or enriched structure and its tensor-hom adjunction.
+The second route is the ordinary-module leaf's engine-ingestion boundary; the generic `ModuleCategory` owns no Sage type, adapter registry, or native dispatch.
 Each route constructs the same `Modules(A, C).ObjectType` and establishes the same module laws.
 Private representation choice does not change the public class or operation surface.
 

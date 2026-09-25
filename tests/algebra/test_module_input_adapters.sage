@@ -10,6 +10,7 @@ from sage_categories.algebra import (
     integer_scalar_monoid,
     simple_tensor,
 )
+from sage_categories.algebra.modules import sage_module_from_engine
 from sage_categories.cat.calculus import binary_product_data
 from sage_categories.cat.category import ask
 from sage_categories.cat.modules import Modules, internal_endomorphism_module
@@ -83,7 +84,7 @@ def test_endomorphism_action_is_restriction_along_the_supplied_map() -> None:
 def test_sage_integer_module_reconstructs_exact_carrier_and_scalar_action() -> None:
     engine = FreeModule(ZZ, 2)
     modules = Modules(integer_scalar_monoid(), SelfAction(AbelianTensor()))
-    module = modules.from_sage_module(engine)
+    module = sage_module_from_engine(modules, engine)
     carrier = modules.forgetful().on_object(module)
     value = engine((2, -1))
     other = engine((1, 4))

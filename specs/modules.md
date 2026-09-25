@@ -135,6 +135,21 @@ The isomorphism lift transports the module action along an isomorphism in `C`.
 
 [Minimal leaf scaffolding](leaf-scaffolding.md) specifies the first executable module consumer and the shared monoidal prerequisites.
 
+### Optional selected relative tensor structure
+
+`Modules(A, C)` is not canonically monoidal from the module data above.
+When an additional relative tensor product and its coherence data are supplied, that monoidal structure is selected on the exact module category:
+
+```python
+modules = Modules(A, C)
+modules.select_monoidal_structure(V_A)
+modules.monoidal_structure()  # V_A
+```
+
+The supplied structure must have `modules` as its underlying category.
+This selection is extra data; neither the ambient actegory nor the scalar monoid chooses it.
+[Base-relative algebras](algebras.md#ambient-categorical-data) use this selected structure when their relative carrier is a module category.
+
 ## Owned operations
 
 `Modules(A, C)` owns the action morphism and the meaning of its action-preservation predicate.
@@ -233,6 +248,8 @@ The [nLab module object](https://ncatlab.org/nlab/show/module%2Bobject) entry, s
 - Module morphisms are morphisms in `C` that preserve the action.
 
 - `U_A` is the sole immediate structure functor, and it is applied by name.
+
+- A separately supplied relative monoidal structure, when selected, is retained on the exact `Modules(A, C)` owner and does not change `U_A` or become a second immediate structure functor.
 
 - The enriched map to `End_C(X)` appears when the stated adjunction exists.
 

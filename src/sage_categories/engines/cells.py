@@ -61,8 +61,8 @@ def native_signature(owner: Category) -> homotopy.Signature:
 
 
 def native_object(owner: Category, value: object) -> homotopy.Cell:
-    owner = owner.construction_owner()
-    match owner:
+    construction_owner = owner.construction_owner()
+    match construction_owner:
         case MorphismCategory():
             # ``Fun = Mor(Cat())`` admits the ordinary values that denote diagrams:
             # a morphism of ``C`` is an object of ``Fun([1], C)`` and an object of
@@ -73,9 +73,10 @@ def native_object(owner: Category, value: object) -> homotopy.Cell:
             # literal morphism of C.
             from sage_categories.cat.functors import Fun, diagram_of
 
+            assert value in owner, f"{value!r} is not an object of {owner!r}"
             return native_cell(
-                owner.base_category(),
-                diagram_of(value) if owner is Fun else value,
+                construction_owner.base_category(),
+                diagram_of(value) if construction_owner is Fun else value,
             )
         case Category():
             pass
@@ -330,7 +331,7 @@ def boundary(
     """
     assert depth >= 0
     native = native_cell(owner, value).boundary(side, depth)
-    current_owner = owner.construction_owner()
+    current_owner = owner
     current_value = value
     for level in range(depth + 1):
         match side:
@@ -344,7 +345,8 @@ def boundary(
                 assert native.same_as(expected), f"native {side} boundary at depth {depth} does not reconstruct to the retained owned boundary {candidate!r}"
                 return candidate
             case False:
-                assert isinstance(current_owner, MorphismCategory), f"{value!r} has no owned boundary at depth {depth}"
-                current_owner = current_owner.base_category()
+                construction_owner = current_owner.construction_owner()
+                assert isinstance(construction_owner, MorphismCategory), f"{value!r} has no owned boundary at depth {depth}"
+                current_owner = construction_owner.base_category()
                 current_value = candidate
     raise AssertionError("unreachable boundary reconstruction")

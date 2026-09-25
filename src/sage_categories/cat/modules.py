@@ -17,7 +17,11 @@ from sage_categories.cat.calculus import pair_maps
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.choices import SelectedChoice
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.monoidal import ActionsCategory, tensor_morphism
+from sage_categories.cat.monoidal import (
+    ActionsCategory,
+    MonoidalStructuresCategory,
+    tensor_morphism,
+)
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import (
     EndofunctorAlgebras,
@@ -82,6 +86,19 @@ class ModuleCategory(EquifierCategory):
     def actegory(self) -> ActionsCategory.ObjectType:
         """The selected left ``M``-action on ``C`` with its coherence isomorphisms."""
         return self._actegory
+
+    def select_monoidal_structure(
+        self,
+        monoidal: MonoidalStructuresCategory.ObjectType,
+    ) -> None:
+        """Select the relative tensor structure carried by this exact module category."""
+        assert monoidal.underlying_category() is self
+        _MODULE_MONOIDAL_STRUCTURES.select(self, (), monoidal)
+
+    def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
+        """The selected relative tensor structure on this exact module category."""
+        assert _MODULE_MONOIDAL_STRUCTURES.has(self, ()), f"{self!r} has no selected monoidal structure"
+        return _MODULE_MONOIDAL_STRUCTURES.selected(self, ())
 
     def underlying_category(self) -> Category:
         return self._actegory.underlying_category()
@@ -231,6 +248,7 @@ type NativeModuleAdapter = Callable[[ModuleCategory, object], ModuleCategory.Obj
 
 _INTERNAL_ENDOMORPHISM_MODULES: SelectedChoice[ModuleCategory.ObjectType] = SelectedChoice()
 _NATIVE_MODULE_ADAPTERS: SelectedChoice[NativeModuleAdapter] = SelectedChoice()
+_MODULE_MONOIDAL_STRUCTURES: SelectedChoice[MonoidalStructuresCategory.ObjectType] = SelectedChoice()
 
 
 @cached_function(key=identity_key)

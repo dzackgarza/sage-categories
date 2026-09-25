@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from sage_categories.cat.bimodules import BimoduleCategory
 from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
-from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
+from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.cones import cone, cones
 from sage_categories.cat.declarations import Sets
 from sage_categories.cat.diagrams import from_sequence, sequence_position
@@ -25,12 +25,10 @@ from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoi
 __all__ = [
     "AlgebraCategory",
     "Algebras",
-    "select_module_monoidal_structure",
 ]
 
 
 _BASE_RELATIVE_ALGEBRAS = ChosenConstruction()
-_MODULE_MONOIDAL_STRUCTURES: SelectedChoice[MonoidalStructuresCategory.ObjectType] = SelectedChoice()
 
 
 class AlgebraCategory(LimitSubcategory):
@@ -142,15 +140,6 @@ class AlgebraCategory(LimitSubcategory):
         return self.module_category().functor_to_sets() * self.to_modules()
 
 
-def select_module_monoidal_structure(
-    modules: ModuleCategory,
-    monoidal: MonoidalStructuresCategory.ObjectType,
-) -> None:
-    """Select the relative tensor structure used by ``Algebras(R,C)`` on this exact module owner."""
-    assert monoidal.underlying_category() is modules
-    _MODULE_MONOIDAL_STRUCTURES.select(modules, (), monoidal)
-
-
 def _monoidal_context(
     base: MonoidCategory.ObjectType,
     context: ActionsCategory.ObjectType | MonoidalStructuresCategory.ObjectType,
@@ -159,8 +148,7 @@ def _monoidal_context(
     match owner:
         case ActionsCategory():
             modules = Modules(base, context)
-            assert _MODULE_MONOIDAL_STRUCTURES.has(modules, ()), f"{modules!r} has no selected relative tensor structure for Algebras"
-            return _MODULE_MONOIDAL_STRUCTURES.selected(modules, ())
+            return modules.monoidal_structure()
         case MonoidalStructuresCategory():
             relative = context.underlying_category()
             match relative:
@@ -203,7 +191,7 @@ def Algebras(
     """Return the base-relative algebra category for the exact supplied relative tensor context.
 
     With an actegory ``C``, the exact ``Modules(R,C)`` must already have its
-    relative tensor selected by :func:`select_module_monoidal_structure`.  A
+    relative tensor selected by :meth:`ModuleCategory.select_monoidal_structure`.  A
     noncommutative base instead supplies its monoidal ``(R,R)``-bimodule category
     directly.  Both routes produce the same base-relative presentation shape.
     """

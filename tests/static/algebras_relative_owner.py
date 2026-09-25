@@ -5,7 +5,6 @@ from typing import assert_type
 from sage_categories.algebra.algebras import (
     AlgebraCategory,
     Algebras,
-    select_module_monoidal_structure,
 )
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.modules import ModuleCategory, Modules
@@ -24,7 +23,8 @@ def algebra_owner_types(
     arrow: MorphismCategory.ObjectType,
 ) -> None:
     modules = Modules(base, context)
-    select_module_monoidal_structure(modules, structure)
+    modules.select_monoidal_structure(structure)
+    assert_type(modules.monoidal_structure(), MonoidalStructuresCategory.ObjectType)
     algebras = Algebras(base, context)
     assert_type(algebras, AlgebraCategory)
     assert_type(Algebras(base, structure), AlgebraCategory)
@@ -36,9 +36,7 @@ def algebra_owner_types(
     algebra = algebras.from_monoid(monoid)
     assert_type(algebra, AlgebraCategory.ObjectType)
     assert_type(algebras.algebra(multiplication, unit), AlgebraCategory.ObjectType)
-    assert_type(
-        algebras.homomorphism(algebra, algebra, arrow), AlgebraCategory.MorphismType
-    )
+    assert_type(algebras.homomorphism(algebra, algebra, arrow), AlgebraCategory.MorphismType)
     assert_type(algebras.to_modules(), Functor)
     assert_type(algebras.U_R(), Functor)
     assert_type(algebras.to_sets(), Functor)

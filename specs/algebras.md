@@ -15,6 +15,15 @@ Fix a base monoid object `R` and an ambient category `C` for which `Modules(R, C
 
 The tensor product, unit object, associator, and unitors are part of the supplied module-category data.
 Write `V_R` for `Modules(R, C)` with this selected monoidal structure.
+The exact module category owns that selection:
+
+```python
+modules = Modules(R, C)
+modules.select_monoidal_structure(V_R)
+modules.monoidal_structure()  # V_R
+```
+
+Selection is data on this exact `ModuleCategory`; the algebra layer does not own a second selector or registry for it.
 The public constructor is
 
 ```python
@@ -120,31 +129,22 @@ The module action contract is stated once, in [Module objects](modules.md#object
 
 ## Finite presentation and the underlying module
 
-Finite generation and finite presentation must name the category in which they
-hold. Neither property for an `R`-algebra establishes finite generation of its
-underlying `R`-module.
+Finite generation and finite presentation must name the category in which they hold.
+Neither property for an `R`-algebra establishes finite generation of its underlying `R`-module.
 
-For a nonzero commutative ring `R`, the free associative unital algebra `R<x,y>`
-has two algebra generators and no additional relations. Its underlying module is
-free on all finite words in `x,y`, including the empty word. There are infinitely
-many such basis words, so this module has infinite rank. Each algebra element is a
-finite linear combination of words; no global bound on word length follows.
-Sage's [free algebra documentation, `monoid()`, `one_basis()`, and `product_on_basis()`](https://doc.sagemath.org/html/en/reference/algebras/sage/algebras/free_algebra.html)
-specifies this native basis and multiplication.
+For a nonzero commutative ring `R`, the free associative unital algebra `R<x,y>` has two algebra generators and no additional relations.
+Its underlying module is free on all finite words in `x,y`, including the empty word.
+There are infinitely many such basis words, so this module has infinite rank.
+Each algebra element is a finite linear combination of words; no global bound on word length follows.
+Sage's [free algebra documentation, `monoid()`, `one_basis()`, and `product_on_basis()`](https://doc.sagemath.org/html/en/reference/algebras/sage/algebras/free_algebra.html) specifies this native basis and multiplication.
 
-The named functor through `Monoids(V_R)` and `Magmas(V_R)` into `Modules(R, C)`
-must retain that entire module. It must not replace it by the span of the two
-algebra generators, a fixed degree truncation, or a finite-dimensional quotient.
-Multiplication and induced morphisms operate on supplied words of arbitrary finite
-length through the native engine; leaf code implements no duplicate word algebra.
+The named functor through `Monoids(V_R)` and `Magmas(V_R)` into `Modules(R, C)` must retain that entire module.
+It must not replace it by the span of the two algebra generators, a fixed degree truncation, or a finite-dimensional quotient.
+Multiplication and induced morphisms operate on supplied words of arbitrary finite length through the native engine; leaf code implements no duplicate word algebra.
 
-An acceptance consumer follows this functor and the inherited module action on
-words of degree greater than one, checks exact multiplication, and compares with
-the algebra morphism induced by chosen generator images. For instance, substitution
-`x |-> x+y`, `y |-> y` sends `x*y` to `x*y+y*y`. Such evaluation must retain the
-full target algebra and its module, without choosing a degree cutoff. The
-[module contract](modules.md#size-and-coordinate-presentations) owns the general
-distinction between finite support and finite rank.
+An acceptance consumer follows this functor and the inherited module action on words of degree greater than one, checks exact multiplication, and compares with the algebra morphism induced by chosen generator images.
+For instance, substitution `x |-> x+y`, `y |-> y` sends `x*y` to `x*y+y*y`. Such evaluation must retain the full target algebra and its module, without choosing a degree cutoff.
+The [module contract](modules.md#size-and-coordinate-presentations) owns the general distinction between finite support and finite rank.
 
 ## Acceptance conditions
 
@@ -154,9 +154,7 @@ distinction between finite support and finite rank.
 
 - The underlying object of an algebra is a module object in that supplied category.
 
-- The free finitely presented algebra consumer retains its infinite rank underlying
-  module and exact multiplication and induced maps on finite expressions of
-  unrestricted degree.
+- The free finitely presented algebra consumer retains its infinite rank underlying module and exact multiplication and induced maps on finite expressions of unrestricted degree.
 
 - Multiplication and unit are morphisms in the module category.
 

@@ -8,7 +8,6 @@ from sage_categories.cat.cat_constructions import (
     limit_of_categories as limit_of_categories,
 )
 from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
-from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.cones import cone as cone
 from sage_categories.cat.cones import cones as cones
 from sage_categories.cat.declarations import Sets as Sets
@@ -29,7 +28,7 @@ from sage_categories.cat.structured_objects import Magmas as Magmas
 from sage_categories.cat.structured_objects import MonoidCategory as MonoidCategory
 from sage_categories.cat.structured_objects import Monoids as Monoids
 
-__all__ = ["AlgebraCategory", "Algebras", "select_module_monoidal_structure"]
+__all__ = ["AlgebraCategory", "Algebras"]
 
 class _StaticRoles_AlgebraCategory(sage_categories.cat.cat_constructions._StaticRoles_LimitSubcategory):
     class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...
@@ -55,5 +54,4 @@ class AlgebraCategory(
     def U_R(self) -> Functor: ...
     def to_sets(self) -> Functor: ...
 
-def select_module_monoidal_structure(modules: ModuleCategory, monoidal: MonoidalStructuresCategory.ObjectType) -> None: ...
 def Algebras(base: MonoidCategory.ObjectType, context: ActionsCategory.ObjectType | MonoidalStructuresCategory.ObjectType) -> AlgebraCategory: ...

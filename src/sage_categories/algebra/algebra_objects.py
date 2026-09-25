@@ -9,7 +9,6 @@ from sage_categories.algebra.algebra_scalar_change import restrict_algebra_scala
 from sage_categories.algebra.algebras import (
     AlgebraCategory,
     Algebras,
-    select_module_monoidal_structure,
 )
 from sage_categories.algebra.presented_algebras import (
     integer_free_algebra,
@@ -34,5 +33,4 @@ __all__ = [
     "presented_algebra_projection",
     "restrict_algebra_scalars",
     "retain_split_algebra_presentation",
-    "select_module_monoidal_structure",
 ]

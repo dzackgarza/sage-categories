@@ -1,0 +1,6 @@
+{
+  "check": "no-bypass",
+  "diagnostics": ".ai-review-ci/sage/no-bypass.diagnostics.log",
+  "log": ".ai-review-ci/sage/no-bypass.log",
+  "status": 0
+}

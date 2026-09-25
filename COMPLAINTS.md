@@ -184,6 +184,9 @@ Read historical observations at their stated revisions before relying on them.
   On 2026-09-23 the read-only `r-gate` request for bimodule morphism admission at `f325fe12` returned the same acceptance-barrier error and rolled back its spawn.
   The passing complete bimodule consumer does not discharge that independent-review requirement.
   On 2026-09-25 two read-only `r-gate` requests for the complete `core-algebraic-calculus` boundary at `2f9aac11` returned the same durable-acceptance-barrier error and explicitly rolled back their spawns.
+  Two further exact read-only requests at `f2cd54c9` returned the same error and rolled back without creating a reviewer.
+  A revision-exact local Sonnet fallback was then run from a clean detached worktree at `f2cd54c9`; it began exercising the public monoidal consumer but reached its 240-second hard timeout without returning a verdict.
+  No partial execution from that timed-out review is acceptance evidence.
   The fixed-revision architecture check and focused public consumers therefore remain execution evidence, not independent acceptance.
 
 - **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.

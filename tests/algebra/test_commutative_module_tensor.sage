@@ -105,6 +105,19 @@ def test_commutative_base_uses_the_selected_left_module_tensor() -> None:
     associator = structure.associator().component(triple)
     associator_inverse = structure.associator().inverse().component(triple)
     assert associator.inverse() is associator_inverse
+    assert ask(
+        associator_inverse * associator
+        == Mor(modules)(associator.domain(), associator.domain()).one()
+    ) is True
+    assert ask(
+        associator * associator_inverse
+        == Mor(modules)(associator.codomain(), associator.codomain()).one()
+    ) is True
+
+    triple_doubling = Mor(triples)(triple, triple)((doubling, doubling, doubling))
+    left_image = structure.associator().domain().on_morphism(triple_doubling)
+    right_image = structure.associator().codomain().on_morphism(triple_doubling)
+    assert ask(right_image * associator == associator * left_image) is True
 
 
 def test_nonfield_commutative_base_retains_torsion_module_tensor() -> None:

@@ -54,7 +54,3 @@ class FunctorImageCache:
     def has_morphism_image(self, value: MorphismOfCategory) -> bool:
         """Whether a completed morphism action retained this exact value."""
         return any(image is value for _, image in self._morphisms.items())
-
-    def retained_morphism_images(self) -> tuple[tuple[MorphismOfCategory, MorphismOfCategory], ...]:
-        """Return the completed source/image pairs retained by this functor."""
-        return tuple((key[1], image) for key, image in self._morphisms.items())

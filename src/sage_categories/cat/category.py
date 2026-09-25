@@ -1416,6 +1416,10 @@ _composite_factors: MonoDict = MonoDict()
 # corresponding component of the competing cone/cocone. The cone owner records those
 # equations lazily, so infinite shapes never need to enumerate their vertices.
 _universal_composites: MonoDict = MonoDict()
+# Identity-only execution indexes of the authoritative table above.  They retain no
+# second equation: both point to the same _RetainedUniversalComposite records.
+_universal_composites_by_first: MonoDict = MonoDict()
+_universal_composite_records_by_result: MonoDict = MonoDict()
 
 
 @dataclass(slots=True)
@@ -1456,9 +1460,12 @@ def _ensure_universal_composite_record(
     if retained is not None:
         return retained
     by_first = _universal_composites[second] if second in _universal_composites else MonoDict()
+    by_second = _universal_composites_by_first[first] if first in _universal_composites_by_first else MonoDict()
     retained = _RetainedUniversalComposite()
     by_first[first] = retained
+    by_second[second] = retained
     _universal_composites[second] = by_first
+    _universal_composites_by_first[first] = by_second
     return retained
 
 
@@ -1474,6 +1481,12 @@ def retain_universal_composite(
     if any(known is result for known in retained.results):
         return
     retained.results = (*retained.results, result)
+    match result in _universal_composite_records_by_result:
+        case True:
+            records = _universal_composite_records_by_result[result]
+        case False:
+            records = ()
+    _universal_composite_records_by_result[result] = (*records, retained)
     for observer in retained.observers:
         observer(result)
 
@@ -1532,15 +1545,11 @@ def _same_universal_composite_result(
     second: MorphismCategory.ObjectType,
 ) -> bool:
     """Whether two exact morphisms are retained results of one composite equation."""
-    for outer_entry in _universal_composites.items():
-        by_first = outer_entry[1]
-        for inner_entry in by_first.items():
-            retained = inner_entry[1]
-            first_retained = any(result is first for result in retained.results)
-            second_retained = any(result is second for result in retained.results)
-            if first_retained and second_retained:
-                return True
-    return False
+    if first not in _universal_composite_records_by_result or second not in _universal_composite_records_by_result:
+        return False
+    first_records = _universal_composite_records_by_result[first]
+    second_records = _universal_composite_records_by_result[second]
+    return any(first_record is second_record for first_record in first_records for second_record in second_records)
 
 
 def retain_composite_factors(
@@ -1869,23 +1878,28 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             source universal reduction remains authoritative: resolving the target
             composite first composes in the source and only then applies this functor.
             """
-            if morphism.domain() is morphism.codomain():
-                self._retain_composable_images(morphism, morphism, image, image)
-            for other, other_image in self._image_cache.retained_morphism_images():
-                if morphism.codomain() is other.domain():
-                    self._retain_composable_images(
-                        other,
-                        morphism,
-                        other_image,
-                        image,
-                    )
-                if other.codomain() is morphism.domain():
-                    self._retain_composable_images(
-                        morphism,
-                        other,
-                        image,
-                        other_image,
-                    )
+            if morphism in _universal_composites:
+                for entry in _universal_composites[morphism].items():
+                    first = entry[0]
+                    if first in self._composition_action_images:
+                        self._retain_composable_images(
+                            morphism,
+                            first,
+                            image,
+                            self._composition_action_images[first],
+                        )
+            if morphism in _universal_composites_by_first:
+                for entry in _universal_composites_by_first[morphism].items():
+                    second = entry[0]
+                    if second is morphism:
+                        continue
+                    if second in self._composition_action_images:
+                        self._retain_composable_images(
+                            second,
+                            morphism,
+                            self._composition_action_images[second],
+                            image,
+                        )
 
         def _retain_composable_images(
             self,

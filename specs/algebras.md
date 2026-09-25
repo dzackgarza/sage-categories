@@ -39,6 +39,10 @@ For any selected monoidal category `V`, `Monoids(V)` is the public general monoi
 The general monoid category owns the multiplication, unit, and monoid laws.
 
 For a commutative `R` in a symmetric monoidal setting, the usual relative tensor product supplies the monoidal structure on left `R`-module objects.
+For the presented abelian-group instance, `AbelianModuleTensor(R)` supplies that
+structure on the exact `Modules(R, SelfAction(AbelianTensor()))` owner and selects
+it there; its tensor, associator, and unitors are the left-module images of the
+existing relative bimodule tensor calculus.
 The constructor applies only when this monoidal structure is supplied.
 A noncommutative base instead requires the monoid-object construction in a supplied monoidal category of `R`-bimodule objects under relative tensor product.
 That ambient and its balancing maps are specified in [Bimodule objects](bimodules.md).

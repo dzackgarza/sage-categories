@@ -26,6 +26,7 @@ from __future__ import annotations
 __all__ = [
     "AbelianBimoduleTensor",
     "AbelianGroups",
+    "AbelianModuleTensor",
     "AbelianTensor",
     "abelian_homomorphism",
     "balanced_tensor",
@@ -58,7 +59,7 @@ from sympy import Q, false, true
 
 from sage_categories.algebra._firewall import abelian as _backend
 from sage_categories.algebra._firewall.abelian import Engine
-from sage_categories.cat.bimodules import Bimodules
+from sage_categories.cat.bimodules import BimoduleCategory, Bimodules
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.certified_structures import certified_additive_group
@@ -67,10 +68,12 @@ from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.limit_basis import parallel_pair
+from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import (
     Cartesian,
     MonoidalStructures,
     MonoidalStructuresCategory,
+    SelfAction,
     tensor_morphism,
     tensor_parentheses,
     tensor_units,
@@ -152,8 +155,10 @@ _TENSOR_OBJECTS = ChosenConstruction()
 _ABELIAN_TENSOR = ChosenConstruction()
 _RELATIVE_TENSORS = ChosenConstruction()
 _BIMODULE_TENSORS = ChosenConstruction()
+_MODULE_TENSORS = ChosenConstruction()
 _BIMODULE_ASSOCIATOR_COMPONENTS = ChosenConstruction()
 _BIMODULE_UNITOR_COMPONENTS = ChosenConstruction()
+_CENTRAL_BIMODULES: SelectedChoice[BimoduleCategory.ObjectType] = SelectedChoice()
 
 
 def _structure() -> MonoidalStructuresCategory.ObjectType:
@@ -1454,3 +1459,194 @@ def _new_abelian_bimodule_tensor(
         lambda value: unitor_components(value, "right")[1],
     )
     return MonoidalStructures(bimodules)(tensor, unit, associator, left_unitor, right_unitor)
+
+
+def _tensor_swap(
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType:
+    """The symmetry from A tensor B to B tensor A of the presented abelian tensor product."""
+    target = _tensor_object(second, first)
+    return tensor_mediator(
+        first,
+        second,
+        target,
+        lambda left, right: simple_tensor(second, first, right, left).datum(),
+    )
+
+
+def _retain_central_bimodule(
+    modules: ModuleCategory,
+    bimodules: BimoduleCategory,
+    module: ModuleCategory.ObjectType,
+    bimodule: BimoduleCategory.ObjectType,
+) -> None:
+    """Retain the canonical symmetric bimodule lift of one left module."""
+    assert bimodules.to_left().on_object(bimodule) is module
+    match _CENTRAL_BIMODULES.has(modules, (module,)):
+        case True:
+            assert _CENTRAL_BIMODULES.selected(modules, (module,)) is bimodule
+        case False:
+            _CENTRAL_BIMODULES.select(modules, (module,), bimodule)
+
+
+def _central_bimodule(
+    modules: ModuleCategory,
+    bimodules: BimoduleCategory,
+    module: ModuleCategory.ObjectType,
+) -> BimoduleCategory.ObjectType:
+    """Equip a left module with the right action x r = r x."""
+    match _CENTRAL_BIMODULES.has(modules, (module,)):
+        case True:
+            return _CENTRAL_BIMODULES.selected(modules, (module,))
+        case False:
+            pass
+    carrier = modules.forgetful().on_object(module)
+    scalar = modules.carrier()
+    right_action = module.action() * _tensor_swap(carrier, scalar)
+    result = bimodules(module.action(), right_action)
+    _CENTRAL_BIMODULES.select(modules, (module,), result)
+    return result
+
+
+def AbelianModuleTensor(
+    scalars: MonoidCategory.ObjectType,
+) -> MonoidalStructuresCategory.ObjectType:
+    """Relative tensor on left modules over a commutative monoid in Ab."""
+    return _MODULE_TENSORS(
+        AbelianTensor(),
+        (scalars,),
+        lambda: _new_abelian_module_tensor(scalars),
+    )
+
+
+def _new_abelian_module_tensor(
+    scalars: MonoidCategory.ObjectType,
+) -> MonoidalStructuresCategory.ObjectType:
+    """Derive the left-module tensor from the existing bimodule tensor calculus."""
+    monoidal = AbelianTensor()
+    scalar = scalars.carrier()
+    assert ask(
+        scalars.operation() * _tensor_swap(scalar, scalar) == scalars.operation()
+    ) is True, f"{scalars!r} is not commutative"
+
+    bimodule_structure = AbelianBimoduleTensor(scalars)
+    bimodules = bimodule_structure.underlying_category()
+    assert isinstance(bimodules, BimoduleCategory)
+    modules = bimodules.left_modules()
+    assert modules.actegory() is SelfAction(monoidal)
+    to_left = bimodules.to_left()
+
+    bimodule_unit = bimodule_structure.unit()
+    unit = to_left.on_object(bimodule_unit)
+    _retain_central_bimodule(modules, bimodules, unit, bimodule_unit)
+
+    def central_on_object(
+        module: ModuleCategory.ObjectType,
+    ) -> BimoduleCategory.ObjectType:
+        return _central_bimodule(modules, bimodules, module)
+
+    def central_on_morphism(
+        arrow: ModuleCategory.MorphismType,
+    ) -> BimoduleCategory.MorphismType:
+        source = central.on_object(arrow.domain())
+        target = central.on_object(arrow.codomain())
+        return bimodules.homomorphism(
+            source,
+            target,
+            modules.forgetful().on_morphism(arrow),
+        )
+
+    central = Fun(modules, bimodules)(central_on_object, central_on_morphism)
+    pairs = Cat().Products()((modules, modules))
+    bimodule_tensor = bimodule_structure.tensor()
+    bimodule_pairs = bimodule_tensor.domain()
+
+    def on_object(pair: CategoryOfCategories.ElementType) -> ModuleCategory.ObjectType:
+        first = central.on_object(pair.family_component(0))
+        second = central.on_object(pair.family_component(1))
+        lifted = bimodule_tensor.on_object(bimodule_pairs((first, second)))
+        result = to_left.on_object(lifted)
+        _retain_central_bimodule(modules, bimodules, result, lifted)
+        return result
+
+    def on_morphism(arrow: MorphismCategory.ObjectType) -> ModuleCategory.MorphismType:
+        source_pair, target_pair = arrow.domain(), arrow.codomain()
+        source_lifts = tuple(
+            central.on_object(source_pair.family_component(index))
+            for index in range(2)
+        )
+        target_lifts = tuple(
+            central.on_object(target_pair.family_component(index))
+            for index in range(2)
+        )
+        lifted_arrow = bimodule_pairs.construct_morphism(
+            bimodule_pairs(source_lifts),
+            bimodule_pairs(target_lifts),
+            tuple(
+                central.on_morphism(arrow.family_component(index))
+                for index in range(2)
+            ),
+        )
+        return to_left.on_morphism(bimodule_tensor.on_morphism(lifted_arrow))
+
+    tensor = Fun(pairs, modules)(on_object, on_morphism)
+    left_parenthesized, right_parenthesized = tensor_parentheses(tensor)
+    bimodule_triples = bimodule_structure.associator().domain().domain()
+
+    def lifted_triple(
+        triple: CategoryOfCategories.ElementType,
+    ) -> CategoryOfCategories.ElementType:
+        return bimodule_triples(
+            tuple(
+                central.on_object(triple.family_component(index))
+                for index in range(3)
+            )
+        )
+
+    associator = natural_isomorphism(
+        left_parenthesized,
+        right_parenthesized,
+        lambda triple: to_left.on_morphism(
+            bimodule_structure.associator().component(lifted_triple(triple))
+        ),
+        lambda triple: to_left.on_morphism(
+            bimodule_structure.associator().inverse().component(lifted_triple(triple))
+        ),
+    )
+
+    left_unit, right_unit = tensor_units(tensor, unit)
+    identity = Fun(modules, modules).one()
+    left_unitor = natural_isomorphism(
+        left_unit,
+        identity,
+        lambda module: to_left.on_morphism(
+            bimodule_structure.left_unitor().component(central.on_object(module))
+        ),
+        lambda module: to_left.on_morphism(
+            bimodule_structure.left_unitor()
+            .inverse()
+            .component(central.on_object(module))
+        ),
+    )
+    right_unitor = natural_isomorphism(
+        right_unit,
+        identity,
+        lambda module: to_left.on_morphism(
+            bimodule_structure.right_unitor().component(central.on_object(module))
+        ),
+        lambda module: to_left.on_morphism(
+            bimodule_structure.right_unitor()
+            .inverse()
+            .component(central.on_object(module))
+        ),
+    )
+    result = MonoidalStructures(modules)(
+        tensor,
+        unit,
+        associator,
+        left_unitor,
+        right_unitor,
+    )
+    modules.select_monoidal_structure(result)
+    return result

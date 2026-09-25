@@ -2,6 +2,7 @@ from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 
 from sage_categories.algebra._firewall.abelian import Engine as Engine
+from sage_categories.cat.bimodules import BimoduleCategory as BimoduleCategory
 from sage_categories.cat.bimodules import Bimodules as Bimodules
 from sage_categories.cat.calculus import binary_product_data as binary_product_data
 from sage_categories.cat.calculus import natural_isomorphism as natural_isomorphism
@@ -12,7 +13,6 @@ from sage_categories.cat.certified_structures import (
 )
 from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
 from sage_categories.cat.choices import SelectedChoice as SelectedChoice
-from sage_categories.cat.cones import ConeCategory as ConeCategory
 from sage_categories.cat.cones import cocone as cocone
 from sage_categories.cat.cones import cocone_apex as cocone_apex
 from sage_categories.cat.cones import cone as cone
@@ -23,12 +23,15 @@ from sage_categories.cat.diagrams import sequence_position as sequence_position
 from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
+from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
 from sage_categories.cat.limit_basis import parallel_pair as parallel_pair
+from sage_categories.cat.modules import ModuleCategory as ModuleCategory
 from sage_categories.cat.monoidal import Cartesian as Cartesian
 from sage_categories.cat.monoidal import MonoidalStructures as MonoidalStructures
 from sage_categories.cat.monoidal import (
     MonoidalStructuresCategory as MonoidalStructuresCategory,
 )
+from sage_categories.cat.monoidal import SelfAction as SelfAction
 from sage_categories.cat.monoidal import tensor_morphism as tensor_morphism
 from sage_categories.cat.monoidal import tensor_parentheses as tensor_parentheses
 from sage_categories.cat.monoidal import tensor_units as tensor_units
@@ -44,6 +47,7 @@ from sage_categories.cat.structured_objects import Monoids as Monoids
 __all__ = [
     "AbelianBimoduleTensor",
     "AbelianGroups",
+    "AbelianModuleTensor",
     "AbelianTensor",
     "abelian_homomorphism",
     "balanced_tensor",
@@ -107,6 +111,7 @@ def relative_right_unitor(
     projection: MorphismCategory.ObjectType, right_action: MorphismCategory.ObjectType, unit_morphism: MorphismCategory.ObjectType
 ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
 def AbelianBimoduleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
+def AbelianModuleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _CoordinateBridge:

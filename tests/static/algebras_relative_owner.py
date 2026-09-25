@@ -2,6 +2,7 @@
 
 from typing import assert_type
 
+from sage_categories.algebra.abelian import AbelianModuleTensor
 from sage_categories.algebra.algebras import (
     AlgebraCategory,
     Algebras,
@@ -25,6 +26,7 @@ def algebra_owner_types(
     modules = Modules(base, context)
     modules.select_monoidal_structure(structure)
     assert_type(modules.monoidal_structure(), MonoidalStructuresCategory.ObjectType)
+    assert_type(AbelianModuleTensor(base), MonoidalStructuresCategory.ObjectType)
     algebras = Algebras(base, context)
     assert_type(algebras, AlgebraCategory)
     assert_type(Algebras(base, structure), AlgebraCategory)

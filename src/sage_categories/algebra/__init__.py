@@ -3,6 +3,7 @@
 from sage_categories.algebra.abelian import (
     AbelianBimoduleTensor,
     AbelianGroups,
+    AbelianModuleTensor,
     AbelianTensor,
     abelian_homomorphism,
     balanced_tensor,
@@ -92,6 +93,7 @@ _install_sage_module_adapter()
 __all__ = [
     "AbelianBimoduleTensor",
     "AbelianGroups",
+    "AbelianModuleTensor",
     "AbelianTensor",
     "AdeleOpen",
     "AdelePresentation",

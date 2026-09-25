@@ -26,9 +26,9 @@ from sage_categories.algebra.indexed_modules import (
 )
 from sage_categories.cat.category import CategoryOfCategories, ask
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone, cocones
+from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone
 from sage_categories.cat.functors import Cat, Functor
-from sage_categories.cat.limit_basis import parallel_pair
+from sage_categories.cat.limit_basis import coequalizer_factor, parallel_pair
 from sage_categories.cat.structured_objects import Magmas
 
 __all__ = [
@@ -290,14 +290,7 @@ def presented_algebra_factor(
     assert coequalizing.domain() is first.codomain() and coequalizing.codomain() is target
     assert ask(coequalizing * first == coequalizing * second) is True, "the supplied algebra map does not respect the retained relations"
 
-    source_vertex = shape(0)
-
-    def candidate_leg(vertex: CategoryOfCategories.ElementType) -> AlgebraMap:
-        match vertex is source_vertex:
-            case True:
-                return coequalizing * first
-            case False:
-                return coequalizing
-
-    candidate = cocones(diagram)(cocone(diagram, target, candidate_leg))
-    return presented_algebra_presentation(algebras, algebra).lift(candidate)
+    return coequalizer_factor(
+        presented_algebra_presentation(algebras, algebra),
+        coequalizing,
+    )

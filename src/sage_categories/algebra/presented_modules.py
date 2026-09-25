@@ -27,9 +27,9 @@ from sage_categories.algebra.free_modules import (
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone, cocones
+from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone
 from sage_categories.cat.functors import Cat, Functor
-from sage_categories.cat.limit_basis import parallel_pair
+from sage_categories.cat.limit_basis import coequalizer_factor, parallel_pair
 from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import tensor_morphism
 from sage_categories.cat.morphisms import Mor, MorphismCategory
@@ -227,21 +227,12 @@ def presented_module_factor(
     coequalizing: ModuleMap,
 ) -> ModuleMap:
     """The unique factor of a relation-respecting map ``R^n -> target`` through ``module``."""
-    diagram = presented_module_diagram(modules, module)
     relation = presented_module_relation(modules, module)
     zero = presented_module_zero(modules, module)
     assert coequalizing.domain() is relation.codomain() and coequalizing.codomain() is target
     assert ask(coequalizing * relation == coequalizing * zero) is True, "the supplied map does not respect the retained module relations"
-    shape = diagram.domain()
-    source_vertex = shape(0)
-
-    def candidate_leg(vertex: CategoryOfCategories.ElementType) -> ModuleMap:
-        match vertex is source_vertex:
-            case True:
-                return coequalizing * relation
-            case False:
-                return coequalizing
-
-    candidate = cocones(diagram)(cocone(diagram, target, candidate_leg))
-    factor: ModuleMap = presented_module_presentation(modules, module).lift(candidate)
+    factor: ModuleMap = coequalizer_factor(
+        presented_module_presentation(modules, module),
+        coequalizing,
+    )
     return factor

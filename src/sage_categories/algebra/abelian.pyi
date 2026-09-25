@@ -4,6 +4,13 @@ from dataclasses import dataclass
 from sage_categories.algebra._firewall.abelian import Engine as Engine
 from sage_categories.cat.bimodules import BimoduleCategory as BimoduleCategory
 from sage_categories.cat.bimodules import Bimodules as Bimodules
+from sage_categories.cat.bimodules import fixed_tensor_functor as fixed_tensor_functor
+from sage_categories.cat.bimodules import (
+    relative_tensor_factor as relative_tensor_factor,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor_preserved_factor as relative_tensor_preserved_factor,
+)
 from sage_categories.cat.calculus import binary_product_data as binary_product_data
 from sage_categories.cat.calculus import natural_isomorphism as natural_isomorphism
 from sage_categories.cat.category import Category as Category

@@ -15,8 +15,23 @@ monoid structures (``cat/structured_objects.py``).
 
 from __future__ import annotations
 
-__all__ = ["ActionPairsCategory", "BimoduleCategory", "Bimodules"]
+from typing import Literal
 
+__all__ = [
+    "ActionPairsCategory",
+    "BimoduleCategory",
+    "Bimodules",
+    "fixed_tensor_functor",
+    "induced_left_action",
+    "induced_right_action",
+    "relative_tensor",
+    "relative_tensor_factor",
+    "relative_tensor_morphism",
+    "relative_tensor_presentation",
+    "relative_tensor_preserved_factor",
+]
+
+from sage_categories.cat.calculus import curry, transpose
 from sage_categories.cat.cat_constructions import (
     LimitSubcategory,
     _faithful_isofibration_projection,
@@ -24,14 +39,17 @@ from sage_categories.cat.cat_constructions import (
     limit_of_categories,
 )
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.cones import LimitConesCategory, cocone, cocones
 from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
+from sage_categories.cat.limit_basis import parallel_pair
 from sage_categories.cat.modules import ModuleCategory, Modules
 from sage_categories.cat.monoidal import (
     MonoidalStructuresCategory,
     Reversed,
     SelfAction,
     tensor_morphism,
+    tensor_object,
 )
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.structured_objects import (
@@ -42,6 +60,185 @@ from sage_categories.cat.structured_objects import (
 from sage_categories.kernel.refinement import refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
+
+
+@cached_function(key=identity_key)
+def fixed_tensor_functor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    value: CategoryOfCategories.ElementType,
+    side: Literal["left", "right"],
+) -> Functor:
+    """Tensor by one fixed object using the supplied monoidal tensor."""
+    curried = curry(monoidal.tensor())
+    match side:
+        case "left":
+            return curried.on_object(value)
+        case "right":
+            return transpose(curried).on_object(value)
+
+
+def _relative_tensor_parallel_pair(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    middle: CategoryOfCategories.ElementType,
+    right_action: MorphismCategory.ObjectType,
+    left_action: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The two balancing maps defining a relative tensor product."""
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    first, second = right_action.codomain(), left_action.codomain()
+    triples = monoidal.associator().domain().domain()
+    rebracket = monoidal.associator().component(triples((first, middle, second)))
+    through_the_right = tensor_morphism(tensor, right_action, Mor(base)(second, second).one())
+    through_the_left = tensor_morphism(tensor, Mor(base)(first, first).one(), left_action)
+    return through_the_right, through_the_left * rebracket
+
+
+@cached_function(key=identity_key)
+def relative_tensor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    middle: CategoryOfCategories.ElementType,
+    right_action: MorphismCategory.ObjectType,
+    left_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """The retained coequalizer map from the ordinary tensor to the relative tensor."""
+    base = monoidal.underlying_category()
+    first, second = right_action.codomain(), left_action.codomain()
+    through_the_right, through_the_left = _relative_tensor_parallel_pair(
+        monoidal,
+        middle,
+        right_action,
+        left_action,
+    )
+    diagram = parallel_pair(through_the_right, through_the_left)
+    shape = diagram.domain()
+    source_vertex, target_vertex = shape(0), shape(1)
+    family = base.Colimits(shape)
+
+    selected_right = monoidal.right_unitor().component(first)
+    selected_left = monoidal.left_unitor().component(second)
+    match right_action is selected_right and left_action is selected_left:
+        case True:
+            product = tensor_object(monoidal.tensor(), first, second)
+            identity = Mor(base)(product, product).one()
+            family.with_universal_data(
+                diagram,
+                product,
+                cocone(
+                    diagram,
+                    product,
+                    lambda vertex: through_the_right if vertex is source_vertex else identity,
+                ),
+                lambda candidate: candidate.component(target_vertex),
+            )
+            return identity
+        case False:
+            family(diagram)
+            return family.universal_data(diagram).leg(target_vertex)
+
+
+def relative_tensor_presentation(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+) -> LimitConesCategory.ObjectType:
+    """Return the retained coequalizer presentation whose target leg is projection."""
+    shape = Cat().WalkingParallelPair()
+    family = monoidal.underlying_category().Colimits(shape)
+    matching = tuple(diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(shape(1)) is projection)
+    assert len(matching) == 1, f"{projection!r} has no unique retained relative-tensor presentation"
+    return family.universal_data(matching[0])
+
+
+def relative_tensor_factor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Factor a balanced map through the retained relative-tensor coequalizer."""
+    assert arrow.domain() is projection.domain()
+    presentation = relative_tensor_presentation(monoidal, projection)
+    diagram = presentation.diagram()
+    shape = diagram.domain()
+    source_vertex = shape(0)
+    candidate = cocone(
+        diagram,
+        arrow.codomain(),
+        lambda vertex: arrow * diagram.on_morphism(shape.generator("f")) if vertex is source_vertex else arrow,
+    )
+    return presentation.lift(cocones(diagram)(candidate))
+
+
+def relative_tensor_preserved_factor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    functor: Functor,
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Factor through the image of a relative tensor under a preserving functor."""
+    presentation = functor.preserved_colimit(relative_tensor_presentation(monoidal, projection))
+    diagram = presentation.diagram()
+    shape = diagram.domain()
+    source_vertex, target_vertex = shape(0), shape(1)
+    assert presentation.leg(target_vertex) is functor.on_morphism(projection)
+    candidate = cocone(
+        diagram,
+        arrow.codomain(),
+        lambda vertex: arrow * diagram.on_morphism(shape.generator("f")) if vertex is source_vertex else arrow,
+    )
+    return presentation.lift(cocones(diagram)(candidate))
+
+
+def induced_left_action(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    scalars: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    left_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Descend an outer left action through a relative-tensor coequalizer."""
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    first = left_action.codomain()
+    triples = monoidal.associator().domain().domain()
+    rebracket = monoidal.associator().inverse().component(triples((scalars, first, second)))
+    acting = projection * tensor_morphism(tensor, left_action, Mor(base)(second, second).one()) * rebracket
+    return relative_tensor_preserved_factor(
+        monoidal,
+        projection,
+        fixed_tensor_functor(monoidal, scalars, "left"),
+        acting,
+    )
+
+
+def induced_right_action(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    first: CategoryOfCategories.ElementType,
+    scalars: CategoryOfCategories.ElementType,
+    right_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Descend an outer right action through a relative-tensor coequalizer."""
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    second = right_action.codomain()
+    triples = monoidal.associator().domain().domain()
+    rebracket = monoidal.associator().component(triples((first, second, scalars)))
+    acting = projection * tensor_morphism(tensor, Mor(base)(first, first).one(), right_action) * rebracket
+    return relative_tensor_preserved_factor(
+        monoidal,
+        projection,
+        fixed_tensor_functor(monoidal, scalars, "right"),
+        acting,
+    )
+
+
+def relative_tensor_morphism(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    source: MorphismCategory.ObjectType,
+    target: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """The map of relative tensors induced by compatible maps of both factors."""
+    underlying = target * tensor_morphism(monoidal.tensor(), first, second)
+    return relative_tensor_factor(monoidal, source, underlying)
 
 
 class ActionPairsCategory(LimitSubcategory):

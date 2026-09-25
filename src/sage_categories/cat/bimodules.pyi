@@ -1,19 +1,27 @@
+from typing import Literal
+
 import sage_categories.cat.cat_constructions
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.cat.structured_objects
 import sage_categories.kernel.roles
+from sage_categories.cat.calculus import curry as curry
+from sage_categories.cat.calculus import transpose as transpose
 from sage_categories.cat.cat_constructions import LimitSubcategory as LimitSubcategory
 from sage_categories.cat.cat_constructions import (
     limit_of_categories as limit_of_categories,
 )
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.cones import LimitConesCategory as LimitConesCategory
+from sage_categories.cat.cones import cocone as cocone
+from sage_categories.cat.cones import cocones as cocones
 from sage_categories.cat.diagrams import cospan_diagram as cospan_diagram
 from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
+from sage_categories.cat.limit_basis import parallel_pair as parallel_pair
 from sage_categories.cat.modules import ModuleCategory as ModuleCategory
 from sage_categories.cat.modules import Modules as Modules
 from sage_categories.cat.monoidal import (
@@ -22,6 +30,7 @@ from sage_categories.cat.monoidal import (
 from sage_categories.cat.monoidal import Reversed as Reversed
 from sage_categories.cat.monoidal import SelfAction as SelfAction
 from sage_categories.cat.monoidal import tensor_morphism as tensor_morphism
+from sage_categories.cat.monoidal import tensor_object as tensor_object
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.structured_objects import EquifierCategory as EquifierCategory
@@ -32,7 +41,55 @@ from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
-__all__ = ["ActionPairsCategory", "BimoduleCategory", "Bimodules"]
+__all__ = [
+    "ActionPairsCategory",
+    "BimoduleCategory",
+    "Bimodules",
+    "fixed_tensor_functor",
+    "induced_left_action",
+    "induced_right_action",
+    "relative_tensor",
+    "relative_tensor_factor",
+    "relative_tensor_morphism",
+    "relative_tensor_presentation",
+    "relative_tensor_preserved_factor",
+]
+
+def fixed_tensor_functor(monoidal: MonoidalStructuresCategory.ObjectType, value: CategoryOfCategories.ElementType, side: Literal["left", "right"]) -> Functor: ...
+def relative_tensor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    middle: CategoryOfCategories.ElementType,
+    right_action: MorphismCategory.ObjectType,
+    left_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType: ...
+def relative_tensor_presentation(monoidal: MonoidalStructuresCategory.ObjectType, projection: MorphismCategory.ObjectType) -> LimitConesCategory.ObjectType: ...
+def relative_tensor_factor(
+    monoidal: MonoidalStructuresCategory.ObjectType, projection: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType
+) -> MorphismCategory.ObjectType: ...
+def relative_tensor_preserved_factor(
+    monoidal: MonoidalStructuresCategory.ObjectType, projection: MorphismCategory.ObjectType, functor: Functor, arrow: MorphismCategory.ObjectType
+) -> MorphismCategory.ObjectType: ...
+def induced_left_action(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    scalars: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    left_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType: ...
+def induced_right_action(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    first: CategoryOfCategories.ElementType,
+    scalars: CategoryOfCategories.ElementType,
+    right_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType: ...
+def relative_tensor_morphism(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    source: MorphismCategory.ObjectType,
+    target: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType: ...
 
 class _StaticRoles_ActionPairsCategory(sage_categories.cat.cat_constructions._StaticRoles_LimitSubcategory):
     class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...

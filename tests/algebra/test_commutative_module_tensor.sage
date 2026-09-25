@@ -7,11 +7,14 @@ from sage.rings.integer_ring import ZZ
 from sage_categories.algebra.abelian import (
     AbelianModuleTensor,
     AbelianTensor,
+    _commutative_module_right_action,
     abelian_homomorphism,
     integer_group,
     presented_abelian_group,
+    relative_tensor,
     tensor_mediator,
 )
+from sage_categories.algebra.indexed_modules import integer_scalar_monoid
 from sage_categories.algebra.algebras import Algebras
 from sage_categories.cat.category import ask
 from sage_categories.cat.modules import Modules
@@ -164,5 +167,54 @@ def test_nonfield_commutative_base_retains_torsion_module_tensor() -> None:
     assert ask(left_unitor * left_unitor_inverse == Mor(modules)(module, module).one()) is True
 
 
+def test_strict_module_tensor_unit_ignores_an_earlier_generic_relative_tensor_choice() -> None:
+    scalars = integer_scalar_monoid()
+    modules = Modules(scalars, SelfAction(AbelianTensor()))
+    unit = modules(scalars.operation())
+
+    generic = relative_tensor(
+        _commutative_module_right_action(modules, unit),
+        unit.action(),
+    )
+    assert generic is not unit.action()
+
+    structure = AbelianModuleTensor(scalars)
+    tensor = structure.tensor()
+    identity = Mor(modules)(unit, unit).one()
+    doubling = modules.homomorphism(
+        unit,
+        unit,
+        abelian_homomorphism(integer_group(), integer_group(), lambda value: 2 * value),
+    )
+
+    assert structure.unit() is unit
+    assert tensor_object(tensor, unit, unit) is unit
+    assert tensor_morphism(tensor, identity, doubling) is doubling
+    assert tensor_morphism(tensor, doubling, identity) is doubling
+    assert structure.left_unitor().component(unit) is identity
+    assert structure.right_unitor().component(unit) is identity
+
+    triples = structure.associator().domain().domain()
+    triple = triples((unit, unit, unit))
+    assert structure.associator().component(triple) is identity
+
+
+def test_strict_module_tensor_unit_coherence() -> None:
+    scalars = integer_scalar_monoid()
+    modules = Modules(scalars, SelfAction(AbelianTensor()))
+    structure = AbelianModuleTensor(scalars)
+    unit = structure.unit()
+    identity = Mor(modules)(unit, unit).one()
+
+    assert structure.left_unitor().component(unit) is identity
+    assert structure.right_unitor().component(unit) is identity
+    triples = structure.associator().domain().domain()
+    triple = triples((unit, unit, unit))
+    assert structure.associator().component(triple) is identity
+    assert ask(structure.triangle(unit, unit)) is True
+
+
 test_commutative_base_uses_the_selected_left_module_tensor()
 test_nonfield_commutative_base_retains_torsion_module_tensor()
+test_strict_module_tensor_unit_ignores_an_earlier_generic_relative_tensor_choice()
+test_strict_module_tensor_unit_coherence()

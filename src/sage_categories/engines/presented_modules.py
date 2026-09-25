@@ -30,6 +30,7 @@ from sage_categories.algebra._presented_modules_cap import (
     retain_presented_native_morphism,
     retain_presented_native_object,
 )
+from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.engines.gap import PRESENTED_MODULE_PACKAGES, load_packages
 
 __all__ = [
@@ -203,7 +204,7 @@ def _native_matrix_from_public(value: object) -> GapElement:
     return _homalg_matrix(tuple(rows), target_rank)
 
 
-def _native_morphism(value: object) -> GapElement:
+def _native_morphism(value: MorphismCategory.ObjectType) -> GapElement:
     if has_presented_native_morphism(value):
         return presented_native_morphism(value).native
     native = _native_morphism_on_selected_endpoints(value)
@@ -211,8 +212,14 @@ def _native_morphism(value: object) -> GapElement:
     return native
 
 
-def _native_morphism_on_selected_endpoints(value: object) -> GapElement:
+def _native_morphism_on_selected_endpoints(value: MorphismCategory.ObjectType) -> GapElement:
     """Rebuild one public arrow on the exact retained native endpoint presentations."""
+    if value.is_composite():
+        first, second = value.factors()
+        return libgap.PreCompose(
+            _native_morphism(first),
+            _native_morphism(second),
+        )
     native = libgap.PresentationMorphism(
         _native_object(value.domain()),
         _native_matrix_from_public(value),

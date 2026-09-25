@@ -11,6 +11,7 @@ from sage_categories.algebra import (
     tensor_mediator,
 )
 from sage_categories.algebra._presented_modules_cap import (
+    has_presented_native_morphism,
     presented_native_morphism,
     presented_native_object,
 )
@@ -74,6 +75,48 @@ def test_cap_computes_finite_presented_tensor_object_and_nonidentity_tensor_map(
             )
 
 
+def test_cap_reconstructs_formal_composites_from_retained_native_factors() -> None:
+    four_engine = AdditiveAbelianGroup([4])
+    two_engine = AdditiveAbelianGroup([2])
+    four = presented_abelian_group(four_engine)
+    two = presented_abelian_group(two_engine)
+    reduction = abelian_homomorphism(
+        four,
+        two,
+        lambda value: int(value.vector()[0]) * two_engine.gen(0),
+    )
+    inclusion = abelian_homomorphism(
+        two,
+        four,
+        lambda value: 2 * int(value.vector()[0]) * four_engine.gen(0),
+    )
+    doubling = abelian_homomorphism(
+        four,
+        four,
+        lambda value: 2 * int(value.vector()[0]) * four_engine.gen(0),
+    )
+    composite = inclusion * reduction
+
+    assert not has_presented_native_morphism(composite)
+    assert ask(composite == doubling) is True
+    native = presented_native_morphism(composite)
+    assert native.value is composite
+    assert native.source is four
+    assert native.target is four
+    assert bool(
+        libgap.IsIdenticalObj(
+            libgap.Source(native.native),
+            presented_native_object(four).native,
+        )
+    )
+    assert bool(
+        libgap.IsIdenticalObj(
+            libgap.Range(native.native),
+            presented_native_object(four).native,
+        )
+    )
+
+
 def test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis() -> None:
     cyclic_engine = AdditiveAbelianGroup([4])
     square_engine = AdditiveAbelianGroup([4, 4])
@@ -121,4 +164,5 @@ def test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis() -> None:
 
 
 test_cap_computes_finite_presented_tensor_object_and_nonidentity_tensor_map()
+test_cap_reconstructs_formal_composites_from_retained_native_factors()
 test_simple_tensor_and_mediator_cross_a_cap_quotient_raw_basis()

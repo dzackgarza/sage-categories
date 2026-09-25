@@ -65,10 +65,6 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.certified_structures import certified_additive_group
 from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.cones import cocone, cocone_apex, cocones, cone, cone_apex
-from sage_categories.cat.constructions import (
-    preserved_colimit,
-    retain_colimit_preservation,
-)
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.limit_basis import parallel_pair
@@ -1211,7 +1207,7 @@ def _fixed_tensor_functor(
                 return candidate.component(shape(1))
             return _backend.colift_along_epimorphism(projection, candidate.component(shape(1)))
 
-        retain_colimit_preservation(result, shape, preserved_mediator)
+        result.retain_colimit_preservation(shape, preserved_mediator)
         return result
 
     return _FIXED_TENSOR_FUNCTORS(AbelianTensor(), (value, side), construct)
@@ -1223,7 +1219,7 @@ def _factor_preserved_relative_projection(
     arrow: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Factor through the tensor image of a relative-tensor coequalizer."""
-    presentation = preserved_colimit(functor, _relative_tensor_presentation(projection))
+    presentation = functor.preserved_colimit(_relative_tensor_presentation(projection))
     diagram = presentation.diagram()
     shape = diagram.domain()
     source_vertex, target_vertex = shape(0), shape(1)

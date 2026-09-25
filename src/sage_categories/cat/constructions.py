@@ -110,8 +110,6 @@ __all__ = [
     "cone_apex",
     "lift_limit",
     "presenting_family",
-    "preserved_colimit",
-    "retain_colimit_preservation",
     "vertex_of",
 ]
 
@@ -126,7 +124,7 @@ type ColimitPreservationMediator = Callable[[UniversalPresentation, NaturalTrans
 _COLIMIT_PRESERVATION: SelectedChoice[ColimitPreservationMediator] = SelectedChoice()
 
 
-def retain_colimit_preservation(
+def _retain_colimit_preservation(
     functor: Functor,
     shape: Category,
     mediator: ColimitPreservationMediator,
@@ -140,7 +138,7 @@ def retain_colimit_preservation(
     _COLIMIT_PRESERVATION.select(functor, (shape,), mediator)
 
 
-def preserved_colimit(
+def _preserved_colimit(
     functor: Functor,
     presentation: UniversalPresentation,
 ) -> UniversalPresentation:
@@ -716,7 +714,7 @@ def _discrete_family_predicate(
 def _retain_discrete_family(
     families: list[LimitsCategory] | list[ColimitsCategory],
     family: Category,
-    expected_type: type[LimitsCategory] | type[ColimitsCategory],
+    expected_type: type[LimitsCategory | ColimitsCategory],
 ) -> None:
     """Retain one discrete construction family by identity."""
     assert isinstance(family, expected_type)

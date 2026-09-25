@@ -42,6 +42,7 @@ from sage_categories.kernel.type_aliases import ContainmentInput, EqualityInput
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.constructions import (
+        ColimitPreservationMediator,
         LimitApexLift,
         LimitMorphismLift,
         UniversalPresentation,
@@ -2103,6 +2104,25 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._limit_liftings[shape] = (on_apex, on_morphism)
             return self
 
+        def retain_colimit_preservation(
+            self,
+            shape: Category,
+            mediator: ColimitPreservationMediator,
+        ) -> None:
+            """Retain executable evidence that this functor preserves chosen ``shape``-colimits."""
+            from sage_categories.cat.constructions import _retain_colimit_preservation
+
+            _retain_colimit_preservation(self, shape, mediator)
+
+        def preserved_colimit(
+            self,
+            presentation: UniversalPresentation,
+        ) -> UniversalPresentation:
+            """Transport one retained colimit presentation through this preserving functor."""
+            from sage_categories.cat.constructions import _preserved_colimit
+
+            return _preserved_colimit(self, presentation)
+
         def limit_lifting(self, shape: Category) -> tuple[LimitApexLift, LimitMorphismLift] | None:
             """Return the chosen lifts for this shape or the discrete shape family."""
             Discrete = _discrete_shape_family()
@@ -2224,7 +2244,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         declared: CategoryDeclaration[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole],
     ) -> type[Category] | None:
         """The class implementing the exact declared category ``declared``, or ``None``."""
-        return self._implementations[declared] if declared in self._implementations else None
+        return self._implementations.get(declared, None)
 
     def implement(self, implementation: type[Category] | partial[Category]) -> None:
         """Connect ``implementation`` to the category it declares itself the implementation of (D156).

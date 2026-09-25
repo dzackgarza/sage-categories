@@ -63,17 +63,12 @@ __all__ = [
     "cone_apex",
     "lift_limit",
     "presenting_family",
-    "preserved_colimit",
-    "retain_colimit_preservation",
     "vertex_of",
 ]
 type Mediator = Callable[[NaturalTransformation], MorphismCategory.ObjectType]
 type Construction = Callable[[Functor], CategoryOfCategories.ElementType]
 type UniversalPresentation = LimitConesCategory.ObjectType
-type ColimitPreservationMediator = Callable[[UniversalPresentation, NaturalTransformation], MorphismCategory.ObjectType]
 
-def retain_colimit_preservation(functor: Functor, shape: Category, mediator: ColimitPreservationMediator) -> None: ...
-def preserved_colimit(functor: Functor, presentation: UniversalPresentation) -> UniversalPresentation: ...
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category: ...
 
 class _StaticRoles_ApexCategory(sage_categories.cat.properties._StaticRoles_PropertySubcategory):
@@ -230,4 +225,8 @@ class CoproductsCategory(
         self, diagram: Functor, apex: CategoryOfCategories.ElementType, colimiting_cocone: NaturalTransformation, mediator: Mediator
     ) -> CategoryOfCategories.ElementType: ...
 
+type ColimitPreservationMediator = Callable[[UniversalPresentation, NaturalTransformation], MorphismCategory.ObjectType]
+
+def _retain_colimit_preservation(functor: Functor, shape: Category, mediator: ColimitPreservationMediator) -> None: ...
+def _preserved_colimit(functor: Functor, presentation: UniversalPresentation) -> UniversalPresentation: ...
 def constructed_data(family: Category, diagram: Functor) -> UniversalPresentation: ...

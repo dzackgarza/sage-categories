@@ -18,10 +18,6 @@ from sage_categories.cat.cones import cocone_apex as cocone_apex
 from sage_categories.cat.cones import cocones as cocones
 from sage_categories.cat.cones import cone as cone
 from sage_categories.cat.cones import cone_apex as cone_apex
-from sage_categories.cat.constructions import preserved_colimit as preserved_colimit
-from sage_categories.cat.constructions import (
-    retain_colimit_preservation as retain_colimit_preservation,
-)
 from sage_categories.cat.declarations import Sets as Sets
 from sage_categories.cat.diagrams import from_sequence as from_sequence
 from sage_categories.cat.diagrams import sequence_position as sequence_position

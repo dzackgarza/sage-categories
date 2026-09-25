@@ -2,15 +2,21 @@
 
 from pytest import raises
 
-from sage_categories.all import Cat, Discrete, Fun, Mor, Sets, ask
 from sage_categories.algebra.abelian import AbelianGroups
+from sage_categories.all import Cat, Discrete, Fun, Mor, Sets, ask
 from sage_categories.cat.canonical import FinitePresentedCategory
-from sage_categories.cat.cones import cocone, cocones, cocone_apex, cone, cones, limit_cones
-from sage_categories.cat.constructions import preserved_colimit, retain_colimit_preservation
+from sage_categories.cat.cones import (
+    cocone,
+    cocone_apex,
+    cocones,
+    cone,
+    cones,
+    limit_cones,
+)
 from sage_categories.cat.diagrams import from_sequence
-from sage_categories.cat.properties import PredicateSubcategory
-from sage_categories.cat.predicates import Proposition
 from sage_categories.cat.opposites import opposite_morphism
+from sage_categories.cat.predicates import Proposition
+from sage_categories.cat.properties import PredicateSubcategory
 
 
 class IntrinsicUpperBounds(PredicateSubcategory):
@@ -49,12 +55,11 @@ def test_preserved_colimit_transports_retained_universal_data() -> None:
     )
     original = family.universal_data(diagram)
     identity_functor = Fun(base, base).one()
-    retain_colimit_preservation(
-        identity_functor,
+    identity_functor.retain_colimit_preservation(
         shape,
         lambda _presentation, candidate: candidate.component(target_vertex),
     )
-    transported = preserved_colimit(identity_functor, original)
+    transported = identity_functor.preserved_colimit(original)
     assert transported.apex() is target
     assert ask(transported.leg(target_vertex) == identity) is True
     candidate = cocones(transported.diagram())(

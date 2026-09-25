@@ -23,13 +23,22 @@ def test_additive_monoid_and_doubling_automorphism() -> None:
     assert monoid.unit_morphism() is unit
     assert ask(addition(square.point((2, 2))) == carrier.point(1)) is True
 
-    magma = Monoids(structure).to_magmas().on_object(monoid)
+    monoids = Monoids(structure)
+    magma = monoids.to_magmas().on_object(monoid)
     assert magma.carrier() is carrier
     doubling = Mor(Sets)(carrier, carrier)(lambda value: (2 * value) % 3)
     homomorphism = Magmas(structure).homomorphism(magma, magma, doubling)
+    Magmas(structure).retain_inverses(homomorphism, homomorphism)
     forgetful = Magmas(structure).forgetful()
     assert forgetful.on_morphism(homomorphism)(carrier.point(1)).datum() == 2
     assert ask(doubling(carrier.point(0)) == carrier.point(0)) is True
+
+    lift = monoids.to_magmas().cartesian_lift(homomorphism, monoid)
+    assert lift.codomain() is monoid
+    assert monoids.to_magmas().on_morphism(lift) is homomorphism
+    assert monoids.to_magmas().on_object(lift.domain()) is magma
+    assert ask(lift.domain().operation() == monoid.operation()) is True
+    assert ask(lift.domain().unit_morphism() == monoid.unit_morphism()) is True
 
 
 def test_incompatible_unit_fails_the_unit_equation() -> None:

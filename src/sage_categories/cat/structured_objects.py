@@ -386,7 +386,30 @@ class MonoidCategory(EquifierCategory):
     def to_magmas(self) -> Functor:
         monoidal = self.monoidal_structure()
         pointed = PointedMagmas(monoidal.tensor(), monoidal.unit())
-        return pointed.forgetful() * Fun.full_subcategory_monomorphism(self, pointed)
+        projection = pointed.forgetful() * Fun.full_subcategory_monomorphism(self, pointed)
+        projection.retain_cartesian_lifts(self._cartesian_lift)
+        return projection
+
+    def _cartesian_lift(
+        self,
+        morphism: MorphismCategory.ObjectType,
+        target: MonoidCategory.ObjectType,
+    ) -> MonoidCategory.MorphismType:
+        """Lift a magma isomorphism and retain the transported monoid laws."""
+        monoidal = self.monoidal_structure()
+        pointed = PointedMagmas(monoidal.tensor(), monoidal.unit())
+        lift = pointed.forgetful().cartesian_lift(morphism, target)
+        source = lift.domain()
+
+        equifiers: list[EquifierCategory] = []
+        category: Category = self
+        while isinstance(category, EquifierCategory):
+            equifiers.append(category)
+            category = category.ambient()
+        for equifier in reversed(equifiers):
+            refine(source, equifier)
+            lift = equifier.restrict_morphism(lift)
+        return lift
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """Forget associativity and the unit, retaining exactly the underlying magma."""

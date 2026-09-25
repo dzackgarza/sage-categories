@@ -5,6 +5,8 @@ from sage_categories.algebra._firewall.abelian import Engine as Engine
 from sage_categories.cat.bimodules import BimoduleCategory as BimoduleCategory
 from sage_categories.cat.bimodules import Bimodules as Bimodules
 from sage_categories.cat.bimodules import fixed_tensor_functor as fixed_tensor_functor
+from sage_categories.cat.bimodules import relative_left_unitor as relative_left_unitor
+from sage_categories.cat.bimodules import relative_right_unitor as relative_right_unitor
 from sage_categories.cat.bimodules import (
     relative_tensor_factor as relative_tensor_factor,
 )
@@ -74,8 +76,6 @@ __all__ = [
     "induced_right_action",
     "integer_group",
     "presented_abelian_group",
-    "relative_left_unitor",
-    "relative_right_unitor",
     "relative_tensor",
     "relative_tensor_mediator",
     "relative_tensor_morphism",
@@ -116,12 +116,6 @@ def induced_right_action(projection: MorphismCategory.ObjectType, right_action: 
 def relative_tensor_morphism(
     source: MorphismCategory.ObjectType, target: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType
 ) -> MorphismCategory.ObjectType: ...
-def relative_left_unitor(
-    projection: MorphismCategory.ObjectType, left_action: MorphismCategory.ObjectType, unit_morphism: MorphismCategory.ObjectType
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
-def relative_right_unitor(
-    projection: MorphismCategory.ObjectType, right_action: MorphismCategory.ObjectType, unit_morphism: MorphismCategory.ObjectType
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
 def AbelianBimoduleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
 def AbelianModuleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
 

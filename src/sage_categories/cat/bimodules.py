@@ -24,6 +24,8 @@ __all__ = [
     "fixed_tensor_functor",
     "induced_left_action",
     "induced_right_action",
+    "relative_left_unitor",
+    "relative_right_unitor",
     "relative_tensor",
     "relative_tensor_factor",
     "relative_tensor_morphism",
@@ -213,6 +215,38 @@ def relative_tensor_morphism(
     """The map of relative tensors induced by compatible maps of both factors."""
     underlying = target * tensor_morphism(monoidal.tensor(), first, second)
     return relative_tensor_factor(monoidal, source, underlying)
+
+
+def relative_left_unitor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    left_action: MorphismCategory.ObjectType,
+    unit_morphism: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """``S ⊗_S Y ≅ Y`` induced by the admitted left action and monoid unit."""
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    carrier = left_action.codomain()
+    identity = Mor(base)(carrier, carrier).one()
+    forward = relative_tensor_factor(monoidal, projection, left_action)
+    backward = projection * tensor_morphism(tensor, unit_morphism, identity) * monoidal.left_unitor().inverse().component(carrier)
+    base.retain_inverses(forward, backward)
+    return forward, backward
+
+
+def relative_right_unitor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    right_action: MorphismCategory.ObjectType,
+    unit_morphism: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """``X ⊗_S S ≅ X`` induced by the admitted right action and monoid unit."""
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    carrier = right_action.codomain()
+    identity = Mor(base)(carrier, carrier).one()
+    forward = relative_tensor_factor(monoidal, projection, right_action)
+    backward = projection * tensor_morphism(tensor, identity, unit_morphism) * monoidal.right_unitor().inverse().component(carrier)
+    base.retain_inverses(forward, backward)
+    return forward, backward
 
 
 class ActionPairsCategory(LimitSubcategory):

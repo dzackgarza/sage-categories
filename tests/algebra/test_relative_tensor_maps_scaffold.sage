@@ -1,6 +1,5 @@
 """Functoriality of the tensor product over M_2(F_2): a pair of module maps, and the two unit comparisons."""
 
-from sage_categories.all import Mor, ask
 from sage_categories.algebra import (
     AbelianGroups,
     AbelianTensor,
@@ -8,12 +7,12 @@ from sage_categories.algebra import (
     balanced_tensor,
     integer_group,
     presented_abelian_group,
-    relative_left_unitor,
-    relative_right_unitor,
     relative_tensor,
     relative_tensor_morphism,
     tensor_mediator,
 )
+from sage_categories.all import Mor, ask
+from sage_categories.cat.bimodules import relative_left_unitor, relative_right_unitor
 from sage_categories.cat.monoidal import Reversed
 from sage_categories.cat.structured_objects import Monoids
 
@@ -91,8 +90,8 @@ def test_the_unit_comparisons_are_isomorphisms_with_executable_inverses() -> Non
 
     # S (x)_S Y is Y and X (x)_S S is X, through the actions themselves.
     into_columns, into_rows = relative_tensor(regular, left_action), relative_tensor(right_action, regular)
-    left, back_to_columns = relative_left_unitor(into_columns, left_action, ring.unit_morphism())
-    right, back_to_rows = relative_right_unitor(into_rows, right_action, ring.unit_morphism())
+    left, back_to_columns = relative_left_unitor(AbelianTensor(), into_columns, left_action, ring.unit_morphism())
+    right, back_to_rows = relative_right_unitor(AbelianTensor(), into_rows, right_action, ring.unit_morphism())
     assert left.inverse() is back_to_columns
     assert right.inverse() is back_to_rows
     assert left.domain() is into_columns.codomain() and left.codomain() is columns

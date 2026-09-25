@@ -7,6 +7,8 @@ from sage_categories.cat.bimodules import (
     fixed_tensor_functor,
     induced_left_action,
     induced_right_action,
+    relative_left_unitor,
+    relative_right_unitor,
     relative_tensor,
     relative_tensor_factor,
     relative_tensor_morphism,
@@ -60,6 +62,8 @@ def relative_tensor_calculus_types(
     assert_type(fixed_tensor_functor(monoidal, second, "right"), Functor)
     assert_type(relative_tensor(monoidal, middle, right_action, left_action), MorphismCategory.ObjectType)
     assert_type(relative_tensor_factor(monoidal, projection, arrow), MorphismCategory.ObjectType)
+    assert_type(relative_left_unitor(monoidal, projection, left_action, arrow), tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType])
+    assert_type(relative_right_unitor(monoidal, projection, right_action, arrow), tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType])
     assert_type(relative_tensor_preserved_factor(monoidal, projection, preserving, arrow), MorphismCategory.ObjectType)
     assert_type(induced_left_action(monoidal, projection, scalars, second, left_action), MorphismCategory.ObjectType)
     assert_type(induced_right_action(monoidal, projection, first, scalars, right_action), MorphismCategory.ObjectType)

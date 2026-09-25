@@ -41,8 +41,6 @@ __all__ = [
     "induced_right_action",
     "integer_group",
     "presented_abelian_group",
-    "relative_left_unitor",
-    "relative_right_unitor",
     "relative_tensor",
     "relative_tensor_mediator",
     "relative_tensor_morphism",
@@ -63,6 +61,8 @@ from sage_categories.cat.bimodules import (
     BimoduleCategory,
     Bimodules,
     fixed_tensor_functor,
+    relative_left_unitor,
+    relative_right_unitor,
     relative_tensor_factor,
     relative_tensor_preserved_factor,
 )
@@ -1230,48 +1230,8 @@ def relative_tensor_morphism(
 
 
 def _monoid_one(unit_morphism: MorphismCategory.ObjectType) -> Hashable:
-    """``eta(1)``: the unit element of a monoid object of ``(Ab, tensor, Z)``."""
+    """``eta(1)`` for an ``Ab`` monoid, used by pointwise module comparisons."""
     return unit_morphism(integer_group().point(1)).datum()
-
-
-def _unitor(
-    projection: MorphismCategory.ObjectType,
-    action: MorphismCategory.ObjectType,
-    into_the_tensor: Callable[[Hashable], CategoryOfCategories.ElementType],
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """The comparison out of a relative tensor with the acting monoid as one factor, and its inverse.
-
-    Acting is itself a balanced map, so it factors through the quotient; the section sends
-    a point to its tensor with the unit.  Both composites are checked here, so the pair is
-    an isomorphism of ``Ab`` by what it does rather than by a declaration.
-    """
-    forward = _factor_relative_projection(projection, action)
-    quotient, carrier = projection.codomain(), action.codomain()
-    backward = abelian_homomorphism(carrier, quotient, lambda datum: into_the_tensor(datum).datum())
-    assert ask(forward * backward == Mor(AbelianGroups())(carrier, carrier).one()) is True
-    assert ask(backward * forward == Mor(AbelianGroups())(quotient, quotient).one()) is True
-    AbelianGroups().retain_inverses(forward, backward)
-    return forward, forward.inverse()
-
-
-def relative_left_unitor(
-    projection: MorphismCategory.ObjectType,
-    left_action: MorphismCategory.ObjectType,
-    unit_morphism: MorphismCategory.ObjectType,
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """``S (x)_S Y -> Y``, ``s (x)_S y`` to ``s y``, with its inverse ``y -> 1 (x)_S y``."""
-    one = _monoid_one(unit_morphism)
-    return _unitor(projection, left_action, lambda datum: balanced_tensor(projection, one, datum))
-
-
-def relative_right_unitor(
-    projection: MorphismCategory.ObjectType,
-    right_action: MorphismCategory.ObjectType,
-    unit_morphism: MorphismCategory.ObjectType,
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """``X (x)_S S -> X``, ``x (x)_S s`` to ``x s``, with its inverse ``x -> x (x)_S 1``."""
-    one = _monoid_one(unit_morphism)
-    return _unitor(projection, right_action, lambda datum: balanced_tensor(projection, datum, one))
 
 
 def _bimodule_unitor_components(
@@ -1289,6 +1249,7 @@ def _bimodule_unitor_components(
             source = tensor.on_object(pairs((unit, value)))
             projection = relative_tensor(unit.right_action(), value.left_action())
             forward, backward = relative_left_unitor(
+                AbelianTensor(),
                 projection,
                 value.left_action(),
                 scalars.unit_morphism(),
@@ -1297,6 +1258,7 @@ def _bimodule_unitor_components(
             source = tensor.on_object(pairs((value, unit)))
             projection = relative_tensor(value.right_action(), unit.left_action())
             forward, backward = relative_right_unitor(
+                AbelianTensor(),
                 projection,
                 value.right_action(),
                 scalars.unit_morphism(),

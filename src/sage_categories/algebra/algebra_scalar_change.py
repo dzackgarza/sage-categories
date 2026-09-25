@@ -23,12 +23,11 @@ from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.monoidal import tensor_morphism, tensor_object
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.structured_objects import Magmas, Monoids
-from sage_categories.kernel.retention import identity_key
-from sage_categories.kernel.sage_runtime import cached_function
 
 __all__ = ["restrict_algebra_scalars"]
 
 _ALGEBRA_RESTRICTIONS = ChosenConstruction()
+_ALGEBRA_RESTRICTION_FUNCTORS = ChosenConstruction()
 
 
 def _relative_carrier(
@@ -112,7 +111,6 @@ def _restrict_object(
     return target.from_monoid(Monoids(target.monoidal_structure())(multiplication, unit))
 
 
-@cached_function(key=identity_key)
 def restrict_algebra_scalars(
     source: AlgebraCategory,
     target: AlgebraCategory,
@@ -124,6 +122,19 @@ def restrict_algebra_scalars(
     ``(S,S)``-bimodules in ``Ab``.  Object and morphism actions preserve the exact
     base-relative owners rather than reusing one Python realization at both bases.
     """
+    return _ALGEBRA_RESTRICTION_FUNCTORS(
+        source,
+        (target, scalar_morphism),
+        lambda: _new_restrict_algebra_scalars(source, target, scalar_morphism),
+    )
+
+
+def _new_restrict_algebra_scalars(
+    source: AlgebraCategory,
+    target: AlgebraCategory,
+    scalar_morphism: MorphismCategory.ObjectType,
+) -> Functor:
+    """Construct the named restriction functor on one exact scalar-change datum."""
     monoids = Monoids(AbelianTensor())
     assert scalar_morphism in Mor(monoids)(target.base(), source.base())
     source_relative, target_relative = (

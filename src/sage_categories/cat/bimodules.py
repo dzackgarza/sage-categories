@@ -20,6 +20,7 @@ __all__ = ["ActionPairsCategory", "BimoduleCategory", "Bimodules"]
 from sage_categories.cat.cat_constructions import (
     LimitSubcategory,
     _faithful_isofibration_projection,
+    _retained_object_component,
     limit_of_categories,
 )
 from sage_categories.cat.category import Category, CategoryOfCategories
@@ -80,8 +81,8 @@ class ActionPairsCategory(LimitSubcategory):
             source,
             target,
             (
-                left.homomorphism(source.family_component(0), target.family_component(0), arrow),
-                right.homomorphism(source.family_component(1), target.family_component(1), arrow),
+                left.homomorphism(_retained_object_component(source, 0), _retained_object_component(target, 0), arrow),
+                right.homomorphism(_retained_object_component(source, 1), _retained_object_component(target, 1), arrow),
                 arrow,
             ),
         )
@@ -96,11 +97,11 @@ class BimoduleCategory(EquifierCategory):
     class ObjectType:
         def left_action(self) -> MorphismCategory.ObjectType:
             """``lambda: R (x) X -> X``."""
-            return self.family_component(0).action()
+            return _retained_object_component(self, 0).action()
 
         def right_action(self) -> MorphismCategory.ObjectType:
             """``rho: X (x) S -> X``."""
-            return self.family_component(1).action()
+            return _retained_object_component(self, 1).action()
 
     class ElementType:
         pass
@@ -198,8 +199,9 @@ def Bimodules(
 
     def commuting(value: CategoryOfCategories.ElementType, through_the_left: bool) -> MorphismCategory.ObjectType:
         """``lambda (1 (x) rho)`` and ``rho (lambda (x) 1) a^-1`` on ``R (x) (X (x) S)``."""
-        x = value.family_component(2)
-        lam, rho = value.family_component(0).action(), value.family_component(1).action()
+        x = _retained_object_component(value, 2)
+        lam = _retained_object_component(value, 0).action()
+        rho = _retained_object_component(value, 1).action()
         match through_the_left:
             case True:
                 return lam * tensor_morphism(tensor, Mor(base)(scalars, scalars).one(), rho)

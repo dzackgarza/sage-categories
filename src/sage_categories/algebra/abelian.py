@@ -68,7 +68,7 @@ from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.limit_basis import parallel_pair
-from sage_categories.cat.modules import ModuleCategory
+from sage_categories.cat.modules import ModuleCategory, Modules
 from sage_categories.cat.monoidal import (
     Cartesian,
     MonoidalStructures,
@@ -1526,120 +1526,125 @@ def _new_abelian_module_tensor(
     """Derive the left-module tensor from the existing bimodule tensor calculus."""
     monoidal = AbelianTensor()
     scalar = scalars.operation().codomain()
-    assert ask(
-        scalars.operation() * _tensor_swap(scalar, scalar) == scalars.operation()
-    ) is True, f"{scalars!r} is not commutative"
+    assert ask(scalars.operation() * _tensor_swap(scalar, scalar) == scalars.operation()) is True, f"{scalars!r} is not commutative"
 
-    bimodule_structure = AbelianBimoduleTensor(scalars)
-    bimodules = bimodule_structure.underlying_category()
-    assert isinstance(bimodules, BimoduleCategory)
-    modules = bimodules.left_modules()
+    modules = Modules(scalars, SelfAction(monoidal))
     assert modules.actegory() is SelfAction(monoidal)
-    to_left = bimodules.to_left()
+    unit = modules(scalars.operation())
 
-    bimodule_unit = bimodule_structure.unit()
-    unit = to_left.on_object(bimodule_unit)
-    _retain_central_bimodule(modules, bimodules, unit, bimodule_unit)
+    def bimodule_data() -> tuple[
+        MonoidalStructuresCategory.ObjectType,
+        BimoduleCategory,
+        Functor,
+    ]:
+        structure = AbelianBimoduleTensor(scalars)
+        bimodules = structure.underlying_category()
+        assert isinstance(bimodules, BimoduleCategory)
+        assert bimodules.left_modules() is modules
+        to_left = bimodules.to_left()
+        _retain_central_bimodule(modules, bimodules, unit, structure.unit())
+        return structure, bimodules, to_left
 
     def central_on_object(
         module: ModuleCategory.ObjectType,
     ) -> BimoduleCategory.ObjectType:
+        _, bimodules, _ = bimodule_data()
         return _central_bimodule(modules, bimodules, module)
 
     def central_on_morphism(
         arrow: ModuleCategory.MorphismType,
     ) -> BimoduleCategory.MorphismType:
-        source = central.on_object(arrow.domain())
-        target = central.on_object(arrow.codomain())
+        _, bimodules, _ = bimodule_data()
+        source = central_on_object(arrow.domain())
+        target = central_on_object(arrow.codomain())
         return bimodules.homomorphism(
             source,
             target,
             modules.forgetful().on_morphism(arrow),
         )
 
-    central = Fun(modules, bimodules)(central_on_object, central_on_morphism)
     pairs = Cat().Products()((modules, modules))
-    bimodule_tensor = bimodule_structure.tensor()
-    bimodule_pairs = bimodule_tensor.domain()
 
     def on_object(pair: CategoryOfCategories.ElementType) -> ModuleCategory.ObjectType:
-        first = central.on_object(pair.family_component(0))
-        second = central.on_object(pair.family_component(1))
+        bimodule_structure, bimodules, to_left = bimodule_data()
+        bimodule_tensor = bimodule_structure.tensor()
+        bimodule_pairs = bimodule_tensor.domain()
+        first = central_on_object(pair.family_component(0))
+        second = central_on_object(pair.family_component(1))
         lifted = bimodule_tensor.on_object(bimodule_pairs((first, second)))
         result = to_left.on_object(lifted)
         _retain_central_bimodule(modules, bimodules, result, lifted)
         return result
 
     def on_morphism(arrow: MorphismCategory.ObjectType) -> ModuleCategory.MorphismType:
+        bimodule_structure, _, to_left = bimodule_data()
+        bimodule_tensor = bimodule_structure.tensor()
+        bimodule_pairs = bimodule_tensor.domain()
         source_pair, target_pair = arrow.domain(), arrow.codomain()
-        source_lifts = tuple(
-            central.on_object(source_pair.family_component(index))
-            for index in range(2)
-        )
-        target_lifts = tuple(
-            central.on_object(target_pair.family_component(index))
-            for index in range(2)
-        )
+        source_lifts = tuple(central_on_object(source_pair.family_component(index)) for index in range(2))
+        target_lifts = tuple(central_on_object(target_pair.family_component(index)) for index in range(2))
         lifted_arrow = bimodule_pairs.construct_morphism(
             bimodule_pairs(source_lifts),
             bimodule_pairs(target_lifts),
-            tuple(
-                central.on_morphism(arrow.family_component(index))
-                for index in range(2)
-            ),
+            tuple(central_on_morphism(arrow.family_component(index)) for index in range(2)),
         )
         return to_left.on_morphism(bimodule_tensor.on_morphism(lifted_arrow))
 
     tensor = Fun(pairs, modules)(on_object, on_morphism)
     left_parenthesized, right_parenthesized = tensor_parentheses(tensor)
-    bimodule_triples = bimodule_structure.associator().domain().domain()
 
     def lifted_triple(
         triple: CategoryOfCategories.ElementType,
+        bimodule_structure: MonoidalStructuresCategory.ObjectType,
     ) -> CategoryOfCategories.ElementType:
-        return bimodule_triples(
-            tuple(
-                central.on_object(triple.family_component(index))
-                for index in range(3)
-            )
-        )
+        bimodule_triples = bimodule_structure.associator().domain().domain()
+        return bimodule_triples(tuple(central_on_object(triple.family_component(index)) for index in range(3)))
+
+    def associator_component(triple: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        bimodule_structure, _, to_left = bimodule_data()
+        return to_left.on_morphism(bimodule_structure.associator().component(lifted_triple(triple, bimodule_structure)))
+
+    def associator_inverse_component(triple: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        bimodule_structure, _, to_left = bimodule_data()
+        return to_left.on_morphism(bimodule_structure.associator().inverse().component(lifted_triple(triple, bimodule_structure)))
 
     associator = natural_isomorphism(
         left_parenthesized,
         right_parenthesized,
-        lambda triple: to_left.on_morphism(
-            bimodule_structure.associator().component(lifted_triple(triple))
-        ),
-        lambda triple: to_left.on_morphism(
-            bimodule_structure.associator().inverse().component(lifted_triple(triple))
-        ),
+        associator_component,
+        associator_inverse_component,
     )
 
     left_unit, right_unit = tensor_units(tensor, unit)
     identity = Fun(modules, modules).one()
+
+    def left_unitor_component(module: ModuleCategory.ObjectType) -> MorphismCategory.ObjectType:
+        bimodule_structure, _, to_left = bimodule_data()
+        return to_left.on_morphism(bimodule_structure.left_unitor().component(central_on_object(module)))
+
+    def left_unitor_inverse_component(module: ModuleCategory.ObjectType) -> MorphismCategory.ObjectType:
+        bimodule_structure, _, to_left = bimodule_data()
+        return to_left.on_morphism(bimodule_structure.left_unitor().inverse().component(central_on_object(module)))
+
+    def right_unitor_component(module: ModuleCategory.ObjectType) -> MorphismCategory.ObjectType:
+        bimodule_structure, _, to_left = bimodule_data()
+        return to_left.on_morphism(bimodule_structure.right_unitor().component(central_on_object(module)))
+
+    def right_unitor_inverse_component(module: ModuleCategory.ObjectType) -> MorphismCategory.ObjectType:
+        bimodule_structure, _, to_left = bimodule_data()
+        return to_left.on_morphism(bimodule_structure.right_unitor().inverse().component(central_on_object(module)))
+
     left_unitor = natural_isomorphism(
         left_unit,
         identity,
-        lambda module: to_left.on_morphism(
-            bimodule_structure.left_unitor().component(central.on_object(module))
-        ),
-        lambda module: to_left.on_morphism(
-            bimodule_structure.left_unitor()
-            .inverse()
-            .component(central.on_object(module))
-        ),
+        left_unitor_component,
+        left_unitor_inverse_component,
     )
     right_unitor = natural_isomorphism(
         right_unit,
         identity,
-        lambda module: to_left.on_morphism(
-            bimodule_structure.right_unitor().component(central.on_object(module))
-        ),
-        lambda module: to_left.on_morphism(
-            bimodule_structure.right_unitor()
-            .inverse()
-            .component(central.on_object(module))
-        ),
+        right_unitor_component,
+        right_unitor_inverse_component,
     )
     result = MonoidalStructures(modules)(
         tensor,

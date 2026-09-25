@@ -137,7 +137,23 @@ class InserterCategory(LimitSubcategory):
 
     @cached_method
     def forgetful(self) -> Functor:
-        return Fun(self, self.factor(0)).Faithful().Isofibrations()(lambda value: value.carrier(), lambda arrow: arrow.underlying_morphism())
+        forgetful = Fun(self, self.factor(0)).Faithful().Isofibrations()(lambda value: value.carrier(), lambda arrow: arrow.underlying_morphism())
+        forgetful.retain_cartesian_lifts(self._cartesian_lift)
+        return forgetful
+
+    def _cartesian_lift(
+        self,
+        morphism: MorphismCategory.ObjectType,
+        target: InserterCategory.ObjectType,
+    ) -> InserterCategory.MorphismType:
+        """Transport an inserter structure along an isomorphism of carriers."""
+        source_category = self.factor(0)
+        inverse = source_category.retained_inverse(morphism)
+        assert inverse is not None, f"{morphism!r} is not a retained isomorphism of {source_category!r}"
+        first, second = self.factor(1).comma_functors()
+        structure = second.on_morphism(inverse) * target.structure() * first.on_morphism(morphism)
+        source = self.algebra(morphism.domain(), structure)
+        return self.homomorphism(source, target, morphism)
 
     @cached_method
     def defining_transformation(self) -> NaturalTransformation:

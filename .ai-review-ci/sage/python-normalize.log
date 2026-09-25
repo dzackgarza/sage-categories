@@ -8,4 +8,4 @@
 === Running: ruff format and check (auto-fix) ===
 # Enforces PEP 8 style + auto-fixes common issues (import sorting, unused imports, pyupgrade patterns)
 All checks passed!
-68 files left unchanged
+1 file left unchanged

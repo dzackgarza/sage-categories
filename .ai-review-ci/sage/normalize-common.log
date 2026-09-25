@@ -1,9 +1,7 @@
 =============================
 === Running: structured text formatting ===
 # Formats Markdown (flowmark), JSON, and YAML (prettier) before agents spend time on whitespace
-.ai-review-ci/sage/no-bypass.json 54ms (unchanged)
-.ai-review-ci/sage/python-normalize.json 6ms (unchanged)
-.ai-review-ci/sage/python-syntax.json 5ms (unchanged)
+.ai-review-ci/sage/sage-syntax.json 82ms (unchanged)
 =============================
 === Running: semgrep auto-fix ===
 # Applies Semgrep autofixes; CI-tier Semgrep verification owns remaining findings

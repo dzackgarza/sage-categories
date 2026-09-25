@@ -1,4 +1,19 @@
 =============================
 === Running: Sage syntax validation ===
 # Preparses .sage files and byte-compiles the generated Python to catch syntax errors early
-# Preparsing and compiling 126 Sage file(s)
+ERROR: Sage virtual-environment Python is not executable: /home/dzack/sage-mypy-plugin/sage-stubs/sage-src/python
+
+================================================================================
+  LOCAL QC FAILURE — DIRECT REPAIR REQUIRED
+================================================================================
+
+  Fix the reported compiler, formatter, type, or test failure in the object
+  being changed, then rerun the same gate. This is not PR review feedback and
+  does not enter returned-PR-feedback triage or require independent policy/remediation subagents.
+
+  Do not weaken the checker, suppress the diagnostic, golf the error count, or
+  edit ai-review-ci to make the signal disappear.
+
+================================================================================
+error: Recipe `_sage-python` failed with exit code 1
+error: Recipe `_sage-syntax` failed with exit code 1

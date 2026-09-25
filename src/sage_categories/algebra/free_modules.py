@@ -10,7 +10,7 @@ matrices are only the finite chosen-basis spelling of a resulting module map.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 
 from sage_categories.algebra.abelian import (
@@ -401,7 +401,7 @@ def _right_scalar_morphism(
     regular = regular_module(modules)
     multiplication = modules.scalars().operation()
 
-    def right_multiply(datum: object) -> object:
+    def right_multiply(datum: Hashable) -> Hashable:
         return multiplication(simple_tensor(carrier, carrier, datum, coefficient.datum())).datum()
 
     underlying = abelian_homomorphism(carrier, carrier, right_multiply)

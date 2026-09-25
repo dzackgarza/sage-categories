@@ -44,14 +44,17 @@ __all__ = [
 ]
 
 
-type CartesianComparisonHandler = Callable[..., MorphismCategory.ObjectType]
+type CartesianComparisonHandler = Callable[
+    [str, *tuple[CategoryOfCategories.ElementType, ...]],
+    MorphismCategory.ObjectType | None,
+]
 
 
 @singledispatch
 def _native_cartesian_comparison(
     base: Category,
     operation: str,
-    *arguments: object,
+    *arguments: CategoryOfCategories.ElementType,
 ) -> MorphismCategory.ObjectType | None:
     """Use the native Cartesian comparison selected for ``base``'s concrete category type."""
     return None
@@ -67,7 +70,7 @@ def register_cartesian_comparisons(
     def comparison(
         _base: Category,
         operation: str,
-        *arguments: object,
+        *arguments: CategoryOfCategories.ElementType,
     ) -> MorphismCategory.ObjectType | None:
         match type(_base) is category_type:
             case True:

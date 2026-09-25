@@ -31,7 +31,11 @@ from sympy import Integer as SympyInteger
 from sympy import ask as sympy_ask
 from sympy.core.basic import Basic
 
-from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.category import (
+    Category,
+    CategoryOfCategories,
+    ContainmentInput,
+)
 from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.declarations import NN, Sets, omega
@@ -471,7 +475,7 @@ class SetsCategory(MorphismDataCategory):
         def __len__(self) -> int:
             return len(self._values)
 
-        def __contains__(self, point: object) -> bool:
+        def __contains__(self, point: ContainmentInput) -> bool:
             return ask(self.membership_proposition(point)) is True
 
         def membership_proposition(self, point: CategoryOfCategories.ElementType) -> Proposition:
@@ -1137,7 +1141,10 @@ register_handler(Mor(Sets).Epimorphisms().predicate(), Sets._surjective)
 register_handler(Mor(Sets).Isomorphisms().predicate(), Sets._bijective)
 
 
-def _finite_cartesian_comparison(operation: str, *arguments: object) -> MorphismCategory.ObjectType | None:
+def _finite_cartesian_comparison(
+    operation: str,
+    *arguments: CategoryOfCategories.ElementType,
+) -> MorphismCategory.ObjectType | None:
     finite_sets = _finite_sets_engine()
 
     if any(_finite_data(argument) is Unknown for argument in arguments):

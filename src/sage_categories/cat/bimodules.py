@@ -563,7 +563,9 @@ class BimoduleCategory[
         return self._left.underlying_category()
 
     @cached_method
-    def to_left(self) -> CategoryOfCategories.MorphismType[
+    def to_left(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
         BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
         ModuleCategory[LeftScalar, BaseCategory, BaseCategory],
         BimoduleCategory.ObjectType,
@@ -579,7 +581,9 @@ class BimoduleCategory[
         return projection
 
     @cached_method
-    def to_right(self) -> CategoryOfCategories.MorphismType[
+    def to_right(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
         BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
         ModuleCategory[MonoidCategory.ObjectType, BaseCategory, BaseCategory],
         BimoduleCategory.ObjectType,

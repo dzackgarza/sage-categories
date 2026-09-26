@@ -105,7 +105,9 @@ class ModuleCategory[
     def underlying_category(self) -> ActedCategory:
         return self._actegory.underlying_category()
 
-    def scalar_endofunctor(self) -> CategoryOfCategories.MorphismType[
+    def scalar_endofunctor(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
         ActedCategory,
         ActedCategory,
         CategoryOfCategories.ElementType,

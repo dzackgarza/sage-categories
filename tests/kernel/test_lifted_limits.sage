@@ -6,7 +6,15 @@ from collections.abc import Callable, Hashable
 from itertools import product
 
 from sage_categories.all import Cat, Category, Fun, Mor
-from sage_categories.cat.cones import LimitConesCategory, cone, cone_apex, cones
+from sage_categories.cat.cones import (
+    LimitConesCategory,
+    cocone,
+    cocone_apex,
+    cocones,
+    cone,
+    cone_apex,
+    cones,
+)
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.leaf_categories import (
@@ -75,6 +83,31 @@ class FiniteSets(MorphismDataCategory):
                 lambda candidate: Mor(self)(cone_apex(candidate), apex)(
                     lambda value: tuple(candidate.component(vertex).apply(value) for vertex in vertices)),
             )
+        return construct
+
+    def colimit_construction(self, shape: Category) -> Callable[[Functor], FiniteSets.ObjectType]:
+        assert shape is Cat().WalkingParallelPair()
+
+        def construct(diagram: Functor) -> FiniteSets.ObjectType:
+            source_vertex, target_vertex = shape(0), shape(1)
+            source, target = diagram.on_object(source_vertex), diagram.on_object(target_vertex)
+            arrows = shape.generating_morphisms()
+            assert source.values() == frozenset((0,)) and target.values() == frozenset((0, 1))
+            assert {diagram.on_morphism(arrow).apply(0) for arrow in arrows} == {0, 1}
+            apex = self(frozenset((0,)))
+            quotient = Mor(self)(target, apex)(lambda _value: 0)
+            selected = cocone(
+                diagram,
+                apex,
+                lambda vertex: quotient * diagram.on_morphism(arrows[0]) if vertex is source_vertex else quotient,
+            )
+
+            def mediator(candidate):
+                target_leg = candidate.component(target_vertex)
+                return Mor(self)(apex, cocone_apex(candidate))(lambda _value: target_leg.apply(0))
+
+            return self.Colimits(shape).with_universal_data(diagram, apex, selected, mediator)
+
         return construct
 
 
@@ -169,6 +202,54 @@ class PointedFiniteSets(FaithfulStructureCategory):
         forget = Fun(self, self._sets).Faithful().Isofibrations().CreatesLimits(Discrete)(
             lambda value: value._pointed_set, lambda arrow: arrow.underlying_map())
         return (forget.with_limit_lifting(Discrete, self.lift_point, self.construct_morphism),)
+
+
+class WrappedFiniteSets(FaithfulStructureCategory):
+    """Finite sets with a semantically separate wrapper and no additional structure."""
+
+    class ObjectType:
+        def __init__(self, carrier: FiniteSets.ObjectType) -> None:
+            self._carrier = carrier
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        def __init__(self, underlying: MorphismCategory.ObjectType) -> None:
+            self._underlying = underlying
+
+        def underlying_map(self) -> MorphismCategory.ObjectType:
+            return self._underlying
+
+    def __init__(self, sets: FiniteSets) -> None:
+        self._sets = sets
+
+    def __call__(self, carrier: FiniteSets.ObjectType) -> WrappedFiniteSets.ObjectType:
+        return self.ObjectType(carrier)
+
+    def construct_morphism(
+        self,
+        source: WrappedFiniteSets.ObjectType,
+        target: WrappedFiniteSets.ObjectType,
+        underlying: MorphismCategory.ObjectType,
+    ) -> WrappedFiniteSets.MorphismType:
+        assert underlying.domain() is source._carrier and underlying.codomain() is target._carrier
+        return self.MorphismType(domain=source, codomain=target, data=underlying)
+
+    def lift_apex(self, _diagram: Functor, base: LimitConesCategory.ObjectType) -> WrappedFiniteSets.ObjectType:
+        return self(base.apex())
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        forget = Fun(self, self._sets).Faithful().Isofibrations()(
+            lambda value: value._carrier,
+            lambda arrow: arrow.underlying_map(),
+        )
+        forget.with_colimit_lifting(
+            Cat().WalkingParallelPair(),
+            self.lift_apex,
+            self.construct_morphism,
+        )
+        return (forget,)
 
 
 def test_poset_product_lifts_order_projections_and_mediator() -> None:
@@ -275,6 +356,49 @@ def test_created_pointed_product_retains_the_point_and_maps() -> None:
         assert all(composite.apply(x) == leg.apply(x) for x in source.values())
 
 
+def test_lifted_coequalizer_retains_injection_and_universal_factor() -> None:
+    sets = FiniteSets()
+    wrapped = WrappedFiniteSets(sets)
+    one, two = sets(frozenset((0,))), sets(frozenset((0, 1)))
+    source, target = wrapped(one), wrapped(two)
+    shape = Cat().WalkingParallelPair()
+    arrows = shape.generating_morphisms()
+    source_vertex, target_vertex = shape(0), shape(1)
+    first = wrapped.construct_morphism(source, target, Mor(sets)(one, two)(lambda _value: 0))
+    second = wrapped.construct_morphism(source, target, Mor(sets)(one, two)(lambda _value: 1))
+    diagram = Fun(shape, wrapped)(
+        lambda vertex: source if vertex is source_vertex else target,
+        lambda arrow: Mor(wrapped)(source if arrow.domain() is source_vertex else target,
+                                   source if arrow.codomain() is source_vertex else target).one()
+        if not arrow.word()
+        else first if arrow.word() == arrows[0].word() else second,
+    )
+
+    result = wrapped.Colimits(shape)(diagram)
+    presentation = wrapped.Colimits(shape).universal_data(diagram)
+    forget = wrapped.selected_functors()[0]
+    image = forget * diagram
+    base = sets.Colimits(shape).universal_data(image)
+    quotient = presentation.leg(target_vertex)
+    assert forget.on_object(result) is base.apex()
+    assert forget.on_morphism(quotient) is base.leg(target_vertex)
+
+    candidate_target = wrapped(two)
+    constant = wrapped.construct_morphism(target, candidate_target, Mor(sets)(two, two)(lambda _value: 1))
+    candidate = cocones(diagram)(
+        cocone(
+            diagram,
+            candidate_target,
+            lambda vertex: constant * first if vertex is source_vertex else constant,
+        )
+    )
+    mediator = presentation.lift(candidate)
+    assert mediator.domain() is result and mediator.codomain() is candidate_target
+    assert (mediator * quotient).underlying_map().apply(0) == 1
+    assert (mediator * quotient).underlying_map().apply(1) == 1
+
+
 test_poset_product_lifts_order_projections_and_mediator()
 test_lifted_limit_respects_nonidentity_diagram_arrows()
 test_created_pointed_product_retains_the_point_and_maps()
+test_lifted_coequalizer_retains_injection_and_universal_factor()

@@ -84,6 +84,10 @@ It has been violated in this exact form, so check for it:
 - a constructor that calls `ask(...)` on its defining equations: `EquifierCategory.__call__`, and everything built on it (`Monoids`, `Semirings`, `Rings`, modules, bimodules).
 - bypasses written to dodge that check, such as `certified_*` constructors or special cases for "canonical" structures. They exist only because construction checks, so the fix is at the constructor, never another bypass.
 - an acceptance, review or node waiting on a coherence run to finish in time.
+- the same check moved to call time: a wrapper that computes comparisons, transports or composites on
+  every call of an operation (`_operation_interchange_wrapper`, `9d6d8299`). The compiler checks
+  once, per compiled category, that the required comparison cells are declared with the right boundary;
+  computing them is a test.
 
 ## Sources of truth
 

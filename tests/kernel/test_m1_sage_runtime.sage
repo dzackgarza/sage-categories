@@ -58,7 +58,6 @@ class BaseCategory(_SyntheticCategoryOperations, Category):
         def preferred_object(self) -> CategoryOfCategories.ElementType:
             return BASE(0)
 
-        @_requires_interchange(lambda category: Fun(category, category).one())
         def interchange_identity(self) -> Self:
             return self
 
@@ -73,7 +72,6 @@ class BaseCategory(_SyntheticCategoryOperations, Category):
         def base_element(self) -> tuple[Self, Integer]:
             return self, self._base_element_state
 
-        @_requires_interchange(lambda category: Fun(category, category).one())
         def interchange_element_identity(self) -> Self:
             return self
 
@@ -85,12 +83,36 @@ class BaseCategory(_SyntheticCategoryOperations, Category):
         def base_morphism(self) -> tuple[Self, Integer]:
             return self, self._base_morphism_state
 
-        @_requires_interchange(lambda category: Fun(category, category).one())
         def interchange_morphism_identity(self) -> Self:
             return self
 
 
 BASE = BaseCategory()
+
+
+class InterchangeBaseCategory(_SyntheticCategoryOperations, Category):
+    """A synthetic owner whose operations explicitly require structural interchange."""
+
+    class ObjectType:
+        def __init__(self, label: Integer) -> None:
+            self._synthetic_label = label
+
+        @_requires_interchange(lambda category: Fun(category, category).one())
+        def interchange_identity(self) -> Self:
+            return self
+
+    class ElementType:
+        @_requires_interchange(lambda category: Fun(category, category).one())
+        def interchange_element_identity(self) -> Self:
+            return self
+
+    class MorphismType:
+        @_requires_interchange(lambda category: Fun(category, category).one())
+        def interchange_morphism_identity(self) -> Self:
+            return self
+
+
+INTERCHANGE_BASE = InterchangeBaseCategory()
 
 
 class LeftCategory(_SyntheticCategoryOperations, Category):
@@ -824,7 +846,7 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
             pass
 
         def structure_functors(self) -> tuple[Functor, ...]:
-            return (_synthetic_isofibration(self, BASE, lambda member: BASE(self._label(member))),)
+            return (_synthetic_isofibration(self, INTERCHANGE_BASE, lambda member: INTERCHANGE_BASE(self._label(member))),)
 
     left = ComparisonLeft()
 
@@ -842,11 +864,34 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
         def structure_functors(self) -> tuple[Functor, ...]:
             def on_object(member: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
                 transported.append(member)
-                return BASE(self._label(member) + 1)
+                return INTERCHANGE_BASE(self._label(member) + 1)
 
-            return (_synthetic_isofibration(self, BASE, on_object),)
+            return (_synthetic_isofibration(self, INTERCHANGE_BASE, on_object),)
 
     right = ComparisonRight()
+
+    class MissingComparisonDiamond(_SyntheticCategoryOperations, Category):
+        class ObjectType:
+            def __init__(self, label: Integer) -> None:
+                self._synthetic_label = label
+
+        class ElementType:
+            pass
+
+        class MorphismType:
+            pass
+
+        def structure_functors(self) -> tuple[Functor, ...]:
+            return (
+                _synthetic_isofibration(self, left, lambda member: left(self._label(member))),
+                _synthetic_isofibration(self, right, lambda member: right(self._label(member))),
+            )
+
+    with pytest.raises(
+        AssertionError,
+        match=r"InterchangeBaseCategory\.ObjectType\.interchange_identity requires interchange.*required boundary",
+    ):
+        MissingComparisonDiamond()
 
     class CoherentDiamond(_SyntheticCategoryOperations, Category):
         class ObjectType:
@@ -867,21 +912,24 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
             comparison = natural_isomorphism(
                 first,
                 second,
-                lambda member: Mor(BASE)(first.on_object(member), second.on_object(member))(),
-                lambda member: Mor(BASE)(second.on_object(member), first.on_object(member))(),
+                lambda member: Mor(INTERCHANGE_BASE)(first.on_object(member), second.on_object(member))(),
+                lambda member: Mor(INTERCHANGE_BASE)(second.on_object(member), first.on_object(member))(),
             )
             return (to_left, to_right)
 
     caplog.set_level(logging.DEBUG, logger="sage_categories.kernel.compiler")
     coherent = CoherentDiamond()
     member = coherent(4)
-    assert member.interchange_identity() is member
     identity = coherent.morphism_category(1)(member, member).one()
     element = coherent.element_from_defining_morphism(identity)
+    before_calls = len(transported)
+    assert member.interchange_identity() is member
     assert identity.interchange_morphism_identity() is identity
     assert element.interchange_element_identity() is element
+    assert len(transported) == before_calls
 
-    # The compiler, not an explicit later read of the natural transformation, executes
+    # Construction transport may consume comparison components for actual selected-image
+    # initialization.  Operation calls above do not recompute that coherence law.
     # the alternate route once and consumes the comparison component during construction.
     assert len(transported) == 3
     assert all(value is right(4) for value in transported)
@@ -890,8 +938,8 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
     second = right.selected_functors()[0] * to_right
     (comparison,) = retained_invertible_comparisons(first, second)
     component = comparison.component(member)
-    assert component.domain() is BASE(4)
-    assert component.codomain() is BASE(5)
+    assert component.domain() is INTERCHANGE_BASE(4)
+    assert component.codomain() is INTERCHANGE_BASE(5)
     assert component.domain() is not component.codomain()
     records = [
         record
@@ -919,8 +967,8 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
             natural_isomorphism(
                 first,
                 second,
-                lambda member: Mor(BASE)(first.on_object(member), first.on_object(member)).one(),
-                lambda member: Mor(BASE)(second.on_object(member), first.on_object(member))(),
+                lambda member: Mor(INTERCHANGE_BASE)(first.on_object(member), first.on_object(member)).one(),
+                lambda member: Mor(INTERCHANGE_BASE)(second.on_object(member), first.on_object(member))(),
             )
             return (to_left, to_right)
 
@@ -968,11 +1016,7 @@ def test_distinct_structures_sharing_a_target_keep_separate_images() -> None:
     assert first_calls == [member]
     assert second_calls == []
 
-    with pytest.raises(
-        AssertionError,
-        match=r"BaseCategory\.ObjectType\.interchange_identity requires interchange.*required boundary.*compatibility: functorial transport",
-    ):
-        member.interchange_identity()
+    assert member.interchange_identity() is member
     assert second_calls == []
 
     first_image = first.on_object(member)

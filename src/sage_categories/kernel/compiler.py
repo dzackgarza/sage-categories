@@ -5,7 +5,6 @@ from __future__ import annotations
 import inspect
 import logging
 from collections.abc import Callable, Iterator
-from functools import wraps
 from itertools import count, pairwise
 from types import FunctionType, GenericAlias, ModuleType
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple, cast
@@ -47,7 +46,6 @@ from sage_categories.kernel.roles import (
     ObjectOfCategory,
     Role,
     building_role_classes,
-    category_of,
     category_universal_class,
     declaration_role,
     declared_roles,
@@ -673,18 +671,10 @@ def _install_written_body(
     if Generic in local.__mro__:
         compiled.__class_getitem__ = classmethod(GenericAlias)
     for name, member in vars(local).items():
-        installed = member
-        if isinstance(member, FunctionType):
-            declaration = getattr(member, "_sage_categories_operation_interchange", None)
-            if declaration is not None and owner is not None:
-                existing = inspect.getattr_static(compiled, name, None)
-                if getattr(existing, "_sage_categories_interchange_original", None) is member:
-                    continue
-                installed = _operation_interchange_wrapper(member, owner, declaration)
-        if isinstance(installed, classmethod | staticmethod | FunctionType):
-            if inspect.getattr_static(compiled, name, None) is installed:
+        if isinstance(member, classmethod | staticmethod | FunctionType):
+            if inspect.getattr_static(compiled, name, None) is member:
                 continue
-            setattr(compiled, name, installed)
+            setattr(compiled, name, member)
 
 
 def install_on_declaration[**P, R](
@@ -1150,119 +1140,76 @@ def _required_comparison(
     )
 
 
-def _element_image(functor: Functor, element: CategoryPoint) -> CategoryPoint:
-    """The generalized-element image used by ordinary selected-functor transport."""
-    image_morphism = functor.on_morphism(element.defining_morphism())
-    return functor.codomain().element_from_defining_morphism(image_morphism)
+def _marked_interchange_operations(
+    target: Category,
+) -> tuple[tuple[FunctionType, _OperationInterchange], ...]:
+    """Marked operations declared directly on the roles of one structural target."""
+    found: list[tuple[FunctionType, _OperationInterchange]] = []
+    seen: set[int] = set()
+    for role in Role:
+        declaration = target.local_role_class(role)
+        for member in vars(declaration).values():
+            if not isinstance(member, FunctionType) or id(member) in seen:
+                continue
+            interchange = getattr(member, "_sage_categories_operation_interchange", None)
+            if interchange is None:
+                continue
+            seen.add(id(member))
+            found.append((member, interchange))
+    return tuple(found)
 
 
-def _validate_operation_interchange(
-    receiver: CategoryPoint,
-    owner: Node,
-    function: FunctionType,
-    declaration: _OperationInterchange,
-) -> None:
-    """Consume comparisons and executable argument/result transport for one marked operation."""
-    role = role_of(receiver)
-    assert role is not None, f"{receiver!r} has no owned role for interchange transport"
-    source = category_of(receiver, role)
-    target = owner.category
-    structural = _structural_paths(source)
-    paths = tuple(structural[target]) if target in structural else ()
-    if len(paths) < 2:
-        return
-    preferred = _composite_structural_path(paths[0])
-    operation = declaration.operation(target)
-    assert operation.domain() is target, (
-        f"{function.__module__}.{function.__qualname__} declares operation functor {operation!r} with domain {operation.domain()!r}, not its inherited owner {target!r}"
-    )
-    for alternate_path in paths[1:]:
-        alternate = _composite_structural_path(alternate_path)
-        if alternate is preferred:
+def _validate_category_interchange_boundaries(category: Category) -> None:
+    """Validate marked interchange declarations once for this compiled category.
+
+    Construction claims the corresponding coherence laws (D26).  Compilation therefore
+    checks only that the exact executable comparison cells required by a marked inherited
+    operation are retained with the declared boundaries.  Components, transports and
+    composites are mathematical computations exercised by tests, never operation-call
+    admission checks.
+    """
+    for target, paths in _structural_paths(category).items():
+        if len(paths) < 2:
             continue
-        comparison = _required_comparison(
-            preferred,
-            alternate,
-            source=source,
-            target=target,
-            operation=function,
-            compatibility=f"functorial transport through {operation!r}",
-        )
-        assert _comparison_component_reader is not None
-        match role:
-            case Role.OBJECT:
-                component = _comparison_component_reader(comparison, receiver)
-                preferred_argument = preferred.on_object(receiver)
-                alternate_argument = alternate.on_object(receiver)
-                assert component.domain() is preferred_argument and component.codomain() is alternate_argument, (
-                    f"{comparison!r} does not transport the affected argument of {function.__module__}.{function.__qualname__} from the preferred to alternate structural image"
+        marked = _marked_interchange_operations(target)
+        if not marked:
+            continue
+        preferred = _composite_structural_path(paths[0])
+        alternates = tuple(_composite_structural_path(path) for path in paths[1:])
+        for function, declaration in marked:
+            operation = declaration.operation(target)
+            assert operation.domain() is target, (
+                f"{function.__module__}.{function.__qualname__} declares operation functor {operation!r} "
+                f"with domain {operation.domain()!r}, not its inherited owner {target!r}"
+            )
+            for alternate in alternates:
+                if alternate is preferred:
+                    continue
+                _required_comparison(
+                    preferred,
+                    alternate,
+                    source=category,
+                    target=target,
+                    operation=function,
+                    compatibility=f"declared interchange for {operation!r}",
                 )
-                transported_result = operation.on_morphism(component)
-                preferred_result = operation.on_object(preferred_argument)
-                alternate_result = operation.on_object(alternate_argument)
-                assert transported_result.domain() is preferred_result and transported_result.codomain() is alternate_result, (
-                    f"{operation!r} does not transport the affected result of {function.__module__}.{function.__qualname__} along the retained structural comparison"
-                )
-            case Role.MORPHISM:
-                source_component = _comparison_component_reader(comparison, receiver.domain())
-                target_component = _comparison_component_reader(comparison, receiver.codomain())
-                preferred_argument = preferred.on_morphism(receiver)
-                alternate_argument = alternate.on_morphism(receiver)
-                transported_argument = target_component * preferred_argument * source_component.inverse()
-                assert transported_argument.domain() is alternate_argument.domain() and transported_argument.codomain() is alternate_argument.codomain(), (
-                    f"{comparison!r} does not conjugate the affected morphism argument of {function.__module__}.{function.__qualname__} to the alternate structural endpoints"
-                )
-                transported_result = operation.on_morphism(transported_argument)
-                preferred_result = operation.on_morphism(preferred_argument)
-                alternate_result = operation.on_morphism(alternate_argument)
-                assert transported_result.domain() is preferred_result.domain() and transported_result.codomain() is alternate_result.codomain(), (
-                    f"{operation!r} does not transport the affected morphism result of {function.__module__}.{function.__qualname__}"
-                )
-            case Role.ELEMENT:
-                parent = receiver.parent()
-                component = _comparison_component_reader(comparison, parent)
-                preferred_argument = _element_image(preferred, receiver)
-                alternate_argument = _element_image(alternate, receiver)
-                transported_argument = component * preferred_argument.defining_morphism()
-                assert transported_argument.codomain() is alternate_argument.parent(), (
-                    f"{comparison!r} does not postcompose the affected generalized-element argument of "
-                    f"{function.__module__}.{function.__qualname__} to the alternate structural parent"
-                )
-                preferred_result = _element_image(operation, preferred_argument)
-                alternate_result = _element_image(operation, alternate_argument)
-                transported_result = operation.on_morphism(transported_argument)
-                assert transported_result.codomain() is alternate_result.parent() and preferred_result.parent() is operation.on_object(preferred_argument.parent()), (
-                    f"{operation!r} does not transport the affected generalized-element result of {function.__module__}.{function.__qualname__}"
-                )
-
-    if declaration.compatibility is None:
-        return
-    first, second = declaration.compatibility(source, target)
-    _required_comparison(
-        first,
-        second,
-        source=first.domain(),
-        target=first.codomain(),
-        operation=function,
-        compatibility=f"one executable invertible comparison between {first!r} and {second!r}",
-    )
-
-
-def _operation_interchange_wrapper(
-    function: FunctionType,
-    owner: Node,
-    declaration: _OperationInterchange,
-) -> FunctionType:
-    """Wrap one marked declaration without changing its semantic owner."""
-
-    @wraps(function)
-    def wrapped(receiver, *args, **kwargs):
-        _validate_operation_interchange(receiver, owner, function, declaration)
-        return function(receiver, *args, **kwargs)
-
-    wrapped._sage_categories_interchange_original = function
-    wrapped._sage_categories_operation_interchange = declaration
-    return wrapped
+            if declaration.compatibility is None:
+                continue
+            first, second = declaration.compatibility(category, target)
+            assert first.domain() is second.domain() and first.codomain() is second.codomain(), (
+                f"{function.__module__}.{function.__qualname__} declares a nonparallel interchange compatibility boundary: "
+                f"{first!r} and {second!r}"
+            )
+            if first is second:
+                continue
+            _required_comparison(
+                first,
+                second,
+                source=first.domain(),
+                target=first.codomain(),
+                operation=function,
+                compatibility=f"one executable invertible comparison between {first!r} and {second!r}",
+            )
 
 
 def _unique_executable_comparison(first: Functor, second: Functor) -> MorphismOfCategory | None:
@@ -1801,6 +1748,7 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         assert open_codomain is None, f"{category!r} selects {functor!r} into {open_codomain}, which Cat declares and no implementation claims"
     assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), f"{category!r} selects one functor twice"
     _debug_unresolved_diamonds(category)
+    _validate_category_interchange_boundaries(category)
     for role in Role:
         declaring = node(category, role)
         if declaring.role is role:

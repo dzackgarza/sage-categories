@@ -98,6 +98,8 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ApexCategory",
+    "ColimitApexLift",
+    "ColimitMorphismLift",
     "ColimitsCategory",
     "CoproductsCategory",
     "LimitApexLift",
@@ -108,6 +110,7 @@ __all__ = [
     "cocone_apex",
     "cone",
     "cone_apex",
+    "lift_colimit",
     "lift_limit",
     "presenting_family",
     "vertex_of",
@@ -119,6 +122,15 @@ type Construction = Callable[[Functor], "CategoryOfCategories.ElementType"]
 
 type UniversalPresentation = LimitConesCategory.ObjectType
 type ColimitPreservationMediator = Callable[[UniversalPresentation, NaturalTransformation], MorphismCategory.ObjectType]
+type ColimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
+type ColimitMorphismLift = Callable[
+    [
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+    ],
+    MorphismCategory.ObjectType,
+]
 
 
 _COLIMIT_PRESERVATION: SelectedChoice[ColimitPreservationMediator] = SelectedChoice()
@@ -519,6 +531,54 @@ def lift_limit(
         return lifted_arrow(candidate_apex, apex, arrow)
 
     return family.with_universal_data(diagram, apex, limiting_cone, mediator)
+
+
+def lift_colimit(
+    functor: Functor,
+    diagram: Functor,
+    on_apex: ColimitApexLift,
+    on_morphism: ColimitMorphismLift,
+) -> CategoryOfCategories.ElementType:
+    """Lift a chosen colimit through a faithful functor using its structure data."""
+    assert functor in Fun.Faithful(), "colimit reconstruction requires a faithful functor"
+    source, target = functor.domain(), functor.codomain()
+    family = source.Colimits(diagram.domain())
+    diagram = family.lowered(diagram)
+    image_diagram = functor * diagram
+    image_family = target.Colimits(diagram.domain())
+    image_family(image_diagram)
+    presentation = image_family.universal_data(image_diagram)
+    apex = on_apex(diagram, presentation)
+    assert apex in source
+    assert functor.on_object(apex) is presentation.apex(), "the lifted apex must retain the ambient apex"
+
+    def lifted_arrow(
+        domain: CategoryOfCategories.ElementType,
+        codomain: CategoryOfCategories.ElementType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> MorphismCategory.ObjectType:
+        result = on_morphism(domain, codomain, arrow)
+        assert result in source.morphism_category(1)(domain, codomain)
+        assert ask(functor.on_morphism(result) == arrow) is True, "the lifted arrow must map to the ambient arrow"
+        return result
+
+    colimiting_cocone = cocone(
+        diagram,
+        apex,
+        lambda vertex: lifted_arrow(diagram.on_object(vertex), apex, presentation.leg(vertex)),
+    )
+
+    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+        candidate_apex = cocone_apex(candidate)
+        image_cocone = cocone(
+            image_diagram,
+            functor.on_object(candidate_apex),
+            lambda vertex: functor.on_morphism(candidate.component(vertex)),
+        )
+        arrow = presentation.lift(cocones(image_diagram)(image_cocone))
+        return lifted_arrow(apex, candidate_apex, arrow)
+
+    return family.with_universal_data(diagram, apex, colimiting_cocone, mediator)
 
 
 class LimitsCategory(ApexCategory):

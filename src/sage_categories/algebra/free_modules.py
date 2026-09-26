@@ -13,11 +13,12 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 
+from sage_categories.algebra._firewall import abelian as _backend
 from sage_categories.algebra.abelian import (
     AbelianGroups,
     AbelianTensor,
     abelian_homomorphism,
-    indexed_free_abelian_coproduct,
+    presented_abelian_group,
     simple_tensor,
 )
 from sage_categories.cat.category import CategoryOfCategories
@@ -166,8 +167,8 @@ def _binary_module_biproduct(
         result,
         cocone(module_diagram, result, lambda vertex: injections[module_shape.label(vertex)]),
         lambda candidate: copair(
-            candidate.leg(module_shape(0)),
-            candidate.leg(module_shape(1)),
+            candidate.component(module_shape(0)),
+            candidate.component(module_shape(1)),
         ),
     )
     return result, injections, projections, pair, copair
@@ -222,8 +223,7 @@ def _zero_module_morphism(
 
 def _zero_module(modules: ModuleCategory) -> ModuleCategory.ObjectType:
     """The zero ordinary module as the empty direct sum of regular modules."""
-    empty = Sets(())
-    carrier = indexed_free_abelian_coproduct(empty)
+    carrier = presented_abelian_group(_backend.finite_free_engine(0))
     action = modules.actegory().action()
     action_source = action.on_object(action.domain()((modules.carrier(), carrier)))
     zero_action = modules.underlying_category().zero_morphism(action_source, carrier)
@@ -287,7 +287,7 @@ def _new_finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategor
         family,
         stage.module,
         cocone(family, stage.module, lambda vertex: stage.injections[int(vertex.point().datum())]),
-        lambda candidate: stage.copair(tuple(candidate.leg(vertex) for vertex in vertices)),
+        lambda candidate: stage.copair(tuple(candidate.component(vertex) for vertex in vertices)),
     )
     _FINITE_FREE_FAMILIES.select(modules, (stage.module,), family)
     return stage.module

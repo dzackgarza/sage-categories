@@ -12,8 +12,9 @@ from sage_categories.algebra.presented_modules import (
     presented_module_zero,
     relation_matrix_morphism,
 )
-from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.category import Cat, CategoryOfCategories
 from sage_categories.cat.cones import LimitConesCategory
+from sage_categories.cat.constructions import ColimitApexLift, ColimitMorphismLift
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.morphisms import MorphismCategory
@@ -29,6 +30,10 @@ def presentation_types(
     assert_type(relation_matrix_morphism(modules, matrix), MorphismCategory.ObjectType)
     module = finitely_presented_module(modules, matrix)
     assert_type(module, ModuleCategory.ObjectType)
+    assert_type(
+        modules.forgetful().colimit_lifting(Cat().WalkingParallelPair()),
+        tuple[ColimitApexLift, ColimitMorphismLift] | None,
+    )
     assert_type(presented_module_diagram(modules, module), Functor)
     assert_type(presented_module_presentation(modules, module), LimitConesCategory.ObjectType)
     assert_type(presented_module_relation(modules, module), MorphismCategory.ObjectType)

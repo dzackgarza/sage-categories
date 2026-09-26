@@ -16,18 +16,14 @@ and universal mediator.
 from __future__ import annotations
 
 from sage_categories.algebra._firewall.abelian import colift_along_epimorphism
-from sage_categories.algebra.abelian import (
-    AbelianGroups,
-    coequalizer_mediator,
-    coequalizer_projection,
-)
+from sage_categories.algebra.abelian import AbelianGroups
 from sage_categories.algebra.free_modules import (
     finite_free_matrix_morphism,
     finite_free_module,
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone
+from sage_categories.cat.cones import LimitConesCategory
 from sage_categories.cat.functors import Cat, Functor
 from sage_categories.cat.limit_basis import coequalizer_factor, parallel_pair
 from sage_categories.cat.modules import ModuleCategory
@@ -108,10 +104,29 @@ def _new_presented_module(
 ) -> ModuleCategory.ObjectType:
     """Construct and retain the module coequalizer of ``relation`` and ``zero``."""
     assert relation.domain() is zero.domain() and relation.codomain() is zero.codomain()
+    shape = Cat().WalkingParallelPair()
     forgetful = modules.forgetful()
-    additive_relation = forgetful.on_morphism(relation)
-    additive_zero = forgetful.on_morphism(zero)
-    additive_projection = coequalizer_projection(additive_relation, additive_zero)
+    if forgetful.colimit_lifting(shape) is None:
+        forgetful.with_colimit_lifting(
+            shape,
+            lambda diagram, presentation: _coequalizer_apex(modules, diagram, presentation),
+            modules.homomorphism,
+        )
+    diagram = parallel_pair(relation, zero)
+    result = modules.Colimits(shape)(diagram)
+    assert result in modules
+    return result
+
+
+def _coequalizer_apex(
+    modules: ModuleCategory,
+    diagram: Functor,
+    presentation: LimitConesCategory.ObjectType,
+) -> ModuleCategory.ObjectType:
+    """Lift the additive coequalizer apex by descending the scalar action."""
+    target_vertex = Cat().WalkingParallelPair()(1)
+    target_module = diagram.on_object(target_vertex)
+    additive_projection = presentation.leg(target_vertex)
 
     scalar = modules.carrier()
     abelian = AbelianGroups()
@@ -120,41 +135,9 @@ def _new_presented_module(
     tensorized_projection = tensor_morphism(action, scalar_identity, additive_projection)
     descended_action: ModuleMap = colift_along_epimorphism(
         tensorized_projection,
-        additive_projection * relation.codomain().action(),
+        additive_projection * target_module.action(),
     )
-    quotient: ModuleCategory.ObjectType = modules(descended_action)
-    projection = modules.homomorphism(relation.codomain(), quotient, additive_projection)
-
-    diagram = parallel_pair(relation, zero)
-    shape = Cat().WalkingParallelPair()
-    source_vertex, target_vertex = shape(0), shape(1)
-    assert ask(projection * relation == projection * zero) is True
-
-    def selected_leg(vertex: CategoryOfCategories.ElementType) -> ModuleMap:
-        match vertex is source_vertex:
-            case True:
-                return projection * relation
-            case False:
-                return projection
-
-    selected = cocone(diagram, quotient, selected_leg)
-
-    def mediator(candidate: ConeCategory.ObjectType) -> ModuleMap:
-        arrow = candidate.leg(target_vertex)
-        additive = coequalizer_mediator(
-            additive_projection,
-            forgetful.on_morphism(arrow),
-        )
-        return modules.homomorphism(quotient, candidate.apex(), additive)
-
-    retained = modules.Colimits(shape).with_universal_data(
-        diagram,
-        quotient,
-        selected,
-        mediator,
-    )
-    assert retained is quotient
-    return quotient
+    return modules(descended_action)
 
 
 def finitely_presented_module(

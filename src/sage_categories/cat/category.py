@@ -42,6 +42,8 @@ from sage_categories.kernel.type_aliases import ContainmentInput, EqualityInput
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.constructions import (
+        ColimitApexLift,
+        ColimitMorphismLift,
         ColimitPreservationMediator,
         LimitApexLift,
         LimitMorphismLift,
@@ -1030,6 +1032,13 @@ class CategoryDeclaration[
         """Use this category's retained construction, then derive general colimits from coproducts and coequalizers."""
         if shape in self._colimit_constructors:
             return self._colimit_constructors[shape]
+        for functor in self.selected_functors():
+            lifting = functor.colimit_lifting(shape)
+            if lifting is not None:
+                apex_lift, morphism_lift = lifting
+                from sage_categories.cat.constructions import lift_colimit
+
+                return lambda diagram: lift_colimit(functor, diagram, apex_lift, morphism_lift)
         if not shape.is_discrete() and shape is not Cat().WalkingParallelPair() and shape.op() is not Cat().WalkingParallelPair():
             from sage_categories.cat.limit_basis import (
                 colimit_from_coproducts_coequalizers,
@@ -1757,6 +1766,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __init__(self, data: FunctorData | _StructuralFunctorData) -> None:
             self._functor_data = data
             self._limit_liftings: MonoDict = MonoDict()
+            self._colimit_liftings: MonoDict = MonoDict()
             self._composition_action_images: MonoDict = MonoDict()
             self._cartesian_lift_rule = None
             self._cocartesian_lift_rule = None
@@ -2104,6 +2114,22 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._limit_liftings[shape] = (on_apex, on_morphism)
             return self
 
+        def with_colimit_lifting(
+            self,
+            shape: Category | Functor,
+            on_apex: ColimitApexLift,
+            on_morphism: ColimitMorphismLift,
+        ) -> Functor:
+            """Choose exact colimit lifts along this faithful functor."""
+            Fun = _functors()
+            Discrete = _discrete_shape_family()
+
+            assert self in Fun.Faithful(), "colimit reconstruction requires a faithful functor"
+            assert shape in Cat() or shape is Discrete, "supply a shape or the discrete shape family"
+            assert shape not in self._colimit_liftings, "this shape already has chosen colimit lifts"
+            self._colimit_liftings[shape] = (on_apex, on_morphism)
+            return self
+
         def retain_colimit_preservation(
             self,
             shape: Category,
@@ -2131,6 +2157,16 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 return self._limit_liftings[shape]
             if Discrete in self._limit_liftings and shape.is_discrete():
                 return self._limit_liftings[Discrete]
+            return None
+
+        def colimit_lifting(self, shape: Category) -> tuple[ColimitApexLift, ColimitMorphismLift] | None:
+            """Return the chosen colimit lifts for this shape or the discrete shape family."""
+            Discrete = _discrete_shape_family()
+
+            if shape in self._colimit_liftings:
+                return self._colimit_liftings[shape]
+            if Discrete in self._colimit_liftings and shape.is_discrete():
+                return self._colimit_liftings[Discrete]
             return None
 
         # A functor is a morphism of ``Cat()``, so ``retain_factors`` and ``factors``

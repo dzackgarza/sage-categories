@@ -99,8 +99,11 @@ class ApexCategory[
 
 type LimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
 type LimitMorphismLift = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType], MorphismCategory.ObjectType]
+type ColimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
+type ColimitMorphismLift = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType], MorphismCategory.ObjectType]
 
 def lift_limit(functor: Functor, diagram: Functor, on_apex: LimitApexLift, on_morphism: LimitMorphismLift) -> CategoryOfCategories.ElementType: ...
+def lift_colimit(functor: Functor, diagram: Functor, on_apex: ColimitApexLift, on_morphism: ColimitMorphismLift) -> CategoryOfCategories.ElementType: ...
 
 class _StaticRoles_LimitsCategory(_StaticRoles_ApexCategory):
     class ObjectType(sage_categories.cat.category.CategoryDeclaration): ...

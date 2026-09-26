@@ -35,8 +35,12 @@ from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCat
 from sage_categories.geometry.sheaves import (
     RingPresheaf,
     RingSheaf,
-    ring_presheaf_from_functor,
-    ring_sheaf,
+)
+from sage_categories.geometry.sheaves import (
+    ring_presheaf_from_functor as _ring_presheaf_from_functor,
+)
+from sage_categories.geometry.sheaves import (
+    ring_sheaf as _ring_sheaf,
 )
 from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 
@@ -482,7 +486,7 @@ def affine_structure_sheaf(
         return key
 
     functor = Fun(opens.op(), rings)(on_object, on_morphism)
-    presheaf = ring_presheaf_from_functor(
+    presheaf = _ring_presheaf_from_functor(
         affine_topological_space(scheme),
         opens,
         functor,
@@ -653,7 +657,7 @@ def affine_ring_sheaf(
         _AFFINE_RING_SHEAVES(
             AffineSchemes(),
             (scheme,),
-            lambda: ring_sheaf(presheaf),
+            lambda: _ring_sheaf(presheaf),
         ),
     )
 

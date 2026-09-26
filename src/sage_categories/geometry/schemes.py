@@ -51,8 +51,6 @@ from sage_categories.geometry.locally_ringed_spaces import (
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
 from sage_categories.geometry.sheaves import (
     RingSheaf,
-    ring_presheaf_from_functor,
-    ring_sheaf,
 )
 from sage_categories.geometry.sheaves import (
     descent_chart_comparison as _descent_chart_comparison,
@@ -71,6 +69,12 @@ from sage_categories.geometry.sheaves import (
 )
 from sage_categories.geometry.sheaves import (
     descent_section_ring as _descent_section_ring,
+)
+from sage_categories.geometry.sheaves import (
+    ring_presheaf_from_functor as _ring_presheaf_from_functor,
+)
+from sage_categories.geometry.sheaves import (
+    ring_sheaf as _ring_sheaf,
 )
 from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 
@@ -565,14 +569,14 @@ def _finite_glued_structure_sheaf(
             return smaller.restriction_to(larger)
 
         functor = Fun(opens.op(), _rings())(on_object, on_morphism)
-        presheaf = ring_presheaf_from_functor(
+        presheaf = _ring_presheaf_from_functor(
             _finite_glued_topological_space(presentation),
             opens,
             functor,
             lambda key: key,
             lambda open_object: open_object,
         )
-        return ring_sheaf(presheaf)
+        return _ring_sheaf(presheaf)
 
     return cast(
         RingSheaf[SchemeOpenCategory.ObjectType],

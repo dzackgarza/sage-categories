@@ -37,6 +37,23 @@ Hand-rolling mathematical algorithms outside `Cat` is prohibited.
 Hand-rolled implementations inside `Cat` are equally prohibited when external packages handle the required categorical computations.
 Write new mathematical implementations only when verified evidence proves that no external dependency satisfies the requirement.
 
+### Construction claims the laws; computing them is a test
+
+Sage is a computer algebra system, not a theorem prover.
+Writing a construction *claims* its laws: associativity, units, distributivity, commutativity, naturality, pentagon, triangle.
+No constructor computes those laws to admit a value.
+Computing them is how a test checks that a construction is correct; it is never a gate on the construction.
+An internal method that computes a law is fine when some operation needs the result, but it never runs as a condition of existing.
+A slow coherence computation is a slow test. It is not an unfinished construction, and it blocks no node and no acceptance.
+This is D26. The repository owner has had to restate it repeatedly, which is why it lives here.
+
+It has been violated in this exact form, so check for it:
+- spec text saying a constructor "decides", "checks" or "verifies" a law before admitting a value.
+  `27b3e507` invented one in `functor.md`, and it drove the code below. Such text is agent-invented and wrong: remove it, don't follow it.
+- a constructor that calls `ask(...)` on its defining equations: `EquifierCategory.__call__`, and everything built on it (`Monoids`, `Semirings`, `Rings`, modules, bimodules).
+- bypasses written to dodge that check, such as `certified_*` constructors or special cases for "canonical" structures. They exist only because construction checks, so the fix is at the constructor, never another bypass.
+- an acceptance, review or node waiting on a coherence run to finish in time.
+
 ## Sources of truth
 
 Each fact has one authoritative home:

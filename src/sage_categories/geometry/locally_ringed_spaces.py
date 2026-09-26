@@ -16,7 +16,8 @@ from sage_categories.geometry._ring_categories import commutative_rings as _ring
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
 from sage_categories.geometry.sheaves import RingSheaf
 from sage_categories.geometry.spaces import TopologicalSpacesCategory
-from sage_categories.geometry.stalks import ring_stalk, ringed_stalk_map
+from sage_categories.geometry.stalks import ring_stalk as _ring_stalk
+from sage_categories.geometry.stalks import ringed_stalk_map as _ringed_stalk_map
 
 __all__ = ["LocallyRingedSpaces", "LocallyRingedSpacesCategory"]
 
@@ -133,7 +134,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
     ) -> LocallyRingedSpacesCategory.ObjectType[OpenKey]:
         return self.with_stalks(
             ringed_space,
-            lambda point: ring_stalk(ringed_space.sheaf(), point),
+            lambda point: _ring_stalk(ringed_space.sheaf(), point),
             local_ring_rule,
         )
 
@@ -158,7 +159,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
             source,
             target,
             ringed_map,
-            lambda point: ringed_stalk_map(ringed_map, point),
+            lambda point: _ringed_stalk_map(ringed_map, point),
             local_map_rule,
         )
 

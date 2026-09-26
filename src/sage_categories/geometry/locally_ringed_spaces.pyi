@@ -26,8 +26,6 @@ from sage_categories.geometry.sheaves import RingSheaf as RingSheaf
 from sage_categories.geometry.spaces import (
     TopologicalSpacesCategory as TopologicalSpacesCategory,
 )
-from sage_categories.geometry.stalks import ring_stalk as ring_stalk
-from sage_categories.geometry.stalks import ringed_stalk_map as ringed_stalk_map
 
 __all__ = ["LocallyRingedSpaces", "LocallyRingedSpacesCategory"]
 type LocalRingRule = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType], Proposition]

@@ -1655,3 +1655,16 @@ The live issue DAG therefore remains valid after remediation closure and can con
 Owner: [Workflow](../AGENTS.md), [runtime support](../pyproject.toml), the topic specifications, and `PLAN-native-engine-remediation` for its completed remediation scope.
 
 Source: repository-owner consolidation instruction on 2026-09-16, including the explicit direction to align the repository with current Sage/Python versions rather than retain older-version compatibility machinery; reconciled with D180's existing one-owner-per-fact rule and the public Sage/Python release state on that date.
+
+### D190
+
+Constructing a value in a law subcategory asserts its laws; it does not compute them.
+`Equifier` construction, and every constructor built on it (`Monoids`, `Semirings`, `Rings`, modules, bimodules, monoidal structures), places the supplied data in the law subcategory without evaluating the equations.
+Associativity, unit, distributivity, pentagon and triangle computations are tests of a construction's correctness: they stay available as explicit checks for tests and debugging, and are never run to admit a value.
+A slow coherence computation is therefore a slow test, not an unfinished construction, and it gates no construction or acceptance by its runtime.
+Per-call bypasses of construction-time checking (`certified_*` constructors, special cases for canonical structures) become unnecessary once construction does not check.
+This applies D26; the earlier `functor.md` sentence "Its constructor decides that equation before admitting a value" contradicted it and is replaced.
+
+Owner: [Functor calculus](functor.md#universal-calculus) and [magmas, monoids and semirings](magmas-monoids-semirings.md).
+
+Source: repository-owner correction on 2026-09-26: "Sage is not a theorem prover. It is a CAS. If you write the code, you are *claiming* coherence … Coherence computations are TESTS that your constructions are correct, not gates on the constructions themselves."

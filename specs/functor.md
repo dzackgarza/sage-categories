@@ -1322,7 +1322,7 @@ Their pullback presentations retain the universal maps separately from that prim
 `Inserter(F, G)` takes parallel functors.
 Its objects are pairs `(X, a: F(X) -> G(X))`. Its morphisms are single arrows `f: X -> Y` satisfying `G(f) a = b F(f)`. It is the pullback of the comma category's pair projection along the diagonal on the common domain.
 `Equifier(alpha, beta)` is the full subcategory where the two components agree.
-Its constructor decides that equation before admitting a value.
+Constructing a value in it asserts that equation (D26, D190): the constructor places the value and does not evaluate the components. Comparing them is a test of the construction, available to tests and explicit checks, never a gate inside construction.
 
 `Algebras(T)` is `Inserter(T, Id)`. `Magmas(tensor)` applies this construction to `X |-> X tensor X`. `PointedMagmas(tensor, I)` adds a map `I -> X` by another inserter.
 `Monoids(C)` imposes the unit and associativity equations for the chosen cartesian tensor by equifiers.

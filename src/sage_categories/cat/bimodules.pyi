@@ -209,7 +209,18 @@ class BimoduleCategory[
     @cached_method
     def to_right(self) -> Functor: ...
     @cached_method
-    def forgetful(self) -> Functor: ...
+    def forgetful(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        BaseCategory,
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+    ]: ...
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def __call__(self, left_action: MorphismCategory.ObjectType, right_action: MorphismCategory.ObjectType) -> BimoduleCategory.ObjectType: ...
     def homomorphism(self, source: BimoduleCategory.ObjectType, target: BimoduleCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> BimoduleCategory.MorphismType: ...

@@ -1317,3 +1317,24 @@ def test_generated_module_projection_keeps_the_monoidal_tensor_owner() -> None:
     assert "from sage_categories.cat.monoidal import" in modules
     assert "tensor_morphism as tensor_morphism" in modules
     assert "from sage_categories.engines.presented_modules import tensor_morphism" not in modules
+
+
+def test_generated_algebraic_forgetful_functors_keep_exact_category_endpoints() -> None:
+    root = Path(__file__).parents[2] / "src/sage_categories/cat"
+    modules = (root / "modules.pyi").read_text()
+    bimodules = (root / "bimodules.pyi").read_text()
+
+    assert (
+        "def forgetful(\n"
+        "        self,\n"
+        "    ) -> CategoryOfCategories.MorphismType[\n"
+        "        ModuleCategory[Scalar, ActingCategory, ActedCategory],\n"
+        "        ActedCategory,"
+    ) in modules
+    assert (
+        "def forgetful(\n"
+        "        self,\n"
+        "    ) -> CategoryOfCategories.MorphismType[\n"
+        "        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],\n"
+        "        BaseCategory,"
+    ) in bimodules

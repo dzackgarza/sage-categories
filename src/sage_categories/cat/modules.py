@@ -114,7 +114,16 @@ class ModuleCategory[
         return _underlying_object(self._scalars)
 
     @cached_method
-    def forgetful(self) -> Functor:
+    def forgetful(self) -> CategoryOfCategories.MorphismType[
+        ModuleCategory[Scalar, ActingCategory, ActedCategory],
+        ActedCategory,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+    ]:
         """``U_A: Modules(A, C) -> C``, retained from the defining inserter and equifiers."""
         unital = self.ambient()
         assert unital.ambient() is self._algebras

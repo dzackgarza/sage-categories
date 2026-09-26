@@ -1179,8 +1179,7 @@ def _validate_category_interchange_boundaries(category: Category) -> None:
         for function, declaration in marked:
             operation = declaration.operation(target)
             assert operation.domain() is target, (
-                f"{function.__module__}.{function.__qualname__} declares operation functor {operation!r} "
-                f"with domain {operation.domain()!r}, not its inherited owner {target!r}"
+                f"{function.__module__}.{function.__qualname__} declares operation functor {operation!r} with domain {operation.domain()!r}, not its inherited owner {target!r}"
             )
             for alternate in alternates:
                 if alternate is preferred:
@@ -1197,8 +1196,7 @@ def _validate_category_interchange_boundaries(category: Category) -> None:
                 continue
             first, second = declaration.compatibility(category, target)
             assert first.domain() is second.domain() and first.codomain() is second.codomain(), (
-                f"{function.__module__}.{function.__qualname__} declares a nonparallel interchange compatibility boundary: "
-                f"{first!r} and {second!r}"
+                f"{function.__module__}.{function.__qualname__} declares a nonparallel interchange compatibility boundary: {first!r} and {second!r}"
             )
             if first is second:
                 continue

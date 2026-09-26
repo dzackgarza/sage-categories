@@ -23,12 +23,14 @@ from sage_categories.cat.weighted import (
     restricted_yoneda,
     separating_evaluation,
     separating_evaluation_injection,
+    weighted_limit_map,
 )
 
 
 def weighted_calculus_types(
     test: Functor,
     hom: Functor,
+    transformation: NaturalTransformation,
     value: CategoryOfCategories.ElementType,
     probe_point: CategoryOfCategories.ElementType,
     hom_point: CategoryOfCategories.ElementType,
@@ -38,6 +40,7 @@ def weighted_calculus_types(
     assert_type(restricted_yoneda(test, hom), Functor)
     assert_type(public_restricted_yoneda(test, hom), Functor)
     assert_type(test.restricted_yoneda(hom), Functor)
+    assert_type(weighted_limit_map(test, transformation), MorphismCategory.ObjectType)
     assert_type(separating_evaluation(test, hom), NaturalTransformation)
     assert_type(public_separating_evaluation(test, hom), NaturalTransformation)
     assert_type(test.separating_evaluation(hom), NaturalTransformation)

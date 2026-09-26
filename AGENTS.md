@@ -341,6 +341,13 @@ The infinite and nonenumerable obligations are at their
 ## Review and acceptance
 
 A complete implementation unit receives independent review at a fixed committed revision.
+"Independent" means only that the agent who wrote the implementation does not review it.
+The review is an ordinary ready task in the DAG. Any other agent that picks it up is the independent reviewer:
+the next chat of this workstream after a replacement or compaction, a worker, or an agent from another session.
+No sub-agent, spawn, slot or special reviewer is required.
+A reviewer being "unavailable" is therefore never a blocker to record. The implementer moves on to other ready work,
+and the review is done by the next agent to reach it. This was misread once: from 2026-09-21 to 09-26,
+core-algebraic-calculus waited on a spawned reviewer while its chat wrote a dozen "review blocker" docs.
 Use `r-gate` for the owned acceptance boundary. Archived R0–R6 and P1–P7 phase
 procedures preserve historical evidence; they do not reinstate the superseded
 execution order or require recreating those phases for the active A/B DAG.

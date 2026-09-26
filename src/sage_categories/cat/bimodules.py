@@ -636,6 +636,10 @@ class BimoduleCategory[
         """Retain exactly the ordered left- and right-module projections."""
         return (self.to_left(), self.to_right())
 
+    def construction_owner(self) -> Category:
+        """Bimodule structure is constructed from its two action morphisms here."""
+        return self
+
     def __call__(
         self,
         left_action: MorphismCategory.ObjectType,

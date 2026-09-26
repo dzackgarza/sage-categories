@@ -342,6 +342,10 @@ class MonoidCategory(EquifierCategory):
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
         return self._monoidal
 
+    def construction_owner(self) -> Category:
+        """Monoid structure is constructed from its operation and unit here."""
+        return self
+
     def _group(self, monoid: MonoidCategory.ObjectType) -> Proposition:
         """The shear map ``⟨π_0, μ⟩: X × X -> X × X`` is an isomorphism (``specs/magmas-monoids-semirings.md``, "Groups").
 
@@ -962,6 +966,10 @@ class SemiringCategory(EquifierCategory):
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
         return self._monoidal
 
+    def construction_owner(self) -> Category:
+        """Semiring structure is constructed from its four structure morphisms here."""
+        return self
+
     @cached_method
     def to_additive(self) -> Functor:
         """The retained leg to ``AdditiveMonoids(C_x).Commutative()``."""
@@ -1165,6 +1173,10 @@ class RingCategory(LimitSubcategory):
 
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
         return self._monoidal
+
+    def construction_owner(self) -> Category:
+        """Ring structure is constructed from its four structure morphisms here."""
+        return self
 
     @cached_method
     def to_semiring(self) -> Functor:

@@ -159,6 +159,10 @@ class ModuleCategory[
         """``U_A`` is the sole immediate structure functor of ``Modules(A, C)``."""
         return (self.forgetful(),)
 
+    def construction_owner(self) -> Category:
+        """Module structure is constructed from its action morphism here."""
+        return self
+
     def __call__(self, action_morphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
         """The module with action ``ρ_X: A • X -> X``; its codomain is ``X``."""
         algebra = self._algebras.algebra(action_morphism.codomain(), action_morphism)

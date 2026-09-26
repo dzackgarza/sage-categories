@@ -737,6 +737,20 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
     def narrowing_roots(self) -> tuple[Category, ...]:
         return self._roots
 
+    def construction_owner(self) -> Category:
+        """The constructor owner inherited from this narrowing's roots (D150)."""
+        ambient_owner = self._ambient.construction_owner()
+        root_owners: list[Category] = []
+        for root in self._roots:
+            owner = root.construction_owner()
+            if owner is ambient_owner or any(owner is known for known in root_owners):
+                continue
+            root_owners.append(owner)
+        if not root_owners:
+            return ambient_owner
+        assert len(root_owners) == 1, f"{self!r} inherits incompatible constructor owners {tuple(map(repr, root_owners))!r}"
+        return root_owners[0]
+
     def predicate(self) -> Predicate:
         """The predicate of the one root property this narrowing restricts (``D.P()``)."""
         (root,) = self._roots
@@ -805,7 +819,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         """
         constructing = tuple(root for root in self._roots if root._constructs_from_diagrams)
         if not constructing:
-            constructed = self._ambient(*construction_data, **keywords)
+            constructed = self.construction_owner()(*construction_data, **keywords)
             refine(constructed, self)
             return constructed
         (root,) = constructing

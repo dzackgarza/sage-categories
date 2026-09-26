@@ -22,7 +22,7 @@ def _finite_relation(
     relation_object: Any,
 ) -> tuple[tuple[Hashable, ...], frozenset[tuple[Hashable, Hashable]]] | None:
     """Lower an exact finite owned relation to data understood by the Sage adapter."""
-    carrier_points = Sets.finite_points(relation_object.carrier())
+    carrier_points = Sets.finite_points(relation_object._carrier)
     relation_points = Sets.finite_points(relation_object.relation().arrow().domain())
     if carrier_points is Unknown or relation_points is Unknown:
         return None
@@ -66,7 +66,7 @@ def order_preserving(
     if lowered is None:
         return None
     _, source_pairs = lowered
-    source_carrier = source.carrier()
+    source_carrier = source._carrier
     undecided = False
     for first_datum, second_datum in source_pairs:
         first_image = underlying(source_carrier.point(first_datum))

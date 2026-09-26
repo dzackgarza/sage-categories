@@ -47,10 +47,11 @@ def test_finite_total_orders_are_the_finite_narrowing() -> None:
 def test_finite_iteration_returns_elements_of_the_original_poset() -> None:
     chain = _chain(4)
     finite = FinitePosets()
+    underlying = Posets().to_sets()
     assert chain in finite
     projection = finite.target_projection()
     assert projection.codomain() is Sets.Finite()
-    assert projection.on_object(chain) is chain.carrier()
+    assert projection.on_object(chain) is underlying.on_object(chain)
     points = tuple(chain)
     assert tuple(point.datum() for point in points) == (0, 1, 2, 3)
     assert all(point.parent() is chain for point in points)
@@ -58,14 +59,16 @@ def test_finite_iteration_returns_elements_of_the_original_poset() -> None:
 
 def test_monotonicity_is_a_proposition_on_an_owned_set_morphism() -> None:
     source, target = _chain(3), _chain(2)
-    underlying = Mor(Sets)(source.carrier(), target.carrier())(lambda value: min(value, 1))
+    projection = Posets().to_sets()
+    source_set, target_set = projection.on_object(source), projection.on_object(target)
+    underlying = Mor(Sets)(source_set, target_set)(lambda value: min(value, 1))
     assert ask(order_preserving(source, target, underlying)) is True
     monotone = Mor(Posets())(source, target)(underlying)
-    assert monotone.underlying_map() is underlying
+    assert projection.on_morphism(monotone) is underlying
 
-    reversing = Mor(Sets)(target.carrier(), target.carrier())(lambda value: 1 - value)
+    reversing = Mor(Sets)(target_set, target_set)(lambda value: 1 - value)
     assert ask(order_preserving(target, target, reversing)) is False
-    assert reversing in Mor(Sets)(target.carrier(), target.carrier())
+    assert reversing in Mor(Sets)(target_set, target_set)
     with pytest.raises(AssertionError):
         Mor(Posets())(target, target)(reversing)
 

@@ -55,7 +55,8 @@ def test_linear_extension_uses_the_exact_carrier_and_extends_the_order() -> None
     extension = poset.linear_extension()
 
     assert extension in FiniteTotallyOrderedSets()
-    assert extension.carrier() is poset.carrier()
+    projection = Posets().to_sets()
+    assert projection.on_object(extension) is projection.on_object(poset)
     for lower in poset:
         for upper in poset:
             if ask(lower <= upper) is True:

@@ -56,14 +56,16 @@ def test_total_order_refines_a_poset() -> None:
 def test_monotone_maps_and_reversing_rejection() -> None:
     source = Posets()(_chain_relation(3))
     target = Posets()(_chain_relation(2))
-    underlying = Mor(Sets)(source.carrier(), target.carrier())(lambda n: min(n, 1))
+    projection = Posets().to_sets()
+    source_set, target_set = projection.on_object(source), projection.on_object(target)
+    underlying = Mor(Sets)(source_set, target_set)(lambda n: min(n, 1))
     monotone = Mor(Posets())(source, target)(underlying)
     image = monotone(source.point(2))
     assert image.parent() is target
     assert image.datum() == 1
     assert monotone(source.point(0)).datum() == 0
 
-    reversing = Mor(Sets)(target.carrier(), target.carrier())(lambda n: 1 - n)
+    reversing = Mor(Sets)(target_set, target_set)(lambda n: 1 - n)
     with pytest.raises(AssertionError):
         Mor(Posets())(target, target)(reversing)
 
@@ -78,7 +80,6 @@ def test_product_of_two_chains_carries_the_componentwise_order() -> None:
     projection = BinaryRelations().to_sets()
     image_diagram = projection * product.product_factors()
     selected = Sets.Limits(image_diagram.domain()).universal_data(image_diagram)
-    assert product.carrier() is selected.apex()
     assert projection.on_object(product) is selected.apex()
 
     # ``(0, 1)`` and ``(1, 0)`` disagree in both coordinates, so neither compares.
@@ -103,8 +104,10 @@ def test_competing_cone_over_the_product_has_the_monotone_mediator() -> None:
     """The universal property of the lifted product, against a cone whose legs differ."""
     two, three = Posets()(_chain_relation(2)), Posets()(_chain_relation(3))
     product = Posets().Products()(two, two)
-    lower = Mor(Posets())(three, two)(Mor(Sets)(three.carrier(), two.carrier())(lambda n: min(n, 1)))
-    upper = Mor(Posets())(three, two)(Mor(Sets)(three.carrier(), two.carrier())(lambda n: int(n >= 2)))
+    projection = Posets().to_sets()
+    three_set, two_set = projection.on_object(three), projection.on_object(two)
+    lower = Mor(Posets())(three, two)(Mor(Sets)(three_set, two_set)(lambda n: min(n, 1)))
+    upper = Mor(Posets())(three, two)(Mor(Sets)(three_set, two_set)(lambda n: int(n >= 2)))
 
     factors = product.product_factors()
     shape = factors.domain()
@@ -121,16 +124,18 @@ def test_competing_cone_over_the_product_has_the_monotone_mediator() -> None:
 def test_transport_along_a_bijection_lifts_it_to_an_isomorphism() -> None:
     """The isofibration lift: a bijection of carriers carries the order to its image (D183)."""
     chain = Posets()(_chain_relation(3))
+    projection = Posets().to_sets()
+    carrier = projection.on_object(chain)
     cycle = {0: 2, 1: 0, 2: 1}
-    bijection = Mor(Sets)(chain.carrier(), chain.carrier())(lambda n: cycle[n])
+    bijection = Mor(Sets)(carrier, carrier)(lambda n: cycle[n])
     inverse_cycle = {value: key for key, value in cycle.items()}
-    inverse = Mor(Sets)(chain.carrier(), chain.carrier())(lambda n: inverse_cycle[n])
+    inverse = Mor(Sets)(carrier, carrier)(lambda n: inverse_cycle[n])
     Sets.retain_inverses(bijection, inverse)
     isomorphism = BinaryRelations().transport(chain, bijection)
     moved = isomorphism.codomain()
 
     assert ask(Posets().membership_proposition(moved)) is True
-    assert isomorphism.underlying_map() is bijection
+    assert projection.on_morphism(isomorphism) is bijection
     assert isomorphism in Mor(Posets())(chain, moved)
     assert isomorphism(chain.point(0)).datum() == 2
 
@@ -151,11 +156,13 @@ def test_transport_carries_an_incomparable_pair_to_a_new_carrier() -> None:
     """Transport onto a different set: the inherited set behaviour is that of the image."""
     two = Posets()(_chain_relation(2))
     product = Posets().Products()(two, two)
+    projection = Posets().to_sets()
+    product_set = projection.on_object(product)
     letters = Sets(("bottom", "left", "right", "top"))
     naming = {(0, 0): "bottom", (0, 1): "left", (1, 0): "right", (1, 1): "top"}
-    bijection = Mor(Sets)(product.carrier(), letters)(lambda pair: naming[pair])
+    bijection = Mor(Sets)(product_set, letters)(lambda pair: naming[pair])
     reverse = {value: key for key, value in naming.items()}
-    inverse = Mor(Sets)(letters, product.carrier())(lambda value: reverse[value])
+    inverse = Mor(Sets)(letters, product_set)(lambda value: reverse[value])
     Sets.retain_inverses(bijection, inverse)
     moved = BinaryRelations().transport(product, bijection).codomain()
 
@@ -181,7 +188,7 @@ def test_transport_of_an_infinite_predicate_relation_uses_the_supplied_inverse()
 
     transported = BinaryRelations().transport(relation, shift)
     moved = transported.codomain()
-    assert transported.inverse().underlying_map() is unshift
+    assert BinaryRelations().to_sets().on_morphism(transported.inverse()) is unshift
     assert ask(moved.related(moved.point(1), moved.point(2))) is True
     assert ask(moved.related(moved.point(2), moved.point(1))) is False
     assert Sets.chosen_enumeration(integers) is Unknown
@@ -212,8 +219,9 @@ def test_thin_sends_a_poset_to_its_thin_category() -> None:
 def test_thin_sends_a_monotone_map_to_a_functor_of_thin_categories() -> None:
     """The morphism action: a point to its image and a comparison to the compared images."""
     three, two = Posets()(_chain_relation(3)), Posets()(_chain_relation(2))
+    projection = Posets().to_sets()
     monotone = Mor(Posets())(three, two)(
-        Mor(Sets)(three.carrier(), two.carrier())(lambda n: min(n, 1))
+        Mor(Sets)(projection.on_object(three), projection.on_object(two))(lambda n: min(n, 1))
     )
     induced = Thin.on_morphism(monotone)
     source, target = Thin.on_object(three), Thin.on_object(two)

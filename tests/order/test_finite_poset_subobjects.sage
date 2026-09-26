@@ -22,7 +22,7 @@ def _selected_data(ambient, subobject):
     inclusion = subobjects.defining_arrow().on_object(subobject)
     assert inclusion.codomain() is ambient
     underlying = Posets().to_sets().on_morphism(inclusion)
-    assert underlying.codomain() is ambient.carrier()
+    assert underlying.codomain() is Posets().to_sets().on_object(ambient)
     induced = inclusion.domain()
     assert induced in Posets()
     assert induced in FinitePosets()

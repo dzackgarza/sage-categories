@@ -60,9 +60,9 @@ class AlgebraCategory(LimitSubcategory):
             case ModuleCategory():
                 return underlying.scalars()
             case BimoduleCategory():
-                left = underlying.left_modules().scalars()
-                right = underlying.right_modules().scalars()
-                assert right.operation() is left.operation() and right.unit_morphism() is left.unit_morphism(), f"{underlying!r} is not an (R,R)-bimodule category"
+                left = underlying.left_scalars()
+                right = underlying.right_scalars()
+                assert right is left, f"{underlying!r} is not an (R,R)-bimodule category"
                 return left
             case _:
                 raise AssertionError(f"{underlying!r} is not a module or (R,R)-bimodule category")

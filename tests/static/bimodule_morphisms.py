@@ -28,6 +28,8 @@ def bimodule_object_types(
     left_action: MorphismCategory.ObjectType,
     right_action: MorphismCategory.ObjectType,
 ) -> None:
+    assert_type(bimodules.left_scalars(), MonoidCategory.ObjectType)
+    assert_type(bimodules.right_scalars(), MonoidCategory.ObjectType)
     module = bimodules(left_action, right_action)
     assert_type(module, BimoduleCategory.ObjectType)
     assert_type(module.left_action(), MorphismCategory.ObjectType)

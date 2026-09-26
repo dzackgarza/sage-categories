@@ -511,12 +511,24 @@ class BimoduleCategory(EquifierCategory):
         self,
         first: NaturalTransformation,
         second: NaturalTransformation,
+        left_scalars: MonoidCategory.ObjectType,
+        right_scalars: MonoidCategory.ObjectType,
         left: ModuleCategory,
         right: ModuleCategory,
         pairs: ActionPairsCategory,
     ) -> None:
+        self._left_scalars = left_scalars
+        self._right_scalars = right_scalars
         self._left, self._right, self._pairs = left, right, pairs
         super().__init__(first, second)
+
+    def left_scalars(self) -> MonoidCategory.ObjectType:
+        """The exact left scalar monoid ``R`` supplied to ``Bimodules(R,S,V)``."""
+        return self._left_scalars
+
+    def right_scalars(self) -> MonoidCategory.ObjectType:
+        """The exact right scalar monoid ``S`` supplied to ``Bimodules(R,S,V)``."""
+        return self._right_scalars
 
     def left_modules(self) -> ModuleCategory:
         """``Modules(R, V)``, the left half."""
@@ -600,14 +612,11 @@ class BimoduleCategory(EquifierCategory):
         """Restrict both scalar actions along ``R' -> R`` and ``S' -> S``."""
         monoidal = self.monoidal_structure()
         monoids = Monoids(monoidal)
-        left_scalars = self.left_modules().scalars()
+        left_scalars = self.left_scalars()
         assert left_scalar_morphism in Mor(monoids)(left_scalar_morphism.domain(), left_scalars)
 
         right_opposite = self.right_modules().scalars()
-        right_scalars = Monoids(monoidal)(
-            right_opposite.operation(),
-            right_opposite.unit_morphism(),
-        )
+        right_scalars = self.right_scalars()
         assert right_scalar_morphism in Mor(monoids)(right_scalar_morphism.domain(), right_scalars)
         reverse_monoids = Monoids(Reversed(monoidal))
         reverse_source = reverse_monoids(
@@ -688,6 +697,8 @@ def Bimodules(
     return BimoduleCategory(
         transformations(source, carrier)(lambda value: commuting(value, True)),
         transformations(source, carrier)(lambda value: commuting(value, False)),
+        left_scalars,
+        right_scalars,
         left,
         right,
         pairs,

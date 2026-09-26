@@ -1347,33 +1347,9 @@ def _new_abelian_bimodule_tensor(
 ) -> MonoidalStructuresCategory.ObjectType:
     monoidal = AbelianTensor()
     bimodules = Bimodules(scalars, scalars, monoidal)
-    pairs = Cat().Products()((bimodules, bimodules))
-    forgetful = bimodules.forgetful()
-
-    def on_object(pair: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        first, second = (pair.family_component(index) for index in range(2))
-        projection = relative_tensor(first.right_action(), second.left_action())
-        return bimodules(
-            induced_left_action(projection, first.left_action()),
-            induced_right_action(projection, second.right_action()),
-        )
-
-    def on_morphism(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        source_pair, target_pair = arrow.domain(), arrow.codomain()
-        source_first, source_second = (source_pair.family_component(index) for index in range(2))
-        target_first, target_second = (target_pair.family_component(index) for index in range(2))
-        source_projection = relative_tensor(source_first.right_action(), source_second.left_action())
-        target_projection = relative_tensor(target_first.right_action(), target_second.left_action())
-        first = forgetful.on_morphism(arrow.family_component(0))
-        second = forgetful.on_morphism(arrow.family_component(1))
-        underlying = relative_tensor_morphism(source_projection, target_projection, first, second)
-        return bimodules.homomorphism(
-            tensor.on_object(source_pair),
-            tensor.on_object(target_pair),
-            underlying,
-        )
-
-    tensor = Fun(pairs, bimodules)(on_object, on_morphism)
+    tensor = relative_tensor_bifunctor(scalars, scalars, scalars)
+    assert tensor.codomain() is bimodules
+    pairs = tensor.domain()
     unit = bimodules(scalars.operation(), scalars.operation())
 
     def associator_components(

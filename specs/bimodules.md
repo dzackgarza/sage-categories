@@ -70,6 +70,7 @@ Descended outer actions and associativity maps are therefore constructed through
 The private CAP realization uses its epimorphism-colift operation, so relative tensor does not choose element representatives of a quotient in order to define these maps.
 
 The tensor product acts on pairs of compatible bimodule morphisms.
+`relative_tensor_bifunctor(R,S,T,V)` is the resulting functor from `Bimodules(R,S,V) x Bimodules(S,T,V)` to `Bimodules(R,T,V)`; its object and morphism actions are exactly the retained constructions above.
 For `R=S=T`, the regular bimodule is the unit, with comparison isomorphisms induced by its actions.
 Thus the supplied relative tensor product gives the monoidal category required for monoid objects over a noncommutative base.
 

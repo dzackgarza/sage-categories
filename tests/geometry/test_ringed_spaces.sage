@@ -10,7 +10,10 @@ from sage_categories.geometry import (
     ring_presheaf,
     ring_sheaf,
 )
-from sage_categories.geometry.sheaves import ring_presheaf_from_functor
+from sage_categories.geometry.sheaves import (
+    identity_sheaf_comparison,
+    ring_presheaf_from_functor,
+)
 
 
 def residue_ring(modulus):
@@ -49,6 +52,10 @@ def test_ringed_map_has_natural_sheaf_action_with_exact_endpoints() -> None:
     ring_data = residue_ring(5)
     source_sheaf = constant_ring_sheaf(source_space, ring_data)
     target_sheaf = constant_ring_sheaf(target_space, ring_data)
+    comparison = identity_sheaf_comparison(source_sheaf.presheaf)
+    assert comparison.inverse() is comparison
+    source_full = source_space.open_object(frozenset((0,)))
+    assert comparison.component(source_full) is Mor(Rings(Sets))(ring_data[0], ring_data[0]).one()
     ringed = RingedSpaces()
     source, target = ringed(source_space, source_sheaf), ringed(target_space, target_sheaf)
     continuous = Mor(spaces)(source_space, target_space)(Mor(Sets)(one, two)(lambda _: 1))
@@ -70,7 +77,6 @@ def test_ringed_map_has_natural_sheaf_action_with_exact_endpoints() -> None:
 
     identity = Mor(ringed)(source, source).one()
     assert identity.continuous_map() is Mor(spaces)(source_space, source_space).one()
-    source_full = source_space.open_object(frozenset((0,)))
     assert identity.sheaf_map().component(source_full) is Mor(Rings(Sets))(ring_data[0], ring_data[0]).one()
 
     composite = morphism * identity

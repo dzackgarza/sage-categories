@@ -240,14 +240,10 @@ def descent_chart_comparison(
 
 def identity_sheaf_comparison(presheaf: RingPresheaf) -> NaturalTransformation:
     """The identity natural isomorphism of one represented ring presheaf."""
-
-    def identity(
-        open_object: CategoryOfCategories.ElementType,
-    ) -> MorphismCategory.ObjectType:
-        ring = presheaf.functor.on_object(open_object)
-        return Mor(_rings())(ring, ring).one()
-
-    return natural_isomorphism(presheaf.functor, presheaf.functor, identity, identity)
+    return Mor(Fun(presheaf.functor.domain(), _rings()))(
+        presheaf.functor,
+        presheaf.functor,
+    ).one()
 
 
 @dataclass(frozen=True, eq=False, slots=True)

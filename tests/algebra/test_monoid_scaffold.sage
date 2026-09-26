@@ -4,7 +4,7 @@ import pytest
 
 from sage_categories.all import Cartesian, Mor, Sets, ask
 from sage_categories.cat.calculus import binary_product_data
-from sage_categories.cat.structured_objects import Magmas, Monoids
+from sage_categories.cat.structured_objects import Groups, Magmas, Monoids
 
 
 def test_additive_monoid_and_doubling_automorphism() -> None:
@@ -40,6 +40,22 @@ def test_additive_monoid_and_doubling_automorphism() -> None:
     assert ask(lift.domain().operation() == monoid.operation()) is True
     assert ask(lift.domain().unit_morphism() == monoid.unit_morphism()) is True
 
+
+
+def test_commutative_group_property_inherits_monoid_constructor() -> None:
+    """A nested property intersection keeps the monoid constructor required by D150."""
+    carrier = Sets((0, 1, 2))
+    structure = Cartesian(Sets())
+    square = binary_product_data(Sets(), carrier, carrier).apex()
+    addition = Mor(Sets)(square, carrier)(lambda pair: (pair[0] + pair[1]) % 3)
+    unit = Mor(Sets)(structure.unit(), carrier)(lambda _: 0)
+
+    groups = Groups(structure).Commutative()
+    value = groups(addition, unit)
+
+    assert value in groups
+    assert value.operation() is addition
+    assert value.unit_morphism() is unit
 
 def test_incompatible_unit_fails_the_unit_equation() -> None:
     carrier = Sets((0, 1, 2))
@@ -85,5 +101,6 @@ def test_monoid_morphisms_require_associative_endpoints() -> None:
 
 
 test_additive_monoid_and_doubling_automorphism()
+test_commutative_group_property_inherits_monoid_constructor()
 test_incompatible_unit_fails_the_unit_equation()
 test_monoid_morphisms_require_associative_endpoints()

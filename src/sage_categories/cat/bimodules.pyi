@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Literal
 
 import sage_categories.cat.cat_constructions
@@ -54,6 +55,7 @@ __all__ = [
     "relative_right_unitor",
     "relative_tensor",
     "relative_tensor_associator",
+    "relative_tensor_associator_from_factors",
     "relative_tensor_factor",
     "relative_tensor_morphism",
     "relative_tensor_preserved_factor",
@@ -114,6 +116,18 @@ def relative_tensor_associator(
     second_third_projection: MorphismCategory.ObjectType,
     source_projection: MorphismCategory.ObjectType,
     target_projection: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
+def relative_tensor_associator_from_factors(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    third: CategoryOfCategories.ElementType,
+    first_second_projection: MorphismCategory.ObjectType,
+    second_third_projection: MorphismCategory.ObjectType,
+    source_projection: MorphismCategory.ObjectType,
+    target_projection: MorphismCategory.ObjectType,
+    factor_source: Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType],
+    factor_target: Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType],
 ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
 
 class _StaticRoles_ActionPairsCategory(sage_categories.cat.cat_constructions._StaticRoles_LimitSubcategory):

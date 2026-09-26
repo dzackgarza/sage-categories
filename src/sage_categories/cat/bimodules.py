@@ -15,6 +15,7 @@ monoid structures (``cat/structured_objects.py``).
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Literal
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     "relative_right_unitor",
     "relative_tensor",
     "relative_tensor_associator",
+    "relative_tensor_associator_from_factors",
     "relative_tensor_factor",
     "relative_tensor_morphism",
     "relative_tensor_preserved_factor",
@@ -266,6 +268,39 @@ def relative_tensor_associator(
     outer factor, using its canonical colimit-preserving fixed-tensor functor.
     The resulting map then factors through the outer relative tensor.
     """
+    return relative_tensor_associator_from_factors(
+        monoidal,
+        first,
+        second,
+        third,
+        first_second_projection,
+        second_third_projection,
+        source_projection,
+        target_projection,
+        lambda arrow: relative_tensor_factor(monoidal, source_projection, arrow),
+        lambda arrow: relative_tensor_factor(monoidal, target_projection, arrow),
+    )
+
+
+def relative_tensor_associator_from_factors(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    third: CategoryOfCategories.ElementType,
+    first_second_projection: MorphismCategory.ObjectType,
+    second_third_projection: MorphismCategory.ObjectType,
+    source_projection: MorphismCategory.ObjectType,
+    target_projection: MorphismCategory.ObjectType,
+    factor_source: Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType],
+    factor_target: Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType],
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The relative-tensor associator with supplied outer quotient factors.
+
+    This is the same generic descent as relative_tensor_associator. The explicit
+    outer factor maps allow a consumer to choose an isomorphic strict-unit
+    presentation while the two inner relative tensors are still transported
+    through their retained colimit presentations.
+    """
     base, tensor = monoidal.underlying_category(), monoidal.tensor()
     triples = monoidal.associator().domain().domain()
     triple = triples((first, second, third))
@@ -283,7 +318,7 @@ def relative_tensor_associator(
         tensor_third,
         forward_from_unbalanced,
     )
-    forward = relative_tensor_factor(monoidal, source_projection, through_first_quotient)
+    forward = factor_source(through_first_quotient)
 
     backward_from_unbalanced = source_projection * tensor_morphism(tensor, first_second_projection, identity_third) * unbracket
     through_second_quotient = relative_tensor_preserved_factor(
@@ -292,7 +327,7 @@ def relative_tensor_associator(
         tensor_first,
         backward_from_unbalanced,
     )
-    backward = relative_tensor_factor(monoidal, target_projection, through_second_quotient)
+    backward = factor_target(through_second_quotient)
     base.retain_inverses(forward, backward)
     return forward, backward
 

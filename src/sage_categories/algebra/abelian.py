@@ -64,8 +64,8 @@ from sage_categories.cat.bimodules import (
     relative_left_unitor,
     relative_right_unitor,
     relative_tensor_associator,
+    relative_tensor_associator_from_factors,
     relative_tensor_factor,
-    relative_tensor_preserved_factor,
 )
 from sage_categories.cat.bimodules import (
     induced_left_action as generic_induced_left_action,
@@ -1309,48 +1309,6 @@ def _bimodule_associator_components(
     )
 
 
-def _relative_associator_underlying(
-    first_group: CategoryOfCategories.ElementType,
-    second_group: CategoryOfCategories.ElementType,
-    third_group: CategoryOfCategories.ElementType,
-    first_second_projection: MorphismCategory.ObjectType,
-    second_third_projection: MorphismCategory.ObjectType,
-    source_projection: MorphismCategory.ObjectType,
-    target_projection: MorphismCategory.ObjectType,
-    factor_source: Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType],
-    factor_target: Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType],
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """Descend the selected abelian associator through two relative-tensor quotient stages."""
-    monoidal = AbelianTensor()
-    abelian_groups, abelian_tensor = monoidal.underlying_category(), monoidal.tensor()
-    abelian_triples = monoidal.associator().domain().domain()
-    abelian_triple = abelian_triples((first_group, second_group, third_group))
-    rebracket = monoidal.associator().component(abelian_triple)
-    unbracket = monoidal.associator().inverse().component(abelian_triple)
-    identity_first = Mor(abelian_groups)(first_group, first_group).one()
-    identity_third = Mor(abelian_groups)(third_group, third_group).one()
-    forward_from_unbalanced = target_projection * tensor_morphism(abelian_tensor, identity_first, second_third_projection) * rebracket
-    backward_from_unbalanced = source_projection * tensor_morphism(abelian_tensor, first_second_projection, identity_third) * unbracket
-
-    through_first_quotient = relative_tensor_preserved_factor(
-        monoidal,
-        first_second_projection,
-        _fixed_tensor_functor(third_group, "right"),
-        forward_from_unbalanced,
-    )
-    forward_underlying = factor_source(through_first_quotient)
-    through_second_quotient = relative_tensor_preserved_factor(
-        monoidal,
-        second_third_projection,
-        _fixed_tensor_functor(first_group, "left"),
-        backward_from_unbalanced,
-    )
-    backward_underlying = factor_target(through_second_quotient)
-    assert ask(forward_underlying * backward_underlying == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()) is True
-    assert ask(backward_underlying * forward_underlying == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()) is True
-    return forward_underlying, backward_underlying
-
-
 def AbelianBimoduleTensor(
     scalars: MonoidCategory.ObjectType,
 ) -> MonoidalStructuresCategory.ObjectType:
@@ -1600,7 +1558,10 @@ def _module_associator_components(
     second_third_projection = _commutative_module_projection(modules, unit, second, third)
     source_projection = _commutative_module_projection(modules, unit, first_second, third)
     target_projection = _commutative_module_projection(modules, unit, first, second_third)
-    forward_underlying, backward_underlying = _relative_associator_underlying(
+    _fixed_tensor_functor(third_group, "right")
+    _fixed_tensor_functor(first_group, "left")
+    forward_underlying, backward_underlying = relative_tensor_associator_from_factors(
+        AbelianTensor(),
         first_group,
         second_group,
         third_group,
@@ -1625,6 +1586,9 @@ def _module_associator_components(
             target_projection,
         ),
     )
+    abelian_groups = AbelianGroups()
+    assert ask(forward_underlying * backward_underlying == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()) is True
+    assert ask(backward_underlying * forward_underlying == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()) is True
     return (
         modules.homomorphism(source, target, forward_underlying),
         modules.homomorphism(target, source, backward_underlying),

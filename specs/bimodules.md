@@ -64,6 +64,7 @@ In Smith generators the quotient adjoins the rows of the difference matrix to th
 `relative_left_unitor(V, q, lambda_Y, eta)` gives `S tensor_S Y -> Y` and `relative_right_unitor(V, q, rho_X, eta)` gives `X tensor_S S -> X`, each with its inverse.
 Acting is itself balanced, so the comparison is the action read on the quotient, and the inverse tensors with the unit; both composites are checked on construction.
 `relative_tensor_associator(V, X, Y, Z, q_XY, q_YZ, q_source, q_target)` constructs the two inverse maps between the iterated relative tensors by transporting each inner quotient through the canonical fixed-tensor functor and then factoring through the outer quotient.
+`relative_tensor_associator_from_factors` is the same generic construction with the two outer factor maps supplied explicitly, for a consumer that has selected an isomorphic strict-unit presentation rather than the literal retained coequalizer apex.
 The concrete realization must already have retained the required colimit-preservation data on those canonical functors.
 Descended outer actions and associativity maps are therefore constructed through retained universal presentations rather than by selecting quotient representatives.
 The private CAP realization uses its epimorphism-colift operation, so relative tensor does not choose element representatives of a quotient in order to define these maps.

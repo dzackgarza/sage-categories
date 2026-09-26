@@ -11,10 +11,10 @@ from sage_categories.cat.bimodules import (
     relative_tensor_associator as relative_tensor_associator,
 )
 from sage_categories.cat.bimodules import (
-    relative_tensor_factor as relative_tensor_factor,
+    relative_tensor_associator_from_factors as relative_tensor_associator_from_factors,
 )
 from sage_categories.cat.bimodules import (
-    relative_tensor_preserved_factor as relative_tensor_preserved_factor,
+    relative_tensor_factor as relative_tensor_factor,
 )
 from sage_categories.cat.calculus import binary_product_data as binary_product_data
 from sage_categories.cat.calculus import natural_isomorphism as natural_isomorphism

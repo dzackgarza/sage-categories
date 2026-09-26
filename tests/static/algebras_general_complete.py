@@ -42,7 +42,15 @@ def complete_algebra_types(
     )
     assert_type(source.U_R(), Functor)
     assert_type(source.to_sets(), Functor)
-    assert_type(restrict_algebra_scalars(source, target, scalar_map), Functor)
+    restriction = restrict_algebra_scalars(source, target, scalar_map)
+    assert_type(
+        restriction.domain(),
+        AlgebraCategory[MonoidCategory.ObjectType],
+    )
+    assert_type(
+        restriction.codomain(),
+        AlgebraCategory[MonoidCategory.ObjectType],
+    )
     assert_type(integer_free_algebra(source, ("x", "y")), AlgebraCategory.ObjectType)
     assert_type(
         integer_free_algebra_generator(source, free, 0),

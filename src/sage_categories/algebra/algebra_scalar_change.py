@@ -17,11 +17,12 @@ from sage_categories.algebra.abelian import (
 )
 from sage_categories.algebra.algebras import AlgebraCategory
 from sage_categories.cat.bimodules import BimoduleCategory
+from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.functors import Fun, Functor
 from sage_categories.cat.monoidal import tensor_object
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.structured_objects import Magmas, Monoids
+from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoids
 
 __all__ = ["restrict_algebra_scalars"]
 
@@ -107,11 +108,23 @@ def _restrict_object(
     return target.from_monoid(Monoids(target.monoidal_structure())(multiplication, unit))
 
 
-def restrict_algebra_scalars(
-    source: AlgebraCategory,
-    target: AlgebraCategory,
+def restrict_algebra_scalars[
+    SourceScalar: "MonoidCategory.ObjectType",
+    TargetScalar: "MonoidCategory.ObjectType",
+](
+    source: AlgebraCategory[SourceScalar],
+    target: AlgebraCategory[TargetScalar],
     scalar_morphism: MorphismCategory.ObjectType,
-) -> Functor:
+) -> CategoryOfCategories.MorphismType[
+    AlgebraCategory[SourceScalar],
+    AlgebraCategory[TargetScalar],
+    AlgebraCategory.ObjectType,
+    AlgebraCategory.ElementType,
+    AlgebraCategory.MorphismType,
+    AlgebraCategory.ObjectType,
+    AlgebraCategory.ElementType,
+    AlgebraCategory.MorphismType,
+]:
     """Restriction of scalars ``Alg_S -> Alg_R`` along ``R -> S``.
 
     Both algebra categories use the ordinary relative tensor on ``(R,R)``- and

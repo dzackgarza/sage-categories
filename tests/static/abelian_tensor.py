@@ -2,7 +2,11 @@
 
 from typing import assert_type
 
-from sage_categories.algebra.abelian import AbelianTensor, relative_tensor_bifunctor
+from sage_categories.algebra.abelian import (
+    AbelianBimoduleTensor,
+    AbelianTensor,
+    relative_tensor_bifunctor,
+)
 from sage_categories.cat.bimodules import BimoduleCategory
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
@@ -54,3 +58,8 @@ def relative_tensor_wrapper_types[
         BimoduleCategory[LeftScalar, RightScalar, Category],
     )
     assert_type(tensor.on_morphism(arrow), BimoduleCategory.MorphismType)
+    bimodule_tensor = AbelianBimoduleTensor(left_scalars)
+    assert_type(
+        bimodule_tensor.underlying_category(),
+        BimoduleCategory[LeftScalar, LeftScalar, Category],
+    )

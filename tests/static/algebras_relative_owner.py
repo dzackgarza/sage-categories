@@ -7,6 +7,7 @@ from sage_categories.algebra.algebras import (
     AlgebraCategory,
     Algebras,
 )
+from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.modules import ModuleCategory, Modules
 from sage_categories.cat.monoidal import ActionsCategory, MonoidalStructuresCategory
@@ -26,7 +27,11 @@ def algebra_owner_types[BaseScalar: MonoidCategory.ObjectType](
     modules = Modules(base, context)
     modules.select_monoidal_structure(structure)
     assert_type(modules.monoidal_structure(), MonoidalStructuresCategory.ObjectType)
-    assert_type(AbelianModuleTensor(base), MonoidalStructuresCategory.ObjectType)
+    module_tensor = AbelianModuleTensor(base)
+    assert_type(
+        module_tensor.underlying_category(),
+        ModuleCategory[BaseScalar, Category, Category],
+    )
     algebras = Algebras(base, context)
     assert_type(algebras, AlgebraCategory[BaseScalar])
     assert_type(Algebras(base, structure), AlgebraCategory[BaseScalar])

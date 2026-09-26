@@ -1342,9 +1342,11 @@ def _bimodule_associator_components(
     )
 
 
-def AbelianBimoduleTensor(
-    scalars: MonoidCategory.ObjectType,
-) -> MonoidalStructuresCategory.ObjectType:
+def AbelianBimoduleTensor[Scalar: "MonoidCategory.ObjectType"](
+    scalars: Scalar,
+) -> MonoidalStructuresCategory.ObjectType[
+    BimoduleCategory[Scalar, Scalar, Category]
+]:
     """The relative tensor monoidal structure on Smith-presented ``(R,R)``-bimodules in ``Ab``.
 
     The abelian leaf supplies the balancing coequalizers.  Tensor product over the
@@ -1604,9 +1606,11 @@ def _module_associator_components(
     )
 
 
-def AbelianModuleTensor(
-    scalars: MonoidCategory.ObjectType,
-) -> MonoidalStructuresCategory.ObjectType:
+def AbelianModuleTensor[Scalar: "MonoidCategory.ObjectType"](
+    scalars: Scalar,
+) -> MonoidalStructuresCategory.ObjectType[
+    ModuleCategory[Scalar, Category, Category]
+]:
     """Relative tensor on left modules over a commutative monoid in Ab."""
     return _MODULE_TENSORS(
         AbelianTensor(),

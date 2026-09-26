@@ -61,12 +61,9 @@ from sage_categories.algebra._firewall.abelian import Engine
 from sage_categories.cat.bimodules import (
     BimoduleCategory,
     Bimodules,
-    fixed_tensor_functor,
-    relative_left_unitor,
-    relative_right_unitor,
-    relative_tensor_associator,
-    relative_tensor_associator_from_factors,
-    relative_tensor_factor,
+)
+from sage_categories.cat.bimodules import (
+    fixed_tensor_functor as _generic_fixed_tensor_functor,
 )
 from sage_categories.cat.bimodules import (
     induced_left_action as generic_induced_left_action,
@@ -75,10 +72,25 @@ from sage_categories.cat.bimodules import (
     induced_right_action as generic_induced_right_action,
 )
 from sage_categories.cat.bimodules import (
+    relative_left_unitor as _generic_relative_left_unitor,
+)
+from sage_categories.cat.bimodules import (
+    relative_right_unitor as _generic_relative_right_unitor,
+)
+from sage_categories.cat.bimodules import (
     relative_tensor as generic_relative_tensor,
 )
 from sage_categories.cat.bimodules import (
+    relative_tensor_associator as _generic_relative_tensor_associator,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor_associator_from_factors as _generic_relative_tensor_associator_from_factors,
+)
+from sage_categories.cat.bimodules import (
     relative_tensor_bifunctor as generic_relative_tensor_bifunctor,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor_factor as _generic_relative_tensor_factor,
 )
 from sage_categories.cat.bimodules import (
     relative_tensor_morphism as generic_relative_tensor_morphism,
@@ -1133,7 +1145,7 @@ def _fixed_tensor_functor(
     def construct() -> Functor:
         monoidal = AbelianTensor()
         base = monoidal.underlying_category()
-        result = fixed_tensor_functor(monoidal, value, side)
+        result = _generic_fixed_tensor_functor(monoidal, value, side)
         shape = Cat().WalkingParallelPair()
 
         def preserved_mediator(_presentation, candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
@@ -1169,7 +1181,7 @@ def relative_tensor_mediator(
     makes its mediator out of ``X (x) Y`` coequalize the two maps this quotient identifies.
     """
     factors = _tensor_info(projection.domain())
-    return relative_tensor_factor(
+    return _generic_relative_tensor_factor(
         AbelianTensor(),
         projection,
         tensor_mediator(factors.first, factors.second, target, balanced),
@@ -1278,7 +1290,7 @@ def _bimodule_unitor_components(
         case "left":
             source = tensor.on_object(pairs((unit, value)))
             projection = relative_tensor(unit.right_action(), value.left_action())
-            forward, backward = relative_left_unitor(
+            forward, backward = _generic_relative_left_unitor(
                 AbelianTensor(),
                 projection,
                 value.left_action(),
@@ -1287,7 +1299,7 @@ def _bimodule_unitor_components(
         case "right":
             source = tensor.on_object(pairs((value, unit)))
             projection = relative_tensor(value.right_action(), unit.left_action())
-            forward, backward = relative_right_unitor(
+            forward, backward = _generic_relative_right_unitor(
                 AbelianTensor(),
                 projection,
                 value.right_action(),
@@ -1322,7 +1334,7 @@ def _bimodule_associator_components(
     _fixed_tensor_functor(third_group, "right")
     _fixed_tensor_functor(first_group, "left")
 
-    forward_underlying, backward_underlying = relative_tensor_associator(
+    forward_underlying, backward_underlying = _generic_relative_tensor_associator(
         AbelianTensor(),
         first_group,
         second_group,
@@ -1513,7 +1525,11 @@ def _factor_commutative_module_projection(
         case True:
             return arrow * _commutative_module_unit_section(modules, first, "right")
         case False:
-            return relative_tensor_factor(AbelianTensor(), projection, arrow)
+            return _generic_relative_tensor_factor(
+                AbelianTensor(),
+                projection,
+                arrow,
+            )
 
 
 def _module_unitor_components(
@@ -1565,7 +1581,7 @@ def _module_associator_components(
     target_projection = _commutative_module_projection(modules, unit, first, second_third)
     _fixed_tensor_functor(third_group, "right")
     _fixed_tensor_functor(first_group, "left")
-    forward_underlying, backward_underlying = relative_tensor_associator_from_factors(
+    forward_underlying, backward_underlying = _generic_relative_tensor_associator_from_factors(
         AbelianTensor(),
         first_group,
         second_group,

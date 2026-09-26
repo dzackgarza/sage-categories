@@ -114,7 +114,9 @@ class ModuleCategory[
         return _underlying_object(self._scalars)
 
     @cached_method
-    def forgetful(self) -> CategoryOfCategories.MorphismType[
+    def forgetful(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
         ModuleCategory[Scalar, ActingCategory, ActedCategory],
         ActedCategory,
         ModuleCategory.ObjectType,

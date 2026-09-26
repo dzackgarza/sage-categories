@@ -595,7 +595,9 @@ class BimoduleCategory[
         return self.restrict_morphism(lift)
 
     @cached_method
-    def forgetful(self) -> CategoryOfCategories.MorphismType[
+    def forgetful(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
         BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
         BaseCategory,
         BimoduleCategory.ObjectType,

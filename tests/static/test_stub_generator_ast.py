@@ -1325,16 +1325,8 @@ def test_generated_algebraic_forgetful_functors_keep_exact_category_endpoints() 
     bimodules = (root / "bimodules.pyi").read_text()
 
     assert (
-        "def forgetful(\n"
-        "        self,\n"
-        "    ) -> CategoryOfCategories.MorphismType[\n"
-        "        ModuleCategory[Scalar, ActingCategory, ActedCategory],\n"
-        "        ActedCategory,"
+        "def forgetful(\n        self,\n    ) -> CategoryOfCategories.MorphismType[\n        ModuleCategory[Scalar, ActingCategory, ActedCategory],\n        ActedCategory,"
     ) in modules
     assert (
-        "def forgetful(\n"
-        "        self,\n"
-        "    ) -> CategoryOfCategories.MorphismType[\n"
-        "        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],\n"
-        "        BaseCategory,"
+        "def forgetful(\n        self,\n    ) -> CategoryOfCategories.MorphismType[\n        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],\n        BaseCategory,"
     ) in bimodules

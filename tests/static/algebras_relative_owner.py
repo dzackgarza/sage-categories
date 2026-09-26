@@ -38,7 +38,7 @@ def algebra_owner_types[BaseScalar: MonoidCategory.ObjectType](
     assert_type(algebras.base(), BaseScalar)
     assert_type(algebras.monoid_category(), MonoidCategory)
     assert_type(algebras.monoidal_structure(), MonoidalStructuresCategory.ObjectType)
-    assert_type(algebras.module_category(), ModuleCategory)
+    assert_type(algebras.module_category(), ModuleCategory[BaseScalar])
     assert_type(algebras.monoid_presentation(), Functor)
     algebra = algebras.from_monoid(monoid)
     assert_type(algebra, AlgebraCategory.ObjectType)

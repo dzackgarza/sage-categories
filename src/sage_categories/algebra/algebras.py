@@ -69,7 +69,7 @@ class AlgebraCategory[
             case _:
                 raise AssertionError(f"{underlying!r} is not a module or (R,R)-bimodule category")
 
-    def module_category(self) -> ModuleCategory:
+    def module_category(self) -> ModuleCategory[BaseScalar]:
         """The left ``R``-module owner reached by the algebra's relative carrier."""
         underlying = self.monoidal_structure().underlying_category()
         match underlying:

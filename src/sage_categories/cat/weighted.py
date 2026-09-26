@@ -267,10 +267,13 @@ class RepresentationsCategory(CommaSpecialization):
         """The representation ``(X, eta: y(X) ≅ F)``; invertibility is asserted data."""
         presheaves = self._embedding.codomain()
         assert representing_object in self._embedding.domain()
-        assert isomorphism in Mor(presheaves)(
-            self._embedding.on_object(representing_object),
-            self._represented,
-        ).Isomorphisms()
+        assert (
+            isomorphism
+            in Mor(presheaves)(
+                self._embedding.on_object(representing_object),
+                self._represented,
+            ).Isomorphisms()
+        )
         star = Cat().Terminal()(0)
         return self.from_arrow(representing_object, star, isomorphism)
 

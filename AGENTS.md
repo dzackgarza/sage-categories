@@ -42,11 +42,21 @@ The target a spike is measured against: a leaf is mostly mathematics plus backen
 generality, inheritance and engineering wiring; inheritance just works; leaves are isolated and modular provided
 they define the right functors.
 
-Rebuilding real Sage functionality is not a goal. Real leaf work belongs in a separate repository that imports
-sage-categories as a black-box foundation. Do not extend a leaf toward a full topic contract (full adelic products,
-arbitrary `CP^infty`, general scheme gluing, local fields and the like). When a spike exposes a defect, repair the core.
+Rebuilding real Sage functionality is not a goal; real leaf work eventually belongs in a separate repository that
+imports sage-categories as a black-box foundation.
+
+The existing leaves stay here as the probe corpus, including their complex real-world settings (adeles,
+`CP^infty`, scheme gluing, local fields): those show what the core forces a leaf to do in realistic cases.
+Change, refactor or extend a leaf when that tests or exposes the core. For example, move a responsibility
+into Cat/core and simplify the leaf that carried it, or push a leaf into a real setting that surfaces a core
+defect. Such a commit names the core finding it produces or consumes. Polishing a leaf for its own sake is
+drift: completing its topic contract, or fixing a leaf-local issue that tells nothing about the core.
 This was misread once: milestone B required "every production leaf" to satisfy its complete topic contract,
 and core nodes were gated on leaf consumers.
+
+The leaves stay in this repository while the core is changing, so that a core change and the leaves' reaction
+land in one history. After milestone A, extracting them into the downstream leaf repository is itself the
+final probe: they must work importing only sage-categories' public surface.
 
 ### Leaf categories and hand-rolled mathematics
 

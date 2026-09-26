@@ -25,6 +25,7 @@ from sage_categories.cat.weighted import (
     separating_evaluation,
     separating_evaluation_injection,
     weighted_limit_map,
+    yoneda,
 )
 
 
@@ -37,8 +38,12 @@ def weighted_calculus_types(
     hom_point: CategoryOfCategories.ElementType,
 ) -> None:
     assert_type(coyoneda(test.domain(), hom.codomain()), Functor)
+    assert_type(coyoneda(test.domain(), hom.codomain(), hom), Functor)
+    assert_type(yoneda(test.domain(), hom.codomain(), hom), Functor)
     assert_type(Representations(test), RepresentationsCategory)
+    assert_type(Representations(test, hom), RepresentationsCategory)
     assert_type(public_representations(test), RepresentationsCategory)
+    assert_type(public_representations(test, hom), RepresentationsCategory)
     assert_type(restricted_yoneda(test, hom), Functor)
     assert_type(public_restricted_yoneda(test, hom), Functor)
     assert_type(test.restricted_yoneda(hom), Functor)

@@ -205,9 +205,17 @@ def hom_functor(category: Category, sets: Category) -> Functor:
 
 
 @cached_function(key=identity_key)
-def yoneda(category: Category, sets: Category) -> Functor:
-    """The covariant Yoneda embedding ``C -> Fun(C.op(), Sets)``."""
-    return _yoneda_from_hom(hom_functor(category, sets))
+def yoneda(category: Category, sets: Category, hom: Functor | None = None) -> Functor:
+    """The covariant Yoneda embedding ``C -> Fun(C.op(), Sets)``.
+
+    ``hom`` supplies a nonenumerative Hom bifunctor when available; omitting it
+    uses :func:`hom_functor`, the finite-enumeration convenience.
+    """
+    chosen = hom_functor(category, sets) if hom is None else hom
+    pairs = chosen.domain()
+    assert pairs.factor(0) is category.op() and pairs.factor(1) is category
+    assert chosen.codomain() is sets
+    return _yoneda_from_hom(chosen)
 
 
 @cached_function(key=identity_key)
@@ -265,15 +273,7 @@ class RepresentationsCategory(CommaSpecialization):
         isomorphism: MorphismCategory.ObjectType,
     ) -> RepresentationsCategory.ObjectType:
         """The representation ``(X, eta: y(X) ≅ F)``; invertibility is asserted data."""
-        presheaves = self._embedding.codomain()
         assert representing_object in self._embedding.domain()
-        assert (
-            isomorphism
-            in Mor(presheaves)(
-                self._embedding.on_object(representing_object),
-                self._represented,
-            ).Isomorphisms()
-        )
         star = Cat().Terminal()(0)
         return self.from_arrow(representing_object, star, isomorphism)
 
@@ -285,7 +285,10 @@ class RepresentationsCategory(CommaSpecialization):
     ) -> RepresentationsCategory.ObjectType:
         presheaves = self._embedding.codomain()
         assert second is Cat().Terminal()(0)
-        assert arrow in Mor(presheaves)(self._embedding.on_object(first), self._represented).Isomorphisms()
+        refine(
+            arrow,
+            Mor(presheaves)(self._embedding.on_object(first), self._represented).Isomorphisms(),
+        )
         return super().from_arrow(first, second, arrow)
 
     def construct_morphism(
@@ -312,20 +315,33 @@ class RepresentationsCategory(CommaSpecialization):
 
 
 @cached_function(key=identity_key)
-def Representations(functor: Functor) -> RepresentationsCategory:
-    """The category of representations ``y(X) ≅ F`` of ``F: C.op() -> Sets``."""
+def Representations(functor: Functor, hom: Functor | None = None) -> RepresentationsCategory:
+    """The category of representations ``y(X) ≅ F`` of ``F: C.op() -> Sets``.
+
+    ``hom`` supplies the Hom bifunctor when its set-valued realization is not the
+    finite enumeration used by :func:`hom_functor`.  Omitting it keeps the finite
+    convenience spelling.
+    """
     domain = functor.domain()
     assert isinstance(domain, OppositeCategory), f"{functor!r} is not a presheaf on an opposite category"
     category = domain.original()
-    embedding = yoneda(category, functor.codomain())
+    embedding = yoneda(category, functor.codomain(), hom)
     assert embedding.codomain() is Fun(domain, functor.codomain())
     return RepresentationsCategory(functor, embedding)
 
 
 @cached_function(key=identity_key)
-def coyoneda(category: Category, sets: Category) -> Functor:
-    """The covariant-hom embedding ``C.op() -> Fun(C, Sets)``."""
-    result = _calculus().curry(hom_functor(category, sets))
+def coyoneda(category: Category, sets: Category, hom: Functor | None = None) -> Functor:
+    """The covariant-hom embedding ``C.op() -> Fun(C, Sets)``.
+
+    ``hom`` supplies a nonenumerative Hom bifunctor when available; omitting it
+    uses :func:`hom_functor`, the finite-enumeration convenience.
+    """
+    chosen = hom_functor(category, sets) if hom is None else hom
+    pairs = chosen.domain()
+    assert pairs.factor(0) is category.op() and pairs.factor(1) is category
+    assert chosen.codomain() is sets
+    result = _calculus().curry(chosen)
     refine(result, Fun.FullyFaithful())
     return result
 

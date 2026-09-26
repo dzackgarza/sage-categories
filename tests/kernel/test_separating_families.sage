@@ -3,14 +3,16 @@
 from sympy import Q
 
 from sage_categories.all import (
+    NN,
     Cat,
     Fun,
     Mor,
-    NN,
+    Representations,
     Sets,
     ask,
     assume,
     separating_evaluation_injection,
+    yoneda,
 )
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.shapes import Discrete
@@ -44,6 +46,17 @@ def test_restricted_yoneda_and_separating_evaluation_are_nonenumerative():
 
     integers = Sets.from_membership(Q.integer)
     shift = Mor(Sets)(integers, integers)(lambda value: value + 1)
+
+    # The same nonenumerative Hom bifunctor supplies generic representability; no
+    # chosen finite Hom enumeration is consulted.
+    embedding = yoneda(Sets, Sets, probe_hom)
+    represented = embedding.on_object(integers)
+    presheaves = Fun(Sets.op(), Sets)
+    eta = Mor(presheaves)(represented, represented).one()
+    representations = Representations(represented, probe_hom)
+    representation = representations(integers, eta)
+    assert representation.representing_object() is integers
+    assert representation.representation_isomorphism() is eta
     probe_point = NN.point(101)
     probe = probes.object_at(probe_point)
     chosen = Mor(Sets)(terminal, integers)(lambda value: 5)

@@ -197,12 +197,72 @@ def check_designated_allowed_importers() -> None:
                 assert valid.returncode == 0, valid.stdout + valid.stderr
 
 
+
+def ast_grep_scan(root: Path, rule: str, target: Path) -> subprocess.CompletedProcess[str]:
+    """Run one repository architecture rule against an isolated fixture tree."""
+    return subprocess.run(
+        [
+            "uvx",
+            "--from",
+            "ast-grep-cli==0.45.0",
+            "ast-grep",
+            "scan",
+            "--rule",
+            str(Path.cwd() / ".ast-grep" / "architecture" / rule),
+            str(target.relative_to(root)),
+        ],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+
+def check_leaf_firewall_boundaries() -> None:
+    """Protected engine/native/Sage imports are forbidden outside and allowed inside ``_firewall``."""
+    cases = (
+        (
+            "no-engine-import-outside-leaf-firewall.yml",
+            "from sage_categories.engines.gap import GAP\n",
+        ),
+        (
+            "no-native-realization-outside-leaf-firewall.yml",
+            "from sage_categories.cat.native import NativeRealizationRegistry\n",
+        ),
+        (
+            "no-direct-sage-import-in-a-leaf.yml",
+            "from sage.all import ZZ\n",
+        ),
+    )
+    for rule, source in cases:
+        with tempfile.TemporaryDirectory(prefix="sage-categories-ast-boundary-") as directory:
+            root = Path(directory)
+            leaf = root / "src" / SOURCE_ROOT / "algebra"
+            firewall = leaf / "_firewall"
+            firewall.mkdir(parents=True)
+            outside = leaf / "outside.py"
+            inside = firewall / "inside.py"
+            outside.write_text(source)
+            inside.write_text(source)
+
+            violating = ast_grep_scan(root, rule, leaf)
+            output = violating.stdout + violating.stderr
+            assert violating.returncode != 0, output
+            assert "outside.py" in output, output
+            assert "inside.py" not in output, output
+
+            outside.unlink()
+            valid = ast_grep_scan(root, rule, leaf)
+            assert valid.returncode == 0, valid.stdout + valid.stderr
+
 def main() -> None:
     check_unclassified_source_rejection()
     check_each_forbidden_contract()
     check_indirect_forbidden_import_rejection()
     check_allowed_indirect_imports()
     check_designated_allowed_importers()
+    check_leaf_firewall_boundaries()
     print(
         "architecture-regressions: exhaustive source classification and valid/violating "
         "fixtures for every forbidden contract behave as required"

@@ -1,5 +1,3 @@
-from _typeshed import Incomplete
-
 import sage_categories.cat.category
 import sage_categories.cat.comma
 import sage_categories.cat.morphisms
@@ -41,8 +39,7 @@ class TotalConesCategory(
     _StaticRoles_TotalConesCategory,
     CommaSpecialization[_StaticRoles_TotalConesCategory.ObjectType, _StaticRoles_TotalConesCategory.ElementType, _StaticRoles_TotalConesCategory.MorphismType],
 ):
-    LimitCones: Incomplete
-
+    def LimitCones(self) -> TotalLimitConesCategory: ...
     def diagrams(self) -> FunctorCategory: ...
     def diagonal_functor(self) -> Functor: ...
     def identity_functor(self) -> Functor: ...

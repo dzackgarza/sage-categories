@@ -460,6 +460,47 @@ class StrongerCategory(PropertySubcategory):
         assert completed[surface][f"example.properties.StrongerCategory.{role}"] == (f"example.properties.StrongCategory.{role}",)
 
 
+
+def test_axiom_descriptors_project_to_typed_property_accessors(tmp_path: Path) -> None:
+    package = tmp_path / "example"
+    package.mkdir()
+    source = package / "__init__.py"
+    source.write_text(
+        """
+class Base(Category):
+    Strong = Axiom()
+
+PublicBase = Base
+
+class StrongCategory(PropertySubcategory):
+    _base_category_class_and_axiom = (PublicBase, "Strong")
+    class ObjectType: ...
+    class ElementType: ...
+    class MorphismType: ...
+"""
+    )
+    generator = _stub_generator()
+    accessors = generator._source_property_accessors("example", package, (source,))
+    stub = ast.parse(
+        """
+from _typeshed import Incomplete
+class Base:
+    Strong: Incomplete
+class StrongCategory:
+    pass
+"""
+    )
+    generator._project_property_accessors(
+        stub,
+        "example",
+        accessors["example"],
+        frozenset({"example"}),
+    )
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "def Strong(self) -> StrongCategory:" in projected
+    assert "Strong: Incomplete" not in projected
+
+
 def test_functor_constructor_projection_retains_action_result_roles() -> None:
     stub = ast.parse(
         """

@@ -7,6 +7,7 @@ from sympy import Lambda
 
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.cat.properties
 import sage_categories.cat.slices
 import sage_categories.kernel.roles
 from sage_categories.cat.category import Category as Category
@@ -83,8 +84,7 @@ class SetsCategory(
     _StaticRoles_SetsCategory, MorphismDataCategory[_StaticRoles_SetsCategory.ObjectType, _StaticRoles_SetsCategory.ElementType, _StaticRoles_SetsCategory.MorphismType]
 ):
     def structure_functors(self) -> tuple[Functor, ...]: ...
-    Finite: Incomplete
-
+    def Finite(self) -> sage_categories.cat.properties.PropertySubcategory: ...
     def inverse_morphism(self, morphism: SetsCategory.MorphismType) -> SetsCategory.MorphismType: ...
     @overload
     def __call__(self) -> SetsCategory: ...

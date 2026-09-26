@@ -2,10 +2,9 @@ from collections.abc import Callable
 from collections.abc import Hashable as Hashable
 from dataclasses import dataclass
 
-from _typeshed import Incomplete
-
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.geometry.schemes
 import sage_categories.kernel.roles
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun
@@ -72,8 +71,7 @@ class LocallyRingedSpacesCategory(
         _StaticRoles_LocallyRingedSpacesCategory.ObjectType, _StaticRoles_LocallyRingedSpacesCategory.ElementType, _StaticRoles_LocallyRingedSpacesCategory.MorphismType
     ],
 ):
-    Scheme: Incomplete
-
+    def Scheme(self) -> sage_categories.geometry.schemes.SchemesCategory: ...
     def to_ringed_spaces(self) -> Functor: ...
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def __call__[OpenKey: Hashable](

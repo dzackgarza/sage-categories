@@ -13,7 +13,6 @@ from sage_categories.geometry.affine import AffineSchemes, Spec
 from sage_categories.geometry.affine_global_sections import (
     GlobalSections,
     affine_global_sections_comparison,
-    affine_structure_sheaf_global_map,
     global_sections_spec_comparison,
 )
 
@@ -40,7 +39,6 @@ def test_spec_composes_on_prime_points_and_structure_sheaf_global_sections() -> 
 
     # Sheaf action on the whole open is exactly the affine pullback and is
     # contravariant under scheme-map composition.
-    assert affine_structure_sheaf_global_map(first) is first.pullback()
     assert GlobalSections.on_morphism(opposite_morphism(first)) is first.pullback()
     assert GlobalSections.on_morphism(opposite_morphism(second)) is second.pullback()
     assert (

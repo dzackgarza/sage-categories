@@ -18,7 +18,6 @@ from sage_categories.geometry.affine import (
 __all__ = [
     "GlobalSections",
     "affine_global_sections_comparison",
-    "affine_structure_sheaf_global_map",
     "global_sections_spec_comparison",
 ]
 
@@ -37,24 +36,6 @@ def _global_sections_morphism(
 ) -> MorphismCategory.ObjectType:
     mapping = opposite_morphism(opposite_mapping)
     assert mapping in AffineSchemes().morphism_category(1)
-    return affine_structure_sheaf_global_map(mapping)
-
-
-GlobalSections: Functor = Fun(AffineSchemes().op(), _rings())(
-    _global_sections_object,
-    _global_sections_morphism,
-)
-
-
-def affine_structure_sheaf_global_map(
-    mapping: AffineSchemesCategory.MorphismType,
-) -> MorphismCategory.ObjectType:
-    """The structure-sheaf component on the whole affine open.
-
-    For ``f: Spec(B) -> Spec(A)``, this is the exact pullback ``A -> B`` retained
-    by the affine morphism.  Thus global sections are obtained from the same sheaf
-    action rather than from a second coordinate-ring map.
-    """
     source_opens, source_sheaf = affine_structure_sheaf(mapping.domain())
     target_opens, target_sheaf = affine_structure_sheaf(mapping.codomain())
     source_ring = source_sheaf.section_ring(source_opens.root())
@@ -62,6 +43,12 @@ def affine_structure_sheaf_global_map(
     pullback = mapping.pullback()
     assert pullback.domain() is target_ring and pullback.codomain() is source_ring
     return pullback
+
+
+GlobalSections: Functor = Fun(AffineSchemes().op(), _rings())(
+    _global_sections_object,
+    _global_sections_morphism,
+)
 
 
 _RING_ROUNDTRIP = GlobalSections * opposite_functor(Spec)

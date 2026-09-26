@@ -1,24 +1,32 @@
-"""Negative consumers for the architecture gates."""
+"""Valid and violating consumers for the architecture gates."""
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import tempfile
+import tomllib
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 from rule_coverage import unclassified_source_modules
+
+CONFIG = Path("pyproject.toml")
+SOURCE_ROOT = "sage_categories"
+FIXTURE_ROOT = "fixturepkg"
 
 
 def check_unclassified_source_rejection() -> None:
     """A new source module must enter one of the declared architecture packages."""
     with tempfile.TemporaryDirectory(prefix="sage-categories-architecture-") as directory:
-        root = Path(directory) / "sage_categories"
+        root = Path(directory) / SOURCE_ROOT
         (root / "kernel").mkdir(parents=True)
         (root / "kernel" / "__init__.py").write_text("")
-        assert unclassified_source_modules(root, Path("pyproject.toml")) == []
+        assert unclassified_source_modules(root, CONFIG) == []
         (root / "unclassified.py").write_text("value = 1\n")
-        assert unclassified_source_modules(root, Path("pyproject.toml")) == ["unclassified.py"]
+        assert unclassified_source_modules(root, CONFIG) == ["unclassified.py"]
 
 
 def lint_imports(directory: Path, config: Path) -> subprocess.CompletedProcess[str]:
@@ -45,42 +53,142 @@ def lint_imports(directory: Path, config: Path) -> subprocess.CompletedProcess[s
     )
 
 
-def check_indirect_forbidden_import_rejection() -> None:
-    """A forbidden contract must reject a dependency reached through an intermediate module."""
-    with tempfile.TemporaryDirectory(prefix="sage-categories-import-contract-") as directory:
-        root = Path(directory)
-        package = root / "fixturepkg"
-        for name in ("foundation", "bridge", "leaf"):
-            target = package / name
-            target.mkdir(parents=True)
-            (target / "__init__.py").write_text("")
-        (package / "__init__.py").write_text("")
-        (package / "foundation" / "__init__.py").write_text("import fixturepkg.bridge\n")
-        (package / "bridge" / "__init__.py").write_text("import fixturepkg.leaf\n")
-        config = root / "architecture.toml"
-        config.write_text(
-            "[tool.importlinter]\n"
-            "root_package = \"fixturepkg\"\n"
-            "\n"
-            "[[tool.importlinter.contracts]]\n"
-            "name = \"Foundation imports no leaf\"\n"
-            "type = \"forbidden\"\n"
-            "source_modules = [\"fixturepkg.foundation\"]\n"
-            "forbidden_modules = [\"fixturepkg.leaf\"]\n"
-        )
-        violating = lint_imports(root, config)
-        assert violating.returncode != 0, violating.stdout + violating.stderr
-        assert "Foundation imports no leaf" in violating.stdout + violating.stderr
+def translated(module: str) -> str:
+    """Move one repository module spelling into the isolated fixture package."""
+    if module == SOURCE_ROOT:
+        return FIXTURE_ROOT
+    prefix = f"{SOURCE_ROOT}."
+    if module.startswith(prefix):
+        return f"{FIXTURE_ROOT}.{module[len(prefix):]}"
+    return module
 
-        (package / "bridge" / "__init__.py").write_text("value = 1\n")
-        valid = lint_imports(root, config)
-        assert valid.returncode == 0, valid.stdout + valid.stderr
+
+def module_file(root: Path, module: str) -> Path:
+    """Create an importable package module and return its ``__init__.py``."""
+    directory = root.joinpath(*module.split("."))
+    directory.mkdir(parents=True, exist_ok=True)
+    target = directory / "__init__.py"
+    target.touch()
+    return target
+
+
+def contract_config(contract: Mapping[str, Any]) -> str:
+    """Render one repository forbidden contract for the isolated fixture package."""
+    sources = [translated(module) for module in contract["source_modules"]]
+    forbidden = [translated(module) for module in contract["forbidden_modules"]]
+    lines = [
+        "[tool.importlinter]",
+        f"root_package = {json.dumps(FIXTURE_ROOT)}",
+        "include_external_packages = true",
+        "exclude_type_checking_imports = true",
+        "",
+        "[[tool.importlinter.contracts]]",
+        f"name = {json.dumps(contract['name'])}",
+        'type = "forbidden"',
+        f"source_modules = {json.dumps(sources)}",
+        f"forbidden_modules = {json.dumps(forbidden)}",
+    ]
+    if "allow_indirect_imports" in contract:
+        lines.append(f"allow_indirect_imports = {str(contract['allow_indirect_imports']).lower()}")
+    ignores = [translated(pattern) for pattern in contract.get("ignore_imports", [])]
+    if ignores:
+        lines.append(f"ignore_imports = {json.dumps(ignores)}")
+        lines.append('unmatched_ignore_imports_alerting = "none"')
+    return "\n".join(lines) + "\n"
+
+
+def forbidden_contracts() -> tuple[Mapping[str, Any], ...]:
+    """Read the authoritative forbidden contracts from the repository config."""
+    data = tomllib.loads(CONFIG.read_text())
+    return tuple(
+        contract
+        for contract in data["tool"]["importlinter"]["contracts"]
+        if contract["type"] == "forbidden"
+    )
+
+
+def fixture_for_contract(root: Path, contract: Mapping[str, Any]) -> tuple[Path, str, str]:
+    """Create the package skeleton for one translated contract."""
+    module_file(root, FIXTURE_ROOT)
+    sources = [translated(module) for module in contract["source_modules"]]
+    forbidden = [translated(module) for module in contract["forbidden_modules"]]
+    for module in (*sources, *forbidden):
+        module_file(root, module)
+    config = root / "architecture.toml"
+    config.write_text(contract_config(contract))
+    return config, sources[0], forbidden[0]
+
+
+def check_each_forbidden_contract() -> None:
+    """Every configured forbidden contract accepts a valid tree and rejects its direct violation."""
+    for contract in forbidden_contracts():
+        with tempfile.TemporaryDirectory(prefix="sage-categories-import-contract-") as directory:
+            root = Path(directory)
+            config, source, forbidden = fixture_for_contract(root, contract)
+            valid = lint_imports(root, config)
+            assert valid.returncode == 0, valid.stdout + valid.stderr
+
+            module_file(root, source).write_text(f"import {forbidden}\n")
+            violating = lint_imports(root, config)
+            output = violating.stdout + violating.stderr
+            assert violating.returncode != 0, output
+            assert contract["name"] in output, output
+
+
+def check_indirect_forbidden_import_rejection() -> None:
+    """At least one contract that forbids indirect imports rejects a two-hop dependency."""
+    contract = next(
+        contract
+        for contract in forbidden_contracts()
+        if not contract.get("allow_indirect_imports", False)
+        and translated(contract["forbidden_modules"][0]).startswith(f"{FIXTURE_ROOT}.")
+    )
+    with tempfile.TemporaryDirectory(prefix="sage-categories-indirect-contract-") as directory:
+        root = Path(directory)
+        config, source, forbidden = fixture_for_contract(root, contract)
+        bridge = f"{FIXTURE_ROOT}.bridge"
+        module_file(root, source).write_text(f"import {bridge}\n")
+        module_file(root, bridge).write_text(f"import {forbidden}\n")
+        violating = lint_imports(root, config)
+        output = violating.stdout + violating.stderr
+        assert violating.returncode != 0, output
+        assert contract["name"] in output, output
+        assert bridge in output, output
+
+
+def ignore_importer(pattern: str, source: str) -> tuple[str, str]:
+    """Instantiate one configured ignore edge as a concrete importer and target."""
+    importer_pattern, target = (part.strip() for part in translated(pattern).split("->", 1))
+    source_component = source.split(".", 1)[1].split(".", 1)[0]
+    importer = importer_pattern.replace("**", "adapter").replace("*", source_component)
+    return importer, target
+
+
+def check_designated_allowed_importers() -> None:
+    """Configured ignore edges remain valid exceptions to their forbidden contract."""
+    for contract in forbidden_contracts():
+        ignores = contract.get("ignore_imports", [])
+        if not ignores:
+            continue
+        with tempfile.TemporaryDirectory(prefix="sage-categories-import-exception-") as directory:
+            root = Path(directory)
+            config, source, _forbidden = fixture_for_contract(root, contract)
+            importer, target = ignore_importer(ignores[0], source)
+            module_file(root, target)
+            module_file(root, importer).write_text(f"import {target}\n")
+            valid = lint_imports(root, config)
+            assert valid.returncode == 0, valid.stdout + valid.stderr
 
 
 def main() -> None:
     check_unclassified_source_rejection()
+    check_each_forbidden_contract()
     check_indirect_forbidden_import_rejection()
-    print("architecture-regressions: valid and violating classification/import fixtures behave as required")
+    check_designated_allowed_importers()
+    print(
+        "architecture-regressions: exhaustive source classification and valid/violating "
+        "fixtures for every forbidden contract behave as required"
+    )
 
 
 if __name__ == "__main__":

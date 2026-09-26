@@ -125,6 +125,9 @@ def check_each_forbidden_contract() -> None:
         with tempfile.TemporaryDirectory(prefix="sage-categories-import-contract-") as directory:
             root = Path(directory)
             config, source, forbidden = fixture_for_contract(root, contract)
+            allowed = f"{FIXTURE_ROOT}.allowed"
+            module_file(root, allowed)
+            module_file(root, source).write_text(f"import {allowed}\n")
             valid = lint_imports(root, config)
             assert valid.returncode == 0, valid.stdout + valid.stderr
 
@@ -168,16 +171,15 @@ def check_designated_allowed_importers() -> None:
     """Configured ignore edges remain valid exceptions to their forbidden contract."""
     for contract in forbidden_contracts():
         ignores = contract.get("ignore_imports", [])
-        if not ignores:
-            continue
-        with tempfile.TemporaryDirectory(prefix="sage-categories-import-exception-") as directory:
-            root = Path(directory)
-            config, source, _forbidden = fixture_for_contract(root, contract)
-            importer, target = ignore_importer(ignores[0], source)
-            module_file(root, target)
-            module_file(root, importer).write_text(f"import {target}\n")
-            valid = lint_imports(root, config)
-            assert valid.returncode == 0, valid.stdout + valid.stderr
+        for ignore in ignores:
+            with tempfile.TemporaryDirectory(prefix="sage-categories-import-exception-") as directory:
+                root = Path(directory)
+                config, source, _forbidden = fixture_for_contract(root, contract)
+                importer, target = ignore_importer(ignore, source)
+                module_file(root, target)
+                module_file(root, importer).write_text(f"import {target}\n")
+                valid = lint_imports(root, config)
+                assert valid.returncode == 0, valid.stdout + valid.stderr
 
 
 def main() -> None:

@@ -30,6 +30,7 @@ __all__ = [
     "relative_tensor",
     "relative_tensor_associator",
     "relative_tensor_associator_from_factors",
+    "relative_tensor_bifunctor",
     "relative_tensor_factor",
     "relative_tensor_morphism",
     "relative_tensor_preserved_factor",
@@ -218,6 +219,88 @@ def relative_tensor_morphism(
     """The map of relative tensors induced by compatible maps of both factors."""
     underlying = target * tensor_morphism(monoidal.tensor(), first, second)
     return relative_tensor_factor(monoidal, source, underlying)
+
+
+@cached_function(key=identity_key)
+def relative_tensor_bifunctor(
+    left_scalars: MonoidCategory.ObjectType,
+    middle_scalars: MonoidCategory.ObjectType,
+    right_scalars: MonoidCategory.ObjectType,
+    monoidal: MonoidalStructuresCategory.ObjectType,
+) -> Functor:
+    """The functor Bimod(R,S) x Bimod(S,T) -> Bimod(R,T).
+
+    The object action is the retained balancing coequalizer with its descended
+    outer actions. The morphism action is the unique map induced by the tensor
+    of the two underlying bimodule maps.
+    """
+    first_category = Bimodules(left_scalars, middle_scalars, monoidal)
+    second_category = Bimodules(middle_scalars, right_scalars, monoidal)
+    target_category = Bimodules(left_scalars, right_scalars, monoidal)
+    pairs = Cat().Products()((first_category, second_category))
+    middle = middle_scalars.operation().codomain()
+    left = left_scalars.operation().codomain()
+    right = right_scalars.operation().codomain()
+
+    def on_object(pair: CategoryOfCategories.ElementType) -> BimoduleCategory.ObjectType:
+        first = pair.family_component(0)
+        second = pair.family_component(1)
+        projection = relative_tensor(
+            monoidal,
+            middle,
+            first.right_action(),
+            second.left_action(),
+        )
+        return target_category(
+            induced_left_action(
+                monoidal,
+                projection,
+                left,
+                second.left_action().codomain(),
+                first.left_action(),
+            ),
+            induced_right_action(
+                monoidal,
+                projection,
+                first.right_action().codomain(),
+                right,
+                second.right_action(),
+            ),
+        )
+
+    def on_morphism(arrow: MorphismCategory.ObjectType) -> BimoduleCategory.MorphismType:
+        source_pair, target_pair = arrow.domain(), arrow.codomain()
+        source_first, source_second = (source_pair.family_component(index) for index in range(2))
+        target_first, target_second = (target_pair.family_component(index) for index in range(2))
+        source_projection = relative_tensor(
+            monoidal,
+            middle,
+            source_first.right_action(),
+            source_second.left_action(),
+        )
+        target_projection = relative_tensor(
+            monoidal,
+            middle,
+            target_first.right_action(),
+            target_second.left_action(),
+        )
+        first = first_category.forgetful().on_morphism(arrow.family_component(0))
+        second = second_category.forgetful().on_morphism(arrow.family_component(1))
+        underlying = relative_tensor_morphism(
+            monoidal,
+            source_projection,
+            target_projection,
+            first,
+            second,
+        )
+        return target_category.homomorphism(
+            tensor.on_object(source_pair),
+            tensor.on_object(target_pair),
+            underlying,
+        )
+
+    tensor = Fun(pairs, target_category)(on_object, on_morphism)
+    return tensor
 
 
 def relative_left_unitor(

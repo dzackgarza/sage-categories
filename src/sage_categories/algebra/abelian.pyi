@@ -80,6 +80,7 @@ __all__ = [
     "integer_group",
     "presented_abelian_group",
     "relative_tensor",
+    "relative_tensor_bifunctor",
     "relative_tensor_mediator",
     "relative_tensor_morphism",
     "simple_tensor",
@@ -119,6 +120,7 @@ def induced_right_action(projection: MorphismCategory.ObjectType, right_action: 
 def relative_tensor_morphism(
     source: MorphismCategory.ObjectType, target: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType
 ) -> MorphismCategory.ObjectType: ...
+def relative_tensor_bifunctor(left_scalars: MonoidCategory.ObjectType, middle_scalars: MonoidCategory.ObjectType, right_scalars: MonoidCategory.ObjectType) -> Functor: ...
 def AbelianBimoduleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
 def AbelianModuleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
 

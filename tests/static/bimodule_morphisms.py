@@ -11,6 +11,7 @@ from sage_categories.cat.bimodules import (
     relative_right_unitor,
     relative_tensor,
     relative_tensor_associator,
+    relative_tensor_bifunctor,
     relative_tensor_factor,
     relative_tensor_morphism,
     relative_tensor_preserved_factor,
@@ -19,6 +20,7 @@ from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.monoidal import MonoidalStructuresCategory
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.structured_objects import MonoidCategory
 
 
 def bimodule_object_types(
@@ -46,6 +48,9 @@ def bimodule_morphism_types(
 
 def relative_tensor_calculus_types(
     monoidal: MonoidalStructuresCategory.ObjectType,
+    left_scalars: MonoidCategory.ObjectType,
+    middle_scalars: MonoidCategory.ObjectType,
+    right_scalars: MonoidCategory.ObjectType,
     middle: CategoryOfCategories.ElementType,
     first: CategoryOfCategories.ElementType,
     second: CategoryOfCategories.ElementType,
@@ -59,6 +64,15 @@ def relative_tensor_calculus_types(
     arrow: MorphismCategory.ObjectType,
     preserving: Functor,
 ) -> None:
+    assert_type(
+        relative_tensor_bifunctor(
+            left_scalars,
+            middle_scalars,
+            right_scalars,
+            monoidal,
+        ),
+        Functor,
+    )
     assert_type(fixed_tensor_functor(monoidal, first, "left"), Functor)
     assert_type(fixed_tensor_functor(monoidal, second, "right"), Functor)
     assert_type(relative_tensor(monoidal, middle, right_action, left_action), MorphismCategory.ObjectType)

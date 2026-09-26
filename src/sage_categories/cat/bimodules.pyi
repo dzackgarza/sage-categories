@@ -56,6 +56,7 @@ __all__ = [
     "relative_tensor",
     "relative_tensor_associator",
     "relative_tensor_associator_from_factors",
+    "relative_tensor_bifunctor",
     "relative_tensor_factor",
     "relative_tensor_morphism",
     "relative_tensor_preserved_factor",
@@ -95,6 +96,12 @@ def relative_tensor_morphism(
     first: MorphismCategory.ObjectType,
     second: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType: ...
+def relative_tensor_bifunctor(
+    left_scalars: MonoidCategory.ObjectType,
+    middle_scalars: MonoidCategory.ObjectType,
+    right_scalars: MonoidCategory.ObjectType,
+    monoidal: MonoidalStructuresCategory.ObjectType,
+) -> Functor: ...
 def relative_left_unitor(
     monoidal: MonoidalStructuresCategory.ObjectType,
     projection: MorphismCategory.ObjectType,

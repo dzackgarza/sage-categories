@@ -42,6 +42,7 @@ __all__ = [
     "integer_group",
     "presented_abelian_group",
     "relative_tensor",
+    "relative_tensor_bifunctor",
     "relative_tensor_mediator",
     "relative_tensor_morphism",
     "simple_tensor",
@@ -75,6 +76,9 @@ from sage_categories.cat.bimodules import (
 )
 from sage_categories.cat.bimodules import (
     relative_tensor as generic_relative_tensor,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor_bifunctor as generic_relative_tensor_bifunctor,
 )
 from sage_categories.cat.bimodules import (
     relative_tensor_morphism as generic_relative_tensor_morphism,
@@ -1228,6 +1232,22 @@ def relative_tensor_morphism(
     """
 
     return generic_relative_tensor_morphism(AbelianTensor(), source, target, first, second)
+
+
+def relative_tensor_bifunctor(
+    left_scalars: MonoidCategory.ObjectType,
+    middle_scalars: MonoidCategory.ObjectType,
+    right_scalars: MonoidCategory.ObjectType,
+) -> Functor:
+    """The relative tensor functor between three exact abelian bimodule categories."""
+    _fixed_tensor_functor(left_scalars.operation().codomain(), "left")
+    _fixed_tensor_functor(right_scalars.operation().codomain(), "right")
+    return generic_relative_tensor_bifunctor(
+        left_scalars,
+        middle_scalars,
+        right_scalars,
+        AbelianTensor(),
+    )
 
 
 def _monoid_one(unit_morphism: MorphismCategory.ObjectType) -> Hashable:

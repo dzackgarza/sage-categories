@@ -81,7 +81,16 @@ class AlgebraCategory[
             case _:
                 raise AssertionError(f"{underlying!r} has no retained left-module owner")
 
-    def monoid_presentation(self) -> Functor:
+    def monoid_presentation(self) -> CategoryOfCategories.MorphismType[
+        AlgebraCategory[BaseScalar],
+        MonoidCategory,
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+        MonoidCategory.ObjectType,
+        MonoidCategory.ElementType,
+        MonoidCategory.MorphismType,
+    ]:
         """The retained equivalence ``Algebras(R,C) -> Monoids(V_R)``."""
         return self.product_projection(0)
 

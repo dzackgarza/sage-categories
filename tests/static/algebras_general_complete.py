@@ -35,7 +35,7 @@ def complete_algebra_types(
 ) -> None:
     assert_type(Algebras(base, monoidal), AlgebraCategory)
     assert_type(source.base(), MonoidCategory.ObjectType)
-    assert_type(source.monoid_presentation(), Functor)
+    assert_type(source.monoid_presentation().codomain(), MonoidCategory)
     assert_type(
         source.to_modules().codomain(),
         ModuleCategory[MonoidCategory.ObjectType],

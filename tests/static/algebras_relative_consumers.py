@@ -3,7 +3,6 @@
 from typing import assert_type
 
 from sage_categories.algebra.algebras import AlgebraCategory
-from sage_categories.cat.functors import Functor
 from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import MonoidalStructuresCategory
 from sage_categories.cat.morphisms import MorphismCategory
@@ -19,7 +18,7 @@ def relative_algebra_consumer_types(
     assert_type(algebras.base(), MonoidCategory.ObjectType)
     assert_type(algebras.monoidal_structure(), MonoidalStructuresCategory.ObjectType)
     assert_type(algebras.module_category(), ModuleCategory)
-    assert_type(algebras.monoid_presentation(), Functor)
+    assert_type(algebras.monoid_presentation().codomain(), MonoidCategory)
     assert_type(
         algebras.to_modules().codomain(),
         ModuleCategory[MonoidCategory.ObjectType],

@@ -193,8 +193,10 @@ Read historical observations at their stated revisions before relying on them.
   On 2026-09-26 exact read-only review attempts at `9c97a712` and `3edc29b4` were rejected before worker creation with `AGENTS_BUSY`: another prime workstream held the app's sole sub-agent swarm.
   Further exact read-only attempts through `28726a89` returned the same `AGENTS_BUSY` condition before worker creation.
   On 2026-09-26 the prime recovered the sleeping original `r-gate algebraic calculus` reviewer, whose prior `NOT ACCEPT` at `727414bf` named the Ab relative-tensor owner and geometry compatible-section descent as the two blockers.
-  Current source through clean revision `4144bb7c` routes those responsibilities through `cat/bimodules.py`, executable colimit preservation/factorization, generic `Rings` product/equalizer owners, retained colimit mediation for stalks, direct functor-owned global sections, and generic relative-tensor factorization for scalar restriction.
-  Repeated attempts to revive that same reviewer through `4144bb7c` were again rejected with `AGENTS_BUSY` before execution.
+  Current source through clean revision `99617427` routes those responsibilities through `cat/bimodules.py`, executable colimit preservation/factorization, generic `Rings` product/equalizer owners, retained colimit mediation for stalks, direct functor-owned global sections, and generic relative-tensor factorization for scalar restriction.
+  The exact-current `test_preserved_colimit_transports_retained_universal_data` consumer passes with the transported apex, leg, and universal mediator exercised; a larger relative-tensor coherence consumer reached its bounded 230-second execution ceiling without a verdict.
+  Repeated attempts to revive the retained reviewer through `99617427` were rejected with `AGENTS_BUSY` before execution.
+  A source-only local Sonnet fallback at `99617427`, restricted to `Read`, `Grep`, and `Glob` with no command/edit/MCP tools, exited immediately with `Not logged in · Please run /login` before reading source.
   These attempts returned no reviewer result and do not discharge the fixed-revision acceptance gate.
   The fixed-revision architecture check and focused public consumers therefore remain execution evidence, not independent acceptance.
 

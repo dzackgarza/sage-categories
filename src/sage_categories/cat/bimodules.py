@@ -489,7 +489,11 @@ class ActionPairsCategory(LimitSubcategory):
         return (*super().structure_functors(), self.to_left(), self.to_right())
 
 
-class BimoduleCategory(EquifierCategory):
+class BimoduleCategory[
+    LeftScalar: "MonoidCategory.ObjectType" = "MonoidCategory.ObjectType",
+    RightScalar: "MonoidCategory.ObjectType" = "MonoidCategory.ObjectType",
+    BaseCategory: "Category[..., ...]" = "Category[..., ...]",
+](EquifierCategory):
     """``Bimodules(R, S, V)``: action pairs whose left and right actions commute."""
 
     class ObjectType:
@@ -511,10 +515,10 @@ class BimoduleCategory(EquifierCategory):
         self,
         first: NaturalTransformation,
         second: NaturalTransformation,
-        left_scalars: MonoidCategory.ObjectType,
-        right_scalars: MonoidCategory.ObjectType,
-        left: ModuleCategory,
-        right: ModuleCategory,
+        left_scalars: LeftScalar,
+        right_scalars: RightScalar,
+        left: ModuleCategory[BaseCategory, BaseCategory],
+        right: ModuleCategory[BaseCategory, BaseCategory],
         pairs: ActionPairsCategory,
     ) -> None:
         self._left_scalars = left_scalars
@@ -522,26 +526,26 @@ class BimoduleCategory(EquifierCategory):
         self._left, self._right, self._pairs = left, right, pairs
         super().__init__(first, second)
 
-    def left_scalars(self) -> MonoidCategory.ObjectType:
+    def left_scalars(self) -> LeftScalar:
         """The exact left scalar monoid ``R`` supplied to ``Bimodules(R,S,V)``."""
         return self._left_scalars
 
-    def right_scalars(self) -> MonoidCategory.ObjectType:
+    def right_scalars(self) -> RightScalar:
         """The exact right scalar monoid ``S`` supplied to ``Bimodules(R,S,V)``."""
         return self._right_scalars
 
-    def left_modules(self) -> ModuleCategory:
+    def left_modules(self) -> ModuleCategory[BaseCategory, BaseCategory]:
         """``Modules(R, V)``, the left half."""
         return self._left
 
-    def right_modules(self) -> ModuleCategory:
+    def right_modules(self) -> ModuleCategory[BaseCategory, BaseCategory]:
         """``Modules(S, V^rev)``, the right half; its objects are the right ``S``-modules."""
         return self._right
 
-    def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
+    def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType[BaseCategory]:
         return self._left.actegory().monoidal_structure()
 
-    def underlying_category(self) -> Category:
+    def underlying_category(self) -> BaseCategory:
         return self._left.underlying_category()
 
     @cached_method
@@ -656,11 +660,15 @@ class BimoduleCategory(EquifierCategory):
 
 
 @cached_function(key=identity_key)
-def Bimodules(
-    left_scalars: MonoidCategory.ObjectType,
-    right_scalars: MonoidCategory.ObjectType,
-    monoidal: MonoidalStructuresCategory.ObjectType,
-) -> BimoduleCategory:
+def Bimodules[
+    LeftScalar: "MonoidCategory.ObjectType",
+    RightScalar: "MonoidCategory.ObjectType",
+    BaseCategory: "Category[..., ...]",
+](
+    left_scalars: LeftScalar,
+    right_scalars: RightScalar,
+    monoidal: MonoidalStructuresCategory.ObjectType[BaseCategory],
+) -> BimoduleCategory[LeftScalar, RightScalar, BaseCategory]:
     """``Bimodules(R, S, V)``: objects of ``V`` carrying a left ``R``-action and a commuting right ``S``-action.
 
     Both scalars are monoid objects of ``V``.  The right half reads ``S`` in ``V^rev``,

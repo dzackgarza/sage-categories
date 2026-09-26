@@ -4,6 +4,7 @@ from typing import assert_type
 
 from sage_categories.cat.bimodules import (
     BimoduleCategory,
+    Bimodules,
     fixed_tensor_functor,
     induced_left_action,
     induced_right_action,
@@ -16,11 +17,33 @@ from sage_categories.cat.bimodules import (
     relative_tensor_morphism,
     relative_tensor_preserved_factor,
 )
-from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor
 from sage_categories.cat.monoidal import MonoidalStructuresCategory
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import MonoidCategory
+
+
+class AmbientCategory(Category[[], []]):
+    pass
+
+
+def bimodule_owner_parameters[
+    LeftScalar: MonoidCategory.ObjectType,
+    RightScalar: MonoidCategory.ObjectType,
+](
+    left_scalars: LeftScalar,
+    right_scalars: RightScalar,
+    monoidal: MonoidalStructuresCategory.ObjectType[AmbientCategory],
+) -> None:
+    bimodules = Bimodules(left_scalars, right_scalars, monoidal)
+    assert_type(
+        bimodules,
+        BimoduleCategory[LeftScalar, RightScalar, AmbientCategory],
+    )
+    assert_type(bimodules.left_scalars(), LeftScalar)
+    assert_type(bimodules.right_scalars(), RightScalar)
+    assert_type(bimodules.underlying_category(), AmbientCategory)
 
 
 def bimodule_object_types(

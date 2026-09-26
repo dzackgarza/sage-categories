@@ -171,10 +171,6 @@ class AlgebraCategory[
         """The named composite from algebras through modules to the ambient category ``C``."""
         return self.module_category().forgetful() * self.to_modules()
 
-    def to_sets(self) -> Functor:
-        """The inherited concrete composite from algebras through their module owner to ``Sets``."""
-        return self.module_category().functor_to_sets() * self.to_modules()
-
 
 def _monoidal_context(
     base: MonoidCategory.ObjectType,

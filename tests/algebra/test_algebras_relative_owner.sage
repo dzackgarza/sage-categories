@@ -59,8 +59,8 @@ def test_relative_algebra_owner_retains_monoid_equivalence_and_forgetful_composi
     assert algebras.U_R().on_object(
         algebra
     ) is algebras.module_category().forgetful().on_object(module)
-    assert algebras.to_sets().codomain() is Sets
-    assert algebras.to_sets().on_object(
+    assert algebras.functor_to_sets().codomain() is Sets
+    assert algebras.functor_to_sets().on_object(
         algebra
     ) is algebras.module_category().functor_to_sets().on_object(module)
 

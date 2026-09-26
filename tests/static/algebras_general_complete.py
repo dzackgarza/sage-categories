@@ -41,7 +41,7 @@ def complete_algebra_types(
         ModuleCategory[MonoidCategory.ObjectType],
     )
     assert_type(source.U_R(), Functor)
-    assert_type(source.to_sets(), Functor)
+    assert_type(source.functor_to_sets(), Functor)
     restriction = restrict_algebra_scalars(source, target, scalar_map)
     assert_type(
         restriction.domain(),

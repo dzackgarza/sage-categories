@@ -51,4 +51,4 @@ def algebra_owner_types[BaseScalar: MonoidCategory.ObjectType](
     assert_type(to_modules.on_object(algebra), ModuleCategory.ObjectType)
     assert_type(to_modules.on_morphism(algebras.homomorphism(algebra, algebra, arrow)), ModuleCategory.MorphismType)
     assert_type(algebras.U_R(), Functor)
-    assert_type(algebras.to_sets(), Functor)
+    assert_type(algebras.functor_to_sets(), Functor)

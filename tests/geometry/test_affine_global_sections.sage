@@ -8,13 +8,12 @@ from sage_categories.algebra.commutative_rings import (
     quotient_ring,
 )
 from sage_categories.all import Mor, ask
+from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.geometry.affine import AffineSchemes, Spec
 from sage_categories.geometry.affine_global_sections import (
     GlobalSections,
     affine_global_sections_comparison,
     affine_structure_sheaf_global_map,
-    global_sections,
-    global_sections_map,
     global_sections_spec_comparison,
 )
 
@@ -35,19 +34,20 @@ def test_spec_composes_on_prime_points_and_structure_sheaf_global_sections() -> 
 
     assert first.domain() is scheme and first.codomain() is scheme
     assert second.domain() is scheme and second.codomain() is scheme
-    assert global_sections(scheme) is polynomial
+    assert GlobalSections.on_object(scheme) is polynomial
     assert GlobalSections.domain() is AffineSchemes().op()
     assert GlobalSections.codomain() is polynomial.category()
 
     # Sheaf action on the whole open is exactly the affine pullback and is
     # contravariant under scheme-map composition.
     assert affine_structure_sheaf_global_map(first) is first.pullback()
-    assert global_sections_map(first) is first.pullback()
-    assert global_sections_map(second) is second.pullback()
+    assert GlobalSections.on_morphism(opposite_morphism(first)) is first.pullback()
+    assert GlobalSections.on_morphism(opposite_morphism(second)) is second.pullback()
     assert (
         ask(
-            global_sections_map(composite)
-            == global_sections_map(first) * global_sections_map(second)
+            GlobalSections.on_morphism(opposite_morphism(composite))
+            == GlobalSections.on_morphism(opposite_morphism(first))
+            * GlobalSections.on_morphism(opposite_morphism(second))
         )
         is True
     )
@@ -98,8 +98,8 @@ def test_nilpotent_affine_scheme_keeps_its_global_section_and_prime_point() -> N
     field_scheme = Spec.on_object(field)
 
     assert dual_scheme is not field_scheme
-    assert global_sections(dual_scheme) is dual_numbers
-    assert global_sections(field_scheme) is field
+    assert GlobalSections.on_object(dual_scheme) is dual_numbers
+    assert GlobalSections.on_object(field_scheme) is field
     assert ask(epsilon == dual_numbers.zero()) is False
     assert ask(epsilon * epsilon == dual_numbers.zero()) is True
 

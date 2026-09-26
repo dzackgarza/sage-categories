@@ -19,8 +19,6 @@ __all__ = [
     "GlobalSections",
     "affine_global_sections_comparison",
     "affine_structure_sheaf_global_map",
-    "global_sections",
-    "global_sections_map",
     "global_sections_spec_comparison",
 ]
 
@@ -48,13 +46,6 @@ GlobalSections: Functor = Fun(AffineSchemes().op(), _rings())(
 )
 
 
-def global_sections(
-    scheme: AffineSchemesCategory.ObjectType,
-) -> CategoryOfCategories.ElementType:
-    """The global section ring of an affine scheme, read from its structure sheaf."""
-    return GlobalSections.on_object(scheme)
-
-
 def affine_structure_sheaf_global_map(
     mapping: AffineSchemesCategory.MorphismType,
 ) -> MorphismCategory.ObjectType:
@@ -71,13 +62,6 @@ def affine_structure_sheaf_global_map(
     pullback = mapping.pullback()
     assert pullback.domain() is target_ring and pullback.codomain() is source_ring
     return pullback
-
-
-def global_sections_map(
-    mapping: AffineSchemesCategory.MorphismType,
-) -> MorphismCategory.ObjectType:
-    """``Gamma(f): Gamma(Y) -> Gamma(X)`` for ``f: X -> Y``."""
-    return GlobalSections.on_morphism(opposite_morphism(mapping))
 
 
 _RING_ROUNDTRIP = GlobalSections * opposite_functor(Spec)

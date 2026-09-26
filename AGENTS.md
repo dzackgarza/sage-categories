@@ -27,6 +27,22 @@ The repository owns three responsibilities only:
 2. Weave and coordinate backend engines.
 3. Supply kernel and `Cat` machinery to organize, structure, and inherit categories ergonomically for mathematicians.
 
+### Leaves are litmus spikes, not products
+
+This repository builds the Cat/kernel core. Leaves exist only as evidence that the core works as intended:
+small structural spikes showing what writing a leaf looks like against the current core.
+From a spike one should be able to see directly that
+- a leaf is mostly mathematics plus backend wiring;
+- Cat/core handles generality, inheritance and engineering wiring;
+- inheritance just works;
+- leaves are isolated and modular, provided they define the right functors.
+
+Rebuilding real Sage functionality is not a goal. Real leaf work belongs in a separate repository that imports
+sage-categories as a black-box foundation. Do not extend a leaf toward a full topic contract (full adelic products,
+arbitrary `CP^infty`, general scheme gluing, local fields and the like). When a spike exposes a defect, repair the core.
+This was misread once: milestone B required "every production leaf" to satisfy its complete topic contract,
+and core nodes were gated on leaf consumers.
+
 ### Leaf categories and hand-rolled mathematics
 
 Leaf categories must not introduce new bespoke code.

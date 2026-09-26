@@ -39,10 +39,16 @@ def bimodule_morphism_types(
     source: BimoduleCategory.ObjectType,
     target: BimoduleCategory.ObjectType,
     arrow: MorphismCategory.ObjectType,
+    left_scalar_map: MorphismCategory.ObjectType,
+    right_scalar_map: MorphismCategory.ObjectType,
 ) -> None:
     assert_type(
         bimodules.homomorphism(source, target, arrow),
         BimoduleCategory.MorphismType,
+    )
+    assert_type(
+        bimodules.restriction(left_scalar_map, right_scalar_map),
+        Functor,
     )
 
 

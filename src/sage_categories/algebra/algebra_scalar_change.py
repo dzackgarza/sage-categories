@@ -10,7 +10,6 @@ implementation.
 from __future__ import annotations
 
 from sage_categories.algebra.abelian import (
-    AbelianGroups,
     AbelianTensor,
     balanced_tensor,
     relative_tensor,
@@ -20,7 +19,7 @@ from sage_categories.algebra.algebras import AlgebraCategory
 from sage_categories.cat.bimodules import BimoduleCategory
 from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.cat.monoidal import tensor_morphism, tensor_object
+from sage_categories.cat.monoidal import tensor_object
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.structured_objects import Magmas, Monoids
 
@@ -65,14 +64,11 @@ def _restrict_object(
         _ordinary_bimodules(target),
     )
     source_carrier = _relative_carrier(source, algebra)
+    restriction = source_relative.restriction(scalar_morphism, scalar_morphism)
+    assert restriction.codomain() is target_relative
+    restricted = restriction.on_object(source_carrier)
     group = source_relative.forgetful().on_object(source_carrier)
     scalar_map = _underlying_scalar_map(scalar_morphism)
-    identity = Mor(AbelianGroups())(group, group).one()
-    tensor = AbelianTensor().tensor()
-    restricted = target_relative(
-        source_carrier.left_action() * tensor_morphism(tensor, scalar_map, identity),
-        source_carrier.right_action() * tensor_morphism(tensor, identity, scalar_map),
-    )
 
     source_monoid = source.monoid_presentation().on_object(algebra)
     source_projection = relative_tensor(
@@ -141,6 +137,11 @@ def _new_restrict_algebra_scalars(
         _ordinary_bimodules(source),
         _ordinary_bimodules(target),
     )
+    relative_restriction = source_relative.restriction(
+        scalar_morphism,
+        scalar_morphism,
+    )
+    assert relative_restriction.codomain() is target_relative
 
     def on_object(algebra: AlgebraCategory.ObjectType) -> AlgebraCategory.ObjectType:
         return _ALGEBRA_RESTRICTIONS(
@@ -155,16 +156,11 @@ def _new_restrict_algebra_scalars(
         source_monoid = source.monoid_presentation().on_morphism(arrow)
         source_magma = source.monoid_category().to_magmas().on_morphism(source_monoid)
         source_bimodule_map = Magmas(source.monoidal_structure()).forgetful().on_morphism(source_magma)
-        underlying = source_relative.forgetful().on_morphism(source_bimodule_map)
         restricted_source, restricted_target = (
             on_object(arrow.domain()),
             on_object(arrow.codomain()),
         )
-        target_bimodule_map = target_relative.homomorphism(
-            _relative_carrier(target, restricted_source),
-            _relative_carrier(target, restricted_target),
-            underlying,
-        )
+        target_bimodule_map = relative_restriction.on_morphism(source_bimodule_map)
         return target.homomorphism(
             restricted_source,
             restricted_target,

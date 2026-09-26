@@ -591,6 +591,62 @@ class BimoduleCategory(EquifierCategory):
         """The bimodule morphism over a map of ``V`` preserving both actions; fullness makes it a morphism here."""
         return self.restrict_morphism(self._pairs.homomorphism(source, target, arrow))
 
+    @cached_method(key=identity_key)
+    def restriction(
+        self,
+        left_scalar_morphism: MorphismCategory.ObjectType,
+        right_scalar_morphism: MorphismCategory.ObjectType,
+    ) -> Functor:
+        """Restrict both scalar actions along ``R' -> R`` and ``S' -> S``."""
+        monoidal = self.monoidal_structure()
+        monoids = Monoids(monoidal)
+        left_scalars = self.left_modules().scalars()
+        assert left_scalar_morphism in Mor(monoids)(left_scalar_morphism.domain(), left_scalars)
+
+        right_opposite = self.right_modules().scalars()
+        right_scalars = Monoids(monoidal)(
+            right_opposite.operation(),
+            right_opposite.unit_morphism(),
+        )
+        assert right_scalar_morphism in Mor(monoids)(right_scalar_morphism.domain(), right_scalars)
+        reverse_monoids = Monoids(Reversed(monoidal))
+        reverse_source = reverse_monoids(
+            right_scalar_morphism.domain().operation(),
+            right_scalar_morphism.domain().unit_morphism(),
+        )
+        to_magmas = monoids.to_magmas()
+        underlying_right = to_magmas.codomain().forgetful().on_morphism(
+            to_magmas.on_morphism(right_scalar_morphism)
+        )
+        reverse_right = reverse_monoids.homomorphism(
+            reverse_source,
+            right_opposite,
+            underlying_right,
+        )
+
+        left_restriction = self.left_modules().restriction(left_scalar_morphism)
+        right_restriction = self.right_modules().restriction(reverse_right)
+        target = Bimodules(
+            left_scalar_morphism.domain(),
+            right_scalar_morphism.domain(),
+            monoidal,
+        )
+
+        def on_object(value: BimoduleCategory.ObjectType) -> BimoduleCategory.ObjectType:
+            left = left_restriction.on_object(self.to_left().on_object(value))
+            right = right_restriction.on_object(self.to_right().on_object(value))
+            return target(left.action(), right.action())
+
+        def on_morphism(arrow: BimoduleCategory.MorphismType) -> BimoduleCategory.MorphismType:
+            return target.homomorphism(
+                restriction.on_object(arrow.domain()),
+                restriction.on_object(arrow.codomain()),
+                self.forgetful().on_morphism(arrow),
+            )
+
+        restriction = Fun(self, target)(on_object, on_morphism)
+        return restriction
+
 
 @cached_function(key=identity_key)
 def Bimodules(

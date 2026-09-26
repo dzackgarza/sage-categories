@@ -638,14 +638,6 @@ def coequalizer_mediator(
     return coequalizer_factor(presentation, coequalizing)
 
 
-def _factor_relative_projection(
-    projection: MorphismCategory.ObjectType,
-    arrow: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    """Factor through the retained relative-tensor coequalizer presentation."""
-    return relative_tensor_factor(AbelianTensor(), projection, arrow)
-
-
 def _pair_vector(
     data: _TensorData | _IndexedTensorData | _IndexedPairTensorData,
     a: Hashable,
@@ -1177,7 +1169,11 @@ def relative_tensor_mediator(
     makes its mediator out of ``X (x) Y`` coequalize the two maps this quotient identifies.
     """
     factors = _tensor_info(projection.domain())
-    return _factor_relative_projection(projection, tensor_mediator(factors.first, factors.second, target, balanced))
+    return relative_tensor_factor(
+        AbelianTensor(),
+        projection,
+        tensor_mediator(factors.first, factors.second, target, balanced),
+    )
 
 
 def induced_left_action(
@@ -1517,7 +1513,7 @@ def _factor_commutative_module_projection(
         case True:
             return arrow * _commutative_module_unit_section(modules, first, "right")
         case False:
-            return _factor_relative_projection(projection, arrow)
+            return relative_tensor_factor(AbelianTensor(), projection, arrow)
 
 
 def _module_unitor_components(

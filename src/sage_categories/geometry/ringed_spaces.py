@@ -140,23 +140,11 @@ class RingedSpacesCategory(MorphismDataCategory):
         second: RingedSpacesCategory.MorphismType,
         first: RingedSpacesCategory.MorphismType,
     ) -> tuple[TopologicalSpacesCategory.MorphismType, NaturalTransformation]:
-        source, target = first.domain(), second.codomain()
         continuous = second.continuous_map() * first.continuous_map()
-
-        def component(target_key: Hashable) -> MorphismCategory.ObjectType:
-            target_open = target.sheaf().presheaf.open_object(target_key)
-            middle_open = second.continuous_map().inverse_image().on_object(target_open)
-            second_component = second.sheaf_map().component(target_open)
-            first_component = first.sheaf_map().component(middle_open)
-            assert second_component.codomain() is first_component.domain()
-            return first_component * second_component
-
-        return self._ringed_morphism_data(
-            source,
-            target,
-            continuous,
-            component,
-        )
+        sheaf_map = first.sheaf_map().whisker_right(
+            second.continuous_map().inverse_image().op(),
+        ) * second.sheaf_map()
+        return continuous, sheaf_map
 
     def __repr__(self) -> str:
         return "RingedSpaces"

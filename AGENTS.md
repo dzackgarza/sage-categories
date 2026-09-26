@@ -29,13 +29,18 @@ The repository owns three responsibilities only:
 
 ### Leaves are litmus spikes, not products
 
-This repository builds the Cat/kernel core. Leaves exist only as evidence that the core works as intended:
-small structural spikes showing what writing a leaf looks like against the current core.
-From a spike one should be able to see directly that
-- a leaf is mostly mathematics plus backend wiring;
-- Cat/core handles generality, inheritance and engineering wiring;
-- inheritance just works;
-- leaves are isolated and modular, provided they define the right functors.
+This repository builds the Cat/kernel core. Leaves are small structural spikes that probe it.
+Their primary purpose is to find where the core falls short. A spike shows:
+- when a leaf has to do too much;
+- where a leaf can easily violate the abstraction boundaries or short-circuit what Cat/core is supposed to do;
+- where Cat/core needs to own more;
+- where it needs stronger mechanisms guiding correct leaf-writing, or enforcement of data flow, import flow and
+  override practices;
+- where writing a leaf exposes missing functionality or missing general mathematics in the core.
+Each such finding is repaired in the core (or becomes a core node), never absorbed into the leaf.
+The target a spike is measured against: a leaf is mostly mathematics plus backend wiring; Cat/core handles
+generality, inheritance and engineering wiring; inheritance just works; leaves are isolated and modular provided
+they define the right functors.
 
 Rebuilding real Sage functionality is not a goal. Real leaf work belongs in a separate repository that imports
 sage-categories as a black-box foundation. Do not extend a leaf toward a full topic contract (full adelic products,

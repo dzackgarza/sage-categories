@@ -13,7 +13,7 @@ from sage_categories.algebra import (
 )
 from sage_categories.all import Mor, ask
 from sage_categories.cat.bimodules import relative_left_unitor, relative_right_unitor
-from sage_categories.cat.monoidal import Reversed
+from sage_categories.cat.monoidal import Reversed, tensor_morphism
 from sage_categories.cat.structured_objects import Monoids
 
 
@@ -60,6 +60,25 @@ def test_a_nonidentity_pair_of_module_maps_induces_a_map_of_relative_tensors() -
     on_the_right = abelian_homomorphism(group, group, lambda a: product(a, e21))
     induced = relative_tensor_morphism(balanced, balanced, on_the_left, on_the_right)
     assert induced.domain() is balanced.codomain() and induced.codomain() is balanced.codomain()
+    raw = tensor_morphism(AbelianTensor().tensor(), on_the_left, on_the_right)
+    assert ask(induced * balanced == balanced * raw) is True
+
+    # A second compatible pair composes through the same universal factor.
+    second_left = abelian_homomorphism(group, group, lambda a: product(e21, a))
+    second_right = abelian_homomorphism(group, group, lambda a: product(a, e12))
+    second_induced = relative_tensor_morphism(
+        balanced,
+        balanced,
+        second_left,
+        second_right,
+    )
+    composed = relative_tensor_morphism(
+        balanced,
+        balanced,
+        second_left * on_the_left,
+        second_right * on_the_right,
+    )
+    assert ask(second_induced * induced == composed) is True
 
     identity = element([1, 0, 0, 1])
     over_the_ring = lambda a, b: balanced_tensor(balanced, a, b)

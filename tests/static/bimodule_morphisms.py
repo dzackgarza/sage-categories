@@ -72,8 +72,12 @@ def bimodule_morphism_types(
         BimoduleCategory.MorphismType,
     )
     assert_type(
-        bimodules.restriction(left_scalar_map, right_scalar_map),
-        Functor,
+        bimodules.restriction(left_scalar_map, right_scalar_map).domain(),
+        BimoduleCategory[MonoidCategory.ObjectType, MonoidCategory.ObjectType, AmbientCategory],
+    )
+    assert_type(
+        bimodules.restriction(left_scalar_map, right_scalar_map).codomain(),
+        BimoduleCategory[MonoidCategory.ObjectType, MonoidCategory.ObjectType, AmbientCategory],
     )
 
 

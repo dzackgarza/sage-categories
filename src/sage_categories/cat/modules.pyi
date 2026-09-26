@@ -90,7 +90,18 @@ class ModuleCategory[
     def homomorphism(self, source: ModuleCategory.ObjectType, target: ModuleCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> ModuleCategory.MorphismType: ...
     def from_endomorphism_action(self, scalar_morphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType: ...
     def transport(self, module: ModuleCategory.ObjectType, isomorphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType: ...
-    def restriction(self, scalar_morphism: MorphismCategory.ObjectType) -> Functor: ...
+    def restriction(
+        self, scalar_morphism: MorphismCategory.ObjectType
+    ) -> CategoryOfCategories.MorphismType[
+        ModuleCategory[Scalar, ActingCategory, ActedCategory],
+        ModuleCategory[MonoidCategory.ObjectType, ActingCategory, ActedCategory],
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]: ...
 
 def Modules[Scalar: MonoidCategory.ObjectType, ActingCategory: Category[..., ...], ActedCategory: Category[..., ...]](
     scalars: Scalar, actegory: ActionsCategory.ObjectType[ActingCategory, ActedCategory]

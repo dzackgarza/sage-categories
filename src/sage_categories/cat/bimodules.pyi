@@ -246,7 +246,18 @@ class BimoduleCategory[
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def __call__(self, left_action: MorphismCategory.ObjectType, right_action: MorphismCategory.ObjectType) -> BimoduleCategory.ObjectType: ...
     def homomorphism(self, source: BimoduleCategory.ObjectType, target: BimoduleCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> BimoduleCategory.MorphismType: ...
-    def restriction(self, left_scalar_morphism: MorphismCategory.ObjectType, right_scalar_morphism: MorphismCategory.ObjectType) -> Functor: ...
+    def restriction(
+        self, left_scalar_morphism: MorphismCategory.ObjectType, right_scalar_morphism: MorphismCategory.ObjectType
+    ) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        BimoduleCategory[MonoidCategory.ObjectType, MonoidCategory.ObjectType, BaseCategory],
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+    ]: ...
 
 def Bimodules[LeftScalar: MonoidCategory.ObjectType, RightScalar: MonoidCategory.ObjectType, BaseCategory: Category[..., ...]](
     left_scalars: LeftScalar, right_scalars: RightScalar, monoidal: MonoidalStructuresCategory.ObjectType[BaseCategory]

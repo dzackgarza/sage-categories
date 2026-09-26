@@ -233,7 +233,19 @@ class ModuleCategory[
         return transported
 
     @cached_method(key=identity_key)
-    def restriction(self, scalar_morphism: MorphismCategory.ObjectType) -> Functor:
+    def restriction(
+        self,
+        scalar_morphism: MorphismCategory.ObjectType,
+    ) -> CategoryOfCategories.MorphismType[
+        ModuleCategory[Scalar, ActingCategory, ActedCategory],
+        ModuleCategory[MonoidCategory.ObjectType, ActingCategory, ActedCategory],
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]:
         """Restriction of scalars along a monoid morphism ``f: B -> A``: ``Modules(A, C) -> Modules(B, C)``, ``(X, ρ) ↦ (X, ρ ∘ (f • X))``."""
         monoids = Monoids(self._actegory.monoidal_structure())
         assert scalar_morphism in monoids.morphism_category(1), f"{scalar_morphism!r} is not a monoid morphism in {monoids!r}"

@@ -659,7 +659,16 @@ class BimoduleCategory[
         self,
         left_scalar_morphism: MorphismCategory.ObjectType,
         right_scalar_morphism: MorphismCategory.ObjectType,
-    ) -> Functor:
+    ) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        BimoduleCategory[MonoidCategory.ObjectType, MonoidCategory.ObjectType, BaseCategory],
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+    ]:
         """Restrict both scalar actions along ``R' -> R`` and ``S' -> S``."""
         monoidal = self.monoidal_structure()
         monoids = Monoids(monoidal)

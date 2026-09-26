@@ -191,6 +191,7 @@ Read historical observations at their stated revisions before relying on them.
   A separate local Sonnet source audit at the same revision, confined to `Read`, `Grep`, and `Glob` with restricted mode and no MCP, command, or edit tools, produced no result before its 220-second hard timeout.
   That source-audit timeout likewise supplies no reviewer verdict and cannot discharge the fixed-revision acceptance gate.
   On 2026-09-26 exact read-only review attempts at `9c97a712` and `3edc29b4` were rejected before worker creation with `AGENTS_BUSY`: another prime workstream held the app's sole sub-agent swarm.
+  Further exact read-only attempts through `e8e8b6f1` returned the same `AGENTS_BUSY` condition before worker creation.
   These attempts returned no reviewer result and do not discharge the fixed-revision acceptance gate.
   The fixed-revision architecture check and focused public consumers therefore remain execution evidence, not independent acceptance.
 

@@ -31,7 +31,9 @@ __all__ = [
 _BASE_RELATIVE_ALGEBRAS = ChosenConstruction()
 
 
-class AlgebraCategory(LimitSubcategory):
+class AlgebraCategory[
+    BaseScalar: "MonoidCategory.ObjectType" = "MonoidCategory.ObjectType",
+](LimitSubcategory):
     """``Algebras(R,C)`` with its retained equivalence to ``Monoids(V_R)``."""
 
     class ObjectType:
@@ -53,7 +55,7 @@ class AlgebraCategory(LimitSubcategory):
         """The exact supplied relative tensor structure ``V_R``."""
         return self.monoid_category().monoidal_structure()
 
-    def base(self) -> MonoidCategory.ObjectType:
+    def base(self) -> BaseScalar:
         """The retained scalar monoid ``R``."""
         underlying = self.monoidal_structure().underlying_category()
         match underlying:
@@ -196,10 +198,10 @@ def _new_algebra_category(
     return algebras
 
 
-def Algebras(
-    base: MonoidCategory.ObjectType,
+def Algebras[BaseScalar: "MonoidCategory.ObjectType"](
+    base: BaseScalar,
     context: ActionsCategory.ObjectType | MonoidalStructuresCategory.ObjectType,
-) -> AlgebraCategory:
+) -> AlgebraCategory[BaseScalar]:
     """Return the base-relative algebra category for the exact supplied relative tensor context.
 
     With an actegory ``C``, the exact ``Modules(R,C)`` must already have its

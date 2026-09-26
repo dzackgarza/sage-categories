@@ -14,8 +14,8 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import MonoidCategory
 
 
-def algebra_owner_types(
-    base: MonoidCategory.ObjectType,
+def algebra_owner_types[BaseScalar: MonoidCategory.ObjectType](
+    base: BaseScalar,
     context: ActionsCategory.ObjectType,
     structure: MonoidalStructuresCategory.ObjectType,
     monoid: MonoidCategory.ObjectType,
@@ -28,9 +28,9 @@ def algebra_owner_types(
     assert_type(modules.monoidal_structure(), MonoidalStructuresCategory.ObjectType)
     assert_type(AbelianModuleTensor(base), MonoidalStructuresCategory.ObjectType)
     algebras = Algebras(base, context)
-    assert_type(algebras, AlgebraCategory)
-    assert_type(Algebras(base, structure), AlgebraCategory)
-    assert_type(algebras.base(), MonoidCategory.ObjectType)
+    assert_type(algebras, AlgebraCategory[BaseScalar])
+    assert_type(Algebras(base, structure), AlgebraCategory[BaseScalar])
+    assert_type(algebras.base(), BaseScalar)
     assert_type(algebras.monoid_category(), MonoidCategory)
     assert_type(algebras.monoidal_structure(), MonoidalStructuresCategory.ObjectType)
     assert_type(algebras.module_category(), ModuleCategory)

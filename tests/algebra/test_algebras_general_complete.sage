@@ -45,7 +45,7 @@ def field_two():
     return element, group, Monoids(AbelianTensor())(multiplication, unit)
 
 
-def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
+def test_scalar_change_uses_the_owned_algebra_restriction_functor() -> None:
     integers = integer_scalar_monoid()
     field_element, field_group, field = field_two()
     scalar_map = Monoids(AbelianTensor()).homomorphism(
@@ -110,6 +110,12 @@ def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
         is True
     )
 
+
+def test_free_maps_use_the_same_relative_algebra_owner() -> None:
+    integers = integer_scalar_monoid()
+    integer_structure = AbelianBimoduleTensor(integers)
+    integer_algebras = Algebras(integers, integer_structure)
+
     # The pre-existing ZZ<x,y> evaluator is now consumed only through the same
     # base-relative owner.  A nonidentity generator permutation is an algebra map
     # whose module image has the exact owner supplied by that algebra category.
@@ -135,4 +141,5 @@ def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
     ) is integer_structure.underlying_category().to_left().on_object(free_bimodule)
 
 
-test_scalar_change_and_free_maps_use_one_relative_algebra_owner()
+test_scalar_change_uses_the_owned_algebra_restriction_functor()
+test_free_maps_use_the_same_relative_algebra_owner()

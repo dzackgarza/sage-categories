@@ -615,9 +615,7 @@ class BimoduleCategory(EquifierCategory):
             right_scalar_morphism.domain().unit_morphism(),
         )
         to_magmas = monoids.to_magmas()
-        underlying_right = to_magmas.codomain().forgetful().on_morphism(
-            to_magmas.on_morphism(right_scalar_morphism)
-        )
+        underlying_right = to_magmas.codomain().forgetful().on_morphism(to_magmas.on_morphism(right_scalar_morphism))
         reverse_right = reverse_monoids.homomorphism(
             reverse_source,
             right_opposite,

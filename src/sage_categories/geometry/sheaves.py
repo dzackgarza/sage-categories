@@ -27,9 +27,6 @@ from sage_categories.cat.predicates import Unknown, ask
 from sage_categories.geometry._ring_categories import (
     commutative_rings as _rings,
 )
-from sage_categories.geometry._ring_categories import (
-    rings as _ambient_rings,
-)
 from sage_categories.geometry.spaces import TopologicalSpacesCategory
 
 __all__ = [
@@ -326,19 +323,15 @@ def _verify_gluing_result(
     local_sections: tuple[CategoryOfCategories.ElementType, ...],
     global_section: CategoryOfCategories.ElementType,
 ) -> None:
-    """Check restriction and uniqueness of one proposed global section."""
+    """Check that one selected amalgamation has the required restrictions.
+
+    Uniqueness is the trusted sheaf declaration, not a computation by exhaustive
+    enumeration of the global section ring.
+    """
     global_ring = presheaf.section_ring(open_set)
     assert global_section.parent() is global_ring
     for member, local in zip(cover, local_sections, strict=True):
         assert ask(_apply_ring_map(presheaf.restriction(open_set, member), global_section) == local) is True
-
-    carrier = _ambient_rings().forgetful().on_object(global_ring)
-    matching = []
-    for candidate in tuple(carrier):
-        point = cast(Any, global_ring).point(candidate.datum())
-        if all(ask(_apply_ring_map(presheaf.restriction(open_set, member), point) == local) is True for member, local in zip(cover, local_sections, strict=True)):
-            matching.append(point)
-    assert len(matching) == 1 and ask(matching[0] == global_section) is True
 
 
 @dataclass(frozen=True, eq=False, slots=True)

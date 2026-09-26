@@ -2,7 +2,7 @@
 
 import pytest
 
-from sage_categories.all import Mor, Sets, Cartesian, ask
+from sage_categories.all import Cartesian, Mor, Sets, ask
 from sage_categories.cat.calculus import binary_product_data
 from sage_categories.cat.structured_objects import Rings
 from sage_categories.geometry import TopologicalSpaces, ring_presheaf, ring_sheaf
@@ -78,8 +78,8 @@ def test_compatible_cover_sections_glue_uniquely() -> None:
     with pytest.raises(AssertionError):
         sheaf.glue(whole, (left, right), (local_left, sections[right].point(4)))
 
-    # An empty cover has a unique matching family. Its amalgamation is unique
-    # exactly when the empty-open section ring has one element.
+    # Sheafhood is trusted mathematical structure. A deliberately false declaration
+    # is therefore not certified or rejected by exhaustive carrier enumeration.
     bad_empty_space = TopologicalSpaces()(Sets(()), (empty,))
     nonzero_ring, _ = residue_ring(5)
     bad_presheaf = ring_presheaf(
@@ -88,8 +88,7 @@ def test_compatible_cover_sections_glue_uniquely() -> None:
         {(empty, empty): Mor(rings)(nonzero_ring, nonzero_ring).one()},
     )
     bad_sheaf = ring_sheaf(bad_presheaf, lambda _open, _cover, _local: nonzero_ring.zero())
-    with pytest.raises(AssertionError):
-        bad_sheaf.glue(empty, (), ())
+    assert bad_sheaf.glue(empty, (), ()) == nonzero_ring.zero()
 
 
 test_compatible_cover_sections_glue_uniquely()

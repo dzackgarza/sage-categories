@@ -9,6 +9,8 @@ from __future__ import annotations
 
 __all__ = [
     "Elements",
+    "Representations",
+    "RepresentationsCategory",
     "coend",
     "coend_weight",
     "coyoneda",
@@ -37,12 +39,13 @@ from collections.abc import Callable
 from types import ModuleType
 
 from sage_categories.cat.category import Category, CategoryOfCategories
+from sage_categories.cat.comma import CommaSpecialization
 from sage_categories.cat.cones import cocone, cocones, cone, cones
 from sage_categories.cat.constructions import UniversalPresentation, constructed_data
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.indexed import Grothendieck, IndexedCategories
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.opposites import opposite_morphism
+from sage_categories.cat.opposites import OppositeCategory, opposite_morphism
 from sage_categories.cat.predicates import Unknown
 from sage_categories.cat.shapes import discrete_functor
 from sage_categories.kernel.refinement import refine
@@ -221,6 +224,99 @@ def _yoneda_from_hom(hom: Functor) -> Functor:
     result = calculus.transpose(calculus.curry(hom))
     refine(result, Fun.FullyFaithful())
     return result
+
+
+class RepresentationsCategory(CommaSpecialization):
+    """``Representations(F)``: representing objects together with a Yoneda isomorphism."""
+
+    class ObjectType:
+        def representing_object(self) -> CategoryOfCategories.ElementType:
+            """The object ``X`` in a representation ``y(X) ≅ F``."""
+            return self.first()
+
+        def representation_isomorphism(self) -> MorphismCategory.ObjectType:
+            """The selected natural isomorphism ``y(X) -> F``."""
+            return self.arrow()
+
+    class ElementType:
+        pass
+
+    class MorphismType:
+        def representing_morphism(self) -> MorphismCategory.ObjectType:
+            """The underlying ``u: X -> Y`` satisfying ``theta * y(u) = eta``."""
+            return self.first()
+
+    def __init__(self, represented: Functor, embedding: Functor) -> None:
+        self._represented = represented
+        self._embedding = embedding
+        presheaves = embedding.codomain()
+        assert represented in presheaves
+        super().__init__(embedding, presheaves.point_functor(represented))
+
+    def represented_functor(self) -> Functor:
+        return self._represented
+
+    def yoneda_embedding(self) -> Functor:
+        return self._embedding
+
+    def __call__(
+        self,
+        representing_object: CategoryOfCategories.ElementType,
+        isomorphism: MorphismCategory.ObjectType,
+    ) -> RepresentationsCategory.ObjectType:
+        """The representation ``(X, eta: y(X) ≅ F)``; invertibility is asserted data."""
+        presheaves = self._embedding.codomain()
+        assert representing_object in self._embedding.domain()
+        assert isomorphism in Mor(presheaves)(
+            self._embedding.on_object(representing_object),
+            self._represented,
+        ).Isomorphisms()
+        star = Cat().Terminal()(0)
+        return self.from_arrow(representing_object, star, isomorphism)
+
+    def from_arrow(
+        self,
+        first: CategoryOfCategories.ElementType,
+        second: CategoryOfCategories.ElementType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> RepresentationsCategory.ObjectType:
+        presheaves = self._embedding.codomain()
+        assert second is Cat().Terminal()(0)
+        assert arrow in Mor(presheaves)(self._embedding.on_object(first), self._represented).Isomorphisms()
+        return super().from_arrow(first, second, arrow)
+
+    def construct_morphism(
+        self,
+        source: RepresentationsCategory.ObjectType,
+        target: RepresentationsCategory.ObjectType,
+        arrow: MorphismCategory.ObjectType,
+    ) -> RepresentationsCategory.MorphismType:
+        """The representation morphism over ``u``; the comma square is its defining equation."""
+        category = self._embedding.domain()
+        assert arrow in Mor(category)(source.representing_object(), target.representing_object())
+        star = Cat().Terminal()(0)
+        identity = Mor(Cat().Terminal())(star, star).one()
+        result = self.morphism_from_pair(source, target, arrow, identity)
+        # Yoneda is fully faithful, so theta * y(u) = eta with eta,theta
+        # invertible implies that u is invertible.  Retain the reflected inverse
+        # here so the representation category has executable inverse data rather
+        # than only an Isomorphisms placement.
+        refine(arrow, Mor(category).Isomorphisms())
+        inverse_arrow = arrow.inverse()
+        inverse = self.morphism_from_pair(target, source, inverse_arrow, identity)
+        self.retain_inverses(result, inverse)
+        return result
+
+
+@cached_function(key=identity_key)
+def Representations(functor: Functor) -> RepresentationsCategory:
+    """The category of representations ``y(X) ≅ F`` of ``F: C.op() -> Sets``."""
+    domain = functor.domain()
+    assert isinstance(domain, OppositeCategory), f"{functor!r} is not a presheaf on an opposite category"
+    category = domain.original()
+    embedding = yoneda(category, functor.codomain())
+    assert embedding.codomain() is Fun(domain, functor.codomain())
+    return RepresentationsCategory(functor, embedding)
 
 
 @cached_function(key=identity_key)

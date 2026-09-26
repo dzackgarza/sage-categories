@@ -132,6 +132,8 @@ from sage_categories.cat.universal_arrows import (
 )
 from sage_categories.cat.weighted import (
     Elements,
+    Representations,
+    RepresentationsCategory,
     coend,
     coyoneda,
     element,
@@ -206,6 +208,8 @@ __all__ = [
     "Profunctors",
     "Query",
     "Relations",
+    "Representations",
+    "RepresentationsCategory",
     "RightUniversalArrows",
     "RingObjects",
     "Rings",

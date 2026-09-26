@@ -82,10 +82,13 @@ def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
     assert restricted in integer_algebras
     assert integer_algebras.base() is integers
     assert field_algebras.base() is field
+    assert restricted is not field_algebra
 
     # The same F_2 carrier now has the canonical ZZ-action, and the retained unit
     # is the supplied scalar map ZZ -> F_2 rather than a reused S-algebra object.
     module = integer_algebras.to_modules().on_object(restricted)
+    field_module = field_algebras.to_modules().on_object(field_algebra)
+    assert integer_algebras.module_category().forgetful().on_object(module) is field_algebras.module_category().forgetful().on_object(field_module)
     generator = field_element(1)
     acted = simple_tensor(integer_group(), field_group, 3, generator)
     assert ask(module.action()(acted) == field_group.point(generator)) is True

@@ -1174,8 +1174,7 @@ def _validate_operation_interchange(
     preferred = _composite_structural_path(paths[0])
     operation = declaration.operation(target)
     assert operation.domain() is target, (
-        f"{function.__module__}.{function.__qualname__} declares operation functor {operation!r} "
-        f"with domain {operation.domain()!r}, not its inherited owner {target!r}"
+        f"{function.__module__}.{function.__qualname__} declares operation functor {operation!r} with domain {operation.domain()!r}, not its inherited owner {target!r}"
     )
     for alternate_path in paths[1:]:
         alternate = _composite_structural_path(alternate_path)
@@ -1196,15 +1195,13 @@ def _validate_operation_interchange(
                 preferred_argument = preferred.on_object(receiver)
                 alternate_argument = alternate.on_object(receiver)
                 assert component.domain() is preferred_argument and component.codomain() is alternate_argument, (
-                    f"{comparison!r} does not transport the affected argument of "
-                    f"{function.__module__}.{function.__qualname__} from the preferred to alternate structural image"
+                    f"{comparison!r} does not transport the affected argument of {function.__module__}.{function.__qualname__} from the preferred to alternate structural image"
                 )
                 transported_result = operation.on_morphism(component)
                 preferred_result = operation.on_object(preferred_argument)
                 alternate_result = operation.on_object(alternate_argument)
                 assert transported_result.domain() is preferred_result and transported_result.codomain() is alternate_result, (
-                    f"{operation!r} does not transport the affected result of {function.__module__}.{function.__qualname__} "
-                    "along the retained structural comparison"
+                    f"{operation!r} does not transport the affected result of {function.__module__}.{function.__qualname__} along the retained structural comparison"
                 )
             case Role.MORPHISM:
                 source_component = _comparison_component_reader(comparison, receiver.domain())
@@ -1213,8 +1210,7 @@ def _validate_operation_interchange(
                 alternate_argument = alternate.on_morphism(receiver)
                 transported_argument = target_component * preferred_argument * source_component.inverse()
                 assert transported_argument.domain() is alternate_argument.domain() and transported_argument.codomain() is alternate_argument.codomain(), (
-                    f"{comparison!r} does not conjugate the affected morphism argument of "
-                    f"{function.__module__}.{function.__qualname__} to the alternate structural endpoints"
+                    f"{comparison!r} does not conjugate the affected morphism argument of {function.__module__}.{function.__qualname__} to the alternate structural endpoints"
                 )
                 transported_result = operation.on_morphism(transported_argument)
                 preferred_result = operation.on_morphism(preferred_argument)

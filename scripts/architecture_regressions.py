@@ -159,6 +159,21 @@ def check_indirect_forbidden_import_rejection() -> None:
         assert bridge in output, output
 
 
+
+def check_allowed_indirect_imports() -> None:
+    """Contracts that explicitly allow indirect imports accept a public-owner bridge."""
+    for contract in forbidden_contracts():
+        if not contract.get("allow_indirect_imports", False):
+            continue
+        with tempfile.TemporaryDirectory(prefix="sage-categories-allowed-indirect-") as directory:
+            root = Path(directory)
+            config, source, forbidden = fixture_for_contract(root, contract)
+            bridge = f"{FIXTURE_ROOT}.public_owner"
+            module_file(root, source).write_text(f"import {bridge}\n")
+            module_file(root, bridge).write_text(f"import {forbidden}\n")
+            valid = lint_imports(root, config)
+            assert valid.returncode == 0, valid.stdout + valid.stderr
+
 def ignore_importer(pattern: str, source: str) -> tuple[str, str]:
     """Instantiate one configured ignore edge as a concrete importer and target."""
     importer_pattern, target = (part.strip() for part in translated(pattern).split("->", 1))
@@ -186,6 +201,7 @@ def main() -> None:
     check_unclassified_source_rejection()
     check_each_forbidden_contract()
     check_indirect_forbidden_import_rejection()
+    check_allowed_indirect_imports()
     check_designated_allowed_importers()
     print(
         "architecture-regressions: exhaustive source classification and valid/violating "

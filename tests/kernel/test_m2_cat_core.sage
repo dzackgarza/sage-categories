@@ -267,6 +267,37 @@ def test_products_pullbacks_comma_and_fixed_slices_retain_defining_functors() ->
     assert presentation.diagram() is diagram
     assert presentation.transformation().codomain() is diagram
 
+    # Pullbacks are functorial for an arbitrary morphism of cospans, not only the
+    # specialized inverse-image comparison path.  For identity cospans, the induced
+    # pullback functor is the supplied component functor.
+    target_category = Cat().Simplex(2)
+    target_identity = _identity_functor(target_category)
+    target_diagram = cospan_diagram(Cat(), target_identity, target_identity)
+    target_pullback = Cat().Pullbacks()(target_diagram)
+    along = Fun(category, target_category)(
+        lambda vertex: target_category(category.label(vertex)),
+        lambda arrow: target_category.generator("0->1") if arrow.word() else Mor(target_category)(target_category(category.label(arrow.domain())), target_category(category.label(arrow.domain()))).one(),
+    )
+    cospan = Cat().WalkingCospan()
+    transformation = Mor(Fun(cospan, Cat()))(diagram, target_diagram)(lambda _vertex: along)
+    induced = Cat().Pullbacks().limit_functor().on_morphism(transformation)
+    assert induced.domain() is pullback
+    assert induced.codomain() is target_pullback
+    source_zero = pullback.from_components(lambda _vertex: category(0))
+    source_one = pullback.from_components(lambda _vertex: category(1))
+    source_edge = pullback.morphism_from_components(
+        source_zero,
+        source_one,
+        lambda _vertex: Mor(category)(category(0), category(1))(("0->1",)),
+    )
+    target_zero = induced.on_object(source_zero)
+    target_one = induced.on_object(source_one)
+    target_edge = induced.on_morphism(source_edge)
+    for vertex in (cospan(0), cospan(1), cospan(2)):
+        assert target_zero.family_component(vertex) is target_category(0)
+        assert target_one.family_component(vertex) is target_category(1)
+        assert target_edge.family_component(vertex) is target_category.generator("0->1")
+
     comma = Cat().Comma(identity, identity)
     assert Cat().Comma(identity, identity) is comma
     assert comma in Cat().Pullbacks()

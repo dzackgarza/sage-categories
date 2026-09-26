@@ -20,6 +20,7 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.weighted import (
     Representations,
     RepresentationsCategory,
+    coyoneda,
     restricted_yoneda,
     separating_evaluation,
     separating_evaluation_injection,
@@ -35,6 +36,7 @@ def weighted_calculus_types(
     probe_point: CategoryOfCategories.ElementType,
     hom_point: CategoryOfCategories.ElementType,
 ) -> None:
+    assert_type(coyoneda(test.domain(), hom.codomain()), Functor)
     assert_type(Representations(test), RepresentationsCategory)
     assert_type(public_representations(test), RepresentationsCategory)
     assert_type(restricted_yoneda(test, hom), Functor)

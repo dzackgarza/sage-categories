@@ -111,8 +111,18 @@ def test_hom_weight_recovers_end_and_coend():
     assert len(tuple(end(constant, hom))) == 2
     assert len(tuple(coend(constant, hom))) == 2
     embedding = yoneda(shape, S)
+    assert embedding.domain() is shape
+    assert embedding.codomain() is Fun(shape.op(), S)
+    assert embedding in Fun.FullyFaithful()
     assert len(tuple(embedding.on_object(shape(0)).on_object(shape(1)))) == 0
     assert len(tuple(embedding.on_object(shape(1)).on_object(shape(0)))) == 1
+
+    coembedding = coyoneda(shape, S)
+    assert coembedding.domain() is shape.op()
+    assert coembedding.codomain() is Fun(shape, S)
+    assert coembedding in Fun.FullyFaithful()
+    assert len(tuple(coembedding.on_object(shape(0)).on_object(shape(1)))) == 1
+    assert len(tuple(coembedding.on_object(shape(1)).on_object(shape(0)))) == 0
 
 
 

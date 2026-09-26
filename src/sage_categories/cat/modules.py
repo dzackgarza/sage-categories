@@ -46,7 +46,10 @@ def _underlying_object(scalars: MonoidCategory.ObjectType) -> CategoryOfCategori
     return scalars.carrier().carrier()
 
 
-class ModuleCategory(EquifierCategory):
+class ModuleCategory[
+    ActingCategory: "Category[..., ...]" = "Category[..., ...]",
+    ActedCategory: "Category[..., ...]" = "Category[..., ...]",
+](EquifierCategory):
     """``Modules(A, C)``: module objects over ``A`` in the actegory ``C``.
 
     An object is ``(X, ρ_X: A • X -> X)`` with the unit law ``ρ ∘ (η • X) = λ_X`` and the
@@ -71,7 +74,7 @@ class ModuleCategory(EquifierCategory):
         first: NaturalTransformation,
         second: NaturalTransformation,
         scalars: MonoidCategory.ObjectType,
-        actegory: ActionsCategory.ObjectType,
+        actegory: ActionsCategory.ObjectType[ActingCategory, ActedCategory],
         algebras: InserterCategory,
     ) -> None:
         self._scalars, self._actegory, self._algebras = scalars, actegory, algebras
@@ -81,7 +84,7 @@ class ModuleCategory(EquifierCategory):
         """``A``, the monoid object acting."""
         return self._scalars
 
-    def actegory(self) -> ActionsCategory.ObjectType:
+    def actegory(self) -> ActionsCategory.ObjectType[ActingCategory, ActedCategory]:
         """The selected left ``M``-action on ``C`` with its coherence isomorphisms."""
         return self._actegory
 
@@ -98,7 +101,7 @@ class ModuleCategory(EquifierCategory):
         assert _MODULE_MONOIDAL_STRUCTURES.has(self, ()), f"{self!r} has no selected monoidal structure"
         return _MODULE_MONOIDAL_STRUCTURES.selected(self, ())
 
-    def underlying_category(self) -> Category:
+    def underlying_category(self) -> ActedCategory:
         return self._actegory.underlying_category()
 
     def scalar_endofunctor(self) -> Functor:
@@ -242,7 +245,13 @@ _MODULE_MONOIDAL_STRUCTURES: SelectedChoice[MonoidalStructuresCategory.ObjectTyp
 
 
 @cached_function(key=identity_key)
-def Modules(scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.ObjectType) -> ModuleCategory:
+def Modules[
+    ActingCategory: "Category[..., ...]",
+    ActedCategory: "Category[..., ...]",
+](
+    scalars: MonoidCategory.ObjectType,
+    actegory: ActionsCategory.ObjectType[ActingCategory, ActedCategory],
+) -> ModuleCategory[ActingCategory, ActedCategory]:
     """``Modules(A, C)``: module objects over the monoid object ``A`` in the selected actegory ``C``."""
     monoidal = actegory.monoidal_structure()
     monoids = Monoids(monoidal)

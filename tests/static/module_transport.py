@@ -2,9 +2,30 @@
 
 from typing import assert_type
 
+from sage_categories.cat.category import Category
 from sage_categories.cat.functors import Functor
-from sage_categories.cat.modules import ModuleCategory
+from sage_categories.cat.modules import ModuleCategory, Modules
+from sage_categories.cat.monoidal import ActionsCategory
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.structured_objects import MonoidCategory
+
+
+class ActingCategory(Category[[], []]):
+    pass
+
+
+class ActedOnCategory(Category[[], []]):
+    pass
+
+
+def module_owner_parameters(
+    scalars: MonoidCategory.ObjectType,
+    action: ActionsCategory.ObjectType[ActingCategory, ActedOnCategory],
+) -> None:
+    modules = Modules(scalars, action)
+    assert_type(modules, ModuleCategory[ActingCategory, ActedOnCategory])
+    assert_type(modules.actegory(), ActionsCategory.ObjectType[ActingCategory, ActedOnCategory])
+    assert_type(modules.underlying_category(), ActedOnCategory)
 
 
 def module_transport_types(

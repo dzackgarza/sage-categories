@@ -222,12 +222,26 @@ def relative_tensor_morphism(
 
 
 @cached_function(key=identity_key)
-def relative_tensor_bifunctor(
-    left_scalars: MonoidCategory.ObjectType,
-    middle_scalars: MonoidCategory.ObjectType,
-    right_scalars: MonoidCategory.ObjectType,
-    monoidal: MonoidalStructuresCategory.ObjectType,
-) -> Functor:
+def relative_tensor_bifunctor[
+    LeftScalar: "MonoidCategory.ObjectType",
+    MiddleScalar: "MonoidCategory.ObjectType",
+    RightScalar: "MonoidCategory.ObjectType",
+    BaseCategory: "Category[..., ...]",
+](
+    left_scalars: LeftScalar,
+    middle_scalars: MiddleScalar,
+    right_scalars: RightScalar,
+    monoidal: MonoidalStructuresCategory.ObjectType[BaseCategory],
+) -> CategoryOfCategories.MorphismType[
+    Category,
+    BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+    CategoryOfCategories.ElementType,
+    CategoryOfCategories.ElementType,
+    MorphismCategory.ObjectType,
+    BimoduleCategory.ObjectType,
+    BimoduleCategory.ElementType,
+    BimoduleCategory.MorphismType,
+]:
     """The functor Bimod(R,S) x Bimod(S,T) -> Bimod(R,T).
 
     The object action is the retained balancing coequalizer with its descended

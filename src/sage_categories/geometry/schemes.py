@@ -762,7 +762,7 @@ class SchemesCategory(PropertySubcategory):
 
         def underlying_points(self) -> CategoryOfCategories.ElementType:
             """The carrier of the underlying topological space; its points are not scheme-valued points."""
-            return self.space().carrier()
+            return TopologicalSpaces().to_sets().on_object(self.space())
 
         def valued_points(self, ring: CategoryOfCategories.ElementType) -> MorphismCategory:
             """The exact Hom category whose objects are ``Spec(ring) -> self``."""
@@ -979,7 +979,7 @@ class SchemesCategory(PropertySubcategory):
             ) -> tuple[int, CategoryOfCategories.ElementType]:
                 tagged = _quotient_tag(quotient_point)
                 space = affine_topological_space(presentation.charts[tagged.chart])
-                return tagged.chart, space.carrier().point(tagged.point)
+                return tagged.chart, TopologicalSpaces().to_sets().on_object(space).point(tagged.point)
 
             def assemble_open(
                 chart_opens: tuple[CategoryOfCategories.ElementType, ...],

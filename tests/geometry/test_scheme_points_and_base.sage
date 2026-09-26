@@ -7,7 +7,7 @@ from sage_categories.algebra import (
     prime_field,
 )
 from sage_categories.all import Mor
-from sage_categories.geometry import AffineSchemes, Schemes, Spec
+from sage_categories.geometry import AffineSchemes, Schemes, Spec, TopologicalSpaces
 
 
 def test_scheme_point_domains_and_generic_base_slice() -> None:
@@ -18,7 +18,7 @@ def test_scheme_point_domains_and_generic_base_slice() -> None:
     scheme = schemes.affine(affine)
 
     underlying_points = scheme.underlying_points()
-    assert underlying_points is scheme.space().carrier()
+    assert underlying_points is TopologicalSpaces().to_sets().on_object(scheme.space())
     spectrum_point = AffineSchemes().spectrum_point(affine, (t,))
     topological_point = underlying_points.point(spectrum_point)
     assert topological_point.datum() is spectrum_point

@@ -11,6 +11,7 @@ from sage_categories.geometry import (
     ring_sheaf,
 )
 from sage_categories.geometry.sheaves import ring_presheaf_from_functor
+from sage_categories.order.posets import Posets
 
 
 def residue_ring(modulus):
@@ -25,7 +26,7 @@ def residue_ring(modulus):
 
 
 def constant_ring_sheaf(space, ring_data):
-    opens = tuple(point.datum() for point in space.opens().carrier())
+    opens = tuple(point.datum() for point in Posets().to_sets().on_object(space.opens()))
     ring, _ = ring_data
     rings = Rings(Sets)
     sections = {open_set: ring for open_set in opens}

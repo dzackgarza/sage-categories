@@ -256,6 +256,36 @@ def check_leaf_firewall_boundaries() -> None:
             valid = ast_grep_scan(root, rule, leaf)
             assert valid.returncode == 0, valid.stdout + valid.stderr
 
+
+def check_functor_accessor_rejection() -> None:
+    """A leaf role cannot publish a second accessor for an immediate functor action."""
+    with tempfile.TemporaryDirectory(prefix="sage-categories-functor-accessor-") as directory:
+        root = Path(directory)
+        leaf = root / "src" / SOURCE_ROOT / "geometry"
+        leaf.mkdir(parents=True)
+        specimen = leaf / "specimen.py"
+        specimen.write_text(
+            "class SpaceCategory:\n"
+            "    class ObjectType:\n"
+            "        def dimension(self):\n"
+            "            return 2\n"
+        )
+        valid = ast_grep_scan(root, "no-accessor-standing-in-for-functor.yml", leaf)
+        assert valid.returncode == 0, valid.stdout + valid.stderr
+
+        specimen.write_text(
+            "class SpaceCategory:\n"
+            "    class ObjectType:\n"
+            "        def carrier(self):\n"
+            "            return self._carrier\n"
+        )
+        violating = ast_grep_scan(root, "no-accessor-standing-in-for-functor.yml", leaf)
+        output = violating.stdout + violating.stderr
+        assert violating.returncode != 0, output
+        assert "specimen.py" in output, output
+        assert "POL-LEAF-078" in output, output
+
+
 def main() -> None:
     check_unclassified_source_rejection()
     check_each_forbidden_contract()
@@ -263,6 +293,7 @@ def main() -> None:
     check_allowed_indirect_imports()
     check_designated_allowed_importers()
     check_leaf_firewall_boundaries()
+    check_functor_accessor_rejection()
     print(
         "architecture-regressions: exhaustive source classification and valid/violating "
         "fixtures for every forbidden contract behave as required"

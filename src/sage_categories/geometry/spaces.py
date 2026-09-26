@@ -41,9 +41,6 @@ class TopologicalSpacesCategory(MorphismDataCategory):
             self._open_point_rule = data.open_point_rule
             self._open_object_rule = data.open_object_rule
 
-        def carrier(self) -> CategoryOfCategories.ElementType:
-            return self._carrier
-
         def opens(self) -> CategoryOfCategories.ElementType:
             """The inclusion poset of represented open subsets."""
             return self._opens
@@ -68,9 +65,6 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         ) -> None:
             self._underlying_map, self._inverse_image = data
 
-        def underlying_map(self) -> MorphismCategory.ObjectType:
-            return self._underlying_map
-
         def inverse_image(self) -> Functor:
             """The contravariant functor ``O(Y) -> O(X)`` induced by this map ``X -> Y``."""
             return self._inverse_image
@@ -83,8 +77,8 @@ class TopologicalSpacesCategory(MorphismDataCategory):
             Fun(self, Sets)
             .Faithful()
             .Isofibrations()(
-                lambda space: space.carrier(),
-                lambda arrow: arrow.underlying_map(),
+                lambda space: space._carrier,
+                lambda arrow: arrow._underlying_map,
             )
         )
         return (*super().structure_functors(), underlying)
@@ -189,12 +183,16 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         """The continuous chart map into a represented quotient topology."""
         projection = self.quotient_projection(target)
         ambient = projection.domain()
-        assert projection.codomain() is target.carrier()
+        assert projection.codomain() is self.to_sets().on_object(target)
 
         def point_image(value: Hashable) -> Hashable:
             return projection(cast(Any, ambient).point(tag_rule(value))).datum()
 
-        underlying = Mor(Sets)(source.carrier(), target.carrier())(point_image)
+        carrier_projection = self.to_sets()
+        underlying = Mor(Sets)(
+            carrier_projection.on_object(source),
+            carrier_projection.on_object(target),
+        )(point_image)
         target_opens = target.open_category()
         source_opens = source.open_category()
         inverse = Fun(target_opens, source_opens)(
@@ -223,12 +221,16 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         """The universal continuous map induced by compatible chart maps."""
 
         def point_image(value: Hashable) -> Hashable:
-            point = source.carrier().point(value)
+            point = self.to_sets().on_object(source).point(value)
             chart_index, chart_point = representative_rule(point)
-            image = chart_maps[chart_index].underlying_map()(chart_point)
+            image = self.to_sets().on_morphism(chart_maps[chart_index])(chart_point)
             return image.datum()
 
-        underlying = Mor(Sets)(source.carrier(), target.carrier())(point_image)
+        carrier_projection = self.to_sets()
+        underlying = Mor(Sets)(
+            carrier_projection.on_object(source),
+            carrier_projection.on_object(target),
+        )(point_image)
         target_opens = target.open_category()
         source_opens = source.open_category()
 
@@ -252,7 +254,8 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         target: TopologicalSpacesCategory.ObjectType[frozenset[Hashable]],
         underlying: MorphismCategory.ObjectType,
     ) -> Functor:
-        source_data = tuple(point.datum() for point in source.carrier())
+        source_carrier = self.to_sets().on_object(source)
+        source_data = tuple(point.datum() for point in source_carrier)
         target_opens = target.open_category()
         source_opens = source.open_category()
 
@@ -260,7 +263,7 @@ class TopologicalSpacesCategory(MorphismDataCategory):
             target_open: CategoryOfCategories.ElementType,
         ) -> frozenset[Hashable]:
             subset = target_open.point().datum()
-            return frozenset(datum for datum in source_data if underlying(source.carrier().point(datum)).datum() in subset)
+            return frozenset(datum for datum in source_data if underlying(source_carrier.point(datum)).datum() in subset)
 
         def on_object(
             target_open: CategoryOfCategories.ElementType,
@@ -277,7 +280,7 @@ class TopologicalSpacesCategory(MorphismDataCategory):
             return Mor(source_opens)(domain, codomain)()
 
         inverse = Fun(target_opens, source_opens)(on_object, on_morphism)
-        for point in target.opens().carrier():
+        for point in Posets().to_sets().on_object(target.opens()):
             open_key = point.datum()
             assert isinstance(open_key, frozenset)
             target_open = target.open_object(open_key)
@@ -290,7 +293,8 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         target: TopologicalSpacesCategory.ObjectType[frozenset[Hashable]],
         underlying: MorphismCategory.ObjectType,
     ) -> TopologicalSpacesCategory.MorphismType:
-        assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()
+        projection = self.to_sets()
+        assert underlying.domain() is projection.on_object(source) and underlying.codomain() is projection.on_object(target)
         inverse = self._inverse_image_functor(source, target, underlying)
         return self.morphism_with_inverse_image(source, target, underlying, inverse)
 
@@ -302,7 +306,8 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         inverse: Functor,
     ) -> TopologicalSpacesCategory.MorphismType:
         """Retain a continuous map from its exact underlying map and inverse-image functor."""
-        assert underlying.domain() is source.carrier() and underlying.codomain() is target.carrier()
+        projection = self.to_sets()
+        assert underlying.domain() is projection.on_object(source) and underlying.codomain() is projection.on_object(target)
         assert inverse.domain() is target.open_category()
         assert inverse.codomain() is source.open_category()
         return self._morphism_from_data(source, target, (underlying, inverse))
@@ -312,7 +317,10 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         member_object: TopologicalSpacesCategory.ObjectType[OpenKey],
     ) -> tuple[MorphismCategory.ObjectType, Functor]:
         return (
-            Mor(Sets)(member_object.carrier(), member_object.carrier()).one(),
+            Mor(Sets)(
+                self.to_sets().on_object(member_object),
+                self.to_sets().on_object(member_object),
+            ).one(),
             Fun(member_object.open_category(), member_object.open_category()).one(),
         )
 
@@ -322,7 +330,7 @@ class TopologicalSpacesCategory(MorphismDataCategory):
         first: TopologicalSpacesCategory.MorphismType,
     ) -> tuple[MorphismCategory.ObjectType, Functor]:
         return (
-            second.underlying_map() * first.underlying_map(),
+            self.to_sets().on_morphism(second) * self.to_sets().on_morphism(first),
             first.inverse_image() * second.inverse_image(),
         )
 

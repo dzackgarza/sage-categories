@@ -28,6 +28,7 @@ from sage_categories.geometry._ring_categories import (
     commutative_rings as _rings,
 )
 from sage_categories.geometry.spaces import TopologicalSpacesCategory
+from sage_categories.order.posets import Posets
 
 __all__ = [
     "RingPresheaf",
@@ -403,7 +404,7 @@ def _validate_ring_presheaf_data(
     ],
 ) -> Category:
     """Validate the section rings and contravariant restriction calculus for a finite open family."""
-    opens = tuple(point.datum() for point in cast(Any, space.opens()).carrier())
+    opens = tuple(point.datum() for point in Posets().to_sets().on_object(cast(Any, space.opens())))
     assert set(sections) == set(opens)
     rings = _rings()
     assert all(section in rings for section in sections.values())

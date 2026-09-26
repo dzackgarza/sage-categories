@@ -142,7 +142,7 @@ class TopologicalRingsCategory(MorphismDataCategory):
     ) -> TopologicalRingsCategory.ObjectType:
         rings = _rings()
         assert ring in rings
-        assert rings.forgetful().on_object(ring) is space.carrier()
+        assert rings.forgetful().on_object(ring) is TopologicalSpaces().to_sets().on_object(space)
         assert addition.space is space and multiplication.space is space
         assert addition.operation is cast(Any, ring).addition()
         assert multiplication.operation is cast(Any, ring).multiplication()
@@ -159,7 +159,7 @@ class TopologicalRingsCategory(MorphismDataCategory):
         assert ring_map.domain() is source.ring() and ring_map.codomain() is target.ring()
         assert continuous_map.domain() is source.space() and continuous_map.codomain() is target.space()
         underlying_ring_map = rings.forgetful().on_morphism(ring_map)
-        assert ask(underlying_ring_map == continuous_map.underlying_map()) is True
+        assert ask(underlying_ring_map == TopologicalSpaces().to_sets().on_morphism(continuous_map)) is True
         return self._morphism_from_data(source, target, (ring_map, continuous_map))
 
     def _identity_data(

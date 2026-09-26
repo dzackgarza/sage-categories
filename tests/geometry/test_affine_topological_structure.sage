@@ -15,6 +15,7 @@ from sage_categories.geometry.affine import (
     affine_structure_sheaf,
     affine_topological_space,
 )
+from sage_categories.geometry.spaces import TopologicalSpaces
 
 
 def test_affine_map_acts_on_prime_points_and_principal_open_basis() -> None:
@@ -34,8 +35,9 @@ def test_affine_map_acts_on_prime_points_and_principal_open_basis() -> None:
 
     affine = AffineSchemes()
     source_point = affine.spectrum_point(source, (s,))
-    represented_source_point = source_space.carrier().point(source_point)
-    represented_target_point = continuous.underlying_map()(represented_source_point)
+    projection = TopologicalSpaces().to_sets()
+    represented_source_point = projection.on_object(source_space).point(source_point)
+    represented_target_point = projection.on_morphism(continuous)(represented_source_point)
     target_point = represented_target_point.datum()
     direct_target_point, _ = affine.map_spectrum_point(mapping, source_point)
     assert target_point.scheme is target

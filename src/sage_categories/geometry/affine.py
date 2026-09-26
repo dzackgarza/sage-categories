@@ -615,7 +615,11 @@ def affine_continuous_map(
             image, _ = AffineSchemes().map_spectrum_point(mapping, value)
             return image
 
-        underlying = Mor(Sets)(source.carrier(), target.carrier())(point_image)
+        projection = TopologicalSpaces().to_sets()
+        underlying = Mor(Sets)(
+            projection.on_object(source),
+            projection.on_object(target),
+        )(point_image)
 
         def preimage(
             open_object: CategoryOfCategories.ElementType,

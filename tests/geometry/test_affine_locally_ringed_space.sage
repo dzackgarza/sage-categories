@@ -19,6 +19,7 @@ from sage_categories.geometry.affine import (
 )
 from sage_categories.geometry.locally_ringed_spaces import LocallyRingedSpaces
 from sage_categories.geometry.ringed_spaces import RingedSpaces
+from sage_categories.geometry.spaces import TopologicalSpaces
 
 
 def test_affine_scheme_retains_topology_sheaf_stalks_and_maps() -> None:
@@ -55,10 +56,10 @@ def test_affine_scheme_retains_topology_sheaf_stalks_and_maps() -> None:
     assert mapping.ringed_map().codomain() is target_ringed
 
     source_point = AffineSchemes().spectrum_point(source, (s,))
-    represented_source = source_space.carrier().point(source_point)
+    represented_source = TopologicalSpaces().to_sets().on_object(source_space).point(source_point)
     assert source_lrs.stalk(represented_source) is source_point.local_ring
     assert ask(source_lrs.local_ring_condition(represented_source)) is True
-    represented_target = mapping.continuous_map().underlying_map()(represented_source)
+    represented_target = TopologicalSpaces().to_sets().on_morphism(mapping.continuous_map())(represented_source)
     target_point = represented_target.datum()
     assert target_point.scheme is target
     stalk_map = mapping.stalk_map(represented_source)

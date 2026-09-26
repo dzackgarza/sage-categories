@@ -12,7 +12,11 @@ from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.predicates import Axiom, ask, assume
 from sage_categories.cat.properties import PropertySubcategory
 from sage_categories.cat_kernel.functor_declarations import retained_invertible_comparisons
-from sage_categories.kernel.compiler import SemanticCollisionError, declared_inheritance
+from sage_categories.kernel.compiler import (
+    SemanticCollisionError,
+    _requires_interchange,
+    declared_inheritance,
+)
 from sage_categories.kernel.construction import active_object_context
 from sage_categories.kernel.refinement import (
     declares_point,
@@ -54,6 +58,10 @@ class BaseCategory(_SyntheticCategoryOperations, Category):
         def preferred_object(self) -> CategoryOfCategories.ElementType:
             return BASE(0)
 
+        @_requires_interchange(lambda category: Fun(category, category).one())
+        def interchange_identity(self) -> Self:
+            return self
+
         def __pos__(self) -> tuple[Self, Integer]:
             return self, self._base_state
 
@@ -65,6 +73,10 @@ class BaseCategory(_SyntheticCategoryOperations, Category):
         def base_element(self) -> tuple[Self, Integer]:
             return self, self._base_element_state
 
+        @_requires_interchange(lambda category: Fun(category, category).one())
+        def interchange_element_identity(self) -> Self:
+            return self
+
     class MorphismType:
         def __init__(self, data: None) -> None:
             _BASE_MORPHISM_INITIALIZATIONS.append(self)
@@ -72,6 +84,10 @@ class BaseCategory(_SyntheticCategoryOperations, Category):
 
         def base_morphism(self) -> tuple[Self, Integer]:
             return self, self._base_morphism_state
+
+        @_requires_interchange(lambda category: Fun(category, category).one())
+        def interchange_morphism_identity(self) -> Self:
+            return self
 
 
 BASE = BaseCategory()
@@ -859,10 +875,16 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
     caplog.set_level(logging.DEBUG, logger="sage_categories.kernel.compiler")
     coherent = CoherentDiamond()
     member = coherent(4)
+    assert member.interchange_identity() is member
+    identity = coherent.morphism_category(1)(member, member).one()
+    element = coherent.element_from_defining_morphism(identity)
+    assert identity.interchange_morphism_identity() is identity
+    assert element.interchange_element_identity() is element
 
     # The compiler, not an explicit later read of the natural transformation, executes
     # the alternate route once and consumes the comparison component during construction.
-    assert transported == [right(4)]
+    assert len(transported) == 3
+    assert all(value is right(4) for value in transported)
     to_left, to_right = coherent.selected_functors()
     first = left.selected_functors()[0] * to_left
     second = right.selected_functors()[0] * to_right
@@ -903,7 +925,7 @@ def test_nonidentity_structural_comparison_transports_alternate_path(caplog: pyt
             return (to_left, to_right)
 
     ill_typed = IllTypedDiamond()
-    with pytest.raises(AssertionError, match="not a morphism of"):
+    with pytest.raises(AssertionError, match=r"membership of .* is not established"):
         ill_typed(6)
 
 
@@ -944,6 +966,13 @@ def test_distinct_structures_sharing_a_target_keep_separate_images() -> None:
     # target does not license the compiler to run or identify the unrelated second
     # structure when no comparison between the two functors was supplied.
     assert first_calls == [member]
+    assert second_calls == []
+
+    with pytest.raises(
+        AssertionError,
+        match=r"BaseCategory\.ObjectType\.interchange_identity requires interchange.*required boundary.*compatibility: functorial transport",
+    ):
+        member.interchange_identity()
     assert second_calls == []
 
     first_image = first.on_object(member)

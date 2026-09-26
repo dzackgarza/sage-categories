@@ -11,12 +11,10 @@ from __future__ import annotations
 
 from sage_categories.algebra.abelian import (
     AbelianTensor,
-    balanced_tensor,
     relative_tensor,
-    relative_tensor_mediator,
 )
 from sage_categories.algebra.algebras import AlgebraCategory
-from sage_categories.cat.bimodules import BimoduleCategory
+from sage_categories.cat.bimodules import BimoduleCategory, relative_tensor_factor
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.functors import Fun, Functor
@@ -68,7 +66,6 @@ def _restrict_object(
     restriction = source_relative.restriction(scalar_morphism, scalar_morphism)
     assert restriction.codomain() is target_relative
     restricted = restriction.on_object(source_carrier)
-    group = source_relative.forgetful().on_object(source_carrier)
     scalar_map = _underlying_scalar_map(scalar_morphism)
 
     source_monoid = source.monoid_presentation().on_object(algebra)
@@ -81,15 +78,10 @@ def _restrict_object(
         restricted.left_action(),
     )
     source_multiplication = source_relative.forgetful().on_morphism(source_monoid.operation())
-
-    def multiply(left, right):
-        source_tensor = balanced_tensor(source_projection, left, right)
-        return source_multiplication(source_tensor).datum()
-
-    underlying_multiplication = relative_tensor_mediator(
+    underlying_multiplication = relative_tensor_factor(
+        AbelianTensor(),
         target_projection,
-        group,
-        multiply,
+        source_multiplication * source_projection,
     )
     tensor_square = tensor_object(target.monoidal_structure().tensor(), restricted, restricted)
     multiplication = target_relative.homomorphism(

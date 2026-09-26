@@ -193,7 +193,8 @@ Read historical observations at their stated revisions before relying on them.
   On 2026-09-26 exact read-only review attempts at `9c97a712` and `3edc29b4` were rejected before worker creation with `AGENTS_BUSY`: another prime workstream held the app's sole sub-agent swarm.
   Further exact read-only attempts through `28726a89` returned the same `AGENTS_BUSY` condition before worker creation.
   On 2026-09-26 the prime recovered the sleeping original `r-gate algebraic calculus` reviewer, whose prior `NOT ACCEPT` at `727414bf` named the Ab relative-tensor owner and geometry compatible-section descent as the two blockers.
-  Current source at `00a63374` routes those responsibilities through `cat/bimodules.py`, executable colimit preservation/factorization, and generic `Rings` product/equalizer owners, but reviving that reviewer for an exact-current-HEAD verdict was again rejected with `AGENTS_BUSY` before execution.
+  Current source through clean revision `4144bb7c` routes those responsibilities through `cat/bimodules.py`, executable colimit preservation/factorization, generic `Rings` product/equalizer owners, retained colimit mediation for stalks, direct functor-owned global sections, and generic relative-tensor factorization for scalar restriction.
+  Repeated attempts to revive that same reviewer through `4144bb7c` were again rejected with `AGENTS_BUSY` before execution.
   These attempts returned no reviewer result and do not discharge the fixed-revision acceptance gate.
   The fixed-revision architecture check and focused public consumers therefore remain execution evidence, not independent acceptance.
 

@@ -16,8 +16,8 @@ from sympy import false, true
 
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone, cocones
-from sage_categories.cat.functors import Functor
+from sage_categories.cat.cones import LimitConesCategory, cocone, cocones
+from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_functor
 from sage_categories.cat.predicates import ask
@@ -137,8 +137,8 @@ def _new_ring_stalk[PointDatum: Hashable](
 
     selected = cocone(diagram, stalk, germ)
 
-    def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        return candidate.leg(data.least_vertex)
+    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+        return candidate.component(data.least_vertex)
 
     retained = (
         _rings()

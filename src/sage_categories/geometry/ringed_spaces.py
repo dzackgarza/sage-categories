@@ -122,18 +122,8 @@ class RingedSpacesCategory(MorphismDataCategory):
         spaces = self._space_category()
         space = member_object.space()
         continuous = Mor(spaces)(space, space).one()
-        sheaf = member_object.sheaf()
-
-        def component(open_key: Hashable) -> MorphismCategory.ObjectType:
-            ring = sheaf.presheaf.section_ring(open_key)
-            return Mor(_rings())(ring, ring).one()
-
-        return self._ringed_morphism_data(
-            member_object,
-            member_object,
-            continuous,
-            component,
-        )
+        sheaf = member_object.sheaf().presheaf.functor
+        return continuous, Mor(Fun(sheaf.domain(), _rings()))(sheaf, sheaf).one()
 
     def _composite_data(
         self,

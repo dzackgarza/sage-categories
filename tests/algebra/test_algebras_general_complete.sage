@@ -45,6 +45,23 @@ def field_two():
     return element, group, Monoids(AbelianTensor())(multiplication, unit)
 
 
+def test_scalar_restriction_is_category_owned_functor() -> None:
+    integers = integer_scalar_monoid()
+    _, _, field = field_two()
+    scalar_map = Monoids(AbelianTensor()).homomorphism(
+        integers,
+        field,
+        field.unit_morphism(),
+    )
+    field_algebras = Algebras(field, AbelianBimoduleTensor(field))
+    integer_algebras = Algebras(integers, AbelianBimoduleTensor(integers))
+
+    restriction = field_algebras.restriction(integer_algebras, scalar_map)
+    assert restriction.domain() is field_algebras
+    assert restriction.codomain() is integer_algebras
+    assert field_algebras.restriction(integer_algebras, scalar_map) is restriction
+
+
 def test_scalar_change_uses_the_owned_algebra_restriction_functor() -> None:
     integers = integer_scalar_monoid()
     field_element, field_group, field = field_two()
@@ -141,5 +158,6 @@ def test_free_maps_use_the_same_relative_algebra_owner() -> None:
     ) is integer_structure.underlying_category().to_left().on_object(free_bimodule)
 
 
+test_scalar_restriction_is_category_owned_functor()
 test_scalar_change_uses_the_owned_algebra_restriction_functor()
 test_free_maps_use_the_same_relative_algebra_owner()

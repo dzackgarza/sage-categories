@@ -79,16 +79,6 @@ from sage_categories.geometry.ringed_spaces import (
 )
 from sage_categories.geometry.sheaves import RingSheaf as RingSheaf
 from sage_categories.geometry.sheaves import (
-    descent_chart_comparison as descent_chart_comparison,
-)
-from sage_categories.geometry.sheaves import descent_lift as descent_lift
-from sage_categories.geometry.sheaves import descent_map as descent_map
-from sage_categories.geometry.sheaves import descent_projection as descent_projection
-from sage_categories.geometry.sheaves import descent_restriction as descent_restriction
-from sage_categories.geometry.sheaves import (
-    descent_section_ring as descent_section_ring,
-)
-from sage_categories.geometry.sheaves import (
     ring_presheaf_from_functor as ring_presheaf_from_functor,
 )
 from sage_categories.geometry.sheaves import ring_sheaf as ring_sheaf

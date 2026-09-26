@@ -36,6 +36,7 @@ architecture-boundary:
 
 architecture:
     uv run --no-project --python 3.14 --with pyyaml python scripts/rule_coverage.py
+    uv run --no-project --python 3.14 --with pyyaml python scripts/architecture_regressions.py
     just architecture-boundary
 
 # Validate the governing plan and its native issue dependencies.

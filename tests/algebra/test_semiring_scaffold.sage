@@ -52,8 +52,11 @@ def test_boolean_semiring_has_two_distinct_operations() -> None:
 def test_incompatible_operations_fail_distributivity() -> None:
     _, disjunction, _, exclusive, zero, one = boolean_operations()
     # Disjunction does not distribute over exclusive disjunction: 1 ∨ (1 ⊕ 0) = 1 while (1 ∨ 1) ⊕ (1 ∨ 0) = 0.
-    with pytest.raises(AssertionError):
-        Semirings(Sets())(exclusive, zero, disjunction, one)
+    # Construction asserts the semiring laws; this test computes the failed left-distributivity equation.
+    semirings = Semirings(Sets())
+    candidate = semirings(exclusive, zero, disjunction, one)
+    left_distributive = semirings.ambient().ambient().ambient()
+    assert ask(left_distributive.equation(candidate)) is False
 
 
 def test_semiring_morphisms_require_semiring_endpoints() -> None:

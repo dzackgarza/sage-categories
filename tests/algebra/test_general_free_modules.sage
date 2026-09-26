@@ -20,10 +20,10 @@ from sage_categories.algebra.free_modules import (
     finite_free_module,
     finite_free_projection,
     free_module_homomorphism,
-    ordinary_modules,
     regular_module,
 )
 from sage_categories.cat.category import ask
+from sage_categories.cat.modules import Modules
 from sage_categories.cat.monoidal import SelfAction
 from sage_categories.cat.structured_objects import Monoids
 
@@ -54,7 +54,7 @@ def matrix_ring():
 
 def test_finite_free_module_retains_basis_product_coproduct_and_left_action() -> None:
     element, group, ring = matrix_ring()
-    modules = ordinary_modules(ring)
+    modules = Modules(ring, SelfAction(AbelianTensor()))
     assert modules.scalars() is ring
     assert modules.actegory() is SelfAction(AbelianTensor())
 
@@ -114,7 +114,7 @@ def test_finite_free_module_retains_basis_product_coproduct_and_left_action() ->
 
 def test_matrix_is_only_the_chosen_basis_specialization_of_a_free_map() -> None:
     element, group, ring = matrix_ring()
-    modules = ordinary_modules(ring)
+    modules = Modules(ring, SelfAction(AbelianTensor()))
     line = finite_free_module(modules, 1)
     e12 = group.point(element([0, 1, 0, 0]))
     e21 = element([0, 0, 1, 0])

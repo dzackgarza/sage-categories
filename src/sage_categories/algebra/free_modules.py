@@ -32,11 +32,11 @@ from sage_categories.cat.cones import (
 )
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.cat.modules import ModuleCategory, Modules
+from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import SelfAction, tensor_morphism
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.shapes import Discrete
-from sage_categories.cat.structured_objects import MonoidCategory, Monoids
+from sage_categories.cat.structured_objects import Monoids
 from sage_categories.sets.finite import Sets
 
 __all__ = [
@@ -47,7 +47,6 @@ __all__ = [
     "finite_free_module",
     "finite_free_projection",
     "free_module_homomorphism",
-    "ordinary_modules",
     "regular_module",
 ]
 
@@ -59,13 +58,6 @@ type BasisImageRule = Callable[[CategoryOfCategories.ElementType], ModuleMap]
 _REGULAR_MODULES = ChosenConstruction()
 _FINITE_FREE_MODULES = ChosenConstruction()
 _FINITE_FREE_FAMILIES: SelectedChoice[Functor] = SelectedChoice()
-
-
-def ordinary_modules(scalars: MonoidCategory.ObjectType) -> ModuleCategory:
-    """The ordinary category of left modules over ``scalars`` in ``(Ab, tensor)``."""
-    monoidal = AbelianTensor()
-    assert scalars in Monoids(monoidal), f"{scalars!r} is not a ring/scalar monoid in {monoidal.underlying_category()!r}"
-    return Modules(scalars, SelfAction(monoidal))
 
 
 def _require_ordinary(modules: ModuleCategory) -> None:

@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from typing import assert_type
 
+from sage_categories.algebra.abelian import AbelianTensor
 from sage_categories.algebra.free_modules import (
     finite_free_basis,
     finite_free_basis_family,
@@ -11,13 +12,12 @@ from sage_categories.algebra.free_modules import (
     finite_free_module,
     finite_free_projection,
     free_module_homomorphism,
-    ordinary_modules,
     regular_module,
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Functor
-from sage_categories.cat.modules import ModuleCategory
-from sage_categories.cat.monoidal import ActionsCategory
+from sage_categories.cat.modules import ModuleCategory, Modules
+from sage_categories.cat.monoidal import ActionsCategory, SelfAction
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import MonoidCategory
 
@@ -29,7 +29,7 @@ def free_module_types(
     coefficient: CategoryOfCategories.ElementType,
     basis_image: Callable[[CategoryOfCategories.ElementType], MorphismCategory.ObjectType],
 ) -> None:
-    modules = ordinary_modules(scalars)
+    modules = Modules(scalars, SelfAction(AbelianTensor()))
     assert_type(modules, ModuleCategory)
     assert_type(modules.scalars(), MonoidCategory.ObjectType)
     assert_type(modules.actegory(), ActionsCategory.ObjectType)

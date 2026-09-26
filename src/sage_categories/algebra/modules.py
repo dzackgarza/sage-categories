@@ -14,7 +14,6 @@ from sage_categories.algebra.free_modules import (
     finite_free_module,
     finite_free_projection,
     free_module_homomorphism,
-    ordinary_modules,
     regular_module,
 )
 from sage_categories.algebra.module_adapters import sage_module_from_engine
@@ -46,7 +45,6 @@ __all__ = [
     "finitely_presented_module",
     "free_module_homomorphism",
     "internal_endomorphism_module",
-    "ordinary_modules",
     "presented_module_diagram",
     "presented_module_factor",
     "presented_module_presentation",

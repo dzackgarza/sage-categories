@@ -5,17 +5,18 @@ from typing import assert_type
 from sage.modules.free_module import FreeModule_generic
 from sage.rings.integer import Integer
 
+from sage_categories.algebra.abelian import AbelianTensor
 from sage_categories.algebra.modules import (
     finite_free_matrix_morphism,
     finite_free_module,
     finitely_presented_module,
-    ordinary_modules,
     presented_module_factor,
     presented_module_projection,
     sage_module_from_engine,
 )
 from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.modules import ModuleCategory
+from sage_categories.cat.modules import ModuleCategory, Modules
+from sage_categories.cat.monoidal import SelfAction
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import MonoidCategory
 
@@ -27,7 +28,7 @@ def unified_module_types(
     coequalizing: MorphismCategory.ObjectType,
     engine_module: FreeModule_generic[Integer],
 ) -> None:
-    modules = ordinary_modules(scalars)
+    modules = Modules(scalars, SelfAction(AbelianTensor()))
     assert_type(modules, ModuleCategory)
     assert_type(modules.scalars(), MonoidCategory.ObjectType)
     free = finite_free_module(modules, 2)

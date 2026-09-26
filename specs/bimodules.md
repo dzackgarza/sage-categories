@@ -51,16 +51,21 @@ The ambient category must supply these coequalizers, and tensoring must preserve
 The retained balanced map and mediator are part of the result.
 For ordinary modules this is the usual balanced tensor product; see [Stacks, bimodules and tensor product](https://stacks.math.columbia.edu/tag/0FQM).
 
-For `V = Ab` the abelian leaf supplies the coequalizer.
+The generic owner is `cat/bimodules.py`: it builds the balancing parallel pair, retains the relative tensor through the ambient coequalizer family, factors balanced maps through that presentation, transports the presentation through supplied colimit-preserving fixed-tensor functors, and constructs the induced maps, unitors, and associator.
+A concrete leaf supplies the ambient monoidal structure, executable coequalizers, and the preservation data required by those generic constructions.
+
+For `V = Ab` the abelian leaf supplies those executable coequalizers and fixed-tensor preservation mediators.
 `coequalizer_projection(f, g)` is the universal map `B -> B / im(f - g)` of a parallel pair of homomorphisms, and `coequalizer_mediator(q, k)` factors a homomorphism that kills the same subgroup.
 In Smith generators the quotient adjoins the rows of the difference matrix to the relations of the target, so it stays presented.
-`relative_tensor(right_action, left_action)` is the balanced map `X tensor Y -> X tensor_S Y`, whose codomain is the relative tensor product.
+`relative_tensor(V, S, right_action, left_action)` is the generic balanced map `X tensor Y -> X tensor_S Y`, whose codomain is the relative tensor product; the Ab leaf's `relative_tensor(right_action, left_action)` supplies `V` and `S` from its retained tensor data.
 `balanced_tensor(q, x, y)` is the point `x tensor_S y`, and `relative_tensor_mediator(q, C, h)` is the map out of the relative tensor through which a biadditive `S`-balanced rule factors.
-`induced_left_action(q, lambda_X)` and `induced_right_action(q, rho_Y)` are the outer actions: acting on the outer factor commutes with the identification the middle monoid makes, so each action descends to the quotient.
-`relative_tensor_morphism(q, q', f, g)` is `f tensor_S g`, the map a map of each factor induces.
-`relative_left_unitor(q, lambda_Y, eta)` gives `S tensor_S Y -> Y` and `relative_right_unitor(q, rho_X, eta)` gives `X tensor_S S -> X`, each with its inverse.
+`induced_left_action(V, q, R, Y, lambda_X)` and `induced_right_action(V, q, X, T, rho_Y)` are the generic outer actions: acting on the outer factor commutes with the identification the middle monoid makes, so each action descends to the quotient.
+`relative_tensor_morphism(V, q, q', f, g)` is `f tensor_S g`, the map a map of each factor induces.
+`relative_left_unitor(V, q, lambda_Y, eta)` gives `S tensor_S Y -> Y` and `relative_right_unitor(V, q, rho_X, eta)` gives `X tensor_S S -> X`, each with its inverse.
 Acting is itself balanced, so the comparison is the action read on the quotient, and the inverse tensors with the unit; both composites are checked on construction.
-Descended outer actions and associativity maps are constructed through the tensorized quotient epimorphisms themselves.
+`relative_tensor_associator(V, X, Y, Z, q_XY, q_YZ, q_source, q_target)` constructs the two inverse maps between the iterated relative tensors by transporting each inner quotient through the canonical fixed-tensor functor and then factoring through the outer quotient.
+The concrete realization must already have retained the required colimit-preservation data on those canonical functors.
+Descended outer actions and associativity maps are therefore constructed through retained universal presentations rather than by selecting quotient representatives.
 The private CAP realization uses its epimorphism-colift operation, so relative tensor does not choose element representatives of a quotient in order to define these maps.
 
 The tensor product acts on pairs of compatible bimodule morphisms.

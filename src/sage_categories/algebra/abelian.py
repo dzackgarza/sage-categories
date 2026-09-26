@@ -63,6 +63,7 @@ from sage_categories.cat.bimodules import (
     fixed_tensor_functor,
     relative_left_unitor,
     relative_right_unitor,
+    relative_tensor_associator,
     relative_tensor_factor,
     relative_tensor_preserved_factor,
 )
@@ -1289,8 +1290,11 @@ def _bimodule_associator_components(
     second_third_projection = relative_tensor(second.right_action(), third.left_action())
     source_projection = relative_tensor(first_second.right_action(), third.left_action())
     target_projection = relative_tensor(first.right_action(), second_third.left_action())
+    _fixed_tensor_functor(third_group, "right")
+    _fixed_tensor_functor(first_group, "left")
 
-    forward_underlying, backward_underlying = _relative_associator_underlying(
+    forward_underlying, backward_underlying = relative_tensor_associator(
+        AbelianTensor(),
         first_group,
         second_group,
         third_group,
@@ -1298,8 +1302,6 @@ def _bimodule_associator_components(
         second_third_projection,
         source_projection,
         target_projection,
-        partial(_factor_relative_projection, source_projection),
-        partial(_factor_relative_projection, target_projection),
     )
     return (
         bimodules.homomorphism(source, target, forward_underlying),

@@ -53,6 +53,7 @@ __all__ = [
     "relative_left_unitor",
     "relative_right_unitor",
     "relative_tensor",
+    "relative_tensor_associator",
     "relative_tensor_factor",
     "relative_tensor_morphism",
     "relative_tensor_preserved_factor",
@@ -103,6 +104,16 @@ def relative_right_unitor(
     projection: MorphismCategory.ObjectType,
     right_action: MorphismCategory.ObjectType,
     unit_morphism: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
+def relative_tensor_associator(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    third: CategoryOfCategories.ElementType,
+    first_second_projection: MorphismCategory.ObjectType,
+    second_third_projection: MorphismCategory.ObjectType,
+    source_projection: MorphismCategory.ObjectType,
+    target_projection: MorphismCategory.ObjectType,
 ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
 
 class _StaticRoles_ActionPairsCategory(sage_categories.cat.cat_constructions._StaticRoles_LimitSubcategory):

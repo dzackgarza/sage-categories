@@ -8,6 +8,9 @@ from sage_categories.cat.bimodules import fixed_tensor_functor as fixed_tensor_f
 from sage_categories.cat.bimodules import relative_left_unitor as relative_left_unitor
 from sage_categories.cat.bimodules import relative_right_unitor as relative_right_unitor
 from sage_categories.cat.bimodules import (
+    relative_tensor_associator as relative_tensor_associator,
+)
+from sage_categories.cat.bimodules import (
     relative_tensor_factor as relative_tensor_factor,
 )
 from sage_categories.cat.bimodules import (

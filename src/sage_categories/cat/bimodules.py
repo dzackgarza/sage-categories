@@ -27,6 +27,7 @@ __all__ = [
     "relative_left_unitor",
     "relative_right_unitor",
     "relative_tensor",
+    "relative_tensor_associator",
     "relative_tensor_factor",
     "relative_tensor_morphism",
     "relative_tensor_preserved_factor",
@@ -245,6 +246,53 @@ def relative_right_unitor(
     identity = Mor(base)(carrier, carrier).one()
     forward = relative_tensor_factor(monoidal, projection, right_action)
     backward = projection * tensor_morphism(tensor, identity, unit_morphism) * monoidal.right_unitor().inverse().component(carrier)
+    base.retain_inverses(forward, backward)
+    return forward, backward
+
+
+def relative_tensor_associator(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    third: CategoryOfCategories.ElementType,
+    first_second_projection: MorphismCategory.ObjectType,
+    second_third_projection: MorphismCategory.ObjectType,
+    source_projection: MorphismCategory.ObjectType,
+    target_projection: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
+    """The associator between the two iterated relative tensors.
+
+    The inner quotient is first transported through tensoring by the untouched
+    outer factor, using its canonical colimit-preserving fixed-tensor functor.
+    The resulting map then factors through the outer relative tensor.
+    """
+    base, tensor = monoidal.underlying_category(), monoidal.tensor()
+    triples = monoidal.associator().domain().domain()
+    triple = triples((first, second, third))
+    rebracket = monoidal.associator().component(triple)
+    unbracket = monoidal.associator().inverse().component(triple)
+    identity_first = Mor(base)(first, first).one()
+    identity_third = Mor(base)(third, third).one()
+    tensor_third = fixed_tensor_functor(monoidal, third, "right")
+    tensor_first = fixed_tensor_functor(monoidal, first, "left")
+
+    forward_from_unbalanced = target_projection * tensor_morphism(tensor, identity_first, second_third_projection) * rebracket
+    through_first_quotient = relative_tensor_preserved_factor(
+        monoidal,
+        first_second_projection,
+        tensor_third,
+        forward_from_unbalanced,
+    )
+    forward = relative_tensor_factor(monoidal, source_projection, through_first_quotient)
+
+    backward_from_unbalanced = source_projection * tensor_morphism(tensor, first_second_projection, identity_third) * unbracket
+    through_second_quotient = relative_tensor_preserved_factor(
+        monoidal,
+        second_third_projection,
+        tensor_first,
+        backward_from_unbalanced,
+    )
+    backward = relative_tensor_factor(monoidal, target_projection, through_second_quotient)
     base.retain_inverses(forward, backward)
     return forward, backward
 

@@ -171,6 +171,29 @@ class AlgebraCategory[
         """The named composite from algebras through modules to the ambient category ``C``."""
         return self.module_category().forgetful() * self.to_modules()
 
+    def restriction[
+        TargetScalar: "MonoidCategory.ObjectType",
+    ](
+        self,
+        target: AlgebraCategory[TargetScalar],
+        scalar_morphism: MorphismCategory.ObjectType,
+    ) -> CategoryOfCategories.MorphismType[
+        AlgebraCategory[BaseScalar],
+        AlgebraCategory[TargetScalar],
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+    ]:
+        """Restriction of scalars ``Alg_S -> Alg_R`` along ``R -> S``."""
+        from sage_categories.algebra.algebra_scalar_change import (
+            _restrict_algebra_scalars,
+        )
+
+        return _restrict_algebra_scalars(self, target, scalar_morphism)
+
 
 def _monoidal_context(
     base: MonoidCategory.ObjectType,

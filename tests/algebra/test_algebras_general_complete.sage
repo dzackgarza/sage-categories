@@ -18,7 +18,6 @@ from sage_categories.algebra.algebra_objects import (
     integer_free_algebra,
     integer_free_algebra_generator,
     integer_free_algebra_homomorphism,
-    restrict_algebra_scalars,
 )
 from sage_categories.algebra.indexed_modules import integer_scalar_monoid
 from sage_categories.cat.category import ask
@@ -69,13 +68,12 @@ def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
     )
     field_algebra = field_algebras.from_monoid(regular_monoid)
 
-    restriction = restrict_algebra_scalars(
-        field_algebras,
+    restriction = field_algebras.restriction(
         integer_algebras,
         scalar_map,
     )
     assert (
-        restrict_algebra_scalars(field_algebras, integer_algebras, scalar_map)
+        field_algebras.restriction(integer_algebras, scalar_map)
         is restriction
     )
     restricted = restriction.on_object(field_algebra)

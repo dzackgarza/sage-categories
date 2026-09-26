@@ -75,6 +75,20 @@ class AlgebraCategory[
         ModuleCategory.MorphismType,
     ]: ...
     def U_R(self) -> Functor: ...
+    def restriction[TargetScalar: MonoidCategory.ObjectType](
+        self,
+        target: AlgebraCategory[TargetScalar],
+        scalar_morphism: MorphismCategory.ObjectType,
+    ) -> CategoryOfCategories.MorphismType[
+        AlgebraCategory[BaseScalar],
+        AlgebraCategory[TargetScalar],
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+    ]: ...
 
 def Algebras[BaseScalar: MonoidCategory.ObjectType](
     base: BaseScalar, context: ActionsCategory.ObjectType | MonoidalStructuresCategory.ObjectType

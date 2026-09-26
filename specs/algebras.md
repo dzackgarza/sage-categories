@@ -106,7 +106,13 @@ The named copy `MultiplicativeMonoids(V_R)` supplies `multiplication()`, `*`, an
 The module action and every operation owned by `C` arrive along `U_R`. No algebra constructor repeats those operations, and no accessor stands in for the composite (`POL-FUN-037`).
 
 The same Python realization in `Algebras(R, C)` and `Algebras(S, C)` represents different algebra objects when the scalar structure morphisms differ.
-Scalar change is a functor between these categories.
+For `f: R -> S`, restriction of scalars is the owned functor
+
+```python
+Alg_S.restriction(Alg_R, f)  # Alg_S -> Alg_R
+```
+
+There is no second standalone public scalar-change spelling.
 
 ## Instances
 

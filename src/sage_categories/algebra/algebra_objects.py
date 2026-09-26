@@ -5,7 +5,6 @@ retained presentations, and scalar change are evaluators or functors on that sam
 none introduces a parallel algebra class.
 """
 
-from sage_categories.algebra.algebra_scalar_change import restrict_algebra_scalars
 from sage_categories.algebra.algebras import (
     AlgebraCategory,
     Algebras,
@@ -31,6 +30,5 @@ __all__ = [
     "presented_algebra_factor",
     "presented_algebra_presentation",
     "presented_algebra_projection",
-    "restrict_algebra_scalars",
     "retain_split_algebra_presentation",
 ]

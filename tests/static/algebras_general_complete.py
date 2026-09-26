@@ -11,7 +11,6 @@ from sage_categories.algebra.algebra_objects import (
     integer_free_algebra_homomorphism,
     presented_algebra_factor,
     presented_algebra_projection,
-    restrict_algebra_scalars,
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Functor
@@ -42,7 +41,7 @@ def complete_algebra_types(
     )
     assert_type(source.U_R(), Functor)
     assert_type(source.functor_to_sets(), Functor)
-    restriction = restrict_algebra_scalars(source, target, scalar_map)
+    restriction = source.restriction(target, scalar_map)
     assert_type(
         restriction.domain(),
         AlgebraCategory[MonoidCategory.ObjectType],

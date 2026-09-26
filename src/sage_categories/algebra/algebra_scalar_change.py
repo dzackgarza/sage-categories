@@ -22,8 +22,6 @@ from sage_categories.cat.monoidal import tensor_object
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoids
 
-__all__ = ["restrict_algebra_scalars"]
-
 _ALGEBRA_RESTRICTIONS = ChosenConstruction()
 _ALGEBRA_RESTRICTION_FUNCTORS = ChosenConstruction()
 
@@ -98,7 +96,7 @@ def _restrict_object(
     return target.from_monoid(Monoids(target.monoidal_structure())(multiplication, unit))
 
 
-def restrict_algebra_scalars[
+def _restrict_algebra_scalars[
     SourceScalar: "MonoidCategory.ObjectType",
     TargetScalar: "MonoidCategory.ObjectType",
 ](

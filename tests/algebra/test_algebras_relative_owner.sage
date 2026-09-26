@@ -14,8 +14,6 @@ from sage_categories.algebra.algebras import Algebras
 from sage_categories.algebra.free_associative import (
     free_associative_generator,
     free_associative_substitution,
-    free_associative_underlying_module,
-    free_associative_underlying_morphism,
     integer_free_associative_algebra,
 )
 from sage_categories.algebra.indexed_modules import integer_scalar_monoid
@@ -55,7 +53,7 @@ def test_relative_algebra_owner_retains_monoid_equivalence_and_forgetful_composi
     assert neutral.unit_morphism() in Mor(relative)(structure.unit(), carrier)
 
     module = algebras.to_modules().on_object(algebra)
-    assert module is free_associative_underlying_module(neutral)
+    assert module is relative.to_left().on_object(carrier)
     assert algebras.U_R().on_object(
         algebra
     ) is algebras.module_category().forgetful().on_object(module)
@@ -77,7 +75,7 @@ def test_relative_algebra_owner_retains_monoid_equivalence_and_forgetful_composi
     assert (
         ask(
             algebras.to_modules().on_morphism(algebra_map)
-            == free_associative_underlying_morphism(neutral_map)
+            == relative.to_left().on_morphism(relative_map)
         )
         is True
     )

@@ -53,8 +53,6 @@ from sage_categories.algebra.free_associative import (
     free_associative_generator,
     free_associative_product,
     free_associative_substitution,
-    free_associative_underlying_module,
-    free_associative_underlying_morphism,
     integer_free_associative_algebra,
 )
 from sage_categories.algebra.indexed_modules import (
@@ -113,8 +111,6 @@ __all__ = [
     "free_associative_generator",
     "free_associative_product",
     "free_associative_substitution",
-    "free_associative_underlying_module",
-    "free_associative_underlying_morphism",
     "indexed_free_abelian_coproduct",
     "indexed_free_abelian_group",
     "indexed_free_abelian_injection",

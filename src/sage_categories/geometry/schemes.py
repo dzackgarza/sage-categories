@@ -57,7 +57,6 @@ from sage_categories.geometry.sheaves import (
     descent_projection,
     descent_restriction,
     descent_section_ring,
-    identity_sheaf_comparison,
     ring_presheaf_from_functor,
     ring_sheaf,
 )
@@ -1022,13 +1021,18 @@ class SchemesCategory(PropertySubcategory):
             value = cast(SchemesCategory.ObjectType[AffineOpenCategory.ObjectType], affine_locally_ringed_space(affine))
             assume(self.predicate()(value))
             inclusion = Mor(self)(value, value).one()
+            affine_presheaf = affine_structure_sheaf(affine)[1]
+            comparison = Mor(Fun(affine_presheaf.functor.domain(), _rings()))(
+                affine_presheaf.functor,
+                affine_presheaf.functor,
+            ).one()
             self.retain_affine_cover(
                 value,
                 (
                     AffineOpenChart(
                         affine,
                         inclusion,
-                        identity_sheaf_comparison(affine_structure_sheaf(affine)[1]),
+                        comparison,
                     ),
                 ),
             )

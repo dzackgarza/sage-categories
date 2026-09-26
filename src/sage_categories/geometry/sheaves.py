@@ -38,7 +38,6 @@ __all__ = [
     "descent_projection",
     "descent_restriction",
     "descent_section_ring",
-    "identity_sheaf_comparison",
     "ring_presheaf",
     "ring_presheaf_from_functor",
     "ring_sheaf",
@@ -233,14 +232,6 @@ def descent_chart_comparison(
         lambda open_object: projection(global_open(open_object)),
         lambda open_object: lift(global_open(open_object)),
     )
-
-
-def identity_sheaf_comparison(presheaf: RingPresheaf) -> NaturalTransformation:
-    """The identity natural isomorphism of one represented ring presheaf."""
-    return Mor(Fun(presheaf.functor.domain(), _rings()))(
-        presheaf.functor,
-        presheaf.functor,
-    ).one()
 
 
 @dataclass(frozen=True, eq=False, slots=True)

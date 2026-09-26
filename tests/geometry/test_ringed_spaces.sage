@@ -10,10 +10,7 @@ from sage_categories.geometry import (
     ring_presheaf,
     ring_sheaf,
 )
-from sage_categories.geometry.sheaves import (
-    identity_sheaf_comparison,
-    ring_presheaf_from_functor,
-)
+from sage_categories.geometry.sheaves import ring_presheaf_from_functor
 
 
 def residue_ring(modulus):
@@ -52,7 +49,11 @@ def test_ringed_map_has_natural_sheaf_action_with_exact_endpoints() -> None:
     ring_data = residue_ring(5)
     source_sheaf = constant_ring_sheaf(source_space, ring_data)
     target_sheaf = constant_ring_sheaf(target_space, ring_data)
-    comparison = identity_sheaf_comparison(source_sheaf.presheaf)
+    presheaf_functor = source_sheaf.presheaf.functor
+    comparison = Mor(Fun(presheaf_functor.domain(), Rings(Sets)))(
+        presheaf_functor,
+        presheaf_functor,
+    ).one()
     assert comparison.inverse() is comparison
     source_full = source_space.open_object(frozenset((0,)))
     assert comparison.component(source_full) is Mor(Rings(Sets))(ring_data[0], ring_data[0]).one()

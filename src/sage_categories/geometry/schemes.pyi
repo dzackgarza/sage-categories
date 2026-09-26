@@ -89,9 +89,6 @@ from sage_categories.geometry.sheaves import (
     descent_section_ring as descent_section_ring,
 )
 from sage_categories.geometry.sheaves import (
-    identity_sheaf_comparison as identity_sheaf_comparison,
-)
-from sage_categories.geometry.sheaves import (
     ring_presheaf_from_functor as ring_presheaf_from_functor,
 )
 from sage_categories.geometry.sheaves import ring_sheaf as ring_sheaf

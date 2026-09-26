@@ -132,7 +132,9 @@ class AlgebraCategory[
         assert result.domain() is source and result.codomain() is target
         return result
 
-    def to_modules(self) -> CategoryOfCategories.MorphismType[
+    def to_modules(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
         AlgebraCategory[BaseScalar],
         ModuleCategory[BaseScalar],
         AlgebraCategory.ObjectType,

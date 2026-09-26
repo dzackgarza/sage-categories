@@ -166,9 +166,8 @@ def _monoidal_context(
                 case ModuleCategory():
                     assert relative.scalars() is base
                 case BimoduleCategory():
-                    assert relative.left_modules().scalars() is base
-                    right = relative.right_modules().scalars()
-                    assert right.operation() is base.operation() and right.unit_morphism() is base.unit_morphism()
+                    assert relative.left_scalars() is base
+                    assert relative.right_scalars() is base
                 case _:
                     raise AssertionError(f"{relative!r} is not a relative module category for {base!r}")
             return context

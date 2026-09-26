@@ -305,7 +305,7 @@ def structure_functors(self) -> tuple[Cat().MorphismType, ...]:
 ```
 
 `to_additive()` and `to_multiplicative()` are the legs of the pullback, declared faithful isofibrations.
-`Semirings(C)(addition, zero, multiplication, one)` constructs the two named monoids, decides commutativity of the addition, forms the pair over the carrier, and asserts the distributivity and absorption equations through equifiers, as `Monoids(V)` asserts its laws: asserting places the value in the equifier and evaluates nothing (D190).
+`Semirings(C)(addition, zero, multiplication, one)` constructs the two named monoids, places the addition in the commutative monoids (commutativity is asserted, not computed), forms the pair over the carrier, and asserts the distributivity and absorption equations through equifiers, as `Monoids(V)` asserts its laws: asserting places the value in the equifier and evaluates nothing (D190).
 The two legs land in distinct categories, so a semiring inherits `zero()` and `+` along one and `one()` and `*` along the other; both composites to `C` are equal, and the carrier is inherited once.
 No neutral name, `operation()` or `unit_morphism()`, reaches a semiring (D185).
 

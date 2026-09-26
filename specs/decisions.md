@@ -1663,8 +1663,8 @@ Constructing a value in a law subcategory asserts its laws; it does not compute 
 Associativity, unit, distributivity, pentagon and triangle computations are tests of a construction's correctness: they stay available as explicit checks for tests and debugging, and are never run to admit a value.
 A slow coherence computation is therefore a slow test, not an unfinished construction, and it gates no construction or acceptance by its runtime.
 Per-call bypasses of construction-time checking (`certified_*` constructors, special cases for canonical structures) become unnecessary once construction does not check.
-This applies D26; the earlier `functor.md` sentence "Its constructor decides that equation before admitting a value" contradicted it and is replaced.
+This is D26 as the repository owner has always stated it. Construction-time checking was never an owner requirement: agent-written spec text introduced it in `27b3e507` (2026-09-05; `functor.md`, "Its constructor decides that equation before admitting a value") and the semiring constructor's "decides commutativity". Both were invented, contradicted D26, and are removed; do not reintroduce them from history.
 
 Owner: [Functor calculus](functor.md#universal-calculus) and [magmas, monoids and semirings](magmas-monoids-semirings.md).
 
-Source: repository-owner correction on 2026-09-26: "Sage is not a theorem prover. It is a CAS. If you write the code, you are *claiming* coherence … Coherence computations are TESTS that your constructions are correct, not gates on the constructions themselves."
+Source: repository owner, repeatedly; restated 2026-09-26: "Sage is not a theorem prover. It is a CAS. If you write the code, you are *claiming* coherence … Coherence computations are TESTS that your constructions are correct, not gates on the constructions themselves."

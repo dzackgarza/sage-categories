@@ -340,8 +340,8 @@ class CategoryDeclaration[
 
         retain_category_universe(self, universe)
         self._inverses: MonoDict = MonoDict()
-        self._biproduct_constructor: Callable[[object, object], object] | None = None
-        self._zero_morphism_constructor: Callable[[object, object], object] | None = None
+        self._biproduct_constructor: Callable[[ObjectRole, ObjectRole], ObjectRole] | None = None
+        self._zero_morphism_constructor: Callable[[ObjectRole, ObjectRole], MorphismRole] | None = None
         self._colimit_constructors: MonoDict = MonoDict()
         self._equality = equality_predicate()
         self._ambient_category: Category | None = None
@@ -1163,8 +1163,8 @@ class CategoryDeclaration[
 
     def retain_biproduct_operations(
         self,
-        biproduct: Callable[[object, object], object],
-        zero_morphism: Callable[[object, object], object],
+        biproduct: Callable[[ObjectRole, ObjectRole], ObjectRole],
+        zero_morphism: Callable[[ObjectRole, ObjectRole], MorphismRole],
     ) -> None:
         """Retain this exact category's selected biproduct and zero-morphism operations."""
         self._biproduct_constructor = biproduct

@@ -26,8 +26,8 @@ from sage_categories.algebra.indexed_modules import (
 )
 from sage_categories.cat.category import CategoryOfCategories, ask
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone
-from sage_categories.cat.functors import Cat, Functor
+from sage_categories.cat.cones import LimitConesCategory, cocone
+from sage_categories.cat.functors import Cat, Functor, NaturalTransformation
 from sage_categories.cat.limit_basis import coequalizer_factor, parallel_pair
 from sage_categories.cat.structured_objects import Magmas
 
@@ -205,8 +205,8 @@ def _new_split_algebra_presentation(
 
     selected = cocone(diagram, quotient, selected_leg)
 
-    def mediator(candidate: ConeCategory.ObjectType) -> AlgebraMap:
-        coequalizing = candidate.leg(target_vertex)
+    def mediator(candidate: NaturalTransformation) -> AlgebraMap:
+        coequalizing = candidate.component(target_vertex)
         factor = coequalizing * section
         assert ask(factor * projection == coequalizing) is True, "the supplied split quotient does not factor this coequalizing algebra map"
         return factor

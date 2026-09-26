@@ -29,8 +29,8 @@ from sage_categories.algebra.abelian import (
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import ConeCategory, cocone
-from sage_categories.cat.functors import Fun
+from sage_categories.cat.cones import cocone, cocone_apex
+from sage_categories.cat.functors import Fun, NaturalTransformation
 from sage_categories.cat.modules import ModuleCategory, Modules
 from sage_categories.cat.monoidal import SelfAction
 from sage_categories.cat.morphisms import Mor, MorphismCategory
@@ -150,13 +150,13 @@ def _new_indexed_free_integer_module(
 
     selected = cocone(diagram, module, leg)
 
-    def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        target = candidate.apex()
+    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+        target = cocone_apex(candidate)
         target_carrier = modules.forgetful().on_object(target)
 
         def component(index: Hashable) -> MorphismCategory.ObjectType:
             vertex = shape.object_at(index_set.point(index))
-            return modules.forgetful().on_morphism(candidate.leg(vertex))
+            return modules.forgetful().on_morphism(candidate.component(vertex))
 
         additive = indexed_free_abelian_mediator(carrier, target_carrier, component)
         return modules.homomorphism(module, target, additive)

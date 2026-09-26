@@ -141,9 +141,12 @@ class RingedSpacesCategory(MorphismDataCategory):
         first: RingedSpacesCategory.MorphismType,
     ) -> tuple[TopologicalSpacesCategory.MorphismType, NaturalTransformation]:
         continuous = second.continuous_map() * first.continuous_map()
-        sheaf_map = first.sheaf_map().whisker_right(
-            second.continuous_map().inverse_image().op(),
-        ) * second.sheaf_map()
+        sheaf_map = (
+            first.sheaf_map().whisker_right(
+                second.continuous_map().inverse_image().op(),
+            )
+            * second.sheaf_map()
+        )
         return continuous, sheaf_map
 
     def __repr__(self) -> str:

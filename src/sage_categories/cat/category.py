@@ -2035,9 +2035,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def base_change(self, defining_functor: Functor) -> Functor:
             """Return the pullback projection ``D ×_C E -> D`` for ``self: D -> C`` and ``defining_functor: E -> C``."""
-            from sage_categories.cat.base_change import base_change
+            from sage_categories.cat.base_change import _base_change
 
-            return base_change(self, defining_functor)
+            return _base_change(self, defining_functor)
 
         @cached_method(key=lambda self, source, target: identity_key(source, target))
         def restrict(self, source: Category, target: Category) -> Functor:

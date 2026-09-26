@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from itertools import product
 
+from pytest import raises
+
 from sage_categories.all import Cat, Category, Fun, Mor
 from sage_categories.cat.cones import (
     LimitConesCategory,
@@ -251,6 +253,19 @@ class WrappedFiniteSets(FaithfulStructureCategory):
         )
         return (forget,)
 
+
+
+def test_faithfulness_without_limit_lifting_does_not_create_limits() -> None:
+    sets = FiniteSets()
+    wrapped = WrappedFiniteSets(sets)
+    first = wrapped(sets(frozenset((0, 1))))
+    second = wrapped(sets(frozenset((0, 1, 2))))
+    diagram = from_sequence(wrapped, (first, second))
+    forget = wrapped.selected_functors()[0]
+    assert forget in Fun(wrapped, sets).Faithful()
+    assert forget.limit_lifting(diagram.domain()) is None
+    with raises(AssertionError, match=r"owns no .*limit construction; supply universal data"):
+        wrapped.Limits(diagram.domain())(diagram)
 
 def test_poset_product_lifts_order_projections_and_mediator() -> None:
     sets = FiniteSets()

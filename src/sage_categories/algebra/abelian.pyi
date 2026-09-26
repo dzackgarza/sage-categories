@@ -40,13 +40,11 @@ from sage_categories.cat.monoidal import tensor_units as tensor_units
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Proposition as Proposition
-from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.shapes import Discrete as Discrete
 from sage_categories.cat.structured_objects import AdditiveGroups as AdditiveGroups
 from sage_categories.cat.structured_objects import Groups as Groups
 from sage_categories.cat.structured_objects import MonoidCategory as MonoidCategory
 from sage_categories.cat.structured_objects import Monoids as Monoids
-from sage_categories.kernel.refinement import refine as refine
 
 __all__ = [
     "AbelianBimoduleTensor",

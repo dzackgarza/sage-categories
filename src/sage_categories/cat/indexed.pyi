@@ -16,7 +16,6 @@ from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism as opposite_morphism
 from sage_categories.cat.predicates import Proposition as Proposition
-from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function

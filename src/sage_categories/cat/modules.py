@@ -162,26 +162,7 @@ class ModuleCategory[
     def __call__(self, action_morphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
         """The module with action ``ρ_X: A • X -> X``; its codomain is ``X``."""
         algebra = self._algebras.algebra(action_morphism.codomain(), action_morphism)
-        monoidal = self.actegory().monoidal_structure()
-        unit = monoidal.unit()
-        base = monoidal.underlying_category()
-        canonical_unit_action = (
-            self.carrier() is unit
-            and self.scalars().operation() is monoidal.left_unitor().component(unit)
-            and self.scalars().unit_morphism() is base.morphism_category(1)(unit, unit).one()
-            and action_morphism is self.actegory().unitor().component(action_morphism.codomain())
-        )
-        match canonical_unit_action:
-            case True:
-                # The tensor unit acts on every object of any selected actegory by
-                # its action unitor.  The module laws follow from that action's
-                # triangle and monoidal unit coherence, even when M and C differ;
-                # no extensional equality decision on X is required.
-                refine(algebra, self.ambient())
-                refine(algebra, self)
-                return algebra
-            case False:
-                return super().__call__(algebra)
+        return super().__call__(algebra)
 
     def homomorphism(
         self,

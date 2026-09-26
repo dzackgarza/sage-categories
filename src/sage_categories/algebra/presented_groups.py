@@ -23,9 +23,7 @@ from sage_categories.cat.structured_objects import (
     Magmas,
     Monoids,
     PointedMagmas,
-    _shear,
 )
-from sage_categories.kernel.refinement import refine
 from sage_categories.sets import Sets
 
 type GroupWord = tuple[int, ...]
@@ -39,10 +37,9 @@ def _owned_group(owner: object, role: str):
     multiplication = Mor(Sets)(square, carrier)(lambda pair: _backend.multiply(pair[0], pair[1]))
     unit = Mor(Sets)(structure.unit(), carrier)(lambda _: _backend.one(owner, role))
     inverse_shear = Mor(Sets)(square, square)(lambda pair: _backend.inverse_product(pair[0], pair[1]))
-    monoid = Monoids(structure)(multiplication, unit)
-    structure.underlying_category().retain_inverses(_shear(monoid), inverse_shear)
-    refine(monoid, Groups(structure))
-    return monoid
+    group = Groups(structure)(multiplication, unit)
+    Groups(structure).retain_inverse_shear(group, inverse_shear)
+    return group
 
 
 def _owned_group_homomorphism(source, target, native):

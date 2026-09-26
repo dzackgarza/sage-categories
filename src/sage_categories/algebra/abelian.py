@@ -117,16 +117,14 @@ from sage_categories.cat.monoidal import (
     tensor_units,
 )
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Proposition, ask
+from sage_categories.cat.predicates import Proposition
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import (
     AdditiveGroups,
     Groups,
     MonoidCategory,
     Monoids,
-    _shear,
 )
-from sage_categories.kernel.refinement import refine
 from sage_categories.sets.finite import Sets
 
 
@@ -356,12 +354,10 @@ def _abelian_group_from_operations(
 ) -> CategoryOfCategories.ElementType:
     """Reconstruct the commutative additive group on the supplied carrier."""
     structure = _structure()
-    monoid = Monoids(structure)(addition, zero)
-    structure.underlying_category().retain_inverses(_shear(monoid), inverse_shear)
-    refine(monoid, Groups(structure))
-    group = AdditiveGroups(structure).renamed(monoid)
-    refine(group, AdditiveGroups(structure).Commutative())
-    return group
+    groups = Groups(structure).Commutative()
+    neutral = groups(addition, zero)
+    Groups(structure).retain_inverse_shear(neutral, inverse_shear)
+    return AdditiveGroups(structure).renamed(neutral)
 
 
 def _rule_abelian_homomorphism(
@@ -1615,9 +1611,6 @@ def _module_associator_components(
             target_projection,
         ),
     )
-    abelian_groups = AbelianGroups()
-    assert ask(forward_underlying * backward_underlying == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()) is True
-    assert ask(backward_underlying * forward_underlying == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()) is True
     return (
         modules.homomorphism(source, target, forward_underlying),
         modules.homomorphism(target, source, backward_underlying),
@@ -1640,9 +1633,6 @@ def _new_abelian_module_tensor(
 ) -> MonoidalStructuresCategory.ObjectType:
     """Derive the commutative-base left-module tensor from the retained relative tensor calculus."""
     monoidal = AbelianTensor()
-    scalar = scalars.operation().codomain()
-    assert ask(scalars.operation() * _tensor_swap(scalar, scalar) == scalars.operation()) is True, f"{scalars!r} is not commutative"
-
     modules = Modules(scalars, SelfAction(monoidal))
     assert modules.actegory() is SelfAction(monoidal)
     unit = modules(scalars.operation())

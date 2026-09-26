@@ -10,7 +10,6 @@ from sage_categories.cat.declarations import Sets
 from sage_categories.cat.monoidal import Cartesian
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.structured_objects import Rings
-from sage_categories.kernel.refinement import refine
 
 
 def commutative_ring(
@@ -27,6 +26,4 @@ def commutative_ring(
     multiplication = Mor(Sets)(product, carrier)(multiplication_rule)
     zero = Mor(Sets)(monoidal.unit(), carrier)(lambda _: zero_value)
     one = Mor(Sets)(monoidal.unit(), carrier)(lambda _: one_value)
-    ring = Rings(Sets)(addition, zero, multiplication, one)
-    refine(ring, Rings(Sets).Commutative())
-    return ring
+    return Rings(Sets).Commutative()(addition, zero, multiplication, one)

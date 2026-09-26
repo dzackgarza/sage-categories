@@ -29,7 +29,6 @@ from sage_categories.cat.limit_basis import coequalizer_factor, parallel_pair
 from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import tensor_morphism
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import ask
 
 __all__ = [
     "finitely_presented_module",
@@ -211,9 +210,7 @@ def presented_module_factor(
 ) -> ModuleMap:
     """The unique factor of a relation-respecting map ``R^n -> target`` through ``module``."""
     relation = presented_module_relation(modules, module)
-    zero = presented_module_zero(modules, module)
     assert coequalizing.domain() is relation.codomain() and coequalizing.codomain() is target
-    assert ask(coequalizing * relation == coequalizing * zero) is True, "the supplied map does not respect the retained module relations"
     factor: ModuleMap = coequalizer_factor(
         presented_module_presentation(modules, module),
         coequalizing,

@@ -502,6 +502,16 @@ class GroupsCategory(PropertySubcategory):
     class MorphismType:
         pass
 
+    def retain_inverse_shear(
+        self,
+        group: GroupsCategory.ObjectType,
+        inverse_shear: MorphismCategory.ObjectType,
+    ) -> None:
+        """Retain a supplied inverse of the defining shear map."""
+        assert group in self
+        base = self.ambient().monoidal_structure().underlying_category()
+        base.retain_inverses(_shear(group), inverse_shear)
+
 
 @cached_function(key=identity_key)
 def Groups(

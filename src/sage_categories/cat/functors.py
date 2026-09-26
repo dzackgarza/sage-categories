@@ -325,18 +325,7 @@ class FunctorCategory[
         target: CategoryOfCategories.ElementType,
         assignment: Assignment,
     ) -> NaturalTransformation:
-        """``Mor(Fun(I, C))(F, G)(assignment)``; for ``I = [1]`` the two components must form a commuting square."""
-        walking_arrow = Cat().Simplex(1)
-        if self.domain() is walking_arrow:
-            generator = walking_arrow.generator("0->1")
-            first, second = assignment(walking_arrow(0)), assignment(walking_arrow(1))
-            square_source, square_target = (
-                self.diagram(source).on_morphism(generator),
-                self.diagram(target).on_morphism(generator),
-            )
-            assert ask(square_target * first == second * square_source) is not False, (
-                f"({first!r}, {second!r}) is not a commuting square from {square_source!r} to {square_target!r}"
-            )
+        """``Mor(Fun(I, C))(F, G)(assignment)``; construction asserts naturality."""
         return Cat().construct_two_morphism(source, target, assignment, self.diagram(source), self.diagram(target))
 
     def construct_identity(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation:

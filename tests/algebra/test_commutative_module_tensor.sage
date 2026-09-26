@@ -46,6 +46,7 @@ def cyclic_ring(order):
 
 def test_commutative_base_uses_the_selected_left_module_tensor() -> None:
     group, field = cyclic_ring(5)
+    assert ask(field.is_commutative()) is True
     ambient = AbelianTensor()
     actegory = SelfAction(ambient)
     structure = AbelianModuleTensor(field)
@@ -128,6 +129,7 @@ def test_commutative_base_uses_the_selected_left_module_tensor() -> None:
 
 def test_nonfield_commutative_base_retains_torsion_module_tensor() -> None:
     ring_group, ring = cyclic_ring(4)
+    assert ask(ring.is_commutative()) is True
     two_engine = AdditiveAbelianGroup([2])
     two = presented_abelian_group(two_engine)
     modules = Modules(ring, SelfAction(AbelianTensor()))

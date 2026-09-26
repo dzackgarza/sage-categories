@@ -51,6 +51,8 @@ from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
 __all__ = [
     "ApexCategory",
+    "ColimitApexLift",
+    "ColimitMorphismLift",
     "ColimitsCategory",
     "CoproductsCategory",
     "LimitApexLift",
@@ -61,6 +63,7 @@ __all__ = [
     "cocone_apex",
     "cone",
     "cone_apex",
+    "lift_colimit",
     "lift_limit",
     "presenting_family",
     "vertex_of",
@@ -68,6 +71,8 @@ __all__ = [
 type Mediator = Callable[[NaturalTransformation], MorphismCategory.ObjectType]
 type Construction = Callable[[Functor], CategoryOfCategories.ElementType]
 type UniversalPresentation = LimitConesCategory.ObjectType
+type ColimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
+type ColimitMorphismLift = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType], MorphismCategory.ObjectType]
 
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category: ...
 
@@ -99,8 +104,6 @@ class ApexCategory[
 
 type LimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
 type LimitMorphismLift = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType], MorphismCategory.ObjectType]
-type ColimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
-type ColimitMorphismLift = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType], MorphismCategory.ObjectType]
 
 def lift_limit(functor: Functor, diagram: Functor, on_apex: LimitApexLift, on_morphism: LimitMorphismLift) -> CategoryOfCategories.ElementType: ...
 def lift_colimit(functor: Functor, diagram: Functor, on_apex: ColimitApexLift, on_morphism: ColimitMorphismLift) -> CategoryOfCategories.ElementType: ...

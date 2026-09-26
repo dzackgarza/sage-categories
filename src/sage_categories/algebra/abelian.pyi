@@ -8,9 +8,6 @@ from sage_categories.cat.calculus import binary_product_data as binary_product_d
 from sage_categories.cat.calculus import natural_isomorphism as natural_isomorphism
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
-from sage_categories.cat.certified_structures import (
-    certified_additive_group as certified_additive_group,
-)
 from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
 from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.cones import cocone as cocone
@@ -46,8 +43,10 @@ from sage_categories.cat.predicates import Proposition as Proposition
 from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.shapes import Discrete as Discrete
 from sage_categories.cat.structured_objects import AdditiveGroups as AdditiveGroups
+from sage_categories.cat.structured_objects import Groups as Groups
 from sage_categories.cat.structured_objects import MonoidCategory as MonoidCategory
 from sage_categories.cat.structured_objects import Monoids as Monoids
+from sage_categories.kernel.refinement import refine as refine
 
 __all__ = [
     "AbelianBimoduleTensor",

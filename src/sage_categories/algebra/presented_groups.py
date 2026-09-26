@@ -16,14 +16,16 @@ from sympy import false, true
 
 from sage_categories.algebra._firewall import presented_groups as _backend
 from sage_categories.cat.calculus import binary_product_data
-from sage_categories.cat.certified_structures import certified_group
 from sage_categories.cat.monoidal import Cartesian
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.structured_objects import (
+    Groups,
     Magmas,
     Monoids,
     PointedMagmas,
+    _shear,
 )
+from sage_categories.kernel.refinement import refine
 from sage_categories.sets import Sets
 
 type GroupWord = tuple[int, ...]
@@ -37,7 +39,10 @@ def _owned_group(owner: object, role: str):
     multiplication = Mor(Sets)(square, carrier)(lambda pair: _backend.multiply(pair[0], pair[1]))
     unit = Mor(Sets)(structure.unit(), carrier)(lambda _: _backend.one(owner, role))
     inverse_shear = Mor(Sets)(square, square)(lambda pair: _backend.inverse_product(pair[0], pair[1]))
-    return certified_group(carrier, multiplication, unit, inverse_shear, structure)
+    monoid = Monoids(structure)(multiplication, unit)
+    structure.underlying_category().retain_inverses(_shear(monoid), inverse_shear)
+    refine(monoid, Groups(structure))
+    return monoid
 
 
 def _owned_group_homomorphism(source, target, native):

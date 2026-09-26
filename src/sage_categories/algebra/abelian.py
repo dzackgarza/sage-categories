@@ -97,7 +97,6 @@ from sage_categories.cat.bimodules import (
 )
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.certified_structures import certified_additive_group
 from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.diagrams import from_sequence, sequence_position
@@ -122,9 +121,12 @@ from sage_categories.cat.predicates import Proposition, ask
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import (
     AdditiveGroups,
+    Groups,
     MonoidCategory,
     Monoids,
+    _shear,
 )
+from sage_categories.kernel.refinement import refine
 from sage_categories.sets.finite import Sets
 
 
@@ -296,7 +298,7 @@ def _group_from_operations(
         return form.element(tuple(-coefficient for coefficient in form.coordinates(value)))
 
     inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], addition_rule((negate(pair[0]), pair[1]))))
-    group = _certified_abelian_group(carrier, addition, unit, inverse_shear)
+    group = _abelian_group_from_operations(carrier, addition, unit, inverse_shear)
     _retain_coordinates(group, form)
     return group
 
@@ -346,14 +348,20 @@ def _new_integer_group() -> CategoryOfCategories.ElementType:
     return _group_from_operations(integers, form, 0, lambda pair: pair[0] + pair[1])
 
 
-def _certified_abelian_group(
+def _abelian_group_from_operations(
     carrier: CategoryOfCategories.ElementType,
     addition: MorphismCategory.ObjectType,
     zero: MorphismCategory.ObjectType,
     inverse_shear: MorphismCategory.ObjectType,
 ) -> CategoryOfCategories.ElementType:
-    """Reconstruct an engine-certified commutative additive group on ``carrier``."""
-    return certified_additive_group(carrier, addition, zero, inverse_shear, _structure(), commutative=True)
+    """Reconstruct the commutative additive group on the supplied carrier."""
+    structure = _structure()
+    monoid = Monoids(structure)(addition, zero)
+    structure.underlying_category().retain_inverses(_shear(monoid), inverse_shear)
+    refine(monoid, Groups(structure))
+    group = AdditiveGroups(structure).renamed(monoid)
+    refine(group, AdditiveGroups(structure).Commutative())
+    return group
 
 
 def _rule_abelian_homomorphism(
@@ -398,7 +406,7 @@ def _new_indexed_free_abelian_group(
     addition = Mor(Sets)(square, carrier)(lambda pair: pair[0] + pair[1])
     zero = Mor(Sets)(_structure().unit(), carrier)(lambda _point: _backend.indexed_zero(engine))
     inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], _backend.indexed_subtract(engine, pair[1], pair[0])))
-    group = _certified_abelian_group(carrier, addition, zero, inverse_shear)
+    group = _abelian_group_from_operations(carrier, addition, zero, inverse_shear)
     _backend.retain_indexed(group, index_set, engine)
     return group
 

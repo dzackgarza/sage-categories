@@ -1,5 +1,7 @@
 """Relative tensor over a noncommutative ring, its coherence maps, and monoid objects in its bimodule category."""
 
+from functools import cache
+
 from sage_categories.all import ask
 from sage_categories.algebra import (
     AbelianBimoduleTensor,
@@ -7,6 +9,7 @@ from sage_categories.algebra import (
     abelian_homomorphism,
     balanced_tensor,
     integer_group,
+    integer_scalar_monoid,
     presented_abelian_group,
     relative_tensor,
     relative_tensor_mediator,
@@ -16,6 +19,7 @@ from sage_categories.cat.monoidal import tensor_object
 from sage_categories.cat.structured_objects import Magmas, Monoids
 
 
+@cache
 def matrix_ring():
     """``M_2(F_2)`` in the entry order ``(a11, a12, a21, a22)``."""
     engine = AdditiveAbelianGroup([2, 2, 2, 2])
@@ -36,11 +40,9 @@ def matrix_ring():
     return entries, element, multiply, group, Monoids(AbelianTensor())(multiplication, unit)
 
 
-def test_relative_tensor_supplies_coherence_and_a_nonidentity_algebra_map() -> None:
-    entries, element, multiply, ring_group, ring = matrix_ring()
-    structure = AbelianBimoduleTensor(ring)
+def pair_bimodule_data(entries, element, multiply, ring_group, structure):
+    """The componentwise regular bimodule used by the multiplication and triangle claims."""
     bimodules = structure.underlying_category()
-
     pair_engine = AdditiveAbelianGroup([2] * 8)
     pair_group = presented_abelian_group(pair_engine)
 
@@ -65,6 +67,38 @@ def test_relative_tensor_supplies_coherence_and_a_nonidentity_algebra_map() -> N
         tensor_mediator(ring_group, pair_group, pair_group, act_on_the_left),
         tensor_mediator(pair_group, ring_group, pair_group, act_on_the_right),
     )
+    return bimodules, pair_group, pair_element, pair_components, pair_bimodule
+
+
+@cache
+def matrix_bimodule_fixture():
+    entries, element, multiply, ring_group, ring = matrix_ring()
+    structure = AbelianBimoduleTensor(ring)
+    return (
+        entries,
+        element,
+        multiply,
+        ring_group,
+        ring,
+        structure,
+        *pair_bimodule_data(entries, element, multiply, ring_group, structure),
+    )
+
+
+def test_relative_tensor_supplies_a_nonidentity_algebra_map() -> None:
+    (
+        entries,
+        element,
+        multiply,
+        ring_group,
+        _,
+        structure,
+        bimodules,
+        pair_group,
+        pair_element,
+        pair_components,
+        pair_bimodule,
+    ) = matrix_bimodule_fixture()
     projection = relative_tensor(pair_bimodule.right_action(), pair_bimodule.left_action())
 
     def componentwise_product(left, right):
@@ -122,9 +156,19 @@ def test_relative_tensor_supplies_coherence_and_a_nonidentity_algebra_map() -> N
     assert ask(underlying_swap(source) == pair_group.point(pair_element(e21, e12))) is True
     assert ask(underlying_swap(source) == source) is False
 
+
+def test_relative_tensor_triangle_coherence() -> None:
+    structure = AbelianBimoduleTensor(integer_scalar_monoid())
     regular = structure.unit()
-    assert ask(structure.triangle(pair_bimodule, regular)) is True
+    assert ask(structure.triangle(regular, regular)) is True
+
+
+def test_relative_tensor_pentagon_coherence() -> None:
+    structure = AbelianBimoduleTensor(integer_scalar_monoid())
+    regular = structure.unit()
     assert ask(structure.pentagon(regular, regular, regular, regular)) is True
 
 
-test_relative_tensor_supplies_coherence_and_a_nonidentity_algebra_map()
+test_relative_tensor_supplies_a_nonidentity_algebra_map()
+test_relative_tensor_triangle_coherence()
+test_relative_tensor_pentagon_coherence()

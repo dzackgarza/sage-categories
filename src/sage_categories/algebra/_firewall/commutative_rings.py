@@ -228,8 +228,8 @@ def reconstruct_oscar_object(
     """
     from sympy import false, true
 
-    from sage_categories.algebra._certified_commutative_ring import (
-        certified_commutative_ring,
+    from sage_categories.algebra._commutative_ring import (
+        commutative_ring,
     )
 
     _install_oscar_ring_operations()
@@ -239,7 +239,7 @@ def reconstruct_oscar_object(
     carrier = Sets.from_membership(
         lambda element: true if isinstance(element, _OscarRingElementDatum) and element.ring is native and oscar.ring_contains(native, element.native) else false
     )
-    ring = certified_commutative_ring(
+    ring = commutative_ring(
         carrier,
         lambda pair: _OscarRingElementDatum(
             native,

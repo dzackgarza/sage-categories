@@ -19,6 +19,10 @@ def test_monoid_objects_receive_all_laws_from_equifiers():
     unit = Mor(sets)(sets.Terminal(), carrier)(lambda point: 0)
     magma = Magmas(tensor).algebra(carrier, multiplication)
     monoid = Monoids(sets)(multiplication, unit)
+    equifier = Monoids(sets)
+    while hasattr(equifier, "equation"):
+        assert ask(equifier.equation(monoid)) is True
+        equifier = equifier.ambient()
     assert (
         monoid.carrier().structure()(multiplication.domain().point((2, 2))).datum() == 1
     )

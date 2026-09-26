@@ -105,7 +105,7 @@ def _new_integer_regular_module() -> ModuleCategory.ObjectType:
     return modules(scalars.operation())
 
 
-def _certified_integer_module(
+def _integer_module(
     carrier: CategoryOfCategories.ElementType,
 ) -> ModuleCategory.ObjectType:
     r"""Equip an indexed free abelian group with the canonical ``ZZ`` action.
@@ -140,7 +140,7 @@ def _new_indexed_free_integer_module(
     modules = _integer_modules()
     regular = integer_regular_module()
     carrier = indexed_free_abelian_coproduct(index_set)
-    module = _certified_integer_module(carrier)
+    module = _integer_module(carrier)
     shape = Discrete(index_set)
     diagram = Fun(shape, modules).constant(regular)
 
@@ -240,7 +240,7 @@ def integer_module(
 ) -> ModuleCategory.ObjectType:
     r"""Equip a represented abelian group with its canonical left ``ZZ`` action."""
     assert additive_group in AbelianGroups()
-    return _INTEGER_MODULES(_integer_modules(), (additive_group,), lambda: _certified_integer_module(additive_group))
+    return _INTEGER_MODULES(_integer_modules(), (additive_group,), lambda: _integer_module(additive_group))
 
 
 def finite_free_integer_module(rank: int) -> ModuleCategory.ObjectType:

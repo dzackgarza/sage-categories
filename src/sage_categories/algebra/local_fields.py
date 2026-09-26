@@ -12,8 +12,8 @@ from sympy import false, true
 from sympy.ntheory import multiplicity
 from sympy.ntheory.primetest import isprime
 
-from sage_categories.algebra._certified_commutative_ring import (
-    certified_commutative_ring,
+from sage_categories.algebra._commutative_ring import (
+    commutative_ring,
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.declarations import Sets
@@ -196,7 +196,7 @@ def _exact_field(place: str | int) -> ExactLocalFieldPresentation:
     carrier = Sets.from_membership(lambda value: true if isinstance(value, ExactLocalValue) and value.place == place else false)
     zero = ExactLocalValue.rational(place, 0)
     one = ExactLocalValue.rational(place, 1)
-    ring = certified_commutative_ring(
+    ring = commutative_ring(
         carrier,
         lambda pair: cast(ExactLocalValue, pair[0]) + cast(ExactLocalValue, pair[1]),
         lambda pair: cast(ExactLocalValue, pair[0]) * cast(ExactLocalValue, pair[1]),

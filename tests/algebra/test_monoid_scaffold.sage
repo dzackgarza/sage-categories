@@ -43,8 +43,15 @@ def test_additive_monoid_and_doubling_automorphism() -> None:
 
 def test_incompatible_unit_fails_the_unit_equation() -> None:
     carrier = Sets((0, 1, 2))
+    structure = Cartesian(Sets())
     square = binary_product_data(Sets(), carrier, carrier).apex()
     addition = Mor(Sets)(square, carrier)(lambda pair: (pair[0] + pair[1]) % 3)
+    wrong_unit = Mor(Sets)(structure.unit(), carrier)(lambda _: 1)
+    monoids = Monoids(structure)
+    candidate = monoids(addition, wrong_unit)
+    left_unital = monoids.ambient().ambient()
+    assert ask(left_unital.equation(candidate)) is False
+
     # The left unit law for a candidate unit ``e`` states ``e + x == x`` for every ``x``.
     # The neutral element 0 satisfies it; the element 1 disproves it at ``x = 0``.
     assert ask(addition(square.point((0, 0))) == carrier.point(0)) is True

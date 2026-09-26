@@ -13,12 +13,8 @@ from sage_categories.cat.canonical import (
     FinitePresentedCategory as FinitePresentedCategory,
 )
 from sage_categories.cat.comma import CommaCategory as CommaCategory
-from sage_categories.cat.constructions import (
-    ColimitApexLift as ColimitApexLift,
-)
-from sage_categories.cat.constructions import (
-    ColimitMorphismLift as ColimitMorphismLift,
-)
+from sage_categories.cat.constructions import ColimitApexLift as ColimitApexLift
+from sage_categories.cat.constructions import ColimitMorphismLift as ColimitMorphismLift
 from sage_categories.cat.constructions import (
     ColimitPreservationMediator as ColimitPreservationMediator,
 )

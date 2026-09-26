@@ -73,7 +73,7 @@ from sage_categories.cat.monoidal import (
     tensor_units,
 )
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask
+from sage_categories.cat.predicates import Axiom, Predicate, Proposition
 from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
 from sage_categories.cat.shapes import Discrete
 from sage_categories.kernel.refinement import refine
@@ -197,10 +197,14 @@ class EquifierCategory(FullSubcategory):
         if isinstance(self.ambient(), EquifierCategory):
             self.ambient()(value)
         assert value in self.ambient()
-        first, second = self._equations
-        assert ask(first.component(value) == second.component(value)) is True
         refine(value, self)
         return value
+
+    def equation(self, value: CategoryOfCategories.ElementType) -> Proposition:
+        """The defining component equation at the supplied value, evaluated only when explicitly asked."""
+        assert value in self.ambient()
+        first, second = self._equations
+        return first.component(value) == second.component(value)
 
 
 @cached_function(key=identity_key)
@@ -365,22 +369,7 @@ class MonoidCategory(EquifierCategory):
         monoidal = self.monoidal_structure()
         magma = Magmas(monoidal).algebra(operation.codomain(), operation)
         pointed = PointedMagmas(monoidal.tensor(), monoidal.unit()).algebra(magma, unit)
-
-        tensor_unit = monoidal.unit()
-        base = monoidal.underlying_category()
-        canonical_unit_monoid = (
-            operation.codomain() is tensor_unit and operation is monoidal.left_unitor().component(tensor_unit) and unit is Mor(base)(tensor_unit, tensor_unit).one()
-        )
-        match canonical_unit_monoid:
-            case True:
-                # The tensor unit carries its canonical monoid structure by monoidal
-                # coherence.  Do not ask the generic equifier equality engine to
-                # rediscover the two unitor laws and associativity extensionally.
-                refine(pointed, self.ambient())
-                refine(pointed, self)
-                return pointed
-            case False:
-                return super().__call__(pointed)
+        return super().__call__(pointed)
 
     @cached_method
     def to_magmas(self) -> Functor:
@@ -1000,7 +989,7 @@ class SemiringCategory(EquifierCategory):
     ) -> SemiringCategory.ObjectType:
         monoidal = self.monoidal_structure()
         additive = AdditiveMonoids(monoidal).renamed(Monoids(monoidal)(addition, zero))
-        assert additive in AdditiveMonoids(monoidal).Commutative(), f"{addition!r} is not commutative"
+        refine(additive, AdditiveMonoids(monoidal).Commutative())
         multiplicative = MultiplicativeMonoids(monoidal).renamed(Monoids(monoidal)(multiplication, one))
         return super().__call__(self._pairs((additive, multiplicative, addition.codomain())))
 
@@ -1278,9 +1267,9 @@ class RingCategory(LimitSubcategory):
         semiring = semirings(addition, zero, multiplication, one)
         additive = semirings.to_additive().on_object(semiring)
         monoid = AdditiveMonoids(monoidal).product_projection(0).on_object(additive)
-        assert monoid in Groups(monoidal), f"the additive monoid of {addition!r} is not a group"
+        refine(monoid, Groups(monoidal))
         group = AdditiveGroups(monoidal).renamed(monoid)
-        assert group in groups
+        refine(group, groups)
         return self._ring(semiring, group, additive)
 
     @cached_method(key=identity_key)

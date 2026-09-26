@@ -460,7 +460,6 @@ class StrongerCategory(PropertySubcategory):
         assert completed[surface][f"example.properties.StrongerCategory.{role}"] == (f"example.properties.StrongCategory.{role}",)
 
 
-
 def test_axiom_descriptors_project_to_typed_property_accessors(tmp_path: Path) -> None:
     package = tmp_path / "example"
     package.mkdir()

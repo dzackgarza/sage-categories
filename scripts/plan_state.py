@@ -77,7 +77,7 @@ def validate_milestones(text: str, nodes: dict[str, Node]) -> None:
         if row:
             groups[section].add(row.group(1))
     require(milestones == ["A", "B"], "TODO requires exactly milestone A then milestone B")
-    foundation, leaves, delivery = "kernel-cat-complete", "leaves-complete", "framework-complete"
+    foundation, leaves, delivery = "kernel-cat-complete", "leaf-litmus", "framework-complete"
     require(foundation in groups["A"], f"{foundation} must belong to milestone A")
     require(leaves in groups["B"], f"{leaves} must belong to milestone B")
     require(delivery in groups["B"], f"{delivery} must follow the milestones in the active table")

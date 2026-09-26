@@ -10,7 +10,7 @@ this file equips that carrier with the canonical action of the tensor-unit ring
 
 from __future__ import annotations
 
-from collections.abc import Hashable, Mapping
+from collections.abc import Callable, Hashable, Mapping
 
 from sage_categories.algebra._firewall import abelian as _backend
 from sage_categories.algebra.abelian import (
@@ -210,7 +210,7 @@ def indexed_free_integer_coefficients(
 def indexed_free_integer_homomorphism(
     source: ModuleCategory.ObjectType,
     target: ModuleCategory.ObjectType,
-    basis_image,
+    basis_image: Callable[[Hashable], CategoryOfCategories.ElementType],
 ) -> MorphismCategory.ObjectType:
     r"""Return the unique ``ZZ``-linear map with the supplied images of basis indices.
 

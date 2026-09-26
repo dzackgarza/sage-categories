@@ -7,7 +7,7 @@ retains quotient data as an actual coequalizer in ``Algebras(R,C)``.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Hashable, Sequence
 
 from sage_categories.algebra._firewall import free_associative as _free_backend
 from sage_categories.algebra.abelian import (
@@ -151,7 +151,7 @@ def integer_free_algebra_homomorphism(
     target_module = algebras.to_modules().on_object(target)
     assert all(image.parent() is target_module for image in images)
 
-    def basis_image(word: object) -> CategoryOfCategories.ElementType:
+    def basis_image(word: Hashable) -> CategoryOfCategories.ElementType:
         assert isinstance(word, tuple)
         result = _integer_algebra_one(algebras, target)
         for position in word:

@@ -190,6 +190,8 @@ Read historical observations at their stated revisions before relying on them.
   At current clean revision `4a2b4bf6` on 2026-09-25, two further exact read-only `r-gate` requests for the complete `core-algebraic-calculus` boundary again returned the durable-acceptance-barrier error and explicitly rolled back without creating a reviewer.
   A separate local Sonnet source audit at the same revision, confined to `Read`, `Grep`, and `Glob` with restricted mode and no MCP, command, or edit tools, produced no result before its 220-second hard timeout.
   That source-audit timeout likewise supplies no reviewer verdict and cannot discharge the fixed-revision acceptance gate.
+  On 2026-09-26 exact read-only review attempts at `9c97a712` and `3edc29b4` were rejected before worker creation with `AGENTS_BUSY`: another prime workstream held the app's sole sub-agent swarm.
+  These attempts returned no reviewer result and do not discharge the fixed-revision acceptance gate.
   The fixed-revision architecture check and focused public consumers therefore remain execution evidence, not independent acceptance.
 
 - **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.

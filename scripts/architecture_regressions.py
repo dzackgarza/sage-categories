@@ -139,24 +139,24 @@ def check_each_forbidden_contract() -> None:
 
 
 def check_indirect_forbidden_import_rejection() -> None:
-    """At least one contract that forbids indirect imports rejects a two-hop dependency."""
-    contract = next(
+    """Every contract that forbids indirect imports rejects a two-hop dependency."""
+    contracts = (
         contract
         for contract in forbidden_contracts()
         if not contract.get("allow_indirect_imports", False)
-        and translated(contract["forbidden_modules"][0]).startswith(f"{FIXTURE_ROOT}.")
     )
-    with tempfile.TemporaryDirectory(prefix="sage-categories-indirect-contract-") as directory:
-        root = Path(directory)
-        config, source, forbidden = fixture_for_contract(root, contract)
-        bridge = f"{FIXTURE_ROOT}.bridge"
-        module_file(root, source).write_text(f"import {bridge}\n")
-        module_file(root, bridge).write_text(f"import {forbidden}\n")
-        violating = lint_imports(root, config)
-        output = violating.stdout + violating.stderr
-        assert violating.returncode != 0, output
-        assert contract["name"] in output, output
-        assert bridge in output, output
+    for contract in contracts:
+        with tempfile.TemporaryDirectory(prefix="sage-categories-indirect-contract-") as directory:
+            root = Path(directory)
+            config, source, forbidden = fixture_for_contract(root, contract)
+            bridge = f"{FIXTURE_ROOT}.bridge"
+            module_file(root, source).write_text(f"import {bridge}\n")
+            module_file(root, bridge).write_text(f"import {forbidden}\n")
+            violating = lint_imports(root, config)
+            output = violating.stdout + violating.stderr
+            assert violating.returncode != 0, output
+            assert contract["name"] in output, output
+            assert bridge in output, output
 
 
 

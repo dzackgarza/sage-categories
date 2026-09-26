@@ -271,10 +271,12 @@ def unconditional(assumptions: Proposition) -> bool:
 
 
 def ask(application: Decision | Proposition | AppliedQuery) -> Answer:
-    """Evaluate a proposition or typed query."""
+    """Evaluate a proposition or typed query, refining exact positive properties."""
     if isinstance(application, AppliedQuery):
         return ask_query(application)
     decision = decide(application)
+    if decision is True and isinstance(application, Boolean):
+        assume_property(application)
     return Unknown if decision is None else decision
 
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from sage_categories.cat.bimodules import BimoduleCategory
 from sage_categories.cat.cat_constructions import LimitSubcategory, limit_of_categories
+from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.cones import cone, cones
 from sage_categories.cat.declarations import Sets
@@ -131,7 +132,16 @@ class AlgebraCategory[
         assert result.domain() is source and result.codomain() is target
         return result
 
-    def to_modules(self) -> Functor:
+    def to_modules(self) -> CategoryOfCategories.MorphismType[
+        AlgebraCategory[BaseScalar],
+        ModuleCategory[BaseScalar],
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]:
         """The retained composite from algebras to their exact left ``R``-modules."""
         monoids = self.monoid_category()
         relative = self.monoidal_structure().underlying_category()

@@ -15,6 +15,7 @@ from sage_categories.algebra.algebra_objects import (
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Functor
+from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import MonoidalStructuresCategory
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import MonoidCategory
@@ -35,7 +36,10 @@ def complete_algebra_types(
     assert_type(Algebras(base, monoidal), AlgebraCategory)
     assert_type(source.base(), MonoidCategory.ObjectType)
     assert_type(source.monoid_presentation(), Functor)
-    assert_type(source.to_modules(), Functor)
+    assert_type(
+        source.to_modules().codomain(),
+        ModuleCategory[MonoidCategory.ObjectType],
+    )
     assert_type(source.U_R(), Functor)
     assert_type(source.to_sets(), Functor)
     assert_type(restrict_algebra_scalars(source, target, scalar_map), Functor)

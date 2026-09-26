@@ -7,6 +7,7 @@ from sage_categories.cat.cat_constructions import LimitSubcategory as LimitSubca
 from sage_categories.cat.cat_constructions import (
     limit_of_categories as limit_of_categories,
 )
+from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
 from sage_categories.cat.cones import cone as cone
 from sage_categories.cat.cones import cones as cones
@@ -50,7 +51,18 @@ class AlgebraCategory[
     def from_monoid(self, monoid: MonoidCategory.ObjectType) -> AlgebraCategory.ObjectType: ...
     def algebra(self, multiplication: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType) -> AlgebraCategory.ObjectType: ...
     def homomorphism(self, source: AlgebraCategory.ObjectType, target: AlgebraCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> AlgebraCategory.MorphismType: ...
-    def to_modules(self) -> Functor: ...
+    def to_modules(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        AlgebraCategory[BaseScalar],
+        ModuleCategory[BaseScalar],
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]: ...
     def U_R(self) -> Functor: ...
     def to_sets(self) -> Functor: ...
 

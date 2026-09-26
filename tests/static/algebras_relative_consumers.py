@@ -20,7 +20,10 @@ def relative_algebra_consumer_types(
     assert_type(algebras.monoidal_structure(), MonoidalStructuresCategory.ObjectType)
     assert_type(algebras.module_category(), ModuleCategory)
     assert_type(algebras.monoid_presentation(), Functor)
-    assert_type(algebras.to_modules(), Functor)
+    assert_type(
+        algebras.to_modules().codomain(),
+        ModuleCategory[MonoidCategory.ObjectType],
+    )
     assert_type(algebras.from_monoid(monoid), AlgebraCategory.ObjectType)
     assert_type(monoid.operation(), MorphismCategory.ObjectType)
     assert_type(monoid.unit_morphism(), MorphismCategory.ObjectType)

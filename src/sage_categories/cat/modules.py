@@ -47,6 +47,7 @@ def _underlying_object(scalars: MonoidCategory.ObjectType) -> CategoryOfCategori
 
 
 class ModuleCategory[
+    Scalar: "MonoidCategory.ObjectType" = "MonoidCategory.ObjectType",
     ActingCategory: "Category[..., ...]" = "Category[..., ...]",
     ActedCategory: "Category[..., ...]" = "Category[..., ...]",
 ](EquifierCategory):
@@ -73,14 +74,14 @@ class ModuleCategory[
         self,
         first: NaturalTransformation,
         second: NaturalTransformation,
-        scalars: MonoidCategory.ObjectType,
+        scalars: Scalar,
         actegory: ActionsCategory.ObjectType[ActingCategory, ActedCategory],
         algebras: InserterCategory,
     ) -> None:
         self._scalars, self._actegory, self._algebras = scalars, actegory, algebras
         super().__init__(first, second)
 
-    def scalars(self) -> MonoidCategory.ObjectType:
+    def scalars(self) -> Scalar:
         """``A``, the monoid object acting."""
         return self._scalars
 
@@ -246,12 +247,13 @@ _MODULE_MONOIDAL_STRUCTURES: SelectedChoice[MonoidalStructuresCategory.ObjectTyp
 
 @cached_function(key=identity_key)
 def Modules[
+    Scalar: "MonoidCategory.ObjectType",
     ActingCategory: "Category[..., ...]",
     ActedCategory: "Category[..., ...]",
 ](
-    scalars: MonoidCategory.ObjectType,
+    scalars: Scalar,
     actegory: ActionsCategory.ObjectType[ActingCategory, ActedCategory],
-) -> ModuleCategory[ActingCategory, ActedCategory]:
+) -> ModuleCategory[Scalar, ActingCategory, ActedCategory]:
     """``Modules(A, C)``: module objects over the monoid object ``A`` in the selected actegory ``C``."""
     monoidal = actegory.monoidal_structure()
     monoids = Monoids(monoidal)

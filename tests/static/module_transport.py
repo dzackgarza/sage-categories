@@ -18,12 +18,16 @@ class ActedOnCategory(Category[[], []]):
     pass
 
 
-def module_owner_parameters(
-    scalars: MonoidCategory.ObjectType,
+def module_owner_parameters[Scalar: MonoidCategory.ObjectType](
+    scalars: Scalar,
     action: ActionsCategory.ObjectType[ActingCategory, ActedOnCategory],
 ) -> None:
     modules = Modules(scalars, action)
-    assert_type(modules, ModuleCategory[ActingCategory, ActedOnCategory])
+    assert_type(
+        modules,
+        ModuleCategory[Scalar, ActingCategory, ActedOnCategory],
+    )
+    assert_type(modules.scalars(), Scalar)
     assert_type(modules.actegory(), ActionsCategory.ObjectType[ActingCategory, ActedOnCategory])
     assert_type(modules.underlying_category(), ActedOnCategory)
 

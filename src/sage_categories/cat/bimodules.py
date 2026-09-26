@@ -531,8 +531,8 @@ class BimoduleCategory[
         second: NaturalTransformation,
         left_scalars: LeftScalar,
         right_scalars: RightScalar,
-        left: ModuleCategory[BaseCategory, BaseCategory],
-        right: ModuleCategory[BaseCategory, BaseCategory],
+        left: ModuleCategory[LeftScalar, BaseCategory, BaseCategory],
+        right: ModuleCategory[MonoidCategory.ObjectType, BaseCategory, BaseCategory],
         pairs: ActionPairsCategory,
     ) -> None:
         self._left_scalars = left_scalars
@@ -548,11 +548,11 @@ class BimoduleCategory[
         """The exact right scalar monoid ``S`` supplied to ``Bimodules(R,S,V)``."""
         return self._right_scalars
 
-    def left_modules(self) -> ModuleCategory[BaseCategory, BaseCategory]:
+    def left_modules(self) -> ModuleCategory[LeftScalar, BaseCategory, BaseCategory]:
         """``Modules(R, V)``, the left half."""
         return self._left
 
-    def right_modules(self) -> ModuleCategory[BaseCategory, BaseCategory]:
+    def right_modules(self) -> ModuleCategory[MonoidCategory.ObjectType, BaseCategory, BaseCategory]:
         """``Modules(S, V^rev)``, the right half; its objects are the right ``S``-modules."""
         return self._right
 

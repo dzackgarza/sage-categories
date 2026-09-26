@@ -563,14 +563,32 @@ class BimoduleCategory[
         return self._left.underlying_category()
 
     @cached_method
-    def to_left(self) -> Functor:
+    def to_left(self) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        ModuleCategory[LeftScalar, BaseCategory, BaseCategory],
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]:
         """The retained leg to the left module category."""
         projection = self._pairs.to_left() * Fun.full_subcategory_monomorphism(self, self._pairs)
         projection.retain_cartesian_lifts(lambda morphism, target: self._cartesian_lift(0, morphism, target))
         return projection
 
     @cached_method
-    def to_right(self) -> Functor:
+    def to_right(self) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        ModuleCategory[MonoidCategory.ObjectType, BaseCategory, BaseCategory],
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]:
         """The retained leg to the right module category."""
         projection = self._pairs.to_right() * Fun.full_subcategory_monomorphism(self, self._pairs)
         projection.retain_cartesian_lifts(lambda morphism, target: self._cartesian_lift(1, morphism, target))

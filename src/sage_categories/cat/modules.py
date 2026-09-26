@@ -105,7 +105,16 @@ class ModuleCategory[
     def underlying_category(self) -> ActedCategory:
         return self._actegory.underlying_category()
 
-    def scalar_endofunctor(self) -> Functor:
+    def scalar_endofunctor(self) -> CategoryOfCategories.MorphismType[
+        ActedCategory,
+        ActedCategory,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+    ]:
         """``A • -: C -> C``, the endofunctor whose algebras this category cuts by the module laws."""
         return _scalar_endofunctor(self._actegory, _underlying_object(self._scalars))
 

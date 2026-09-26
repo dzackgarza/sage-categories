@@ -59,7 +59,18 @@ class ModuleCategory[
     def select_monoidal_structure(self, monoidal: MonoidalStructuresCategory.ObjectType) -> None: ...
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType: ...
     def underlying_category(self) -> ActedCategory: ...
-    def scalar_endofunctor(self) -> Functor: ...
+    def scalar_endofunctor(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        ActedCategory,
+        ActedCategory,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+    ]: ...
     def carrier(self) -> CategoryOfCategories.ElementType: ...
     @cached_method
     def forgetful(

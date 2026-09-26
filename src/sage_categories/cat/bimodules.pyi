@@ -205,9 +205,31 @@ class BimoduleCategory[
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType[BaseCategory]: ...
     def underlying_category(self) -> BaseCategory: ...
     @cached_method
-    def to_left(self) -> Functor: ...
+    def to_left(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        ModuleCategory[LeftScalar, BaseCategory, BaseCategory],
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]: ...
     @cached_method
-    def to_right(self) -> Functor: ...
+    def to_right(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        ModuleCategory[MonoidCategory.ObjectType, BaseCategory, BaseCategory],
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]: ...
     @cached_method
     def forgetful(
         self,

@@ -171,6 +171,12 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return self._ambient.point_morphism(point)
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+        # A full subcategory can own a stronger construction than its ambient through
+        # one of its own selected faithful functors. Prefer that local lifting exactly
+        # as colimits prefer a locally retained constructor below; otherwise inherit
+        # the ambient construction.
+        if any(functor.limit_lifting(shape) is not None for functor in self.selected_functors()):
+            return Category.limit_construction(self, shape)
         return self._ambient.limit_construction(shape)
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:

@@ -77,7 +77,7 @@ def test_product_of_two_chains_carries_the_componentwise_order() -> None:
     product = Posets().Products()(first_factor, second_factor)
     assert product in Posets()
 
-    projection = BinaryRelations().to_sets()
+    projection = Posets().to_sets()
     image_diagram = projection * product.product_factors()
     selected = Sets.Limits(image_diagram.domain()).universal_data(image_diagram)
     assert projection.on_object(product) is selected.apex()

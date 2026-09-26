@@ -28,6 +28,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
+from typing import cast
 
 from sympy import ask as sympy_ask
 from sympy import false, true
@@ -312,13 +313,40 @@ class PosetsCategory(PropertySubcategory):
     Total = Axiom(_total)
 
     def to_sets(self) -> Functor:
-        """The underlying-set functor ``U: Posets() -> Sets()``.
+        """The selected faithful isofibration U: Posets() -> Sets()."""
+        return next(functor for functor in self.selected_functors() if functor.codomain() is Sets)
 
-        ``Posets()`` is the full partial-order subcategory of ``BinaryRelations()``;
-        restricting the relation projection is therefore the one owned underlying-set
-        functor, with no second object or morphism action in the poset leaf.
-        """
-        return BinaryRelations().to_sets().restrict(self, Sets)
+    def lift_order(
+        self,
+        diagram: Functor,
+        presentation: LimitConesCategory.ObjectType,
+    ) -> PosetsCategory.ObjectType:
+        """Put the componentwise partial order on the selected set-limit apex."""
+        relation = BinaryRelations().lift_order(diagram, presentation)
+        return self(relation.relation())
+
+    def construct_morphism(
+        self,
+        source: PosetsCategory.ObjectType,
+        target: PosetsCategory.ObjectType,
+        underlying: MorphismCategory.ObjectType,
+    ) -> PosetsCategory.MorphismType:
+        """The monotone map over the supplied set map, restricted from relation-preserving maps."""
+        ambient = BinaryRelations().construct_morphism(source, target, underlying)
+        return cast(PosetsCategory.MorphismType, self.restrict_morphism(ambient))
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        underlying = (
+            Fun(self, Sets)
+            .Faithful()
+            .Isofibrations()
+            .PreservesLimits(Discrete)(
+                lambda poset: poset._carrier,
+                lambda arrow: arrow._underlying_map,
+            )
+            .with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
+        )
+        return (*super().structure_functors(), underlying)
 
     Finite = SetsCategory.Finite.inverse_image(lambda category: category.to_sets())
 

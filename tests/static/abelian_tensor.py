@@ -2,11 +2,13 @@
 
 from typing import assert_type
 
-from sage_categories.algebra.abelian import AbelianTensor
-from sage_categories.cat.category import CategoryOfCategories
+from sage_categories.algebra.abelian import AbelianTensor, relative_tensor_bifunctor
+from sage_categories.cat.bimodules import BimoduleCategory
+from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.monoidal import MonoidalStructuresCategory, tensor_morphism
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.structured_objects import MonoidCategory
 
 
 def abelian_tensor_types(
@@ -30,3 +32,25 @@ def abelian_tensor_types(
         structure.associator().component(triple),
         MorphismCategory.ObjectType,
     )
+
+
+def relative_tensor_wrapper_types[
+    LeftScalar: MonoidCategory.ObjectType,
+    MiddleScalar: MonoidCategory.ObjectType,
+    RightScalar: MonoidCategory.ObjectType,
+](
+    left_scalars: LeftScalar,
+    middle_scalars: MiddleScalar,
+    right_scalars: RightScalar,
+    arrow: MorphismCategory.ObjectType,
+) -> None:
+    tensor = relative_tensor_bifunctor(
+        left_scalars,
+        middle_scalars,
+        right_scalars,
+    )
+    assert_type(
+        tensor.codomain(),
+        BimoduleCategory[LeftScalar, RightScalar, Category],
+    )
+    assert_type(tensor.on_morphism(arrow), BimoduleCategory.MorphismType)

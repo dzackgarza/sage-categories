@@ -120,7 +120,18 @@ def induced_right_action(projection: MorphismCategory.ObjectType, right_action: 
 def relative_tensor_morphism(
     source: MorphismCategory.ObjectType, target: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType
 ) -> MorphismCategory.ObjectType: ...
-def relative_tensor_bifunctor(left_scalars: MonoidCategory.ObjectType, middle_scalars: MonoidCategory.ObjectType, right_scalars: MonoidCategory.ObjectType) -> Functor: ...
+def relative_tensor_bifunctor[LeftScalar: MonoidCategory.ObjectType, MiddleScalar: MonoidCategory.ObjectType, RightScalar: MonoidCategory.ObjectType](
+    left_scalars: LeftScalar, middle_scalars: MiddleScalar, right_scalars: RightScalar
+) -> CategoryOfCategories.MorphismType[
+    Category,
+    BimoduleCategory[LeftScalar, RightScalar, Category],
+    CategoryOfCategories.ElementType,
+    CategoryOfCategories.ElementType,
+    MorphismCategory.ObjectType,
+    BimoduleCategory.ObjectType,
+    BimoduleCategory.ElementType,
+    BimoduleCategory.MorphismType,
+]: ...
 def AbelianBimoduleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
 def AbelianModuleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
 

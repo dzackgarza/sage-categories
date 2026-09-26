@@ -1234,11 +1234,24 @@ def relative_tensor_morphism(
     return generic_relative_tensor_morphism(AbelianTensor(), source, target, first, second)
 
 
-def relative_tensor_bifunctor(
-    left_scalars: MonoidCategory.ObjectType,
-    middle_scalars: MonoidCategory.ObjectType,
-    right_scalars: MonoidCategory.ObjectType,
-) -> Functor:
+def relative_tensor_bifunctor[
+    LeftScalar: "MonoidCategory.ObjectType",
+    MiddleScalar: "MonoidCategory.ObjectType",
+    RightScalar: "MonoidCategory.ObjectType",
+](
+    left_scalars: LeftScalar,
+    middle_scalars: MiddleScalar,
+    right_scalars: RightScalar,
+) -> CategoryOfCategories.MorphismType[
+    Category,
+    BimoduleCategory[LeftScalar, RightScalar, Category],
+    CategoryOfCategories.ElementType,
+    CategoryOfCategories.ElementType,
+    MorphismCategory.ObjectType,
+    BimoduleCategory.ObjectType,
+    BimoduleCategory.ElementType,
+    BimoduleCategory.MorphismType,
+]:
     """The relative tensor functor between three exact abelian bimodule categories."""
     _fixed_tensor_functor(left_scalars.operation().codomain(), "left")
     _fixed_tensor_functor(right_scalars.operation().codomain(), "right")

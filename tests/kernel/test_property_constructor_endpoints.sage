@@ -1,6 +1,6 @@
 """Property constructors retain Hom and Fun parameters through nested narrowing."""
 
-from sage_categories.all import Fun, Mor, Sets
+from sage_categories.all import Cartesian, Fun, Monoids, Mor, Sets, binary_product_data
 
 
 def test_nested_hom_properties_retain_distinct_endpoints() -> None:
@@ -44,5 +44,32 @@ def test_nested_functor_properties_retain_domain_parameters() -> None:
             assert inclusion.on_morphism(arrow)(source.point(2)) is target.point(4)
 
 
+def test_nested_algebraic_properties_retain_distinct_monoidal_parameters() -> None:
+    bases = (Sets, Sets.Finite())
+    structures = tuple(Cartesian(base) for base in bases)
+    families = tuple(Monoids(structure) for structure in structures)
+    assert structures[0] is not structures[1]
+    assert families[0] is not families[1]
+
+    for base, structure, monoids in zip(bases, structures, families):
+        carrier = base((0, 1, 2))
+        square = binary_product_data(base, carrier, carrier).apex()
+        addition = Mor(base)(square, carrier)(lambda pair: (pair[0] + pair[1]) % 3)
+        unit = Mor(base)(structure.unit(), carrier)(lambda _: 0)
+        for narrowed in (
+            monoids.Group().Commutative(),
+            monoids.Commutative().Group(),
+        ):
+            group = narrowed(addition, unit)
+            assert group in narrowed
+            assert group in monoids
+            assert group.operation() is addition
+            assert group.unit_morphism() is unit
+            assert group.carrier().carrier() is carrier
+            assert group.operation()(square.point((2, 2))) is carrier.point(1)
+            assert group.unit_morphism()(structure.unit().point(())) is carrier.point(0)
+
+
 test_nested_hom_properties_retain_distinct_endpoints()
 test_nested_functor_properties_retain_domain_parameters()
+test_nested_algebraic_properties_retain_distinct_monoidal_parameters()

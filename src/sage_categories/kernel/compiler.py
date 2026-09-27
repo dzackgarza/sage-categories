@@ -284,7 +284,7 @@ _ROLE_POSITIONS: dict[Role, int] = {
 
 _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
 
-_declared_ranks: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+_declared_ranks: dict[Role, MonoDict[int]] = {role: MonoDict() for role in Role}
 _compiled_orders: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 
@@ -315,7 +315,7 @@ def _rank_declaration(category: Category, role: Role) -> None:
     _declared_ranks[role] = _rank_declarations(role, (category,))
 
 
-def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict:
+def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict[int]:
     """Rank structural owners while preserving declaration precedence where compatible.
 
     Sage's controlled C3 remains the sole linearizer.  This function supplies its total
@@ -399,7 +399,7 @@ def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict:
 
     for category in pending:
         place(category)
-    ranks: MonoDict = MonoDict()
+    ranks: MonoDict[int] = MonoDict()
     for position, category in enumerate(ranked):
         ranks[category] = len(ranked) - position
     return ranks

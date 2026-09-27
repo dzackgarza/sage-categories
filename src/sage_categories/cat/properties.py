@@ -49,7 +49,7 @@ from sage_categories.cat.predicates import (
     register_handler,
 )
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
-from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_method
 
@@ -743,7 +743,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         root_owners: list[Category] = []
         for root in self._roots:
             owner = root.construction_owner()
-            if owner is ambient_owner or any(owner is known for known in root_owners):
+            if is_subcategory(ambient_owner, owner) or any(owner is known for known in root_owners):
                 continue
             root_owners.append(owner)
         if not root_owners:

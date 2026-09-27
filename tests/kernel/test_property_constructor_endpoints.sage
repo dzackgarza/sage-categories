@@ -1,0 +1,48 @@
+"""Property constructors retain Hom and Fun parameters through nested narrowing."""
+
+from sage_categories.all import Fun, Mor, Sets
+
+
+def test_nested_hom_properties_retain_distinct_endpoints() -> None:
+    source = Sets((1, 2))
+    middle = Sets((3, 4))
+    target = Sets((5, 6))
+    first_hom = Mor(Sets)(source, middle)
+    second_hom = Mor(Sets)(middle, target)
+
+    for narrowed in (
+        first_hom.Monomorphisms().Epimorphisms(),
+        first_hom.Epimorphisms().Monomorphisms(),
+    ):
+        first = narrowed(lambda value: value + 2)
+        second = second_hom.Monomorphisms().Epimorphisms()(lambda value: value + 2)
+        assert first.domain() is source
+        assert first.codomain() is middle
+        assert second.domain() is middle
+        assert second.codomain() is target
+        assert first in narrowed
+        assert first(source.point(1)) is middle.point(3)
+        assert (second * first)(source.point(2)) is target.point(6)
+
+
+def test_nested_functor_properties_retain_domain_parameters() -> None:
+    finite = Sets.Finite()
+    source = Sets((1, 2))
+    target = Sets((3, 4))
+    arrow = Mor(Sets)(source, target)(lambda value: value + 2)
+
+    for domain in (finite, Sets):
+        for narrowed in (
+            Fun(domain, Sets).Full().Faithful(),
+            Fun(domain, Sets).Faithful().Full(),
+        ):
+            inclusion = narrowed(lambda value: value, lambda morphism: morphism)
+            assert inclusion.domain() is domain
+            assert inclusion.codomain() is Sets
+            assert inclusion in narrowed
+            assert inclusion.on_object(source) is source
+            assert inclusion.on_morphism(arrow)(source.point(2)) is target.point(4)
+
+
+test_nested_hom_properties_retain_distinct_endpoints()
+test_nested_functor_properties_retain_domain_parameters()

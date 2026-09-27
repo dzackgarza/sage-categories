@@ -180,10 +180,9 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return self._ambient.limit_construction(shape)
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        # A full subcategory may own a construction more specific than its ambient
-        # category (for example Ab's retained walking-parallel-pair coequalizer).
-        # Prefer that exact owner before inheriting the ambient construction.
-        if shape in self._colimit_constructors:
+        # Retained constructors and selected lifts belong to this exact subcategory,
+        # just as selected limit lifts above do; its ambient can have neither.
+        if shape in self._colimit_constructors or any(functor.colimit_lifting(shape) is not None for functor in self.selected_functors()):
             return Category.colimit_construction(self, shape)
         return self._ambient.colimit_construction(shape)
 

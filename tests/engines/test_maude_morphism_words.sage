@@ -1,5 +1,7 @@
 """Maude owns generic formal morphism reduction and equality."""
 
+from importlib import import_module
+
 from sage_categories.all import Category, Mor, ask
 
 
@@ -25,6 +27,9 @@ class FormalCategory(Category):
 
 
 def test_maude_reduces_generic_morphism_terms() -> None:
+    # Static category discovery imports package modules in the Sage process.
+    # Discovering the isolated worker must not start its native engine here.
+    import_module("sage_categories.engines._maude_worker")
     category = FormalCategory()
     a, b, c, d = (category(label) for label in "abcd")
     f = Mor(category)(a, b)()

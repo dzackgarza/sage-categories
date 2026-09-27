@@ -14,7 +14,7 @@ from typing import Literal
 import sage_categories_homotopy as homotopy
 
 from sage_categories.cat.category import Category, composite_factors, is_composite
-from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
 
@@ -42,10 +42,18 @@ class _CellState:
     morphisms: MonoDict = field(default_factory=MonoDict)
 
 
-def _root_owner(owner: Category) -> Category:
+def _tower_owner(owner: Category) -> Category:
+    """Forget fixed constructor parameters without forgetting the Mor dimension."""
     root = owner.construction_owner()
+    while isinstance(root, FixedEndpointCategory):
+        root = root.ambient().construction_owner()
+    return root
+
+
+def _root_owner(owner: Category) -> Category:
+    root = _tower_owner(owner)
     while isinstance(root, MorphismCategory):
-        root = root.base_category().construction_owner()
+        root = _tower_owner(root.base_category())
     return root
 
 
@@ -61,7 +69,7 @@ def native_signature(owner: Category) -> homotopy.Signature:
 
 
 def native_object(owner: Category, value: object) -> homotopy.Cell:
-    construction_owner = owner.construction_owner()
+    construction_owner = _tower_owner(owner)
     match construction_owner:
         case MorphismCategory():
             # ``Fun = Mor(Cat())`` admits the ordinary values that denote diagrams:
@@ -345,7 +353,7 @@ def boundary(
                 assert native.same_as(expected), f"native {side} boundary at depth {depth} does not reconstruct to the retained owned boundary {candidate!r}"
                 return candidate
             case False:
-                construction_owner = current_owner.construction_owner()
+                construction_owner = _tower_owner(current_owner)
                 assert isinstance(construction_owner, MorphismCategory), f"{value!r} has no owned boundary at depth {depth}"
                 current_owner = construction_owner.base_category()
                 current_value = candidate

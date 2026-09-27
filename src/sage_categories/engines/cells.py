@@ -13,7 +13,7 @@ from typing import Literal
 
 import sage_categories_homotopy as homotopy
 
-from sage_categories.cat.category import Category, composite_factors, is_composite
+from sage_categories.cat.category import Category, CategoryOfCategories, composite_factors, is_composite
 from sage_categories.cat.morphisms import FixedEndpointCategory, MorphismCategory
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import MonoDict, cached_function
@@ -107,6 +107,20 @@ def _cached_morphism(state: _CellState, value: MorphismCategory.ObjectType) -> h
     return state.morphisms[value] if value in state.morphisms else None
 
 
+def _boundary_value(
+    owner: Category,
+    value: MorphismCategory.ObjectType,
+    side: Literal["source", "target"],
+) -> CategoryOfCategories.ElementType:
+    """Use a transformation's retained diagram interpretation at the native boundary."""
+    from sage_categories.cat.functors import Fun, NaturalTransformation
+
+    if _tower_owner(owner) is Fun:
+        assert isinstance(value, NaturalTransformation)
+        return value.source_functor() if side == "source" else value.target_functor()
+    return value.domain() if side == "source" else value.codomain()
+
+
 def retain_identity(
     owner: Category,
     value: MorphismCategory.ObjectType,
@@ -118,8 +132,8 @@ def retain_identity(
         case False:
             return cached
         case True:
-            source = native_object(owner, value.domain())
-            target = native_object(owner, value.codomain())
+            source = native_object(owner, _boundary_value(owner, value, "source"))
+            target = native_object(owner, _boundary_value(owner, value, "target"))
             assert source.same_as(target), f"{value!r} is not an identity cell"
             return _retain_morphism(state, value, source.identity())
 
@@ -198,8 +212,8 @@ def retain_generator(
         case False:
             return cached
         case True:
-            source = native_object(owner, value.domain())
-            target = native_object(owner, value.codomain())
+            source = native_object(owner, _boundary_value(owner, value, "source"))
+            target = native_object(owner, _boundary_value(owner, value, "target"))
             native = state.signature.add_generator(source, target, invertibility=invertibility)
             return _retain_morphism(state, value, native)
 
@@ -349,12 +363,12 @@ def boundary(
                 candidate = current_value.codomain()
         match level == depth:
             case True:
-                expected = native_object(current_owner, candidate)
+                expected = native_object(current_owner, _boundary_value(current_owner, current_value, side))
                 assert native.same_as(expected), f"native {side} boundary at depth {depth} does not reconstruct to the retained owned boundary {candidate!r}"
                 return candidate
             case False:
                 construction_owner = _tower_owner(current_owner)
                 assert isinstance(construction_owner, MorphismCategory), f"{value!r} has no owned boundary at depth {depth}"
+                current_value = _boundary_value(current_owner, current_value, side)
                 current_owner = construction_owner.base_category()
-                current_value = candidate
     raise AssertionError("unreachable boundary reconstruction")

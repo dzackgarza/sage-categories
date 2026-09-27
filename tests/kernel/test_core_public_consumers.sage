@@ -298,6 +298,30 @@ def test_images_requested_after_the_functor_action_recognize_the_retained_values
     assert square.source_functor().codomain() is category
     assert square.target_functor().codomain() is category
     assert square.component(Cat().Simplex(1)(1)) is arrow
+    square.typecheck_cell()
+    assert square.cell_dimension() == 2
+    assert square.boundary("source") is identity
+    assert square.boundary("target") is arrow
+    assert square.boundary("source", 1) is Cat().Simplex(1)
+    assert square.boundary("target", 1) is category
+
+    diagrams = Fun(Cat().Simplex(1), category)
+    identity_square = Mor(diagrams)(arrow, arrow).one()
+    assert identity_square.source_functor().codomain() is category
+    assert identity_square.target_functor().codomain() is category
+    composite = identity_square * square
+    composite.typecheck_cell()
+    assert composite.cell_dimension() == 2
+    assert composite.component(Cat().Simplex(1)(1)) is arrow
+    assert composite.boundary("source") is identity
+    assert composite.boundary("target") is arrow
+
+    for whiskered in (square.whisker_left(functor), square.whisker_right(functor)):
+        whiskered.typecheck_cell()
+        assert whiskered.cell_dimension() == 2
+        assert whiskered.source_functor().codomain() is category
+        assert whiskered.target_functor().codomain() is category
+        assert whiskered.component(Cat().Simplex(1)(1)) is arrow
 
 
 test_selected_initialization_order_is_local_to_each_declaration()

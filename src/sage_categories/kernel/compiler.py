@@ -616,8 +616,8 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
             relations[provider_name] = entry
             observed.add(key)
             continue
-        current = relations[provider_name]
-        relations[provider_name] = tuple(name for name in current if name in entry)
+        previous_names = relations[provider_name]
+        relations[provider_name] = tuple(name for name in previous_names if name in entry)
     universal = cast(
         type[CategoryPoint],
         vars(category_universal_class())[Role.ELEMENT.value],
@@ -968,7 +968,7 @@ def runtime_semantic_bases(
 _installed_root_declarations: dict[type[CategoryPoint], type[CategoryPoint]] = {}
 
 
-type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[Node, object]]
+type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[CategoryPoint, Node, object]]
 
 
 class _SelectedAction(NamedTuple):

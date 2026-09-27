@@ -30,6 +30,8 @@ dev = [
     "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main",
     "sage-stubs @ git+https://github.com/dzackgarza/sage-stubs.git@main",
     "microsoft-python-type-stubs @ git+https://github.com/dzackgarza/python-type-stubs.git@main",
+    "pyyaml>=6.0.3",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 migration = [
     "libcst>=1.9,<2",

@@ -204,7 +204,7 @@ def test_historical_phase_model(gate_repo: tuple[Path, dict[str, str]], fault: s
     phases.mkdir()
     source = repo / "src/sage_categories"
     (source / "algebra").mkdir(parents=True)
-    core = {
+    core: dict[str, object] = {
         "id": "PLAN-pr-8-kernel-cat-architecture-convergence",
         "status": "complete",
         "parents": ["[[FEATURE-functor-owned-category-framework]]"],

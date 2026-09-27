@@ -1917,8 +1917,8 @@ def _runtimes_reaching(target: Node) -> tuple[_RuntimeImplementationCategory, ..
 
     predecessors: dict[tuple[int, Role], list[Node]] = {}
     for runtime in runtimes:
-        for _, reached in _compiled_successors(runtime._current):
-            predecessors.setdefault(key(reached), []).append(runtime._current)
+        for _, successor in _compiled_successors(runtime._current):
+            predecessors.setdefault(key(successor), []).append(runtime._current)
 
     reached: set[tuple[int, Role]] = set()
     frontier = [target]

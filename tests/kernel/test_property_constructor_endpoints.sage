@@ -1,6 +1,8 @@
 """Property constructors retain Hom and Fun parameters through nested narrowing."""
 
-from sage_categories.all import Cartesian, Fun, Monoids, Mor, Sets, binary_product_data
+import pytest
+
+from sage_categories.all import Cartesian, Cat, Fun, Monoids, Mor, Sets, binary_product_data
 
 
 def test_nested_hom_properties_retain_distinct_endpoints() -> None:
@@ -70,6 +72,22 @@ def test_nested_algebraic_properties_retain_distinct_monoidal_parameters() -> No
             assert group.unit_morphism()(structure.unit().point(())) is carrier.point(0)
 
 
+def test_intersection_rejects_incompatible_fixed_endpoint_constructors() -> None:
+    source, first_target, second_target = Sets((0,)), Sets((1,)), Sets((2,))
+    first = Mor(Sets)(source, first_target)
+    second = Mor(Sets)(source, second_target)
+    incompatible = Mor(Sets).intersection((first, second))
+    with pytest.raises(AssertionError, match="incompatible constructor owners"):
+        incompatible(lambda value: value + 1)
+
+
+def test_inverse_image_rejects_unestablished_subcategory_containment() -> None:
+    with pytest.raises(AssertionError, match="not a declared subcategory"):
+        Fun(Sets, Sets).one().inverse_image(Cat().Simplex(1))
+
+
 test_nested_hom_properties_retain_distinct_endpoints()
 test_nested_functor_properties_retain_domain_parameters()
 test_nested_algebraic_properties_retain_distinct_monoidal_parameters()
+test_intersection_rejects_incompatible_fixed_endpoint_constructors()
+test_inverse_image_rejects_unestablished_subcategory_containment()

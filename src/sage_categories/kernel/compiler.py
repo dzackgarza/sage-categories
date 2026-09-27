@@ -6,6 +6,7 @@ import inspect
 import logging
 from collections.abc import Callable, Iterator
 from itertools import count, pairwise
+from pathlib import Path
 from types import FunctionType, GenericAlias, ModuleType
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple, cast
 
@@ -531,6 +532,20 @@ class _CompilerProjection:
 
     def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:
         return _subtyping_projection()
+
+    def declared_type_aliases(self) -> dict[str, str]:
+        """Expose the same source-derived role aliases as the generated stubs."""
+        from sage_categories.kernel.stub_generator import _source_role_aliases
+
+        package = __name__.rsplit(".", 2)[0]
+        root = Path(__file__).resolve().parents[1]
+        aliases = _source_role_aliases(
+            package,
+            root,
+            tuple(sorted(root.rglob("*.py"))),
+            self.declared_inheritance(),
+        )
+        return {f"{module}.{name}": target for module, declarations in aliases.items() for name, target in declarations.items()}
 
     def declared_method_result_projections(
         self,

@@ -876,7 +876,7 @@ source = { editable = "native/homotopy-python" }
 [[package]]
 name = "sage-mypy-category-plugin"
 version = "0.0.0"
-source = { git = "https://github.com/dzackgarza/sagemath-mypy-plugin?rev=main#64dce2c9057877b55413db29ded32eceae70f8f9" }
+source = { git = "https://github.com/dzackgarza/sagemath-mypy-plugin?rev=main#95140f889589c784675f8536fe51841bd3471aa3" }
 dependencies = [
     { name = "mypy" },
     { name = "packaging" },

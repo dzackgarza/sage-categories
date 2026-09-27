@@ -11,8 +11,6 @@ import json
 import sys
 from typing import Any
 
-import maude
-
 _MODULE_SOURCE = r"""
 fmod SAGE-CATEGORIES-MORPHISM-WORD is
   sorts Tok Obj Morph .
@@ -43,12 +41,6 @@ fmod SAGE-CATEGORIES-MORPHISM-WORD is
 endfm
 """
 
-assert maude.init(), "Maude failed to initialize"
-assert maude.input(_MODULE_SOURCE), "Maude rejected the morphism-word theory"
-_module = maude.getModule("SAGE-CATEGORIES-MORPHISM-WORD")
-assert _module is not None
-_symbols = {str(symbol): symbol for symbol in _module.getSymbols()}
-
 
 def _successor(zero: Any, successor: Any, index: int) -> Any:
     term = zero.makeTerm([])
@@ -70,9 +62,7 @@ def _term(expression: list[Any]) -> Any:
         case ["id", int(index)]:
             return _symbols["id"].makeTerm([_object(index)])
         case ["a", int(token), int(inverse), int(source), int(target)]:
-            return _symbols["a"].makeTerm(
-                [_token(token), _token(inverse), _object(source), _object(target)]
-            )
+            return _symbols["a"].makeTerm([_token(token), _token(inverse), _object(source), _object(target)])
         case ["then", first, second]:
             return _symbols["_then_"].makeTerm([_term(first), _term(second)])
     raise ValueError(f"invalid morphism expression {expression!r}")
@@ -117,11 +107,20 @@ def _handle(request: dict[str, Any]) -> object:
     raise ValueError(f"unknown worker operation {request['op']!r}")
 
 
-for line in sys.stdin:
-    try:
-        request = json.loads(line)
-        response = {"ok": True, "result": _handle(request)}
-    except (AssertionError, KeyError, TypeError, ValueError) as error:
-        response = {"ok": False, "error": f"{type(error).__name__}: {error}"}
-    sys.stdout.write(json.dumps(response, separators=(",", ":")) + "\n")
-    sys.stdout.flush()
+if __name__ == "__main__":
+    import maude
+
+    assert maude.init(), "Maude failed to initialize"
+    assert maude.input(_MODULE_SOURCE), "Maude rejected the morphism-word theory"
+    _module = maude.getModule("SAGE-CATEGORIES-MORPHISM-WORD")
+    assert _module is not None
+    _symbols = {str(symbol): symbol for symbol in _module.getSymbols()}
+
+    for line in sys.stdin:
+        try:
+            request = json.loads(line)
+            response = {"ok": True, "result": _handle(request)}
+        except (AssertionError, KeyError, TypeError, ValueError) as error:
+            response = {"ok": False, "error": f"{type(error).__name__}: {error}"}
+        sys.stdout.write(json.dumps(response, separators=(",", ":")) + "\n")
+        sys.stdout.flush()

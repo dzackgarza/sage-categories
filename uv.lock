@@ -886,7 +886,7 @@ dependencies = [
 [[package]]
 name = "sage-stubs"
 version = "10.7.0"
-source = { git = "https://github.com/dzackgarza/sage-stubs.git?rev=main#f19dc7973149adf54b2754fae3e1364283f1c351" }
+source = { git = "https://github.com/dzackgarza/sage-stubs.git?rev=main#949fc3b622b1cde89b2df41bceea20a43c4add43" }
 
 [[package]]
 name = "semver"

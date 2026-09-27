@@ -402,8 +402,12 @@ def _declared_inclusion(subcategory: Category, ambient: Category) -> Functor:
         (functor for functor in subcategory.selected_functors() if functor.codomain() is ambient and _functors().declares_subcategory(functor)),
         None,
     )
-    assert declared is not None, f"{subcategory!r} declares no subcategory monomorphism into {ambient!r}"
-    return declared
+    if declared is not None:
+        return declared
+    # Narrowing containment also follows from the declared roots; storing every
+    # weakening as an immediate edge would build their exponential subset lattice.
+    assert is_subcategory(subcategory, ambient), f"{subcategory!r} is not a declared subcategory of {ambient!r}"
+    return _functors().subcategory_monomorphism(subcategory, ambient)
 
 
 def _inverse_image_mediator(realization: Category, shape: Category, cone_apex, Fun):

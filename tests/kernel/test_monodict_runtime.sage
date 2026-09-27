@@ -8,7 +8,7 @@ class IdentityKey:
 
 
 key = IdentityKey()
-table: MonoDict[str] = MonoDict()
+table: MonoDict[IdentityKey, str] = MonoDict()
 table[key] = "retained"
 
 assert key in table

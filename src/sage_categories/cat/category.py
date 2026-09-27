@@ -2501,9 +2501,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def identity_two_morphism(self, member_object: CategoryOfCategories.ElementType) -> NaturalTransformation:
         from sage_categories.cat.functors import diagram_of
 
-        catlab, cells = _catlab_engine(), _cells_engine()
+        return self._identity_transformation(member_object, diagram_of(member_object))
 
-        functor = diagram_of(member_object)
+    def _identity_transformation(self, member_object: CategoryOfCategories.ElementType, functor: Functor) -> NaturalTransformation:
+        """The identity of the supplied diagram interpretation of a public value."""
+        catlab, cells = _catlab_engine(), _cells_engine()
 
         def component(
             x: CategoryOfCategories.ElementType,
@@ -2511,7 +2513,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             image = functor.on_object(x)
             return image.category().morphism_category(1)(image, image).one()
 
-        transformation = self._construct_transformation(member_object, member_object, component)
+        transformation = self._construct_transformation(member_object, member_object, component, functor, functor)
         catlab.identity_transformation(transformation)
         cells.retain_identity(self.morphism_category(1), transformation)
         return transformation
@@ -2576,6 +2578,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         source_image = self.postcompose(functor, transformation.domain())
         target_image = self.postcompose(functor, transformation.codomain())
+        source_functor = self.compose_morphisms(functor, source)
+        target_functor = self.compose_morphisms(functor, transformation.target_functor())
 
         match transformation._has_component_rule():
             case True:
@@ -2585,10 +2589,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 ) -> MorphismCategory.ObjectType:
                     return functor.on_morphism(transformation.component(value))
 
-                result = self._construct_transformation(source_image, target_image, component)
+                result = self._construct_transformation(source_image, target_image, component, source_functor, target_functor)
                 _catlab_engine().whisker_left(result, functor, transformation)
             case False:
-                result = self._construct_transformation(source_image, target_image, None)
+                result = self._construct_transformation(source_image, target_image, None, source_functor, target_functor)
         cells.retain_whisker_left(self.morphism_category(1), result, functor, transformation)
         return result
 
@@ -2642,10 +2646,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 ) -> MorphismCategory.ObjectType:
                     return inner.component(value) * outer.component(value)
 
-                result = self._construct_transformation(outer.domain(), inner.codomain(), component)
+                result = self._construct_transformation(outer.domain(), inner.codomain(), component, outer.source_functor(), inner.target_functor())
                 _catlab_engine().horizontal_composite(result, first, second)
             case False:
-                result = self._construct_transformation(outer.domain(), inner.codomain(), None)
+                result = self._construct_transformation(outer.domain(), inner.codomain(), None, outer.source_functor(), inner.target_functor())
         cells.retain_composite(self.morphism_category(1), result, outer, inner)
         return result
 

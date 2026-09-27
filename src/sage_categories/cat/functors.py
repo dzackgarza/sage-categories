@@ -329,7 +329,7 @@ class FunctorCategory[
         return Cat().construct_two_morphism(source, target, assignment, self.diagram(source), self.diagram(target))
 
     def construct_identity(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation:
-        return Cat().identity_two_morphism(value)
+        return Cat()._identity_transformation(value, self.diagram(value))
 
     def _formal_transformation(
         self,

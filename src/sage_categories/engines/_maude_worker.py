@@ -41,6 +41,7 @@ fmod SAGE-CATEGORIES-MORPHISM-WORD is
 endfm
 """
 
+
 def _successor(zero: Any, successor: Any, index: int) -> Any:
     term = zero.makeTerm([])
     for _ in range(index):
@@ -61,9 +62,7 @@ def _term(expression: list[Any]) -> Any:
         case ["id", int(index)]:
             return _symbols["id"].makeTerm([_object(index)])
         case ["a", int(token), int(inverse), int(source), int(target)]:
-            return _symbols["a"].makeTerm(
-                [_token(token), _token(inverse), _object(source), _object(target)]
-            )
+            return _symbols["a"].makeTerm([_token(token), _token(inverse), _object(source), _object(target)])
         case ["then", first, second]:
             return _symbols["_then_"].makeTerm([_term(first), _term(second)])
     raise ValueError(f"invalid morphism expression {expression!r}")

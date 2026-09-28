@@ -4,6 +4,7 @@ from sage_categories.all import Cat, Fun, Mor, ask
 from sage_categories.cat.weighted import (
     Representations,
     coend,
+    coyoneda,
     element,
     element_projection,
     end,
@@ -15,6 +16,7 @@ from sage_categories.cat.weighted import (
     weighted_injection,
     weighted_limit,
     weighted_limit_lift,
+    weighted_limit_map,
     weighted_projection,
     yoneda,
 )

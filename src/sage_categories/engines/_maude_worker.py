@@ -11,8 +11,6 @@ import json
 import sys
 from typing import Any
 
-import maude
-
 _MODULE_SOURCE = r"""
 fmod SAGE-CATEGORIES-MORPHISM-WORD is
   sorts Tok Obj Morph .
@@ -42,13 +40,6 @@ fmod SAGE-CATEGORIES-MORPHISM-WORD is
   eq a(N, M, X, Y) then a(M, N, Y, X) = id(X) .
 endfm
 """
-
-assert maude.init(), "Maude failed to initialize"
-assert maude.input(_MODULE_SOURCE), "Maude rejected the morphism-word theory"
-_module = maude.getModule("SAGE-CATEGORIES-MORPHISM-WORD")
-assert _module is not None
-_symbols = {str(symbol): symbol for symbol in _module.getSymbols()}
-
 
 def _successor(zero: Any, successor: Any, index: int) -> Any:
     term = zero.makeTerm([])
@@ -117,11 +108,22 @@ def _handle(request: dict[str, Any]) -> object:
     raise ValueError(f"unknown worker operation {request['op']!r}")
 
 
-for line in sys.stdin:
-    try:
-        request = json.loads(line)
-        response = {"ok": True, "result": _handle(request)}
-    except (AssertionError, KeyError, TypeError, ValueError) as error:
-        response = {"ok": False, "error": f"{type(error).__name__}: {error}"}
-    sys.stdout.write(json.dumps(response, separators=(",", ":")) + "\n")
-    sys.stdout.flush()
+# Maude loads only when this file runs as the worker process. A package walk that
+# imports this module must not load Maude into a Sage process.
+if __name__ == "__main__":
+    import maude
+
+    assert maude.init(), "Maude failed to initialize"
+    assert maude.input(_MODULE_SOURCE), "Maude rejected the morphism-word theory"
+    _module = maude.getModule("SAGE-CATEGORIES-MORPHISM-WORD")
+    assert _module is not None
+    _symbols = {str(symbol): symbol for symbol in _module.getSymbols()}
+
+    for line in sys.stdin:
+        try:
+            request = json.loads(line)
+            response = {"ok": True, "result": _handle(request)}
+        except (AssertionError, KeyError, TypeError, ValueError) as error:
+            response = {"ok": False, "error": f"{type(error).__name__}: {error}"}
+        sys.stdout.write(json.dumps(response, separators=(",", ":")) + "\n")
+        sys.stdout.flush()

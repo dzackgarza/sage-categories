@@ -127,7 +127,7 @@ def test_weighted_colimit_map_retains_the_injection_equations():
     source_values, target_values = S((0, 1)), S((5, 6, 7))
     source = Fun(shape.op(), S).constant(source_values)
     target = Fun(shape.op(), S).constant(target_values)
-    shift = Mor(S)(source_values, target_values)(lambda value: value.datum() + 5)
+    shift = Mor(S)(source_values, target_values)(lambda value: value + 5)
     transformation = Mor(Fun(shape.op(), S))(source, target)(lambda _vertex: shift)
 
     induced = weighted_colimit_map(weight, transformation)

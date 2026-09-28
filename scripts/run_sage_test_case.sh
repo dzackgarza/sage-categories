@@ -10,6 +10,11 @@ source_file=$1
 test_name=$2
 repo_root=$(git rev-parse --show-toplevel)
 sage_bin=${SAGE_BIN:?SAGE_BIN must name the declared Sage executable}
+# The declared Sage launcher (sage.cli) has no --preparse or -python mode; its
+# interpreter and preparser are siblings of SAGE_BIN, as the Sage QC profile derives.
+sage_dir=$(dirname "$sage_bin")
+sage_python="$sage_dir/python"
+sage_preparse="$sage_dir/sage-preparse"
 
 case "$source_file" in
     /*)
@@ -52,7 +57,7 @@ sed -E '/^test_[A-Za-z_][A-Za-z0-9_]*\(\)$/d' \
 
 (
     cd "$work"
-    "$sage_bin" --preparse "$source_file" >/dev/null
+    "$sage_python" "$sage_preparse" "$source_file" >/dev/null
 )
 
 generated="$work/${source_file}.py"
@@ -63,7 +68,7 @@ relative_importable="${source_file%.sage}.py"
 (
     cd "$work"
     PYTHONPATH="$repo_root/src${PYTHONPATH:+:$PYTHONPATH}" \
-        "$sage_bin" -python -m pytest -vv -s "$relative_importable::$test_name" &
+        "$sage_python" -m pytest -vv -s "$relative_importable::$test_name" &
     pytest_pid=$!
     while kill -0 "$pytest_pid" 2>/dev/null; do
         sleep 15

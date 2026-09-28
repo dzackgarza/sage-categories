@@ -13,6 +13,7 @@ from sage_categories.cat.weighted import (
     natural_transformation_to_end,
     weighted_colimit,
     weighted_colimit_desc,
+    weighted_colimit_map,
     weighted_injection,
     weighted_limit,
     weighted_limit_lift,
@@ -105,6 +106,40 @@ def test_weighted_limit_map_retains_the_projection_equations():
             == collapse * weighted_projection(weight, source, vertex, point)
         ) is True
 
+
+def test_weighted_colimit_map_retains_the_injection_equations():
+    shape = Cat().Simplex(1)
+    first, second = S((0, 1)), S((2,))
+    collapse_weight = Mor(S)(first, second)(lambda _x: 2)
+    weight = Fun(shape, S)(
+        lambda vertex: first if shape.label(vertex) == 0 else second,
+        lambda arrow: (
+            collapse_weight
+            if arrow.word()
+            else Mor(S)(
+                first if shape.label(arrow.domain()) == 0 else second,
+                first if shape.label(arrow.domain()) == 0 else second,
+            ).one()
+        ),
+    )
+    # The target has more than one point, so a wrong mediator cannot satisfy the
+    # injection equations vacuously.
+    source_values, target_values = S((0, 1)), S((5, 6, 7))
+    source = Fun(shape.op(), S).constant(source_values)
+    target = Fun(shape.op(), S).constant(target_values)
+    shift = Mor(S)(source_values, target_values)(lambda value: value.datum() + 5)
+    transformation = Mor(Fun(shape.op(), S))(source, target)(lambda _vertex: shift)
+
+    induced = weighted_colimit_map(weight, transformation)
+    assert induced.domain() is weighted_colimit(weight, source)
+    assert induced.codomain() is weighted_colimit(weight, target)
+    for vertex, point in ((shape(0), first.point(0)), (shape(0), first.point(1)), (shape(1), second.point(2))):
+        assert ask(
+            induced * weighted_injection(weight, source, vertex, point)
+            == weighted_injection(weight, target, vertex, point) * shift
+        ) is True
+
+
 def test_hom_weight_recovers_end_and_coend():
     shape = Cat().Simplex(1)
     hom = hom_functor(shape, S)
@@ -185,6 +220,7 @@ def test_natural_transformations_are_points_of_the_hom_end():
 
 test_weighted_limit_and_colimit_have_nonconstant_transport()
 test_weighted_limit_map_retains_the_projection_equations()
+test_weighted_colimit_map_retains_the_injection_equations()
 test_hom_weight_recovers_end_and_coend()
 test_representations_retain_the_representing_object_and_yoneda_isomorphism()
 test_natural_transformations_are_points_of_the_hom_end()

@@ -19,6 +19,10 @@ def test_monoid_objects_receive_all_laws_from_equifiers():
     unit = Mor(sets)(sets.Terminal(), carrier)(lambda point: 0)
     magma = Magmas(tensor).algebra(carrier, multiplication)
     monoid = Monoids(sets)(multiplication, unit)
+    equifier = Monoids(sets)
+    while hasattr(equifier, "equation"):
+        assert ask(equifier.equation(monoid)) is True
+        equifier = equifier.ambient()
     assert (
         monoid.carrier().structure()(multiplication.domain().point((2, 2))).datum() == 1
     )
@@ -125,6 +129,35 @@ def test_inserter_homomorphisms_and_monad_algebra_laws():
     em = EilenbergMoore(identity, unit, unit)
     value = algebras.algebra(base(2), Mor(base)(base(2), base(2)).one())
     assert em(value).carrier() is base(2)
+
+    from sage_categories.sets import Sets
+
+    identity_sets = Fun(Sets, Sets).one()
+    endomorphism_algebras = EndofunctorAlgebras(identity_sets)
+    source_carrier = Sets((0, 1))
+    target_carrier = Sets((10, 20))
+    target_algebra = endomorphism_algebras.algebra(
+        target_carrier,
+        Mor(Sets)(target_carrier, target_carrier).one(),
+    )
+    forward = Mor(Sets)(source_carrier, target_carrier)(
+        lambda value: {0: 10, 1: 20}[value]
+    )
+    backward = Mor(Sets)(target_carrier, source_carrier)(
+        lambda value: {10: 0, 20: 1}[value]
+    )
+    Sets.retain_inverses(forward, backward)
+    lift = endomorphism_algebras.forgetful().cartesian_lift(forward, target_algebra)
+    assert lift.codomain() is target_algebra
+    assert endomorphism_algebras.forgetful().on_morphism(lift) is forward
+    assert endomorphism_algebras.forgetful().on_object(lift.domain()) is source_carrier
+    assert (
+        ask(
+            lift.domain().structure()
+            == Mor(Sets)(source_carrier, source_carrier).one()
+        )
+        is True
+    )
 
 
 def test_limit_adjunction_transposes_a_competing_cone():

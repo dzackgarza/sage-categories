@@ -88,6 +88,16 @@ def ensure_native_functor(functor: MorphismCategory.ObjectType) -> object:
     elif functor.is_composite():
         first, second = functor.factors()
         native = bridge.compose_functors(ensure_native_functor(first), ensure_native_functor(second))
+    elif functor._is_identity_on_values():
+        # A zero-action subcategory inclusion is identity on the shared owned values.
+        # Direct public application needs no computation, but a native composite or
+        # transformation can still request its Catlab realization here.
+        native = bridge.callable_functor(
+            lambda value: value,
+            lambda value: value,
+            ensure_native_category(source),
+            ensure_native_category(target),
+        )
     else:
         native = bridge.callable_functor(
             functor._declared_object_image,

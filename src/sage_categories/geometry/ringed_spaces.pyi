@@ -1,4 +1,5 @@
-from collections.abc import Callable, Hashable
+from collections.abc import Callable
+from collections.abc import Hashable as Hashable
 from dataclasses import dataclass
 
 import sage_categories.cat.category

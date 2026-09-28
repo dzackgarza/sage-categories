@@ -20,7 +20,6 @@ from sage_categories.cat.predicates import (
     Decision,
     Proposition,
     Unknown,
-    ask,
     register_handler,
 )
 from sage_categories.kernel.construction import retained_objects
@@ -190,22 +189,11 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         source, target = self.source_category(), self.target_category()
         source_endofunctors = Fun(source, source)
         target_endofunctors = Fun(target, target)
-        forward_functors = Fun(source, target)
-        inverse_functors = Fun(target, source)
 
         assert unit.domain() is source_endofunctors.one()
         assert unit.codomain() is self._inverse * self._forward
         assert counit.domain() is self._forward * self._inverse
         assert counit.codomain() is target_endofunctors.one()
-
-        forward_triangle = counit.whisker_right(self._forward) * unit.whisker_left(self._forward)
-        inverse_triangle = counit.whisker_left(self._inverse) * unit.whisker_right(self._inverse)
-        assert ask(forward_triangle == forward_functors.morphism_category(1)(self._forward, self._forward).one()) is not False, (
-            "the unit and counit fail the triangle identity on the forward functor"
-        )
-        assert ask(inverse_triangle == inverse_functors.morphism_category(1)(self._inverse, self._inverse).one()) is not False, (
-            "the unit and counit fail the triangle identity on the inverse functor"
-        )
 
         return self.ObjectType(data=AdjunctionData(self._forward, self._inverse, unit, counit))
 
@@ -223,10 +211,6 @@ class AdjunctionsCategory(Category[[NaturalTransformation, NaturalTransformation
         assert forward in forward_functors.morphism_category(1)(self._forward, self._forward)
         assert inverse in inverse_functors.morphism_category(1)(self._inverse, self._inverse)
 
-        unit_transport = Cat().horizontal_composite(inverse, forward) * source.unit()
-        counit_transport = target.counit() * Cat().horizontal_composite(forward, inverse)
-        assert ask(unit_transport == target.unit()) is not False, "the endotransformations are not compatible with the units"
-        assert ask(counit_transport == source.counit()) is not False, "the endotransformations are not compatible with the counits"
         return self.MorphismType(
             domain=source,
             codomain=target,

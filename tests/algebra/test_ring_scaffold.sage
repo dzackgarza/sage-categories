@@ -68,10 +68,16 @@ def test_boolean_semiring_is_not_a_ring() -> None:
     conjunction = Mor(Sets)(square, carrier)(lambda pair: min(pair))
     zero = Mor(Sets)(structure.unit(), carrier)(lambda _: 0)
     one = Mor(Sets)(structure.unit(), carrier)(lambda _: 1)
-    assert Semirings(Sets())(disjunction, zero, conjunction, one) in Semirings(Sets())
+    semirings = Semirings(Sets())
+    semiring = semirings(disjunction, zero, conjunction, one)
+    assert semiring in semirings
     # 1 has no additive inverse under disjunction, so the additive monoid is not a group.
-    with pytest.raises(AssertionError):
-        Rings(Sets())(disjunction, zero, conjunction, one)
+    additive = semirings.to_additive().on_object(semiring)
+    monoid = additive.parent().product_projection(0).on_object(additive)
+    assert ask(monoid.is_group()) is False
+    # Ring construction asserts the additive-group law rather than recomputing it.
+    ring = Rings(Sets())(disjunction, zero, conjunction, one)
+    assert ring in Rings(Sets())
 
 
 def test_additive_nonunital_map_is_not_a_ring_map() -> None:

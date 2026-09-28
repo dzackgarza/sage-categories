@@ -1,6 +1,5 @@
 """Functoriality of the tensor product over M_2(F_2): a pair of module maps, and the two unit comparisons."""
 
-from sage_categories.all import Mor, ask
 from sage_categories.algebra import (
     AbelianGroups,
     AbelianTensor,
@@ -8,13 +7,13 @@ from sage_categories.algebra import (
     balanced_tensor,
     integer_group,
     presented_abelian_group,
-    relative_left_unitor,
-    relative_right_unitor,
     relative_tensor,
     relative_tensor_morphism,
     tensor_mediator,
 )
-from sage_categories.cat.monoidal import Reversed
+from sage_categories.all import Mor, ask
+from sage_categories.cat.bimodules import relative_left_unitor, relative_right_unitor
+from sage_categories.cat.monoidal import Reversed, tensor_morphism
 from sage_categories.cat.structured_objects import Monoids
 
 
@@ -61,6 +60,25 @@ def test_a_nonidentity_pair_of_module_maps_induces_a_map_of_relative_tensors() -
     on_the_right = abelian_homomorphism(group, group, lambda a: product(a, e21))
     induced = relative_tensor_morphism(balanced, balanced, on_the_left, on_the_right)
     assert induced.domain() is balanced.codomain() and induced.codomain() is balanced.codomain()
+    raw = tensor_morphism(AbelianTensor().tensor(), on_the_left, on_the_right)
+    assert ask(induced * balanced == balanced * raw) is True
+
+    # A second compatible pair composes through the same universal factor.
+    second_left = abelian_homomorphism(group, group, lambda a: product(e21, a))
+    second_right = abelian_homomorphism(group, group, lambda a: product(a, e12))
+    second_induced = relative_tensor_morphism(
+        balanced,
+        balanced,
+        second_left,
+        second_right,
+    )
+    composed = relative_tensor_morphism(
+        balanced,
+        balanced,
+        second_left * on_the_left,
+        second_right * on_the_right,
+    )
+    assert ask(second_induced * induced == composed) is True
 
     identity = element([1, 0, 0, 1])
     over_the_ring = lambda a, b: balanced_tensor(balanced, a, b)
@@ -91,8 +109,8 @@ def test_the_unit_comparisons_are_isomorphisms_with_executable_inverses() -> Non
 
     # S (x)_S Y is Y and X (x)_S S is X, through the actions themselves.
     into_columns, into_rows = relative_tensor(regular, left_action), relative_tensor(right_action, regular)
-    left, back_to_columns = relative_left_unitor(into_columns, left_action, ring.unit_morphism())
-    right, back_to_rows = relative_right_unitor(into_rows, right_action, ring.unit_morphism())
+    left, back_to_columns = relative_left_unitor(AbelianTensor(), into_columns, left_action, ring.unit_morphism())
+    right, back_to_rows = relative_right_unitor(AbelianTensor(), into_rows, right_action, ring.unit_morphism())
     assert left.inverse() is back_to_columns
     assert right.inverse() is back_to_rows
     assert left.domain() is into_columns.codomain() and left.codomain() is columns

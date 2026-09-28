@@ -107,8 +107,6 @@ def _handle(request: dict[str, Any]) -> object:
     raise ValueError(f"unknown worker operation {request['op']!r}")
 
 
-# Maude loads only when this file runs as the worker process. A package walk that
-# imports this module must not load Maude into a Sage process.
 if __name__ == "__main__":
     import maude
 

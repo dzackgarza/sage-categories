@@ -113,7 +113,7 @@ def test_locally_ringed_owner_forgets_to_ringed_spaces_and_retains_local_stalk_m
     assert locally.to_ringed_spaces().on_morphism(mapping) is ringed_map
     assert mapping.continuous_map() is continuous
     assert mapping.sheaf_map() is ringed_map.sheaf_map()
-    assert mapping.continuous_map().underlying_map()(zero) is one
+    assert TopologicalSpaces().to_sets().on_morphism(mapping.continuous_map())(zero) is one
     assert mapping.stalk_map(zero).domain() is field
     assert mapping.stalk_map(zero).codomain() is field
     assert ask(mapping.stalk_map(zero) == identity) is True
@@ -126,7 +126,7 @@ def test_locally_ringed_owner_forgets_to_ringed_spaces_and_retains_local_stalk_m
     assert ask(identity_local.stalk_map(zero) == identity) is True
     composite = mapping * mapping
     assert composite.ringed_map() is ringed_map * ringed_map
-    assert composite.continuous_map().underlying_map()(zero) is one
+    assert TopologicalSpaces().to_sets().on_morphism(composite.continuous_map())(zero) is one
     assert ask(composite.stalk_map(zero) == identity) is True
     assert ask(composite.local_map_condition(zero)) is True
 

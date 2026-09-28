@@ -460,6 +460,46 @@ class StrongerCategory(PropertySubcategory):
         assert completed[surface][f"example.properties.StrongerCategory.{role}"] == (f"example.properties.StrongCategory.{role}",)
 
 
+def test_axiom_descriptors_project_to_typed_property_accessors(tmp_path: Path) -> None:
+    package = tmp_path / "example"
+    package.mkdir()
+    source = package / "__init__.py"
+    source.write_text(
+        """
+class Base(Category):
+    Strong = Axiom()
+
+PublicBase = Base
+
+class StrongCategory(PropertySubcategory):
+    _base_category_class_and_axiom = (PublicBase, "Strong")
+    class ObjectType: ...
+    class ElementType: ...
+    class MorphismType: ...
+"""
+    )
+    generator = _stub_generator()
+    accessors = generator._source_property_accessors("example", package, (source,))
+    stub = ast.parse(
+        """
+from _typeshed import Incomplete
+class Base:
+    Strong: Incomplete
+class StrongCategory:
+    pass
+"""
+    )
+    generator._project_property_accessors(
+        stub,
+        "example",
+        accessors["example"],
+        frozenset({"example"}),
+    )
+    projected = ast.unparse(ast.fix_missing_locations(stub))
+    assert "def Strong(self) -> StrongCategory:" in projected
+    assert "Strong: Incomplete" not in projected
+
+
 def test_functor_constructor_projection_retains_action_result_roles() -> None:
     stub = ast.parse(
         """
@@ -1317,3 +1357,31 @@ def test_generated_module_projection_keeps_the_monoidal_tensor_owner() -> None:
     assert "from sage_categories.cat.monoidal import" in modules
     assert "tensor_morphism as tensor_morphism" in modules
     assert "from sage_categories.engines.presented_modules import tensor_morphism" not in modules
+
+
+def test_generated_algebraic_forgetful_functors_keep_exact_category_endpoints() -> None:
+    root = Path(__file__).parents[2] / "src/sage_categories/cat"
+    modules = (root / "modules.pyi").read_text()
+    bimodules = (root / "bimodules.pyi").read_text()
+
+    assert ("def scalar_endofunctor(\n        self,\n    ) -> CategoryOfCategories.MorphismType[\n        ActedCategory,\n        ActedCategory,") in modules
+    assert (
+        "def forgetful(\n        self,\n    ) -> CategoryOfCategories.MorphismType[\n        ModuleCategory[Scalar, ActingCategory, ActedCategory],\n        ActedCategory,"
+    ) in modules
+    assert (
+        "def to_left(\n"
+        "        self,\n"
+        "    ) -> CategoryOfCategories.MorphismType[\n"
+        "        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],\n"
+        "        ModuleCategory[LeftScalar, BaseCategory, BaseCategory],"
+    ) in bimodules
+    assert (
+        "def to_right(\n"
+        "        self,\n"
+        "    ) -> CategoryOfCategories.MorphismType[\n"
+        "        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],\n"
+        "        ModuleCategory[MonoidCategory.ObjectType, BaseCategory, BaseCategory],"
+    ) in bimodules
+    assert (
+        "def forgetful(\n        self,\n    ) -> CategoryOfCategories.MorphismType[\n        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],\n        BaseCategory,"
+    ) in bimodules

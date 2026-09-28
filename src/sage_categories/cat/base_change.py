@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from sage_categories.cat.cat_constructions import LimitCategory, _retained_object_component
+from sage_categories.cat.cat_constructions import (
+    LimitCategory,
+    _retained_object_component,
+)
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.constructions import LimitsCategory
 from sage_categories.cat.diagrams import cospan_diagram
@@ -11,8 +14,6 @@ from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.kernel.refinement import is_placed, refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
-
-__all__ = ["base_change"]
 
 
 def _cartesian_lift(
@@ -107,7 +108,7 @@ def _retain_cocartesian_base_change(
     )
 
 
-def base_change(base_functor: Functor, defining_functor: Functor) -> Functor:
+def _base_change(base_functor: Functor, defining_functor: Functor) -> Functor:
     """Return ``D ×_C E -> D`` for ``D -> C <- E``.
 
     The pullback's retained limiting presentation owns both projections and the

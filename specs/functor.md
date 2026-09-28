@@ -659,7 +659,7 @@ class Category[Obj: CategoryPoint, Elem: CategoryPoint, Mor: CategoryPoint]:
 
 `Category[Obj, Elem, Mor]` denotes exactly the category whose values have those three category-owned types.
 A declaration fixes all three parameters.
-It does not replace one with `Cat().ElementType`, a universal morphism type, or a structural duck type (`POL-TYPE-018`, `POL-TYPE-019`, `POL-TYPE-027`).  A generated static declaration for a concrete category family binds its exact `ObjectType`, `ElementType`, and `MorphismType`; this includes `CategoryOfCategories`, `MorphismCategory`, `FunctorsCategory`, finite presented categories such as `Simplex(n)`, and pullback categories.
+It does not replace one with `Cat().ElementType`, a universal morphism type, or a structural duck type (`POL-TYPE-018`, `POL-TYPE-019`, `POL-TYPE-027`). A generated static declaration for a concrete category family binds its exact `ObjectType`, `ElementType`, and `MorphismType`; this includes `CategoryOfCategories`, `MorphismCategory`, `FunctorsCategory`, finite presented categories such as `Simplex(n)`, and pullback categories.
 
 The semantic signature of a functor keeps both endpoint triples:
 
@@ -695,9 +695,9 @@ class FixedEndpointCategory[
     def __call__(self, ...) -> MorType: ...
 ```
 
-The returned `MorType` is statically the morphism type of `C`; its stored domain and codomain are exactly `A` and `B`.  `Mor(C).ObjectType = C.MorphismType` is a level identity, not a wrapper, conversion, or additional class hierarchy.
+The returned `MorType` is statically the morphism type of `C`; its stored domain and codomain are exactly `A` and `B`. `Mor(C).ObjectType = C.MorphismType` is a level identity, not a wrapper, conversion, or additional class hierarchy.
 
-For a full property subcategory `P = C.P()`, the associated-type triple has the same semantic values as `C`.  A positive proposition evaluated by `ask()`, an assumption, or construction in `P` returns the identical owned value with the compiler-generated refined nominal type.
+For a full property subcategory `P = C.P()`, the associated-type triple has the same semantic values as `C`. A positive proposition evaluated by `ask()`, an assumption, or construction in `P` returns the identical owned value with the compiler-generated refined nominal type.
 The generated type is the one dynamic class computed from `C` and `P`; it exposes both the ambient and property surfaces.
 This is the static intersection for same-object refinement.
 It is not a `Protocol`, `TypeIs` guard, adapter, wrapper allocation, cast, or false runtime inheritance (`POL-TYPE-020`, `POL-TYPE-027`; [property-refinement.md](property-refinement.md#same-object-refinement)).
@@ -1190,6 +1190,7 @@ For a faithful functor, executable lifting data is supplied once per shape or di
 
 ```python
 U.with_limit_lifting(I, on_apex, on_morphism)
+U.with_colimit_lifting(I, on_apex, on_morphism)
 ```
 
 `on_apex(K, c)` receives `K: I -> C` and a retained limiting cone `c` over `U * K`. It returns an object `L` of `C` with `U(L) is c.apex()`. `on_morphism(X, Y, f)` returns a morphism `X -> Y` whose image under `U` equals `f`. It is required on the ambient projections and on the ambient mediators from every competing source cone.
@@ -1197,9 +1198,11 @@ Existence on this domain is the supplied lifting theorem.
 The generic construction forms the lifted cone and obtains each mediator by mapping a competing cone through `U`, applying `c.lift`, and lifting that map.
 Faithfulness reflects the cone equations and proves uniqueness of the mediator.
 This is the constructive content of [Mathlib's `LiftsToLimit`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Limits/Creates.html#CategoryTheory.LiftsToLimit).
+The colimit form is dual: `on_apex(K, c)` receives the retained colimiting cocone over `U * K`, `on_morphism` lifts its injections and universal factors, and the generic construction forms the source cocone and lifts each ambient colimit mediator.
+This executable data is distinct from the theorem-level `CreatesLimits` declaration, whose colimit form derives through `Op` as above.
 The exact shape takes precedence over the `Discrete` family.
 Among selected structure functors, declaration order chooses the construction.
-`C.Limits(I)(K)` and its named product and equalizer forms use these retained data automatically.
+`C.Limits(I)(K)` and `C.Colimits(I)(K)`, together with their named product/equalizer and coproduct/coequalizer forms, use the corresponding retained data automatically.
 A category with another realization supplies its owned `limit_construction` or complete universal data.
 The [poset-products template](poset-products-minimal-template.py) supplies componentwise order and the existing monotone-map constructor.
 Limit creation additionally requires reflection of limits; the theorem declaration and chosen executable data have distinct roles.
@@ -1319,7 +1322,7 @@ Their pullback presentations retain the universal maps separately from that prim
 `Inserter(F, G)` takes parallel functors.
 Its objects are pairs `(X, a: F(X) -> G(X))`. Its morphisms are single arrows `f: X -> Y` satisfying `G(f) a = b F(f)`. It is the pullback of the comma category's pair projection along the diagonal on the common domain.
 `Equifier(alpha, beta)` is the full subcategory where the two components agree.
-Its constructor decides that equation before admitting a value.
+Constructing a value in it asserts that equation (D26, D190): the constructor places the value and does not evaluate the components. Comparing them is a test of the construction, available to tests and explicit checks, never a gate inside construction.
 
 `Algebras(T)` is `Inserter(T, Id)`. `Magmas(tensor)` applies this construction to `X |-> X tensor X`. `PointedMagmas(tensor, I)` adds a map `I -> X` by another inserter.
 `Monoids(C)` imposes the unit and associativity equations for the chosen cartesian tensor by equifiers.

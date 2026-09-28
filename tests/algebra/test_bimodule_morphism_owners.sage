@@ -69,11 +69,42 @@ def test_bimodule_morphisms_require_commuting_endpoints() -> None:
         image = projection.on_morphism(arrow)
         assert image in Mor(modules)(projection.on_object(module), projection.on_object(translated))
         assert modules.forgetful().on_morphism(image) is forward
+        image_inverse = projection.on_morphism(inverse)
+        lift = projection.cartesian_lift(image_inverse, module)
+        assert lift.codomain() is module
+        assert projection.on_morphism(lift) is image_inverse
+        assert ask(lift.domain() == translated) is True
     assert module.left_action()(left_domain.point((0, 1))).datum() == 0
     assert module.right_action()(right_domain.point((1, 0))).datum() == 1
     assert bimodules.forgetful().on_morphism(arrow)(source.point(1)).datum() == 11
     assert ask(inverse * arrow == Mor(bimodules)(module, module).one()) is True
     assert ask(arrow * inverse == Mor(bimodules)(translated, translated).one()) is True
+
+    # Restrict both actions along the inclusion of the unit submonoid {1} -> {0,1}.
+    unit_scalars = Sets((1,))
+    unit_square = binary_product_data(Sets, unit_scalars, unit_scalars).apex()
+    unit_monoid = Monoids(structure)(
+        Mor(Sets)(unit_square, unit_scalars)(lambda _pair: 1),
+        Mor(Sets)(structure.unit(), unit_scalars)(lambda _point: 1),
+    )
+    inclusion = Monoids(structure).homomorphism(
+        unit_monoid,
+        monoid,
+        Mor(Sets)(unit_scalars, scalars)(lambda _value: 1),
+    )
+    restriction = bimodules.restriction(inclusion, inclusion)
+    restricted = restriction.on_object(module)
+    restricted_translated = restriction.on_object(translated)
+    restricted_bimodules = Bimodules(unit_monoid, unit_monoid, structure)
+    assert restriction.codomain() is restricted_bimodules
+    assert restricted in restricted_bimodules
+    assert restricted_bimodules.forgetful().on_object(restricted) is source
+    assert restricted.left_action().domain() is binary_product_data(Sets, unit_scalars, source).apex()
+    assert restricted.right_action().domain() is binary_product_data(Sets, source, unit_scalars).apex()
+    restricted_arrow = restriction.on_morphism(arrow)
+    assert restricted_arrow.domain() is restricted
+    assert restricted_arrow.codomain() is restricted_translated
+    assert restricted_bimodules.forgetful().on_morphism(restricted_arrow) is forward
 
 
 test_bimodule_morphisms_require_commuting_endpoints()

@@ -11,8 +11,8 @@ from sympy import false, true
 from sympy.ntheory import factorint
 from sympy.ntheory.primetest import isprime
 
-from sage_categories.algebra._certified_commutative_ring import (
-    certified_commutative_ring,
+from sage_categories.algebra._commutative_ring import (
+    commutative_ring,
 )
 from sage_categories.algebra.local_fields import (
     ExactLocalFieldPresentation,
@@ -351,7 +351,7 @@ def _adele_ring(owner: object) -> tuple[CategoryOfCategories.ElementType, Catego
         frozenset(),
         lambda _: True,
     )
-    ring = certified_commutative_ring(
+    ring = commutative_ring(
         carrier,
         lambda pair: cast(AdeleValue, pair[0]) + cast(AdeleValue, pair[1]),
         lambda pair: cast(AdeleValue, pair[0]) * cast(AdeleValue, pair[1]),

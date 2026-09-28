@@ -21,8 +21,8 @@ MILESTONE_DAG = """### Milestone A — Foundation
 ### Milestone B — Leaves
 | `leaf` | **Open.** | `kernel-cat-complete` |
 | `leaf-consumer` | **Open.** | `leaf` |
-| `leaves-complete` | **Open.** | `leaf-consumer` |
-| `framework-complete` | **Open.** | `leaves-complete` |
+| `leaf-litmus` | **Open.** | `leaf-consumer` |
+| `framework-complete` | **Open.** | `leaf-litmus` |
 ### Retained implementation evidence
 | `historical` | **Closed.** | none |
 """
@@ -38,7 +38,7 @@ MILESTONE_DAG = """### Milestone A — Foundation
         ("`core` | **Open.** | none", "`core` | **Open.** | `leaf`", 1),
         ("`historical` | **Closed.**", "`historical` | **Open.**", 1),
         ("### Milestone A — Foundation", "### Historical foundation", 1),
-        ("`framework-complete` | **Open.** | `leaves-complete`", "`framework-complete` | **Open.** | `kernel-cat-complete`", 1),
+        ("`framework-complete` | **Open.** | `leaf-litmus`", "`framework-complete` | **Open.** | `kernel-cat-complete`", 1),
         ("| `core` | **Open.** | none |", "| `core` | **Closed.** | none |", 0),
     ],
 )
@@ -204,7 +204,7 @@ def test_historical_phase_model(gate_repo: tuple[Path, dict[str, str]], fault: s
     phases.mkdir()
     source = repo / "src/sage_categories"
     (source / "algebra").mkdir(parents=True)
-    core = {
+    core: dict[str, object] = {
         "id": "PLAN-pr-8-kernel-cat-architecture-convergence",
         "status": "complete",
         "parents": ["[[FEATURE-functor-owned-category-framework]]"],

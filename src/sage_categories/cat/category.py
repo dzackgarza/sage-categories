@@ -42,6 +42,9 @@ from sage_categories.kernel.type_aliases import ContainmentInput, EqualityInput
 if TYPE_CHECKING:
     from sage_categories.cat.canonical import FinitePresentedCategory
     from sage_categories.cat.constructions import (
+        ColimitApexLift,
+        ColimitMorphismLift,
+        ColimitPreservationMediator,
         LimitApexLift,
         LimitMorphismLift,
         UniversalPresentation,
@@ -339,8 +342,8 @@ class CategoryDeclaration[
 
         retain_category_universe(self, universe)
         self._inverses: MonoDict = MonoDict()
-        self._biproduct_constructor: Callable[[object, object], object] | None = None
-        self._zero_morphism_constructor: Callable[[object, object], object] | None = None
+        self._biproduct_constructor: Callable[[ObjectRole, ObjectRole], ObjectRole] | None = None
+        self._zero_morphism_constructor: Callable[[ObjectRole, ObjectRole], MorphismRole] | None = None
         self._colimit_constructors: MonoDict = MonoDict()
         self._equality = equality_predicate()
         self._ambient_category: Category | None = None
@@ -681,6 +684,14 @@ class CategoryDeclaration[
     ) -> None:
         """Record two morphisms as mutually inverse; both enter ``Mor(self).Isomorphisms()`` (POL-MATH-037)."""
 
+        morphisms = self.morphism_category(1)
+        # An exactly owned morphism already carries this admission fact in its retained
+        # construction identity.  Keep the proposition-backed membership fallback for a
+        # morphism admitted through a full subcategory, but do not construct that machinery
+        # on every identity/inverse retained by its exact owner.
+        assert forward.base_category() is self or forward in morphisms, f"{forward!r} is not a morphism of {self!r}"
+        assert backward.base_category() is self or backward in morphisms, f"{backward!r} is not a morphism of {self!r}"
+        assert forward.domain() is backward.codomain() and forward.codomain() is backward.domain(), f"{forward!r} and {backward!r} do not have opposite endpoints"
         self._inverses[forward] = backward
         self._inverses[backward] = forward
         isomorphisms = self.morphism_category(1).Isomorphisms()
@@ -1021,6 +1032,13 @@ class CategoryDeclaration[
         """Use this category's retained construction, then derive general colimits from coproducts and coequalizers."""
         if shape in self._colimit_constructors:
             return self._colimit_constructors[shape]
+        for functor in self.selected_functors():
+            lifting = functor.colimit_lifting(shape)
+            if lifting is not None:
+                apex_lift, morphism_lift = lifting
+                from sage_categories.cat.constructions import lift_colimit
+
+                return lambda diagram: lift_colimit(functor, diagram, apex_lift, morphism_lift)
         if not shape.is_discrete() and shape is not Cat().WalkingParallelPair() and shape.op() is not Cat().WalkingParallelPair():
             from sage_categories.cat.limit_basis import (
                 colimit_from_coproducts_coequalizers,
@@ -1154,8 +1172,8 @@ class CategoryDeclaration[
 
     def retain_biproduct_operations(
         self,
-        biproduct: Callable[[object, object], object],
-        zero_morphism: Callable[[object, object], object],
+        biproduct: Callable[[ObjectRole, ObjectRole], ObjectRole],
+        zero_morphism: Callable[[ObjectRole, ObjectRole], MorphismRole],
     ) -> None:
         """Retain this exact category's selected biproduct and zero-morphism operations."""
         self._biproduct_constructor = biproduct
@@ -1748,6 +1766,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         def __init__(self, data: FunctorData | _StructuralFunctorData) -> None:
             self._functor_data = data
             self._limit_liftings: MonoDict = MonoDict()
+            self._colimit_liftings: MonoDict = MonoDict()
             self._composition_action_images: MonoDict = MonoDict()
             self._cartesian_lift_rule = None
             self._cocartesian_lift_rule = None
@@ -1797,6 +1816,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             )
 
         def _construct_object_image(self, member_object: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
+            if self._is_identity_on_values():
+                # Identities and zero-action subcategory inclusions are literally the
+                # identity on the owned values they share. Their public action therefore
+                # has no computation to delegate; native materialization remains available
+                # when Catlab itself needs this functor as part of a composite or cell.
+                return self._retain_object_action_result(member_object, member_object)
             catlab = _catlab_engine()
 
             return self._retain_object_action_result(
@@ -1971,6 +1996,12 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                     ),
                     self.on_object,
                 )
+            if self._is_identity_on_values():
+                return self._retain_morphism_action_result(
+                    morphism,
+                    morphism,
+                    self.on_object,
+                )
             catlab = _catlab_engine()
 
             return self._retain_morphism_action_result(
@@ -1992,6 +2023,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             assert value in self.domain().morphism_category(1), f"{value!r} is neither an object nor a morphism of {self.domain()!r}"
             return self.on_morphism(value)
 
+        def _is_identity_on_values(self) -> bool:
+            """Whether retained structural data makes this functor identity on shared values."""
+            return isinstance(self._functor_data, _StructuralFunctorData) and not self.is_composite()
+
         def inverse_image(self, subcategory: Category) -> Category:
             """``F.inverse_image(P) = D ×_C P`` for a subcategory ``P -> C``."""
             from sage_categories.cat.properties import inverse_image
@@ -2000,9 +2035,9 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         def base_change(self, defining_functor: Functor) -> Functor:
             """Return the pullback projection ``D ×_C E -> D`` for ``self: D -> C`` and ``defining_functor: E -> C``."""
-            from sage_categories.cat.base_change import base_change
+            from sage_categories.cat.base_change import _base_change
 
-            return base_change(self, defining_functor)
+            return _base_change(self, defining_functor)
 
         @cached_method(key=lambda self, source, target: identity_key(source, target))
         def restrict(self, source: Category, target: Category) -> Functor:
@@ -2079,6 +2114,41 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             self._limit_liftings[shape] = (on_apex, on_morphism)
             return self
 
+        def with_colimit_lifting(
+            self,
+            shape: Category | Functor,
+            on_apex: ColimitApexLift,
+            on_morphism: ColimitMorphismLift,
+        ) -> Functor:
+            """Choose exact colimit lifts along this faithful functor."""
+            Fun = _functors()
+            Discrete = _discrete_shape_family()
+
+            assert self in Fun.Faithful(), "colimit reconstruction requires a faithful functor"
+            assert shape in Cat() or shape is Discrete, "supply a shape or the discrete shape family"
+            assert shape not in self._colimit_liftings, "this shape already has chosen colimit lifts"
+            self._colimit_liftings[shape] = (on_apex, on_morphism)
+            return self
+
+        def retain_colimit_preservation(
+            self,
+            shape: Category,
+            mediator: ColimitPreservationMediator,
+        ) -> None:
+            """Retain executable evidence that this functor preserves chosen ``shape``-colimits."""
+            from sage_categories.cat.constructions import _retain_colimit_preservation
+
+            _retain_colimit_preservation(self, shape, mediator)
+
+        def preserved_colimit(
+            self,
+            presentation: UniversalPresentation,
+        ) -> UniversalPresentation:
+            """Transport one retained colimit presentation through this preserving functor."""
+            from sage_categories.cat.constructions import _preserved_colimit
+
+            return _preserved_colimit(self, presentation)
+
         def limit_lifting(self, shape: Category) -> tuple[LimitApexLift, LimitMorphismLift] | None:
             """Return the chosen lifts for this shape or the discrete shape family."""
             Discrete = _discrete_shape_family()
@@ -2087,6 +2157,16 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 return self._limit_liftings[shape]
             if Discrete in self._limit_liftings and shape.is_discrete():
                 return self._limit_liftings[Discrete]
+            return None
+
+        def colimit_lifting(self, shape: Category) -> tuple[ColimitApexLift, ColimitMorphismLift] | None:
+            """Return the chosen colimit lifts for this shape or the discrete shape family."""
+            Discrete = _discrete_shape_family()
+
+            if shape in self._colimit_liftings:
+                return self._colimit_liftings[shape]
+            if Discrete in self._colimit_liftings and shape.is_discrete():
+                return self._colimit_liftings[Discrete]
             return None
 
         # A functor is a morphism of ``Cat()``, so ``retain_factors`` and ``factors``
@@ -2200,7 +2280,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         declared: CategoryDeclaration[MorphismData, TwoMorphismData, ObjectRole, ElementRole, MorphismRole],
     ) -> type[Category] | None:
         """The class implementing the exact declared category ``declared``, or ``None``."""
-        return self._implementations[declared] if declared in self._implementations else None
+        return self._implementations.get(declared, None)
 
     def implement(self, implementation: type[Category] | partial[Category]) -> None:
         """Connect ``implementation`` to the category it declares itself the implementation of (D156).
@@ -2331,6 +2411,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         ):
             if is_placed(first, property_category) and is_placed(second, property_category):
                 refine(composite, property_category)
+                if property_category is Fun.Isofibrations():
+                    self._retain_composite_cartesian_lifts(composite, first, second)
         return composite
 
     @cached_method(key=lambda self, factors, first, second: identity_key(*factors))
@@ -2357,6 +2439,26 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
         composite.retain_factors(first, second)
         _cells_engine().retain_composite(self, composite, first, second)
         return composite
+
+    @cached_method(key=lambda self, composite, first, second: identity_key(composite, first, second))
+    def _retain_composite_cartesian_lifts(
+        self,
+        composite: CategoryOfCategories.MorphismType,
+        first: CategoryOfCategories.MorphismType,
+        second: CategoryOfCategories.MorphismType,
+    ) -> None:
+        """Retain the successive lift when both isofibration factors execute lifts."""
+        if first._cartesian_lift_rule is None or second._cartesian_lift_rule is None:
+            return
+
+        def lift(
+            morphism: MorphismCategory.ObjectType,
+            target: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
+            through_second = second.cartesian_lift(morphism, first.on_object(target))
+            return first.cartesian_lift(through_second, target)
+
+        composite.retain_cartesian_lifts(lift)
 
     def _construct_transformation(
         self,
@@ -2399,9 +2501,11 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
     def identity_two_morphism(self, member_object: CategoryOfCategories.ElementType) -> NaturalTransformation:
         from sage_categories.cat.functors import diagram_of
 
-        catlab, cells = _catlab_engine(), _cells_engine()
+        return self._identity_transformation(member_object, diagram_of(member_object))
 
-        functor = diagram_of(member_object)
+    def _identity_transformation(self, member_object: CategoryOfCategories.ElementType, functor: Functor) -> NaturalTransformation:
+        """The identity of the supplied diagram interpretation of a public value."""
+        catlab, cells = _catlab_engine(), _cells_engine()
 
         def component(
             x: CategoryOfCategories.ElementType,
@@ -2409,7 +2513,7 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
             image = functor.on_object(x)
             return image.category().morphism_category(1)(image, image).one()
 
-        transformation = self._construct_transformation(member_object, member_object, component)
+        transformation = self._construct_transformation(member_object, member_object, component, functor, functor)
         catlab.identity_transformation(transformation)
         cells.retain_identity(self.morphism_category(1), transformation)
         return transformation
@@ -2474,6 +2578,8 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
 
         source_image = self.postcompose(functor, transformation.domain())
         target_image = self.postcompose(functor, transformation.codomain())
+        source_functor = self.compose_morphisms(functor, source)
+        target_functor = self.compose_morphisms(functor, transformation.target_functor())
 
         match transformation._has_component_rule():
             case True:
@@ -2483,10 +2589,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 ) -> MorphismCategory.ObjectType:
                     return functor.on_morphism(transformation.component(value))
 
-                result = self._construct_transformation(source_image, target_image, component)
+                result = self._construct_transformation(source_image, target_image, component, source_functor, target_functor)
                 _catlab_engine().whisker_left(result, functor, transformation)
             case False:
-                result = self._construct_transformation(source_image, target_image, None)
+                result = self._construct_transformation(source_image, target_image, None, source_functor, target_functor)
         cells.retain_whisker_left(self.morphism_category(1), result, functor, transformation)
         return result
 
@@ -2540,10 +2646,10 @@ class CategoryOfCategories(CategoryDeclaration[[OnObject, OnMorphism], [Assignme
                 ) -> MorphismCategory.ObjectType:
                     return inner.component(value) * outer.component(value)
 
-                result = self._construct_transformation(outer.domain(), inner.codomain(), component)
+                result = self._construct_transformation(outer.domain(), inner.codomain(), component, outer.source_functor(), inner.target_functor())
                 _catlab_engine().horizontal_composite(result, first, second)
             case False:
-                result = self._construct_transformation(outer.domain(), inner.codomain(), None)
+                result = self._construct_transformation(outer.domain(), inner.codomain(), None, outer.source_functor(), inner.target_functor())
         cells.retain_composite(self.morphism_category(1), result, outer, inner)
         return result
 

@@ -14,7 +14,6 @@ from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Decision as Decision
 from sage_categories.cat.predicates import Proposition as Proposition
 from sage_categories.cat.predicates import Unknown as Unknown
-from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.predicates import register_handler as register_handler
 from sage_categories.kernel.construction import retained_objects as retained_objects
 from sage_categories.kernel.refinement import refine as refine

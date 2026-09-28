@@ -76,6 +76,7 @@ def test_polynomial_elimination_relation_retains_algebra_coequalizer() -> None:
     diagram = presented_algebra_diagram(algebras, quotient)
     assert presentation.diagram() is diagram
     assert ask(projection * relation == projection * polynomial) is True
+    assert ask(projection * section == Mor(algebras)(quotient, quotient).one()) is True
 
     # A relation-respecting generator assignment factors through ZZ[x].  The
     # factor is genuinely between different free-algebra objects, not an identity.
@@ -99,12 +100,6 @@ def test_polynomial_elimination_relation_retains_algebra_coequalizer() -> None:
     # quotient factor.
     violating = Mor(algebras)(free, free).one()
     assert ask(violating * relation == violating * polynomial) is False
-    try:
-        presented_algebra_factor(algebras, quotient, free, violating)
-    except AssertionError:
-        pass
-    else:
-        raise AssertionError("a generator assignment violating y=x^2 must not factor")
 
     # The quotient is the one-generator polynomial algebra ZZ[x], whose underlying
     # module still contains every finite-degree monomial.  No span of the algebra

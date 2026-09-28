@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
-from typing import Any, cast
 
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
@@ -12,10 +11,7 @@ from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.sheaves import RingSheaf
-from sage_categories.geometry.spaces import (
-    TopologicalSpacesCategory,
-    _topological_space_projection,
-)
+from sage_categories.geometry.spaces import TopologicalSpacesCategory
 
 __all__ = ["RingedSpaces", "RingedSpacesCategory"]
 
@@ -64,7 +60,12 @@ class RingedSpacesCategory(MorphismDataCategory):
         return TopologicalSpaces()
 
     def structure_functors(self) -> tuple[Functor, ...]:
-        return (*super().structure_functors(), _topological_space_projection(self))
+        spaces = self._space_category()
+        to_spaces = Fun(self, spaces)(
+            lambda value: value.space(),
+            lambda arrow: arrow.continuous_map(),
+        )
+        return (*super().structure_functors(), to_spaces)
 
     def __call__[OpenKey: Hashable](
         self,
@@ -96,7 +97,7 @@ class RingedSpacesCategory(MorphismDataCategory):
         component_rule: SheafComponentRule[TargetKey],
     ) -> tuple[TopologicalSpacesCategory.MorphismType, NaturalTransformation]:
         assert continuous.domain() is source.space() and continuous.codomain() is target.space()
-        inverse_op = cast(Any, continuous).inverse_image().op()
+        inverse_op = continuous.inverse_image().op()
         target_sheaf = target.sheaf().presheaf.functor
         pushed_source = source.sheaf().presheaf.functor * inverse_op
         assert target_sheaf.domain() is pushed_source.domain() and target_sheaf.codomain() is pushed_source.codomain()
@@ -121,41 +122,22 @@ class RingedSpacesCategory(MorphismDataCategory):
         spaces = self._space_category()
         space = member_object.space()
         continuous = Mor(spaces)(space, space).one()
-        sheaf = member_object.sheaf()
-
-        def component(open_key: Hashable) -> MorphismCategory.ObjectType:
-            ring = sheaf.presheaf.section_ring(open_key)
-            return Mor(_rings())(ring, ring).one()
-
-        return self._ringed_morphism_data(
-            member_object,
-            member_object,
-            continuous,
-            component,
-        )
+        sheaf = member_object.sheaf().presheaf.functor
+        return continuous, Mor(Fun(sheaf.domain(), _rings()))(sheaf, sheaf).one()
 
     def _composite_data(
         self,
         second: RingedSpacesCategory.MorphismType,
         first: RingedSpacesCategory.MorphismType,
     ) -> tuple[TopologicalSpacesCategory.MorphismType, NaturalTransformation]:
-        source, target = first.domain(), second.codomain()
         continuous = second.continuous_map() * first.continuous_map()
-
-        def component(target_key: Hashable) -> MorphismCategory.ObjectType:
-            target_open = target.sheaf().presheaf.open_object(target_key)
-            middle_open = second.continuous_map().inverse_image().on_object(target_open)
-            second_component = second.sheaf_map().component(target_open)
-            first_component = first.sheaf_map().component(middle_open)
-            assert second_component.codomain() is first_component.domain()
-            return first_component * second_component
-
-        return self._ringed_morphism_data(
-            source,
-            target,
-            continuous,
-            component,
+        sheaf_map = (
+            first.sheaf_map().whisker_right(
+                second.continuous_map().inverse_image().op(),
+            )
+            * second.sheaf_map()
         )
+        return continuous, sheaf_map
 
     def __repr__(self) -> str:
         return "RingedSpaces"

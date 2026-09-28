@@ -18,7 +18,6 @@ from sage_categories.algebra.algebra_objects import (
     integer_free_algebra,
     integer_free_algebra_generator,
     integer_free_algebra_homomorphism,
-    restrict_algebra_scalars,
 )
 from sage_categories.algebra.indexed_modules import integer_scalar_monoid
 from sage_categories.cat.category import ask
@@ -46,7 +45,24 @@ def field_two():
     return element, group, Monoids(AbelianTensor())(multiplication, unit)
 
 
-def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
+def test_scalar_restriction_is_category_owned_functor() -> None:
+    integers = integer_scalar_monoid()
+    _, _, field = field_two()
+    scalar_map = Monoids(AbelianTensor()).homomorphism(
+        integers,
+        field,
+        field.unit_morphism(),
+    )
+    field_algebras = Algebras(field, AbelianBimoduleTensor(field))
+    integer_algebras = Algebras(integers, AbelianBimoduleTensor(integers))
+
+    restriction = field_algebras.restriction(integer_algebras, scalar_map)
+    assert restriction.domain() is field_algebras
+    assert restriction.codomain() is integer_algebras
+    assert field_algebras.restriction(integer_algebras, scalar_map) is restriction
+
+
+def test_scalar_change_uses_the_owned_algebra_restriction_functor() -> None:
     integers = integer_scalar_monoid()
     field_element, field_group, field = field_two()
     scalar_map = Monoids(AbelianTensor()).homomorphism(
@@ -69,19 +85,25 @@ def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
     )
     field_algebra = field_algebras.from_monoid(regular_monoid)
 
-    restriction = restrict_algebra_scalars(
-        field_algebras,
+    restriction = field_algebras.restriction(
         integer_algebras,
         scalar_map,
+    )
+    assert (
+        field_algebras.restriction(integer_algebras, scalar_map)
+        is restriction
     )
     restricted = restriction.on_object(field_algebra)
     assert restricted in integer_algebras
     assert integer_algebras.base() is integers
     assert field_algebras.base() is field
+    assert restricted is not field_algebra
 
     # The same F_2 carrier now has the canonical ZZ-action, and the retained unit
     # is the supplied scalar map ZZ -> F_2 rather than a reused S-algebra object.
     module = integer_algebras.to_modules().on_object(restricted)
+    field_module = field_algebras.to_modules().on_object(field_algebra)
+    assert integer_algebras.module_category().forgetful().on_object(module) is field_algebras.module_category().forgetful().on_object(field_module)
     generator = field_element(1)
     acted = simple_tensor(integer_group(), field_group, 3, generator)
     assert ask(module.action()(acted) == field_group.point(generator)) is True
@@ -104,6 +126,12 @@ def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
         ask(restricted_identity == Mor(integer_algebras)(restricted, restricted).one())
         is True
     )
+
+
+def test_free_maps_use_the_same_relative_algebra_owner() -> None:
+    integers = integer_scalar_monoid()
+    integer_structure = AbelianBimoduleTensor(integers)
+    integer_algebras = Algebras(integers, integer_structure)
 
     # The pre-existing ZZ<x,y> evaluator is now consumed only through the same
     # base-relative owner.  A nonidentity generator permutation is an algebra map
@@ -130,4 +158,6 @@ def test_scalar_change_and_free_maps_use_one_relative_algebra_owner() -> None:
     ) is integer_structure.underlying_category().to_left().on_object(free_bimodule)
 
 
-test_scalar_change_and_free_maps_use_one_relative_algebra_owner()
+test_scalar_restriction_is_category_owned_functor()
+test_scalar_change_uses_the_owned_algebra_restriction_functor()
+test_free_maps_use_the_same_relative_algebra_owner()

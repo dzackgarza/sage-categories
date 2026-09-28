@@ -1,23 +1,24 @@
 """Weighted universal maps over a changing finite set weight."""
 
 from sage_categories.all import Cat, Fun, Mor, ask
-from sage_categories.sets import FiniteSets as S
 from sage_categories.cat.weighted import (
-    weighted_limit,
-    weighted_projection,
-    weighted_limit_lift,
-)
-from sage_categories.cat.weighted import (
-    weighted_colimit,
-    weighted_injection,
-    weighted_colimit_desc,
-)
-from sage_categories.cat.weighted import hom_functor, end, coend, yoneda
-from sage_categories.cat.weighted import (
-    natural_transformation_to_end,
+    Representations,
+    coend,
+    element,
+    element_projection,
+    end,
     end_to_natural_transformation,
+    hom_functor,
+    natural_transformation_to_end,
+    weighted_colimit,
+    weighted_colimit_desc,
+    weighted_injection,
+    weighted_limit,
+    weighted_limit_lift,
+    weighted_projection,
+    yoneda,
 )
-from sage_categories.cat.weighted import element_projection, element
+from sage_categories.sets import FiniteSets as S
 
 
 def test_weighted_limit_and_colimit_have_nonconstant_transport():
@@ -71,6 +72,37 @@ def test_weighted_limit_and_colimit_have_nonconstant_transport():
         )
 
 
+
+def test_weighted_limit_map_retains_the_projection_equations():
+    shape = Cat().Simplex(1)
+    first, second = S((0, 1)), S((2,))
+    collapse_weight = Mor(S)(first, second)(lambda _x: 2)
+    weight = Fun(shape, S)(
+        lambda vertex: first if shape.label(vertex) == 0 else second,
+        lambda arrow: (
+            collapse_weight
+            if arrow.word()
+            else Mor(S)(
+                first if shape.label(arrow.domain()) == 0 else second,
+                first if shape.label(arrow.domain()) == 0 else second,
+            ).one()
+        ),
+    )
+    source_values, target_values = S((0, 1)), S((0,))
+    source = Fun(shape, S).constant(source_values)
+    target = Fun(shape, S).constant(target_values)
+    collapse = Mor(S)(source_values, target_values)(lambda _value: 0)
+    transformation = Mor(Fun(shape, S))(source, target)(lambda _vertex: collapse)
+
+    induced = weighted_limit_map(weight, transformation)
+    assert induced.domain() is weighted_limit(weight, source)
+    assert induced.codomain() is weighted_limit(weight, target)
+    for vertex, point in ((shape(0), first.point(0)), (shape(0), first.point(1)), (shape(1), second.point(2))):
+        assert ask(
+            weighted_projection(weight, target, vertex, point) * induced
+            == collapse * weighted_projection(weight, source, vertex, point)
+        ) is True
+
 def test_hom_weight_recovers_end_and_coend():
     shape = Cat().Simplex(1)
     hom = hom_functor(shape, S)
@@ -79,9 +111,40 @@ def test_hom_weight_recovers_end_and_coend():
     assert len(tuple(end(constant, hom))) == 2
     assert len(tuple(coend(constant, hom))) == 2
     embedding = yoneda(shape, S)
+    assert embedding.domain() is shape
+    assert embedding.codomain() is Fun(shape.op(), S)
+    assert embedding in Fun.FullyFaithful()
     assert len(tuple(embedding.on_object(shape(0)).on_object(shape(1)))) == 0
     assert len(tuple(embedding.on_object(shape(1)).on_object(shape(0)))) == 1
 
+    coembedding = coyoneda(shape, S)
+    assert coembedding.domain() is shape.op()
+    assert coembedding.codomain() is Fun(shape, S)
+    assert coembedding in Fun.FullyFaithful()
+    assert len(tuple(coembedding.on_object(shape(0)).on_object(shape(1)))) == 1
+    assert len(tuple(coembedding.on_object(shape(1)).on_object(shape(0)))) == 0
+
+
+
+def test_representations_retain_the_representing_object_and_yoneda_isomorphism():
+    shape = Cat().Simplex(1)
+    embedding = yoneda(shape, S)
+    represented = embedding.on_object(shape(1))
+    presheaves = Fun(shape.op(), S)
+    eta = Mor(presheaves)(represented, represented).one()
+    representations = Representations(represented)
+    representation = representations(shape(1), eta)
+
+    assert representation.representing_object() is shape(1)
+    assert representation.representation_isomorphism() is eta
+    assert representation in representations
+
+    underlying = Mor(shape)(shape(1), shape(1)).one()
+    morphism = representations.construct_morphism(representation, representation, underlying)
+    assert morphism.representing_morphism() is underlying
+    assert morphism in Mor(representations).Isomorphisms()
+    assert ask(eta * embedding.on_morphism(underlying) == eta) is True
+    assert morphism.inverse().representing_morphism() is underlying
 
 def test_natural_transformations_are_points_of_the_hom_end():
     shape, target = Cat().Simplex(1), Cat().Simplex(2)
@@ -119,5 +182,7 @@ def test_natural_transformations_are_points_of_the_hom_end():
 
 
 test_weighted_limit_and_colimit_have_nonconstant_transport()
+test_weighted_limit_map_retains_the_projection_equations()
 test_hom_weight_recovers_end_and_coend()
+test_representations_retain_the_representing_object_and_yoneda_isomorphism()
 test_natural_transformations_are_points_of_the_hom_end()

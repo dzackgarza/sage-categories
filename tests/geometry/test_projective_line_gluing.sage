@@ -2,7 +2,7 @@
 
 from sage_categories.algebra import inverse_unit, prime_field
 from sage_categories.all import Mor, ask
-from sage_categories.geometry import AffineSchemes, Schemes, affine_structure_sheaf, projective_line
+from sage_categories.geometry import AffineSchemes, Schemes, TopologicalSpaces, affine_structure_sheaf, projective_line
 from sage_categories.geometry.schemes import FiniteAffineGluing, native_scheme, native_scheme_morphism
 
 
@@ -88,7 +88,7 @@ def test_projective_line_two_chart_gluing_and_swap() -> None:
     def chart_point(chart, inclusion, generator, scalar):
         point = AffineSchemes().spectrum_point(chart, (generator - scalar,))
         carrier = schemes.affine(chart).underlying_points()
-        return inclusion.continuous_map().underlying_map()(carrier.point(point))
+        return TopologicalSpaces().to_sets().on_morphism(inclusion.continuous_map())(carrier.point(point))
 
     t, u = presentation.left_coordinate, presentation.right_coordinate
     left_ring, right_ring = t.parent(), u.parent()
@@ -98,7 +98,7 @@ def test_projective_line_two_chart_gluing_and_swap() -> None:
     three = two + left_ring.one()
     point_two = chart_point(presentation.left_chart, presentation.left_inclusion, t, two)
     point_three = chart_point(presentation.left_chart, presentation.left_inclusion, t, three)
-    underlying = swap.continuous_map().underlying_map()
+    underlying = TopologicalSpaces().to_sets().on_morphism(swap.continuous_map())
     assert ask(zero == infinity) is False
     for source, target in ((zero, infinity), (infinity, zero), (point_two, point_three), (point_three, point_two)):
         assert ask(underlying(source) == target) is True

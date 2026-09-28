@@ -8,9 +8,6 @@ from sage_categories.cat.calculus import binary_product_data as binary_product_d
 from sage_categories.cat.calculus import natural_isomorphism as natural_isomorphism
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
-from sage_categories.cat.certified_structures import (
-    certified_additive_group as certified_additive_group,
-)
 from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
 from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.cones import cocone as cocone
@@ -24,6 +21,10 @@ from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
+from sage_categories.cat.limit_basis import coequalizer_factor as coequalizer_factor
+from sage_categories.cat.limit_basis import (
+    coequalizer_presentation as coequalizer_presentation,
+)
 from sage_categories.cat.limit_basis import parallel_pair as parallel_pair
 from sage_categories.cat.modules import ModuleCategory as ModuleCategory
 from sage_categories.cat.modules import Modules as Modules
@@ -39,9 +40,9 @@ from sage_categories.cat.monoidal import tensor_units as tensor_units
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.predicates import Proposition as Proposition
-from sage_categories.cat.predicates import ask as ask
 from sage_categories.cat.shapes import Discrete as Discrete
 from sage_categories.cat.structured_objects import AdditiveGroups as AdditiveGroups
+from sage_categories.cat.structured_objects import Groups as Groups
 from sage_categories.cat.structured_objects import MonoidCategory as MonoidCategory
 from sage_categories.cat.structured_objects import Monoids as Monoids
 
@@ -63,9 +64,8 @@ __all__ = [
     "induced_right_action",
     "integer_group",
     "presented_abelian_group",
-    "relative_left_unitor",
-    "relative_right_unitor",
     "relative_tensor",
+    "relative_tensor_bifunctor",
     "relative_tensor_mediator",
     "relative_tensor_morphism",
     "simple_tensor",
@@ -105,14 +105,20 @@ def induced_right_action(projection: MorphismCategory.ObjectType, right_action: 
 def relative_tensor_morphism(
     source: MorphismCategory.ObjectType, target: MorphismCategory.ObjectType, first: MorphismCategory.ObjectType, second: MorphismCategory.ObjectType
 ) -> MorphismCategory.ObjectType: ...
-def relative_left_unitor(
-    projection: MorphismCategory.ObjectType, left_action: MorphismCategory.ObjectType, unit_morphism: MorphismCategory.ObjectType
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
-def relative_right_unitor(
-    projection: MorphismCategory.ObjectType, right_action: MorphismCategory.ObjectType, unit_morphism: MorphismCategory.ObjectType
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
-def AbelianBimoduleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
-def AbelianModuleTensor(scalars: MonoidCategory.ObjectType) -> MonoidalStructuresCategory.ObjectType: ...
+def relative_tensor_bifunctor[LeftScalar: MonoidCategory.ObjectType, MiddleScalar: MonoidCategory.ObjectType, RightScalar: MonoidCategory.ObjectType](
+    left_scalars: LeftScalar, middle_scalars: MiddleScalar, right_scalars: RightScalar
+) -> CategoryOfCategories.MorphismType[
+    Category,
+    BimoduleCategory[LeftScalar, RightScalar, Category],
+    CategoryOfCategories.ElementType,
+    CategoryOfCategories.ElementType,
+    MorphismCategory.ObjectType,
+    BimoduleCategory.ObjectType,
+    BimoduleCategory.ElementType,
+    BimoduleCategory.MorphismType,
+]: ...
+def AbelianBimoduleTensor[Scalar: MonoidCategory.ObjectType](scalars: Scalar) -> MonoidalStructuresCategory.ObjectType[BimoduleCategory[Scalar, Scalar, Category]]: ...
+def AbelianModuleTensor[Scalar: MonoidCategory.ObjectType](scalars: Scalar) -> MonoidalStructuresCategory.ObjectType[ModuleCategory[Scalar, Category, Category]]: ...
 
 @dataclass(frozen=True, eq=False, slots=True)
 class _CoordinateBridge:

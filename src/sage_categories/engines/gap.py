@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
-from sage.libs.gap.element import GapElement
+from sage.libs.gap.element import GapElement_List, GapElement_Record
 from sage.libs.gap.libgap import libgap
 
 __all__ = [
@@ -107,20 +107,24 @@ def package_directory(package: GapPackage) -> Path:
     return matches[0].resolve()
 
 
-def _loaded_package_info(package: GapPackage, expected_path: Path) -> GapElement:
+def _loaded_package_info(package: GapPackage, expected_path: Path) -> GapElement_Record:
     """Return the exact loaded package record, rejecting a substituted installation."""
-    version = str(libgap.InstalledPackageVersion(package.name))
+    version = str(libgap.function_factory("InstalledPackageVersion")(package.name))
     assert version == package.version, f"loaded {package.name} {version} instead of repository allocation {package.version}"
-    info = libgap.PackageInfo(package.name)[0]
-    directories = tuple(libgap.DirectoriesPackageLibrary(package.name, ""))
+    package_info = libgap.function_factory("PackageInfo")(package.name)
+    assert isinstance(package_info, GapElement_List)
+    info = package_info[0]
+    assert isinstance(info, GapElement_Record)
+    directories = libgap.function_factory("DirectoriesPackageLibrary")(package.name, "")
+    assert isinstance(directories, GapElement_List)
     assert len(directories) == 1, f"expected one active package library for {package.name}, found {len(directories)}"
-    installed_path = Path(str(libgap.Filename(directories[0], ""))).resolve()
+    installed_path = Path(str(libgap.function_factory("Filename")(directories[0], ""))).resolve()
     assert installed_path == expected_path, f"loaded {package.name} from {installed_path}, expected {expected_path}"
     return info
 
 
 @cache
-def load_repository_package(package: GapPackage) -> GapElement:
+def load_repository_package(package: GapPackage) -> GapElement_Record:
     """Load one exact package after forcing every repository-local package path.
 
     Broad categorical packages such as FunctorCategories have deep dependency
@@ -141,15 +145,15 @@ def load_repository_package(package: GapPackage) -> GapElement:
     key = package.name.lower()
     assert key in installed and installed[key][0] == package, f"repository allocation contains no exact {package.name} {package.version}"
     for identity, path in installed.values():
-        libgap.SetPackagePath(identity.name, str(path))
+        libgap.function_factory("SetPackagePath")(identity.name, str(path))
     path = installed[key][1]
-    loaded = libgap.LoadPackage(package.name, f"={package.version}", False)
+    loaded = libgap.function_factory("LoadPackage")(package.name, f"={package.version}", False)
     assert loaded == libgap.true, f"failed to load {package.name} {package.version} from {path}"
     return _loaded_package_info(package, path)
 
 
 @cache
-def load_packages(packages: tuple[GapPackage, ...]) -> tuple[GapElement, ...]:
+def load_packages(packages: tuple[GapPackage, ...]) -> tuple[GapElement_Record, ...]:
     """Force an exact package closure, then load it in dependency order.
 
     The two-pass shape is essential: loading the first package is allowed to load its
@@ -158,10 +162,10 @@ def load_packages(packages: tuple[GapPackage, ...]) -> tuple[GapElement, ...]:
     paths = tuple(package_directory(package) for package in packages)
     assert len({package.name.lower() for package in packages}) == len(packages), "an exact GAP package closure names one release of each package"
     for package, path in zip(packages, paths, strict=True):
-        libgap.SetPackagePath(package.name, str(path))
-    records: list[GapElement] = []
+        libgap.function_factory("SetPackagePath")(package.name, str(path))
+    records: list[GapElement_Record] = []
     for package, path in zip(packages, paths, strict=True):
-        loaded = libgap.LoadPackage(package.name, f"={package.version}", False)
+        loaded = libgap.function_factory("LoadPackage")(package.name, f"={package.version}", False)
         assert loaded == libgap.true, f"failed to load {package.name} {package.version} from {path}"
         records.append(_loaded_package_info(package, path))
     return tuple(records)

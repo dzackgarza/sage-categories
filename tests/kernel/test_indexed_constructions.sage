@@ -23,6 +23,7 @@ def test_cartesian_transport_and_fiber_equivalence() -> None:
     assert total.projection().on_morphism(lift) is second
     source = total(base(0), fiber(0))
     arrow = total.construct_morphism(source, target, second * first, Mor(fiber)(fiber(0), fiber(0)).one())
+    assert ask(lift.base_morphism() * first == arrow.base_morphism()) is True
     factor = total.factor_cartesian(lift, arrow, first)
     assert total.projection().on_morphism(factor) is first
     assert ask(lift * factor == arrow) is True
@@ -128,6 +129,7 @@ def test_nonconstant_pseudofunctor_transports_nonstrict_comparisons() -> None:
     first_lift = total.projection().cartesian_lift(first, second_lift.domain())
     composite = second_lift * first_lift
     assert composite.fiber_morphism() is twist
+    assert ask(second_lift.base_morphism() * first == composite.base_morphism()) is True
     factor = total.factor_cartesian(second_lift, composite, first)
     assert ask(factor == first_lift) is True
 

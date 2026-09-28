@@ -73,7 +73,7 @@ from sage_categories.cat.monoidal import (
     tensor_units,
 )
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Axiom, Predicate, Proposition, ask
+from sage_categories.cat.predicates import Axiom, Predicate, Proposition
 from sage_categories.cat.properties import FullSubcategory, PropertySubcategory
 from sage_categories.cat.shapes import Discrete
 from sage_categories.kernel.refinement import refine
@@ -137,7 +137,23 @@ class InserterCategory(LimitSubcategory):
 
     @cached_method
     def forgetful(self) -> Functor:
-        return Fun(self, self.factor(0)).Faithful().Isofibrations()(lambda value: value.carrier(), lambda arrow: arrow.underlying_morphism())
+        forgetful = Fun(self, self.factor(0)).Faithful().Isofibrations()(lambda value: value.carrier(), lambda arrow: arrow.underlying_morphism())
+        forgetful.retain_cartesian_lifts(self._cartesian_lift)
+        return forgetful
+
+    def _cartesian_lift(
+        self,
+        morphism: MorphismCategory.ObjectType,
+        target: InserterCategory.ObjectType,
+    ) -> InserterCategory.MorphismType:
+        """Transport an inserter structure along an isomorphism of carriers."""
+        source_category = self.factor(0)
+        inverse = source_category.retained_inverse(morphism)
+        assert inverse is not None, f"{morphism!r} is not a retained isomorphism of {source_category!r}"
+        first, second = self.factor(1).comma_functors()
+        structure = second.on_morphism(inverse) * target.structure() * first.on_morphism(morphism)
+        source = self.algebra(morphism.domain(), structure)
+        return self.homomorphism(source, target, morphism)
 
     @cached_method
     def defining_transformation(self) -> NaturalTransformation:
@@ -181,10 +197,14 @@ class EquifierCategory(FullSubcategory):
         if isinstance(self.ambient(), EquifierCategory):
             self.ambient()(value)
         assert value in self.ambient()
-        first, second = self._equations
-        assert ask(first.component(value) == second.component(value)) is True
         refine(value, self)
         return value
+
+    def equation(self, value: CategoryOfCategories.ElementType) -> Proposition:
+        """The defining component equation at the supplied value, evaluated only when explicitly asked."""
+        assert value in self.ambient()
+        first, second = self._equations
+        return first.component(value) == second.component(value)
 
 
 @cached_function(key=identity_key)
@@ -322,6 +342,10 @@ class MonoidCategory(EquifierCategory):
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
         return self._monoidal
 
+    def construction_owner(self) -> Category:
+        """Monoid structure is constructed from its operation and unit here."""
+        return self
+
     def _group(self, monoid: MonoidCategory.ObjectType) -> Proposition:
         """The shear map ``⟨π_0, μ⟩: X × X -> X × X`` is an isomorphism (``specs/magmas-monoids-semirings.md``, "Groups").
 
@@ -349,28 +373,36 @@ class MonoidCategory(EquifierCategory):
         monoidal = self.monoidal_structure()
         magma = Magmas(monoidal).algebra(operation.codomain(), operation)
         pointed = PointedMagmas(monoidal.tensor(), monoidal.unit()).algebra(magma, unit)
-
-        tensor_unit = monoidal.unit()
-        base = monoidal.underlying_category()
-        canonical_unit_monoid = (
-            operation.codomain() is tensor_unit and operation is monoidal.left_unitor().component(tensor_unit) and unit is Mor(base)(tensor_unit, tensor_unit).one()
-        )
-        match canonical_unit_monoid:
-            case True:
-                # The tensor unit carries its canonical monoid structure by monoidal
-                # coherence.  Do not ask the generic equifier equality engine to
-                # rediscover the two unitor laws and associativity extensionally.
-                refine(pointed, self.ambient())
-                refine(pointed, self)
-                return pointed
-            case False:
-                return super().__call__(pointed)
+        return super().__call__(pointed)
 
     @cached_method
     def to_magmas(self) -> Functor:
         monoidal = self.monoidal_structure()
         pointed = PointedMagmas(monoidal.tensor(), monoidal.unit())
-        return pointed.forgetful() * Fun.full_subcategory_monomorphism(self, pointed)
+        projection = pointed.forgetful() * Fun.full_subcategory_monomorphism(self, pointed)
+        projection.retain_cartesian_lifts(self._cartesian_lift)
+        return projection
+
+    def _cartesian_lift(
+        self,
+        morphism: MorphismCategory.ObjectType,
+        target: MonoidCategory.ObjectType,
+    ) -> MonoidCategory.MorphismType:
+        """Lift a magma isomorphism and retain the transported monoid laws."""
+        monoidal = self.monoidal_structure()
+        pointed = PointedMagmas(monoidal.tensor(), monoidal.unit())
+        lift = pointed.forgetful().cartesian_lift(morphism, target)
+        source = lift.domain()
+
+        equifiers: list[EquifierCategory] = []
+        category: Category = self
+        while isinstance(category, EquifierCategory):
+            equifiers.append(category)
+            category = category.ambient()
+        for equifier in reversed(equifiers):
+            refine(source, equifier)
+            lift = equifier.restrict_morphism(lift)
+        return lift
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """Forget associativity and the unit, retaining exactly the underlying magma."""
@@ -473,6 +505,16 @@ class GroupsCategory(PropertySubcategory):
 
     class MorphismType:
         pass
+
+    def retain_inverse_shear(
+        self,
+        group: GroupsCategory.ObjectType,
+        inverse_shear: MorphismCategory.ObjectType,
+    ) -> None:
+        """Retain a supplied inverse of the defining shear map."""
+        assert group in self
+        base = self.ambient().monoidal_structure().underlying_category()
+        base.retain_inverses(_shear(group), inverse_shear)
 
 
 @cached_function(key=identity_key)
@@ -924,6 +966,10 @@ class SemiringCategory(EquifierCategory):
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
         return self._monoidal
 
+    def construction_owner(self) -> Category:
+        """Semiring structure is constructed from its four structure morphisms here."""
+        return self
+
     @cached_method
     def to_additive(self) -> Functor:
         """The retained leg to ``AdditiveMonoids(C_x).Commutative()``."""
@@ -961,7 +1007,7 @@ class SemiringCategory(EquifierCategory):
     ) -> SemiringCategory.ObjectType:
         monoidal = self.monoidal_structure()
         additive = AdditiveMonoids(monoidal).renamed(Monoids(monoidal)(addition, zero))
-        assert additive in AdditiveMonoids(monoidal).Commutative(), f"{addition!r} is not commutative"
+        refine(additive, AdditiveMonoids(monoidal).Commutative())
         multiplicative = MultiplicativeMonoids(monoidal).renamed(Monoids(monoidal)(multiplication, one))
         return super().__call__(self._pairs((additive, multiplicative, addition.codomain())))
 
@@ -1128,6 +1174,10 @@ class RingCategory(LimitSubcategory):
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType:
         return self._monoidal
 
+    def construction_owner(self) -> Category:
+        """Ring structure is constructed from its four structure morphisms here."""
+        return self
+
     @cached_method
     def to_semiring(self) -> Functor:
         return _faithful_isofibration_projection(self, 0)
@@ -1239,9 +1289,9 @@ class RingCategory(LimitSubcategory):
         semiring = semirings(addition, zero, multiplication, one)
         additive = semirings.to_additive().on_object(semiring)
         monoid = AdditiveMonoids(monoidal).product_projection(0).on_object(additive)
-        assert monoid in Groups(monoidal), f"the additive monoid of {addition!r} is not a group"
+        refine(monoid, Groups(monoidal))
         group = AdditiveGroups(monoidal).renamed(monoid)
-        assert group in groups
+        refine(group, groups)
         return self._ring(semiring, group, additive)
 
     @cached_method(key=identity_key)

@@ -137,11 +137,6 @@ def integer_free_associative_algebra(
     return algebra
 
 
-def free_associative_underlying_module(algebra: MonoidCategory.ObjectType) -> ModuleCategory.ObjectType:
-    """Return the actual left ``ZZ``-module obtained from the algebra forgetful chain."""
-    return _underlying_module_functor(algebra).on_object(algebra)
-
-
 def _underlying_module_functor(algebra):
     monoids = _owner(algebra)
     structure = monoids.monoidal_structure()
@@ -149,11 +144,15 @@ def _underlying_module_functor(algebra):
     return bimodules.to_left() * Magmas(structure).forgetful() * monoids.to_magmas()
 
 
+def _underlying_module(algebra: MonoidCategory.ObjectType) -> ModuleCategory.ObjectType:
+    return _underlying_module_functor(algebra).on_object(algebra)
+
+
 def free_associative_element(algebra: MonoidCategory.ObjectType, terms: Mapping[Word, int]) -> ModuleCategory.ElementType:
     """Return the underlying-module element with the supplied finite word coefficients."""
     construction = _construction(algebra)
     source_point = indexed_free_integer_element(construction.word_module, terms)
-    return free_associative_underlying_module(algebra).point(source_point.datum())
+    return _underlying_module(algebra).point(source_point.datum())
 
 
 def free_associative_generator(algebra: MonoidCategory.ObjectType, position: int) -> ModuleCategory.ElementType:
@@ -165,7 +164,7 @@ def free_associative_generator(algebra: MonoidCategory.ObjectType, position: int
 def free_associative_coefficients(algebra: MonoidCategory.ObjectType, element: ModuleCategory.ElementType) -> dict[Word, int]:
     """Return the finite word-basis coefficient map of an underlying element."""
     construction = _construction(algebra)
-    module = free_associative_underlying_module(algebra)
+    module = _underlying_module(algebra)
     if element.parent() is not module:
         raise ValueError("coefficients are read on the algebra's underlying module")
     source_point = construction.word_module.point(element.datum())
@@ -178,7 +177,7 @@ def free_associative_product(
     right: ModuleCategory.ElementType,
 ) -> ModuleCategory.ElementType:
     """Multiply two elements through the algebra's retained multiplication morphism."""
-    module = free_associative_underlying_module(algebra)
+    module = _underlying_module(algebra)
     if left.parent() is not module or right.parent() is not module:
         raise ValueError("free-algebra multiplication takes elements of its underlying module")
     monoids = _owner(algebra)
@@ -204,7 +203,7 @@ def free_associative_substitution(
     underlying module; no degree bound appears.
     """
     construction = _construction(algebra)
-    module = free_associative_underlying_module(algebra)
+    module = _underlying_module(algebra)
     if len(images) != len(construction.names):
         raise ValueError("one image is required for every free generator")
     if any(image.parent() is not module for image in images):
@@ -231,13 +230,6 @@ def free_associative_substitution(
     return monoids.homomorphism(algebra, algebra, bimodule_map)
 
 
-def free_associative_underlying_morphism(
-    algebra_morphism: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    """Forget a retained free-algebra morphism to its actual left-module map."""
-    return _underlying_module_functor(algebra_morphism.domain()).on_morphism(algebra_morphism)
-
-
 __all__ = [
     "IntegerFreeAssociativeConstruction",
     "free_associative_coefficients",
@@ -245,7 +237,5 @@ __all__ = [
     "free_associative_generator",
     "free_associative_product",
     "free_associative_substitution",
-    "free_associative_underlying_module",
-    "free_associative_underlying_morphism",
     "integer_free_associative_algebra",
 ]

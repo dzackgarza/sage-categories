@@ -7,6 +7,7 @@ from sage_categories.cat.cat_constructions import LimitSubcategory as LimitSubca
 from sage_categories.cat.cat_constructions import (
     limit_of_categories as limit_of_categories,
 )
+from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction as ChosenConstruction
 from sage_categories.cat.cones import cone as cone
 from sage_categories.cat.cones import cones as cones
@@ -38,20 +39,55 @@ class _StaticRoles_AlgebraCategory(sage_categories.cat.cat_constructions._Static
         def domain(self) -> AlgebraCategory.ObjectType: ...
         def codomain(self) -> AlgebraCategory.ObjectType: ...
 
-class AlgebraCategory(
-    _StaticRoles_AlgebraCategory, LimitSubcategory[_StaticRoles_AlgebraCategory.ObjectType, _StaticRoles_AlgebraCategory.ElementType, _StaticRoles_AlgebraCategory.MorphismType]
-):
+class AlgebraCategory[
+    BaseScalar: sage_categories.cat.structured_objects._StaticRoles_MonoidCategory.ObjectType = sage_categories.cat.structured_objects._StaticRoles_MonoidCategory.ObjectType
+](_StaticRoles_AlgebraCategory, LimitSubcategory[_StaticRoles_AlgebraCategory.ObjectType, _StaticRoles_AlgebraCategory.ElementType, _StaticRoles_AlgebraCategory.MorphismType]):
     def monoid_category(self) -> MonoidCategory: ...
     def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType: ...
-    def base(self) -> MonoidCategory.ObjectType: ...
-    def module_category(self) -> ModuleCategory: ...
-    def monoid_presentation(self) -> Functor: ...
+    def base(self) -> BaseScalar: ...
+    def module_category(self) -> ModuleCategory[BaseScalar]: ...
+    def monoid_presentation(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        AlgebraCategory[BaseScalar],
+        MonoidCategory,
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+        MonoidCategory.ObjectType,
+        MonoidCategory.ElementType,
+        MonoidCategory.MorphismType,
+    ]: ...
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def from_monoid(self, monoid: MonoidCategory.ObjectType) -> AlgebraCategory.ObjectType: ...
     def algebra(self, multiplication: MorphismCategory.ObjectType, unit: MorphismCategory.ObjectType) -> AlgebraCategory.ObjectType: ...
     def homomorphism(self, source: AlgebraCategory.ObjectType, target: AlgebraCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> AlgebraCategory.MorphismType: ...
-    def to_modules(self) -> Functor: ...
+    def to_modules(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        AlgebraCategory[BaseScalar],
+        ModuleCategory[BaseScalar],
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]: ...
     def U_R(self) -> Functor: ...
-    def to_sets(self) -> Functor: ...
+    def restriction[TargetScalar: MonoidCategory.ObjectType](
+        self, target: AlgebraCategory[TargetScalar], scalar_morphism: MorphismCategory.ObjectType
+    ) -> CategoryOfCategories.MorphismType[
+        AlgebraCategory[BaseScalar],
+        AlgebraCategory[TargetScalar],
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+        AlgebraCategory.ObjectType,
+        AlgebraCategory.ElementType,
+        AlgebraCategory.MorphismType,
+    ]: ...
 
-def Algebras(base: MonoidCategory.ObjectType, context: ActionsCategory.ObjectType | MonoidalStructuresCategory.ObjectType) -> AlgebraCategory: ...
+def Algebras[BaseScalar: MonoidCategory.ObjectType](
+    base: BaseScalar, context: ActionsCategory.ObjectType | MonoidalStructuresCategory.ObjectType
+) -> AlgebraCategory[BaseScalar]: ...

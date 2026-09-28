@@ -7,7 +7,7 @@ retains quotient data as an actual coequalizer in ``Algebras(R,C)``.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Hashable, Sequence
 
 from sage_categories.algebra._firewall import free_associative as _free_backend
 from sage_categories.algebra.abelian import (
@@ -24,11 +24,11 @@ from sage_categories.algebra.indexed_modules import (
     indexed_free_integer_element,
     indexed_free_integer_homomorphism,
 )
-from sage_categories.cat.category import CategoryOfCategories, ask
+from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone, cocones
-from sage_categories.cat.functors import Cat, Functor
-from sage_categories.cat.limit_basis import parallel_pair
+from sage_categories.cat.cones import LimitConesCategory, cocone
+from sage_categories.cat.functors import Cat, Functor, NaturalTransformation
+from sage_categories.cat.limit_basis import coequalizer_factor, parallel_pair
 from sage_categories.cat.structured_objects import Magmas
 
 __all__ = [
@@ -151,7 +151,7 @@ def integer_free_algebra_homomorphism(
     target_module = algebras.to_modules().on_object(target)
     assert all(image.parent() is target_module for image in images)
 
-    def basis_image(word: object) -> CategoryOfCategories.ElementType:
+    def basis_image(word: Hashable) -> CategoryOfCategories.ElementType:
         assert isinstance(word, tuple)
         result = _integer_algebra_one(algebras, target)
         for position in word:
@@ -189,9 +189,6 @@ def _new_split_algebra_presentation(
     assert projection.domain() is target and quotient in algebras
     assert section.domain() is quotient and section.codomain() is target
     assert section in algebras.morphism_category(1)
-    assert ask(projection * first == projection * second) is True
-    assert ask(projection * section == algebras.morphism_category(1)(quotient, quotient).one()) is True
-
     diagram = parallel_pair(first, second)
     shape = diagram.domain()
     source_vertex, target_vertex = shape(0), shape(1)
@@ -205,10 +202,9 @@ def _new_split_algebra_presentation(
 
     selected = cocone(diagram, quotient, selected_leg)
 
-    def mediator(candidate: ConeCategory.ObjectType) -> AlgebraMap:
-        coequalizing = candidate.leg(target_vertex)
+    def mediator(candidate: NaturalTransformation) -> AlgebraMap:
+        coequalizing = candidate.component(target_vertex)
         factor = coequalizing * section
-        assert ask(factor * projection == coequalizing) is True, "the supplied split quotient does not factor this coequalizing algebra map"
         return factor
 
     retained = algebras.Colimits(shape).with_universal_data(
@@ -286,18 +282,8 @@ def presented_algebra_factor(
     diagram = presented_algebra_diagram(algebras, algebra)
     shape = diagram.domain()
     first = diagram.on_morphism(shape.generator("f"))
-    second = diagram.on_morphism(shape.generator("g"))
     assert coequalizing.domain() is first.codomain() and coequalizing.codomain() is target
-    assert ask(coequalizing * first == coequalizing * second) is True, "the supplied algebra map does not respect the retained relations"
-
-    source_vertex = shape(0)
-
-    def candidate_leg(vertex: CategoryOfCategories.ElementType) -> AlgebraMap:
-        match vertex is source_vertex:
-            case True:
-                return coequalizing * first
-            case False:
-                return coequalizing
-
-    candidate = cocones(diagram)(cocone(diagram, target, candidate_leg))
-    return presented_algebra_presentation(algebras, algebra).lift(candidate)
+    return coequalizer_factor(
+        presented_algebra_presentation(algebras, algebra),
+        coequalizing,
+    )

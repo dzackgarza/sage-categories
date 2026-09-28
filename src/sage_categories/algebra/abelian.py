@@ -41,9 +41,8 @@ __all__ = [
     "induced_right_action",
     "integer_group",
     "presented_abelian_group",
-    "relative_left_unitor",
-    "relative_right_unitor",
     "relative_tensor",
+    "relative_tensor_bifunctor",
     "relative_tensor_mediator",
     "relative_tensor_morphism",
     "simple_tensor",
@@ -59,15 +58,54 @@ from sympy import Q, false, true
 
 from sage_categories.algebra._firewall import abelian as _backend
 from sage_categories.algebra._firewall.abelian import Engine
-from sage_categories.cat.bimodules import BimoduleCategory, Bimodules
+from sage_categories.cat.bimodules import (
+    BimoduleCategory,
+    Bimodules,
+)
+from sage_categories.cat.bimodules import (
+    fixed_tensor_functor as _generic_fixed_tensor_functor,
+)
+from sage_categories.cat.bimodules import (
+    induced_left_action as generic_induced_left_action,
+)
+from sage_categories.cat.bimodules import (
+    induced_right_action as generic_induced_right_action,
+)
+from sage_categories.cat.bimodules import (
+    relative_left_unitor as _generic_relative_left_unitor,
+)
+from sage_categories.cat.bimodules import (
+    relative_right_unitor as _generic_relative_right_unitor,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor as generic_relative_tensor,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor_associator as _generic_relative_tensor_associator,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor_associator_from_factors as _generic_relative_tensor_associator_from_factors,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor_bifunctor as generic_relative_tensor_bifunctor,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor_factor as _generic_relative_tensor_factor,
+)
+from sage_categories.cat.bimodules import (
+    relative_tensor_morphism as generic_relative_tensor_morphism,
+)
 from sage_categories.cat.calculus import binary_product_data, natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
-from sage_categories.cat.certified_structures import certified_additive_group
 from sage_categories.cat.choices import ChosenConstruction, SelectedChoice
 from sage_categories.cat.cones import cocone, cocone_apex, cone, cone_apex
 from sage_categories.cat.diagrams import from_sequence, sequence_position
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
-from sage_categories.cat.limit_basis import parallel_pair
+from sage_categories.cat.limit_basis import (
+    coequalizer_factor,
+    coequalizer_presentation,
+    parallel_pair,
+)
 from sage_categories.cat.modules import ModuleCategory, Modules
 from sage_categories.cat.monoidal import (
     Cartesian,
@@ -79,10 +117,11 @@ from sage_categories.cat.monoidal import (
     tensor_units,
 )
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.predicates import Proposition, ask
+from sage_categories.cat.predicates import Proposition
 from sage_categories.cat.shapes import Discrete
 from sage_categories.cat.structured_objects import (
     AdditiveGroups,
+    Groups,
     MonoidCategory,
     Monoids,
 )
@@ -154,13 +193,13 @@ _INDEXED_FREE_ABELIAN_GROUPS = ChosenConstruction()
 _TENSOR_OBJECTS = ChosenConstruction()
 _TENSOR_SWAPS = ChosenConstruction()
 _ABELIAN_TENSOR = ChosenConstruction()
-_RELATIVE_TENSORS = ChosenConstruction()
 _BIMODULE_TENSORS = ChosenConstruction()
 _MODULE_TENSORS = ChosenConstruction()
 _BIMODULE_ASSOCIATOR_COMPONENTS = ChosenConstruction()
 _BIMODULE_UNITOR_COMPONENTS = ChosenConstruction()
 _MODULE_ASSOCIATOR_COMPONENTS = ChosenConstruction()
 _MODULE_UNITOR_COMPONENTS = ChosenConstruction()
+_MODULE_UNIT_SECTIONS = ChosenConstruction()
 
 
 def _structure() -> MonoidalStructuresCategory.ObjectType:
@@ -257,7 +296,7 @@ def _group_from_operations(
         return form.element(tuple(-coefficient for coefficient in form.coordinates(value)))
 
     inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], addition_rule((negate(pair[0]), pair[1]))))
-    group = _certified_abelian_group(carrier, addition, unit, inverse_shear)
+    group = _abelian_group_from_operations(carrier, addition, unit, inverse_shear)
     _retain_coordinates(group, form)
     return group
 
@@ -307,14 +346,18 @@ def _new_integer_group() -> CategoryOfCategories.ElementType:
     return _group_from_operations(integers, form, 0, lambda pair: pair[0] + pair[1])
 
 
-def _certified_abelian_group(
+def _abelian_group_from_operations(
     carrier: CategoryOfCategories.ElementType,
     addition: MorphismCategory.ObjectType,
     zero: MorphismCategory.ObjectType,
     inverse_shear: MorphismCategory.ObjectType,
 ) -> CategoryOfCategories.ElementType:
-    """Reconstruct an engine-certified commutative additive group on ``carrier``."""
-    return certified_additive_group(carrier, addition, zero, inverse_shear, _structure(), commutative=True)
+    """Reconstruct the commutative additive group on the supplied carrier."""
+    structure = _structure()
+    groups = Groups(structure).Commutative()
+    neutral = groups(addition, zero)
+    Groups(structure).retain_inverse_shear(neutral, inverse_shear)
+    return AdditiveGroups(structure).renamed(neutral)
 
 
 def _rule_abelian_homomorphism(
@@ -359,7 +402,7 @@ def _new_indexed_free_abelian_group(
     addition = Mor(Sets)(square, carrier)(lambda pair: pair[0] + pair[1])
     zero = Mor(Sets)(_structure().unit(), carrier)(lambda _point: _backend.indexed_zero(engine))
     inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], _backend.indexed_subtract(engine, pair[1], pair[0])))
-    group = _certified_abelian_group(carrier, addition, zero, inverse_shear)
+    group = _abelian_group_from_operations(carrier, addition, zero, inverse_shear)
     _backend.retain_indexed(group, index_set, engine)
     return group
 
@@ -602,94 +645,13 @@ def coequalizer_projection(
     return family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1))
 
 
-def _retain_coequalizer_projection(
-    first: MorphismCategory.ObjectType,
-    second: MorphismCategory.ObjectType,
-    projection: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    """Retain a supplied coequalizer leg in the ordinary ``Ab`` colimit owner.
-
-    Some algebraic presentations already carry the quotient object and quotient map.
-    The regular-module action ``R tensor M -> M`` is the basic example: the module laws
-    make it the standard presentation of ``R tensor_R M``.  Keep that public universal
-    presentation instead of reconstructing an isomorphic CAP cokernel object.
-    """
-    assert first.domain() is second.domain()
-    assert first.codomain() is second.codomain() is projection.domain()
-    shape = Cat().WalkingParallelPair()
-    target_vertex = shape(1)
-    diagram = parallel_pair(first, second)
-    family = AbelianGroups().Colimits(shape)
-    match family.has_construction(diagram):
-        case True:
-            selected = family.universal_data(diagram).leg(target_vertex)
-            assert selected.domain() is projection.domain()
-            return selected
-        case False:
-            pass
-
-    source_vertex = shape(0)
-    source_leg = projection * first
-
-    def selected_leg(vertex: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
-        match vertex is source_vertex:
-            case True:
-                return source_leg
-            case False:
-                return projection
-
-    selected = cocone(diagram, projection.codomain(), selected_leg)
-
-    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
-        return _backend.colift_along_epimorphism(
-            projection,
-            candidate.component(target_vertex),
-        )
-
-    family.with_universal_data(
-        diagram,
-        projection.codomain(),
-        selected,
-        mediator,
-    )
-    return projection
-
-
 def coequalizer_mediator(
     projection: MorphismCategory.ObjectType,
     coequalizing: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """Factor ``coequalizing`` through the retained coequalizer presentation of ``projection``."""
-    family = AbelianGroups().Colimits(Cat().WalkingParallelPair())
-    matching = tuple(
-        diagram for diagram in family.presenting_diagrams(projection.codomain()) if family.universal_data(diagram).leg(Cat().WalkingParallelPair()(1)) is projection
-    )
-    assert len(matching) == 1, f"{projection!r} is not the selected leg of one retained coequalizer presentation"
-    # The retained presentation establishes that ``projection`` is the chosen
-    # coequalizer leg.  Factor through that exact epimorphism, rather than assuming the
-    # public choice is CAP's freshly allocated cokernel projection.  This also supports
-    # canonical algebraic presentations such as ``R tensor_R M = M`` with the action as
-    # the chosen quotient map.
-    return _backend.colift_along_epimorphism(projection, coequalizing)
-
-
-def _factor_relative_projection(
-    projection: MorphismCategory.ObjectType,
-    arrow: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    """Factor through a relative-tensor quotient, including its strict unit case.
-
-    ``relative_tensor`` returns the literal identity when both balancing actions are the
-    selected unit actions.  That case belongs to the relative-tensor owner and needs no
-    pretend coequalizer provenance: factoring through an identity is just ``arrow``.
-    Every nonidentity relative projection is an actual retained additive coequalizer.
-    """
-    assert arrow.domain() is projection.domain()
-    if projection.domain() is projection.codomain():
-        identity = Mor(AbelianGroups())(projection.domain(), projection.domain()).one()
-        if projection is identity:
-            return arrow
-    return coequalizer_mediator(projection, arrow)
+    presentation = coequalizer_presentation(AbelianGroups(), projection)
+    return coequalizer_factor(presentation, coequalizing)
 
 
 def _pair_vector(
@@ -1170,62 +1132,36 @@ def relative_tensor(
     the projection are homomorphisms of ``Ab`` carrying matrices on Smith generators, so
     the quotient is presented and needs no enumeration.
     """
-    return _RELATIVE_TENSORS(AbelianTensor(), (right_action, left_action), lambda: _new_relative_tensor(right_action, left_action))
+    middle = _tensor_info(left_action.domain()).first
+    assert _tensor_info(right_action.domain()).second is middle
+    return generic_relative_tensor(AbelianTensor(), middle, right_action, left_action)
 
 
-def _relative_tensor_parallel_pair(
-    right_action: MorphismCategory.ObjectType,
-    left_action: MorphismCategory.ObjectType,
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """The two balancing maps whose coequalizer is a relative tensor product."""
-    monoidal = AbelianTensor()
-    base, tensor = monoidal.underlying_category(), monoidal.tensor()
-    first, second = right_action.codomain(), left_action.codomain()
-    scalars = _tensor_info(left_action.domain()).first
-    triples = monoidal.associator().domain().domain()
-    rebracket = monoidal.associator().component(triples((first, scalars, second)))
-    through_the_right = tensor_morphism(tensor, right_action, Mor(base)(second, second).one())
-    through_the_left = tensor_morphism(tensor, Mor(base)(first, first).one(), left_action)
-    return through_the_right, through_the_left * rebracket
+_FIXED_TENSOR_FUNCTORS = ChosenConstruction()
 
 
-def _relative_tensor_with_selected_projection(
-    right_action: MorphismCategory.ObjectType,
-    left_action: MorphismCategory.ObjectType,
-    projection: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    """Retain a supplied balancing quotient unless this exact pair already has a choice.
+def _fixed_tensor_functor(
+    value: CategoryOfCategories.ElementType,
+    side: Literal["left", "right"],
+) -> Functor:
+    """Tensor by one fixed abelian group, with executable coequalizer preservation."""
 
-    ``_RELATIVE_TENSORS`` is the authoritative identity-owned choice.  A previously
-    selected quotient therefore wins; the supplied projection is installed only for an
-    action pair with no earlier relative-tensor construction.
-    """
+    def construct() -> Functor:
+        monoidal = AbelianTensor()
+        base = monoidal.underlying_category()
+        result = _generic_fixed_tensor_functor(monoidal, value, side)
+        shape = Cat().WalkingParallelPair()
 
-    def construct() -> MorphismCategory.ObjectType:
-        first, second = _relative_tensor_parallel_pair(right_action, left_action)
-        return _retain_coequalizer_projection(first, second, projection)
+        def preserved_mediator(_presentation, candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+            projection = result.on_morphism(_presentation.leg(shape(1)))
+            if projection.domain() is projection.codomain() and projection is Mor(base)(projection.domain(), projection.domain()).one():
+                return candidate.component(shape(1))
+            return _backend.colift_along_epimorphism(projection, candidate.component(shape(1)))
 
-    return _RELATIVE_TENSORS(
-        AbelianTensor(),
-        (right_action, left_action),
-        construct,
-    )
+        result.retain_colimit_preservation(shape, preserved_mediator)
+        return result
 
-
-def _new_relative_tensor(
-    right_action: MorphismCategory.ObjectType,
-    left_action: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    monoidal = AbelianTensor()
-    base = monoidal.underlying_category()
-    first, second = right_action.codomain(), left_action.codomain()
-    selected_right = monoidal.right_unitor().component(first)
-    selected_left = monoidal.left_unitor().component(second)
-    if right_action is selected_right and left_action is selected_left:
-        product = _tensor_object(first, second)
-        return Mor(base)(product, product).one()
-    through_the_right, through_the_left = _relative_tensor_parallel_pair(right_action, left_action)
-    return coequalizer_projection(through_the_right, through_the_left)
+    return _FIXED_TENSOR_FUNCTORS(AbelianTensor(), (value, side), construct)
 
 
 def balanced_tensor(
@@ -1249,15 +1185,11 @@ def relative_tensor_mediator(
     makes its mediator out of ``X (x) Y`` coequalize the two maps this quotient identifies.
     """
     factors = _tensor_info(projection.domain())
-    return _factor_relative_projection(projection, tensor_mediator(factors.first, factors.second, target, balanced))
-
-
-def _colift_presented_epimorphism(
-    epimorphism: MorphismCategory.ObjectType,
-    arrow: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    """Colift through a retained CAP epimorphism at the cycle-safe additive boundary."""
-    return _backend.colift_along_epimorphism(epimorphism, arrow)
+    return _generic_relative_tensor_factor(
+        AbelianTensor(),
+        projection,
+        tensor_mediator(factors.first, factors.second, target, balanced),
+    )
 
 
 def induced_left_action(
@@ -1269,22 +1201,16 @@ def induced_left_action(
     Acting on the left factor commutes with the identification the middle monoid makes, so
     it descends to the relative tensor product (``specs/bimodules.md``).
     """
-    monoidal = AbelianTensor()
-    base, tensor = monoidal.underlying_category(), monoidal.tensor()
-    scalars, first = _tensor_info(left_action.domain()).first, left_action.codomain()
-    product = projection.domain()
-    product_data = _tensor_info(product)
-    second = product_data.second
-    assert product_data.first is first, f"{left_action!r} does not act on the left factor of {product!r}"
-    triples = monoidal.associator().domain().domain()
-    rebracket = monoidal.associator().inverse().component(triples((scalars, first, second)))
-    acting = projection * tensor_morphism(tensor, left_action, Mor(base)(second, second).one()) * rebracket
-    tensorized_projection = tensor_morphism(
-        tensor,
-        Mor(base)(scalars, scalars).one(),
+    scalars = _tensor_info(left_action.domain()).first
+    second = _tensor_info(projection.domain()).second
+    _fixed_tensor_functor(scalars, "left")
+    return generic_induced_left_action(
+        AbelianTensor(),
         projection,
+        scalars,
+        second,
+        left_action,
     )
-    return _colift_presented_epimorphism(tensorized_projection, acting)
 
 
 def induced_right_action(
@@ -1292,22 +1218,16 @@ def induced_right_action(
     right_action: MorphismCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """``(X (x)_S Y) (x) T -> X (x)_S Y`` from a right ``T``-action on ``Y``: ``x (x)_S y`` times ``t`` goes to ``x (x)_S (y t)``."""
-    monoidal = AbelianTensor()
-    base, tensor = monoidal.underlying_category(), monoidal.tensor()
-    scalars, second = _tensor_info(right_action.domain()).second, right_action.codomain()
-    product = projection.domain()
-    product_data = _tensor_info(product)
-    first = product_data.first
-    assert product_data.second is second, f"{right_action!r} does not act on the right factor of {product!r}"
-    triples = monoidal.associator().domain().domain()
-    rebracket = monoidal.associator().component(triples((first, second, scalars)))
-    acting = projection * tensor_morphism(tensor, Mor(base)(first, first).one(), right_action) * rebracket
-    tensorized_projection = tensor_morphism(
-        tensor,
+    scalars = _tensor_info(right_action.domain()).second
+    first = _tensor_info(projection.domain()).first
+    _fixed_tensor_functor(scalars, "right")
+    return generic_induced_right_action(
+        AbelianTensor(),
         projection,
-        Mor(base)(scalars, scalars).one(),
+        first,
+        scalars,
+        right_action,
     )
-    return _colift_presented_epimorphism(tensorized_projection, acting)
 
 
 def relative_tensor_morphism(
@@ -1323,59 +1243,41 @@ def relative_tensor_morphism(
     the source quotient (``specs/bimodules.md``).
     """
 
-    def apply(arrow: MorphismCategory.ObjectType, datum: Hashable) -> Hashable:
-        return arrow(arrow.domain().point(datum)).datum()
+    return generic_relative_tensor_morphism(AbelianTensor(), source, target, first, second)
 
-    return relative_tensor_mediator(
-        source,
-        target.codomain(),
-        lambda left, right: balanced_tensor(target, apply(first, left), apply(second, right)).datum(),
+
+def relative_tensor_bifunctor[
+    LeftScalar: "MonoidCategory.ObjectType",
+    MiddleScalar: "MonoidCategory.ObjectType",
+    RightScalar: "MonoidCategory.ObjectType",
+](
+    left_scalars: LeftScalar,
+    middle_scalars: MiddleScalar,
+    right_scalars: RightScalar,
+) -> CategoryOfCategories.MorphismType[
+    Category,
+    BimoduleCategory[LeftScalar, RightScalar, Category],
+    CategoryOfCategories.ElementType,
+    CategoryOfCategories.ElementType,
+    MorphismCategory.ObjectType,
+    BimoduleCategory.ObjectType,
+    BimoduleCategory.ElementType,
+    BimoduleCategory.MorphismType,
+]:
+    """The relative tensor functor between three exact abelian bimodule categories."""
+    _fixed_tensor_functor(left_scalars.operation().codomain(), "left")
+    _fixed_tensor_functor(right_scalars.operation().codomain(), "right")
+    return generic_relative_tensor_bifunctor(
+        left_scalars,
+        middle_scalars,
+        right_scalars,
+        AbelianTensor(),
     )
 
 
 def _monoid_one(unit_morphism: MorphismCategory.ObjectType) -> Hashable:
-    """``eta(1)``: the unit element of a monoid object of ``(Ab, tensor, Z)``."""
+    """``eta(1)`` for an ``Ab`` monoid, used by pointwise module comparisons."""
     return unit_morphism(integer_group().point(1)).datum()
-
-
-def _unitor(
-    projection: MorphismCategory.ObjectType,
-    action: MorphismCategory.ObjectType,
-    into_the_tensor: Callable[[Hashable], CategoryOfCategories.ElementType],
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """The comparison out of a relative tensor with the acting monoid as one factor, and its inverse.
-
-    Acting is itself a balanced map, so it factors through the quotient; the section sends
-    a point to its tensor with the unit.  Both composites are checked here, so the pair is
-    an isomorphism of ``Ab`` by what it does rather than by a declaration.
-    """
-    forward = _factor_relative_projection(projection, action)
-    quotient, carrier = projection.codomain(), action.codomain()
-    backward = abelian_homomorphism(carrier, quotient, lambda datum: into_the_tensor(datum).datum())
-    assert ask(forward * backward == Mor(AbelianGroups())(carrier, carrier).one()) is True
-    assert ask(backward * forward == Mor(AbelianGroups())(quotient, quotient).one()) is True
-    AbelianGroups().retain_inverses(forward, backward)
-    return forward, forward.inverse()
-
-
-def relative_left_unitor(
-    projection: MorphismCategory.ObjectType,
-    left_action: MorphismCategory.ObjectType,
-    unit_morphism: MorphismCategory.ObjectType,
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """``S (x)_S Y -> Y``, ``s (x)_S y`` to ``s y``, with its inverse ``y -> 1 (x)_S y``."""
-    one = _monoid_one(unit_morphism)
-    return _unitor(projection, left_action, lambda datum: balanced_tensor(projection, one, datum))
-
-
-def relative_right_unitor(
-    projection: MorphismCategory.ObjectType,
-    right_action: MorphismCategory.ObjectType,
-    unit_morphism: MorphismCategory.ObjectType,
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """``X (x)_S S -> X``, ``x (x)_S s`` to ``x s``, with its inverse ``x -> x (x)_S 1``."""
-    one = _monoid_one(unit_morphism)
-    return _unitor(projection, right_action, lambda datum: balanced_tensor(projection, datum, one))
 
 
 def _bimodule_unitor_components(
@@ -1392,7 +1294,8 @@ def _bimodule_unitor_components(
         case "left":
             source = tensor.on_object(pairs((unit, value)))
             projection = relative_tensor(unit.right_action(), value.left_action())
-            forward, backward = relative_left_unitor(
+            forward, backward = _generic_relative_left_unitor(
+                AbelianTensor(),
                 projection,
                 value.left_action(),
                 scalars.unit_morphism(),
@@ -1400,7 +1303,8 @@ def _bimodule_unitor_components(
         case "right":
             source = tensor.on_object(pairs((value, unit)))
             projection = relative_tensor(value.right_action(), unit.left_action())
-            forward, backward = relative_right_unitor(
+            forward, backward = _generic_relative_right_unitor(
+                AbelianTensor(),
                 projection,
                 value.right_action(),
                 scalars.unit_morphism(),
@@ -1431,8 +1335,11 @@ def _bimodule_associator_components(
     second_third_projection = relative_tensor(second.right_action(), third.left_action())
     source_projection = relative_tensor(first_second.right_action(), third.left_action())
     target_projection = relative_tensor(first.right_action(), second_third.left_action())
+    _fixed_tensor_functor(third_group, "right")
+    _fixed_tensor_functor(first_group, "left")
 
-    forward_underlying, backward_underlying = _relative_associator_underlying(
+    forward_underlying, backward_underlying = _generic_relative_tensor_associator(
+        AbelianTensor(),
         first_group,
         second_group,
         third_group,
@@ -1447,45 +1354,9 @@ def _bimodule_associator_components(
     )
 
 
-def _relative_associator_underlying(
-    first_group: CategoryOfCategories.ElementType,
-    second_group: CategoryOfCategories.ElementType,
-    third_group: CategoryOfCategories.ElementType,
-    first_second_projection: MorphismCategory.ObjectType,
-    second_third_projection: MorphismCategory.ObjectType,
-    source_projection: MorphismCategory.ObjectType,
-    target_projection: MorphismCategory.ObjectType,
-) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """Descend the selected abelian associator through two relative-tensor quotient stages."""
-    monoidal = AbelianTensor()
-    abelian_groups, abelian_tensor = monoidal.underlying_category(), monoidal.tensor()
-    abelian_triples = monoidal.associator().domain().domain()
-    abelian_triple = abelian_triples((first_group, second_group, third_group))
-    rebracket = monoidal.associator().component(abelian_triple)
-    unbracket = monoidal.associator().inverse().component(abelian_triple)
-    identity_first = Mor(abelian_groups)(first_group, first_group).one()
-    identity_third = Mor(abelian_groups)(third_group, third_group).one()
-    forward_from_unbalanced = target_projection * tensor_morphism(abelian_tensor, identity_first, second_third_projection) * rebracket
-    backward_from_unbalanced = source_projection * tensor_morphism(abelian_tensor, first_second_projection, identity_third) * unbracket
-
-    through_first_quotient = _colift_presented_epimorphism(
-        tensor_morphism(abelian_tensor, first_second_projection, identity_third),
-        forward_from_unbalanced,
-    )
-    forward_underlying = _factor_relative_projection(source_projection, through_first_quotient)
-    through_second_quotient = _colift_presented_epimorphism(
-        tensor_morphism(abelian_tensor, identity_first, second_third_projection),
-        backward_from_unbalanced,
-    )
-    backward_underlying = _factor_relative_projection(target_projection, through_second_quotient)
-    assert ask(forward_underlying * backward_underlying == Mor(abelian_groups)(target_projection.codomain(), target_projection.codomain()).one()) is True
-    assert ask(backward_underlying * forward_underlying == Mor(abelian_groups)(source_projection.codomain(), source_projection.codomain()).one()) is True
-    return forward_underlying, backward_underlying
-
-
-def AbelianBimoduleTensor(
-    scalars: MonoidCategory.ObjectType,
-) -> MonoidalStructuresCategory.ObjectType:
+def AbelianBimoduleTensor[Scalar: "MonoidCategory.ObjectType"](
+    scalars: Scalar,
+) -> MonoidalStructuresCategory.ObjectType[BimoduleCategory[Scalar, Scalar, Category]]:
     """The relative tensor monoidal structure on Smith-presented ``(R,R)``-bimodules in ``Ab``.
 
     The abelian leaf supplies the balancing coequalizers.  Tensor product over the
@@ -1501,33 +1372,9 @@ def _new_abelian_bimodule_tensor(
 ) -> MonoidalStructuresCategory.ObjectType:
     monoidal = AbelianTensor()
     bimodules = Bimodules(scalars, scalars, monoidal)
-    pairs = Cat().Products()((bimodules, bimodules))
-    forgetful = bimodules.forgetful()
-
-    def on_object(pair: CategoryOfCategories.ElementType) -> CategoryOfCategories.ElementType:
-        first, second = (pair.family_component(index) for index in range(2))
-        projection = relative_tensor(first.right_action(), second.left_action())
-        return bimodules(
-            induced_left_action(projection, first.left_action()),
-            induced_right_action(projection, second.right_action()),
-        )
-
-    def on_morphism(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
-        source_pair, target_pair = arrow.domain(), arrow.codomain()
-        source_first, source_second = (source_pair.family_component(index) for index in range(2))
-        target_first, target_second = (target_pair.family_component(index) for index in range(2))
-        source_projection = relative_tensor(source_first.right_action(), source_second.left_action())
-        target_projection = relative_tensor(target_first.right_action(), target_second.left_action())
-        first = forgetful.on_morphism(arrow.family_component(0))
-        second = forgetful.on_morphism(arrow.family_component(1))
-        underlying = relative_tensor_morphism(source_projection, target_projection, first, second)
-        return bimodules.homomorphism(
-            tensor.on_object(source_pair),
-            tensor.on_object(target_pair),
-            underlying,
-        )
-
-    tensor = Fun(pairs, bimodules)(on_object, on_morphism)
+    tensor = relative_tensor_bifunctor(scalars, scalars, scalars)
+    assert tensor.codomain() is bimodules
+    pairs = tensor.domain()
     unit = bimodules(scalars.operation(), scalars.operation())
 
     def associator_components(
@@ -1605,35 +1452,6 @@ def _commutative_module_right_action(
     return module.action() * _tensor_swap(carrier, modules.carrier())
 
 
-def _commutative_module_projection_from_actions(
-    modules: ModuleCategory,
-    unit: ModuleCategory.ObjectType,
-    first: ModuleCategory.ObjectType,
-    second: ModuleCategory.ObjectType,
-    right_action: MorphismCategory.ObjectType,
-    left_action: MorphismCategory.ObjectType,
-) -> MorphismCategory.ObjectType:
-    """Choose the balancing projection after both module actions are retained."""
-    match first is unit:
-        case True:
-            return _relative_tensor_with_selected_projection(
-                right_action,
-                left_action,
-                left_action,
-            )
-        case False:
-            pass
-    match second is unit:
-        case True:
-            return _relative_tensor_with_selected_projection(
-                right_action,
-                left_action,
-                right_action,
-            )
-        case False:
-            return relative_tensor(right_action, left_action)
-
-
 def _commutative_module_projection(
     modules: ModuleCategory,
     unit: ModuleCategory.ObjectType,
@@ -1641,14 +1459,81 @@ def _commutative_module_projection(
     second: ModuleCategory.ObjectType,
 ) -> MorphismCategory.ObjectType:
     """The balancing projection X tensor Y -> X tensor_R Y for left modules over commutative R."""
-    return _commutative_module_projection_from_actions(
+    match first is unit:
+        case True:
+            return second.action()
+        case False:
+            pass
+    right_action = _commutative_module_right_action(modules, first)
+    match second is unit:
+        case True:
+            return right_action
+        case False:
+            return relative_tensor(right_action, second.action())
+
+
+def _commutative_module_unit_section(
+    modules: ModuleCategory,
+    value: ModuleCategory.ObjectType,
+    side: Literal["left", "right"],
+) -> MorphismCategory.ObjectType:
+    """The retained section of a strict unit quotient in the module tensor."""
+    return _MODULE_UNIT_SECTIONS(
         modules,
-        unit,
-        first,
-        second,
-        _commutative_module_right_action(modules, first),
-        second.action(),
+        (side, value),
+        lambda: _new_commutative_module_unit_section(modules, value, side),
     )
+
+
+def _new_commutative_module_unit_section(
+    modules: ModuleCategory,
+    value: ModuleCategory.ObjectType,
+    side: Literal["left", "right"],
+) -> MorphismCategory.ObjectType:
+    carrier = modules.forgetful().on_object(value)
+    scalars = modules.carrier()
+    one = _monoid_one(modules.scalars().unit_morphism())
+    match side:
+        case "left":
+            target = _tensor_object(scalars, carrier)
+            return _rule_abelian_homomorphism(
+                carrier,
+                target,
+                lambda datum: simple_tensor(scalars, carrier, one, datum).datum(),
+            )
+        case "right":
+            target = _tensor_object(carrier, scalars)
+            return _rule_abelian_homomorphism(
+                carrier,
+                target,
+                lambda datum: simple_tensor(carrier, scalars, datum, one).datum(),
+            )
+
+
+def _factor_commutative_module_projection(
+    modules: ModuleCategory,
+    unit: ModuleCategory.ObjectType,
+    first: ModuleCategory.ObjectType,
+    second: ModuleCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    arrow: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType:
+    """Factor through the strict unit quotient or the generic relative tensor."""
+    assert arrow.domain() is projection.domain()
+    match first is unit:
+        case True:
+            return arrow * _commutative_module_unit_section(modules, second, "left")
+        case False:
+            pass
+    match second is unit:
+        case True:
+            return arrow * _commutative_module_unit_section(modules, first, "right")
+        case False:
+            return _generic_relative_tensor_factor(
+                AbelianTensor(),
+                projection,
+                arrow,
+            )
 
 
 def _module_unitor_components(
@@ -1656,32 +1541,18 @@ def _module_unitor_components(
     pairs: Category,
     unit: ModuleCategory.ObjectType,
     modules: ModuleCategory,
-    scalars: MonoidCategory.ObjectType,
     value: ModuleCategory.ObjectType,
     side: Literal["left", "right"],
 ) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]:
-    """The selected relative-tensor unitor and inverse as left-module homomorphisms."""
+    """The identity comparison for the strict module-tensor unit cases."""
     match side:
         case "left":
             source = tensor.on_object(pairs((unit, value)))
-            projection = _commutative_module_projection(modules, unit, unit, value)
-            forward, backward = relative_left_unitor(
-                projection,
-                value.action(),
-                scalars.unit_morphism(),
-            )
         case "right":
             source = tensor.on_object(pairs((value, unit)))
-            projection = _commutative_module_projection(modules, unit, value, unit)
-            forward, backward = relative_right_unitor(
-                projection,
-                _commutative_module_right_action(modules, value),
-                scalars.unit_morphism(),
-            )
-    return (
-        modules.homomorphism(source, value, forward),
-        modules.homomorphism(value, source, backward),
-    )
+    assert source is value
+    identity = Mor(modules)(value, value).one()
+    return identity, identity
 
 
 def _module_associator_components(
@@ -1699,13 +1570,23 @@ def _module_associator_components(
     second_third = tensor.on_object(pairs((second, third)))
     source = tensor.on_object(pairs((first_second, third)))
     target = tensor.on_object(pairs((first, second_third)))
+    match first is unit or second is unit or third is unit:
+        case True:
+            assert source is target
+            identity = Mor(modules)(source, source).one()
+            return identity, identity
+        case False:
+            pass
     first_group, second_group, third_group = (forgetful.on_object(value) for value in (first, second, third))
 
     first_second_projection = _commutative_module_projection(modules, unit, first, second)
     second_third_projection = _commutative_module_projection(modules, unit, second, third)
     source_projection = _commutative_module_projection(modules, unit, first_second, third)
     target_projection = _commutative_module_projection(modules, unit, first, second_third)
-    forward_underlying, backward_underlying = _relative_associator_underlying(
+    _fixed_tensor_functor(third_group, "right")
+    _fixed_tensor_functor(first_group, "left")
+    forward_underlying, backward_underlying = _generic_relative_tensor_associator_from_factors(
+        AbelianTensor(),
         first_group,
         second_group,
         third_group,
@@ -1713,6 +1594,22 @@ def _module_associator_components(
         second_third_projection,
         source_projection,
         target_projection,
+        partial(
+            _factor_commutative_module_projection,
+            modules,
+            unit,
+            first_second,
+            third,
+            source_projection,
+        ),
+        partial(
+            _factor_commutative_module_projection,
+            modules,
+            unit,
+            first,
+            second_third,
+            target_projection,
+        ),
     )
     return (
         modules.homomorphism(source, target, forward_underlying),
@@ -1720,9 +1617,9 @@ def _module_associator_components(
     )
 
 
-def AbelianModuleTensor(
-    scalars: MonoidCategory.ObjectType,
-) -> MonoidalStructuresCategory.ObjectType:
+def AbelianModuleTensor[Scalar: "MonoidCategory.ObjectType"](
+    scalars: Scalar,
+) -> MonoidalStructuresCategory.ObjectType[ModuleCategory[Scalar, Category, Category]]:
     """Relative tensor on left modules over a commutative monoid in Ab."""
     return _MODULE_TENSORS(
         AbelianTensor(),
@@ -1736,9 +1633,6 @@ def _new_abelian_module_tensor(
 ) -> MonoidalStructuresCategory.ObjectType:
     """Derive the commutative-base left-module tensor from the retained relative tensor calculus."""
     monoidal = AbelianTensor()
-    scalar = scalars.operation().codomain()
-    assert ask(scalars.operation() * _tensor_swap(scalar, scalar) == scalars.operation()) is True, f"{scalars!r} is not commutative"
-
     modules = Modules(scalars, SelfAction(monoidal))
     assert modules.actegory() is SelfAction(monoidal)
     unit = modules(scalars.operation())
@@ -1748,47 +1642,46 @@ def _new_abelian_module_tensor(
 
     def on_object(pair: CategoryOfCategories.ElementType) -> ModuleCategory.ObjectType:
         first, second = (pair.family_component(index) for index in range(2))
-        right_action = _commutative_module_right_action(modules, first)
-        left_action = second.action()
-        projection = _commutative_module_projection_from_actions(
-            modules,
-            unit,
-            first,
-            second,
-            right_action,
-            left_action,
-        )
         match first is unit:
             case True:
-                match projection is left_action:
-                    case True:
-                        return second
-                    case False:
-                        pass
+                return second
             case False:
                 pass
         match second is unit:
             case True:
-                match projection is right_action:
-                    case True:
-                        return first
-                    case False:
-                        pass
+                return first
             case False:
                 pass
+        projection = _commutative_module_projection(modules, unit, first, second)
         return modules(induced_left_action(projection, first.action()))
 
     def on_morphism(arrow: MorphismCategory.ObjectType) -> ModuleCategory.MorphismType:
         source_pair, target_pair = arrow.domain(), arrow.codomain()
         source_first, source_second = (source_pair.family_component(index) for index in range(2))
         target_first, target_second = (target_pair.family_component(index) for index in range(2))
+        first_map, second_map = (arrow.family_component(index) for index in range(2))
+        match source_first is unit and target_first is unit and first_map is Mor(modules)(unit, unit).one():
+            case True:
+                return second_map
+            case False:
+                pass
+        match source_second is unit and target_second is unit and second_map is Mor(modules)(unit, unit).one():
+            case True:
+                return first_map
+            case False:
+                pass
         source_projection = _commutative_module_projection(modules, unit, source_first, source_second)
         target_projection = _commutative_module_projection(modules, unit, target_first, target_second)
-        underlying = relative_tensor_morphism(
+        first = forgetful.on_morphism(first_map)
+        second = forgetful.on_morphism(second_map)
+        raw = tensor_morphism(monoidal.tensor(), first, second)
+        underlying = _factor_commutative_module_projection(
+            modules,
+            unit,
+            source_first,
+            source_second,
             source_projection,
-            target_projection,
-            forgetful.on_morphism(arrow.family_component(0)),
-            forgetful.on_morphism(arrow.family_component(1)),
+            target_projection * raw,
         )
         return modules.homomorphism(
             tensor.on_object(source_pair),
@@ -1827,7 +1720,6 @@ def _new_abelian_module_tensor(
                 pairs,
                 unit,
                 modules,
-                scalars,
                 value,
                 side,
             ),

@@ -10,6 +10,7 @@ from sage_categories.algebra import (
     integer_group,
     presented_abelian_group,
     relative_tensor,
+    relative_tensor_bifunctor,
     relative_tensor_mediator,
     simple_tensor,
     tensor_mediator,
@@ -232,13 +233,20 @@ def test_distinct_outer_scalars_descend_to_the_R_T_bimodule() -> None:
 
     first = Bimodules(integer_ring, middle_ring, monoidal)(left_integer, right_middle)
     second = Bimodules(middle_ring, field_ring, monoidal)(left_middle, right_field)
-    projection = relative_tensor(first.right_action(), second.left_action())
-    left_outer = induced_left_action(projection, first.left_action())
-    right_outer = induced_right_action(projection, second.right_action())
     target_category = Bimodules(integer_ring, field_ring, monoidal)
-    result = target_category(left_outer, right_outer)
+    tensor_over_middle = relative_tensor_bifunctor(
+        integer_ring,
+        middle_ring,
+        field_ring,
+    )
+    pair = tensor_over_middle.domain()((first, second))
+    result = tensor_over_middle.on_object(pair)
+    projection = relative_tensor(first.right_action(), second.left_action())
+    left_outer = result.left_action()
+    right_outer = result.right_action()
 
     assert result in target_category
+    assert tensor_over_middle.codomain() is target_category
     assert target_category.forgetful().on_object(result) is projection.codomain()
     assert result.left_action() is left_outer
     assert result.right_action() is right_outer
@@ -255,4 +263,3 @@ test_the_dot_product_factors_through_the_balanced_map()
 test_the_outer_actions_survive_the_balancing()
 test_the_induced_right_action_is_the_right_action_of_the_first_factor()
 test_distinct_outer_scalars_descend_to_the_R_T_bimodule()
-

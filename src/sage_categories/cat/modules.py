@@ -46,7 +46,11 @@ def _underlying_object(scalars: MonoidCategory.ObjectType) -> CategoryOfCategori
     return scalars.carrier().carrier()
 
 
-class ModuleCategory(EquifierCategory):
+class ModuleCategory[
+    Scalar: "MonoidCategory.ObjectType" = "MonoidCategory.ObjectType",
+    ActingCategory: "Category[..., ...]" = "Category[..., ...]",
+    ActedCategory: "Category[..., ...]" = "Category[..., ...]",
+](EquifierCategory):
     """``Modules(A, C)``: module objects over ``A`` in the actegory ``C``.
 
     An object is ``(X, ρ_X: A • X -> X)`` with the unit law ``ρ ∘ (η • X) = λ_X`` and the
@@ -70,18 +74,18 @@ class ModuleCategory(EquifierCategory):
         self,
         first: NaturalTransformation,
         second: NaturalTransformation,
-        scalars: MonoidCategory.ObjectType,
-        actegory: ActionsCategory.ObjectType,
+        scalars: Scalar,
+        actegory: ActionsCategory.ObjectType[ActingCategory, ActedCategory],
         algebras: InserterCategory,
     ) -> None:
         self._scalars, self._actegory, self._algebras = scalars, actegory, algebras
         super().__init__(first, second)
 
-    def scalars(self) -> MonoidCategory.ObjectType:
+    def scalars(self) -> Scalar:
         """``A``, the monoid object acting."""
         return self._scalars
 
-    def actegory(self) -> ActionsCategory.ObjectType:
+    def actegory(self) -> ActionsCategory.ObjectType[ActingCategory, ActedCategory]:
         """The selected left ``M``-action on ``C`` with its coherence isomorphisms."""
         return self._actegory
 
@@ -98,10 +102,21 @@ class ModuleCategory(EquifierCategory):
         assert _MODULE_MONOIDAL_STRUCTURES.has(self, ()), f"{self!r} has no selected monoidal structure"
         return _MODULE_MONOIDAL_STRUCTURES.selected(self, ())
 
-    def underlying_category(self) -> Category:
+    def underlying_category(self) -> ActedCategory:
         return self._actegory.underlying_category()
 
-    def scalar_endofunctor(self) -> Functor:
+    def scalar_endofunctor(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        ActedCategory,
+        ActedCategory,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+    ]:
         """``A • -: C -> C``, the endofunctor whose algebras this category cuts by the module laws."""
         return _scalar_endofunctor(self._actegory, _underlying_object(self._scalars))
 
@@ -110,39 +125,48 @@ class ModuleCategory(EquifierCategory):
         return _underlying_object(self._scalars)
 
     @cached_method
-    def forgetful(self) -> Functor:
+    def forgetful(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        ModuleCategory[Scalar, ActingCategory, ActedCategory],
+        ActedCategory,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+    ]:
         """``U_A: Modules(A, C) -> C``, retained from the defining inserter and equifiers."""
         unital = self.ambient()
         assert unital.ambient() is self._algebras
-        return self._algebras.forgetful() * Fun.full_subcategory_monomorphism(unital, self._algebras) * Fun.full_subcategory_monomorphism(self, unital)
+        forgetful = self._algebras.forgetful() * Fun.full_subcategory_monomorphism(unital, self._algebras) * Fun.full_subcategory_monomorphism(self, unital)
+        forgetful.retain_cartesian_lifts(self._cartesian_lift)
+        return forgetful
+
+    def _cartesian_lift(
+        self,
+        morphism: MorphismCategory.ObjectType,
+        target: ModuleCategory.ObjectType,
+    ) -> ModuleCategory.MorphismType:
+        """Lift an isomorphism ``Y -> U_A(X)`` by transporting the action to ``Y``."""
+        base = self.underlying_category()
+        assert morphism in base.morphism_category(1).Isomorphisms()
+        source = self.transport(target, morphism.inverse())
+        return self.homomorphism(source, target, morphism)
 
     def structure_functors(self) -> tuple[Functor, ...]:
         """``U_A`` is the sole immediate structure functor of ``Modules(A, C)``."""
         return (self.forgetful(),)
 
+    def construction_owner(self) -> Category:
+        """Module structure is constructed from its action morphism here."""
+        return self
+
     def __call__(self, action_morphism: MorphismCategory.ObjectType) -> ModuleCategory.ObjectType:
         """The module with action ``ρ_X: A • X -> X``; its codomain is ``X``."""
         algebra = self._algebras.algebra(action_morphism.codomain(), action_morphism)
-        monoidal = self.actegory().monoidal_structure()
-        unit = monoidal.unit()
-        base = monoidal.underlying_category()
-        canonical_unit_action = (
-            self.carrier() is unit
-            and self.scalars().operation() is monoidal.left_unitor().component(unit)
-            and self.scalars().unit_morphism() is base.morphism_category(1)(unit, unit).one()
-            and action_morphism is self.actegory().unitor().component(action_morphism.codomain())
-        )
-        match canonical_unit_action:
-            case True:
-                # The tensor unit acts on every object of any selected actegory by
-                # its action unitor.  The module laws follow from that action's
-                # triangle and monoidal unit coherence, even when M and C differ;
-                # no extensional equality decision on X is required.
-                refine(algebra, self.ambient())
-                refine(algebra, self)
-                return algebra
-            case False:
-                return super().__call__(algebra)
+        return super().__call__(algebra)
 
     def homomorphism(
         self,
@@ -194,7 +218,19 @@ class ModuleCategory(EquifierCategory):
         return transported
 
     @cached_method(key=identity_key)
-    def restriction(self, scalar_morphism: MorphismCategory.ObjectType) -> Functor:
+    def restriction(
+        self,
+        scalar_morphism: MorphismCategory.ObjectType,
+    ) -> CategoryOfCategories.MorphismType[
+        ModuleCategory[Scalar, ActingCategory, ActedCategory],
+        ModuleCategory[MonoidCategory.ObjectType, ActingCategory, ActedCategory],
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]:
         """Restriction of scalars along a monoid morphism ``f: B -> A``: ``Modules(A, C) -> Modules(B, C)``, ``(X, ρ) ↦ (X, ρ ∘ (f • X))``."""
         monoids = Monoids(self._actegory.monoidal_structure())
         assert scalar_morphism in monoids.morphism_category(1), f"{scalar_morphism!r} is not a monoid morphism in {monoids!r}"
@@ -229,7 +265,14 @@ _MODULE_MONOIDAL_STRUCTURES: SelectedChoice[MonoidalStructuresCategory.ObjectTyp
 
 
 @cached_function(key=identity_key)
-def Modules(scalars: MonoidCategory.ObjectType, actegory: ActionsCategory.ObjectType) -> ModuleCategory:
+def Modules[
+    Scalar: "MonoidCategory.ObjectType",
+    ActingCategory: "Category[..., ...]",
+    ActedCategory: "Category[..., ...]",
+](
+    scalars: Scalar,
+    actegory: ActionsCategory.ObjectType[ActingCategory, ActedCategory],
+) -> ModuleCategory[Scalar, ActingCategory, ActedCategory]:
     """``Modules(A, C)``: module objects over the monoid object ``A`` in the selected actegory ``C``."""
     monoidal = actegory.monoidal_structure()
     monoids = Monoids(monoidal)

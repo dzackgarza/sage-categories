@@ -28,6 +28,7 @@ __all__ = [
 ]
 
 from collections.abc import Callable
+from typing import cast
 
 from sympy import ask as sympy_ask
 from sympy import false, true
@@ -159,9 +160,6 @@ class BinaryRelationsCategory(FaithfulStructureCategory):
         def relation(self) -> CategoryOfCategories.ElementType:
             return self._relation
 
-        def carrier(self) -> CategoryOfCategories.ElementType:
-            return self._carrier
-
         def related(
             self,
             first: CategoryOfCategories.ElementType,
@@ -176,9 +174,6 @@ class BinaryRelationsCategory(FaithfulStructureCategory):
     class MorphismType:
         def __init__(self, underlying: MorphismCategory.ObjectType) -> None:
             self._underlying_map = underlying
-
-        def underlying_map(self) -> MorphismCategory.ObjectType:
-            return self._underlying_map
 
     def _partial_order(self, relation_object: BinaryRelationsCategory.ObjectType) -> Proposition:
         return partial_order(relation_object)
@@ -238,7 +233,7 @@ class BinaryRelationsCategory(FaithfulStructureCategory):
         ``y S y'`` is defined by ``f^-1(y) R f^-1(y')`` pointwise, so this works equally
         for finite, infinite and predicate-defined carriers.
         """
-        carrier = relation_object.carrier()
+        carrier = self.to_sets().on_object(relation_object)
         assert bijection.domain() is carrier, f"{bijection!r} does not start at the carrier of {relation_object!r}"
         inverse = bijection.inverse()
         image = bijection.codomain()
@@ -275,8 +270,8 @@ class BinaryRelationsCategory(FaithfulStructureCategory):
             Fun(self, Sets)
             .Faithful()
             .Isofibrations()(
-                lambda relation_object: relation_object.carrier(),
-                lambda arrow: arrow.underlying_map(),
+                lambda relation_object: relation_object._carrier,
+                lambda arrow: arrow._underlying_map,
             )
             .with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
         )
@@ -288,7 +283,8 @@ class BinaryRelationsCategory(FaithfulStructureCategory):
         target: BinaryRelationsCategory.ObjectType,
         underlying: MorphismCategory.ObjectType,
     ) -> BinaryRelationsCategory.MorphismType:
-        source_carrier, target_carrier = source.carrier(), target.carrier()
+        projection = self.to_sets()
+        source_carrier, target_carrier = projection.on_object(source), projection.on_object(target)
         assert underlying.domain() is source_carrier and underlying.codomain() is target_carrier
         assert sympy_ask(order_preserving(source, target, underlying)) is True, f"{underlying!r} is not established to preserve the relation of {source!r}"
         return self._morphism_from_data(source, target, underlying)
@@ -317,13 +313,40 @@ class PosetsCategory(PropertySubcategory):
     Total = Axiom(_total)
 
     def to_sets(self) -> Functor:
-        """The underlying-set functor ``U: Posets() -> Sets()``.
+        """The selected faithful isofibration U: Posets() -> Sets()."""
+        return next(functor for functor in self.selected_functors() if functor.codomain() is Sets)
 
-        ``Posets()`` is the full partial-order subcategory of ``BinaryRelations()``;
-        restricting the relation projection is therefore the one owned underlying-set
-        functor, with no second object or morphism action in the poset leaf.
-        """
-        return BinaryRelations().to_sets().restrict(self, Sets)
+    def lift_order(
+        self,
+        diagram: Functor,
+        presentation: LimitConesCategory.ObjectType,
+    ) -> PosetsCategory.ObjectType:
+        """Put the componentwise partial order on the selected set-limit apex."""
+        relation = BinaryRelations().lift_order(diagram, presentation)
+        return self(relation.relation())
+
+    def construct_morphism(
+        self,
+        source: PosetsCategory.ObjectType,
+        target: PosetsCategory.ObjectType,
+        underlying: MorphismCategory.ObjectType,
+    ) -> PosetsCategory.MorphismType:
+        """The monotone map over the supplied set map, restricted from relation-preserving maps."""
+        ambient = BinaryRelations().construct_morphism(source, target, underlying)
+        return cast(PosetsCategory.MorphismType, self.restrict_morphism(ambient))
+
+    def structure_functors(self) -> tuple[Functor, ...]:
+        underlying = (
+            Fun(self, Sets)
+            .Faithful()
+            .Isofibrations()
+            .PreservesLimits(Discrete)(
+                lambda poset: poset._carrier,
+                lambda arrow: arrow._underlying_map,
+            )
+            .with_limit_lifting(Discrete, self.lift_order, self.construct_morphism)
+        )
+        return (*super().structure_functors(), underlying)
 
     Finite = SetsCategory.Finite.inverse_image(lambda category: category.to_sets())
 
@@ -356,7 +379,7 @@ class PosetSubobjects(SliceProperty):
         No backend or Python collection is the public subobject.
         """
         ambient = self.ambient().fixed_object()
-        carrier_subobjects = Sets.Subobjects(ambient.carrier())
+        carrier_subobjects = Sets.Subobjects(Posets().to_sets().on_object(ambient))
         carrier_subobject = carrier_subobjects.from_predicate(lambda point: predicate(ambient.point(point.datum())))
         carrier_inclusion = carrier_subobjects.defining_arrow().on_object(carrier_subobject)
         selected_carrier = carrier_inclusion.domain()
@@ -443,7 +466,7 @@ class FinitePosetsCategory(Category):
 
         def linear_extension(self) -> FiniteTotallyOrderedSetsCategory.ObjectType:
             """A finite total order on this exact carrier extending the source order."""
-            carrier = self.carrier()
+            carrier = Posets().to_sets().on_object(self)
             relation = BinaryRelations().from_predicate(
                 carrier,
                 lambda first, second: (

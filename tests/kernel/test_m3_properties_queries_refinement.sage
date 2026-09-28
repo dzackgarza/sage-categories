@@ -177,6 +177,29 @@ def test_positive_evidence_refines_the_same_public_value() -> None:
     assert undecided in tiny.Special()
 
 
+
+def test_sympy_inferred_positive_property_refines_the_same_public_value() -> None:
+    tiny = Tiny()
+    tokens = Tokens()
+    undecided = tiny(99)
+    witness = tokens(1)
+    property_proposition = undecided.is_special()
+    alternative = balanced(witness)
+    disjunction = property_proposition | alternative
+    negated_alternative = ~alternative
+    identity = id(undecided)
+
+    assume(disjunction)
+    assume(negated_alternative)
+    try:
+        assert ask(property_proposition) is True
+        assert id(undecided) == identity
+        assert undecided.category() is tiny.Special()
+        assert undecided in tiny.Special()
+    finally:
+        retract(disjunction)
+        retract(negated_alternative)
+
 def test_property_construction_and_query_use_public_surfaces() -> None:
     tiny = Tiny()
     constructed = tiny.Special()(5)
@@ -369,6 +392,7 @@ def test_shape_indexed_functor_properties_are_public_axioms() -> None:
 
 test_axiom_application_has_three_valued_public_semantics()
 test_positive_evidence_refines_the_same_public_value()
+test_sympy_inferred_positive_property_refines_the_same_public_value()
 test_property_construction_and_query_use_public_surfaces()
 test_predicate_subclassing_uses_owned_sympy_atoms()
 test_exact_handler_dispatch_and_sympy_errors_keep_their_meaning()

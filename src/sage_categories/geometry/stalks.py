@@ -16,14 +16,15 @@ from sympy import false, true
 
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import ConeCategory, LimitConesCategory, cocone, cocones
-from sage_categories.cat.functors import Functor
+from sage_categories.cat.cones import LimitConesCategory, cocone, cocones
+from sage_categories.cat.functors import Functor, NaturalTransformation
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.opposites import opposite_functor
 from sage_categories.cat.predicates import ask
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.ringed_spaces import RingedSpacesCategory
 from sage_categories.geometry.sheaves import RingSheaf
+from sage_categories.geometry.spaces import TopologicalSpaces
 from sage_categories.order.posets import FinitePosets, Posets, Thin
 
 __all__ = [
@@ -70,7 +71,7 @@ def _new_stalk_data[PointDatum: Hashable](
 ) -> _FiniteStalkData[PointDatum]:
     presheaf = sheaf.presheaf
     space = presheaf.space
-    assert point.parent() is space.carrier(), f"{point!r} is not a point of this sheaf's space"
+    assert point.parent() is TopologicalSpaces().to_sets().on_object(space), f"{point!r} is not a point of this sheaf's space"
     ambient = space.opens()
     assert ambient in FinitePosets(), "the first stalk evaluator requires a finite represented open poset"
 
@@ -137,8 +138,8 @@ def _new_ring_stalk[PointDatum: Hashable](
 
     selected = cocone(diagram, stalk, germ)
 
-    def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        return candidate.leg(data.least_vertex)
+    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+        return candidate.component(data.least_vertex)
 
     retained = (
         _rings()
@@ -199,8 +200,9 @@ def ringed_stalk_map(
 ) -> MorphismCategory.ObjectType:
     """The induced map ``O_{Y,f(x)} -> O_{X,x}`` of represented stalks."""
     source, target = mapping.domain(), mapping.codomain()
-    assert source_point.parent() is source.space().carrier()
-    target_point = mapping.continuous_map().underlying_map()(source_point)
+    projection = TopologicalSpaces().to_sets()
+    assert source_point.parent() is projection.on_object(source.space())
+    target_point = projection.on_morphism(mapping.continuous_map())(source_point)
     source_sheaf, target_sheaf = source.sheaf(), target.sheaf()
     source_stalk = ring_stalk(source_sheaf, source_point)
     target_stalk = ring_stalk(target_sheaf, target_point)

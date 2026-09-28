@@ -7,6 +7,7 @@ import sage_categories.kernel.roles
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.category import member as member
+from sage_categories.cat.choices import SelectedChoice as SelectedChoice
 from sage_categories.cat.cones import ConeCategory as ConeCategory
 from sage_categories.cat.cones import LimitConesCategory as LimitConesCategory
 from sage_categories.cat.cones import cocone as cocone
@@ -50,6 +51,8 @@ from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
 __all__ = [
     "ApexCategory",
+    "ColimitApexLift",
+    "ColimitMorphismLift",
     "ColimitsCategory",
     "CoproductsCategory",
     "LimitApexLift",
@@ -60,6 +63,7 @@ __all__ = [
     "cocone_apex",
     "cone",
     "cone_apex",
+    "lift_colimit",
     "lift_limit",
     "presenting_family",
     "vertex_of",
@@ -67,6 +71,8 @@ __all__ = [
 type Mediator = Callable[[NaturalTransformation], MorphismCategory.ObjectType]
 type Construction = Callable[[Functor], CategoryOfCategories.ElementType]
 type UniversalPresentation = LimitConesCategory.ObjectType
+type ColimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], CategoryOfCategories.ElementType]
+type ColimitMorphismLift = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType], MorphismCategory.ObjectType]
 
 def presenting_family(constructed: CategoryOfCategories.ElementType) -> Category: ...
 
@@ -100,6 +106,7 @@ type LimitApexLift = Callable[[Functor, LimitConesCategory.ObjectType], Category
 type LimitMorphismLift = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType, MorphismCategory.ObjectType], MorphismCategory.ObjectType]
 
 def lift_limit(functor: Functor, diagram: Functor, on_apex: LimitApexLift, on_morphism: LimitMorphismLift) -> CategoryOfCategories.ElementType: ...
+def lift_colimit(functor: Functor, diagram: Functor, on_apex: ColimitApexLift, on_morphism: ColimitMorphismLift) -> CategoryOfCategories.ElementType: ...
 
 class _StaticRoles_LimitsCategory(_StaticRoles_ApexCategory):
     class ObjectType(sage_categories.cat.category.CategoryDeclaration): ...
@@ -224,4 +231,8 @@ class CoproductsCategory(
         self, diagram: Functor, apex: CategoryOfCategories.ElementType, colimiting_cocone: NaturalTransformation, mediator: Mediator
     ) -> CategoryOfCategories.ElementType: ...
 
+type ColimitPreservationMediator = Callable[[UniversalPresentation, NaturalTransformation], MorphismCategory.ObjectType]
+
+def _retain_colimit_preservation(functor: Functor, shape: Category, mediator: ColimitPreservationMediator) -> None: ...
+def _preserved_colimit(functor: Functor, presentation: UniversalPresentation) -> UniversalPresentation: ...
 def constructed_data(family: Category, diagram: Functor) -> UniversalPresentation: ...

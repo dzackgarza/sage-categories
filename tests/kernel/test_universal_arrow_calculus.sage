@@ -45,7 +45,17 @@ def test_mates_preserve_the_nonidentity_correspondence():
             ),
         )
     )
-    adjunction = Adjunctions(left, right)(unit, counit)
+    adjunctions = Adjunctions(left, right)
+    adjunction = adjunctions(unit, counit)
+    forward_triangle = counit.whisker_right(left) * unit.whisker_left(left)
+    inverse_triangle = counit.whisker_left(right) * unit.whisker_right(right)
+    assert ask(forward_triangle == Mor(Fun(first, second))(left, left).one()) is True
+    assert ask(inverse_triangle == Mor(Fun(second, first))(right, right).one()) is True
+    forward_identity = Mor(Fun(first, second))(left, left).one()
+    inverse_identity = Mor(Fun(second, first))(right, right).one()
+    adjunctions.construct_morphism(adjunction, adjunction, forward_identity, inverse_identity)
+    assert ask(Cat().horizontal_composite(inverse_identity, forward_identity) * unit == unit) is True
+    assert ask(counit * Cat().horizontal_composite(forward_identity, inverse_identity) == counit) is True
     top, bottom = Fun(first, first).constant(first(0)), Fun(second, second).one()
     alpha = Mor(Fun(first, second))(left * top, bottom * left)(
         lambda value: second.construct_morphism(
@@ -113,6 +123,7 @@ def test_pointwise_kan_adjunctions_in_finite_sets():
         ),
     )
     flip = Mor(sets)(first, first)(lambda value: 1 - value)
+    assert ask(collapse * flip == Mor(sets)(second, second).one() * collapse) is True
     transformation = Mor(Fun(shape, sets))(diagram, diagram)(
         lambda vertex: (
             flip if shape.label(vertex) == 0 else Mor(sets)(second, second).one()

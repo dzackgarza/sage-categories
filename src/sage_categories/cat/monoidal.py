@@ -88,8 +88,10 @@ def tensor_morphism(tensor: Functor, first: MorphismCategory.ObjectType, second:
     source = pairs((first.domain(), second.domain()))
     target = pairs((first.codomain(), second.codomain()))
     paired = Mor(pairs)(source, target)((first, second))
-    first_inverse = first.base_category().retained_inverse(first)
-    second_inverse = second.base_category().retained_inverse(second)
+    first_category = pairs.product_projection(0).codomain()
+    second_category = pairs.product_projection(1).codomain()
+    first_inverse = first_category.retained_inverse(first)
+    second_inverse = second_category.retained_inverse(second)
     match first_inverse, second_inverse:
         case (None, _) | (_, None):
             pass
@@ -170,13 +172,22 @@ def _diagram_model(
 ) -> NonstrictMonoidalModel[CategoryOfCategories.ElementType, MorphismCategory.ObjectType]:
     """DisCoPy interpretation into this exact supplied nonstrict monoidal structure."""
     base, tensor = monoidal.underlying_category(), monoidal.tensor()
+
+    def inverse_comparison(arrow: MorphismCategory.ObjectType) -> MorphismCategory.ObjectType:
+        """Read the inverse retained by the supplied monoidal base."""
+        match base.retained_inverse(arrow):
+            case None:
+                raise AssertionError(f"{arrow!r} is not a retained comparison isomorphism of {base!r}")
+            case inverse:
+                return inverse
+
     return NonstrictMonoidalModel(
         unit=monoidal.unit(),
         tensor_object=lambda first, second: tensor_object(tensor, first, second),
         tensor_morphism=lambda first, second: tensor_morphism(tensor, first, second),
         identity=lambda value: Mor(base)(value, value).one(),
         compose=lambda second, first: second * first,
-        inverse=lambda arrow: arrow.inverse(),
+        inverse=inverse_comparison,
         comparison=lambda first, second: _word_comparison(monoidal, first, second),
     )
 

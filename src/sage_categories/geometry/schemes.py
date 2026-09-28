@@ -51,15 +51,30 @@ from sage_categories.geometry.locally_ringed_spaces import (
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
 from sage_categories.geometry.sheaves import (
     RingSheaf,
-    descent_chart_comparison,
-    descent_lift,
-    descent_map,
-    descent_projection,
-    descent_restriction,
-    descent_section_ring,
-    identity_sheaf_comparison,
-    ring_presheaf_from_functor,
-    ring_sheaf,
+)
+from sage_categories.geometry.sheaves import (
+    descent_chart_comparison as _descent_chart_comparison,
+)
+from sage_categories.geometry.sheaves import (
+    descent_lift as _descent_lift,
+)
+from sage_categories.geometry.sheaves import (
+    descent_map as _descent_map,
+)
+from sage_categories.geometry.sheaves import (
+    descent_projection as _descent_projection,
+)
+from sage_categories.geometry.sheaves import (
+    descent_restriction as _descent_restriction,
+)
+from sage_categories.geometry.sheaves import (
+    descent_section_ring as _descent_section_ring,
+)
+from sage_categories.geometry.sheaves import (
+    ring_presheaf_from_functor as _ring_presheaf_from_functor,
+)
+from sage_categories.geometry.sheaves import (
+    ring_sheaf as _ring_sheaf,
 )
 from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 
@@ -202,7 +217,7 @@ class SchemeOpenCategory(ParameterizedThinCategory):
                     chart_opens[right],
                 )
 
-            return descent_section_ring(self, local_rings, overlap_restrictions)
+            return _descent_section_ring(self, local_rings, overlap_restrictions)
 
         def restriction_to(self, larger: SchemeOpenCategory.ObjectType) -> MorphismCategory.ObjectType:
             return cast(SchemeOpenCategory, self.parent()).restriction_map(self, larger)
@@ -273,7 +288,7 @@ class SchemeOpenCategory(ParameterizedThinCategory):
             case True:
                 return Mor(_rings())(larger.section_ring(), larger.section_ring()).one()
             case False:
-                return descent_restriction(
+                return _descent_restriction(
                     larger,
                     smaller,
                     larger.section_ring(),
@@ -554,14 +569,14 @@ def _finite_glued_structure_sheaf(
             return smaller.restriction_to(larger)
 
         functor = Fun(opens.op(), _rings())(on_object, on_morphism)
-        presheaf = ring_presheaf_from_functor(
+        presheaf = _ring_presheaf_from_functor(
             _finite_glued_topological_space(presentation),
             opens,
             functor,
             lambda key: key,
             lambda open_object: open_object,
         )
-        return ring_sheaf(presheaf)
+        return _ring_sheaf(presheaf)
 
     return cast(
         RingSheaf[SchemeOpenCategory.ObjectType],
@@ -674,7 +689,7 @@ def _finite_chart_ringed_map(
             open_object: CategoryOfCategories.ElementType,
         ) -> MorphismCategory.ObjectType:
             target_open = cast(SchemeOpenCategory.ObjectType, open_object)
-            return descent_projection(
+            return _descent_projection(
                 target_open,
                 target_open.section_ring(),
                 target_open.chart_open(chart_index).section_ring(),
@@ -747,7 +762,7 @@ class SchemesCategory(PropertySubcategory):
 
         def underlying_points(self) -> CategoryOfCategories.ElementType:
             """The carrier of the underlying topological space; its points are not scheme-valued points."""
-            return self.space().carrier()
+            return TopologicalSpaces().to_sets().on_object(self.space())
 
         def valued_points(self, ring: CategoryOfCategories.ElementType) -> MorphismCategory:
             """The exact Hom category whose objects are ``Spec(ring) -> self``."""
@@ -902,7 +917,7 @@ class SchemesCategory(PropertySubcategory):
                     retained_chart_index: int = chart_index,
                 ) -> MorphismCategory.ObjectType:
                     represented = cast(SchemeOpenCategory.ObjectType, global_key)
-                    return descent_projection(
+                    return _descent_projection(
                         represented,
                         represented.section_ring(),
                         represented.chart_open(retained_chart_index).section_ring(),
@@ -920,7 +935,7 @@ class SchemesCategory(PropertySubcategory):
                         component.restriction_to(source_open) if index == retained_chart_index else _backend.finite_open_restriction(presentation, component, source_open)
                         for index, component in enumerate(represented.chart_opens())
                     )
-                    return descent_lift(
+                    return _descent_lift(
                         represented,
                         source_open.section_ring(),
                         represented.section_ring(),
@@ -928,7 +943,7 @@ class SchemesCategory(PropertySubcategory):
                         retained_chart_index,
                     )
 
-                comparison = descent_chart_comparison(
+                comparison = _descent_chart_comparison(
                     local_opens,
                     local_sheaf,
                     global_open,
@@ -964,7 +979,7 @@ class SchemesCategory(PropertySubcategory):
             ) -> tuple[int, CategoryOfCategories.ElementType]:
                 tagged = _quotient_tag(quotient_point)
                 space = affine_topological_space(presentation.charts[tagged.chart])
-                return tagged.chart, space.carrier().point(tagged.point)
+                return tagged.chart, TopologicalSpaces().to_sets().on_object(space).point(tagged.point)
 
             def assemble_open(
                 chart_opens: tuple[CategoryOfCategories.ElementType, ...],
@@ -986,7 +1001,7 @@ class SchemesCategory(PropertySubcategory):
                     SchemeOpenCategory.ObjectType,
                     continuous.inverse_image().on_object(target_open),
                 )
-                return descent_map(
+                return _descent_map(
                     source_open,
                     target_presheaf.section_ring(target_key),
                     source_open.section_ring(),
@@ -1022,13 +1037,18 @@ class SchemesCategory(PropertySubcategory):
             value = cast(SchemesCategory.ObjectType[AffineOpenCategory.ObjectType], affine_locally_ringed_space(affine))
             assume(self.predicate()(value))
             inclusion = Mor(self)(value, value).one()
+            affine_presheaf = affine_structure_sheaf(affine)[1]
+            comparison = Mor(Fun(affine_presheaf.functor.domain(), _rings()))(
+                affine_presheaf.functor,
+                affine_presheaf.functor,
+            ).one()
             self.retain_affine_cover(
                 value,
                 (
                     AffineOpenChart(
                         affine,
                         inclusion,
-                        identity_sheaf_comparison(affine_structure_sheaf(affine)[1]),
+                        comparison,
                     ),
                 ),
             )
@@ -1200,7 +1220,7 @@ def projective_line(
     # constructed substitution that could disagree with the scheme morphism.
     overlap_swap = (
         cover.left_overlap.restriction_to(local_source)
-        * descent_projection(pulled_overlap, pulled_overlap.section_ring(), local_source.section_ring(), 0)
+        * _descent_projection(pulled_overlap, pulled_overlap.section_ring(), local_source.section_ring(), 0)
         * swap.sheaf_map().component(overlap_global)
         * left_entry.structure_sheaf_comparison.inverse().component(cover.left_overlap)
     )

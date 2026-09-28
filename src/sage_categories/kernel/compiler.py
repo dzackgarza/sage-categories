@@ -6,6 +6,7 @@ import inspect
 import logging
 from collections.abc import Callable, Iterator
 from itertools import count, pairwise
+from pathlib import Path
 from types import FunctionType, GenericAlias, ModuleType
 from typing import TYPE_CHECKING, Concatenate, Generic, NamedTuple, cast
 
@@ -99,6 +100,34 @@ _structural_comparison_reader: StructuralComparisonReader | None = None
 _comparison_executability_reader: ComparisonExecutabilityReader | None = None
 _comparison_component_reader: ComparisonComponentReader | None = None
 
+type OperationFunctorBuilder = Callable[[Category], Functor]
+type OperationCompatibilityBuilder = Callable[[Category, Category], tuple[Functor, Functor]]
+
+
+class _OperationInterchange(NamedTuple):
+    """Positive declaration that one written operation requires structural interchange."""
+
+    operation: OperationFunctorBuilder
+    compatibility: OperationCompatibilityBuilder | None
+
+
+def _requires_interchange(
+    operation: OperationFunctorBuilder,
+    *,
+    compatibility: OperationCompatibilityBuilder | None = None,
+):
+    """Mark one written method whose interpretation requires interchangeable structural paths.
+
+    The declaration is attached to the actual ``FunctionType``.  It is deliberately
+    private compiler metadata, not a string-keyed operation registry or leaf lifecycle API.
+    """
+
+    def declare(function: FunctionType) -> FunctionType:
+        function._sage_categories_operation_interchange = _OperationInterchange(operation, compatibility)
+        return function
+
+    return declare
+
 
 def _refinement() -> ModuleType:
     """Load refinement graph queries at the compiler/refinement cycle boundary."""
@@ -185,6 +214,7 @@ class _RuntimeImplementationCategory(SageCategory):
     ) -> None:
         self._current = current
         self._targets = targets
+        self._selected_successors: tuple[tuple[Functor, Node], ...] = ()
         self._ordinal = next(_runtime_ordinals)
         self.ParentMethods = declaration
         super().__init__()
@@ -254,7 +284,7 @@ _ROLE_POSITIONS: dict[Role, int] = {
 
 _COMPILE_ORDER = (Role.ELEMENT, Role.OBJECT, Role.MORPHISM)
 
-_declared_ranks: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
+_declared_ranks: dict[Role, MonoDict[Category, int]] = {role: MonoDict() for role in Role}
 _compiled_orders: dict[Role, MonoDict] = {role: MonoDict() for role in Role}
 
 
@@ -285,7 +315,7 @@ def _rank_declaration(category: Category, role: Role) -> None:
     _declared_ranks[role] = _rank_declarations(role, (category,))
 
 
-def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict:
+def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict[Category, int]:
     """Rank structural owners while preserving declaration precedence where compatible.
 
     Sage's controlled C3 remains the sole linearizer.  This function supplies its total
@@ -369,7 +399,7 @@ def _rank_declarations(role: Role, roots: tuple[Category, ...]) -> MonoDict:
 
     for category in pending:
         place(category)
-    ranks: MonoDict = MonoDict()
+    ranks: MonoDict[Category, int] = MonoDict()
     for position, category in enumerate(ranked):
         ranks[category] = len(ranked) - position
     return ranks
@@ -392,20 +422,25 @@ def _runtime_category(current: Node) -> _RuntimeImplementationCategory:
     table = _runtime_categories[current.role]
     if current.category in table:
         return table[current.category]
+    selected_successors = successors(current)
     # Sage CachedRepresentation keys on constructor arguments. A retained category
     # can acquire a new written implementation through Cat.implement.
     runtime = _RuntimeImplementationCategory(
         current,
-        _runtime_targets(current),
+        _runtime_targets(current, selected_successors),
         current.category.local_role_class(current.role),
     )
+    runtime._selected_successors = selected_successors
     table[current.category] = runtime
     return runtime
 
 
-def _runtime_targets(current: Node) -> tuple[SageCategory, ...]:
+def _runtime_targets(
+    current: Node,
+    selected_successors: tuple[tuple[Functor, Node], ...],
+) -> tuple[SageCategory, ...]:
     """The immediate Sage runtime targets of one implementation node."""
-    targets: list[SageCategory] = [_runtime_category(target) for _, target in successors(current)]
+    targets: list[SageCategory] = [_runtime_category(target) for _, target in selected_successors]
     if not targets:
         targets.append(_cat_element_role_root() if _is_cat_element_root(current) else _kernel_role_root(current.role))
     if current.role is Role.OBJECT:
@@ -445,6 +480,11 @@ def successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
     return tuple(
         (functor, target) for functor in inheriting_functors(current.category) for target in (node(functor.codomain(), current.role),) if not same_node(current, target)
     )
+
+
+def _compiled_successors(current: Node) -> tuple[tuple[Functor, Node], ...]:
+    """The selected inheritance edges retained when ``current``'s Sage runtime was compiled."""
+    return _runtime_category(current)._selected_successors
 
 
 def declared_inheritance(
@@ -492,6 +532,20 @@ class _CompilerProjection:
 
     def declared_subtyping(self) -> dict[str, dict[str, tuple[str, ...]]]:
         return _subtyping_projection()
+
+    def declared_type_aliases(self) -> dict[str, str]:
+        """Expose the same source-derived role aliases as the generated stubs."""
+        from sage_categories.kernel.stub_generator import _source_role_aliases
+
+        package = __name__.rsplit(".", 2)[0]
+        root = Path(__file__).resolve().parents[1]
+        aliases = _source_role_aliases(
+            package,
+            root,
+            tuple(sorted(root.rglob("*.py"))),
+            self.declared_inheritance(),
+        )
+        return {f"{module}.{name}": target for module, declarations in aliases.items() for name, target in declarations.items()}
 
     def declared_method_result_projections(
         self,
@@ -562,8 +616,8 @@ def _inheritance_projection() -> dict[str, dict[str, tuple[str, ...]]]:
             relations[provider_name] = entry
             observed.add(key)
             continue
-        current = relations[provider_name]
-        relations[provider_name] = tuple(name for name in current if name in entry)
+        previous_names = relations[provider_name]
+        relations[provider_name] = tuple(name for name in previous_names if name in entry)
     universal = cast(
         type[CategoryPoint],
         vars(category_universal_class())[Role.ELEMENT.value],
@@ -623,7 +677,11 @@ def _local_method_names(local_class: type[CategoryPoint]) -> tuple[str, ...]:
     )
 
 
-def _install_written_body(compiled: type[CategoryPoint], local: type[CategoryPoint]) -> None:
+def _install_written_body(
+    compiled: type[CategoryPoint],
+    local: type[CategoryPoint],
+    owner: Node | None = None,
+) -> None:
     """Install each written member of one declaration on the class compiled from it."""
     if Generic in local.__mro__:
         compiled.__class_getitem__ = classmethod(GenericAlias)
@@ -663,7 +721,7 @@ def _compiled_class(current: Node) -> type[CategoryPoint]:
     """The Sage-compiled implementation class of ``current``'s private runtime category."""
     with building_role_classes():
         compiled = _runtime_category(current).parent_class
-    _install_written_body(compiled, current.category.local_role_class(current.role))
+    _install_written_body(compiled, current.category.local_role_class(current.role), current)
     fixed = _compiled_orders[current.role]
     chain = [
         current.category,
@@ -910,7 +968,7 @@ def runtime_semantic_bases(
 _installed_root_declarations: dict[type[CategoryPoint], type[CategoryPoint]] = {}
 
 
-type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[Node, object]]
+type _ImageDatum = Callable[[Functor, CategoryPoint], tuple[CategoryPoint, Node, object]]
 
 
 class _SelectedAction(NamedTuple):
@@ -1054,12 +1112,123 @@ def _composite_structural_path(path: tuple[Functor, ...]) -> Functor:
     return composite
 
 
+def _comparison_resolution(
+    first: Functor,
+    second: Functor,
+) -> tuple[MorphismOfCategory | None, str | None]:
+    """Resolve one executable invertible comparison and explain an unresolved boundary."""
+    if first is second:
+        return None, None
+    if _structural_comparison_reader is None:
+        return None, "no Cat-owned comparison reader is installed"
+    candidates = _structural_comparison_reader(first, second)
+    if not candidates:
+        return None, "no retained invertible comparison"
+    if _comparison_executability_reader is None:
+        return None, "comparison executability is unavailable"
+    executable = tuple(candidate for candidate in candidates if _comparison_executability_reader(candidate))
+    if not executable:
+        return None, "the retained comparison is formal and has no executable component transport"
+    if len(executable) != 1:
+        return None, f"{len(executable)} executable comparisons are retained, so no comparison is uniquely selected"
+    return executable[0], None
+
+
+def _required_comparison(
+    first: Functor,
+    second: Functor,
+    *,
+    source: Category,
+    target: Category,
+    operation: FunctionType,
+    compatibility: str,
+) -> MorphismOfCategory:
+    """Require the exact executable comparison one marked operation needs."""
+    comparison, reason = _comparison_resolution(first, second)
+    if comparison is not None:
+        return comparison
+    assert reason is not None
+    raise AssertionError(
+        f"{operation.__module__}.{operation.__qualname__} requires interchange between competing structural paths "
+        f"{first!r} and {second!r}; required boundary is one executable invertible natural transformation "
+        f"between them in Fun({source!r}, {target!r}); compatibility: {compatibility}; {reason}"
+    )
+
+
+def _marked_interchange_operations(
+    target: Category,
+) -> tuple[tuple[FunctionType, _OperationInterchange], ...]:
+    """Marked operations declared directly on the roles of one structural target."""
+    found: list[tuple[FunctionType, _OperationInterchange]] = []
+    seen: set[int] = set()
+    for role in Role:
+        declaration = target.local_role_class(role)
+        for member in vars(declaration).values():
+            if not isinstance(member, FunctionType) or id(member) in seen:
+                continue
+            interchange = getattr(member, "_sage_categories_operation_interchange", None)
+            if interchange is None:
+                continue
+            seen.add(id(member))
+            found.append((member, interchange))
+    return tuple(found)
+
+
+def _validate_category_interchange_boundaries(category: Category) -> None:
+    """Validate marked interchange declarations once for this compiled category.
+
+    Construction claims the corresponding coherence laws (D26).  Compilation therefore
+    checks only that the exact executable comparison cells required by a marked inherited
+    operation are retained with the declared boundaries.  Components, transports and
+    composites are mathematical computations exercised by tests, never operation-call
+    admission checks.
+    """
+    for target, paths in _structural_paths(category).items():
+        if len(paths) < 2:
+            continue
+        marked = _marked_interchange_operations(target)
+        if not marked:
+            continue
+        preferred = _composite_structural_path(paths[0])
+        alternates = tuple(_composite_structural_path(path) for path in paths[1:])
+        for function, declaration in marked:
+            operation = declaration.operation(target)
+            assert operation.domain() is target, (
+                f"{function.__module__}.{function.__qualname__} declares operation functor {operation!r} with domain {operation.domain()!r}, not its inherited owner {target!r}"
+            )
+            for alternate in alternates:
+                if alternate is preferred:
+                    continue
+                _required_comparison(
+                    preferred,
+                    alternate,
+                    source=category,
+                    target=target,
+                    operation=function,
+                    compatibility=f"declared interchange for {operation!r}",
+                )
+            if declaration.compatibility is None:
+                continue
+            first, second = declaration.compatibility(category, target)
+            assert first.domain() is second.domain() and first.codomain() is second.codomain(), (
+                f"{function.__module__}.{function.__qualname__} declares a nonparallel interchange compatibility boundary: {first!r} and {second!r}"
+            )
+            if first is second:
+                continue
+            _required_comparison(
+                first,
+                second,
+                source=first.domain(),
+                target=first.codomain(),
+                operation=function,
+                compatibility=f"one executable invertible comparison between {first!r} and {second!r}",
+            )
+
+
 def _unique_executable_comparison(first: Functor, second: Functor) -> MorphismOfCategory | None:
     """The unique retained executable invertible comparison from first to second, if any."""
-    if first is second or _structural_comparison_reader is None or _comparison_executability_reader is None:
-        return None
-    executable = tuple(comparison for comparison in _structural_comparison_reader(first, second) if _comparison_executability_reader(comparison))
-    return executable[0] if len(executable) == 1 else None
+    comparison, _ = _comparison_resolution(first, second)
+    return comparison
 
 
 def _transport_alternate_object_path(
@@ -1155,7 +1324,7 @@ def _initialization_order(
                 continue
             case False:
                 ordered.append(owner)
-                pending.extend(reversed([target for _, target in successors(owner)]))
+                pending.extend(reversed([target for _, target in _compiled_successors(owner)]))
     ordered.extend(owner for owner in context.nodes if not any(same_node(owner, known) for known in ordered))
     return tuple(ordered)
 
@@ -1242,7 +1411,7 @@ def _initialize_graph(
                 representative,
                 None if owner_path is None else (*owner_path, functor),
             )
-            for functor, target in successors(owner)
+            for functor, target in _compiled_successors(owner)
         )
 
     # The C3 owner loop initializes each reached implementation owner once.  A second
@@ -1592,6 +1761,7 @@ def compile_category(category: Category, functors: tuple[Functor, ...]) -> None:
         assert open_codomain is None, f"{category!r} selects {functor!r} into {open_codomain}, which Cat declares and no implementation claims"
     assert all(first is not second for index, first in enumerate(functors) for second in functors[index + 1 :]), f"{category!r} selects one functor twice"
     _debug_unresolved_diamonds(category)
+    _validate_category_interchange_boundaries(category)
     for role in Role:
         declaring = node(category, role)
         if declaring.role is role:
@@ -1711,7 +1881,7 @@ def implement_category(
         # descendants already inherit this compiled class through the runtime graph,
         # and repeating the declaration as a Python base creates a second ordering
         # constraint that can make a later fixed-endpoint narrowing unlinearizable.
-        _install_written_body(compiled, declaration)
+        _install_written_body(compiled, declaration, node(category, role))
         runtime = _node_runtimes[role][category]
         local_initializer = vars(declaration).get("__init__")
         if local_initializer is None:
@@ -1747,8 +1917,8 @@ def _runtimes_reaching(target: Node) -> tuple[_RuntimeImplementationCategory, ..
 
     predecessors: dict[tuple[int, Role], list[Node]] = {}
     for runtime in runtimes:
-        for _, reached in successors(runtime._current):
-            predecessors.setdefault(key(reached), []).append(runtime._current)
+        for _, successor in _compiled_successors(runtime._current):
+            predecessors.setdefault(key(successor), []).append(runtime._current)
 
     reached: set[tuple[int, Role]] = set()
     frontier = [target]
@@ -1807,7 +1977,7 @@ def apply_level_shift(member: Category, placement: Category) -> None:
     affected = _runtimes_reaching(current)
     old_classes = {runtime.parent_class: runtime for runtime in affected}
     old_nodes = {runtime: _linearized_nodes(runtime._current) for runtime in affected}
-    changed._targets = _runtime_targets(current)
+    changed._targets = _runtime_targets(current, changed._selected_successors)
     for runtime in affected:
         for name in _RUNTIME_CACHE_NAMES:
             runtime.__dict__.pop(name, None)

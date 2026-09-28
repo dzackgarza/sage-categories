@@ -20,7 +20,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
-from sage_categories.cat.predicates import Proposition, ask, register_handler
+from sage_categories.cat.predicates import Proposition, register_handler
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function, cached_method
 
@@ -308,7 +308,6 @@ class GrothendieckCategory(Category[[MorphismCategory.ObjectType, MorphismCatego
     ) -> GrothendieckCategory.MorphismType:
         """Factor an arrow through the selected cartesian lift over a specified base arrow."""
         assert arrow.codomain() is lift.codomain()
-        assert ask(lift.base_morphism() * base == arrow.base_morphism()) is True
         comparison = self._indexed.compositor(lift.base_morphism(), base).component(lift.codomain().fiber_object())
         return self.construct_morphism(arrow.domain(), lift.domain(), base, comparison.inverse() * arrow.fiber_morphism())
 

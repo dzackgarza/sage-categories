@@ -2,10 +2,9 @@ from collections.abc import Callable
 from collections.abc import Hashable as Hashable
 from dataclasses import dataclass
 
-from _typeshed import Incomplete
-
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
+import sage_categories.geometry.schemes
 import sage_categories.kernel.roles
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
 from sage_categories.cat.functors import Fun as Fun
@@ -23,11 +22,10 @@ from sage_categories.geometry.ringed_spaces import (
     RingedSpacesCategory as RingedSpacesCategory,
 )
 from sage_categories.geometry.sheaves import RingSheaf as RingSheaf
+from sage_categories.geometry.spaces import TopologicalSpaces as TopologicalSpaces
 from sage_categories.geometry.spaces import (
     TopologicalSpacesCategory as TopologicalSpacesCategory,
 )
-from sage_categories.geometry.stalks import ring_stalk as ring_stalk
-from sage_categories.geometry.stalks import ringed_stalk_map as ringed_stalk_map
 
 __all__ = ["LocallyRingedSpaces", "LocallyRingedSpacesCategory"]
 type LocalRingRule = Callable[[CategoryOfCategories.ElementType, CategoryOfCategories.ElementType], Proposition]
@@ -74,8 +72,7 @@ class LocallyRingedSpacesCategory(
         _StaticRoles_LocallyRingedSpacesCategory.ObjectType, _StaticRoles_LocallyRingedSpacesCategory.ElementType, _StaticRoles_LocallyRingedSpacesCategory.MorphismType
     ],
 ):
-    Scheme: Incomplete
-
+    def Scheme(self) -> sage_categories.geometry.schemes.SchemesCategory: ...
     def to_ringed_spaces(self) -> Functor: ...
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def __call__[OpenKey: Hashable](

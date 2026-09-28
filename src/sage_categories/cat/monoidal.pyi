@@ -38,7 +38,7 @@ __all__ = [
     "TrivialAction",
     "register_cartesian_comparisons",
 ]
-type CartesianComparisonHandler = Callable[..., MorphismCategory.ObjectType]
+type CartesianComparisonHandler = Callable[[str, *tuple[CategoryOfCategories.ElementType, ...]], MorphismCategory.ObjectType | None]
 
 def register_cartesian_comparisons(category_type: type[Category], handler: CartesianComparisonHandler) -> None: ...
 

@@ -1,7 +1,7 @@
 """The full projective-space sequence retains its CW topological colimit."""
 
 from sage_categories.all import ask
-from sage_categories.geometry import complex_projective_point, projective_infinity
+from sage_categories.geometry import TopologicalSpaces, complex_projective_point, projective_infinity
 
 
 def test_projective_infinity_retains_arbitrary_stages_and_mediator() -> None:
@@ -29,7 +29,7 @@ def test_projective_infinity_retains_arbitrary_stages_and_mediator() -> None:
     conjugation = presentation.complex_conjugation()
     assert conjugation.domain() is presentation.space and conjugation.codomain() is presentation.space
 
-    stage_point = low.space.carrier().point(complex_projective_point(1, 1j, 2))
+    stage_point = TopologicalSpaces().to_sets().on_object(low.space).point(complex_projective_point(1, 1j, 2))
     conjugated_stage = low.complex_conjugation()(stage_point)
     assert conjugated_stage.datum() != stage_point.datum()
     assert ask(
@@ -37,7 +37,7 @@ def test_projective_infinity_retains_arbitrary_stages_and_mediator() -> None:
         == low_inclusion(conjugated_stage)
     ) is True
 
-    later_point = high.space.carrier().point(
+    later_point = TopologicalSpaces().to_sets().on_object(high.space).point(
         complex_projective_point(1, 1j, *(0 for _ in range(36)))
     )
     assert ask(

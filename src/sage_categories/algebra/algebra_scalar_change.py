@@ -10,32 +10,26 @@ implementation.
 from __future__ import annotations
 
 from sage_categories.algebra.abelian import (
-    AbelianGroups,
     AbelianTensor,
-    balanced_tensor,
     relative_tensor,
-    relative_tensor_mediator,
 )
 from sage_categories.algebra.algebras import AlgebraCategory
-from sage_categories.cat.bimodules import BimoduleCategory
+from sage_categories.cat.bimodules import BimoduleCategory, relative_tensor_factor
+from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.cat.monoidal import tensor_morphism, tensor_object
+from sage_categories.cat.monoidal import tensor_object
 from sage_categories.cat.morphisms import Mor, MorphismCategory
-from sage_categories.cat.structured_objects import Magmas, Monoids
-
-__all__ = ["restrict_algebra_scalars"]
+from sage_categories.cat.structured_objects import Magmas, MonoidCategory, Monoids
 
 _ALGEBRA_RESTRICTIONS = ChosenConstruction()
+_ALGEBRA_RESTRICTION_FUNCTORS = ChosenConstruction()
 
 
-def _relative_carrier(
-    algebras: AlgebraCategory,
-    algebra: AlgebraCategory.ObjectType,
-):
-    monoid = algebras.monoid_presentation().on_object(algebra)
-    magma = algebras.monoid_category().to_magmas().on_object(monoid)
-    return Magmas(algebras.monoidal_structure()).forgetful().on_object(magma)
+def _to_relative(algebras: AlgebraCategory) -> Functor:
+    """The retained composite from algebras to their relative bimodule carrier."""
+    monoids = algebras.monoid_category()
+    return Magmas(algebras.monoidal_structure()).forgetful() * monoids.to_magmas() * algebras.monoid_presentation()
 
 
 def _ordinary_bimodules(algebras: AlgebraCategory) -> BimoduleCategory:
@@ -63,15 +57,12 @@ def _restrict_object(
         _ordinary_bimodules(source),
         _ordinary_bimodules(target),
     )
-    source_carrier = _relative_carrier(source, algebra)
-    group = source_relative.forgetful().on_object(source_carrier)
+    to_relative = _to_relative(source)
+    source_carrier = to_relative.on_object(algebra)
+    restriction = source_relative.restriction(scalar_morphism, scalar_morphism)
+    assert restriction.codomain() is target_relative
+    restricted = restriction.on_object(source_carrier)
     scalar_map = _underlying_scalar_map(scalar_morphism)
-    identity = Mor(AbelianGroups())(group, group).one()
-    tensor = AbelianTensor().tensor()
-    restricted = target_relative(
-        source_carrier.left_action() * tensor_morphism(tensor, scalar_map, identity),
-        source_carrier.right_action() * tensor_morphism(tensor, identity, scalar_map),
-    )
 
     source_monoid = source.monoid_presentation().on_object(algebra)
     source_projection = relative_tensor(
@@ -83,15 +74,10 @@ def _restrict_object(
         restricted.left_action(),
     )
     source_multiplication = source_relative.forgetful().on_morphism(source_monoid.operation())
-
-    def multiply(left, right):
-        source_tensor = balanced_tensor(source_projection, left, right)
-        return source_multiplication(source_tensor).datum()
-
-    underlying_multiplication = relative_tensor_mediator(
+    underlying_multiplication = relative_tensor_factor(
+        AbelianTensor(),
         target_projection,
-        group,
-        multiply,
+        source_multiplication * source_projection,
     )
     tensor_square = tensor_object(target.monoidal_structure().tensor(), restricted, restricted)
     multiplication = target_relative.homomorphism(
@@ -110,23 +96,53 @@ def _restrict_object(
     return target.from_monoid(Monoids(target.monoidal_structure())(multiplication, unit))
 
 
-def restrict_algebra_scalars(
-    source: AlgebraCategory,
-    target: AlgebraCategory,
+def _restrict_algebra_scalars[
+    SourceScalar: "MonoidCategory.ObjectType",
+    TargetScalar: "MonoidCategory.ObjectType",
+](
+    source: AlgebraCategory[SourceScalar],
+    target: AlgebraCategory[TargetScalar],
     scalar_morphism: MorphismCategory.ObjectType,
-) -> Functor:
+) -> CategoryOfCategories.MorphismType[
+    AlgebraCategory[SourceScalar],
+    AlgebraCategory[TargetScalar],
+    AlgebraCategory.ObjectType,
+    AlgebraCategory.ElementType,
+    AlgebraCategory.MorphismType,
+    AlgebraCategory.ObjectType,
+    AlgebraCategory.ElementType,
+    AlgebraCategory.MorphismType,
+]:
     """Restriction of scalars ``Alg_S -> Alg_R`` along ``R -> S``.
 
     Both algebra categories use the ordinary relative tensor on ``(R,R)``- and
     ``(S,S)``-bimodules in ``Ab``.  Object and morphism actions preserve the exact
     base-relative owners rather than reusing one Python realization at both bases.
     """
+    return _ALGEBRA_RESTRICTION_FUNCTORS(
+        source,
+        (target, scalar_morphism),
+        lambda: _new_restrict_algebra_scalars(source, target, scalar_morphism),
+    )
+
+
+def _new_restrict_algebra_scalars(
+    source: AlgebraCategory,
+    target: AlgebraCategory,
+    scalar_morphism: MorphismCategory.ObjectType,
+) -> Functor:
+    """Construct the named restriction functor on one exact scalar-change datum."""
     monoids = Monoids(AbelianTensor())
     assert scalar_morphism in Mor(monoids)(target.base(), source.base())
     source_relative, target_relative = (
         _ordinary_bimodules(source),
         _ordinary_bimodules(target),
     )
+    relative_restriction = source_relative.restriction(
+        scalar_morphism,
+        scalar_morphism,
+    )
+    assert relative_restriction.codomain() is target_relative
 
     def on_object(algebra: AlgebraCategory.ObjectType) -> AlgebraCategory.ObjectType:
         return _ALGEBRA_RESTRICTIONS(
@@ -138,19 +154,12 @@ def restrict_algebra_scalars(
     def on_morphism(
         arrow: AlgebraCategory.MorphismType,
     ) -> AlgebraCategory.MorphismType:
-        source_monoid = source.monoid_presentation().on_morphism(arrow)
-        source_magma = source.monoid_category().to_magmas().on_morphism(source_monoid)
-        source_bimodule_map = Magmas(source.monoidal_structure()).forgetful().on_morphism(source_magma)
-        underlying = source_relative.forgetful().on_morphism(source_bimodule_map)
+        source_bimodule_map = _to_relative(source).on_morphism(arrow)
         restricted_source, restricted_target = (
             on_object(arrow.domain()),
             on_object(arrow.codomain()),
         )
-        target_bimodule_map = target_relative.homomorphism(
-            _relative_carrier(target, restricted_source),
-            _relative_carrier(target, restricted_target),
-            underlying,
-        )
+        target_bimodule_map = relative_restriction.on_morphism(source_bimodule_map)
         return target.homomorphism(
             restricted_source,
             restricted_target,

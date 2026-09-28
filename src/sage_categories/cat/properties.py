@@ -49,7 +49,7 @@ from sage_categories.cat.predicates import (
     register_handler,
 )
 from sage_categories.kernel.predicates import axiom_layer as _axiom_layer
-from sage_categories.kernel.refinement import refine
+from sage_categories.kernel.refinement import is_subcategory, refine
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_method
 
@@ -171,13 +171,18 @@ class FullSubcategory[**MorphismData, **TwoMorphismData](Category[MorphismData, 
         return self._ambient.point_morphism(point)
 
     def limit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
+        # A full subcategory can own a stronger construction than its ambient through
+        # one of its own selected faithful functors. Prefer that local lifting exactly
+        # as colimits prefer a locally retained constructor below; otherwise inherit
+        # the ambient construction.
+        if any(functor.limit_lifting(shape) is not None for functor in self.selected_functors()):
+            return Category.limit_construction(self, shape)
         return self._ambient.limit_construction(shape)
 
     def colimit_construction(self, shape: Category) -> Callable[[Functor], CategoryOfCategories.ElementType]:
-        # A full subcategory may own a construction more specific than its ambient
-        # category (for example Ab's retained walking-parallel-pair coequalizer).
-        # Prefer that exact owner before inheriting the ambient construction.
-        if shape in self._colimit_constructors:
+        # Retained constructors and selected lifts belong to this exact subcategory,
+        # just as selected limit lifts above do; its ambient can have neither.
+        if shape in self._colimit_constructors or any(functor.colimit_lifting(shape) is not None for functor in self.selected_functors()):
             return Category.colimit_construction(self, shape)
         return self._ambient.colimit_construction(shape)
 
@@ -396,8 +401,12 @@ def _declared_inclusion(subcategory: Category, ambient: Category) -> Functor:
         (functor for functor in subcategory.selected_functors() if functor.codomain() is ambient and _functors().declares_subcategory(functor)),
         None,
     )
-    assert declared is not None, f"{subcategory!r} declares no subcategory monomorphism into {ambient!r}"
-    return declared
+    if declared is not None:
+        return declared
+    # Narrowing containment also follows from the declared roots; storing every
+    # weakening as an immediate edge would build their exponential subset lattice.
+    assert is_subcategory(subcategory, ambient), f"{subcategory!r} is not a declared subcategory of {ambient!r}"
+    return _functors().subcategory_monomorphism(subcategory, ambient)
 
 
 def _inverse_image_mediator(realization: Category, shape: Category, cone_apex, Fun):
@@ -731,6 +740,20 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
     def narrowing_roots(self) -> tuple[Category, ...]:
         return self._roots
 
+    def construction_owner(self) -> Category:
+        """The constructor owner inherited from this narrowing's roots (D150)."""
+        ambient_owner = self._ambient.construction_owner()
+        root_owners: list[Category] = []
+        for root in self._roots:
+            owner = root.construction_owner()
+            if is_subcategory(ambient_owner, owner) or any(owner is known for known in root_owners):
+                continue
+            root_owners.append(owner)
+        if not root_owners:
+            return ambient_owner
+        assert len(root_owners) == 1, f"{self!r} inherits incompatible constructor owners {tuple(map(repr, root_owners))!r}"
+        return root_owners[0]
+
     def predicate(self) -> Predicate:
         """The predicate of the one root property this narrowing restricts (``D.P()``)."""
         (root,) = self._roots
@@ -799,7 +822,7 @@ class NarrowedProperty[**MorphismData, **TwoMorphismData](FullSubcategory[Morphi
         """
         constructing = tuple(root for root in self._roots if root._constructs_from_diagrams)
         if not constructing:
-            constructed = self._ambient(*construction_data, **keywords)
+            constructed = self.construction_owner()(*construction_data, **keywords)
             refine(constructed, self)
             return constructed
         (root,) = constructing

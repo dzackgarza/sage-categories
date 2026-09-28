@@ -27,6 +27,37 @@ The repository owns three responsibilities only:
 2. Weave and coordinate backend engines.
 3. Supply kernel and `Cat` machinery to organize, structure, and inherit categories ergonomically for mathematicians.
 
+### Leaves are litmus spikes, not products
+
+This repository builds the Cat/kernel core. Leaves are small structural spikes that probe it.
+Their primary purpose is to find where the core falls short. A spike shows:
+- when a leaf has to do too much;
+- where a leaf can easily violate the abstraction boundaries or short-circuit what Cat/core is supposed to do;
+- where Cat/core needs to own more;
+- where it needs stronger mechanisms guiding correct leaf-writing, or enforcement of data flow, import flow and
+  override practices;
+- where writing a leaf exposes missing functionality or missing general mathematics in the core.
+Each such finding is repaired in the core (or becomes a core node), never absorbed into the leaf.
+The target a spike is measured against: a leaf is mostly mathematics plus backend wiring; Cat/core handles
+generality, inheritance and engineering wiring; inheritance just works; leaves are isolated and modular provided
+they define the right functors.
+
+Rebuilding real Sage functionality is not a goal; real leaf work eventually belongs in a separate repository that
+imports sage-categories as a black-box foundation.
+
+The existing leaves stay here as the probe corpus, including their complex real-world settings (adeles,
+`CP^infty`, scheme gluing, local fields): those show what the core forces a leaf to do in realistic cases.
+Change, refactor or extend a leaf when that tests or exposes the core. For example, move a responsibility
+into Cat/core and simplify the leaf that carried it, or push a leaf into a real setting that surfaces a core
+defect. Such a commit names the core finding it produces or consumes. Polishing a leaf for its own sake is
+drift: completing its topic contract, or fixing a leaf-local issue that tells nothing about the core.
+This was misread once: milestone B required "every production leaf" to satisfy its complete topic contract,
+and core nodes were gated on leaf consumers.
+
+The leaves stay in this repository while the core is changing, so that a core change and the leaves' reaction
+land in one history. After milestone A, extracting them into the downstream leaf repository is itself the
+final probe: they must work importing only sage-categories' public surface.
+
 ### Leaf categories and hand-rolled mathematics
 
 Leaf categories must not introduce new bespoke code.
@@ -36,6 +67,27 @@ Leaves manage backend engines; `Cat` threads operations across engines.
 Hand-rolling mathematical algorithms outside `Cat` is prohibited.
 Hand-rolled implementations inside `Cat` are equally prohibited when external packages handle the required categorical computations.
 Write new mathematical implementations only when verified evidence proves that no external dependency satisfies the requirement.
+
+### Construction claims the laws; computing them is a test
+
+Sage is a computer algebra system, not a theorem prover.
+Writing a construction *claims* its laws: associativity, units, distributivity, commutativity, naturality, pentagon, triangle.
+No constructor computes those laws to admit a value.
+Computing them is how a test checks that a construction is correct; it is never a gate on the construction.
+An internal method that computes a law is fine when some operation needs the result, but it never runs as a condition of existing.
+A slow coherence computation is a slow test. It is not an unfinished construction, and it blocks no node and no acceptance.
+This is D26. The repository owner has had to restate it repeatedly, which is why it lives here.
+
+It has been violated in this exact form, so check for it:
+- spec text saying a constructor "decides", "checks" or "verifies" a law before admitting a value.
+  `27b3e507` invented one in `functor.md`, and it drove the code below. Such text is agent-invented and wrong: remove it, don't follow it.
+- a constructor that calls `ask(...)` on its defining equations: `EquifierCategory.__call__`, and everything built on it (`Monoids`, `Semirings`, `Rings`, modules, bimodules).
+- bypasses written to dodge that check, such as `certified_*` constructors or special cases for "canonical" structures. They exist only because construction checks, so the fix is at the constructor, never another bypass.
+- an acceptance, review or node waiting on a coherence run to finish in time.
+- the same check moved to call time: a wrapper that computes comparisons, transports or composites on
+  every call of an operation (`_operation_interchange_wrapper`, `9d6d8299`). The compiler checks
+  once, per compiled category, that the required comparison cells are declared with the right boundary;
+  computing them is a test.
 
 ## Sources of truth
 
@@ -324,6 +376,13 @@ The infinite and nonenumerable obligations are at their
 ## Review and acceptance
 
 A complete implementation unit receives independent review at a fixed committed revision.
+"Independent" means only that the agent who wrote the implementation does not review it.
+The review is an ordinary ready task in the DAG. Any other agent that picks it up is the independent reviewer:
+the next chat of this workstream after a replacement or compaction, a worker, or an agent from another session.
+No sub-agent, spawn, slot or special reviewer is required.
+A reviewer being "unavailable" is therefore never a blocker to record. The implementer moves on to other ready work,
+and the review is done by the next agent to reach it. This was misread once: from 2026-09-21 to 09-26,
+core-algebraic-calculus waited on a spawned reviewer while its chat wrote a dozen "review blocker" docs.
 Use `r-gate` for the owned acceptance boundary. Archived R0–R6 and P1–P7 phase
 procedures preserve historical evidence; they do not reinstate the superseded
 execution order or require recreating those phases for the active A/B DAG.

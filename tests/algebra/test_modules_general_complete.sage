@@ -14,13 +14,14 @@ from sage_categories.algebra.abelian import (
 from sage_categories.algebra.modules import (
     finite_free_matrix_morphism,
     finitely_presented_module,
-    ordinary_modules,
     presented_module_factor,
     presented_module_projection,
     presented_module_relation,
     presented_module_zero,
 )
 from sage_categories.cat.category import ask
+from sage_categories.cat.modules import Modules
+from sage_categories.cat.monoidal import SelfAction
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.structured_objects import Monoids
 
@@ -53,7 +54,7 @@ def matrix_ring():
 
 def test_unified_module_api_preserves_noncommutative_scalars_and_universal_factor() -> None:
     element, group, ring = matrix_ring()
-    modules = ordinary_modules(ring)
+    modules = Modules(ring, SelfAction(AbelianTensor()))
     e11 = group.point(element([1, 0, 0, 0]))
     e12 = element([0, 1, 0, 0])
     e21 = element([0, 0, 1, 0])

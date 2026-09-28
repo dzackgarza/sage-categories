@@ -15,8 +15,9 @@ from sage_categories.cat.predicates import Axiom, Proposition
 from sage_categories.geometry._ring_categories import commutative_rings as _rings
 from sage_categories.geometry.ringed_spaces import RingedSpaces, RingedSpacesCategory
 from sage_categories.geometry.sheaves import RingSheaf
-from sage_categories.geometry.spaces import TopologicalSpacesCategory
-from sage_categories.geometry.stalks import ring_stalk, ringed_stalk_map
+from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
+from sage_categories.geometry.stalks import ring_stalk as _ring_stalk
+from sage_categories.geometry.stalks import ringed_stalk_map as _ringed_stalk_map
 
 __all__ = ["LocallyRingedSpaces", "LocallyRingedSpacesCategory"]
 
@@ -133,7 +134,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
     ) -> LocallyRingedSpacesCategory.ObjectType[OpenKey]:
         return self.with_stalks(
             ringed_space,
-            lambda point: ring_stalk(ringed_space.sheaf(), point),
+            lambda point: _ring_stalk(ringed_space.sheaf(), point),
             local_ring_rule,
         )
 
@@ -158,7 +159,7 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
             source,
             target,
             ringed_map,
-            lambda point: ringed_stalk_map(ringed_map, point),
+            lambda point: _ringed_stalk_map(ringed_map, point),
             local_map_rule,
         )
 
@@ -209,13 +210,13 @@ class LocallyRingedSpacesCategory(MorphismDataCategory):
             source_point: CategoryOfCategories.ElementType,
             _stalk_map: MorphismCategory.ObjectType,
         ) -> Proposition:
-            middle_point = first_map.continuous_map().underlying_map()(source_point)
+            middle_point = TopologicalSpaces().to_sets().on_morphism(first_map.continuous_map())(source_point)
             return first.local_map_condition(source_point) & second.local_map_condition(middle_point)
 
         def stalk_map_at(
             source_point: CategoryOfCategories.ElementType,
         ) -> MorphismCategory.ObjectType:
-            middle_point = first_map.continuous_map().underlying_map()(source_point)
+            middle_point = TopologicalSpaces().to_sets().on_morphism(first_map.continuous_map())(source_point)
             return first.stalk_map(source_point) * second.stalk_map(middle_point)
 
         return _LocallyRingedMorphismData(

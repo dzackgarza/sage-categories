@@ -1,0 +1,21 @@
+id: no-accessor-standing-in-for-functor
+language: python
+severity: error
+files:
+  - src/sage_categories/sets/**/*.py
+  - src/sage_categories/order/**/*.py
+  - src/sage_categories/algebra/**/*.py
+  - src/sage_categories/geometry/**/*.py
+message: POL-LEAF-078, D73
+rule:
+  all:
+    - kind: function_definition
+      has:
+        field: name
+        regex: ^(carrier|carrier_morphism|underlying_set|underlying_map)$
+    - inside:
+        kind: class_definition
+        has:
+          field: name
+          regex: ^(ObjectType|ElementType|MorphismType)$
+        stopBy: end

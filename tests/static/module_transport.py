@@ -2,9 +2,33 @@
 
 from typing import assert_type
 
-from sage_categories.cat.functors import Functor
-from sage_categories.cat.modules import ModuleCategory
+from sage_categories.cat.category import Category
+from sage_categories.cat.modules import ModuleCategory, Modules
+from sage_categories.cat.monoidal import ActionsCategory
 from sage_categories.cat.morphisms import MorphismCategory
+from sage_categories.cat.structured_objects import MonoidCategory
+
+
+class ActingCategory(Category[[], []]):
+    pass
+
+
+class ActedOnCategory(Category[[], []]):
+    pass
+
+
+def module_owner_parameters[Scalar: MonoidCategory.ObjectType](
+    scalars: Scalar,
+    action: ActionsCategory.ObjectType[ActingCategory, ActedOnCategory],
+) -> None:
+    modules = Modules(scalars, action)
+    assert_type(
+        modules,
+        ModuleCategory[Scalar, ActingCategory, ActedOnCategory],
+    )
+    assert_type(modules.scalars(), Scalar)
+    assert_type(modules.actegory(), ActionsCategory.ObjectType[ActingCategory, ActedOnCategory])
+    assert_type(modules.underlying_category(), ActedOnCategory)
 
 
 def module_transport_types(
@@ -22,7 +46,15 @@ def module_transport_types(
 
 
 def module_restriction_types(
-    modules: ModuleCategory,
+    modules: ModuleCategory[MonoidCategory.ObjectType, ActingCategory, ActedOnCategory],
     scalar_morphism: MorphismCategory.ObjectType,
 ) -> None:
-    assert_type(modules.restriction(scalar_morphism), Functor)
+    restriction = modules.restriction(scalar_morphism)
+    assert_type(
+        restriction.domain(),
+        ModuleCategory[MonoidCategory.ObjectType, ActingCategory, ActedOnCategory],
+    )
+    assert_type(
+        restriction.codomain(),
+        ModuleCategory[MonoidCategory.ObjectType, ActingCategory, ActedOnCategory],
+    )

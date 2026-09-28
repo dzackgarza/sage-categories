@@ -8,6 +8,7 @@ from sage_categories.cat.diagrams import cospan_diagram
 from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
 from sage_categories.cat.images import full_image, strict_image
 from sage_categories.cat.morphisms import FixedEndpointCategory, Mor, MorphismCategory
+from sage_categories.cat.native import has_native_functor
 from sage_categories.cat.opposites import Op, op_squared_isomorphism
 from sage_categories.cat.points import PointCategory
 from sage_categories.cat.predicates import Proposition, Unknown, register_handler
@@ -265,6 +266,37 @@ def test_products_pullbacks_comma_and_fixed_slices_retain_defining_functors() ->
     presentation = Cat().Pullbacks().presentation(pullback)
     assert presentation.diagram() is diagram
     assert presentation.transformation().codomain() is diagram
+
+    # Pullbacks are functorial for an arbitrary morphism of cospans, not only the
+    # specialized inverse-image comparison path.  For identity cospans, the induced
+    # pullback functor is the supplied component functor.
+    target_category = Cat().Simplex(2)
+    target_identity = _identity_functor(target_category)
+    target_diagram = cospan_diagram(Cat(), target_identity, target_identity)
+    target_pullback = Cat().Pullbacks()(target_diagram)
+    along = Fun(category, target_category)(
+        lambda vertex: target_category(category.label(vertex)),
+        lambda arrow: target_category.generator("0->1") if arrow.word() else Mor(target_category)(target_category(category.label(arrow.domain())), target_category(category.label(arrow.domain()))).one(),
+    )
+    cospan = Cat().WalkingCospan()
+    transformation = Mor(Fun(cospan, Cat()))(diagram, target_diagram)(lambda _vertex: along)
+    induced = Cat().Pullbacks().limit_functor().on_morphism(transformation)
+    assert induced.domain() is pullback
+    assert induced.codomain() is target_pullback
+    source_zero = pullback.from_components(lambda _vertex: category(0))
+    source_one = pullback.from_components(lambda _vertex: category(1))
+    source_edge = pullback.morphism_from_components(
+        source_zero,
+        source_one,
+        lambda _vertex: Mor(category)(category(0), category(1))(("0->1",)),
+    )
+    target_zero = induced.on_object(source_zero)
+    target_one = induced.on_object(source_one)
+    target_edge = induced.on_morphism(source_edge)
+    for vertex in (cospan(0), cospan(1), cospan(2)):
+        assert target_zero.family_component(vertex) is target_category(0)
+        assert target_one.family_component(vertex) is target_category(1)
+        assert target_edge.family_component(vertex) is target_category.generator("0->1")
 
     comma = Cat().Comma(identity, identity)
     assert Cat().Comma(identity, identity) is comma
@@ -748,6 +780,11 @@ def test_strict_and_full_image_inclusions_are_the_direct_zero_argument_call() ->
     assert strict_inclusion is Fun(strict, TOKENS).Monomorphisms()()
     assert is_placed(strict_inclusion, Fun(strict, TOKENS).Monomorphisms())
     assert ask(Fun.Isofibrations().membership_proposition(strict_inclusion)) is Unknown
+    assert not has_native_functor(strict_inclusion)
+    assert strict_inclusion.on_object(strict_member) is strict_member
+    strict_identity = Mor(strict)(strict_member, strict_member).one()
+    assert strict_inclusion.on_morphism(strict_identity) is strict_identity
+    assert not has_native_functor(strict_inclusion)
 
     full = full_image(TOKENS, defining)
     assert full_image(TOKENS, defining) is full

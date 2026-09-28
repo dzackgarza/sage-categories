@@ -11,6 +11,7 @@ from sage_categories.algebra.commutative_rings import (
 from sage_categories.all import ask
 from sage_categories.geometry import RingedSpaces, RingSheaf, TopologicalSpaces
 from sage_categories.geometry.locally_ringed_spaces import LocallyRingedSpaces
+from sage_categories.geometry.sheaves import descent_projection
 from sage_categories.geometry.affine import (
     AffineSchemes,
     Spec,
@@ -138,8 +139,8 @@ def test_three_chart_gluing_uses_multi_affine_overlaps() -> None:
         for chart, (coordinate_x, coordinate_y) in zip(charts, generators, strict=True)
     )
     quotient_points = tuple(
-        chart.open_immersion.continuous_map().underlying_map()(
-            affine_topological_space(chart.affine).carrier().point(point)
+        TopologicalSpaces().to_sets().on_morphism(chart.open_immersion.continuous_map())(
+            TopologicalSpaces().to_sets().on_object(affine_topological_space(chart.affine)).point(point)
         )
         for chart, point in zip(cover, points, strict=True)
     )
@@ -203,15 +204,16 @@ def test_three_chart_gluing_uses_multi_affine_overlaps() -> None:
     assert sheaf_pullback.codomain() is source_du.section_ring()
     localized_u = target_du.restriction_to(target_root)(u)
     compatible_u = sheaf_pullback(localized_u)
-    owner, local_values = compatible_u.datum()
-    assert owner is source_du
-    assert len(local_values) == 3
-    assert all(
-        local_value.parent() is component.section_ring()
-        for local_value, component in zip(local_values, source_du.chart_opens(), strict=True)
-    )
+    for index, component in enumerate(source_du.chart_opens()):
+        projected = descent_projection(
+            source_du,
+            source_du.section_ring(),
+            component.section_ring(),
+            index,
+        )(compatible_u)
+        assert projected.parent() is component.section_ring()
 
-    image = mediator.continuous_map().underlying_map()(quotient_points[0])
+    image = TopologicalSpaces().to_sets().on_morphism(mediator.continuous_map())(quotient_points[0])
     expected_target_point = AffineSchemes().spectrum_point(
         target_affine,
         (u - u.parent().one(), v),

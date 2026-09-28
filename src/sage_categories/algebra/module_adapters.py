@@ -17,11 +17,14 @@ from sage_categories.algebra._firewall.modules import Engine
 from sage_categories.algebra.indexed_modules import integer_scalar_monoid
 from sage_categories.cat.calculus import binary_product_data
 from sage_categories.cat.category import CategoryOfCategories
-from sage_categories.cat.certified_structures import certified_additive_group
 from sage_categories.cat.choices import ChosenConstruction
 from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import Cartesian
 from sage_categories.cat.morphisms import Mor
+from sage_categories.cat.structured_objects import (
+    AdditiveGroups,
+    Groups,
+)
 from sage_categories.sets.finite import Sets
 
 __all__ = ["sage_module_from_engine"]
@@ -48,7 +51,9 @@ def _owned_additive_carrier(engine_module: Engine) -> CategoryOfCategories.Eleme
         cartesian = Cartesian(Sets())
         zero = Mor(Sets)(cartesian.unit(), carrier)(lambda _point: _backend.module_zero(native))
         inverse_shear = Mor(Sets)(square, square)(lambda pair: (pair[0], _backend.module_subtract(native, pair[1], pair[0])))
-        group = certified_additive_group(carrier, addition, zero, inverse_shear, cartesian, commutative=True)
+        neutral = Groups(cartesian).Commutative()(addition, zero)
+        Groups(cartesian).retain_inverse_shear(neutral, inverse_shear)
+        group = AdditiveGroups(cartesian).renamed(neutral)
         coordinates = _abelian._CoordinateBridge(
             (0,) * _backend.module_rank(native),
             lambda datum: _backend.module_coordinates(native, datum),

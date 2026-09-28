@@ -13,11 +13,12 @@ from __future__ import annotations
 from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 
+from sage_categories.algebra._firewall import abelian as _backend
 from sage_categories.algebra.abelian import (
     AbelianGroups,
     AbelianTensor,
     abelian_homomorphism,
-    indexed_free_abelian_coproduct,
+    presented_abelian_group,
     simple_tensor,
 )
 from sage_categories.cat.category import CategoryOfCategories
@@ -32,11 +33,11 @@ from sage_categories.cat.cones import (
 )
 from sage_categories.cat.diagrams import from_sequence
 from sage_categories.cat.functors import Fun, Functor
-from sage_categories.cat.modules import ModuleCategory, Modules
+from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import SelfAction, tensor_morphism
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.shapes import Discrete
-from sage_categories.cat.structured_objects import MonoidCategory, Monoids
+from sage_categories.cat.structured_objects import Monoids
 from sage_categories.sets.finite import Sets
 
 __all__ = [
@@ -47,7 +48,6 @@ __all__ = [
     "finite_free_module",
     "finite_free_projection",
     "free_module_homomorphism",
-    "ordinary_modules",
     "regular_module",
 ]
 
@@ -59,13 +59,6 @@ type BasisImageRule = Callable[[CategoryOfCategories.ElementType], ModuleMap]
 _REGULAR_MODULES = ChosenConstruction()
 _FINITE_FREE_MODULES = ChosenConstruction()
 _FINITE_FREE_FAMILIES: SelectedChoice[Functor] = SelectedChoice()
-
-
-def ordinary_modules(scalars: MonoidCategory.ObjectType) -> ModuleCategory:
-    """The ordinary category of left modules over ``scalars`` in ``(Ab, tensor)``."""
-    monoidal = AbelianTensor()
-    assert scalars in Monoids(monoidal), f"{scalars!r} is not a ring/scalar monoid in {monoidal.underlying_category()!r}"
-    return Modules(scalars, SelfAction(monoidal))
 
 
 def _require_ordinary(modules: ModuleCategory) -> None:
@@ -174,8 +167,8 @@ def _binary_module_biproduct(
         result,
         cocone(module_diagram, result, lambda vertex: injections[module_shape.label(vertex)]),
         lambda candidate: copair(
-            candidate.leg(module_shape(0)),
-            candidate.leg(module_shape(1)),
+            candidate.component(module_shape(0)),
+            candidate.component(module_shape(1)),
         ),
     )
     return result, injections, projections, pair, copair
@@ -230,8 +223,7 @@ def _zero_module_morphism(
 
 def _zero_module(modules: ModuleCategory) -> ModuleCategory.ObjectType:
     """The zero ordinary module as the empty direct sum of regular modules."""
-    empty = Sets(())
-    carrier = indexed_free_abelian_coproduct(empty)
+    carrier = presented_abelian_group(_backend.finite_free_engine(0))
     action = modules.actegory().action()
     action_source = action.on_object(action.domain()((modules.carrier(), carrier)))
     zero_action = modules.underlying_category().zero_morphism(action_source, carrier)
@@ -295,7 +287,7 @@ def _new_finite_free_module(modules: ModuleCategory, rank: int) -> ModuleCategor
         family,
         stage.module,
         cocone(family, stage.module, lambda vertex: stage.injections[int(vertex.point().datum())]),
-        lambda candidate: stage.copair(tuple(candidate.leg(vertex) for vertex in vertices)),
+        lambda candidate: stage.copair(tuple(candidate.component(vertex) for vertex in vertices)),
     )
     _FINITE_FREE_FAMILIES.select(modules, (stage.module,), family)
     return stage.module

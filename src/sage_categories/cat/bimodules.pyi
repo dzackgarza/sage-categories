@@ -1,19 +1,30 @@
+from collections.abc import Callable
+from typing import Literal
+
 import sage_categories.cat.cat_constructions
 import sage_categories.cat.category
 import sage_categories.cat.morphisms
 import sage_categories.cat.structured_objects
 import sage_categories.kernel.roles
+from sage_categories.cat.calculus import curry as curry
+from sage_categories.cat.calculus import transpose as transpose
 from sage_categories.cat.cat_constructions import LimitSubcategory as LimitSubcategory
 from sage_categories.cat.cat_constructions import (
     limit_of_categories as limit_of_categories,
 )
 from sage_categories.cat.category import Category as Category
 from sage_categories.cat.category import CategoryOfCategories as CategoryOfCategories
+from sage_categories.cat.cones import cocone as cocone
 from sage_categories.cat.diagrams import cospan_diagram as cospan_diagram
 from sage_categories.cat.functors import Cat as Cat
 from sage_categories.cat.functors import Fun as Fun
 from sage_categories.cat.functors import Functor as Functor
 from sage_categories.cat.functors import NaturalTransformation as NaturalTransformation
+from sage_categories.cat.limit_basis import coequalizer_factor as coequalizer_factor
+from sage_categories.cat.limit_basis import (
+    coequalizer_presentation as coequalizer_presentation,
+)
+from sage_categories.cat.limit_basis import parallel_pair as parallel_pair
 from sage_categories.cat.modules import ModuleCategory as ModuleCategory
 from sage_categories.cat.modules import Modules as Modules
 from sage_categories.cat.monoidal import (
@@ -22,16 +33,120 @@ from sage_categories.cat.monoidal import (
 from sage_categories.cat.monoidal import Reversed as Reversed
 from sage_categories.cat.monoidal import SelfAction as SelfAction
 from sage_categories.cat.monoidal import tensor_morphism as tensor_morphism
+from sage_categories.cat.monoidal import tensor_object as tensor_object
 from sage_categories.cat.morphisms import Mor as Mor
 from sage_categories.cat.morphisms import MorphismCategory as MorphismCategory
 from sage_categories.cat.structured_objects import EquifierCategory as EquifierCategory
 from sage_categories.cat.structured_objects import MonoidCategory as MonoidCategory
 from sage_categories.cat.structured_objects import Monoids as Monoids
+from sage_categories.kernel.refinement import refine as refine
 from sage_categories.kernel.retention import identity_key as identity_key
 from sage_categories.kernel.sage_runtime import cached_function as cached_function
 from sage_categories.kernel.sage_runtime import cached_method as cached_method
 
-__all__ = ["ActionPairsCategory", "BimoduleCategory", "Bimodules"]
+__all__ = [
+    "ActionPairsCategory",
+    "BimoduleCategory",
+    "Bimodules",
+    "fixed_tensor_functor",
+    "induced_left_action",
+    "induced_right_action",
+    "relative_left_unitor",
+    "relative_right_unitor",
+    "relative_tensor",
+    "relative_tensor_associator",
+    "relative_tensor_associator_from_factors",
+    "relative_tensor_bifunctor",
+    "relative_tensor_factor",
+    "relative_tensor_morphism",
+    "relative_tensor_preserved_factor",
+]
+
+def fixed_tensor_functor(monoidal: MonoidalStructuresCategory.ObjectType, value: CategoryOfCategories.ElementType, side: Literal["left", "right"]) -> Functor: ...
+def relative_tensor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    middle: CategoryOfCategories.ElementType,
+    right_action: MorphismCategory.ObjectType,
+    left_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType: ...
+def relative_tensor_factor(
+    monoidal: MonoidalStructuresCategory.ObjectType, projection: MorphismCategory.ObjectType, arrow: MorphismCategory.ObjectType
+) -> MorphismCategory.ObjectType: ...
+def relative_tensor_preserved_factor(
+    monoidal: MonoidalStructuresCategory.ObjectType, projection: MorphismCategory.ObjectType, functor: Functor, arrow: MorphismCategory.ObjectType
+) -> MorphismCategory.ObjectType: ...
+def induced_left_action(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    scalars: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    left_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType: ...
+def induced_right_action(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    first: CategoryOfCategories.ElementType,
+    scalars: CategoryOfCategories.ElementType,
+    right_action: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType: ...
+def relative_tensor_morphism(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    source: MorphismCategory.ObjectType,
+    target: MorphismCategory.ObjectType,
+    first: MorphismCategory.ObjectType,
+    second: MorphismCategory.ObjectType,
+) -> MorphismCategory.ObjectType: ...
+def relative_tensor_bifunctor[
+    LeftScalar: MonoidCategory.ObjectType,
+    MiddleScalar: MonoidCategory.ObjectType,
+    RightScalar: MonoidCategory.ObjectType,
+    BaseCategory: Category[..., ...],
+](
+    left_scalars: LeftScalar, middle_scalars: MiddleScalar, right_scalars: RightScalar, monoidal: MonoidalStructuresCategory.ObjectType[BaseCategory]
+) -> CategoryOfCategories.MorphismType[
+    Category,
+    BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+    CategoryOfCategories.ElementType,
+    CategoryOfCategories.ElementType,
+    MorphismCategory.ObjectType,
+    BimoduleCategory.ObjectType,
+    BimoduleCategory.ElementType,
+    BimoduleCategory.MorphismType,
+]: ...
+def relative_left_unitor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    left_action: MorphismCategory.ObjectType,
+    unit_morphism: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
+def relative_right_unitor(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    projection: MorphismCategory.ObjectType,
+    right_action: MorphismCategory.ObjectType,
+    unit_morphism: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
+def relative_tensor_associator(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    third: CategoryOfCategories.ElementType,
+    first_second_projection: MorphismCategory.ObjectType,
+    second_third_projection: MorphismCategory.ObjectType,
+    source_projection: MorphismCategory.ObjectType,
+    target_projection: MorphismCategory.ObjectType,
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
+def relative_tensor_associator_from_factors(
+    monoidal: MonoidalStructuresCategory.ObjectType,
+    first: CategoryOfCategories.ElementType,
+    second: CategoryOfCategories.ElementType,
+    third: CategoryOfCategories.ElementType,
+    first_second_projection: MorphismCategory.ObjectType,
+    second_third_projection: MorphismCategory.ObjectType,
+    source_projection: MorphismCategory.ObjectType,
+    target_projection: MorphismCategory.ObjectType,
+    factor_source: Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType],
+    factor_target: Callable[[MorphismCategory.ObjectType], MorphismCategory.ObjectType],
+) -> tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]: ...
 
 class _StaticRoles_ActionPairsCategory(sage_categories.cat.cat_constructions._StaticRoles_LimitSubcategory):
     class ObjectType(sage_categories.cat.category._StaticRoles_CategoryOfCategories.ElementType, sage_categories.kernel.roles.ObjectOfCategory): ...
@@ -65,23 +180,85 @@ class _StaticRoles_BimoduleCategory(sage_categories.cat.structured_objects._Stat
         def domain(self) -> BimoduleCategory.ObjectType: ...
         def codomain(self) -> BimoduleCategory.ObjectType: ...
 
-class BimoduleCategory(
+class BimoduleCategory[
+    LeftScalar: sage_categories.cat.structured_objects._StaticRoles_MonoidCategory.ObjectType = sage_categories.cat.structured_objects._StaticRoles_MonoidCategory.ObjectType,
+    RightScalar: sage_categories.cat.structured_objects._StaticRoles_MonoidCategory.ObjectType = sage_categories.cat.structured_objects._StaticRoles_MonoidCategory.ObjectType,
+    BaseCategory: Category[..., ...] = Category[..., ...],
+](
     _StaticRoles_BimoduleCategory,
     EquifierCategory[_StaticRoles_BimoduleCategory.ObjectType, _StaticRoles_BimoduleCategory.ElementType, _StaticRoles_BimoduleCategory.MorphismType],
 ):
-    def __init__(self, first: NaturalTransformation, second: NaturalTransformation, left: ModuleCategory, right: ModuleCategory, pairs: ActionPairsCategory) -> None: ...
-    def left_modules(self) -> ModuleCategory: ...
-    def right_modules(self) -> ModuleCategory: ...
-    def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType: ...
-    def underlying_category(self) -> Category: ...
+    def __init__(
+        self,
+        first: NaturalTransformation,
+        second: NaturalTransformation,
+        left_scalars: LeftScalar,
+        right_scalars: RightScalar,
+        left: ModuleCategory[LeftScalar, BaseCategory, BaseCategory],
+        right: ModuleCategory[MonoidCategory.ObjectType, BaseCategory, BaseCategory],
+        pairs: ActionPairsCategory,
+    ) -> None: ...
+    def left_scalars(self) -> LeftScalar: ...
+    def right_scalars(self) -> RightScalar: ...
+    def left_modules(self) -> ModuleCategory[LeftScalar, BaseCategory, BaseCategory]: ...
+    def right_modules(self) -> ModuleCategory[MonoidCategory.ObjectType, BaseCategory, BaseCategory]: ...
+    def monoidal_structure(self) -> MonoidalStructuresCategory.ObjectType[BaseCategory]: ...
+    def underlying_category(self) -> BaseCategory: ...
     @cached_method
-    def to_left(self) -> Functor: ...
+    def to_left(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        ModuleCategory[LeftScalar, BaseCategory, BaseCategory],
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]: ...
     @cached_method
-    def to_right(self) -> Functor: ...
+    def to_right(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        ModuleCategory[MonoidCategory.ObjectType, BaseCategory, BaseCategory],
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        ModuleCategory.ObjectType,
+        ModuleCategory.ElementType,
+        ModuleCategory.MorphismType,
+    ]: ...
     @cached_method
-    def forgetful(self) -> Functor: ...
+    def forgetful(
+        self,
+    ) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        BaseCategory,
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        CategoryOfCategories.ElementType,
+        CategoryOfCategories.ElementType,
+        MorphismCategory.ObjectType,
+    ]: ...
     def structure_functors(self) -> tuple[Functor, ...]: ...
     def __call__(self, left_action: MorphismCategory.ObjectType, right_action: MorphismCategory.ObjectType) -> BimoduleCategory.ObjectType: ...
     def homomorphism(self, source: BimoduleCategory.ObjectType, target: BimoduleCategory.ObjectType, arrow: MorphismCategory.ObjectType) -> BimoduleCategory.MorphismType: ...
+    def restriction(
+        self, left_scalar_morphism: MorphismCategory.ObjectType, right_scalar_morphism: MorphismCategory.ObjectType
+    ) -> CategoryOfCategories.MorphismType[
+        BimoduleCategory[LeftScalar, RightScalar, BaseCategory],
+        BimoduleCategory[MonoidCategory.ObjectType, MonoidCategory.ObjectType, BaseCategory],
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+        BimoduleCategory.ObjectType,
+        BimoduleCategory.ElementType,
+        BimoduleCategory.MorphismType,
+    ]: ...
 
-def Bimodules(left_scalars: MonoidCategory.ObjectType, right_scalars: MonoidCategory.ObjectType, monoidal: MonoidalStructuresCategory.ObjectType) -> BimoduleCategory: ...
+def Bimodules[LeftScalar: MonoidCategory.ObjectType, RightScalar: MonoidCategory.ObjectType, BaseCategory: Category[..., ...]](
+    left_scalars: LeftScalar, right_scalars: RightScalar, monoidal: MonoidalStructuresCategory.ObjectType[BaseCategory]
+) -> BimoduleCategory[LeftScalar, RightScalar, BaseCategory]: ...

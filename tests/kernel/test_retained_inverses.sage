@@ -1,5 +1,7 @@
 """Retained inverses persist through owned composition without symbolic replacement."""
 
+import pytest
+
 from sage_categories.cat.morphisms import Mor
 from sage_categories.sets.finite import Sets
 
@@ -34,4 +36,17 @@ def test_retained_inverses_compose_in_reverse_order() -> None:
     assert target_roundtrip(target.point(21)) is target.point(21)
 
 
+def test_retained_inverses_require_opposite_exact_endpoints() -> None:
+    source, middle, other = Sets((0, 1)), Sets((10, 11)), Sets((20, 21))
+    forward = Mor(Sets)(source, middle)({0: 10, 1: 11})
+    wrong_way = Mor(Sets)(other, source)({20: 0, 21: 1})
+
+    with pytest.raises(AssertionError, match="do not have opposite endpoints"):
+        Sets.retain_inverses(forward, wrong_way)
+
+    assert Sets.retained_inverse(forward) is None
+    assert Sets.retained_inverse(wrong_way) is None
+
+
 test_retained_inverses_compose_in_reverse_order()
+test_retained_inverses_require_opposite_exact_endpoints()

@@ -6,27 +6,29 @@ from collections.abc import Callable, Hashable, Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
-from sympy import false, true
-
-from sage_categories.algebra._certified_commutative_ring import (
-    certified_commutative_ring,
+from sage_categories.cat.calculus import (
+    finite_product_data,
+    finite_product_morphism,
+    finite_product_projection,
+    natural_isomorphism,
 )
-from sage_categories.cat.calculus import natural_isomorphism
 from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.declarations import Sets
-from sage_categories.cat.functors import Fun, Functor, NaturalTransformation
+from sage_categories.cat.constructions import UniversalPresentation
+from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
+from sage_categories.cat.limit_basis import (
+    equalizer_factor,
+    equalizer_presentation,
+    parallel_pair,
+)
 from sage_categories.cat.morphisms import Mor, MorphismCategory
 from sage_categories.cat.opposites import opposite_morphism
 from sage_categories.cat.predicates import Unknown, ask
-from sage_categories.cat.structured_objects import Rings
 from sage_categories.geometry._ring_categories import (
     commutative_rings as _rings,
 )
-from sage_categories.geometry._ring_categories import (
-    rings as _ambient_rings,
-)
 from sage_categories.geometry.spaces import TopologicalSpacesCategory
+from sage_categories.order.posets import Posets
 
 __all__ = [
     "RingPresheaf",
@@ -37,7 +39,6 @@ __all__ = [
     "descent_projection",
     "descent_restriction",
     "descent_section_ring",
-    "identity_sheaf_comparison",
     "ring_presheaf",
     "ring_presheaf_from_functor",
     "ring_sheaf",
@@ -55,56 +56,83 @@ def _apply_ring_map(
     return cast(CategoryOfCategories.ElementType, cast(Any, arrow)(section))
 
 
+def _descent_presentation_for_component(
+    section_ring: CategoryOfCategories.ElementType,
+    local_ring: CategoryOfCategories.ElementType,
+    component_index: int,
+) -> UniversalPresentation:
+    """Select the descent presentation whose local product has this component."""
+    family = _rings().Equalizers()
+    source_vertex = Cat().WalkingParallelPair()(0)
+
+    def has_component(diagram: Functor) -> bool:
+        local_product = diagram.on_object(source_vertex)
+        if local_product is local_ring:
+            return component_index == 0
+        if ask(_rings().Products().membership_proposition(local_product)) is not True:
+            return False
+        return local_product.product_projection(component_index).codomain() is local_ring
+
+    diagrams = tuple(diagram for diagram in family.presenting_diagrams(section_ring) if has_component(diagram))
+    assert len(diagrams) == 1, f"{section_ring!r} has {len(diagrams)} descent presentations with component {component_index} = {local_ring!r}"
+    return family.universal_data(diagrams[0])
+
+
+def _local_projection(
+    local_product: CategoryOfCategories.ElementType,
+    local_ring: CategoryOfCategories.ElementType,
+    component_index: int,
+) -> MorphismCategory.ObjectType:
+    """One local-product projection, including the singleton-product identity."""
+    match local_product is local_ring:
+        case True:
+            assert component_index == 0
+            return Mor(_rings())(local_ring, local_ring).one()
+        case False:
+            return local_product.product_projection(component_index)
+
+
 def descent_section_ring(
     open_key: Hashable,
     local_rings: tuple[CategoryOfCategories.ElementType, ...],
     overlap_restrictions: Callable[[int, int], tuple[MorphismCategory.ObjectType, MorphismCategory.ObjectType]],
 ) -> CategoryOfCategories.ElementType:
-    """The ring of compatible local sections for one represented finite cover.
-
-    This is the sheaf-owner realization of the equalizer condition: the caller
-    supplies the local rings and the two restriction maps to each pairwise
-    overlap; the sheaf owner owns the compatibility equations, compatible-family
-    ring, and all pointwise ring operations.
-    """
+    """The generic ring-limit of compatible local sections for one finite cover."""
 
     def construct() -> CategoryOfCategories.ElementType:
-        def member(value: Hashable):
-            match value:
-                case (owner, values) if owner is open_key and isinstance(values, tuple):
-                    if len(values) != len(local_rings):
-                        return false
-                    sections = cast(tuple[CategoryOfCategories.ElementType, ...], values)
-                    if any(
-                        not isinstance(section, CategoryOfCategories.ElementType) or section.parent() is not ring for section, ring in zip(sections, local_rings, strict=True)
-                    ):
-                        return false
-                    for left_index in range(len(sections)):
-                        for right_index in range(left_index + 1, len(sections)):
-                            left_map, right_map = overlap_restrictions(left_index, right_index)
-                            if ask(left_map(sections[left_index]) == right_map(sections[right_index])) is not True:
-                                return false
-                    return true
-                case _:
-                    return false
+        rings = _rings()
+        assert local_rings, "a finite descent cover must have at least one local ring"
+        local_data = finite_product_data(rings, local_rings)
+        local_product = local_data.apex()
+        local_projections = tuple(finite_product_projection(local_data, index) for index in range(len(local_rings)))
+        overlaps: list[tuple[int, int, MorphismCategory.ObjectType, MorphismCategory.ObjectType]] = []
+        for left_index in range(len(local_rings)):
+            for right_index in range(left_index + 1, len(local_rings)):
+                left_map, right_map = overlap_restrictions(left_index, right_index)
+                assert left_map.codomain() is right_map.codomain()
+                overlaps.append((left_index, right_index, left_map, right_map))
 
-        carrier = Sets.from_membership(member)
+        match overlaps:
+            case []:
+                first = second = Mor(rings)(local_product, local_product).one()
+            case _:
+                overlap_rings = tuple(left_map.codomain() for _, _, left_map, _ in overlaps)
+                overlap_data = finite_product_data(rings, overlap_rings)
+                first = finite_product_morphism(
+                    overlap_data,
+                    local_product,
+                    tuple(left_map * local_projections[left_index] for left_index, _, left_map, _ in overlaps),
+                )
+                second = finite_product_morphism(
+                    overlap_data,
+                    local_product,
+                    tuple(right_map * local_projections[right_index] for _, right_index, _, right_map in overlaps),
+                )
 
-        def add(pair: tuple[Hashable, Hashable]) -> Hashable:
-            left_owner, left_values = cast(tuple[object, tuple[Any, ...]], pair[0])
-            right_owner, right_values = cast(tuple[object, tuple[Any, ...]], pair[1])
-            assert left_owner is open_key and right_owner is open_key
-            return open_key, tuple(left + right for left, right in zip(left_values, right_values, strict=True))
-
-        def multiply(pair: tuple[Hashable, Hashable]) -> Hashable:
-            left_owner, left_values = cast(tuple[object, tuple[Any, ...]], pair[0])
-            right_owner, right_values = cast(tuple[object, tuple[Any, ...]], pair[1])
-            assert left_owner is open_key and right_owner is open_key
-            return open_key, tuple(left * right for left, right in zip(left_values, right_values, strict=True))
-
-        zero = open_key, tuple(ring.zero() for ring in local_rings)
-        one = open_key, tuple(ring.one() for ring in local_rings)
-        return certified_commutative_ring(carrier, add, multiply, zero, one)
+        diagram = parallel_pair(first, second)
+        family = rings.Limits(diagram.domain())
+        section_ring = family(diagram)
+        return section_ring
 
     return _FINITE_DESCENT_SECTION_RINGS(_rings(), (open_key,), construct)
 
@@ -116,20 +144,15 @@ def descent_restriction(
     target_ring: CategoryOfCategories.ElementType,
     component_restrictions: tuple[MorphismCategory.ObjectType, ...],
 ) -> MorphismCategory.ObjectType:
-    """Restrict a compatible family componentwise between represented opens."""
-    source_carrier = Rings(Sets).forgetful().on_object(source_ring)
-    target_carrier = Rings(Sets).forgetful().on_object(target_ring)
-
-    def rule(value: Hashable) -> Hashable:
-        owner, sections = cast(tuple[object, tuple[Any, ...]], value)
-        assert owner is larger_key
-        return (
-            smaller_key,
-            tuple(restriction(section) for restriction, section in zip(component_restrictions, sections, strict=True)),
-        )
-
-    underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    return _rings().restrict_morphism(Rings(Sets).homomorphism(source_ring, target_ring, underlying))
+    """Restrict through the generic product/equalizer presentations."""
+    _ = (larger_key, smaller_key)
+    source_rings = tuple(restriction.domain() for restriction in component_restrictions)
+    local_product = finite_product_data(_rings(), source_rings).apex()
+    source = equalizer_presentation(_rings(), source_ring, local_product)
+    local_product = source.diagram().on_object(source.diagram().domain().generator("f").domain())
+    inclusion = source.leg(source.diagram().domain().generator("f").domain())
+    components = tuple(restriction * _local_projection(local_product, restriction.domain(), index) * inclusion for index, restriction in enumerate(component_restrictions))
+    return descent_map(smaller_key, source_ring, target_ring, components)
 
 
 def descent_projection(
@@ -138,17 +161,14 @@ def descent_projection(
     local_ring: CategoryOfCategories.ElementType,
     component_index: int,
 ) -> MorphismCategory.ObjectType:
-    """Project a compatible section family to one member of its cover."""
-    source_carrier = Rings(Sets).forgetful().on_object(section_ring)
-    target_carrier = Rings(Sets).forgetful().on_object(local_ring)
-
-    def rule(value: Hashable) -> Hashable:
-        owner, sections = cast(tuple[object, tuple[Any, ...]], value)
-        assert owner is open_key
-        return cast(CategoryOfCategories.ElementType, sections[component_index]).datum()
-
-    underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    return _rings().restrict_morphism(Rings(Sets).homomorphism(section_ring, local_ring, underlying))
+    """Project using the retained equalizer inclusion followed by a product projection."""
+    _ = open_key
+    data = _descent_presentation_for_component(section_ring, local_ring, component_index)
+    inclusion = data.leg(data.diagram().domain().generator("f").domain())
+    local_product = inclusion.codomain()
+    projection = _local_projection(local_product, local_ring, component_index) * inclusion
+    assert projection.codomain() is local_ring
+    return projection
 
 
 def descent_lift(
@@ -159,15 +179,7 @@ def descent_lift(
     component_index: int,
 ) -> MorphismCategory.ObjectType:
     """Lift one chart section to the uniquely compatible represented family."""
-    source_carrier = Rings(Sets).forgetful().on_object(local_ring)
-    target_carrier = Rings(Sets).forgetful().on_object(section_ring)
-
-    def rule(value: Hashable) -> Hashable:
-        section = local_ring.point(value)
-        return open_key, tuple(component(section) for component in component_maps)
-
-    underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    lift = _rings().restrict_morphism(Rings(Sets).homomorphism(local_ring, section_ring, underlying))
+    lift = descent_map(open_key, local_ring, section_ring, component_maps)
     projection = descent_projection(open_key, section_ring, local_ring, component_index)
     _rings().retain_inverses(projection, lift)
     return lift
@@ -179,16 +191,15 @@ def descent_map(
     target_ring: CategoryOfCategories.ElementType,
     component_maps: tuple[MorphismCategory.ObjectType, ...],
 ) -> MorphismCategory.ObjectType:
-    """Map a section into a compatible-family ring via its chart components."""
-    source_carrier = Rings(Sets).forgetful().on_object(source_ring)
-    target_carrier = Rings(Sets).forgetful().on_object(target_ring)
-
-    def rule(value: Hashable) -> Hashable:
-        section = source_ring.point(value)
-        return open_key, tuple(component(section) for component in component_maps)
-
-    underlying = Mor(Sets)(source_carrier, target_carrier)(rule)
-    return _rings().restrict_morphism(Rings(Sets).homomorphism(source_ring, target_ring, underlying))
+    """Map into a compatible-family ring through its retained limit mediator."""
+    _ = open_key
+    target_rings = tuple(component.codomain() for component in component_maps)
+    product_data = finite_product_data(_rings(), target_rings)
+    target_product = product_data.apex()
+    target = equalizer_presentation(_rings(), target_ring, target_product)
+    into_product = finite_product_morphism(product_data, source_ring, component_maps)
+    assert into_product.codomain() is target_product
+    return equalizer_factor(target, into_product)
 
 
 def descent_chart_comparison(
@@ -222,18 +233,6 @@ def descent_chart_comparison(
         lambda open_object: projection(global_open(open_object)),
         lambda open_object: lift(global_open(open_object)),
     )
-
-
-def identity_sheaf_comparison(presheaf: RingPresheaf) -> NaturalTransformation:
-    """The identity natural isomorphism of one represented ring presheaf."""
-
-    def identity(
-        open_object: CategoryOfCategories.ElementType,
-    ) -> MorphismCategory.ObjectType:
-        ring = presheaf.functor.on_object(open_object)
-        return Mor(_rings())(ring, ring).one()
-
-    return natural_isomorphism(presheaf.functor, presheaf.functor, identity, identity)
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -316,19 +315,15 @@ def _verify_gluing_result(
     local_sections: tuple[CategoryOfCategories.ElementType, ...],
     global_section: CategoryOfCategories.ElementType,
 ) -> None:
-    """Check restriction and uniqueness of one proposed global section."""
+    """Check that one selected amalgamation has the required restrictions.
+
+    Uniqueness is the trusted sheaf declaration, not a computation by exhaustive
+    enumeration of the global section ring.
+    """
     global_ring = presheaf.section_ring(open_set)
     assert global_section.parent() is global_ring
     for member, local in zip(cover, local_sections, strict=True):
         assert ask(_apply_ring_map(presheaf.restriction(open_set, member), global_section) == local) is True
-
-    carrier = _ambient_rings().forgetful().on_object(global_ring)
-    matching = []
-    for candidate in tuple(carrier):
-        point = cast(Any, global_ring).point(candidate.datum())
-        if all(ask(_apply_ring_map(presheaf.restriction(open_set, member), point) == local) is True for member, local in zip(cover, local_sections, strict=True)):
-            matching.append(point)
-    assert len(matching) == 1 and ask(matching[0] == global_section) is True
 
 
 @dataclass(frozen=True, eq=False, slots=True)
@@ -409,7 +404,7 @@ def _validate_ring_presheaf_data(
     ],
 ) -> Category:
     """Validate the section rings and contravariant restriction calculus for a finite open family."""
-    opens = tuple(point.datum() for point in cast(Any, space.opens()).carrier())
+    opens = tuple(point.datum() for point in Posets().to_sets().on_object(cast(Any, space.opens())))
     assert set(sections) == set(opens)
     rings = _rings()
     assert all(section in rings for section in sections.values())

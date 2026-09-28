@@ -217,7 +217,9 @@ def _conjugate_point(point: ComplexProjectivePoint) -> ComplexProjectivePoint:
 @cache
 def _stage_conjugation(stage: int) -> TopologicalSpacesCategory.MorphismType:
     presentation = projective_space(stage)
-    underlying = Mor(Sets)(presentation.space.carrier(), presentation.space.carrier())(_conjugate_point)
+    projection = TopologicalSpaces().to_sets()
+    carrier = projection.on_object(presentation.space)
+    underlying = Mor(Sets)(carrier, carrier)(_conjugate_point)
 
     def preimage(
         open_object: CategoryOfCategories.ElementType,
@@ -247,7 +249,11 @@ def _stage_conjugation(stage: int) -> TopologicalSpacesCategory.MorphismType:
 def _standard_inclusion(source_stage: int, target_stage: int) -> TopologicalSpacesCategory.MorphismType:
     assert 0 <= source_stage <= target_stage
     source, target = projective_space(source_stage), projective_space(target_stage)
-    underlying = Mor(Sets)(source.space.carrier(), target.space.carrier())(lambda point: _pad_point(point, target_stage))
+    projection = TopologicalSpaces().to_sets()
+    underlying = Mor(Sets)(
+        projection.on_object(source.space),
+        projection.on_object(target.space),
+    )(lambda point: _pad_point(point, target_stage))
     inverse = Fun(target.space.open_category(), source.space.open_category())(
         lambda target_open: source.open(_restrict_open(_cw_open_datum(target_open), source_stage)),
         lambda inclusion: Mor(source.space.open_category())(
@@ -373,14 +379,17 @@ def _projective_infinity_descent(
 ) -> TopologicalSpacesCategory.MorphismType:
     """Descend one compatible topological cocone through the weak CW colimit."""
     target = cast(TopologicalSpacesCategory.ObjectType, cast(Any, candidate).apex())
+    projection = TopologicalSpaces().to_sets()
     set_candidate = cocones(underlying_diagram)(
         cocone(
             underlying_diagram,
-            target.carrier(),
-            lambda vertex: cast(
-                TopologicalSpacesCategory.MorphismType,
-                cast(Any, candidate).component(vertex),
-            ).underlying_map(),
+            projection.on_object(target),
+            lambda vertex: projection.on_morphism(
+                cast(
+                    TopologicalSpacesCategory.MorphismType,
+                    cast(Any, candidate).component(vertex),
+                )
+            ),
         )
     )
     underlying = set_colimit.lift(set_candidate)
@@ -400,9 +409,10 @@ def projective_infinity() -> ProjectiveInfinityPresentation:
     """Return the full CW colimit of the standard sequence of complex projective spaces."""
     spaces = TopologicalSpaces()
     diagram = _projective_diagram()
+    projection = spaces.to_sets()
     underlying_diagram = Fun(omega, Sets)(
-        lambda vertex: cast(TopologicalSpacesCategory.ObjectType, diagram.on_object(vertex)).carrier(),
-        lambda arrow: cast(TopologicalSpacesCategory.MorphismType, diagram.on_morphism(arrow)).underlying_map(),
+        lambda vertex: projection.on_object(cast(TopologicalSpacesCategory.ObjectType, diagram.on_object(vertex))),
+        lambda arrow: projection.on_morphism(cast(TopologicalSpacesCategory.MorphismType, diagram.on_morphism(arrow))),
     )
     carrier = Sets.Colimits(omega)(underlying_diagram)
 

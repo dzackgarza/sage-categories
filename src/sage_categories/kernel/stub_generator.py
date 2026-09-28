@@ -150,6 +150,7 @@ class _StubProjectionContext:
     declarations_by_module: dict[str, frozenset[str]]
     inheritance: dict[str, dict[str, tuple[str, ...]]]
     runtime_aliases: dict[str, dict[str, str]]
+    property_accessors: dict[str, dict[str, dict[str, tuple[str, tuple[str, ...]]]]]
     source_modules: frozenset[str]
     category_parameter_counts: dict[str, int]
     category_modules: dict[str, str]
@@ -176,6 +177,7 @@ def _stub_projection_context(
         sources,
     )
     runtime_aliases = _source_role_aliases(package, output_directory, sources, inheritance)
+    property_accessors = _source_property_accessors(package, output_directory, sources)
     source_modules = frozenset(_module_name(package, output_directory, source) for source in sources)
     category_parameter_counts = _source_category_parameter_counts(sources)
     category_modules = _source_category_modules(package, output_directory, sources)
@@ -195,6 +197,7 @@ def _stub_projection_context(
         declarations_by_module,
         inheritance,
         runtime_aliases,
+        property_accessors,
         source_modules,
         category_parameter_counts,
         category_modules,
@@ -203,6 +206,159 @@ def _stub_projection_context(
         hoisted_role_providers,
         _source_generic_category_bases(sources, category_parameter_counts),
     )
+
+
+def _source_property_accessors(
+    package: str,
+    output_directory: Path,
+    sources: tuple[Path, ...],
+) -> dict[str, dict[str, dict[str, tuple[str, tuple[str, ...]]]]]:
+    """Return source-declared property accessors and their exact implementation categories."""
+    classes: dict[str, tuple[str, ast.ClassDef]] = {}
+    trees: dict[str, ast.Module] = {}
+    for source in sources:
+        module = _module_name(package, output_directory, source)
+        tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        trees[module] = tree
+        for statement in tree.body:
+            if isinstance(statement, ast.ClassDef):
+                classes[statement.name] = (module, statement)
+
+    class_aliases: dict[str, str] = {}
+    for tree in trees.values():
+        for statement in tree.body:
+            if (
+                isinstance(statement, ast.Assign)
+                and len(statement.targets) == 1
+                and isinstance(statement.targets[0], ast.Name)
+                and isinstance(statement.value, ast.Name)
+                and statement.value.id in classes
+            ):
+                class_aliases[statement.targets[0].id] = statement.value.id
+
+    implementations: dict[tuple[str, str], str] = {}
+    for module, tree in trees.items():
+        for declaration in tree.body:
+            if not isinstance(declaration, ast.ClassDef):
+                continue
+            for statement in declaration.body:
+                if not (
+                    isinstance(statement, ast.Assign)
+                    and len(statement.targets) == 1
+                    and isinstance(statement.targets[0], ast.Name)
+                    and statement.targets[0].id == "_base_category_class_and_axiom"
+                    and isinstance(statement.value, ast.Tuple)
+                    and len(statement.value.elts) == 2
+                    and isinstance(statement.value.elts[0], ast.Name)
+                    and isinstance(statement.value.elts[1], ast.Constant)
+                    and isinstance(statement.value.elts[1].value, str)
+                ):
+                    continue
+                declaring = class_aliases.get(statement.value.elts[0].id, statement.value.elts[0].id)
+                implementations[(declaring, statement.value.elts[1].value)] = f"{module}.{declaration.name}"
+
+    def constructor_parameters(class_name: str) -> tuple[str, ...]:
+        seen: set[str] = set()
+        current = class_name
+        while current in classes and current not in seen:
+            seen.add(current)
+            _module, declaration = classes[current]
+            initializer = next(
+                (statement for statement in declaration.body if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)) and statement.name == "__init__"),
+                None,
+            )
+            if initializer is not None:
+                positional = (*initializer.args.posonlyargs, *initializer.args.args)
+                names = tuple(argument.arg for argument in positional)
+                return names[4:] if len(names) >= 4 else ()
+            base = next((base.id for base in declaration.bases if isinstance(base, ast.Name) and base.id in classes), None)
+            if base is None:
+                return ()
+            current = base
+        return ()
+
+    projected: dict[str, dict[str, dict[str, tuple[str, tuple[str, ...]]]]] = {}
+    for module, tree in trees.items():
+        for declaration in tree.body:
+            if not isinstance(declaration, ast.ClassDef):
+                continue
+            for statement in declaration.body:
+                if not (isinstance(statement, ast.Assign) and len(statement.targets) == 1 and isinstance(statement.targets[0], ast.Name)):
+                    continue
+                name = statement.targets[0].id
+                value = statement.value
+                implementation = implementations.get((declaration.name, name))
+                if isinstance(value, ast.Call) and _dotted_name(value.func) in {"Axiom", "ConstructionFamily"}:
+                    if implementation is None:
+                        target = "sage_categories.cat.properties.PropertySubcategory"
+                        parameters: tuple[str, ...] = ()
+                    else:
+                        target = implementation
+                        parameters = constructor_parameters(implementation.rsplit(".", 1)[1])
+                elif isinstance(value, ast.Call) and isinstance(value.func, ast.Attribute) and value.func.attr == "inverse_image":
+                    target = "sage_categories.cat.properties.InverseImageSubcategory"
+                    parameters = ()
+                else:
+                    continue
+                projected.setdefault(module, {}).setdefault(declaration.name, {})[name] = (target, parameters)
+    return projected
+
+
+def _project_property_accessors(
+    tree: ast.Module,
+    module: str,
+    accessors: dict[str, dict[str, tuple[str, tuple[str, ...]]]],
+    source_modules: frozenset[str],
+) -> None:
+    """Project Axiom descriptors as typed instance accessors instead of ``Incomplete``."""
+    if not accessors:
+        return
+    used_modules: set[str] = set()
+    for declaration in tree.body:
+        if not isinstance(declaration, ast.ClassDef) or declaration.name not in accessors:
+            continue
+        replacements = accessors[declaration.name]
+        rewritten: list[ast.stmt] = []
+        for statement in declaration.body:
+            if not (isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name) and statement.target.id in replacements):
+                rewritten.append(statement)
+                continue
+            target, parameters = replacements[statement.target.id]
+            target_module = _qualified_module(target, source_modules)
+            target_expression = target.rsplit(".", 1)[1] if target_module == module else target
+            if target_module != module:
+                used_modules.add(target_module)
+            if parameters:
+                used_modules.add("sage_categories.cat.category")
+            arguments = [ast.arg(arg="self")]
+            arguments.extend(
+                ast.arg(
+                    arg=name,
+                    annotation=_base_expression("sage_categories.cat.category.CategoryOfCategories.ElementType"),
+                )
+                for name in parameters
+            )
+            rewritten.append(
+                ast.FunctionDef(
+                    name=statement.target.id,
+                    args=ast.arguments(
+                        posonlyargs=[],
+                        args=arguments,
+                        vararg=None,
+                        kwonlyargs=[],
+                        kw_defaults=[],
+                        kwarg=None,
+                        defaults=[],
+                    ),
+                    body=[ast.Expr(value=ast.Constant(value=Ellipsis))],
+                    decorator_list=[],
+                    returns=_base_expression(target_expression),
+                    type_comment=None,
+                    type_params=[],
+                )
+            )
+        declaration.body = rewritten
+    _ensure_module_imports(tree, used_modules)
 
 
 def _complete_source_property_inheritance(
@@ -303,6 +459,12 @@ def _project_package_stub(
         case False:
             module_runtime_aliases = {}
     _project_runtime_class_aliases(tree, module_runtime_aliases, context.source_modules)
+    _project_property_accessors(
+        tree,
+        module,
+        context.property_accessors.get(module, {}),
+        context.source_modules,
+    )
     if providers:
         _project_provider_bases(tree, module, providers, context.source_modules, context.hoisted_role_providers)
     _project_exact_morphism_endpoints(tree)

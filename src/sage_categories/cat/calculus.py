@@ -11,6 +11,9 @@ __all__ = [
     "curry",
     "currying",
     "evaluation",
+    "finite_product_data",
+    "finite_product_morphism",
+    "finite_product_projection",
     "natural_isomorphism",
     "pair_maps",
     "power_data",
@@ -28,6 +31,7 @@ from sage_categories.cat.category import Category, CategoryOfCategories
 from sage_categories.cat.cones import LimitConesCategory, cone, cones
 from sage_categories.cat.functors import Cat, Fun, Functor, NaturalTransformation
 from sage_categories.cat.morphisms import Mor, MorphismCategory
+from sage_categories.cat.predicates import Unknown
 from sage_categories.kernel.retention import identity_key
 from sage_categories.kernel.sage_runtime import cached_function
 
@@ -53,7 +57,7 @@ def pair_maps(
     )
 
 
-def _finite_power_data(
+def finite_product_data(
     base: Category,
     values: tuple[CategoryOfCategories.ElementType, ...],
 ) -> LimitConesCategory.ObjectType:
@@ -65,17 +69,60 @@ def _finite_power_data(
     return constructed_data(base.Limits(diagram.domain()), diagram)
 
 
+def finite_product_projection(
+    data: LimitConesCategory.ObjectType,
+    index: int,
+) -> MorphismCategory.ObjectType:
+    """The ``index``-th leg of a finite product presentation."""
+    vertices = _finite_product_vertices(data.diagram())
+    assert 0 <= index < len(vertices), f"finite product has no component {index}"
+    return data.leg(vertices[index])
+
+
+def finite_product_morphism(
+    data: LimitConesCategory.ObjectType,
+    source: CategoryOfCategories.ElementType,
+    components: tuple[MorphismCategory.ObjectType, ...],
+) -> MorphismCategory.ObjectType:
+    """The universal map from ``source`` with the supplied ordered components."""
+    from sage_categories.cat.diagrams import sequence_position
+
+    diagram = data.diagram()
+    assert len(components) == len(_finite_product_vertices(diagram))
+    return data.lift(
+        cones(diagram)(
+            cone(
+                diagram,
+                source,
+                lambda vertex: components[sequence_position(vertex)],
+            )
+        )
+    )
+
+
+def _finite_product_vertices(
+    diagram: Functor,
+) -> tuple[CategoryOfCategories.ElementType, ...]:
+    """The ordered finite-discrete vertices of a finite product diagram."""
+    from sage_categories.cat.diagrams import sequence_position
+    from sage_categories.cat.finite_categories import finite_objects
+
+    vertices = finite_objects(diagram.domain())
+    assert vertices is not Unknown, "a finite product presentation requires a finite discrete shape"
+    return tuple(sorted(vertices, key=sequence_position))
+
+
 def binary_product_data(
     base: Category,
     first: CategoryOfCategories.ElementType,
     second: CategoryOfCategories.ElementType,
 ) -> LimitConesCategory.ObjectType:
     """The chosen binary product presentation, even when its apex presents other diagrams."""
-    return _finite_power_data(base, (first, second))
+    return finite_product_data(base, (first, second))
 
 
 def power_data(base: Category, value: CategoryOfCategories.ElementType, degree: int) -> LimitConesCategory.ObjectType:
-    return _finite_power_data(base, (value,) * degree)
+    return finite_product_data(base, (value,) * degree)
 
 
 def terminal_map(base: Category, value: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
@@ -111,8 +158,18 @@ def product_functor(base: Category) -> Functor:
         lambda pair: base.Products()((pair.family_component(0), pair.family_component(1))),
         lambda arrow: pair_maps(
             base,
-            arrow.family_component(0) * binary_product_data(base, arrow.domain().family_component(0), arrow.domain().family_component(1)).leg(0),
-            arrow.family_component(1) * binary_product_data(base, arrow.domain().family_component(0), arrow.domain().family_component(1)).leg(1),
+            arrow.family_component(0)
+            * binary_product_data(
+                base,
+                arrow.domain().family_component(0),
+                arrow.domain().family_component(1),
+            ).leg(0),
+            arrow.family_component(1)
+            * binary_product_data(
+                base,
+                arrow.domain().family_component(0),
+                arrow.domain().family_component(1),
+            ).leg(1),
         ),
     )
     return result
@@ -253,7 +310,9 @@ def _currying_unit(
     def component(functor: Functor) -> NaturalTransformation:
         roundtrip = uncurry(curry(functor))
 
-        def identity(pair: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+        def identity(
+            pair: CategoryOfCategories.ElementType,
+        ) -> MorphismCategory.ObjectType:
             return Mor(target)(functor.on_object(pair), functor.on_object(pair)).one()
 
         return natural_isomorphism(functor, roundtrip, identity, identity)
@@ -276,7 +335,9 @@ def _currying_counit(
     """The counit ``curry ∘ uncurry -> 1`` of the selected currying equivalence."""
 
     @cached_function(key=identity_key)
-    def counit_component(value: CategoryOfCategories.ElementType) -> NaturalTransformation:
+    def counit_component(
+        value: CategoryOfCategories.ElementType,
+    ) -> NaturalTransformation:
         functor = destination.diagram(value)
         roundtrip = curry(uncurry(functor))
 
@@ -285,7 +346,9 @@ def _currying_counit(
             original = functor.on_object(other)
             image = Fun(second, target).diagram(original)
 
-            def identity(third: CategoryOfCategories.ElementType) -> MorphismCategory.ObjectType:
+            def identity(
+                third: CategoryOfCategories.ElementType,
+            ) -> MorphismCategory.ObjectType:
                 return Mor(target)(image.on_object(third), image.on_object(third)).one()
 
             return natural_isomorphism(roundtrip.on_object(other), original, identity, identity)

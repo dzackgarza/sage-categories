@@ -3,10 +3,10 @@
 import pytest
 
 from sage_categories import Fun, Mor, ask
-from sage_categories.cat.monoidal import Cartesian, SelfAction
-from sage_categories.cat.modules import Modules
-from sage_categories.cat.structured_objects import Monoids
 from sage_categories.cat.calculus import binary_product_data
+from sage_categories.cat.modules import Modules
+from sage_categories.cat.monoidal import Cartesian, SelfAction
+from sage_categories.cat.structured_objects import Monoids
 from sage_categories.sets import Sets
 
 
@@ -55,13 +55,15 @@ def test_boolean_monoid_acting_on_three_points() -> None:
     assert module.action()(acted.point((1, 1))).datum() == 1
 
     # 0 acting as the identity and 1 as the sink violates the unit law.
-    with pytest.raises(AssertionError):
-        modules(Mor(Sets)(acted, three)(lambda pair: pair[1] if pair[0] == 0 else 2))
+    # Construction asserts the module laws; the test computes the failed equation explicitly.
+    wrong_unit = modules(Mor(Sets)(acted, three)(lambda pair: pair[1] if pair[0] == 0 else 2))
+    assert ask(modules.ambient().equation(wrong_unit)) is False
 
     # The unit acts correctly, but a three-cycle cannot represent the idempotent 0.
     # This satisfies the unit law independently of the failed action law.
-    with pytest.raises(AssertionError):
-        modules(Mor(Sets)(acted, three)(lambda pair: pair[1] if pair[0] == 1 else (pair[1] + 1) % 3))
+    wrong_action = modules(Mor(Sets)(acted, three)(lambda pair: pair[1] if pair[0] == 1 else (pair[1] + 1) % 3))
+    assert ask(modules.ambient().equation(wrong_action)) is True
+    assert ask(modules.equation(wrong_action)) is False
 
     # Collapsing 0 and 1 to 0 while fixing the sink is equivariant; sending everything to 1 is not.
     two = Sets((0, 2))

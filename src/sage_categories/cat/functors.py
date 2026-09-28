@@ -60,13 +60,6 @@ def _diagrams() -> ModuleType:
     return diagrams
 
 
-def identity_on_values(
-    value: CategoryOfCategories.ElementType,
-) -> CategoryOfCategories.ElementType:
-    """The object and morphism action of every subcategory monomorphism: the identity on the shared values (POL-FUN-027)."""
-    return value
-
-
 def diagram_of(value: CategoryOfCategories.ElementType) -> Functor:
     """Return the functor represented by a functor, object, or morphism value."""
     if is_placed(value, Fun):
@@ -332,22 +325,11 @@ class FunctorCategory[
         target: CategoryOfCategories.ElementType,
         assignment: Assignment,
     ) -> NaturalTransformation:
-        """``Mor(Fun(I, C))(F, G)(assignment)``; for ``I = [1]`` the two components must form a commuting square."""
-        walking_arrow = Cat().Simplex(1)
-        if self.domain() is walking_arrow:
-            generator = walking_arrow.generator("0->1")
-            first, second = assignment(walking_arrow(0)), assignment(walking_arrow(1))
-            square_source, square_target = (
-                self.diagram(source).on_morphism(generator),
-                self.diagram(target).on_morphism(generator),
-            )
-            assert ask(square_target * first == second * square_source) is not False, (
-                f"({first!r}, {second!r}) is not a commuting square from {square_source!r} to {square_target!r}"
-            )
+        """``Mor(Fun(I, C))(F, G)(assignment)``; construction asserts naturality."""
         return Cat().construct_two_morphism(source, target, assignment, self.diagram(source), self.diagram(target))
 
     def construct_identity(self, value: CategoryOfCategories.ElementType) -> NaturalTransformation:
-        return Cat().identity_two_morphism(value)
+        return Cat()._identity_transformation(value, self.diagram(value))
 
     def _formal_transformation(
         self,
@@ -748,7 +730,12 @@ class FunctorsCategory(MorphismCategory[[OnObject, OnMorphism], [Assignment]]):
         states nothing about which relation holds: the caller declares that by placing the
         result, and a placement made twice for one pair narrows the one retained value.
         """
-        return self._base.construct_morphism(source, target, identity_on_values, identity_on_values)
+        assert source in self._base and target in self._base
+        return self._base.MorphismType(
+            domain=source,
+            codomain=target,
+            data=_category._StructuralFunctorData(),
+        )
 
     def _shared_value_functor(self, source: Category, target: Category, full: bool) -> Functor:
         """The identity-on-values functor ``source -> target``, placed in the declared property.

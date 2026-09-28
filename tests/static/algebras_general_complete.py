@@ -11,10 +11,10 @@ from sage_categories.algebra.algebra_objects import (
     integer_free_algebra_homomorphism,
     presented_algebra_factor,
     presented_algebra_projection,
-    restrict_algebra_scalars,
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.functors import Functor
+from sage_categories.cat.modules import ModuleCategory
 from sage_categories.cat.monoidal import MonoidalStructuresCategory
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.structured_objects import MonoidCategory
@@ -34,11 +34,22 @@ def complete_algebra_types(
 ) -> None:
     assert_type(Algebras(base, monoidal), AlgebraCategory)
     assert_type(source.base(), MonoidCategory.ObjectType)
-    assert_type(source.monoid_presentation(), Functor)
-    assert_type(source.to_modules(), Functor)
+    assert_type(source.monoid_presentation().codomain(), MonoidCategory)
+    assert_type(
+        source.to_modules().codomain(),
+        ModuleCategory[MonoidCategory.ObjectType],
+    )
     assert_type(source.U_R(), Functor)
-    assert_type(source.to_sets(), Functor)
-    assert_type(restrict_algebra_scalars(source, target, scalar_map), Functor)
+    assert_type(source.functor_to_sets(), Functor)
+    restriction = source.restriction(target, scalar_map)
+    assert_type(
+        restriction.domain(),
+        AlgebraCategory[MonoidCategory.ObjectType],
+    )
+    assert_type(
+        restriction.codomain(),
+        AlgebraCategory[MonoidCategory.ObjectType],
+    )
     assert_type(integer_free_algebra(source, ("x", "y")), AlgebraCategory.ObjectType)
     assert_type(
         integer_free_algebra_generator(source, free, 0),

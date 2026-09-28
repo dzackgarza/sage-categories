@@ -10,7 +10,7 @@ this file equips that carrier with the canonical action of the tensor-unit ring
 
 from __future__ import annotations
 
-from collections.abc import Hashable, Mapping
+from collections.abc import Callable, Hashable, Mapping
 
 from sage_categories.algebra._firewall import abelian as _backend
 from sage_categories.algebra.abelian import (
@@ -29,8 +29,8 @@ from sage_categories.algebra.abelian import (
 )
 from sage_categories.cat.category import CategoryOfCategories
 from sage_categories.cat.choices import ChosenConstruction
-from sage_categories.cat.cones import ConeCategory, cocone
-from sage_categories.cat.functors import Fun
+from sage_categories.cat.cones import cocone, cocone_apex
+from sage_categories.cat.functors import Fun, NaturalTransformation
 from sage_categories.cat.modules import ModuleCategory, Modules
 from sage_categories.cat.monoidal import SelfAction
 from sage_categories.cat.morphisms import Mor, MorphismCategory
@@ -105,7 +105,7 @@ def _new_integer_regular_module() -> ModuleCategory.ObjectType:
     return modules(scalars.operation())
 
 
-def _certified_integer_module(
+def _integer_module(
     carrier: CategoryOfCategories.ElementType,
 ) -> ModuleCategory.ObjectType:
     r"""Equip an indexed free abelian group with the canonical ``ZZ`` action.
@@ -140,7 +140,7 @@ def _new_indexed_free_integer_module(
     modules = _integer_modules()
     regular = integer_regular_module()
     carrier = indexed_free_abelian_coproduct(index_set)
-    module = _certified_integer_module(carrier)
+    module = _integer_module(carrier)
     shape = Discrete(index_set)
     diagram = Fun(shape, modules).constant(regular)
 
@@ -150,13 +150,13 @@ def _new_indexed_free_integer_module(
 
     selected = cocone(diagram, module, leg)
 
-    def mediator(candidate: ConeCategory.ObjectType) -> MorphismCategory.ObjectType:
-        target = candidate.apex()
+    def mediator(candidate: NaturalTransformation) -> MorphismCategory.ObjectType:
+        target = cocone_apex(candidate)
         target_carrier = modules.forgetful().on_object(target)
 
         def component(index: Hashable) -> MorphismCategory.ObjectType:
             vertex = shape.object_at(index_set.point(index))
-            return modules.forgetful().on_morphism(candidate.leg(vertex))
+            return modules.forgetful().on_morphism(candidate.component(vertex))
 
         additive = indexed_free_abelian_mediator(carrier, target_carrier, component)
         return modules.homomorphism(module, target, additive)
@@ -210,7 +210,7 @@ def indexed_free_integer_coefficients(
 def indexed_free_integer_homomorphism(
     source: ModuleCategory.ObjectType,
     target: ModuleCategory.ObjectType,
-    basis_image,
+    basis_image: Callable[[Hashable], CategoryOfCategories.ElementType],
 ) -> MorphismCategory.ObjectType:
     r"""Return the unique ``ZZ``-linear map with the supplied images of basis indices.
 
@@ -240,7 +240,7 @@ def integer_module(
 ) -> ModuleCategory.ObjectType:
     r"""Equip a represented abelian group with its canonical left ``ZZ`` action."""
     assert additive_group in AbelianGroups()
-    return _INTEGER_MODULES(_integer_modules(), (additive_group,), lambda: _certified_integer_module(additive_group))
+    return _INTEGER_MODULES(_integer_modules(), (additive_group,), lambda: _integer_module(additive_group))
 
 
 def finite_free_integer_module(rank: int) -> ModuleCategory.ObjectType:

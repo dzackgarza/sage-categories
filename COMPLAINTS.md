@@ -187,6 +187,25 @@ Read historical observations at their stated revisions before relying on them.
   Two further exact read-only requests at `f2cd54c9` returned the same error and rolled back without creating a reviewer.
   A revision-exact local Sonnet fallback was then run from a clean detached worktree at `f2cd54c9`; it began exercising the public monoidal consumer but reached its 240-second hard timeout without returning a verdict.
   No partial execution from that timed-out review is acceptance evidence.
+  At current clean revision `4a2b4bf6` on 2026-09-25, two further exact read-only `r-gate` requests for the complete `core-algebraic-calculus` boundary again returned the durable-acceptance-barrier error and explicitly rolled back without creating a reviewer.
+  A separate local Sonnet source audit at the same revision, confined to `Read`, `Grep`, and `Glob` with restricted mode and no MCP, command, or edit tools, produced no result before its 220-second hard timeout.
+  That source-audit timeout likewise supplies no reviewer verdict and cannot discharge the fixed-revision acceptance gate.
+  On 2026-09-26 exact read-only review attempts at `9c97a712` and `3edc29b4` were rejected before worker creation with `AGENTS_BUSY`: another prime workstream held the app's sole sub-agent swarm.
+  Further exact read-only attempts through `28726a89` returned the same `AGENTS_BUSY` condition before worker creation.
+  On 2026-09-26 the prime recovered the sleeping original `r-gate algebraic calculus` reviewer, whose prior `NOT ACCEPT` at `727414bf` named the Ab relative-tensor owner and geometry compatible-section descent as the two blockers.
+  Current source through clean revision `4666d30c` routes those responsibilities through `cat/bimodules.py`, executable colimit preservation/factorization, generic `Rings` product/equalizer owners, retained colimit mediation for stalks, direct functor-owned global sections, and generic relative-tensor factorization for scalar restriction.
+  Scalar restriction is now owned by `AlgebraCategory.restriction(...)` with no standalone public alias; `Functor.base_change(...)` is the sole public base-change spelling.
+  The Ab projection no longer republishes generic bimodule helpers, and scheme/affine/locally-ringed projections no longer republish sheaf descent, sheaf constructors or stalk operations.
+  The exact-current `test_preserved_colimit_transports_retained_universal_data` consumer passes with the transported apex, leg, and universal mediator exercised; a larger relative-tensor coherence consumer reached its bounded 230-second execution ceiling without a verdict.
+  The affected `test_base_change_of_fibration_retains_cartesian_lifts` consumer also passes after the `Functor.base_change(...)` spelling cleanup.
+  Focused scalar-restriction owner/behavior consumers were split without weakening assertions, but their Sage startup/execution still reached the configured bounded runtime without a verdict, so those partial runs are not acceptance evidence.
+  Repeated attempts to revive the retained reviewer through `4666d30c` were rejected with `AGENTS_BUSY` before execution.
+  At clean current revision `7df52254`, `just architecture` again passes all seven contracts.
+  The focused `test_scalar_restriction_is_category_owned_functor` run reached its selected test body but exceeded a 180-second hard ceiling, and `test_scalar_change_uses_the_owned_algebra_restriction_functor` likewise reached its selected test body but exceeded a 220-second hard ceiling while remaining CPU-active; neither run returned an assertion failure or a passing verdict, so neither is acceptance evidence.
+  A same-revision attempt to revive the retained `r-gate algebraic calculus` reviewer was rejected before execution with `AGENTS_BUSY`, leaving the required fixed-revision independent review unavailable.
+  A source-only local Sonnet fallback at `99617427`, restricted to `Read`, `Grep`, and `Glob` with no command/edit/MCP tools, exited immediately with `Not logged in · Please run /login` before reading source.
+  A source-only local Codex fallback at `8efcd8c6`, run ephemerally in a read-only sandbox, exited before reading source because the account usage limit was exhausted.
+  These attempts returned no reviewer result and do not discharge the fixed-revision acceptance gate.
   The fixed-revision architecture check and focused public consumers therefore remain execution evidence, not independent acceptance.
 
 - **Acceptance:** The delegation owner must reliably identify this conversation or provide a working read-only reviewer route that returns a result at the exact committed revision.

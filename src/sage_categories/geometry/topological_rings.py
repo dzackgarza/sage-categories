@@ -12,11 +12,7 @@ from sage_categories.cat.leaf_categories import MorphismDataCategory
 from sage_categories.cat.morphisms import MorphismCategory
 from sage_categories.cat.predicates import ask
 from sage_categories.geometry._ring_categories import rings as _rings
-from sage_categories.geometry.spaces import (
-    TopologicalSpaces,
-    TopologicalSpacesCategory,
-    _topological_space_projection,
-)
+from sage_categories.geometry.spaces import TopologicalSpaces, TopologicalSpacesCategory
 
 __all__ = [
     "BinaryContinuity",
@@ -122,11 +118,19 @@ class TopologicalRingsCategory(MorphismDataCategory):
 
     def structure_functors(self) -> tuple[Functor, ...]:
         rings = _rings()
-        to_rings = Fun(self, rings).Faithful().Isofibrations()(
-            lambda value: cast(Any, value).ring(),
-            lambda arrow: cast(Any, arrow).ring_map(),
+        to_rings = (
+            Fun(self, rings)
+            .Faithful()
+            .Isofibrations()(
+                lambda value: value.ring(),
+                lambda arrow: arrow.ring_map(),
+            )
         )
-        to_spaces = _topological_space_projection(self)
+        spaces = TopologicalSpaces()
+        to_spaces = Fun(self, spaces)(
+            lambda value: value.space(),
+            lambda arrow: arrow.continuous_map(),
+        )
         return (*super().structure_functors(), to_rings, to_spaces)
 
     def __call__(
@@ -138,7 +142,7 @@ class TopologicalRingsCategory(MorphismDataCategory):
     ) -> TopologicalRingsCategory.ObjectType:
         rings = _rings()
         assert ring in rings
-        assert rings.forgetful().on_object(ring) is space.carrier()
+        assert rings.forgetful().on_object(ring) is TopologicalSpaces().to_sets().on_object(space)
         assert addition.space is space and multiplication.space is space
         assert addition.operation is cast(Any, ring).addition()
         assert multiplication.operation is cast(Any, ring).multiplication()
@@ -155,7 +159,7 @@ class TopologicalRingsCategory(MorphismDataCategory):
         assert ring_map.domain() is source.ring() and ring_map.codomain() is target.ring()
         assert continuous_map.domain() is source.space() and continuous_map.codomain() is target.space()
         underlying_ring_map = rings.forgetful().on_morphism(ring_map)
-        assert ask(underlying_ring_map == continuous_map.underlying_map()) is True
+        assert ask(underlying_ring_map == TopologicalSpaces().to_sets().on_morphism(continuous_map)) is True
         return self._morphism_from_data(source, target, (ring_map, continuous_map))
 
     def _identity_data(

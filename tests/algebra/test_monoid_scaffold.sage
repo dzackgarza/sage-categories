@@ -4,7 +4,7 @@ import pytest
 
 from sage_categories.all import Cartesian, Mor, Sets, ask
 from sage_categories.cat.calculus import binary_product_data
-from sage_categories.cat.structured_objects import Magmas, Monoids
+from sage_categories.cat.structured_objects import Groups, Magmas, Monoids
 
 
 def test_additive_monoid_and_doubling_automorphism() -> None:
@@ -23,19 +23,51 @@ def test_additive_monoid_and_doubling_automorphism() -> None:
     assert monoid.unit_morphism() is unit
     assert ask(addition(square.point((2, 2))) == carrier.point(1)) is True
 
-    magma = Monoids(structure).to_magmas().on_object(monoid)
+    monoids = Monoids(structure)
+    magma = monoids.to_magmas().on_object(monoid)
     assert magma.carrier() is carrier
     doubling = Mor(Sets)(carrier, carrier)(lambda value: (2 * value) % 3)
     homomorphism = Magmas(structure).homomorphism(magma, magma, doubling)
+    Magmas(structure).retain_inverses(homomorphism, homomorphism)
     forgetful = Magmas(structure).forgetful()
     assert forgetful.on_morphism(homomorphism)(carrier.point(1)).datum() == 2
     assert ask(doubling(carrier.point(0)) == carrier.point(0)) is True
 
+    lift = monoids.to_magmas().cartesian_lift(homomorphism, monoid)
+    assert lift.codomain() is monoid
+    assert monoids.to_magmas().on_morphism(lift) is homomorphism
+    assert monoids.to_magmas().on_object(lift.domain()) is magma
+    assert ask(lift.domain().operation() == monoid.operation()) is True
+    assert ask(lift.domain().unit_morphism() == monoid.unit_morphism()) is True
+
+
+
+def test_commutative_group_property_inherits_monoid_constructor() -> None:
+    """A nested property intersection keeps the monoid constructor required by D150."""
+    carrier = Sets((0, 1, 2))
+    structure = Cartesian(Sets())
+    square = binary_product_data(Sets(), carrier, carrier).apex()
+    addition = Mor(Sets)(square, carrier)(lambda pair: (pair[0] + pair[1]) % 3)
+    unit = Mor(Sets)(structure.unit(), carrier)(lambda _: 0)
+
+    groups = Groups(structure).Commutative()
+    value = groups(addition, unit)
+
+    assert value in groups
+    assert value.operation() is addition
+    assert value.unit_morphism() is unit
 
 def test_incompatible_unit_fails_the_unit_equation() -> None:
     carrier = Sets((0, 1, 2))
+    structure = Cartesian(Sets())
     square = binary_product_data(Sets(), carrier, carrier).apex()
     addition = Mor(Sets)(square, carrier)(lambda pair: (pair[0] + pair[1]) % 3)
+    wrong_unit = Mor(Sets)(structure.unit(), carrier)(lambda _: 1)
+    monoids = Monoids(structure)
+    candidate = monoids(addition, wrong_unit)
+    left_unital = monoids.ambient().ambient()
+    assert ask(left_unital.equation(candidate)) is False
+
     # The left unit law for a candidate unit ``e`` states ``e + x == x`` for every ``x``.
     # The neutral element 0 satisfies it; the element 1 disproves it at ``x = 0``.
     assert ask(addition(square.point((0, 0))) == carrier.point(0)) is True
@@ -69,5 +101,6 @@ def test_monoid_morphisms_require_associative_endpoints() -> None:
 
 
 test_additive_monoid_and_doubling_automorphism()
+test_commutative_group_property_inherits_monoid_constructor()
 test_incompatible_unit_fails_the_unit_equation()
 test_monoid_morphisms_require_associative_endpoints()

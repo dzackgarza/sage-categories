@@ -46,10 +46,6 @@ from sage_categories.geometry.ringed_spaces import (
 )
 from sage_categories.geometry.sheaves import RingPresheaf as RingPresheaf
 from sage_categories.geometry.sheaves import RingSheaf as RingSheaf
-from sage_categories.geometry.sheaves import (
-    ring_presheaf_from_functor as ring_presheaf_from_functor,
-)
-from sage_categories.geometry.sheaves import ring_sheaf as ring_sheaf
 from sage_categories.geometry.spaces import TopologicalSpaces as TopologicalSpaces
 from sage_categories.geometry.spaces import (
     TopologicalSpacesCategory as TopologicalSpacesCategory,

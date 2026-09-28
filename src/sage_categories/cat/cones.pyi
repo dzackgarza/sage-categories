@@ -1,7 +1,5 @@
 from collections.abc import Callable, Hashable
 
-from _typeshed import Incomplete
-
 import sage_categories.cat.comma
 import sage_categories.cat.properties
 from sage_categories.cat.category import Category as Category
@@ -53,9 +51,8 @@ class _StaticRoles_ConeCategory(sage_categories.cat.comma._StaticRoles_CommaSpec
 class ConeCategory(
     _StaticRoles_ConeCategory, CommaSpecialization[_StaticRoles_ConeCategory.ObjectType, _StaticRoles_ConeCategory.ElementType, _StaticRoles_ConeCategory.MorphismType]
 ):
-    LimitCones: Incomplete
-    ColimitCocones: Incomplete
-
+    def LimitCones(self) -> LimitConesCategory: ...
+    def ColimitCocones(self) -> sage_categories.cat.properties.PropertySubcategory: ...
     def __init__(self, diagram: Functor, dual: bool = False) -> None: ...
     def diagram(self) -> Functor: ...
     def apex_of(self, transformation: NaturalTransformation) -> CategoryOfCategories.ElementType: ...

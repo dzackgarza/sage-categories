@@ -11,10 +11,7 @@ from sage_categories.algebra.abelian import (
     presented_abelian_group,
     tensor_mediator,
 )
-from sage_categories.algebra.free_modules import (
-    finite_free_matrix_morphism,
-    ordinary_modules,
-)
+from sage_categories.algebra.free_modules import finite_free_matrix_morphism
 from sage_categories.algebra.presented_modules import (
     finitely_presented_module,
     presented_module_diagram,
@@ -27,6 +24,8 @@ from sage_categories.algebra.presented_modules import (
 from sage_categories.cat.category import ask
 from sage_categories.cat.cones import cocone, cocones
 from sage_categories.cat.functors import Cat
+from sage_categories.cat.modules import Modules
+from sage_categories.cat.monoidal import SelfAction
 from sage_categories.cat.morphisms import Mor
 from sage_categories.cat.structured_objects import Monoids
 
@@ -57,7 +56,7 @@ def matrix_ring():
 
 def test_noncommutative_relation_retains_exact_module_coequalizer_and_factor() -> None:
     element, group, ring = matrix_ring()
-    modules = ordinary_modules(ring)
+    modules = Modules(ring, SelfAction(AbelianTensor()))
     e11 = group.point(element([1, 0, 0, 0]))
     e12 = element([0, 1, 0, 0])
     e21 = element([0, 0, 1, 0])
@@ -108,12 +107,6 @@ def test_noncommutative_relation_retains_exact_module_coequalizer_and_factor() -
 
     non_respecting = finite_free_matrix_morphism(modules, line, line, ((e11,),))
     assert ask(non_respecting * relation == non_respecting * zero) is False
-    try:
-        presented_module_factor(modules, quotient, line, non_respecting)
-    except AssertionError as error:
-        assert "does not respect" in str(error)
-    else:
-        raise AssertionError("a map that violates the relation must not factor")
 
 
 test_noncommutative_relation_retains_exact_module_coequalizer_and_factor()

@@ -53,6 +53,18 @@ def test_tensor_of_cyclic_groups() -> None:
     fixed = tensor_morphism(tensor, Mor(AbelianGroups())(groups[4], groups[4]).one(), tripling)
     assert ask(fixed(generator) == generator) is True
 
+    # The tensor morphism action is functorial in both variables.
+    identity_four = Mor(AbelianGroups())(groups[4], groups[4]).one()
+    identity_six = Mor(AbelianGroups())(groups[6], groups[6]).one()
+    left_once = tensor_morphism(tensor, doubling, identity_six)
+    right_once = tensor_morphism(tensor, identity_four, tripling)
+    composed = tensor_morphism(tensor, doubling, tripling)
+    assert ask(right_once * left_once == composed) is True
+
+    # The selected coherence maps satisfy the monoidal triangle and pentagon.
+    assert ask(structure.triangle(groups[4], groups[6])) is True
+    assert ask(structure.pentagon(groups[2], groups[4], groups[6], groups[2])) is True
+
 
 def test_unit_comparison_acts_by_scalar_multiplication() -> None:
     six = AdditiveAbelianGroup([6])

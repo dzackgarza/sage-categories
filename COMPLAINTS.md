@@ -2324,3 +2324,21 @@ Concrete unresolved findings belong to their source owner or to a current TODO n
 
 - **Repair owner and acceptance:** `dzackgarza/ai-review-ci`, `justfiles/python.just:_normalize`. Preserve the actual command failure through the central recipe and prove that a real unfixable Ruff violation makes the normal commit gate fail, while a conforming change succeeds.
   Repository-local suppression or gate replacement does not repair this owner.
+
+## Limit-category morphism equality decides False for equal abelian homomorphisms
+
+- **User action:** Compare two equal homomorphisms of abelian groups with `ask(f == g)`.
+  `tests/algebra/test_abelian_coequalizer_scaffold.sage` asserts `ask(q * zero == q * double) is True` for `zero, double: Z/2 -> Z/4` and the coequalizer `q: Z/4 -> Z/4/<2g>`; both composites are the zero map.
+
+- **Evidence:** On 2026-09-28 at `39be374`, under the declared runtime `ghcr.io/dzackgarza/sage:develop` (Sage 10.10.beta8), the assertion fails: `ask` returns `False`, not `Unknown`.
+  The two composites agree on both elements of `Z/2`, and `ask` on each pointwise value pair returns `True`.
+  Tracing `Q.equal` shows the one answering handler is `LimitCategory._equal_morphisms` (`cat/cat_constructions.py`), through `LimitCategory._equal`'s componentwise conjunction.
+  Walking the retained family components, the first component decided `False` is the `AdditiveGroupsCategory` limit `Limit(Functor(FiniteDiscrete(2) -> Cat))`; its own components (an inserter and `Sets` morphisms) all answer `Unknown`.
+  So a conjunction of `Unknown` components is reported as `False` somewhere in the additive-group family comparison or in `_morphism_equality_decision`'s endpoint-owner candidates.
+
+- **Gap and owner:** `cat/cat_constructions.py:LimitCategory._equal`/`_equal_morphisms` and `cat/morphisms.py:_morphism_equality_decision` (core-universal-calculus / core-properties-refinement).
+  A decided `False` for equal morphisms is a wrong answer, not an undecided one.
+
+- **Uncertainty:** The exact line converting `Unknown` components to `False` in the `AdditiveGroupsCategory` comparison was not yet isolated. Work paused here by owner instruction.
+
+- **Repair acceptance:** the unchanged scaffold assertion passes on the declared runtime, and a pair of genuinely different parallel homomorphisms still decides `False` or `Unknown`, never `True`.

@@ -27,6 +27,17 @@ The repository owns three responsibilities only:
 2. Weave and coordinate backend engines.
 3. Supply kernel and `Cat` machinery to organize, structure, and inherit categories ergonomically for mathematicians.
 
+### Relationship to the Lean programme
+
+`lean-cas-dsl` takes its requirements, and the failures to design against, from this repository.
+It does not reproduce this repository's implementation.
+[`lean-cas-dsl/specs/architecture.md`](https://github.com/dzackgarza/lean-cas-dsl/blob/main/specs/architecture.md)
+owns that programme's separation of concerns: `lean-categories` is its single mathematical
+authority, and its leaves contribute zero mathematics. Its specifications cite this repository's
+decisions as precedent (for example D183, transport along isofibrations). A decision recorded here
+therefore does not change that programme's mathematics; `lean-categories` does. When a lesson
+learned here should bind the programme, record it in `lean-cas-dsl/specs/`.
+
 ### Leaves are litmus spikes, not products
 
 This repository builds the Cat/kernel core. Leaves are small structural spikes that probe it.

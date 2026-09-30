@@ -120,9 +120,10 @@ Their primary purpose is to find where the core falls short. A spike shows:
   override practices;
 - where writing a leaf exposes missing functionality or missing general mathematics in the core.
 Each such finding is repaired in the core (or becomes a core node), never absorbed into the leaf.
-The target a spike is measured against: a leaf is mostly mathematics plus backend wiring; Cat/core handles
-generality, inheritance and engineering wiring; inheritance just works; leaves are isolated and modular provided
-they define the right functors.
+The target a spike is measured against: a leaf is backend wiring registered against categories and functors
+the core declares; the core owns the mathematics, generality, inheritance and engineering wiring; inheritance
+just works; leaves are isolated and modular. Nothing a leaf asserts about its own correctness counts as
+evidence (the evidence model above); its tests' expected values are independently sourced mathematics.
 
 Rebuilding real Sage functionality is not a goal; real leaf work eventually belongs in a separate repository that
 imports sage-categories as a black-box foundation.

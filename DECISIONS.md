@@ -6,6 +6,36 @@ The repository already connects its owned `Mor` tower to `homotopy-core` and sup
 
 Make the desired architecture a consequence of the public interfaces and their compilation, then check the resulting boundaries mechanically. This can eliminate whole classes of drift without enumerating every bad implementation pattern.
 
+## Failure mechanisms and successor-stack lessons
+
+Commit `27b3e507` specified deciding an Equifier's defining equation before admitting a
+value. A mathematical law became a runtime construction burden; consumers then acquired
+`certified_structures` escape paths to avoid it. Commit `96054a58` removed that route and
+returned consumers to ordinary constructors. The originating error, its downstream escape
+framework and the correction belong together: investigate whether a prerequisite belongs at
+that boundary before designing exceptions around it.
+
+In the successor stack, formal definitions and genuinely proof-producing mechanisms retain
+checked laws. External implementations fulfill computational contracts without automatically
+producing proofs of those laws. Complete defining maps and callable operations must remain
+available; their computational data does not thereby become mathematical proof. A well-formed
+wrong answer remains possible and is judged by independent acceptance.
+
+Research's placement and constructor failures similarly exposed interfaces before required
+selected data existed, producing retrospective recovery machinery. Construct and retain the
+selected data at its owner rather than reconstructing it from carrier or category membership.
+The binder history showed implementation-shaped goals steering supposedly separate upstream
+authors; role labels did not make those mathematical inputs independent. The recent B0
+reconstruction campaign repeated the Equifier error by making backend results contingent on
+universal-property and comparison proofs. Remove that mistaken responsibility rather than
+building another escape or approval framework.
+
+These are teaching examples for this repository as a reference implementation and downstream
+specimen. They do not replace its separately assigned A/B work or transplant its legacy
+runtime arrangements into the successor. The full model is in
+[the successor architecture](https://github.com/dzackgarza/lean-cas-dsl/blob/b0/construction/specs/architecture.md).
+No detector, hook, incident ledger or mandatory checklist follows from this history.
+
 ## Contents
 
 - [Functorial inheritance and leaf simplicity](#functorial-inheritance-and-leaf-simplicity)

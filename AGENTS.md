@@ -15,6 +15,29 @@ Use the relevant section while working; keep the rest available by reference.
 An explanation of a failure does not establish that its remedy works.
 Preserve the original operation and acceptance claim until the delivered behavior establishes them.
 
+## You have no memory
+
+Corrections and causal examples that exist only in chat do not survive compaction or a new
+session. Preserve them in the existing owning documents. Recording a settled correction is
+ordinary maintenance, not another approval transaction. Keep the failure, its consequences and
+the corrective principle together so that a later agent can understand the cause.
+
+> **The model to retain**
+>
+> `lean-categories` verifies and designs the mathematical API, including its abstract computational obligations. The kernel interprets and composes that API. Leaves declare implementations and supply computations under the published contracts. Acceptance tests their observed answers against independent mathematics.
+>
+> A verified specification is not a verified backend. Contract conformance is not functional correctness. Computational data may be used without becoming proof. A well-formed wrong answer is possible and must not redefine mathematical meaning.
+>
+> Interfaces follow formal constructions and selected structural maps, not backend classes or forwarding lists. Selected forms, parameters, inclusions, and actions are data; category membership does not reconstruct them.
+>
+> Each owner must complete its responsibility and may redesign inadequate implementation means. Existing code, schemas, gates, and assistant-authored plans are not mathematical facts or immutable requirements.
+>
+> When repairs multiply, inspect the prerequisite generating them. It may be an invented obligation. Removing that obligation is different from weakening the intended product.
+>
+> Judge progress by functioning required operations, their compositions, and the growth mechanism. Counts, local probes, accurate gap reports, and completed administrative machinery cannot substitute for that judgment.
+>
+> Preserve corrections and their causal examples in the existing owning documents. Do not assume conversational acknowledgment survives. Recording a settled correction is ordinary maintenance, not another approval transaction.
+
 ## Repository role: integration framework and engine delegation
 
 `sage-categories` is a stitching framework.

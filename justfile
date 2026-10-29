@@ -129,7 +129,6 @@ ci-provision-sage:
         --python /sage/.venv/bin/python \
         --project "${workspace}" \
         --group dev \
-        --group platform \
         --editable "${workspace}"
     # GAP PackageManager resolves the exact native package releases into this checkout.
     docker exec -i -w "${workspace}" sage-env gap -q -r --packagedirs "${workspace}/.gap/pkg" "${workspace}/.gap-packages.g"

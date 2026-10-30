@@ -6,7 +6,7 @@ requires-python = "==3.14.*"
 dependencies = [
     "attrs>=26.1,<27",
     "discopy==1.2.2",
-    "juliacall>=0.9.35,<0.10",
+    "juliacall>=0.9.35,<0.9.37",
     "makefun>=1.16",
     "maude>=1.6,<2",
     "multimethod>=2.1",

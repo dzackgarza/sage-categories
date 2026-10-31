@@ -1,5 +1,10 @@
 # Agent instructions
 
+Use the [shared math container](https://github.com/dzackgarza/ai-review-ci/blob/main/SAGE-CONTAINER.md#use-the-image)
+(`ghcr.io/dzackgarza/sage:develop`) for Lean/elan, Sage with mypy, GAP,
+Julia/Oscar, Macaulay2, and Singular. The guide covers image pull/run commands,
+CI use, and the host launchers.
+
 Read [TODO.md](TODO.md) for the active A/B execution DAG and its contract links,
 [CONTRIBUTING.md](CONTRIBUTING.md) for named policies, and
 [COMPLAINTS.md](COMPLAINTS.md) for observed mathematical issues and papercuts.

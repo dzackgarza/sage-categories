@@ -31,7 +31,7 @@ dev = [
     "mypy>=2",
     "pytest>=9.1,<10",
     "ruff>=0.16.5,<1",
-    "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@1dc7d482236cc70de0b053658a2d2af963af4092",
+    "sage-mypy-category-plugin @ git+https://github.com/dzackgarza/sagemath-mypy-plugin@main",
     "sage-stubs @ git+https://github.com/dzackgarza/sage-stubs.git@main",
     "microsoft-python-type-stubs @ git+https://github.com/dzackgarza/python-type-stubs.git@main",
     "pyyaml>=6.0.3",
@@ -42,29 +42,17 @@ migration = [
 ]
 
 
-# D132: the source dependency directions of specs/system.md, as a hard stop at the push tier.
-# import-linter refuses a module that does not exist, so a contract names only packages
-# in the tree. P1 adds the two leaf contracts of specs/system.md "Dependency directions"
-# ("Cat and the kernel import no production leaf"; "A leaf imports no kernel internal")
-# with `sage_categories.sets`, and each later P-phase adds its package to both.
 [tool.importlinter]
 root_package = "sage_categories"
 include_external_packages = true
-# A `TYPE_CHECKING` import is an annotation, not a dependency, and D130 requires the exact
-# type. The contracts below read runtime imports only.
 exclude_type_checking_imports = true
 
-# D173: the kernel is engineering and `Cat` owns the mathematics every category shares, so
-# the direction is kernel to `Cat` to leaves. specs/system.md "Dependency directions".
 [[tool.importlinter.contracts]]
 name = "The kernel imports no module of Cat"
 type = "forbidden"
 source_modules = ["sage_categories.kernel"]
 forbidden_modules = ["sage_categories.cat"]
 
-# D175: `cat_kernel` is downstream of both the kernel and `Cat`, and upstream of every
-# leaf. It holds the work that needs both layers, so it imports them and neither imports
-# it. specs/resolution.md "The closed kernel surface".
 [[tool.importlinter.contracts]]
 name = "The kernel imports no module of cat_kernel"
 type = "forbidden"
@@ -77,8 +65,6 @@ type = "forbidden"
 source_modules = ["sage_categories.cat"]
 forbidden_modules = ["sage_categories.cat_kernel"]
 
-# The runtime/compiler surface is protected: production leaves consume Cat, never kernel internals.
-# Indirect dependency through Cat is expected; only direct imports are forbidden here.
 [[tool.importlinter.contracts]]
 name = "Production leaves import no kernel internals"
 type = "forbidden"
@@ -92,8 +78,6 @@ source_modules = [
 forbidden_modules = ["sage_categories.kernel", "sage_categories.cat_kernel"]
 broken_contract_guidance = "Production mathematics must use Cat/public owners. Move backend conversion behind the leaf-local _firewall boundary; categorical propagation belongs to Cat/kernel."
 
-# Leaf theory never imports Sage directly. A future leaf-local _firewall may be granted an
-# exact exception deliberately; ordinary theory modules must go through owned interfaces.
 [[tool.importlinter.contracts]]
 name = "Production leaves import no Sage runtime directly"
 type = "forbidden"
@@ -109,7 +93,6 @@ ignore_imports = ["sage_categories.*._firewall.** -> sage"]
 unmatched_ignore_imports_alerting = "none"
 broken_contract_guidance = "Move Sage/backend conversion into an explicit private firewall/engine boundary and return owned mathematical objects."
 
-# Foundation layers must never reach upward into production mathematics.
 [[tool.importlinter.contracts]]
 name = "Foundation layers import no production leaf"
 type = "forbidden"
@@ -122,10 +105,6 @@ forbidden_modules = [
 ]
 broken_contract_guidance = "Move the dependency to a generic Cat/kernel abstraction or invert it through a retained public functor/interface."
 
-# The third D175 edge, "no leaf imports `cat_kernel`", enters with the first leaf
-# package at P1: the tree holds no leaf (D137), and a contract whose source module does
-# not exist reports green over nothing, which is the vacuous-green defect
-# `scripts/rule_coverage.py` exists to stop (D174). A leaf reaches `Cat`.
 
 [[tool.importlinter.contracts]]
 name = "Only the kernel's Sage runtime module and the named engine modules import Sage"

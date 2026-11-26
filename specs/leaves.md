@@ -298,6 +298,18 @@ Each entry names the shape, the code that carries it, the owner that supplies it
 A gate is a rule in `.ast-grep/architecture/` or a contract in `[tool.importlinter]`; `just architecture` runs both over `src` and the witness categories in `tests/kernel` at the push tier and fails on a file and line (D132). "Review" marks a shape that D132 admits no mechanical check for; the gate agent finds it by reading.
 The decision record stays in `decisions.md`; the compact rule stays in `CONTRIBUTING.md`; a plan card cites the row.
 
+The contracts of `[tool.importlinter]` state the dependency directions of [system.md](system.md#system-shape) (D132):
+
+- The direction is kernel to `Cat` to leaves (D173): the kernel imports no module of `Cat`.
+- `cat_kernel` is below the kernel and `Cat` and above each leaf (D175). It imports both layers; neither layer imports it.
+- A production leaf uses `Cat` and imports no kernel internal. An indirect dependency through `Cat` is permitted; a direct import is not.
+- A production leaf imports no Sage runtime. A leaf-local firewall can get an exact exception by a decision; an ordinary theory module goes through an owned interface.
+- A foundation layer imports no production leaf.
+- Only the Sage runtime module of the kernel and the named engine modules import Sage.
+- The contracts read runtime imports only (`exclude_type_checking_imports`): a `TYPE_CHECKING` import is an annotation, not a dependency, and D130 requires the exact type.
+- import-linter refuses a contract whose module does not exist, so a contract names only packages in the tree. Each new leaf package goes into each leaf contract.
+- The third edge of D175, "no leaf imports `cat_kernel`", has no contract yet. A contract over a source module that does not exist is green over nothing, the vacuous-green defect that `scripts/rule_coverage.py` stops (D174).
+
 ### `POL-LEAF-063` — base initializer, or inherited state installed by hand
 
 - In code: `super().__init__(...)` or `Base.__init__(self, ...)` in a category class or in `ObjectType`, `ElementType`, `MorphismType`; an `__init__` on a category class that builds subcategories, registers handlers, or constructs objects.

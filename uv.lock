@@ -477,7 +477,7 @@ wheels = [
 [[package]]
 name = "microsoft-python-type-stubs"
 version = "0"
-source = { git = "https://github.com/dzackgarza/python-type-stubs.git?rev=main#c22a757c3371fef8a93281522324d50af7e617c5" }
+source = { git = "https://github.com/dzackgarza/python-type-stubs.git?rev=main#a7ba86b8ee7921813d57a37edb7521353108c6e7" }
 
 [[package]]
 name = "mpmath"
@@ -866,7 +866,7 @@ dev = [
     { name = "pytest", specifier = ">=9.1,<10" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "ruff", specifier = ">=0.16.5,<1" },
-    { name = "sage-mypy-category-plugin", git = "https://github.com/dzackgarza/sagemath-mypy-plugin?rev=1dc7d482236cc70de0b053658a2d2af963af4092" },
+    { name = "sage-mypy-category-plugin", git = "https://github.com/dzackgarza/sagemath-mypy-plugin?rev=main" },
     { name = "sage-stubs", git = "https://github.com/dzackgarza/sage-stubs.git?rev=main" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20260906" },
 ]
@@ -880,7 +880,7 @@ source = { editable = "native/homotopy-python" }
 [[package]]
 name = "sage-mypy-category-plugin"
 version = "0.0.0"
-source = { git = "https://github.com/dzackgarza/sagemath-mypy-plugin?rev=1dc7d482236cc70de0b053658a2d2af963af4092#1dc7d482236cc70de0b053658a2d2af963af4092" }
+source = { git = "https://github.com/dzackgarza/sagemath-mypy-plugin?rev=main#692389a8617d65dec149eed15e54a75650f54e77" }
 dependencies = [
     { name = "mypy" },
     { name = "packaging" },
@@ -890,7 +890,7 @@ dependencies = [
 [[package]]
 name = "sage-stubs"
 version = "10.7.0"
-source = { git = "https://github.com/dzackgarza/sage-stubs.git?rev=main#949fc3b622b1cde89b2df41bceea20a43c4add43" }
+source = { git = "https://github.com/dzackgarza/sage-stubs.git?rev=main#38ecb94244a45dbc041ea583629b48ea5be1e717" }
 
 [[package]]
 name = "semver"

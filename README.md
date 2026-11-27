@@ -26,6 +26,9 @@ Before changing a consumer pin, verify that the selected SHA is present on the r
 If required work exists only locally, record the consumer as blocked on repository owner `dzackgarza` choosing either to publish the relevant branch/history or to select another already-published revision.
 Do not replace the declared Git dependency with a filesystem path to bypass that publication decision.
 
+The published package metadata pins `sage-categories-homotopy` to the native Python extension in a published revision of this repository, so external installs do not require a uv workspace or the platform dependency group.
+The local uv workspace still resolves the extension from `native/homotopy-python`. Update the published native revision when that extension changes, using a revision containing the compatible native sources.
+
 ## Documentation map
 
 | Subject | Owner |

@@ -11,7 +11,7 @@ dependencies = [
     "maude>=1.6,<2",
     "multimethod>=2.1",
     "plum-dispatch>=2.9,<3",
-    "sage-categories-homotopy",
+    "sage-categories-homotopy @ git+https://github.com/dzackgarza/sage-categories.git@df6e6aadbcd0480b87154f8ed573f123dbba8f3d#subdirectory=native/homotopy-python",
     "sympy>=1.14,<2",
     "wrapt",
 ]
